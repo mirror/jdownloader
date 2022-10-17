@@ -21,10 +21,13 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dw.com" }, urls = { "https?://(?:www\\.)?dw\\.com/[a-z]{2}/([^/]+)/av-(\\d+)" })
@@ -33,34 +36,47 @@ public class DwCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String lid = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
-        br.getPage("https://www." + this.getHost() + "/playersources/v-" + lid);
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String addedurl = param.getCryptedUrl();
+        br.setFollowRedirects(true);
+        br.getPage(addedurl);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String url_title = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        url_title = Encoding.htmlDecode(url_title);
-        final String[] links = br.getRegex("(http[^\"]+\\.mp4)").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        String title = HTMLSearch.searchMetaTag(br, "og:title");
+        final String[] hlsmasters = br.getRegex("src=\"(https?://[^\"]+master\\.m3u8)\" type=\"application/x-mpegURL\"").getColumn(0);
+        for (final String hlsmaster : hlsmasters) {
+            ret.add(this.createDownloadlink(hlsmaster));
         }
-        String title_for_filename = url_title.replace("-", " ");
-        for (final String singleLink : links) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
-            final String quality_part = new Regex(singleLink, "(_[a-z]+_[a-z]+\\.mp4)").getMatch(0);
-            if (quality_part != null) {
-                dl.setFinalFileName(title_for_filename + quality_part);
+        if (ret.isEmpty()) {
+            /* Old handling */
+            final String lid = new Regex(addedurl, this.getSupportedLinks()).getMatch(1);
+            br.getPage("https://www." + this.getHost() + "/playersources/v-" + lid);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            decryptedLinks.add(dl);
+            String url_title = new Regex(addedurl, this.getSupportedLinks()).getMatch(0);
+            url_title = Encoding.htmlDecode(url_title);
+            final String[] links = br.getRegex("(http[^\"]+\\.mp4)").getColumn(0);
+            if (links == null || links.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (title == null) {
+                title = url_title.replace("-", " ");
+            }
+            for (final String singleLink : links) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
+                final String quality_part = new Regex(singleLink, "(_[a-z]+_[a-z]+\\.mp4)").getMatch(0);
+                if (quality_part != null) {
+                    dl.setFinalFileName(title + quality_part);
+                }
+                ret.add(dl);
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(url_title);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.setName(title);
+        fp.addLinks(ret);
+        return ret;
     }
 }

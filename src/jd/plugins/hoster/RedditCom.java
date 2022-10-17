@@ -46,6 +46,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -287,7 +288,7 @@ public class RedditCom extends PluginForHost {
         synchronized (account) {
             if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 showUnderDevelopment();
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "This plugin is still under development", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException("The login process of this plugin is still under development");
             }
             br.setCookiesExclusive(true);
             prepBRAPI(br);
@@ -298,7 +299,7 @@ public class RedditCom extends PluginForHost {
                 final String error = UrlQuery.parse(account.getPass()).get("error");
                 if (error != null) {
                     /* User has tried authorization but for some reason it failed. */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "OAuth login failed: " + error, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("OAuth login failed: " + error);
                 }
                 /*
                  * User probably entered normal username & password but we need something else as password --> Display dialog with
@@ -307,9 +308,9 @@ public class RedditCom extends PluginForHost {
                 showLoginInformation();
                 /* Display error to tell user to try again and this time, enter URL into PW field. */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Versuch's nochmal und gib die Autorisierungs-URL in das Passwort Feld ein.\r\nGib NICHT dein Passwort ins Passwort Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("Versuch's nochmal und gib die Autorisierungs-URL in das Passwort Feld ein.\r\nGib NICHT dein Passwort ins Passwort Feld ein!");
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Try again and enter your authorization URL in the password field.\r\nDo NOT enter your password into the password field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("Try again and enter your authorization URL in the password field.\r\nDo NOT enter your password into the password field!");
                 }
             }
             /*
@@ -354,7 +355,7 @@ public class RedditCom extends PluginForHost {
                     /* Build new query containing only what we need. */
                     if (StringUtils.isEmpty(active_refresh_token)) {
                         logger.info("active_refresh_token is not given --> Cannot Refresh login-token --> Login invalid");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException();
                     }
                     logger.info("Trying to generate new authorization token");
                     final UrlQuery loginquery = new UrlQuery();
@@ -368,7 +369,7 @@ public class RedditCom extends PluginForHost {
                     if (StringUtils.isEmpty(active_access_token)) {
                         /* Failure e.g. user revoked API access --> Invalid logindata --> Permanently disable account */
                         checkErrors(this.br, null, account);
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException();
                     }
                     /* Update authorization header */
                     br.getHeaders().put("Authorization", "Bearer " + active_access_token);
@@ -392,7 +393,7 @@ public class RedditCom extends PluginForHost {
                 if (StringUtils.isEmpty(active_access_token)) {
                     /* Failure e.g. user revoked API access --> Invalid logindata --> Permanently disable account */
                     checkErrors(this.br, null, account);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
             }
             account.setProperty(PROPERTY_ACCOUNT_access_token, active_access_token);
@@ -411,9 +412,9 @@ public class RedditCom extends PluginForHost {
 
     private void errorUsernameMismtach() throws PluginException {
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Falscher Benutzername: Dein Account ist gültig, aber der Benutzername ist nicht der mit dem du in deinem Browser angemeldet bist!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("Falscher Benutzername: Dein Account ist gültig, aber der Benutzername ist nicht der mit dem du in deinem Browser angemeldet bist!");
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Username mismatch: Please enter the username in which you are logged in in your browser!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("Username mismatch: Please enter the username in which you are logged in in your browser!");
         }
     }
 

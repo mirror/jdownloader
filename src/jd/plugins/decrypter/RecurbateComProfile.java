@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -31,8 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.RecurbateCom;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RecurbateComProfile extends PluginForDecrypt {
@@ -68,17 +68,18 @@ public class RecurbateComProfile extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String username = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         username = Encoding.htmlDecode(username).trim();
+        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
-        fp.addLinks(decryptedLinks);
+        fp.addLinks(ret);
         int page = 0;
         final Set<String> dupes = new HashSet<String>();
         do {
@@ -102,7 +103,7 @@ public class RecurbateComProfile extends PluginForDecrypt {
                     RecurbateCom.setFilename(dl, videoID);
                     dl.setAvailable(true);
                     dl._setFilePackage(fp);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                 }
             }
@@ -117,11 +118,11 @@ public class RecurbateComProfile extends PluginForDecrypt {
                 logger.info("Stopping because: Looks like we've reached last page: " + page);
                 break;
             } else {
-                logger.info("Found number of items so far: " + decryptedLinks.size() + " | Continuing to next page: " + nextpage);
+                logger.info("Found number of items so far: " + ret.size() + " | Continuing to next page: " + nextpage);
                 br.getPage(nextpage);
                 continue;
             }
         } while (true);
-        return decryptedLinks;
+        return ret;
     }
 }
