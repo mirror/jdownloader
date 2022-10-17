@@ -277,6 +277,9 @@ public class RedditComCrawler extends PluginForDecrypt {
             final String kind = (String) post.get("kind");
             final Map<String, Object> data = (Map<String, Object>) post.get("data");
             final String postID = (String) data.get("id");
+            if (StringUtils.isEmpty(postID)) {
+                logger.warning("WTF");
+            }
             final String author = (String) data.get("author");
             final long createdDateTimestampMillis = ((Number) data.get("created")).longValue() * 1000;
             final long createdTimedeltaSeconds = (System.currentTimeMillis() - createdDateTimestampMillis) / 1000;
@@ -548,13 +551,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                     final TextCrawlerMode mode = cfg.getCrawlerTextDownloadMode();
                     if (mode == TextCrawlerMode.ALWAYS || (mode == TextCrawlerMode.ONLY_IF_NO_MEDIA_AVAILABLE && !postContainsRealMedia)) {
                         final DownloadLink text = this.createDownloadlink("reddidtext://" + postID);
-                        final String filename;
-                        if (lastAddedMediaItem != null) {
-                            /* Use filename that matches other found media item. */
-                            filename = lastAddedMediaItem.getName().substring(0, lastAddedMediaItem.getName().lastIndexOf(".")) + ".txt";
-                        } else {
-                            filename = fp.getName() + ".txt";
-                        }
+                        final String filename = filenameBaseForMultiItems.replace("*original_filename_without_ext*", "").replace("*index*", "0").replace("*ext*", ".txt");
                         text.setFinalFileName(filename);
                         try {
                             text.setDownloadSize(postText.getBytes("UTF-8").length);
