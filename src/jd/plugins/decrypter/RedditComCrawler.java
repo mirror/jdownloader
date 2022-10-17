@@ -277,9 +277,6 @@ public class RedditComCrawler extends PluginForDecrypt {
             final String kind = (String) post.get("kind");
             final Map<String, Object> data = (Map<String, Object>) post.get("data");
             final String postID = (String) data.get("id");
-            if (StringUtils.isEmpty(postID)) {
-                logger.warning("WTF");
-            }
             final String author = (String) data.get("author");
             final long createdDateTimestampMillis = ((Number) data.get("created")).longValue() * 1000;
             final long createdTimedeltaSeconds = (System.currentTimeMillis() - createdDateTimestampMillis) / 1000;
