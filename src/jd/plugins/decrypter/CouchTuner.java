@@ -25,10 +25,13 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CouchTuner extends antiDDoSForDecrypt {
@@ -39,7 +42,7 @@ public class CouchTuner extends antiDDoSForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "couchtuner.cloud", "couchtuner.click", "couchtuner.host", "couchtuner.website", "couchtuner.top", "couchtuner.fun", "couchtuner.me", "couchtuner.network", "couchtuner.show", "couchtuner.vip", "couchtuner.win", "watch-online.xyz", "watchseries-online.me", "2mycouchtuner.me", "mycouchtuner.li", "1couchtuner.club", "1couchtuner.me", "1couchtuner.xyz", "ecouchtuner.club", "ecouchtuner.me", "ecouchtuner.xyz", "icouchtuner.club", "icouchtuner.me", "icouchtuner.xyz" });
+        ret.add(new String[] { "couchtuner.show", "couchtuner.cloud", "couchtuner.click", "couchtuner.host", "couchtuner.website", "couchtuner.top", "couchtuner.fun", "couchtuner.me", "couchtuner.network", "couchtuner.vip", "couchtuner.win", "watch-online.xyz", "watchseries-online.me", "2mycouchtuner.me", "mycouchtuner.li", "1couchtuner.club", "1couchtuner.me", "1couchtuner.xyz", "ecouchtuner.club", "ecouchtuner.me", "ecouchtuner.xyz", "icouchtuner.club", "icouchtuner.me", "icouchtuner.xyz" });
         return ret;
     }
 
@@ -59,18 +62,22 @@ public class CouchTuner extends antiDDoSForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/.+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/\\d{4}/\\d{2}/[\\w\\-]+/?");
         }
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        getPage(parameter);
-        String page = br.toString();
-        String fpName = br.getRegex("(?:og:)?(?:title|description)\\\"[^>]*content=[\\\"'](?:\\s*Watch\\s*Couchtuner\\s*)?([^\\\"\\']+)\\s+(?:online\\s+for\\s+free|\\|)").getMatch(0);
+        getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String fpName = HTMLSearch.searchMetaTag(br, "og:title");
+        if (StringUtils.isEmpty(fpName)) {
+            fpName = br.getRegex("(?:og:)?(?:title|description)\\\"[^>]*content=[\\\"'](?:\\s*Watch\\s*Couchtuner\\s*)?([^\\\"\\']+)\\s+(?:online\\s+for\\s+free|\\|)").getMatch(0);
+        }
         if (StringUtils.isEmpty(fpName)) {
             fpName = br.getRegex("<h2[^>]+class\\s*=\\s*\"[^\"]*title[^\"]*\"[^>]*>\\s*([^<]+)\\s*").getMatch(0);
         }
@@ -89,14 +96,14 @@ public class CouchTuner extends antiDDoSForDecrypt {
             Collections.addAll(links, br.getRegex("<iframe[^>]+src=\"([^\"]+)\"[^>]*>").getColumn(0));
         }
         for (String link : links) {
-            link = Encoding.htmlDecode(link).replaceAll("^//", "https://");
-            decryptedLinks.add(createDownloadlink(link));
+            link = br.getURL(Encoding.htmlDecode(link)).toString();
+            ret.add(createDownloadlink(link));
         }
         if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

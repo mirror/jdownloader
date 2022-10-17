@@ -19,11 +19,13 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "donkparty.com" }, urls = { "https?://(?:www\\.)?donkparty\\.com/videos/([a-z0-9\\-_]+)_(\\d+)" })
-public class DonkPartyCom extends PornEmbedParser {
-    public DonkPartyCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "donkparty.com" }, urls = { "https?://(?:www\\.)?donkparty\\.com/videos/\\d+/([\\w\\-]+)" })
+public class DonkPartyComCrawler extends PornEmbedParser {
+    public DonkPartyComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -42,7 +44,17 @@ public class DonkPartyCom extends PornEmbedParser {
         }
     }
 
+    @Override
+    protected boolean isSelfhosted(final Browser br) {
+        return br.containsHTML("get_file") || br.containsHTML("video_id\\s*:\\s*'\\d+'");
+    }
+
     protected boolean returnRedirectToUnsupportedLinkAsResult() {
         return true;
+    }
+
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ").trim();
     }
 }

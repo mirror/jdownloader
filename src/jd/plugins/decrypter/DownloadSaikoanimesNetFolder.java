@@ -86,6 +86,10 @@ public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
             }
             final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final Map<String, Object> folderChildren = (Map<String, Object>) root.get("folderChildren");
+            if (folderChildren == null) {
+                /* E.g. {"link":null,"status":"success"} Link: https://download.saikoanimes.net/drive/s/qK2jfFm0ocB3QllH7s2d2bEE6wCVDK */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final int maxItemsPerPage = ((Number) folderChildren.get("per_page")).intValue();
             final int totalNumberofItems = ((Number) folderChildren.get("total")).intValue();
             final int lastPage = ((Number) folderChildren.get("last_page")).intValue();
