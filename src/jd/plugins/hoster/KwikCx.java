@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
@@ -31,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.HashInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KwikCx extends PluginForHost {
@@ -98,21 +100,25 @@ public class KwikCx extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("File name</strong>\\s*:\\s*([^<>\"]+)").getMatch(0);
+        final String filename = br.getRegex("(?i)File name\\s*</strong>\\s*:\\s*([^<>\"]+)").getMatch(0);
         String filesize = br.getRegex("(?i)Size\\s*</strong>\\s*:\\s*<abbr[^>]*title=\"(\\d+)\\s*Bytes").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         if (filename != null) {
-            filename = Encoding.htmlDecode(filename).trim();
-            link.setFinalFileName(filename);
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
             link.setVerifiedFileSize(Long.parseLong(filesize));
         }
-        final String sha1 = br.getRegex("strong>SHA1</strong>\\s*:\\s*<code>([a-f0-9]+)</code>").getMatch(0);
+        final String sha1 = br.getRegex("(?i)strong>\\s*SHA1\\s*</strong>\\s*:\\s*<code>([a-f0-9]+)</code>").getMatch(0);
         if (sha1 != null) {
             link.setSha1Hash(sha1);
+        }
+        final String crc32 = br.getRegex("(?i)strong>\\s*CRC32\\s*</strong>\\s*:\\s*<code>([a-f0-9]+)</code>").getMatch(0);
+        if (crc32 != null) {
+            link.setHashInfo(HashInfo.newInstanceSafe(crc32, HashInfo.TYPE.CRC32C));
+        }
+        final String md5 = br.getRegex("(?i)strong>\\s*MD5\\s*</strong>\\s*:\\s*<code>([a-f0-9]+)</code>").getMatch(0);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
         }
         return AvailableStatus.TRUE;
     }
@@ -125,18 +131,12 @@ public class KwikCx extends PluginForHost {
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
-            br.setFollowRedirects(false);
-            if (true) {
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 /* 2021-08-03: Broken because of Cloudflare. */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.postPage("/d/" + this.getFID(link), "_token=TODO");
-            String dllink = br.getRedirectLocation();
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, "/d/" + this.getFID(link), "_token=TODO", resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
