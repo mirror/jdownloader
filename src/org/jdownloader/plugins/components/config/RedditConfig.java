@@ -3,9 +3,11 @@ package org.jdownloader.plugins.components.config;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
@@ -19,8 +21,8 @@ public interface RedditConfig extends PluginConfigInterface {
     final String                                 text_PreferredFilenameScheme            = "Select preferred filename scheme";
     final String                                 text_CrawlerTextDownloadMode            = "Crawler: Select text download mode";
     final String                                 text_CrawlUrlsInsidePostText            = "Crawl URLs inside post-text?";
-    final String                                 text_CrawlCompleteUserProfiles          = "Crawl complete user profiles?\r\nThis can lead to very time consuming crawl processes!";
-    final String                                 text_CrawlCompleteSubreddits            = "Crawl complete subreddits?\r\nThis can cause very time consuming crawl processes!";
+    final String                                 text_ProfileCrawlerMaxPages             = "[Unfinished feature] User crawler: Crawl mas X last pages (-1 = unlimited, 0 = disable user crawler)";
+    final String                                 text_SubredditCrawlerMaxPages           = "[Unfinished feature] Subreddit crawler: Crawl mas X last pages (-1 = unlimited, 0 = disable subreddit crawler)";
 
     public static class TRANSLATION {
         public String getPreferredCommentsPackagenameScheme_label() {
@@ -43,12 +45,12 @@ public interface RedditConfig extends PluginConfigInterface {
             return text_CrawlUrlsInsidePostText;
         }
 
-        public String getCrawlCompleteUserProfiles_label() {
-            return text_CrawlCompleteUserProfiles;
+        public String getProfileCrawlerMaxPages_label() {
+            return text_ProfileCrawlerMaxPages;
         }
 
-        public String getCrawlCompleteSubreddits_label() {
-            return text_CrawlCompleteSubreddits;
+        public String getSubredditCrawlerMaxPages_label() {
+            return text_SubredditCrawlerMaxPages;
         }
     }
 
@@ -182,18 +184,20 @@ public interface RedditConfig extends PluginConfigInterface {
     void setCrawlUrlsInsidePostText(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry(text_CrawlCompleteUserProfiles)
+    @SpinnerValidator(min = -1, max = 2000, step = 1)
+    @DefaultIntValue(1)
+    @DescriptionForConfigEntry(text_SubredditCrawlerMaxPages)
     @Order(30)
-    boolean isCrawlCompleteUserProfiles();
+    int getProfileCrawlerMaxPages();
 
-    void setCrawlCompleteUserProfiles(boolean b);
+    void setProfileCrawlerMaxPages(int i);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry(text_CrawlCompleteSubreddits)
+    @SpinnerValidator(min = -1, max = 2000, step = 1)
+    @DefaultIntValue(1)
+    @DescriptionForConfigEntry(text_SubredditCrawlerMaxPages)
     @Order(40)
-    boolean isCrawlCompleteSubreddits();
+    int getSubredditCrawlerMaxPages();
 
-    void setCrawlCompleteSubreddits(boolean b);
+    void setSubredditCrawlerMaxPages(int i);
 }
