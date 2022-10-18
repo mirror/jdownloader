@@ -25,9 +25,11 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
@@ -43,8 +45,8 @@ public class FfetishPhotos extends antiDDoSForDecrypt {
         return 1;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String dl_id = new Regex(parameter, "(?:photos|video)/(\\d+)").getMatch(0);
         final String skin;
@@ -56,8 +58,27 @@ public class FfetishPhotos extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        FilePackage fp = null;
+        String title = HTMLSearch.searchMetaTag(br, "og:title");
+        if (title != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(title).trim());
+        }
+        String picturehtml = br.getRegex("class=\"lazy\"(.*?)class=\"ui-form\"").getMatch(0);
+        if (picturehtml == null) {
+            logger.warning("Using picturehtml fallback");
+            picturehtml = br.getRequest().getHtmlCode();
+        }
+        final String[] pictureurls = new Regex(picturehtml, "data-src=\"(/uploads/posts/[^\"]+)\"").getColumn(0);
+        for (final String pictureurl : pictureurls) {
+            final DownloadLink image = this.createDownloadlink(br.getURL(pictureurl).toString());
+            if (fp != null) {
+                image._setFilePackage(fp);
+            }
+            ret.add(image);
+            distribute(image);
         }
         if (br.containsHTML("engine/modules/antibot/antibot\\.php")) {
             boolean success = false;
@@ -93,7 +114,11 @@ public class FfetishPhotos extends antiDDoSForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        final DownloadLink result = createDownloadlink(finallink);
+        if (fp != null) {
+            result._setFilePackage(fp);
+        }
+        ret.add(result);
+        return ret;
     }
 }
