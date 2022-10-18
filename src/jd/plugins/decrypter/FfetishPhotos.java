@@ -83,19 +83,26 @@ public class FfetishPhotos extends antiDDoSForDecrypt {
         if (br.containsHTML("engine/modules/antibot/antibot\\.php")) {
             boolean success = false;
             br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+            final String initialURL = br.getURL();
             for (int i = 0; i <= 3; i++) {
-                final String code = this.getCaptchaCode("https://" + this.getHost() + "/engine/modules/antibot/antibot.php?rndval=" + System.currentTimeMillis(), param);
+                final String code = this.getCaptchaCode("/engine/modules/antibot/antibot.php?rndval=" + System.currentTimeMillis(), param);
+                /*
+                 * We either need to use another browser instance or set this header otherwise if user enters a wrong captcha once, all
+                 * following attempts will fail due to wrong Referer header.
+                 */
+                br.getHeaders().put("Referer", initialURL);
                 postPage("/engine/ajax/getlink.php", "sec_code=" + Encoding.urlEncode(code) + "&id=" + dl_id + "&skin=" + skin);
-                Form form = br.getForm(0);
+                final Form form = br.getForm(0);
                 if (form != null && form.containsHTML("g-recaptcha")) {
                     final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                     form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     submitForm(form);
                 }
-                form = br.getForm(0);
-                if (form == null && br.toString().length() > 100) {
+                if (br.getForm(0) == null && br.toString().length() > 100) {
                     success = true;
                     break;
+                } else {
+                    logger.info("User entered invalid captcha");
                 }
             }
             if (!success) {
