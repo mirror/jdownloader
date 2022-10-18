@@ -540,14 +540,14 @@ public class RedditComCrawler extends PluginForDecrypt {
                     /* FilenameScheme.DATE_SUBREDDIT_POSTID_SLUG and fallback */
                     chosenFilenameScheme = "*date*_*subreddit_title*_*post_id*_*post_slug**ext*";
                 }
-                String filenameBaseForMultiItems = chosenFilenameScheme.replace("*date*", dateFormatted);
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*date_timestamp*", Long.toString(createdDateTimestampMillis));
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*date_timedelta_formatted*", createdTimedeltaString);
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*subreddit_title*", subredditTitle);
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*username*", author);
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*post_id*", postID);
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*post_slug*", urlSlug);
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*post_title*", title);
+                String filenameBase = chosenFilenameScheme.replace("*date*", dateFormatted);
+                filenameBase = filenameBase.replace("*date_timestamp*", Long.toString(createdDateTimestampMillis));
+                filenameBase = filenameBase.replace("*date_timedelta_formatted*", createdTimedeltaString);
+                filenameBase = filenameBase.replace("*subreddit_title*", subredditTitle);
+                filenameBase = filenameBase.replace("*username*", author);
+                filenameBase = filenameBase.replace("*post_id*", postID);
+                filenameBase = filenameBase.replace("*post_slug*", urlSlug);
+                filenameBase = filenameBase.replace("*post_title*", title);
                 for (final DownloadLink thisCrawledLink : thisCrawledLinks) {
                     thisCrawledLink._setFilePackage(fp);
                     /* Set properties for Packagizer usage */
@@ -586,13 +586,13 @@ public class RedditComCrawler extends PluginForDecrypt {
                         final String filename;
                         if (padLength == 1 || chosenFilenameScheme.contains("*index*")) {
                             /* Use users' desired naming scheme */
-                            filename = filenameBaseForMultiItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*index*", indexStr).replace("*ext*", extensionWithDot);
+                            filename = filenameBase.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*index*", indexStr).replace("*ext*", extensionWithDot);
                         } else {
                             /*
                              * We know that this item is part of e.g. a gallery so let's add the position number as part of the file
                              * -extension to make sure we'll get uniqe filenames
                              */
-                            filename = filenameBaseForMultiItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", "_" + indexStr + extensionWithDot);
+                            filename = filenameBase.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", "_" + indexStr + extensionWithDot);
                         }
                         thisCrawledLink.setFinalFileName(filename);
                         thisCrawledLink.setProperty(RedditCom.PROPERTY_CRAWLER_FILENAME, filename);
