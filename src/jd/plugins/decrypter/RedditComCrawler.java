@@ -49,6 +49,7 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -298,9 +299,11 @@ public class RedditComCrawler extends PluginForDecrypt {
             boolean postContainsRealMedia = true;
             final String urlSlug = new Regex(permalink, TYPE_SUBREDDIT_COMMENTS).getMatch(3);
             if (urlSlug == null) {
+                /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final ArrayList<DownloadLink> thisCrawledLinks = new ArrayList<DownloadLink>();
+            final ArrayList<DownloadLink> thisCrawledExternalLinks = new ArrayList<DownloadLink>();
             try {
                 if (fp == null) {
                     /* No packagename given? Set FilePackage with name of comment/post. */
@@ -327,31 +330,6 @@ public class RedditComCrawler extends PluginForDecrypt {
                     packagename = packagename.replace("*post_title*", title);
                     fp.setName(packagename);
                 }
-                final FilenameScheme scheme = cfg.getPreferredFilenameScheme();
-                final String customFilenameScheme = cfg.getCustomFilenameScheme();
-                final String chosenFilenameScheme;
-                if (scheme == FilenameScheme.CUSTOM && !StringUtils.isEmpty(customFilenameScheme)) {
-                    chosenFilenameScheme = customFilenameScheme;
-                } else if (scheme == FilenameScheme.DATE_SUBREDDIT_POSTID_SERVER_FILENAME) {
-                    chosenFilenameScheme = "*date*_*subreddit_title*_*post_id*_*original_filename_without_ext**ext*";
-                } else if (scheme == FilenameScheme.DATE_SUBREDDIT_POSTID_TITLE) {
-                    chosenFilenameScheme = "*date*_*subreddit_title*_*post_id*_*post_title**ext*";
-                } else if (scheme == FilenameScheme.SERVER_FILENAME) {
-                    chosenFilenameScheme = "*original_filename_without_ext**ext*";
-                } else {
-                    /* FilenameScheme.DATE_SUBREDDIT_POSTID_SLUG and fallback */
-                    chosenFilenameScheme = "*date*_*subreddit_title*_*post_id*_*post_slug**ext*";
-                }
-                String filenameBaseForMultiItems = chosenFilenameScheme.replace("*date*", dateFormatted);
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*date_timestamp*", Long.toString(createdDateTimestampMillis));
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*date_timedelta_formatted*", createdTimedeltaString);
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*subreddit_title*", subredditTitle);
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*username*", author);
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*post_id*", postID);
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*post_slug*", urlSlug);
-                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*post_title*", title);
-                /* For items without index */
-                final String filenameBaseForSingleItems = filenameBaseForMultiItems.replace("*index*", "");
                 /* Look for single URLs e.g. single pictures (e.g. often imgur.com URLs, can also be selfhosted content) */
                 boolean addedRedditSelfhostedVideo = false;
                 String maybeExternalURL = (String) data.get("url");
@@ -362,40 +340,32 @@ public class RedditComCrawler extends PluginForDecrypt {
                 if (maybeExternalURL.startsWith("/")) {
                     maybeExternalURL = br.getURL(maybeExternalURL).toString();
                 }
-                DownloadLink lastAddedMediaItem = null;
                 if (!StringUtils.isEmpty(maybeExternalURL) && !this.canHandle(maybeExternalURL)) {
-                    logger.info("Found external URL: " + maybeExternalURL);
                     final String serverFilename = Plugin.getFileNameFromURL(new URL(maybeExternalURL));
                     final String serverFilenameWithoutExt;
-                    String ext = null;
                     if (serverFilename.contains(".")) {
-                        ext = Plugin.getFileNameExtensionFromURL(maybeExternalURL);
                         serverFilenameWithoutExt = serverFilename.substring(0, serverFilename.lastIndexOf("."));
                     } else {
                         serverFilenameWithoutExt = serverFilename;
                     }
                     final DownloadLink dl = this.createDownloadlink(maybeExternalURL);
                     if (maybeExternalURL.matches(TYPE_CRAWLED_SELFHOSTED_VIDEO)) {
-                        if (ext == null) {
-                            /* Fallback */
-                            ext = ".mp4";
-                        }
+                        dl.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, serverFilenameWithoutExt);
+                        dl.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_video);
                         addedRedditSelfhostedVideo = true;
-                        dl.setFinalFileName(filenameBaseForSingleItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", ext));
                         /* Skip availablecheck as we know that this content is online and is a directurl. */
                         dl.setAvailable(true);
-                        lastAddedMediaItem = dl;
+                        thisCrawledLinks.add(dl);
                     } else if (maybeExternalURL.matches(TYPE_CRAWLED_SELFHOSTED_IMAGE)) {
-                        if (ext == null) {
-                            /* Fallback */
-                            ext = ".jpg";
-                        }
-                        dl.setFinalFileName(filenameBaseForSingleItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", ext));
+                        dl.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, serverFilenameWithoutExt);
+                        dl.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_image);
                         /* Skip availablecheck as we know that this content is online and is a directurl. */
                         dl.setAvailable(true);
-                        lastAddedMediaItem = dl;
+                        thisCrawledLinks.add(dl);
+                    } else {
+                        logger.info("Found external URL in 'url' field: " + maybeExternalURL);
+                        thisCrawledExternalLinks.add(dl);
                     }
-                    thisCrawledLinks.add(dl);
                 }
                 /* 2022-03-10: When a gallery is removed, 'is_gallery' can be true while 'gallery_data' does not exist. */
                 final Object is_galleryO = data.get("is_gallery");
@@ -405,7 +375,6 @@ public class RedditComCrawler extends PluginForDecrypt {
                     final List<Map<String, Object>> galleryItems = (List<Map<String, Object>>) gallery_data.get("items");
                     final Map<String, Object> media_metadata = (Map<String, Object>) data.get("media_metadata");
                     int imageNumber = 1;
-                    final int padLength = StringUtils.getPadLength(galleryItems.size());
                     for (final Map<String, Object> galleryItem : galleryItems) {
                         final String mediaID = galleryItem.get("media_id").toString();
                         final String caption = (String) galleryItem.get("caption");
@@ -420,23 +389,16 @@ public class RedditComCrawler extends PluginForDecrypt {
                         if (extension == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        final String extensionWithDot = "." + extension;
-                        final String serverFilenameWithoutExt = mediaID;
-                        final DownloadLink image = this.createDownloadlink("https://i.redd.it/" + serverFilenameWithoutExt + "." + extension);
-                        final String indexStr = StringUtils.formatByPadLength(padLength, imageNumber);
-                        if (galleryItems.size() == 1 || chosenFilenameScheme.contains("*index*")) {
-                            image.setFinalFileName(filenameBaseForMultiItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*index*", indexStr).replace("*ext*", extensionWithDot));
-                        } else {
-                            /* Special: Add number of image as part of filename extension. */
-                            image.setFinalFileName(filenameBaseForMultiItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", "_" + indexStr + extensionWithDot));
-                        }
-                        image.setAvailable(true);
+                        final DownloadLink image = this.createDownloadlink("https://i.redd.it/" + mediaID + "." + extension);
+                        image.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, mediaID);
+                        image.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_image);
                         image.setProperty(RedditCom.PROPERTY_INDEX, imageNumber);
+                        image.setProperty(RedditCom.PROPERTY_INDEX_MAX, galleryItems.size());
+                        image.setAvailable(true);
                         if (!StringUtils.isEmpty(caption)) {
                             image.setComment(caption);
                         }
                         thisCrawledLinks.add(image);
-                        lastAddedMediaItem = image;
                         imageNumber++;
                     }
                     break;
@@ -448,10 +410,10 @@ public class RedditComCrawler extends PluginForDecrypt {
                     if (!embeddedMediaInfo.isEmpty()) {
                         logger.info("Found media_embed");
                         String mediaEmbedStr = (String) embeddedMediaInfo.get("content");
-                        final String[] links = HTMLParser.getHttpLinks(mediaEmbedStr, this.br.getURL());
-                        for (final String url : links) {
+                        final String[] urls = HTMLParser.getHttpLinks(mediaEmbedStr, this.br.getURL());
+                        for (final String url : urls) {
                             final DownloadLink dl = this.createDownloadlink(url);
-                            thisCrawledLinks.add(dl);
+                            thisCrawledExternalLinks.add(dl);
                         }
                     }
                 }
@@ -480,7 +442,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                                 }
                             }
                         }
-                        /* Stop once one type has been found! */
+                        /* Stop once one media type has been found as the rest are usually mirrors. */
                         break;
                     }
                 }
@@ -489,9 +451,9 @@ public class RedditComCrawler extends PluginForDecrypt {
                     postContainsRealMedia = false;
                     final List<Map<String, Object>> images = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(data, "preview/images");
                     if (images != null) {
+                        /* Images slash selfhosted preview images */
                         logger.info(String.format("Found %d selfhosted images", images.size()));
                         int imageNumber = 1;
-                        final int padLength = StringUtils.getPadLength(images.size());
                         for (final Map<String, Object> imageInfo : images) {
                             String bestImageURL = (String) JavaScriptEngineFactory.walkJson(imageInfo, "source/url");
                             if (StringUtils.isEmpty(bestImageURL)) {
@@ -507,18 +469,13 @@ public class RedditComCrawler extends PluginForDecrypt {
                             } else {
                                 serverFilenameWithoutExt = serverFilename;
                             }
-                            final String extensionWithDot = Plugin.getFileNameExtensionFromString(serverFilename);
                             final DownloadLink image = this.createDownloadlink("directhttp://" + bestImageURL);
-                            final String indexStr = StringUtils.formatByPadLength(padLength, imageNumber);
-                            if (images.size() == 1 || chosenFilenameScheme.contains("*index*")) {
-                                image.setFinalFileName(filenameBaseForMultiItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*index*", indexStr).replace("*ext*", extensionWithDot));
-                            } else {
-                                /* Special: Add number of image as part of filename extension. */
-                                image.setFinalFileName(filenameBaseForMultiItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", "_" + indexStr + extensionWithDot));
-                            }
+                            image.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_image);
+                            image.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, serverFilenameWithoutExt);
+                            image.setProperty(RedditCom.PROPERTY_INDEX, imageNumber);
+                            image.setProperty(RedditCom.PROPERTY_INDEX_MAX, images.size());
                             image.setAvailable(true);
                             thisCrawledLinks.add(image);
-                            lastAddedMediaItem = image;
                             imageNumber++;
                         }
                     } else {
@@ -536,7 +493,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                                 logger.info(String.format("Found %d URLs in selftext", urls.length));
                                 for (final String url : urls) {
                                     final DownloadLink dl = this.createDownloadlink(url);
-                                    thisCrawledLinks.add(dl);
+                                    thisCrawledExternalLinks.add(dl);
                                 }
                             } else {
                                 logger.info("Failed to find any URLs in selftext");
@@ -548,28 +505,49 @@ public class RedditComCrawler extends PluginForDecrypt {
                     final TextCrawlerMode mode = cfg.getCrawlerTextDownloadMode();
                     if (mode == TextCrawlerMode.ALWAYS || (mode == TextCrawlerMode.ONLY_IF_NO_MEDIA_AVAILABLE && !postContainsRealMedia)) {
                         final DownloadLink text = this.createDownloadlink("reddidtext://" + postID);
-                        final String filename = filenameBaseForMultiItems.replace("*original_filename_without_ext*", "").replace("*index*", "0").replace("*ext*", ".txt");
-                        text.setFinalFileName(filename);
+                        text.setProperty(RedditCom.PROPERTY_TYPE, "text");
                         try {
                             text.setDownloadSize(postText.getBytes("UTF-8").length);
                         } catch (final UnsupportedEncodingException ignore) {
                             ignore.printStackTrace();
                         }
-                        text.setProperty(RedditCom.PROPERTY_CRAWLER_FILENAME, filename);
                         text.setAvailable(true);
                         thisCrawledLinks.add(text);
                     }
                 }
-                if (thisCrawledLinks.isEmpty() && skippedItems == 0) {
+                if ((thisCrawledLinks.isEmpty() && thisCrawledExternalLinks.isEmpty()) && skippedItems == 0) {
                     if (removed_by_category != null) {
                         final String subredditURL = "https://" + this.getHost() + permalink;
                         final DownloadLink dummy = this.createOfflinelink(subredditURL, "REMOVED_BY_" + removed_by_category + "_" + postID, "This post has been removed by " + removed_by_category + ".");
                         thisCrawledLinks.add(dummy);
                     } else {
-                        logger.warning("Post offline or contains unsupported content: " + postID);
+                        logger.warning("Post is offline or contains unsupported content: " + postID);
                     }
                 }
             } finally {
+                final FilenameScheme scheme = cfg.getPreferredFilenameScheme();
+                final String customFilenameScheme = cfg.getCustomFilenameScheme();
+                final String chosenFilenameScheme;
+                if (scheme == FilenameScheme.CUSTOM && !StringUtils.isEmpty(customFilenameScheme)) {
+                    chosenFilenameScheme = customFilenameScheme;
+                } else if (scheme == FilenameScheme.DATE_SUBREDDIT_POSTID_SERVER_FILENAME) {
+                    chosenFilenameScheme = "*date*_*subreddit_title*_*post_id*_*original_filename_without_ext**ext*";
+                } else if (scheme == FilenameScheme.DATE_SUBREDDIT_POSTID_TITLE) {
+                    chosenFilenameScheme = "*date*_*subreddit_title*_*post_id*_*post_title**ext*";
+                } else if (scheme == FilenameScheme.SERVER_FILENAME) {
+                    chosenFilenameScheme = "*original_filename_without_ext**ext*";
+                } else {
+                    /* FilenameScheme.DATE_SUBREDDIT_POSTID_SLUG and fallback */
+                    chosenFilenameScheme = "*date*_*subreddit_title*_*post_id*_*post_slug**ext*";
+                }
+                String filenameBaseForMultiItems = chosenFilenameScheme.replace("*date*", dateFormatted);
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*date_timestamp*", Long.toString(createdDateTimestampMillis));
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*date_timedelta_formatted*", createdTimedeltaString);
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*subreddit_title*", subredditTitle);
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*username*", author);
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*post_id*", postID);
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*post_slug*", urlSlug);
+                filenameBaseForMultiItems = filenameBaseForMultiItems.replace("*post_title*", title);
                 for (final DownloadLink thisCrawledLink : thisCrawledLinks) {
                     thisCrawledLink._setFilePackage(fp);
                     /* Set properties for Packagizer usage */
@@ -586,9 +564,47 @@ public class RedditComCrawler extends PluginForDecrypt {
                     if (!StringUtils.isEmpty(postText)) {
                         thisCrawledLink.setProperty(RedditCom.PROPERTY_POST_TEXT, postText);
                     }
-                    /* Not (yet) required */
+                    if (thisCrawledLink.getAvailableStatus() == AvailableStatus.TRUE) {
+                        /* Set filename for items that are online */
+                        final String extensionWithDot;
+                        final String type = thisCrawledLink.getStringProperty(RedditCom.PROPERTY_TYPE);
+                        if (StringUtils.equalsIgnoreCase(type, RedditCom.PROPERTY_TYPE_text)) {
+                            extensionWithDot = ".txt";
+                        } else if (StringUtils.equalsIgnoreCase(type, RedditCom.PROPERTY_TYPE_video)) {
+                            extensionWithDot = ".mp4";
+                        } else {
+                            /* Obtain extension from URL. */
+                            extensionWithDot = Plugin.getFileNameExtensionFromString(thisCrawledLink.getPluginPatternMatcher());
+                        }
+                        String serverFilenameWithoutExt = thisCrawledLink.getStringProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT);
+                        if (serverFilenameWithoutExt == null) {
+                            serverFilenameWithoutExt = "";
+                        }
+                        final int padLength = thisCrawledLink.getIntegerProperty(RedditCom.PROPERTY_INDEX_MAX, 1);
+                        final int itemPosition = thisCrawledLink.getIntegerProperty(RedditCom.PROPERTY_INDEX);
+                        final String indexStr = StringUtils.formatByPadLength(padLength, itemPosition);
+                        final String filename;
+                        if (padLength == 1 || chosenFilenameScheme.contains("*index*")) {
+                            /* Use users' desired naming scheme */
+                            filename = filenameBaseForMultiItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*index*", indexStr).replace("*ext*", extensionWithDot);
+                        } else {
+                            /*
+                             * We know that this item is part of e.g. a gallery so let's add the position number as part of the file
+                             * -extension to make sure we'll get uniqe filenames
+                             */
+                            filename = filenameBaseForMultiItems.replace("*original_filename_without_ext*", serverFilenameWithoutExt).replace("*ext*", "_" + indexStr + extensionWithDot);
+                        }
+                        thisCrawledLink.setFinalFileName(filename);
+                        thisCrawledLink.setProperty(RedditCom.PROPERTY_CRAWLER_FILENAME, filename);
+                    }
                     this.distribute(thisCrawledLink);
                     crawledItems.add(thisCrawledLink);
+                }
+                /* Do not set reddit specific properties on crawled external URLs. */
+                for (final DownloadLink thisCrawledExternalLink : thisCrawledExternalLinks) {
+                    thisCrawledExternalLink._setFilePackage(fp);
+                    this.distribute(thisCrawledExternalLink);
+                    crawledItems.add(thisCrawledExternalLink);
                 }
             }
         }
