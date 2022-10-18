@@ -100,17 +100,19 @@ public class RedditComCrawler extends PluginForDecrypt {
         /* Prepare crawl process */
         final String subredditTitle = new Regex(param.getCryptedUrl(), TYPE_SUBREDDIT).getMatch(0);
         if (subredditTitle == null) {
+            /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        final String url = "https://www." + this.getHost() + "/r/" + subredditTitle + "/.json";
-        fp.setName("/r/" + subredditTitle);
-        if (PluginJsonConfig.get(RedditConfig.class).isCrawlCompleteSubreddits()) {
-            /* Crawl until we've reached the end. */
-            return this.crawlPagination(url, fp, -1);
+        final int maxPagesToCrawl = PluginJsonConfig.get(RedditConfig.class).getSubredditCrawlerMaxPages();
+        if (maxPagesToCrawl == 0) {
+            logger.info("User has disabled subreddit crawler");
+            return new ArrayList<DownloadLink>();
         } else {
-            /* Crawl only first page */
-            return this.crawlPagination(url, fp, 1);
+            /* Crawl until we've reached the end. */
+            final FilePackage fp = FilePackage.getInstance();
+            final String url = "https://www." + this.getHost() + "/r/" + subredditTitle + "/.json";
+            fp.setName("/r/" + subredditTitle);
+            return this.crawlPagination(url, fp, maxPagesToCrawl);
         }
     }
 
@@ -121,15 +123,15 @@ public class RedditComCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName("/u/" + userTitle);
-        final String url = "https://www." + this.getHost() + "/user/" + userTitle + "/.json";
-        if (PluginJsonConfig.get(RedditConfig.class).isCrawlCompleteUserProfiles()) {
-            /* Crawl until we've reached the end. */
-            return this.crawlPagination(url, fp, -1);
+        final int maxPagesToCrawl = PluginJsonConfig.get(RedditConfig.class).getProfileCrawlerMaxPages();
+        if (maxPagesToCrawl == 0) {
+            logger.info("User has disabled user profile crawler");
+            return new ArrayList<DownloadLink>();
         } else {
-            /* Crawl only first page */
-            return this.crawlPagination(url, fp, 1);
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName("/u/" + userTitle);
+            final String url = "https://www." + this.getHost() + "/user/" + userTitle + "/.json";
+            return this.crawlPagination(url, fp, maxPagesToCrawl);
         }
     }
 
@@ -178,7 +180,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                 logger.info("Stopping because: Found only " + numberofItemsOnCurrentPage + "/" + maxItemsPerCall + " items this round");
                 break;
             } else if (maxPage > -1 && page >= maxPage) {
-                logger.info("Stopping because: Reached desired max. page: " + maxPage);
+                logger.info("Stopping because: Reached desired max page: " + maxPage);
                 break;
             }
             query.addAndReplace("after", nextPageToken);

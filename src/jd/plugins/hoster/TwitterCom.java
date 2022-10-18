@@ -257,11 +257,7 @@ public class TwitterCom extends PluginForHost {
                         this.dllink = getStoredVideoDirecturl(result);
                         if (StringUtils.isEmpty(dllink)) {
                             /* Video download failed and no alternatives are available? */
-                            if (this.looksLikeBrokenVideoStream(link)) {
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
-                            } else {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
+                            this.handleBrokenVideo(link);
                         }
                         link.setProperties(result.getProperties());
                     } else {
@@ -427,7 +423,7 @@ public class TwitterCom extends PluginForHost {
                             } catch (IOException e) {
                                 logger.log(e);
                             }
-                            handleServerErrorsLastResort(con);
+                            handleServerErrorsLastResort(link, con);
                         }
                         if (con.getCompleteContentLength() == 0) {
                             /* 2017-07-18: E.g. abused video OR temporarily unavailable picture */
@@ -463,6 +459,17 @@ public class TwitterCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private void handleBrokenVideo(final DownloadLink link) throws PluginException {
+        if (this.looksLikeBrokenVideoStream(link)) {
+            /* Second time */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
+        } else {
+            /* First time */
+            link.setProperty(PROPERTY_BROKEN_VIDEO_STREAM, true);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Broken video?");
+        }
+    }
+
     private void checkGenericErrors(final Browser br) throws PluginException {
         if (br.getHttpConnection().getResponseCode() == 429) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate-limit reached", 5 * 60 * 1000l);
@@ -471,8 +478,10 @@ public class TwitterCom extends PluginForHost {
 
     private String getStoredVideoDirecturl(final DownloadLink link) {
         if (looksLikeBrokenVideoStream(link)) {
+            /* Prefer HLS as fallback because http stream looks to be broken. */
             return link.getStringProperty(PROPERTY_DIRECTURL_hls_master);
         } else if (PluginJsonConfig.get(TwitterConfigInterface.class).isPreferHLSVideoDownload()) {
+            /* Prefer HLS stream because user wants it. */
             return link.getStringProperty(PROPERTY_DIRECTURL_hls_master);
         } else {
             return link.getStringProperty(PROPERTY_DIRECTURL);
@@ -551,29 +560,33 @@ public class TwitterCom extends PluginForHost {
                     } catch (final IOException e) {
                         logger.log(e);
                     }
-                    handleServerErrorsLastResort(dl.getConnection());
+                    handleServerErrorsLastResort(link, dl.getConnection());
                 } else if (dl.getConnection().getCompleteContentLength() == 0) {
                     /*
-                     * 2021-09-13: E.g. broken videos: HEAD request looks good but download-attepmpt will result in empty file --> Catch
-                     * that and use HLS download for next attempt
+                     * 2021-09-13: E.g. broken videos: HEAD request looks good but download-attempt will result in empty file --> Catch that
+                     * and use HLS download for next attempt
                      */
-                    link.setProperty(PROPERTY_BROKEN_VIDEO_STREAM, true);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Broken file?");
+                    logger.info("Looks like broken http video with filesize == 0");
+                    this.handleBrokenVideo(link);
                 } else if (StringUtils.containsIgnoreCase(dl.getConnection().getURL().toString(), ".mp4") && dl.getConnection().getCompleteContentLength() == -1) {
-                    link.setProperty(PROPERTY_BROKEN_VIDEO_STREAM, true);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Broken video?");
+                    logger.info("Looks like broken video with unknown filesize");
+                    this.handleBrokenVideo(link);
                 }
                 dl.startDownload();
             }
         }
     }
 
-    private void handleServerErrorsLastResort(final URLConnectionAdapter con) throws PluginException {
-        if (dl.getConnection().getResponseCode() == 403) {
+    private void handleServerErrorsLastResort(final DownloadLink link, final URLConnectionAdapter con) throws PluginException {
+        if (con.getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403: Profile which posted this media has been deleted?", 10 * 60 * 1000l);
-        } else if (dl.getConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
-        } else if (dl.getConnection().getResponseCode() == 429) {
+        } else if (con.getResponseCode() == 404) {
+            if (StringUtils.containsIgnoreCase(dl.getConnection().getURL().toString(), ".mp4") && !this.looksLikeBrokenVideoStream(link)) {
+                this.handleBrokenVideo(link);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
+            }
+        } else if (con.getResponseCode() == 429) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate-limit reached", 5 * 60 * 1000l);
         } else if (con.getResponseCode() == 503) {
             /* 2021-06-24: Possible rate-limit */
