@@ -65,17 +65,23 @@ public class RedditCom extends PluginForHost {
         }
     }
 
-    public static final String PROPERTY_SUBREDDIT                = "subreddit";
-    public static final String PROPERTY_TITLE                    = "title";
-    public static final String PROPERTY_USERNAME                 = "username";
-    public static final String PROPERTY_DATE                     = "date";
-    public static final String PROPERTY_DATE_TIMESTAMP           = "date_timestamp";
-    public static final String PROPERTY_DATE_TIMEDELTA_FORMATTED = "date_timedelta_formatted";
-    public static final String PROPERTY_INDEX                    = "index";
-    public static final String PROPERTY_SLUG                     = "slug";
-    public static final String PROPERTY_POST_ID                  = "postid";
-    public static final String PROPERTY_POST_TEXT                = "post_text";
-    public static final String PROPERTY_CRAWLER_FILENAME         = "crawler_filename";
+    public static final String PROPERTY_SUBREDDIT                   = "subreddit";
+    public static final String PROPERTY_TITLE                       = "title";
+    public static final String PROPERTY_USERNAME                    = "username";
+    public static final String PROPERTY_DATE                        = "date";
+    public static final String PROPERTY_DATE_TIMESTAMP              = "date_timestamp";
+    public static final String PROPERTY_DATE_TIMEDELTA_FORMATTED    = "date_timedelta_formatted";
+    public static final String PROPERTY_INDEX                       = "index";
+    public static final String PROPERTY_INDEX_MAX                   = "index_max";
+    public static final String PROPERTY_SLUG                        = "slug";
+    public static final String PROPERTY_POST_ID                     = "postid";
+    public static final String PROPERTY_POST_TEXT                   = "post_text";
+    public static final String PROPERTY_CRAWLER_FILENAME            = "crawler_filename";
+    public static final String PROPERTY_SERVER_FILENAME_WITHOUT_EXT = "server_filename_without_ext";
+    public static final String PROPERTY_TYPE                        = "type";
+    public static final String PROPERTY_TYPE_text                   = "text";
+    public static final String PROPERTY_TYPE_image                  = "image";
+    public static final String PROPERTY_TYPE_video                  = "video";
 
     /** API wiki/docs: https://github.com/reddit-archive/reddit/wiki/API */
     public static final String getApiBaseLogin() {
