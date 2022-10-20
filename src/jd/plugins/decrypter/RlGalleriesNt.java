@@ -97,8 +97,8 @@ public class RlGalleriesNt extends PluginForDecrypt {
                 int numberofNewItems = 0;
                 final String[] redirecturls = br.getRegex("rel='nofollow noopener' href='(/[^/\\']+)' target='_blank'").getColumn(0);
                 /*
-                 * Check for imagevenue thumbnails which we can change to the original URLs without needing to crawl the individual
-                 * urlgalleries.net URLs -> Saves a lot of time
+                 * Check for imagevenue thumbnails that our imagevenue host plugin will change to the original URLs without needing to crawl
+                 * the individual urlgalleries.net URLs -> Saves a lot of time
                  */
                 final String[] thumbnailurls = br.getRegex("class='gallery' src='(https?://[^/]*\\.imagevenue\\.com/[^<>\"\\']+)'").getColumn(0);
                 for (final String thumbnailurl : thumbnailurls) {
@@ -164,7 +164,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
                 finallink = br.getRegex("linkDestUrl\\s*=\\s*\\'(http[^<>\"\\']+)\\'").getMatch(0);
             }
             if (finallink == null) {
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             ret.add(this.createDownloadlink(finallink));
             return ret;
