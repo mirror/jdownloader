@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,12 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hidrive.com" }, urls = { "https?://(?:my\\.hidrive\\.com/lnk/|(?:www\\.)?hidrive\\.strato\\.com/wget)[A-Za-z0-9]+|https://my\\.hidrive\\.com/share/([^/]+)#file_id=(.+)" })
 public class HidriveCom extends PluginForHost {
@@ -178,7 +178,7 @@ public class HidriveCom extends PluginForHost {
                         }
                     } else if (this.looksLikeDownloadableContent(con)) {
                         link.setPasswordProtected(false);
-                        if (con.getLongContentLength() > 0) {
+                        if (con.getCompleteContentLength() > 0) {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
                         link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
