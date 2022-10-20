@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -63,7 +65,8 @@ public class ImageVenueCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            String regex = "https?://(?:www\\.)?img[0-9]+\\." + buildHostsPatternPart(domains) + "img\\.php\\?(loc=[^&]+\\&)?image=.{4,300}";
+            String regex = "https?://img[0-9]+\\." + buildHostsPatternPart(domains) + "/img\\.php\\?(loc=[^&]+\\&)?image=.+";
+            regex += "|https?://img[0-9]+\\." + buildHostsPatternPart(domains) + "/loc\\d+/th_\\d+[^/]+";
             regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/view/o/\\?i=[^\\&]+\\&h=[^\\&]+";
             // galleries start with GA, images with ME?
             regex += "|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?!GA)[A-Za-z0-9]+";
@@ -72,22 +75,6 @@ public class ImageVenueCom extends PluginForHost {
             ret.add(regex);
         }
         return ret.toArray(new String[0]);
-    }
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-        final String url = link != null ? link.getPluginPatternMatcher() : null;
-        final String cdnImageD = new Regex(url, "https?://cdn-images\\.[^/]*/[^/]+/[^/]+/[^/]+/([A-Za-z0-9]+)").getMatch(0);
-        if (cdnImageD != null) {
-            // rewrite cdn-images to normal urls
-            link.setPluginPatternMatcher("https://www." + getHost() + "/" + cdnImageD);
-        } else {
-            final String cdnodata[] = new Regex(url, "https?://cdno-data\\.[^/]*/html\\.([^/]+)/upload\\d+/loc\\d+/([^/]+(?:\\.png|\\.jpe?g))").getRow(0);
-            if (cdnodata != null) {
-                // rewrite cdno-data to normal urls
-                link.setPluginPatternMatcher("https://www." + getHost() + "/view/o/?i=" + cdnodata[1] + "&h=" + cdnodata[0]);
-            }
-        }
     }
 
     @Override
@@ -100,29 +87,58 @@ public class ImageVenueCom extends PluginForHost {
         return -1;
     }
 
-    private String getFilenameURL(final DownloadLink link) throws MalformedURLException {
-        final UrlQuery query = new UrlQuery().parse(link.getPluginPatternMatcher());
+    private String getFilenameFromURL(final DownloadLink link) throws MalformedURLException {
+        final String url = link.getPluginPatternMatcher();
+        final UrlQuery query = UrlQuery.parse(url);
         String name = query.get("image");
         if (name == null) {
             name = query.get("i");
         }
+        if (name == null) {
+            /* Final fallback */
+            name = Plugin.getFileNameFromURL(new URL(url));
+        }
         return name;
+    }
+
+    private String getContentURL(final DownloadLink link) {
+        final String url = link != null ? link.getPluginPatternMatcher() : null;
+        final String cdnImageD = new Regex(url, "https?://cdn-images\\.[^/]*/[^/]+/[^/]+/[^/]+/([A-Za-z0-9]+)").getMatch(0);
+        final Regex thumbnailurl = new Regex(url, "https?://(img[0-9]+)\\.[^/]+/([^/]+)/th_(\\d+[^/]+)");
+        if (cdnImageD != null) {
+            /* cdn-images to normal urls */
+            return "https://www." + getHost() + "/" + cdnImageD;
+        } else if (thumbnailurl.matches()) {
+            return generateContentURL(thumbnailurl.getMatch(2), thumbnailurl.getMatch(0));
+        } else {
+            final String cdnodata[] = new Regex(url, "https?://cdno-data\\.[^/]*/html\\.([^/]+)/upload\\d+/loc\\d+/([^/]+(?:\\.png|\\.jpe?g))").getRow(0);
+            if (cdnodata != null) {
+                /* cdno-data to normal urls */
+                return generateContentURL(cdnodata[1], cdnodata[0]);
+            }
+        }
+        /* Return URL which was added by the user and assume that's already the one we want. */
+        return link.getPluginPatternMatcher();
+    }
+
+    private String generateContentURL(final String i, final String imageServer) {
+        return "https://www." + this.getHost() + "/view/o/?i=" + i + "&h=" + imageServer;
     }
 
     private String dllink = null;
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         /* Offline links should also have nice filenames */
-        final String fallbackFilename = getFilenameURL(link);
+        final String fallbackFilename = getFilenameFromURL(link);
         if (!link.isNameSet() && fallbackFilename != null) {
             link.setName(fallbackFilename);
         }
         this.br.setAllowedResponseCodes(500);
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        final String contentURL = getContentURL(link);
+        br.getPage(contentURL);
         /* Error handling */
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -131,28 +147,18 @@ public class ImageVenueCom extends PluginForHost {
         } else if (br.containsHTML("(?i)This image does not exist on this server|<title>404 Not Found</title>|>The requested URL /img\\.php was not found on this server\\.<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dllink = br.getRegex("id=(?:\"|\\')thepic(?:\"|\\')[^>]*?.*?SRC=(?:\"|\\')(.*?)(?:\"|\\')").getMatch(0);
-        if (dllink == null && (br.containsHTML("Continue to your image") || br.containsHTML("Continue to ImageVenue"))) {
-            br.getPage(link.getDownloadURL());
-            dllink = br.getRegex("id=(?:\"|\\')thepic(?:\"|\\')[^>]*?.*?SRC=(?:\"|\\')(.*?)(?:\"|\\')").getMatch(0);
+        if (br.containsHTML("(?i)Continue to your image|Continue to ImageVenue")) {
+            /* Extra step */
+            br.getPage(contentURL);
         }
+        dllink = br.getRegex("data-toggle=\"full\">\\s*<img src=\"(https?://[^<>\"]+)\"").getMatch(0);
         if (dllink == null) {
-            /* 2020-06-22 */
-            dllink = br.getRegex("data-toggle=\"full\">\\s*<img src=\"(https?://[^<>\"]+)\"").getMatch(0);
-        } else {
-            if (dllink == null) {
-                if (br.containsHTML("tempval\\.focus\\(\\)")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    logger.warning("Could not find finallink reference");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+            if (br.containsHTML("tempval\\.focus\\(\\)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                logger.warning("Could not find finallink reference");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String server = new Regex(link.getDownloadURL(), "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
-            dllink = "https://" + server + dllink;
-        }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String filename = br.getRegex("<title>\\s*(?:ImageVenue.com\\s*-)?\\s*(.*?)\\s*</title>").getMatch(0);
         if (filename == null) {
@@ -161,30 +167,32 @@ public class ImageVenueCom extends PluginForHost {
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            final String etag = con.getRequest().getResponseHeader("etag");
-            if (!this.looksLikeDownloadableContent(con)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (StringUtils.equalsIgnoreCase(etag, "\"182f722b7-171e-479ab58eae440\"")) {
-                /* 2022-07-18: Special "Image removed copyright violation" dummy image. */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (StringUtils.equalsIgnoreCase(etag, "\"19fdf2cd6-383c-5a4cd5b6710ed\"")) {
-                /* 2021-08-27: Special "404 not image unavailable" dummy picture. */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                final long size = con.getCompleteContentLength();
-                if (size > 0) {
-                    link.setVerifiedFileSize(size);
-                }
-            }
-        } finally {
+        if (!StringUtils.isEmpty(dllink)) {
+            URLConnectionAdapter con = null;
             try {
-                if (con != null) {
-                    con.disconnect();
+                con = br.openHeadConnection(dllink);
+                final String etag = con.getRequest().getResponseHeader("etag");
+                if (!this.looksLikeDownloadableContent(con)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (StringUtils.equalsIgnoreCase(etag, "\"182f722b7-171e-479ab58eae440\"")) {
+                    /* 2022-07-18: Special "Image removed copyright violation" dummy image. */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (StringUtils.equalsIgnoreCase(etag, "\"19fdf2cd6-383c-5a4cd5b6710ed\"")) {
+                    /* 2021-08-27: Special "404 not image unavailable" dummy picture. */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    final long filesize = con.getCompleteContentLength();
+                    if (filesize > 0) {
+                        link.setVerifiedFileSize(filesize);
+                    }
                 }
-            } catch (final Throwable e) {
+            } finally {
+                try {
+                    if (con != null) {
+                        con.disconnect();
+                    }
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
