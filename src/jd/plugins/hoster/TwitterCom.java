@@ -40,6 +40,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -154,6 +155,28 @@ public class TwitterCom extends PluginForHost {
         }
     }
 
+    private String getTweetID(final DownloadLink link) {
+        final String tweetIDFromProperty = link.getStringProperty(TwitterComCrawler.PROPERTY_TWEET_ID);
+        if (tweetIDFromProperty != null) {
+            return tweetIDFromProperty;
+        } else {
+            /* Backward compatibility */
+            return getTweetIDFromURL(link.getPluginPatternMatcher());
+        }
+    }
+
+    private String getTweetIDFromURL(final String url) {
+        if (url.matches(TYPE_VIDEO_EMBED)) {
+            return new Regex(url, TYPE_VIDEO_EMBED).getMatch(0);
+        } else if (url.matches(TYPE_VIDEO_SPECIFIC)) {
+            return new Regex(url, TYPE_VIDEO_SPECIFIC).getMatch(1);
+        } else if (url.matches(TYPE_TWEET_TEXT)) {
+            return new Regex(url, TYPE_TWEET_TEXT).getMatch(0);
+        } else {
+            return null;
+        }
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (link.getPluginPatternMatcher().matches(TYPE_TWEET_TEXT)) {
             if (StringUtils.isEmpty(getTweetText(link))) {
@@ -173,7 +196,7 @@ public class TwitterCom extends PluginForHost {
                 link.setFinalFileName(filenameFromCrawler);
                 filename = filenameFromCrawler;
             }
-            final String tweetID = link.getStringProperty(TwitterComCrawler.PROPERTY_TWEET_ID);
+            final String tweetID = getTweetID(link);
             String vmap_url = null;
             boolean possibly_geo_blocked = false;
             if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_DIRECT) || link.getPluginPatternMatcher().matches(TYPE_VIDEO_VMAP)) {
