@@ -40,7 +40,6 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -55,6 +54,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.TwitterComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwitterCom extends PluginForHost {
@@ -65,7 +65,7 @@ public class TwitterCom extends PluginForHost {
     }
 
     public static List<String[]> getPluginDomains() {
-        return jd.plugins.decrypter.TwitterComCrawler.getPluginDomains();
+        return TwitterComCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -89,7 +89,7 @@ public class TwitterCom extends PluginForHost {
             regex.append("|https?://amp\\.twimg\\.com/prod/[^<>\"]*?/vmap/[^<>\"]*?\\.vmap");
             regex.append("|https?://video\\.twimg\\.com/amplify_video/vmap/\\d+\\.vmap");
             regex.append("|https?://amp\\.twimg\\.com/v/.+");
-            regex.append("|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:i/videos/tweet/\\d+|[^/]+/status/\\d+)");
+            regex.append("|https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:i/videos/tweet/\\d+|[^/]+/status/\\d+(/video/\\d+)?)");
             ret.add(regex.toString());
         }
         return ret.toArray(new String[0]);
@@ -110,6 +110,7 @@ public class TwitterCom extends PluginForHost {
     private final String        TYPE_VIDEO_DIRECT             = "https?://amp\\.twimg\\.com/v/.+";
     private final String        TYPE_VIDEO_VMAP               = "^https?://.*\\.vmap$";
     public static final String  TYPE_VIDEO_EMBED              = "https?://[^/]+/i/videos/tweet/(\\d+)";
+    public static final String  TYPE_VIDEO_SPECIFIC           = "https://[^/]+/([^/]+)/status/(\\d+)/video/(\\d+)";
     private static final String TYPE_TWEET_TEXT               = "https?://[^/]+/([^/]+)/status/(\\d+)";
     /* Connection stuff - don't allow chunks as we only download small pictures/videos */
     private final int           MAXCHUNKS                     = 1;
@@ -130,7 +131,7 @@ public class TwitterCom extends PluginForHost {
     @Override
     public void init() {
         super.init();
-        jd.plugins.decrypter.TwitterComCrawler.setRequestIntervallLimits();
+        TwitterComCrawler.setRequestIntervallLimits();
     }
 
     private static Object LOCK = new Object();
@@ -140,8 +141,17 @@ public class TwitterCom extends PluginForHost {
         return requestFileInformation(link, null, false);
     }
 
+    @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         return true;
+    }
+
+    private static boolean isVideo(final String url) {
+        if (url.matches(TYPE_VIDEO_EMBED) || url.matches(TYPE_VIDEO_SPECIFIC)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
@@ -150,7 +160,7 @@ public class TwitterCom extends PluginForHost {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String filenameFromCrawler = link.getStringProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_FILENAME_FROM_CRAWLER);
+            final String filenameFromCrawler = link.getStringProperty(TwitterComCrawler.PROPERTY_FILENAME_FROM_CRAWLER);
             if (filenameFromCrawler != null) {
                 link.setFinalFileName(filenameFromCrawler);
             }
@@ -158,12 +168,12 @@ public class TwitterCom extends PluginForHost {
             prepBR(this.br);
             /* Most items will come from crawler. */
             String filename = null;
-            final String filenameFromCrawler = link.getStringProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_FILENAME_FROM_CRAWLER);
+            final String filenameFromCrawler = link.getStringProperty(TwitterComCrawler.PROPERTY_FILENAME_FROM_CRAWLER);
             if (filenameFromCrawler != null) {
                 link.setFinalFileName(filenameFromCrawler);
                 filename = filenameFromCrawler;
             }
-            String tweetID = link.getStringProperty("tweetid");
+            final String tweetID = link.getStringProperty(TwitterComCrawler.PROPERTY_TWEET_ID);
             String vmap_url = null;
             boolean possibly_geo_blocked = false;
             if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_DIRECT) || link.getPluginPatternMatcher().matches(TYPE_VIDEO_VMAP)) {
@@ -190,22 +200,22 @@ public class TwitterCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-            } else if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_EMBED)) {
-                tweetID = new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO_EMBED).getMatch(0);
+            } else if (isVideo(link.getPluginPatternMatcher())) {
                 this.dllink = getStoredVideoDirecturl(link);
                 if (StringUtils.isEmpty(this.dllink)) {
+                    logger.info("Trying to obtain fresh video directurl");
                     final boolean useCrawler;
                     /*
                      * 2022-02-02: Legacy handling: TODO: Hardcode set 'useCrawler' to false after 04-2022 to fix rare issue with single
                      * embedded video URLs. Don't do this earlier as it will kill filenames of existing videos!
                      */
-                    if (link.hasProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY)) {
-                        if (link.getBooleanProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false)) {
+                    if (link.hasProperty(TwitterComCrawler.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY)) {
+                        if (link.getBooleanProperty(TwitterComCrawler.PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false)) {
                             useCrawler = true;
                         } else {
                             useCrawler = false;
                         }
-                    } else if (!link.hasProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_BITRATE)) {
+                    } else if (!link.hasProperty(TwitterComCrawler.PROPERTY_BITRATE)) {
                         /* Link was added to host plugin directly -> Don't use crawler handling. */
                         useCrawler = false;
                     } else {
@@ -213,52 +223,35 @@ public class TwitterCom extends PluginForHost {
                     }
                     if (useCrawler) {
                         logger.info("Obtaining new directurl via crawler");
-                        final PluginForDecrypt decrypter = this.getNewPluginForDecryptInstance(this.getHost());
-                        final String tweetVideoURL = jd.plugins.decrypter.TwitterComCrawler.createVideourl(tweetID);
+                        final PluginForDecrypt crawlerplugin = this.getNewPluginForDecryptInstance(this.getHost());
+                        final String tweetVideoURL = TwitterComCrawler.createVideourl(tweetID);
                         final CryptedLink param = new CryptedLink(tweetVideoURL, link);
-                        final ArrayList<DownloadLink> results = decrypter.decryptIt(param, null);
+                        final ArrayList<DownloadLink> results = crawlerplugin.decryptIt(param, null);
                         if (results.isEmpty()) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Single tweet video item crawler failure");
                         }
                         DownloadLink result = null;
                         if (results.size() == 1) {
+                            /* Simple handling: Assume what we want is the first item */
                             result = results.get(0);
                         } else {
-                            /*
-                             * We expect exactly one element - for twitter posts containing videos, only one single video item is allowed
-                             * per twitter post BUT there are edge cases e.g. when the user has edited/replaced a video inside a post. In
-                             * this case the API may return 2 items whereas via browser you can only watch one video which is usually the
-                             * first item in the array returned by the API.
-                             */
-                            logger.info("Edge case: Video tweet contains multiple elements: " + results.size());
+                            /* Tweet contains multiple media items */
                             for (final DownloadLink tmp : results) {
-                                /**
-                                 * The check for filename-ending is only there for backward-compatibility to crawler revision 45677 and
-                                 * before. </br>
-                                 * TODO: Remove it after 08-2022
-                                 */
-                                if ((link.getName() != null && link.getName().endsWith(".mp4")) || StringUtils.equals(link.getStringProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_TYPE), "video")) {
+                                if (StringUtils.equalsIgnoreCase(tmp.getStringProperty(TwitterComCrawler.PROPERTY_MEDIA_ID), link.getStringProperty(TwitterComCrawler.PROPERTY_MEDIA_ID))) {
                                     result = tmp;
                                     break;
                                 }
                             }
-                            result = results.get(link.getIntegerProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_MEDIA_INDEX, 0));
                         }
                         if (result == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to refresh directurl");
                         }
-                        if (!result.hasProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_BITRATE)) {
-                            /*
-                             * This should never happen but it can if the user e.g. for some reason adds a non-video single tweet URL as URL
-                             * matching this video embed pattern.
-                             */
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Single tweet video item type mismatch");
-                        }
                         this.dllink = getStoredVideoDirecturl(result);
                         if (StringUtils.isEmpty(dllink)) {
-                            /* Video download failed and no alternatives are available? */
-                            this.handleBrokenVideo(link);
+                            /* This should never happen */
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Failed to refresh directurl");
                         }
+                        /* Take over properties from crawler result */
                         link.setProperties(result.getProperties());
                     } else {
                         /* 2018-11-13: Using static token */
@@ -291,10 +284,10 @@ public class TwitterCom extends PluginForHost {
                         final Browser brc = br.cloneBrowser();
                         brc.setAllowedResponseCodes(400);
                         synchronized (LOCK) {
-                            jd.plugins.decrypter.TwitterComCrawler.prepAPIHeaders(brc);
+                            TwitterComCrawler.prepAPIHeaders(brc);
                             /* Set guest_token header if needed. */
                             if (account == null) {
-                                final String guest_token = jd.plugins.decrypter.TwitterComCrawler.getAndSetGuestToken(this, brc);
+                                final String guest_token = TwitterComCrawler.getAndSetGuestToken(this, brc);
                                 if (guest_token != null) {
                                     brc.getHeaders().put("x-guest-token", guest_token);
                                 } else {
@@ -329,11 +322,11 @@ public class TwitterCom extends PluginForHost {
                                      * 2019-08-20: {"errors":[{"code":239,"message":"Bad guest token."}]}
                                      */
                                     logger.info("Possible token failure 239, retrying");
-                                    jd.plugins.decrypter.TwitterComCrawler.resetGuestToken();
+                                    TwitterComCrawler.resetGuestToken();
                                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 353", 3 * 60 * 1000l);
                                 } else if (errorcode.equals("353")) {
                                     logger.info("Possible token failure 353, retrying");
-                                    jd.plugins.decrypter.TwitterComCrawler.resetGuestToken();
+                                    TwitterComCrawler.resetGuestToken();
                                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 353", 2 * 60 * 1000l);
                                 } else {
                                     logger.warning("Unknown error");
@@ -341,8 +334,8 @@ public class TwitterCom extends PluginForHost {
                                 }
                             }
                         }
-                        Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
-                        Map<String, Object> track = (Map<String, Object>) root.get("track");
+                        final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+                        final Map<String, Object> track = (Map<String, Object>) root.get("track");
                         if ((Boolean) track.get("isEventGeoblocked") == Boolean.TRUE) {
                             possibly_geo_blocked = true;
                         }
@@ -434,6 +427,7 @@ public class TwitterCom extends PluginForHost {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
                         if (!link.isNameSet()) {
+                            /* Set filename by URL */
                             if (filename == null) {
                                 filename = Encoding.htmlDecode(getFileNameFromHeader(con)).replace(":orig", "");
                             }
@@ -499,7 +493,7 @@ public class TwitterCom extends PluginForHost {
 
     /** Returns text of this tweet. Can be null as not all tweets have a post-text! */
     private String getTweetText(final DownloadLink link) {
-        return link.getStringProperty(jd.plugins.decrypter.TwitterComCrawler.PROPERTY_TWEET_TEXT);
+        return link.getStringProperty(TwitterComCrawler.PROPERTY_TWEET_TEXT);
     }
 
     private static String regexVideoVmapHighestQualityURL(final Browser br) {
@@ -666,7 +660,7 @@ public class TwitterCom extends PluginForHost {
     }
 
     private boolean checkLogin(final Browser br) throws IOException, PluginException {
-        jd.plugins.decrypter.TwitterComCrawler.prepAPIHeaders(br);
+        TwitterComCrawler.prepAPIHeaders(br);
         br.getPage("https://api.twitter.com/2/badge_count/badge_count.json?supports_ntab_urt=1");
         /* E.g. check for error "rate-limit reached" */
         this.checkGenericErrors(br);
