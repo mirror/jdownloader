@@ -50,6 +50,7 @@ public class Mangakakalot extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        br.setFollowRedirects(true);
         getPage(br, param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -80,7 +81,10 @@ public class Mangakakalot extends antiDDoSForDecrypt {
             // Extract manga title
             //
             if (StringUtils.isNotEmpty(breadcrumb)) {
-                mangaTitle = new Regex(breadcrumb, "<a[^>]+title\\s*=\\s*\"([^\"]+)").getMatch(0);
+                try {
+                    mangaTitle = new Regex(breadcrumb, "<a[^>]+title\\s*=\\s*\"([^\"]+)").getMatch(1);
+                } catch (Exception e) {
+                }
             }
             if (StringUtils.isEmpty(mangaTitle)) {
                 mangaTitle = br.getRegex("<title>\\s*([^<]+)\\s+(?:Ch\\.|Chapter)[^<]+\\s-\\s+").getMatch(0);
@@ -96,7 +100,10 @@ public class Mangakakalot extends antiDDoSForDecrypt {
             //
             String chapterTitle = null;
             if (StringUtils.isNotEmpty(breadcrumb)) {
-                chapterTitle = new Regex(breadcrumb, "<a[^>]+title\\s*=\\s*\"([^\"]+)").getMatch(0);
+                try {
+                    chapterTitle = new Regex(breadcrumb, "<a[^>]+title\\s*=\\s*\"([^\"]+)").getMatch(2);
+                } catch (Exception e) {
+                }
             }
             if (StringUtils.isEmpty(chapterTitle)) {
                 chapterTitle = "Chapter_" + chapterNumber;
