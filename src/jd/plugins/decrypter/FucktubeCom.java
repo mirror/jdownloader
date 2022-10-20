@@ -32,15 +32,18 @@ public class FucktubeCom extends PluginForDecrypt {
     /* DEV NOTES */
     /* Porn_plugin */
     /* Similar websites: porn.com, fucktube.com */
+    /**
+     * 2022-10-20: Website seems to have changed and is now linking to paid websites povr.com and wankzvr.com but old URLs will continue to
+     * work as this is an "offline crawler" which will only extract information out of base64 strings contained in added URLs.
+     */
     @Override
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String url = parameter.getCryptedUrl();
-        if (url.matches(TYPE_REDIRECT_BASE64)) {
+        if (param.getCryptedUrl().matches(TYPE_REDIRECT_BASE64)) {
             /* These ones redirect to a single external URL and contain a base64 encoded String containing that URL. */
-            final String b64 = Encoding.htmlDecode(new Regex(url, "https?://(?:\\w+\\.)?[^/]+/out/[a-z]/[^/]+/([a-zA-Z0-9_/\\+\\=\\-%]+)/.*").getMatch(0));
+            final String b64 = Encoding.htmlDecode(new Regex(param.getCryptedUrl(), "https?://(?:\\w+\\.)?[^/]+/out/[a-z]/[^/]+/([a-zA-Z0-9_/\\+\\=\\-%]+)/.*").getMatch(0));
             final String decoded = Encoding.Base64Decode(b64);
             final String[] urls = HTMLParser.getHttpLinks(decoded, br.getURL());
             if (urls.length == 0) {
@@ -53,6 +56,7 @@ public class FucktubeCom extends PluginForDecrypt {
                 }
             }
         } else {
+            /* Unsupported URL -> Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return links;
