@@ -8,6 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -19,17 +27,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "500px.com" }, urls = { "https?://(?:www\\.)?500px\\.com/p/([^/\\?]+)(/galleries/[^/]+)?" })
-public class FivehundretPxCom extends PluginForDecrypt {
-    public FivehundretPxCom(PluginWrapper wrapper) {
+public class FivehundretPxComCrawler extends PluginForDecrypt {
+    public FivehundretPxComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -133,17 +133,17 @@ public class FivehundretPxCom extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         photoBaseURL = new URL("https://" + this.getHost());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String userName = new Regex(parameter.toString(), this.getSupportedLinks()).getMatch(0);
-        final String userID = getUserID(br, parameter.toString(), userName);
+        String userName = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
+        final String userID = getUserID(br, param.toString(), userName);
         userName = getUserName(userID);
-        if (parameter.toString().matches(".+/galleries/.+")) {
+        if (param.toString().matches(".+/galleries/.+")) {
             /* Crawl a gallery of a user */
             String galleryName = null;
-            if (parameter.toString().matches(".+/featured")) {
+            if (param.toString().matches(".+/featured")) {
                 galleryName = br.getRegex("<option selected value='\\d+'>\\s*(.*?)\\s*</option").getMatch(0);
                 if (galleryName != null) {
                     galleryName = galleryName.replace(" ", "").replace("-", "_");
@@ -151,9 +151,10 @@ public class FivehundretPxCom extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
-                galleryName = new Regex(parameter.toString(), ".+/galleries/(.+)").getMatch(0);
+                galleryName = new Regex(param.toString(), ".+/galleries/(.+)").getMatch(0);
             }
             br.getPage("https://api.500px.com/v1/users/" + userID + "/galleries/" + galleryName + "?include_user=true&include_cover=1&cover_size=2048");
+            checkErrorsAPI(br);
             final String galleryID = br.getRegex("\"id\"\\s*:\\s*(\\d+)").getMatch(0);
             if (galleryID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -175,6 +176,7 @@ public class FivehundretPxCom extends PluginForDecrypt {
             int page = 0;
             while (!isAbort()) {
                 br.getPage("https://api.500px.com/v1/users/" + userID + "/galleries/" + galleryID + "/items?rpp=50&image_size[]=1&image_size[]=2&image_size[]=32&image_size[]=31&image_size[]=33&image_size[]=34&image_size[]=35&image_size[]=36&image_size[]=2048&image_size[]=4&image_size[]=14&include_licensing=true&formats=jpeg,lytro&sort=position&sort_direction=asc&page=" + page++ + "&rpp=50");
+                checkErrorsAPI(br);
                 final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final List<Map<String, Object>> photos = (List<Map<String, Object>>) map.get("photos");
                 if (photos == null) {
@@ -202,10 +204,7 @@ public class FivehundretPxCom extends PluginForDecrypt {
             while (!isAbort()) {
                 logger.info("Crawling page: " + page);
                 br.getPage("https://api.500px.com/v1/photos?feature=user&stream=photos&username=" + userName + "&include_states=true&image_size[]=1&image_size[]=2&image_size[]=32&image_size[]=31&image_size[]=33&image_size[]=34&image_size[]=35&image_size[]=36&image_size[]=2048&image_size[]=4&image_size[]=14&include_licensing=true&page=" + page++ + "&rpp=50");
-                if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
-                    ret.add(createOfflinelink(parameter.toString()));
-                    return ret;
-                }
+                checkErrorsAPI(br);
                 final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final List<Map<String, Object>> photos = (List<Map<String, Object>>) map.get("photos");
                 if (photos == null) {
@@ -224,5 +223,11 @@ public class FivehundretPxCom extends PluginForDecrypt {
             }
         }
         return ret;
+    }
+
+    private void checkErrorsAPI(final Browser br) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 }

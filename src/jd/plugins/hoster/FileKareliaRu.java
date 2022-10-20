@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //Links come from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.karelia.ru" }, urls = { "https?://(?:www\\.)?file\\.kareliadecrypted\\.ru/[a-z0-9]+/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.karelia.ru" }, urls = { "https?://(?:www\\.)?file\\.kareliadecrypted\\.ru/([a-z0-9]+)/\\d+" })
 public class FileKareliaRu extends PluginForHost {
     public FileKareliaRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,7 +41,7 @@ public class FileKareliaRu extends PluginForHost {
         return "http://file.karelia.ru/terms";
     }
 
-    private String FID = null;
+    private String folderID = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -52,7 +52,7 @@ public class FileKareliaRu extends PluginForHost {
         if (jd.plugins.decrypter.FileKareliaRuDecrypter.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        FID = new Regex(link.getDownloadURL(), "([a-z0-9]+)/\\d+$").getMatch(0);
+        folderID = new Regex(link.getDownloadURL(), "([a-z0-9]+)/\\d+$").getMatch(0);
         if (link.getBooleanProperty("partlink")) {
             link.setFinalFileName(link.getStringProperty("plainfilename"));
         } else {
@@ -63,23 +63,24 @@ public class FileKareliaRu extends PluginForHost {
             if (filesize == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setFinalFileName(FID + ".zip");
-            setFilesize(link, filesize);
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            link.setFinalFileName(folderID + ".zip");
+            if (filesize != null) {
+                setFilesize(link, filesize);
+            }
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         String dllink = null;
-        if (downloadLink.getBooleanProperty("partlink")) {
-            final boolean singlefile = downloadLink.getBooleanProperty("singlefile", false);
-            final String filename_urlencoded = URLEncode.encodeURIComponent(downloadLink.getStringProperty("plainfilename"));
-            final Regex fInfo = br.getRegex("\"(https?://[a-z0-9\\-]+\\.karelia\\.ru/" + FID + "/[a-z0-9]+/[a-z0-9]+/" + filename_urlencoded + ")\"");
+        if (link.getBooleanProperty("partlink")) {
+            final boolean folderWithOnlySingleFile = link.getBooleanProperty("singlefile", false);
+            final String filename_urlencoded = URLEncode.encodeURIComponent(link.getStringProperty("plainfilename"));
+            final Regex fInfo = br.getRegex("\"(https?://[a-z0-9\\-]+\\.karelia\\.ru/" + folderID + "/[a-z0-9]+/[a-z0-9]+/" + filename_urlencoded + ")\"");
             dllink = fInfo.getMatch(0);
-            if (dllink == null && singlefile) {
+            if (dllink == null && folderWithOnlySingleFile) {
                 /* Fallback for single files --> We do not necessarily have to grab the 'correct' directurl based on our filename! */
                 dllink = br.getRegex("data\\-href=\"(https?://[^<>\"]+)").getMatch(0);
             }
@@ -93,9 +94,13 @@ public class FileKareliaRu extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
