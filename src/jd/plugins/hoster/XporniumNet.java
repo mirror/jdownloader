@@ -18,17 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -36,24 +31,22 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class VideovardSx extends PluginForHost {
-    public VideovardSx(PluginWrapper wrapper) {
+public class XporniumNet extends PluginForHost {
+    public XporniumNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://videovard.sx/tos";
+        return "https://xpornium.net/terms";
     }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "videovard.sx", "videovard.to" });
+        ret.add(new String[] { "xpornium.net" });
         return ret;
     }
 
@@ -69,21 +62,15 @@ public class VideovardSx extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:v|e)/([a-z0-9]{12})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/watch/([a-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final boolean FREE_RESUME       = true;
+    private final int     FREE_MAXCHUNKS    = 1;
+    private final int     FREE_MAXDOWNLOADS = 1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -100,29 +87,18 @@ public class VideovardSx extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {
             /* Fallback */
             link.setName(this.getFID(link) + ".mp4");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("Accept", "application/json, text/plain, */*");
-        br.getHeaders().put("Referer", link.getPluginPatternMatcher());
-        br.getPage("https://" + this.getHost() + "/api/file/status/" + this.getFID(link));
+        br.getPage("https://" + this.getHost() + "/watch/" + this.getFID(link));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final String msg = (String) entries.get("msg");
-        if (!msg.equalsIgnoreCase("ok")) {
-            /* E.g. "nofile" */
+        } else if (br.containsHTML("class=\"error\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = (String) entries.get("name");
-        if (!StringUtils.isEmpty(filename)) {
-            filename = this.correctOrApplyFileNameExtension(filename, ".mp4");
-            link.setFinalFileName(filename);
         }
         return AvailableStatus.TRUE;
     }
@@ -133,30 +109,29 @@ public class VideovardSx extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
-            /* 2021-09-22: Unfinished plugin */
-            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        if (!attemptStoredDownloadurlDownload(link, directlinkproperty)) {
             requestFileInformation(link);
-            br.getPage("/api/make/hash/" + this.getFID(link));
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final String hash = entries.get("hash").toString();
-            final UrlQuery query = new UrlQuery();
-            query.add("cmd", "get_stream");
-            query.add("file_code", this.getFID(link));
-            query.add("hash", hash);
-            br.postPage("/api/player/setup", query);
-            final Map<String, Object> streamInfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            /* TODO: 2022-01-12: Implement this */
-            final String cryptedURL = streamInfo.get("src").toString();
-            final String seed = streamInfo.get("seed").toString();
-            final boolean pluginUnfinished = true;
-            if (pluginUnfinished) {
+            br.getPage("/embed/" + this.getFID(link));
+            String dllink = br.getRegex("XPSYS\\('([^<>\"\\']+)'\\)").getMatch(0);
+            if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String decryptedURL = "TODO_IMPLEMENT_THIS";
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, decryptedURL, resumable, maxchunks);
+            dllink = Encoding.Base64Decode(dllink);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
         dl.startDownload();
     }
@@ -166,18 +141,17 @@ public class VideovardSx extends PluginForHost {
         return false;
     }
 
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty, final boolean resumable, final int maxchunks) throws Exception {
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty) throws Exception {
         final String url = link.getStringProperty(directlinkproperty);
         if (StringUtils.isEmpty(url)) {
             return false;
         }
         try {
             final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumable, maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, FREE_RESUME, FREE_MAXCHUNKS);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
-                link.removeProperty(directlinkproperty);
                 brc.followConnection(true);
                 throw new IOException();
             }
@@ -202,11 +176,5 @@ public class VideovardSx extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    /** 2021-09-22: Heavily modified XFS with custom API. */
-    @Override
-    public SiteTemplate siteTemplateType() {
-        return SiteTemplate.SibSoft_XFileShare;
     }
 }

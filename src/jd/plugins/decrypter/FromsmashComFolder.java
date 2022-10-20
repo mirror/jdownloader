@@ -24,6 +24,18 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -38,18 +50,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.FromsmashCom;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FromsmashComFolder extends PluginForDecrypt {
@@ -152,8 +152,8 @@ public class FromsmashComFolder extends PluginForDecrypt {
         br.getHeaders().put("Smash-Authorization", Encoding.Base64Encode(passCode));
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getHeaders().put("Authorization", "Bearer " + getToken(this, this.br));
         final String details[] = getDetails(param, br);
         final String folderID = details[0];
@@ -188,6 +188,11 @@ public class FromsmashComFolder extends PluginForDecrypt {
         } while (true);
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Map<String, Object> transfer = (Map<String, Object>) entries.get("transfer");
+        final String status = transfer.get("status").toString();
+        if (!status.equalsIgnoreCase("Uploaded")) {
+            /* E.g. "Expired" */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fpName = (String) transfer.get("title");
         if (StringUtils.isEmpty(fpName)) {
             fpName = folderID;
@@ -218,6 +223,7 @@ public class FromsmashComFolder extends PluginForDecrypt {
                 link.setProperty("folderid", folderID);
                 link.setProperty("region", region);
                 if (passCode != null) {
+                    link.setPasswordProtected(true);
                     link.setDownloadPassword(passCode);
                     /*
                      * User can modify the other property but we know that the given download password will never change so let's make sure
@@ -227,12 +233,13 @@ public class FromsmashComFolder extends PluginForDecrypt {
                 }
                 link._setFilePackage(fp);
                 distribute(link);
-                decryptedLinks.add(link);
+                ret.add(link);
             }
-            logger.info("Progress: Page: " + page + " | Found items " + decryptedLinks.size() + " / " + numberofItems);
+            logger.info("Progress: Page: " + page + " | Found items " + ret.size() + " / " + numberofItems);
             next = (String) entries.get("next");
             if (this.isAbort()) {
-                return decryptedLinks;
+                logger.info("Stopping because: Aborted by user");
+                return ret;
             } else if (StringUtils.isEmpty(next)) {
                 logger.info("Stopping because: Reached end (no 'next' token given)");
                 break;
@@ -245,6 +252,6 @@ public class FromsmashComFolder extends PluginForDecrypt {
                 continue;
             }
         } while (true);
-        return decryptedLinks;
+        return ret;
     }
 }
