@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -28,7 +26,6 @@ import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -39,6 +36,7 @@ import org.jdownloader.plugins.components.config.UpstoReConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -90,7 +88,7 @@ public class UpstoRe extends antiDDoSForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]{2,})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]{2,})(/([^/]+))?");
         }
         return ret.toArray(new String[0]);
     }
@@ -98,19 +96,13 @@ public class UpstoRe extends antiDDoSForHost {
     /* Constants (limits) */
     private static final long              FREE_RECONNECTWAIT            = 1 * 60 * 60 * 1000L;
     private static final long              FREE_RECONNECTWAIT_ADDITIONAL = 60 * 1000l;
-    private final String                   INVALIDLINKS                  = "https?://[^/]+/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
-    private static String[]                IPCHECK                       = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private Pattern                        IPREGEX                       = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private final String                   INVALIDLINKS                  = "(?i)https?://[^/]+/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
     private static AtomicReference<String> currentIP                     = new AtomicReference<String>();
     private static Map<String, Long>       blockedIPsMap                 = new HashMap<String, Long>();
     private static Object                  CTRLLOCK                      = new Object();
     private static final String            PROPERTY_last_blockedIPsMap   = "UPSTORE_last_blockedIPsMap";
     /* Don't touch the following! */
     private static final AtomicInteger     freeRunning                   = new AtomicInteger(0);
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("upsto.re/", "upstore.net/").replace("http://", "https://"));
-    }
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -152,18 +144,33 @@ public class UpstoRe extends antiDDoSForHost {
         br.setCookie(this.getHost(), "lang", "en");
     }
 
+    /** Returns the URL used in browser to access content. */
+    private String getInternalContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceFirst("http://", "https://").replaceFirst("upsto\\.re/", "upstore.net/");
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String fid = this.getFID(link);
+        final String contenturl = getInternalContentURL(link);
+        if (!link.isNameSet()) {
+            /* Set weak filename */
+            final String filenameInsideURL = new Regex(contenturl, this.getSupportedLinks()).getMatch(2);
+            if (filenameInsideURL != null) {
+                link.setName(Encoding.htmlDecode(filenameInsideURL));
+            } else {
+                link.setName(fid);
+            }
+        }
         this.setBrowserExclusive();
-        correctDownloadLink(link);
         br.setFollowRedirects(true);
-        if (link.getPluginPatternMatcher().matches(INVALIDLINKS)) {
+        if (contenturl.matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        getPage(link.getPluginPatternMatcher());
+        getPage(contenturl);
         if (isOffline1()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!this.br.containsHTML("name=\"hash\"") && !this.br.containsHTML("class=\"features (minus|plus)\"")) {
+        } else if (!this.br.containsHTML("value=\"" + fid) && !this.br.containsHTML("class=\"features (minus|plus)\"")) {
             /* Probably not a file url. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -197,11 +204,11 @@ public class UpstoRe extends antiDDoSForHost {
         } else {
             requestFileInformation(link);
             handleErrorsHTML(this.br);
-            currentIP.set(this.getIP());
+            currentIP.set(new BalancedWebIPCheck(null).getExternalIP().getIP());
             synchronized (CTRLLOCK) {
                 /* Load list of saved IPs + timestamp of last download */
                 final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_last_blockedIPsMap);
-                if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
+                if (lastdownloadmap != null && lastdownloadmap instanceof Map && blockedIPsMap.isEmpty()) {
                     blockedIPsMap = (Map<String, Long>) lastdownloadmap;
                 }
             }
@@ -600,7 +607,7 @@ public class UpstoRe extends antiDDoSForHost {
         requestFileInformation(link);
         this.login(account, false);
         br.setFollowRedirects(false);
-        getPage(link.getPluginPatternMatcher());
+        getPage(this.getInternalContentURL(link));
         if (br.containsHTML(premDlLimit)) {
             trafficLeft(account);
         }
@@ -687,37 +694,6 @@ public class UpstoRe extends antiDDoSForHost {
             }
         }
         return lastdownload;
-    }
-
-    private String getIP() throws Exception {
-        Browser ip = new Browser();
-        String currentIP = null;
-        ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(IPCHECK));
-        Collections.shuffle(checkIP);
-        Exception exception = null;
-        for (String ipServer : checkIP) {
-            if (currentIP == null) {
-                try {
-                    ip.getPage(ipServer);
-                    currentIP = ip.getRegex(IPREGEX).getMatch(0);
-                    if (currentIP != null) {
-                        break;
-                    }
-                } catch (Exception e) {
-                    if (exception == null) {
-                        exception = e;
-                    }
-                }
-            }
-        }
-        if (currentIP == null) {
-            if (exception != null) {
-                throw exception;
-            }
-            logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return currentIP;
     }
 
     @Override

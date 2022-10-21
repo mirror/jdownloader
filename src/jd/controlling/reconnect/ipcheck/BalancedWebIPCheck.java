@@ -6,6 +6,12 @@ import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
+
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.http.Browser;
@@ -13,14 +19,8 @@ import jd.http.NoGateWayException;
 import jd.http.ProxySelectorInterface;
 import jd.http.StaticProxySelector;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
-
 /**
- * balanced IP check uses the jdownloader ip check servers. This type of ip check is default, and fallback for all reconnect methods
+ * Balanced IP check uses the jdownloader ip check servers. This type of ip check is default, and fallback for all reconnect methods
  *
  * @author thomas
  *
@@ -38,9 +38,9 @@ public class BalancedWebIPCheck implements IPCheckProvider {
     /**
      * All registered ip check urls
      */
-    protected final Browser                     br;
-    private final Pattern                       pattern;
-    private final Object                        LOCK     = new Object();
+    protected final Browser br;
+    private final Pattern   pattern;
+    private final Object    LOCK = new Object();
 
     public BalancedWebIPCheck() {
         this(CFG_RECONNECT.CFG.isIPCheckUsesProxyEnabled() ? ProxyController.getInstance() : new StaticProxySelector(HTTPProxy.NONE));
@@ -59,7 +59,7 @@ public class BalancedWebIPCheck implements IPCheckProvider {
     }
 
     /**
-     * gets the external IP.
+     * Gets the external IP.
      *
      * @throws IPCheckException
      *             if there is no valid external IP

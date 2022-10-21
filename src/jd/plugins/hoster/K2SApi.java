@@ -648,7 +648,7 @@ public abstract class K2SApi extends PluginForHost {
                     /* Load list of saved IPs + timestamp of last download and add it to our main map */
                     try {
                         final Map<String, Long> lastdownloadmap = (Map<String, Long>) this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
-                        if (lastdownloadmap != null && blockedIPsMap.isEmpty()) {
+                        if (lastdownloadmap != null && lastdownloadmap instanceof Map && blockedIPsMap.isEmpty()) {
                             blockedIPsMap.putAll(lastdownloadmap);
                         }
                     } catch (final Exception ignore) {
