@@ -15,92 +15,140 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
-import org.jdownloader.controlling.PasswordUtils;
+import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 
-/**
- *
- * @version raz_Template-pastebin-201508200000
- * @author raztoki
- */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pastehere.xyz" }, urls = { "https?://(?:www\\.)?pastehere\\.xyz/[a-zA-Z0-9]+/?" })
-public class PasteHereXyz extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class PasteHereXyz extends AbstractPastebinCrawler {
     public PasteHereXyz(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* DEV NOTES */
-    // Tags: pastebin
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String url = param.getCryptedUrl();
+    @Override
+    String getFID(final String url) {
+        return new Regex(url, this.getSupportedLinks()).getMatch(0);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "pastehere.xyz" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-zA-Z0-9]+)/?");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    protected String getPastebinText(final Browser br) {
+        String plaintxt = br.getRegex("<div[^>]+id=\"p_data\"[^>]*>(.*?)\\s*</div>\\s*</div>").getMatch(0);
+        return plaintxt;
+    }
+
+    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
+        final PastebinMetadata metadata = super.crawlMetadata(param, br);
+        final String title = br.getRegex("class=\"pastitle\"[^>]*>([^<]+)<").getMatch(0);
+        if (title != null) {
+            metadata.setTitle(Encoding.htmlDecode(title).trim());
+        } else {
+            logger.warning("Unable to find paste title");
+        }
+        return metadata;
+    }
+
+    @Override
+    public void preProcess(final CryptedLink param) throws IOException, PluginException, DecrypterException {
         br.setFollowRedirects(true);
-        br.getPage(url);
-        final String id = new Regex(url, "/([a-zA-Z0-9]+)").getMatch(0);
-        /* Error handling */
-        if (br.containsHTML("<strong>Alert!</strong>\\s*Paste not found") || br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(param.getCryptedUrl());
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("Password protected")) {
-            while (!isAbort()) {
-                Form form = br.getFormbyAction("/" + id);
-                if (form == null) {
-                    form = br.getFormbyAction("/" + id + "/");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("<strong>Alert!</strong>\\s*Paste not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (getPwProtectedForm(br) != null) {
+            final String initialURL = br.getURL();
+            int counter = 0;
+            boolean success = false;
+            do {
+                final Form pwprotected = getPwProtectedForm(br);
+                String passCode = null;
+                if (param.getDownloadLink() != null) {
+                    passCode = param.getDownloadLink().getDownloadPassword();
                 }
-                if (form == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (passCode == null || counter > 0) {
+                    passCode = this.getUserInput("Enter password", param);
                 }
-                final List<String> passwords = getPreSetPasswords();
-                final String passCode;
-                if (passwords.size() > 0) {
-                    passCode = passwords.remove(0);
+                pwprotected.put("mypass", Encoding.urlEncode(passCode));
+                this.br.submitForm(pwprotected);
+                if (br.containsHTML(">\\s*Password is Wrong")) {
+                    logger.info("User entered invalid password: " + passCode);
+                    /* Reload page */
+                    br.getPage(initialURL);
+                    counter++;
+                    continue;
                 } else {
-                    passCode = getUserInput(null, param);
-                }
-                form.put("mypass", Encoding.urlEncode(passCode));
-                br.submitForm(form);
-                if (br.containsHTML("Password is Wrong")) {
-                    br.getPage(url);
-                }
-                if (!br.containsHTML("Password protected")) {
+                    logger.info("User entered valid password: " + passCode);
+                    param.setDecrypterPassword(passCode);
+                    success = true;
                     break;
                 }
+            } while (!this.isAbort() && counter <= 2);
+            if (!success) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        String plaintxt = br.getRegex("<div[^>]+id=\"p_data\"[^>]*>(.*?)\\s*</div>\\s*</div>").getMatch(0);
-        if (plaintxt == null) {
-            logger.info("Could not find 'plaintxt' : " + url + ", using full browser instead.");
-            plaintxt = br.toString();
-            // return decryptedLinks;
-        }
-        final Set<String> pws = PasswordUtils.getPasswords(plaintxt);
-        final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links == null || links.length == 0) {
-            logger.info("Found no links[] from 'plaintxt' : " + url);
-            return ret;
-        }
-        for (final String link : links) {
-            final DownloadLink dl = createDownloadlink(link);
-            if (pws != null && pws.size() > 0) {
-                dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
+    }
+
+    private Form getPwProtectedForm(final Browser br) {
+        return br.getFormbyKey("mypass");
+    }
+
+    @Override
+    protected ArrayList<DownloadLink> crawlAdditionalURLs(final Browser br, final CryptedLink param, final PastebinMetadata metadata) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String pasteDirecturl = br.getRegex("href=\"(/paste\\.php\\?download[^\"]+)\"").getMatch(0);
+        if (pasteDirecturl != null) {
+            final DownloadLink direct = this.createDownloadlink("directhttp://" + br.getURL(pasteDirecturl).toString());
+            if (metadata.getPassword() != null) {
+                direct.setPasswordProtected(true);
+                direct.setDownloadPassword(metadata.getPassword());
             }
-            ret.add(dl);
+            ret.add(direct);
         }
         return ret;
     }
