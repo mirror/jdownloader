@@ -311,7 +311,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     }
 
     @Override
-    protected void _controllerParentlessLinks(final List<DownloadLink> links, QueuePriority priority) {
+    protected void _controllerParentlessLinks(FilePackage pkg, final List<DownloadLink> links, QueuePriority priority) {
         dupeController.invalidate();
         eventSender.fireEvent(new DownloadControllerEventRemovedLinkList(new ArrayList<DownloadLink>(links)));
     }
@@ -601,15 +601,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
         private final ArrayList<IndexedDownloadLink>         downloadLinks = new ArrayList<IndexedDownloadLink>();
         private final static Comparator<IndexedDownloadLink> COMPARATOR    = new Comparator<IndexedDownloadLink>() {
-            private final int compare(int x, int y) {
-                return (x < y) ? -1 : ((x == y) ? 0 : 1);
-            }
+                                                                               private final int compare(int x, int y) {
+                                                                                   return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                                                                               }
 
-            @Override
-            public int compare(IndexedDownloadLink o1, IndexedDownloadLink o2) {
-                return compare(o1.getIndex(), o2.getIndex());
-            }
-        };
+                                                                               @Override
+                                                                               public int compare(IndexedDownloadLink o1, IndexedDownloadLink o2) {
+                                                                                   return compare(o1.getIndex(), o2.getIndex());
+                                                                               }
+                                                                           };
 
         private FilePackage getLoadedPackage() {
             final FilePackage filePackage = this.filePackage;

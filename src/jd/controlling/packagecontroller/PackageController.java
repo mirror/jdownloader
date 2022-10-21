@@ -95,14 +95,14 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     protected final Queue QUEUE = new Queue(getClass().getName()) {
-                                    @Override
-                                    public void killQueue() {
-                                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
-                                        /*
-                                         * this queue can't be killed
-                                         */
-                                    }
-                                };
+        @Override
+        public void killQueue() {
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(new Throwable("YOU CANNOT KILL ME!"));
+            /*
+             * this queue can't be killed
+             */
+        }
+    };
 
     /**
      * add a Package at given position position in this PackageController. in case the Package is already controlled by this
@@ -409,7 +409,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         final long version = backendChanged.incrementAndGet();
                         if (remove.size() > 0) {
                             childrenChanged.set(version);
-                            controller._controllerParentlessLinks(remove, this.getQueuePrio());
+                            controller._controllerParentlessLinks(pkg, remove, this.getQueuePrio());
                         }
                         controller.structureChanged.set(version);
                         controller._controllerPackageNodeRemoved(pkg, this.getQueuePrio());
@@ -727,7 +727,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         /* remove all */
                         /*
                          * TODO: speed optimization, we have to correct the index to match changes in children structure
-                         * 
+                         *
                          * TODO: optimize this loop. only process existing links in this package
                          */
                         for (final ChildType child : elementsToMove) {
@@ -864,7 +864,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             } finally {
                                 getMapLock().writeUnlock();
                             }
-                            controller._controllerParentlessLinks(links, this.getQueuePrio());
+                            controller._controllerParentlessLinks(pkg, links, this.getQueuePrio());
                         }
                         if (pkg.getChildren().size() == 0) {
                             controller.removePackage(pkg);
@@ -952,7 +952,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         moveAfter(srcLinks, dstPkg, afterLink);
     }
 
-    abstract protected void _controllerParentlessLinks(final List<ChildType> links, QueuePriority priority);
+    abstract protected void _controllerParentlessLinks(PackageType pkg, final List<ChildType> links, QueuePriority priority);
 
     abstract protected void _controllerStructureChanged(QueuePriority priority);
 
