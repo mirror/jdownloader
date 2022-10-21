@@ -364,6 +364,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         private final String packageName;
         private final String downloadFolder;
         private final String downloadFolderRaw;
+        private final int    hashCode;
 
         private static CrawledPackageMappingID get(String combined) {
             if (combined != null) {
@@ -413,15 +414,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             } else {
                 this.downloadFolder = this.downloadFolderRaw;
             }
+            this.hashCode = (this.id + this.packageName + this.downloadFolder).hashCode();
         }
 
         @Override
         public int hashCode() {
-            if (downloadFolderRaw != null) {
-                return downloadFolderRaw.hashCode();
-            } else {
-                return CrawledPackageMappingID.class.hashCode();
-            }
+            return hashCode;
         }
 
         @Override
@@ -468,31 +466,31 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         eventsender.fireEvent(new LinkCollectorEvent(this, LinkCollectorEvent.TYPE.CRAWLER_STARTED, crawledLinkCrawler, QueuePriority.NORM));
     }
 
-    private transient LinkCollectorEventSender                                  eventsender           = new LinkCollectorEventSender();
-    public final ScheduledExecutorService                                       TIMINGQUEUE           = DelayedRunnable.getNewScheduledExecutorService();
-    public static SingleReachableState                                          CRAWLERLIST_LOADED    = new SingleReachableState("CRAWLERLIST_COMPLETE");
-    private static LinkCollector                                                INSTANCE              = new LinkCollector();
-    private volatile LinkChecker<CrawledLink>                                   defaultLinkChecker    = null;
+    private transient LinkCollectorEventSender                         eventsender           = new LinkCollectorEventSender();
+    public final ScheduledExecutorService                              TIMINGQUEUE           = DelayedRunnable.getNewScheduledExecutorService();
+    public static SingleReachableState                                 CRAWLERLIST_LOADED    = new SingleReachableState("CRAWLERLIST_COMPLETE");
+    private static LinkCollector                                       INSTANCE              = new LinkCollector();
+    private volatile LinkChecker<CrawledLink>                          defaultLinkChecker    = null;
     /**
      * NOTE: only access these fields inside the IOEQ
      */
-    private final HashMap<String, WeakReference<CrawledLink>>                   dupeCheckMap          = new HashMap<String, WeakReference<CrawledLink>>();
-    private final Map<CrawledPackageMappingID, CrawledPackage>                  packageMapIDtoPackage = new HashMap<CrawledPackageMappingID, CrawledPackage>();
-    private final Map<CrawledPackage, CrawledPackageMappingID>                  packageMapPackageToID = new HashMap<CrawledPackage, CrawledPackageMappingID>();
-    private final List<CrawledLink>                                             filteredStuff         = new CopyOnWriteArrayList<CrawledLink>();
-    private volatile ExtractionExtension                                        archiver;
-    private final DelayedRunnable                                               asyncSaving;
-    protected volatile CrawledPackage                                           offlinePackage;
-    protected volatile CrawledPackage                                           variousPackage;
-    protected volatile CrawledPackage                                           permanentofflinePackage;
-    private final CopyOnWriteArrayList<File>                                    linkcollectorLists    = new CopyOnWriteArrayList<File>();
-    private final HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>> offlineMap            = new HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>>();
-    private final HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>> variousMap            = new HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>>();
-    private final HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>> badMappingMap         = new HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>>();
-    private final WeakHashMap<CrawledPackage, HashMap<Object, Object>>          autoRenameCache       = new WeakHashMap<CrawledPackage, HashMap<Object, Object>>();
-    private final DelayedRunnable                                               asyncCacheCleanup;
-    private final AutoStartManager                                              autoStartManager;
-    private final boolean                                                       isDupeManagerEnabled;
+    private final HashMap<String, WeakReference<CrawledLink>>          dupeCheckMap          = new HashMap<String, WeakReference<CrawledLink>>();
+    private final Map<CrawledPackageMappingID, CrawledPackage>         packageMapIDtoPackage = new HashMap<CrawledPackageMappingID, CrawledPackage>();
+    private final Map<CrawledPackage, CrawledPackageMappingID>         packageMapPackageToID = new HashMap<CrawledPackage, CrawledPackageMappingID>();
+    private final List<CrawledLink>                                    filteredStuff         = new CopyOnWriteArrayList<CrawledLink>();
+    private volatile ExtractionExtension                               archiver;
+    private final DelayedRunnable                                      asyncSaving;
+    protected volatile CrawledPackage                                  offlinePackage;
+    protected volatile CrawledPackage                                  variousPackage;
+    protected volatile CrawledPackage                                  permanentofflinePackage;
+    private final CopyOnWriteArrayList<File>                           linkcollectorLists    = new CopyOnWriteArrayList<File>();
+    private final HashMap<CrawledPackageMappingID, List<CrawledLink>>  offlineMap            = new HashMap<CrawledPackageMappingID, List<CrawledLink>>();
+    private final HashMap<CrawledPackageMappingID, List<CrawledLink>>  variousMap            = new HashMap<CrawledPackageMappingID, List<CrawledLink>>();
+    private final HashMap<CrawledPackageMappingID, List<CrawledLink>>  badMappingMap         = new HashMap<CrawledPackageMappingID, List<CrawledLink>>();
+    private final WeakHashMap<CrawledPackage, HashMap<Object, Object>> autoRenameCache       = new WeakHashMap<CrawledPackage, HashMap<Object, Object>>();
+    private final DelayedRunnable                                      asyncCacheCleanup;
+    private final AutoStartManager                                     autoStartManager;
+    private final boolean                                              isDupeManagerEnabled;
 
     private LinkCollector() {
         autoStartManager = new AutoStartManager();
@@ -675,22 +673,39 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
         }
         autoRenameCache.remove(pkg);
-        removePackageMapping(pkg);
+        final CrawledPackageMappingID mapping = removePackageMapping(pkg);
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, pkg, priority));
-        cleanupMaps(getChildrenCopy(pkg));
+        cleanupMaps(pkg, mapping, getChildrenCopy(pkg));
     }
 
     /**
      * NOTE: only access the IOEQ
      */
-    private void removePackageMapping(CrawledPackage pkg) {
+    private CrawledPackageMappingID removePackageMapping(CrawledPackage pkg) {
         final CrawledPackageMappingID id = packageMapPackageToID.remove(pkg);
+        final boolean removedFlag;
         if (JVMVersion.isMinimum(JVMVersion.JAVA_1_8)) {
-            packageMapIDtoPackage.remove(id, pkg);
+            removedFlag = id != null ? packageMapIDtoPackage.remove(id, pkg) : false;
         } else {
             if (id != null && packageMapIDtoPackage.get(id) == pkg) {
-                packageMapIDtoPackage.remove(id);
+                removedFlag = (packageMapIDtoPackage.remove(id) == pkg);
+            } else {
+                removedFlag = false;
             }
+        }
+        if (removedFlag) {
+            return id;
+        } else {
+            return null;
+        }
+    }
+
+    private CrawledPackageMappingID getPackageMapping(CrawledPackage pkg) {
+        final CrawledPackageMappingID id = packageMapPackageToID.get(pkg);
+        if (id != null && packageMapIDtoPackage.get(id) == pkg) {
+            return id;
+        } else {
+            return null;
         }
     }
 
@@ -700,9 +715,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     @Override
-    protected void _controllerParentlessLinks(List<CrawledLink> links, QueuePriority priority) {
+    protected void _controllerParentlessLinks(CrawledPackage pkg, List<CrawledLink> links, QueuePriority priority) {
         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REMOVE_CONTENT, new ArrayList<CrawledLink>(links), priority));
-        cleanupMaps(links);
+        final CrawledPackageMappingID mapping = getPackageMapping(pkg);
+        cleanupMaps(pkg, mapping, links);
     }
 
     @Override
@@ -1034,7 +1050,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             if (existingLink.getMatchingFilter() != null && filteredStuff.remove(existingLink)) {
                                 // remove filtered entry and add new link
                                 clearCrawledLinkReferences(existingLink);
-                                cleanupMaps(Arrays.asList(new CrawledLink[] { existingLink }));
+                                cleanupMaps(null, null, Arrays.asList(new CrawledLink[] { existingLink }));
                                 eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, filteredStuff.size() > 0 ? LinkCollectorEvent.TYPE.FILTERED_AVAILABLE : LinkCollectorEvent.TYPE.FILTERED_EMPTY));
                             } else {
                                 /* clear references */
@@ -1247,7 +1263,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return lofflinePackage;
     }
 
-    public LinkCrawler addCrawlerJob(final java.util.List<CrawledLink> links, final LinkCollectingJob job) {
+    public LinkCrawler addCrawlerJob(final List<CrawledLink> links, final LinkCollectingJob job) {
         if (ShutdownController.getInstance().isShutDownRequested()) {
             return null;
         } else if (links == null || links.size() == 0) {
@@ -1360,15 +1376,24 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     // clean up offline/various/dupeCheck maps
-    protected void cleanupMaps(List<CrawledLink> links) {
-        if (links == null) {
-            return;
-        }
-        for (CrawledLink l : links) {
-            removeCrawledLinkByLinkID(l);
-            if (!removeFromMap(variousMap, l)) {
-                if (!removeFromMap(offlineMap, l)) {
-                    removeFromMap(badMappingMap, l);
+    protected void cleanupMaps(final CrawledPackage pkg, final CrawledPackageMappingID lastKnownMapping, List<CrawledLink> links) {
+        if (links != null && links.size() > 0) {
+            final TYPE type = pkg != null ? pkg.getType() : null;
+            for (CrawledLink l : links) {
+                removeCrawledLinkByLinkID(l);
+                if ((lastKnownMapping != null && removeFromMap(variousMap, lastKnownMapping, l) != null) || TYPE.VARIOUS == type) {
+                    continue;
+                } else if ((lastKnownMapping != null && removeFromMap(offlineMap, lastKnownMapping, l) != null) || TYPE.OFFLINE == type) {
+                    continue;
+                } else if (lastKnownMapping != null && removeFromMap(badMappingMap, lastKnownMapping, l) != null) {
+                    continue;
+                } else if (lastKnownMapping != null) {
+                    continue;
+                }
+                if (removeFromMap(variousMap, null, l) == null) {
+                    if (removeFromMap(offlineMap, null, l) == null) {
+                        removeFromMap(badMappingMap, null, l);
+                    }
                 }
             }
         }
@@ -1378,7 +1403,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         QUEUE.add(new QueueAction<Void, RuntimeException>() {
             @Override
             protected Void run() throws RuntimeException {
-                cleanupMaps(filteredStuff);
+                cleanupMaps(null, null, filteredStuff);
                 filteredStuff.clear();
                 eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
                 return null;
@@ -1416,7 +1441,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
      *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
-    private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
+    private FilePackage createFilePackage(final CrawledPackage pkg, List<CrawledLink> plinks) {
         FilePackage ret = FilePackage.getInstance();
         ret.setPriorityEnum(pkg.getPriorityEnum());
         /* set values */
@@ -1438,7 +1463,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 pkg.getModifyLock().readUnlock(readL);
             }
         }
-        java.util.List<DownloadLink> links = new ArrayList<DownloadLink>(pkgLinks.size());
+        List<DownloadLink> links = new ArrayList<DownloadLink>(pkgLinks.size());
         for (CrawledLink link : pkgLinks) {
             /* extract DownloadLink from CrawledLink */
             DownloadLink dl = link.getDownloadLink();
@@ -1471,14 +1496,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return LinkFilterController.getInstance();
     }
 
-    public java.util.List<CrawledLink> getFilteredStuff(final boolean clearAfterGet) {
-        return QUEUE.addWait(new QueueAction<java.util.List<CrawledLink>, RuntimeException>() {
+    public List<CrawledLink> getFilteredStuff(final boolean clearAfterGet) {
+        return QUEUE.addWait(new QueueAction<List<CrawledLink>, RuntimeException>() {
             @Override
-            protected java.util.List<CrawledLink> run() throws RuntimeException {
+            protected List<CrawledLink> run() throws RuntimeException {
                 final List<CrawledLink> ret2 = new ArrayList<CrawledLink>(filteredStuff);
                 if (clearAfterGet) {
                     filteredStuff.clear();
-                    cleanupMaps(ret2);
+                    cleanupMaps(null, null, ret2);
                     eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.FILTERED_EMPTY));
                 }
                 return ret2;
@@ -1690,9 +1715,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             protected List<FilePackage> run() throws RuntimeException {
                 final List<FilePackage> ret = new ArrayList<FilePackage>();
                 final HashMap<CrawledPackage, List<CrawledLink>> map = new HashMap<CrawledPackage, List<CrawledLink>>();
-                if (removeLinks) {
-                    cleanupMaps(links);
-                }
                 for (final CrawledLink link : links) {
                     final CrawledPackage parent = link.getParentNode();
                     if (parent == null || parent.getControlledBy() != LinkCollector.this) {
@@ -1719,27 +1741,38 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         });
     }
 
-    private boolean removeFromMap(HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>> idListMap, CrawledLink l) {
-        final Iterator<Entry<CrawledPackageMappingID, java.util.List<CrawledLink>>> mapIt = idListMap.entrySet().iterator();
+    private CrawledPackageMappingID removeFromMap(final Map<CrawledPackageMappingID, List<CrawledLink>> idListMap, final CrawledPackageMappingID lastKnownMapping, final CrawledLink l) {
+        if (lastKnownMapping != null) {
+            final List<CrawledLink> list = idListMap.get(lastKnownMapping);
+            if (list != null && list.remove(l)) {
+                if (list.size() == 0) {
+                    idListMap.remove(lastKnownMapping);
+                }
+                return lastKnownMapping;
+            } else {
+                return null;
+            }
+        }
+        final Iterator<Entry<CrawledPackageMappingID, List<CrawledLink>>> mapIt = idListMap.entrySet().iterator();
         while (mapIt.hasNext()) {
-            final Entry<CrawledPackageMappingID, java.util.List<CrawledLink>> map = mapIt.next();
-            final java.util.List<CrawledLink> list = map.getValue();
+            final Entry<CrawledPackageMappingID, List<CrawledLink>> map = mapIt.next();
+            final List<CrawledLink> list = map.getValue();
             if (list != null && list.remove(l)) {
                 if (list.size() == 0) {
                     mapIt.remove();
                 }
-                return true;
+                return map.getKey();
             }
         }
-        return false;
+        return null;
     }
 
-    private CrawledPackageMappingID getIDFromMap(HashMap<CrawledPackageMappingID, java.util.List<CrawledLink>> idListMap, CrawledLink l) {
-        final Iterator<Entry<CrawledPackageMappingID, java.util.List<CrawledLink>>> it = idListMap.entrySet().iterator();
+    private CrawledPackageMappingID getIDFromMap(final Map<CrawledPackageMappingID, List<CrawledLink>> idListMap, final CrawledLink l) {
+        final Iterator<Entry<CrawledPackageMappingID, List<CrawledLink>>> it = idListMap.entrySet().iterator();
         while (it.hasNext()) {
-            final Entry<CrawledPackageMappingID, java.util.List<CrawledLink>> elem = it.next();
+            final Entry<CrawledPackageMappingID, List<CrawledLink>> elem = it.next();
             final CrawledPackageMappingID identifier = elem.getKey();
-            final java.util.List<CrawledLink> mapElems = elem.getValue();
+            final List<CrawledLink> mapElems = elem.getValue();
             if (mapElems != null && mapElems.contains(l)) {
                 return identifier;
             }
@@ -2300,7 +2333,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
      * @param packages
      * @param file
      */
-    private void save(final java.util.List<CrawledPackage> packages, final File destFile) {
+    private void save(final List<CrawledPackage> packages, final File destFile) {
         QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
             @Override
             protected Void run() throws RuntimeException {
@@ -2737,7 +2770,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 @Override
                 protected Void run() throws RuntimeException {
                     internalRemoveChildren(removechildren);
-                    cleanupMaps(removechildren);
                     _controllerStructureChanged(this.getQueuePrio());
                     return null;
                 }
@@ -2970,7 +3002,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     return null;
                 }
                 setActiveVariantForLink(crawledLink.getDownloadLink(), linkVariant);
-                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+                List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
                 checkableLinks.add(crawledLink);
                 LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
                 linkChecker.check(checkableLinks);
