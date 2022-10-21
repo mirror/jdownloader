@@ -1390,9 +1390,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 } else if (lastKnownMapping != null) {
                     continue;
                 }
-                if (removeFromMap(variousMap, null, l) == null) {
-                    if (removeFromMap(offlineMap, null, l) == null) {
-                        removeFromMap(badMappingMap, null, l);
+                if (removeFromMap(badMappingMap, null, l) == null) {
+                    if (removeFromMap(variousMap, null, l) == null) {
+                        removeFromMap(offlineMap, null, l);
                     }
                 }
             }
