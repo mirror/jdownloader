@@ -17,9 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ffetish.photos", "ffetish.video" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?ffetish\\.photos/\\d+[a-z0-9\\-]+\\.html", "https?://(?:[a-z0-9\\-]+\\.)?ffetish\\.video/\\d+[a-z0-9\\-]+\\.html" })
 public class FfetishPhotos extends antiDDoSForDecrypt {
@@ -90,7 +90,7 @@ public class FfetishPhotos extends antiDDoSForDecrypt {
                  * We either need to use another browser instance or set this header otherwise if user enters a wrong captcha once, all
                  * following attempts will fail due to wrong Referer header.
                  */
-                br.getHeaders().put("Referer", initialURL);
+                br.setCurrentURL(initialURL);
                 postPage("/engine/ajax/getlink.php", "sec_code=" + Encoding.urlEncode(code) + "&id=" + dl_id + "&skin=" + skin);
                 final Form form = br.getForm(0);
                 if (form != null && form.containsHTML("g-recaptcha")) {

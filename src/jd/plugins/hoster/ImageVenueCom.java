@@ -21,10 +21,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -35,6 +33,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImageVenueCom extends PluginForHost {
@@ -170,7 +171,8 @@ public class ImageVenueCom extends PluginForHost {
         if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
+                final Browser brc = br.cloneBrowser();
+                con = brc.openHeadConnection(dllink);
                 final String etag = con.getRequest().getResponseHeader("etag");
                 if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

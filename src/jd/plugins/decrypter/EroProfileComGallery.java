@@ -27,6 +27,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -71,9 +72,8 @@ public class EroProfileComGallery extends PluginForDecrypt {
         } else if (br.containsHTML(jd.plugins.hoster.EroProfileCom.NOACCESS)) {
             logger.info("No cookies, login maybe failed: " + parameter);
             return decryptedLinks;
-        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Album not found<|>\\s*No photos found")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Album not found<|>\\s*No photos found|^No htmlCode read$")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex("Browse photos from album \\&quot;([^<>\"]*?)\\&quot;<").getMatch(0);
         if (fpName == null) {

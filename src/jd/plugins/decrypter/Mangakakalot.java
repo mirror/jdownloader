@@ -19,11 +19,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -35,6 +30,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangakakalot.com" }, urls = { "https?://(www\\.)?(manganelo|readmanganato|manganato|mangakakalot|chapmanganato)\\.com/(?:manga-|chapter)[^\\s$]+" })
 public class Mangakakalot extends antiDDoSForDecrypt {
     public Mangakakalot(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class Mangakakalot extends antiDDoSForDecrypt {
     }
 
     private final String TYPE_MANGA         = "^https?://[^/]+/manga-([a-z0-9\\-]+)$";
-    private final String TYPE_MANGA_CHAPTER = "^https?://[^/]+/manga-([a-z0-9\\-]+)/chapter-(\\d+(\\.\\d+)?)$";
+    private final String TYPE_MANGA_CHAPTER = "^https?://[^/]+/(?:manga-|chapter/)([a-z0-9\\-]+)/chapter[\\-_](\\d+(\\.\\d+)?)$";
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -74,23 +74,23 @@ public class Mangakakalot extends antiDDoSForDecrypt {
         } else if (param.getCryptedUrl().matches(TYPE_MANGA_CHAPTER)) {
             final String chapterNumber = new Regex(param.getCryptedUrl(), TYPE_MANGA_CHAPTER).getMatch(1);
             //
-            String mangaTitle = null;
-            String breadcrumb = br.getRegex("<div[^>]+class\\s*=\\s*\\\"panel-breadcrumb\\\"[^>]*>\\s*([^§]+)<div[^>]+class\\s*=\\s*\"panel").getMatch(0);
-            breadcrumb = breadcrumb.replaceAll("<div[^>]+class\\s*=\\s*\\\"panel[^§]+", "");
+            String breadcrumb = br.getRegex("<div[^>]+class\\s*=\\s*\"(?:panel-)?breadcrumb[^\"]*\"[^>]*>\\s*([^§]+)<div[^>]+class\\s*=\\s*\"panel").getMatch(0);
+            breadcrumb = breadcrumb != null ? breadcrumb.replaceAll("<div[^>]+class\\s*=\\s*\\\"panel[^§]+", "") : null;
             //
             // Extract manga title
             //
-            if (StringUtils.isNotEmpty(breadcrumb)) {
-                try {
-                    mangaTitle = new Regex(breadcrumb, "<a[^>]+title\\s*=\\s*\"([^\"]+)").getMatch(1);
-                } catch (Exception e) {
+            String mangaTitle = null;
+            if (StringUtils.isEmpty(mangaTitle)) {
+                mangaTitle = new Regex(breadcrumb, "<a[^>]+/manga[\\-/][^/>]*title\\s*=\\s*\"([^\"]+)").getMatch(0);
+                if (StringUtils.isEmpty(mangaTitle)) {
+                    mangaTitle = br.getRegex("<title>\\s*([^<]+)\\s+(?:Ch\\.|Chapter)[^<]+\\s-\\s+").getMatch(0);
+                    if (StringUtils.isEmpty(mangaTitle)) {
+                        mangaTitle = new Regex(breadcrumb, "<a[^>]+title\\s*=\\s*\"([^\"]+)").getMatch(0);
+                        if (StringUtils.isEmpty(mangaTitle)) {
+                            mangaTitle = new Regex(param.getCryptedUrl(), TYPE_MANGA_CHAPTER).getMatch(0).replace("-", " ");
+                        }
+                    }
                 }
-            }
-            if (StringUtils.isEmpty(mangaTitle)) {
-                mangaTitle = br.getRegex("<title>\\s*([^<]+)\\s+(?:Ch\\.|Chapter)[^<]+\\s-\\s+").getMatch(0);
-            }
-            if (StringUtils.isEmpty(mangaTitle)) {
-                mangaTitle = new Regex(param.getCryptedUrl(), TYPE_MANGA_CHAPTER).getMatch(0).replace("-", " ");
             }
             if (StringUtils.isNotEmpty(mangaTitle)) {
                 fp.setName(mangaTitle);
@@ -99,14 +99,14 @@ public class Mangakakalot extends antiDDoSForDecrypt {
             // Extract chapter title
             //
             String chapterTitle = null;
-            if (StringUtils.isNotEmpty(breadcrumb)) {
-                try {
-                    chapterTitle = new Regex(breadcrumb, "<a[^>]+title\\s*=\\s*\"([^\"]+)").getMatch(2);
-                } catch (Exception e) {
-                }
-            }
             if (StringUtils.isEmpty(chapterTitle)) {
-                chapterTitle = "Chapter_" + chapterNumber;
+                chapterTitle = new Regex(breadcrumb, "<a[^>]+/chapter[\\-_][^/>]*title\\s*=\\s*\"([^\"]+)").getMatch(0);
+                if (StringUtils.isEmpty(chapterTitle)) {
+                    chapterTitle = new Regex(breadcrumb, "<a[^>]+/chapter[\\-_][^/>]*>\\s*<span[^>]*\"name\"[^>]*>\\s*(.*?)\\s*<").getMatch(0);
+                }
+                if (StringUtils.isEmpty(chapterTitle)) {
+                    chapterTitle = "Chapter_" + chapterNumber;
+                }
             }
             //
             String imgSrc = br.getRegex("<div class=\"container-chapter-reader\">\\s+(.*?)\n").getMatch(0);
@@ -143,7 +143,7 @@ public class Mangakakalot extends antiDDoSForDecrypt {
             }
         } else {
             /* Unsupported URL -> Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unsupported:" + param.getCryptedUrl());
         }
         return decryptedLinks;
     }
