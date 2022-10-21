@@ -23,19 +23,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.SrfChConfig;
-import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionFallbackMode;
-import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionMode;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
@@ -53,6 +40,19 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.SrfCh;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.SrfChConfig;
+import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionFallbackMode;
+import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionMode;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SrfChCrawler extends PluginForDecrypt {
@@ -176,13 +176,18 @@ public class SrfChCrawler extends PluginForDecrypt {
             selectedQualities.add(180);
         }
         if (cfg.isCrawl270p()) {
+            // different aspect ratio
             selectedQualities.add(270);
+            selectedQualities.add(272);
+            selectedQualities.add(288);
         }
         if (cfg.isCrawl360p()) {
             selectedQualities.add(360);
         }
         if (cfg.isCrawl540p()) {
+            // different aspect ratio
             selectedQualities.add(540);
+            selectedQualities.add(544);
         }
         if (cfg.isCrawl720p()) {
             selectedQualities.add(720);

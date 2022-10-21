@@ -44,6 +44,7 @@ import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.PublicSuffixList;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -91,7 +92,12 @@ public abstract class XvideosCore extends PluginForHost {
     }
 
     protected String getPremiumBaseURL(final Account account) {
-        return "https://www." + this.getPremiumDomain(account);
+        final String premiumDomain = this.getPremiumDomain(account);
+        if (PublicSuffixList.getInstance().getSubDomain(premiumDomain) != null) {
+            return "https://" + premiumDomain;
+        } else {
+            return "https://www." + premiumDomain;
+        }
     }
 
     protected String getPremiumAccountOverviewURL(final Account account) {

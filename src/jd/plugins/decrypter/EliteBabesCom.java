@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -38,6 +39,16 @@ public class EliteBabesCom extends SimpleHtmlBasedGalleryPlugin {
 
     public static String[] getAnnotationUrls() {
         return new String[] { SITE_DATA.getUrlRegex() };
+    }
+
+    @Override
+    protected String[] getRawImageUrls(Browser brc) {
+        final String[] rawlinks = brc.getRegex("<a data-fancybox\\s*=\\s*\"images\"[^>]*(?:data-)srcset\\s*=\\s*(?:\"|')([^\"' ]+\\.jpe?g/?)").getColumn(0);
+        if (rawlinks.length > 0) {
+            return rawlinks;
+        } else {
+            return super.getRawImageUrls(brc);
+        }
     }
 
     @Override

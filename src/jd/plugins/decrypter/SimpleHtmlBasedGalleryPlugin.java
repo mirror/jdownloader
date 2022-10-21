@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -24,6 +20,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 /**
  * A plugin for downloading JPG galleries from plain HTML of configured sites. Single galleries are supported, but also all galleries for a
@@ -186,7 +186,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         return allImageLinks;
     }
 
-    private void crawlGallery(ArrayList<DownloadLink> allImageLinks, String url) throws PluginException, IOException {
+    protected void crawlGallery(ArrayList<DownloadLink> allImageLinks, String url) throws PluginException, IOException {
         Browser brc = br.cloneBrowser();
         brc.setFollowRedirects(true);
         /* First check for direct downloadable content */
@@ -216,7 +216,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         allImageLinks.addAll(galleryImageLinks);
     }
 
-    private void crawlGalleries(ArrayList<DownloadLink> allImageLinks, String url, String galleryHrefRegex) throws PluginException, IOException {
+    protected void crawlGalleries(ArrayList<DownloadLink> allImageLinks, String url, String galleryHrefRegex) throws PluginException, IOException {
         br.setFollowRedirects(true);
         br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -236,7 +236,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         }
     }
 
-    private String[] getGalleryUrls(String galleryHrefRegex) throws PluginException, IOException {
+    protected String[] getGalleryUrls(String galleryHrefRegex) throws PluginException, IOException {
         if (StringUtils.isEmpty(galleryHrefRegex)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no gallery href regex configured for " + br.getHost());
         }
@@ -283,7 +283,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         return SITE_DATA;
     }
 
-    private SiteAndType determineSiteAndType(String url) throws PluginException {
+    protected SiteAndType determineSiteAndType(String url) throws PluginException {
         List<SiteData> siteData = getSiteData();
         for (SiteData sd : siteData) {
             final Pattern galleryUrlPattern = sd.getGalleryUrlPattern();
@@ -302,7 +302,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "could not determine site data of " + url);
     }
 
-    private void populateGalleryImageLinks(ArrayList<DownloadLink> imageLinks, Browser brc) throws PluginException, IOException {
+    protected void populateGalleryImageLinks(ArrayList<DownloadLink> imageLinks, Browser brc) throws PluginException, IOException {
         final String[] imageUrls = determineImageUrls(brc);
         if (imageUrls == null || imageUrls.length == 0) {
             // do not throw PluginException(LinkStatus.ERROR_PLUGIN_DEFECT), see e.g. https://svn.jdownloader.org/issues/88913
@@ -317,7 +317,7 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         }
     }
 
-    private String[] determineImageUrls(Browser brc) throws PluginException {
+    protected String[] determineImageUrls(Browser brc) throws PluginException {
         final String[] rawImageUrls = getRawImageUrls(brc);
         if (rawImageUrls == null || rawImageUrls.length == 0) {
             return rawImageUrls;
@@ -338,12 +338,12 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         }
     }
 
-    private String[] getRawImageUrls(Browser brc) {
+    protected String[] getRawImageUrls(Browser brc) {
         String[] rawlinks = brc.getRegex("href\\s*=\\s*(?:\"|')([^\"']+\\.jpg/?)(\"|')").getColumn(0);
         return rawlinks;
     }
 
-    private DownloadLink buildImageDownloadLink(int padLength, int index, String imageUrl) throws IOException {
+    protected DownloadLink buildImageDownloadLink(int padLength, int index, String imageUrl) throws IOException {
         final URL url = new URL(imageUrl);
         final DownloadLink dl;
         if (url.getPath().matches(".*\\.(jpg)$")) {
@@ -356,11 +356,11 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
         return dl;
     }
 
-    private String buildImageFileName(int padLength, int index) {
+    protected String buildImageFileName(int padLength, int index) {
         return "image_" + String.format(Locale.US, "%0" + padLength + "d", index) + ".jpg";
     }
 
-    private String getFilePackageName(String url, Browser brc) {
+    protected String getFilePackageName(String url, Browser brc) {
         String title = brc.getRegex("<title>\\s*([^<>]+?)\\s*</title>").getMatch(0);
         if (StringUtils.isNotEmpty(title)) {
             String id = new Regex(url, "(\\d+)").getMatch(0);
