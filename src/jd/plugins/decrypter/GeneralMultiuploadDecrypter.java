@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,10 +40,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadonall.com" }, urls = { "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}" })
 public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
@@ -213,14 +213,6 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
                     return getSiteKey(captcha.getHtmlCode());
                 };
             }.getToken();
-            // some reason twice.
-            if ("go4up.com".equals(getHost())) {
-                // altered length...
-                captcha.put("captcha-response", Encoding.urlEncode(recaptchaV2Response));
-                // no referrer
-                br.getHeaders().put("Referer", null);
-                // also note that captcha form is present again even though answer is right. though the link is in page
-            }
             captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             submitForm(br, captcha);
         }
