@@ -18,19 +18,20 @@ package jd.plugins.hoster;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -40,9 +41,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
@@ -271,7 +269,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
             super.handleDownload(link, account, dllink, null);
         } else {
             /* No directurl? Check for saved reconnect-limit and if there is none, continue via template-handling! */
-            currentIP.set(this.getIP());
+            currentIP.set(new BalancedWebIPCheck(null).getExternalIP().getIP());
             synchronized (CTRLLOCK) {
                 /* Load list of saved IPs + timestamp of last download */
                 final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
@@ -299,9 +297,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     }
 
     private static final long              FREE_RECONNECTWAIT_DEFAULT = 45 * 60 * 1000L;
-    private static String[]                IPCHECK                    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private final String                   EXPERIMENTALHANDLING       = "EXPERIMENTALHANDLING";
-    private Pattern                        IPREGEX                    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static AtomicReference<String> currentIP                  = new AtomicReference<String>();
     private static Map<String, Long>       blockedIPsMap              = new HashMap<String, Long>();
     private static Object                  CTRLLOCK                   = new Object();
@@ -345,39 +341,6 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
             }
         }
         return lastdownload;
-    }
-
-    private String getIP() throws Exception {
-        Browser ip = new Browser();
-        String currentIP = null;
-        ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(IPCHECK));
-        Collections.shuffle(checkIP);
-        Exception exception = null;
-        for (String ipServer : checkIP) {
-            if (currentIP == null) {
-                try {
-                    ip.getPage(ipServer);
-                    currentIP = ip.getRegex(IPREGEX).getMatch(0);
-                    if (currentIP != null) {
-                        break;
-                    }
-                } catch (Exception e) {
-                    if (exception == null) {
-                        exception = e;
-                    }
-                }
-            }
-        }
-        if (currentIP == null) {
-            if (exception != null) {
-                throw exception;
-            } else {
-                logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } else {
-            return currentIP;
-        }
     }
 
     private final boolean default_eh = false;

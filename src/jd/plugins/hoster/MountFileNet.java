@@ -16,20 +16,24 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -46,33 +50,23 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "https?://(www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "https?://(?:www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" })
 public class MountFileNet extends antiDDoSForHost {
-    private final String                   MAINPAGE                      = "http://mountfile.net";
     /* For reconnect special handling */
-    private static Object                  CTRLLOCK                      = new Object();
-    private final String                   EXPERIMENTALHANDLING          = "EXPERIMENTALHANDLING";
-    private final String[]                 IPCHECK                       = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private static Map<String, Long>       blockedIPsMap                 = new HashMap<String, Long>();
-    private final String                   PROPERTY_LAST_BLOCKED_IPS_MAP = "mountfilenet_last_blockedIPsMap";
-    private static AtomicReference<String> currentIP                     = new AtomicReference<String>();
-    private final Pattern                  IPREGEX                       = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static final long              FREE_RECONNECTWAIT_GENERAL    = 1 * 60 * 60 * 1000L;
+    private static Object            CTRLLOCK                      = new Object();
+    private final String             EXPERIMENTALHANDLING          = "EXPERIMENTALHANDLING";
+    private static Map<String, Long> blockedIPsMap                 = new HashMap<String, Long>();
+    private final String             PROPERTY_LAST_BLOCKED_IPS_MAP = "mountfilenet_last_blockedIPsMap";
+    private static final long        FREE_RECONNECTWAIT_GENERAL    = 1 * 60 * 60 * 1000L;
 
     public MountFileNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://mountfile.net/premium/");
+        this.enablePremium("https://mountfile.net/premium/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://mountfile.net/terms/";
+        return "https://mountfile.net/terms/";
     }
 
     public boolean hasAutoCaptcha() {
@@ -83,7 +77,7 @@ public class MountFileNet extends antiDDoSForHost {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        } else if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        } else if (AccountType.FREE.equals(acc.getType())) {
             /* free accounts also have captchas */
             return true;
         } else {
@@ -138,15 +132,14 @@ public class MountFileNet extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        doFree(null, link);
+        doFree(link, null);
     }
 
-    public void doFree(final Account account, final DownloadLink link) throws Exception, PluginException {
+    public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
         final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        currentIP.set(this.getIP());
+        final String currentIP = new BalancedWebIPCheck(null).getExternalIP().getIP();
         final boolean useExperimentalHandling = this.getPluginConfig().getBooleanProperty(this.EXPERIMENTALHANDLING, false);
         long lastdownload = 0;
         long passedTimeSinceLastDl = 0;
@@ -154,7 +147,7 @@ public class MountFileNet extends antiDDoSForHost {
             /* Load list of saved IPs + timestamp of last download */
             final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LAST_BLOCKED_IPS_MAP);
             if (lastdownloadmap != null && lastdownloadmap instanceof Map && blockedIPsMap.isEmpty()) {
-                blockedIPsMap = (Map<String, Long>) lastdownloadmap;
+                blockedIPsMap.putAll((Map<String, Long>) lastdownloadmap);
             }
         }
         if (useExperimentalHandling) {
@@ -163,7 +156,7 @@ public class MountFileNet extends antiDDoSForHost {
              * tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN download
              * using the same free accounts after performing a reconnect!
              */
-            lastdownload = getPluginSavedLastDownloadTimestamp();
+            lastdownload = getPluginSavedLastDownloadTimestamp(currentIP);
             passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
             if (passedTimeSinceLastDl < FREE_RECONNECTWAIT_GENERAL) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT_GENERAL - passedTimeSinceLastDl);
@@ -206,7 +199,7 @@ public class MountFileNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
+        blockedIPsMap.put(currentIP, System.currentTimeMillis());
         getPluginConfig().setProperty(PROPERTY_LAST_BLOCKED_IPS_MAP, blockedIPsMap);
         dl.startDownload();
     }
@@ -254,7 +247,7 @@ public class MountFileNet extends antiDDoSForHost {
                     postData += "&captcha=" + Encoding.urlEncode(c);
                 }
                 postPage("/account/login", postData);
-                if (br.getCookie(MAINPAGE, "usid") == null) {
+                if (br.getCookie(br.getHost(), "usid", Cookies.NOTDELETEDPATTERN) == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -273,7 +266,6 @@ public class MountFileNet extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -292,7 +284,6 @@ public class MountFileNet extends antiDDoSForHost {
         final boolean is_premium_without_expiredate = br.containsHTML("eternal premium");
         if (!is_premium_without_expiredate && expire == null) {
             account.setType(AccountType.FREE);
-            ai.setStatus("Free Account");
         } else {
             if (expire != null && expire.matches("\\d{2}/\\d{2}/\\d{2}")) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", Locale.ENGLISH));
@@ -301,9 +292,7 @@ public class MountFileNet extends antiDDoSForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", Locale.ENGLISH));
             }
             ai.setUnlimitedTraffic();
-            account.setValid(true);
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium User");
         }
         return ai;
     }
@@ -313,7 +302,7 @@ public class MountFileNet extends antiDDoSForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (account.getType() == AccountType.FREE) {
             login(account, false);
-            doFree(account, link);
+            doFree(link, account);
         } else {
             requestFileInformation(link);
             login(account, false);
@@ -329,7 +318,7 @@ public class MountFileNet extends antiDDoSForHost {
                 postPage("/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
                 errorHandling(br, account, link);
                 String dllink = PluginJSonUtils.getJsonValue(this.br, "ok");
-                if (dllink == null) {
+                if (StringUtils.isEmpty(dllink)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
@@ -357,32 +346,7 @@ public class MountFileNet extends antiDDoSForHost {
         return true;
     }
 
-    /* Stuff for special reconnect errorhandling */
-    private String getIP() throws PluginException {
-        final Browser ip = new Browser();
-        String currentIP = null;
-        final ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(this.IPCHECK));
-        Collections.shuffle(checkIP);
-        for (final String ipServer : checkIP) {
-            if (currentIP == null) {
-                try {
-                    ip.getPage(ipServer);
-                    currentIP = ip.getRegex(this.IPREGEX).getMatch(0);
-                    if (currentIP != null) {
-                        break;
-                    }
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        if (currentIP == null) {
-            this.logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return currentIP;
-    }
-
-    private long getPluginSavedLastDownloadTimestamp() {
+    private long getPluginSavedLastDownloadTimestamp(final String currentIP) {
         long lastdownload = 0;
         synchronized (blockedIPsMap) {
             final Iterator<Entry<String, Long>> it = blockedIPsMap.entrySet().iterator();
@@ -394,7 +358,7 @@ public class MountFileNet extends antiDDoSForHost {
                     /* Remove old entries */
                     it.remove();
                 }
-                if (ip.equals(currentIP.get())) {
+                if (ip.equals(currentIP)) {
                     lastdownload = timestamp;
                 }
             }

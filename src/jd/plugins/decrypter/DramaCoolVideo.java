@@ -97,7 +97,6 @@ public class DramaCoolVideo extends PluginForDecrypt {
         String title = br.getRegex("<title>(?:Watch\\s+)([^<]+)\\s+\\|[\\s\\w]+").getMatch(0);
         if (title == null) {
             /* Fallback */
-            // title = br._getURL().getPath().replace("-", " ").trim();
             title = br._getURL().getPath().substring(1).replace("-", " ").trim();
         }
         String[] links = br.getRegex("data-video=\"([^\"]+)\"\\s*>").getColumn(0);

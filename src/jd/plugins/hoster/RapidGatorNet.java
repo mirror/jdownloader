@@ -24,8 +24,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -33,10 +31,27 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
-import java.util.regex.Pattern;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -55,23 +70,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RapidGatorNet extends antiDDoSForHost {
@@ -126,7 +124,6 @@ public class RapidGatorNet extends antiDDoSForHost {
      * may lead to login-captchas!
      */
     private final long               WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES = 1;
-    private final String[]           IPCHECK                                    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private static Object            CTRLLOCK                                   = new Object();
     private static Map<String, Long> blockedIPsMap                              = new HashMap<String, Long>();
     private static final String      PROPERTY_LAST_BLOCKED_IPS_MAP              = "rapidgatornet__last_blockedIPsMap";
@@ -134,7 +131,6 @@ public class RapidGatorNet extends antiDDoSForHost {
     private static final String      PROPERTY_timestamp_session_create_api      = "session_create";
     private static final String      PROPERTY_timestamp_session_create_website  = "session_create_website";
     private final String             HOTLINK                                    = "HOTLINK";
-    private final Pattern            IPREGEX                                    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     /* 2019-12-12: Lowered from 2 to 1 hour */
     private static final long        FREE_RECONNECTWAIT_GENERAL                 = 1 * 60 * 60 * 1001L;
     private static final long        FREE_RECONNECTWAIT_DAILYLIMIT              = 3 * 60 * 60 * 1000L;
@@ -399,7 +395,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             showFreeDialog(getHost());
         }
         final boolean useExperimentalHandling = PluginJsonConfig.get(RapidGatorConfig.class).isActivateExperimentalWaittimeHandling();
-        final String currentIP = useExperimentalHandling ? getIP() : null;
+        final String currentIP = useExperimentalHandling ? new BalancedWebIPCheck(null).getExternalIP().getIP() : null;
         String finalDownloadURL = null;
         if (!StringUtils.isEmpty(hotLinkURL)) {
             logger.info("Seems to be a hotlink file:" + hotLinkURL);
@@ -413,7 +409,7 @@ public class RapidGatorNet extends antiDDoSForHost {
                         /* Load list of saved IPs + timestamp of last download */
                         final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LAST_BLOCKED_IPS_MAP);
                         if (lastdownloadmap != null && lastdownloadmap instanceof Map && blockedIPsMap.isEmpty()) {
-                            blockedIPsMap = (Map<String, Long>) lastdownloadmap;
+                            blockedIPsMap.putAll((Map<String, Long>) lastdownloadmap);
                         }
                     }
                     final long lastdownload_timestamp = getPluginSavedLastDownloadTimestamp(currentIP);
@@ -1668,30 +1664,6 @@ public class RapidGatorNet extends antiDDoSForHost {
         } else if (br.containsHTML(">\\s*An unexpected error occurred\\s*\\.?\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "An unexpected error occurred", 15 * 60 * 1000l);
         }
-    }
-
-    private String getIP() throws PluginException {
-        final Browser ip = new Browser();
-        String currentIP = null;
-        final ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(IPCHECK));
-        Collections.shuffle(checkIP);
-        for (final String ipServer : checkIP) {
-            if (currentIP == null) {
-                try {
-                    ip.getPage(ipServer);
-                    currentIP = ip.getRegex(IPREGEX).getMatch(0);
-                    if (currentIP != null) {
-                        break;
-                    }
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        if (currentIP == null) {
-            logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return currentIP;
     }
 
     @Override
