@@ -17,9 +17,9 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "instagram.com", type = Type.HOSTER)
 public interface InstagramConfig extends PluginConfigInterface {
-    final String                                    text_EnforceLoginIfAccountIsAvailable       = "Only for debugging purposes: Enforce login if account is available?";
-    final String                                    text_GlobalRequestIntervalLimitMilliseconds = "Define global request limit for domain 'instagram.com' in milliseconds (0 = no limit)";
-    public static final InstagramConfig.TRANSLATION TRANSLATION                                 = new TRANSLATION();
+    final String                    text_EnforceLoginIfAccountIsAvailable       = "Only for debugging purposes: Enforce login if account is available?";
+    final String                    text_GlobalRequestIntervalLimitMilliseconds = "Define global request limit for domain 'instagram.com' in milliseconds (0 = no limit)";
+    public static final TRANSLATION TRANSLATION                                 = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getPostCrawlerAddPostDescriptionAsTextfile_label() {
