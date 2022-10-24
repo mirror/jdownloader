@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -35,6 +34,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -69,15 +69,13 @@ import jd.plugins.download.DownloadInterface;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class K2SApi extends PluginForHost {
-    private final String   lng                        = getLanguage();
-    private final String   PROPERTY_ACCOUNT_AUTHTOKEN = "auth_token";
+    private final String lng                        = getLanguage();
+    private final String PROPERTY_ACCOUNT_AUTHTOKEN = "auth_token";
     /* Reconnect workaround settings */
-    private final Pattern  IPREGEX                    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private final String   PROPERTY_FILE_ID           = "fileID";
-    private final String   PROPERTY_LASTDOWNLOAD      = "_lastdownload_timestamp";
-    private final String   PROPERTY_ACCESS            = "access";
-    private final long     FREE_RECONNECTWAIT_MILLIS  = 1 * 60 * 60 * 1000L;
-    private final String[] IPCHECK                    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private final String PROPERTY_FILE_ID           = "fileID";
+    private final String PROPERTY_LASTDOWNLOAD      = "_lastdownload_timestamp";
+    private final String PROPERTY_ACCESS            = "access";
+    private final long   FREE_RECONNECTWAIT_MILLIS  = 1 * 60 * 60 * 1000L;
 
     public K2SApi(PluginWrapper wrapper) {
         super(wrapper);
@@ -632,7 +630,7 @@ public abstract class K2SApi extends PluginForHost {
                 /**
                  * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
                  */
-                currentIP = this.getIP();
+                currentIP = new BalancedWebIPCheck(null).getExternalIP().getIP();
                 final String downloadlimitText = "Downloadlimit reached";
                 logger.info("New free/free-account Download: currentIP = " + currentIP);
                 if (account != null) {
@@ -648,7 +646,7 @@ public abstract class K2SApi extends PluginForHost {
                     /* Load list of saved IPs + timestamp of last download and add it to our main map */
                     try {
                         final Map<String, Long> lastdownloadmap = (Map<String, Long>) this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
-                        if (lastdownloadmap != null && lastdownloadmap instanceof Map && blockedIPsMap.isEmpty()) {
+                        if (lastdownloadmap != null && blockedIPsMap.isEmpty()) {
                             blockedIPsMap.putAll(lastdownloadmap);
                         }
                     } catch (final Exception ignore) {
@@ -1835,43 +1833,6 @@ public abstract class K2SApi extends PluginForHost {
             }
         }
         return super.isSameAccount(downloadAccount, downloadProxySelector, candidateAccount, candidateProxySelector);
-    }
-
-    /* Reconnect workaround methods */
-    private String getIP() throws Exception {
-        final Browser ip = new Browser();
-        String currentIP = null;
-        ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(IPCHECK));
-        Collections.shuffle(checkIP);
-        Exception exception = null;
-        for (String ipServer : checkIP) {
-            if (currentIP == null) {
-                try {
-                    ip.getPage(ipServer);
-                    currentIP = ip.getRegex(IPREGEX).getMatch(0);
-                    if (currentIP != null) {
-                        break;
-                    }
-                } catch (Exception e) {
-                    if (exception == null) {
-                        exception = e;
-                    }
-                }
-            }
-        }
-        if (currentIP == null) {
-            if (exception != null) {
-                throw exception;
-            }
-            /*
-             * 2019-08-12: Sometimes we will be stuck on e.g. error 400 here. In general it is a better idea to wait and retry later instead
-             * of showing plugin_defect at this stage!
-             */
-            logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
-        }
-        return currentIP;
     }
 
     private long getPluginSavedLastDownloadTimestamp(final String currentIP) {

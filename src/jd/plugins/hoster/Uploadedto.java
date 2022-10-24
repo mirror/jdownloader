@@ -20,8 +20,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -45,6 +43,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.crypt.Base64;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -89,11 +88,9 @@ public class Uploadedto extends PluginForHost {
     private static final long              FREE_RECONNECTWAIT                        = 3 * 60 * 60 * 1000L;
     private static final String            PROPERTY_NOAPI                            = "NOAPI";
     private static final String            PROPERTY_last_blockedIPsMap               = "uploadednet_last_blockedIPsMap";
-    private Pattern                        IPREGEX                                   = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static AtomicReference<String> currentIP                                 = new AtomicReference<String>();
     private static Map<String, Long>       blockedIPsMap                             = new HashMap<String, Long>();
     private static Object                  CTRLLOCK                                  = new Object();
-    private static String[]                IPCHECK                                   = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
     private static AtomicBoolean           usePremiumAPI                             = new AtomicBoolean(true);
     private static final String            NOCHUNKS                                  = "NOCHUNKS";
     private static final String            NORESUME                                  = "NORESUME";
@@ -733,14 +730,14 @@ public class Uploadedto extends PluginForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     public void doFree(final DownloadLink link, final Account account) throws Exception {
-        currentIP.set(this.getIP());
+        currentIP.set(new BalancedWebIPCheck(null).getExternalIP().getIP());
         if (account == null) {
             logger.info("Free, WEB download method in use!");
             synchronized (CTRLLOCK) {
                 /* Load list of saved IPs + timestamp of last download */
                 final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_last_blockedIPsMap);
                 if (lastdownloadmap != null && lastdownloadmap instanceof Map && blockedIPsMap.isEmpty()) {
-                    blockedIPsMap = (Map<String, Long>) lastdownloadmap;
+                    blockedIPsMap.putAll((Map<String, Long>) lastdownloadmap);
                 }
             }
         } else {
@@ -1298,7 +1295,7 @@ public class Uploadedto extends PluginForHost {
                     return tokenType;
                 }
                 getPage(br, getProtocol() + "api.uploaded.net/api/user/jdownloader?access_token=" + token);
-                tokenType = br.getRegex("account_type\":\\s*?\"(premium|free)").getMatch(0);
+                tokenType = br.getRegex("(?i)account_type\":\\s*?\"(premium|free)").getMatch(0);
                 if (tokenType == null) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Error. Please contact Uploaded.to Support.", 5 * 60 * 1000l);
                 }
@@ -1758,31 +1755,6 @@ public class Uploadedto extends PluginForHost {
         } finally {
             br.setFollowRedirects(red);
         }
-    }
-
-    private String getIP() throws PluginException {
-        Browser ip = new Browser();
-        String currentIP = null;
-        ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(IPCHECK));
-        Collections.shuffle(checkIP);
-        for (String ipServer : checkIP) {
-            if (currentIP == null) {
-                try {
-                    ip.getPage(ipServer);
-                    currentIP = ip.getRegex(IPREGEX).getMatch(0);
-                    if (currentIP != null) {
-                        break;
-                    }
-                } catch (Throwable e) {
-                    logger.log(e);
-                }
-            }
-        }
-        if (currentIP == null) {
-            logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return currentIP;
     }
 
     private void freeDownloadlimitReached(final String message) throws PluginException {
