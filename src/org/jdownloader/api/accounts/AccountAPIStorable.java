@@ -1,12 +1,14 @@
 package org.jdownloader.api.accounts;
 
+import jd.plugins.Account;
+
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableDeprecatedSince;
 import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.jdownloader.myjdownloader.client.json.JsonMap;
 
-import jd.plugins.Account;
-
 @Deprecated
+@StorableDeprecatedSince("2022-10-18T00:00+0200")
 public class AccountAPIStorable implements Storable {
     private Account acc;
     private JsonMap infoMap = null;

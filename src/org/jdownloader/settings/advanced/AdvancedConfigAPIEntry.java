@@ -4,6 +4,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableDeprecatedSince;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStorable;
@@ -75,5 +76,23 @@ public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable impl
     @SuppressWarnings("unused")
     public AdvancedConfigAPIEntry(/* Storable */) {
         super();
+    }
+
+    @Deprecated
+    @Override
+    @StorableDeprecatedSince("2022-10-18T00:00+0200")
+    /**
+     * @Deprecated use #getAbstractType instead
+     * @return
+     */
+    public String getType() {
+        return super.getType();
+    }
+
+    @Deprecated
+    @Override
+    @StorableDeprecatedSince("2022-10-18T00:00+0200")
+    public void setType(final String type) {
+        super.setType(type);
     }
 }

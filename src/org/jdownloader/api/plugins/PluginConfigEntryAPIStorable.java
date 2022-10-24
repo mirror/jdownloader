@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableDeprecatedSince;
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -101,5 +102,23 @@ public class PluginConfigEntryAPIStorable extends AdvancedConfigAPIEntry impleme
             ret.add(new EnumOption(o.toString(), label));
         }
         return ret;
+    }
+
+    @Deprecated
+    @Override
+    @StorableDeprecatedSince("2022-10-18T00:00+0200")
+    /**
+     * @Deprecated use #getAbstractType instead
+     * @return
+     */
+    public String getType() {
+        return super.getType();
+    }
+
+    @Deprecated
+    @Override
+    @StorableDeprecatedSince("2022-10-18T00:00+0200")
+    public void setType(final String type) {
+        super.setType(type);
     }
 }
