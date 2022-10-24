@@ -19,6 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,6 +32,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -33,22 +41,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.HidriveCom;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hidrive.com" }, urls = { "https?://(?:my\\.hidrive\\.com/share/|(?:www\\.)?hidrive\\.strato\\.com/share/)(.+)" })
 public class HidriveComCrawler extends PluginForDecrypt {
     public HidriveComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String URLREGEX = "https?://[^/]+/share/([^/]+)(/.+)?";
+    private static final String URLREGEX = "https?://[^/]+/share/([^/#]+)(/.+)?";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        return crawlFolder(param, false);
+    }
+
+    /** Set returnDummyResult to true if you only want this to return a dummy DownloadLink object to obtain a fresh token. */
+    public ArrayList<DownloadLink> crawlFolder(final CryptedLink param, final boolean returnDummyResult) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex urlregex = new Regex(param.getCryptedUrl(), URLREGEX);
         /* Remove "#$": Required in browser to display paths properly but it is not part of the id we need! */
         final String baseFolderID = urlregex.getMatch(0).replace("#$", "");
@@ -57,6 +65,7 @@ public class HidriveComCrawler extends PluginForDecrypt {
             internalPath = "/";
         }
         HidriveCom.prepBRAPI(this.br);
+        /* Check if this folder is available. */
         br.getPage("https://my.hidrive.com/api/share/info?id=" + Encoding.urlEncode(baseFolderID));
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -66,7 +75,7 @@ public class HidriveComCrawler extends PluginForDecrypt {
         final UrlQuery folderQuery = new UrlQuery();
         folderQuery.add("id", baseFolderID);
         String passCode = param.getDecrypterPassword();
-        if ((Boolean) folderInfo.get("has_password")) {
+        if ((Boolean) folderInfo.get("has_password") || passCode != null) {
             /* TODO: Check if this password handling is working and add check for wrong password! */
             if (passCode == null) {
                 passCode = getUserInput("Password?", param);
@@ -86,6 +95,13 @@ public class HidriveComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("Authorization", "Bearer " + access_token);
+        if (returnDummyResult) {
+            final DownloadLink dummy = this.createDownloadlink(param.getCryptedUrl());
+            dummy.setProperty(HidriveCom.PROPERTY_ACCESS_TOKEN, access_token);
+            dummy.setProperty(HidriveCom.PROPERTY_ACCESS_TOKEN_VALID_UNTIL, access_token_valid_until);
+            ret.add(dummy);
+            return ret;
+        }
         final UrlQuery folderOverviewQuery = new UrlQuery();
         folderOverviewQuery.add("path", internalPath);
         folderOverviewQuery.add("fields", Encoding.urlEncode("id,path,readable,writable,members.id,members.parent_id,members.name,members.mtime,members.mime_type,members.path,members.readable,members.writable,members.type,members.image.width,members.image.height,members.image.exif.Orientation,members.size"));
@@ -98,7 +114,10 @@ public class HidriveComCrawler extends PluginForDecrypt {
         String subfolderPath = this.getAdoptedCloudFolderStructure();
         if (subfolderPath == null) {
             /* Root folder */
-            subfolderPath = token.get("root_name").toString();
+            subfolderPath = Encoding.htmlDecode(token.get("root_name").toString());
+        }
+        if (ressourcelist.isEmpty()) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, subfolderPath);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(subfolderPath);
@@ -117,17 +136,17 @@ public class HidriveComCrawler extends PluginForDecrypt {
                 }
                 file.setRelativeDownloadFolderPath(subfolderPath);
                 file._setFilePackage(fp);
-                decryptedLinks.add(file);
+                ret.add(file);
             } else if (ressource.get("type").toString().equals("dir")) {
                 /* Subfolder */
-                final String relativeFolderPath = (String) ressource.get("path");
-                final DownloadLink folder = this.createDownloadlink("https://my.hidrive.com/share/" + baseFolderID + "#$" + relativeFolderPath);
-                folder.setRelativeDownloadFolderPath(subfolderPath + relativeFolderPath);
-                decryptedLinks.add(folder);
+                final String relativeFolderPathUrlEncoded = (String) ressource.get("path");
+                final DownloadLink folder = this.createDownloadlink("https://my.hidrive.com/share/" + baseFolderID + "#$" + relativeFolderPathUrlEncoded);
+                folder.setRelativeDownloadFolderPath(subfolderPath + Encoding.htmlDecode(relativeFolderPathUrlEncoded));
+                ret.add(folder);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 }
