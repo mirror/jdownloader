@@ -9,6 +9,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableDeprecatedSince;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
@@ -96,6 +97,7 @@ public class DownloadLinkStorable implements Storable {
      * @return
      */
     @Deprecated
+    @StorableDeprecatedSince("2022-10-18T00:00+0200")
     public Map<String, String> getLinkStatus() {
         return null;
     }
