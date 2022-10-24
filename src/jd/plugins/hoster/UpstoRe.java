@@ -209,7 +209,7 @@ public class UpstoRe extends antiDDoSForHost {
                 /* Load list of saved IPs + timestamp of last download */
                 final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_last_blockedIPsMap);
                 if (lastdownloadmap != null && lastdownloadmap instanceof Map && blockedIPsMap.isEmpty()) {
-                    blockedIPsMap = (Map<String, Long>) lastdownloadmap;
+                    blockedIPsMap.putAll((Map<String, Long>) lastdownloadmap);
                 }
             }
             {

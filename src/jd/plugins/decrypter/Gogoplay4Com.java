@@ -47,7 +47,7 @@ public class Gogoplay4Com extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "gogoplay4.com", "gogoplay5.com", "gogoplay1.com", "goload.pro", "asianwatch.net", "dembed1.com", "membed.net", "asianplay.net", "gogohd.net" });
+        ret.add(new String[] { "gogoplay4.com", "gogoplay5.com", "gogoplay1.com", "goload.pro", "asianwatch.net", "dembed1.com", "membed.net", "asianplay.net", "asianplay.pro", "gogohd.net" });
         ret.add(new String[] { "asianload.net", "asianembed.io", "k-vid.net" });
         return ret;
     }
@@ -126,7 +126,10 @@ public class Gogoplay4Com extends PluginForDecrypt {
         }
         final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
         for (final String url : urls) {
-            if (url.matches(TYPE_STREAMING)) {
+            if (looksLikeSupportedPatternStreaming(url)) {
+                if (!this.canHandle(url)) {
+                    logger.warning("!Developer! You need to add the following domain to this plugin in order to make the currently added link work: " + Browser.getHost(url));
+                }
                 ret.add(this.createDownloadlink(url));
             }
         }

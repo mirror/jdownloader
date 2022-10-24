@@ -94,7 +94,12 @@ public class DramaCoolVideo extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fpName = br.getRegex("<title>(?:Watch\\s+)([^<]+)\\s+\\|[\\s\\w]+").getMatch(0);
+        String title = br.getRegex("<title>(?:Watch\\s+)([^<]+)\\s+\\|[\\s\\w]+").getMatch(0);
+        if (title == null) {
+            /* Fallback */
+            // title = br._getURL().getPath().replace("-", " ").trim();
+            title = br._getURL().getPath().substring(1).replace("-", " ").trim();
+        }
         String[] links = br.getRegex("data-video=\"([^\"]+)\"\\s*>").getColumn(0);
         if (links == null || links.length == 0) {
             links = br.getRegex("<li>\\s*<a href=\"([^\"]+)\" class=\"img\">\\s*<span class=\"type[^\"]*\">").getColumn(0);
@@ -126,9 +131,9 @@ public class DramaCoolVideo extends PluginForDecrypt {
                 }
             }
         }
-        if (fpName != null) {
+        if (title != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.setName(Encoding.htmlDecode(title).trim());
             fp.setAllowMerge(true);
             fp.addLinks(ret);
         }
