@@ -19,10 +19,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -34,6 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.decrypter.VoeSxCrawler;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { VoeSxCrawler.class })
@@ -147,8 +147,11 @@ public class VoeSx extends XFileSharingProBasic {
 
     @Override
     protected String getDllinkVideohost(final String src) {
-        /** 2021-03-01: Prefer HLS over HTTP as they've hidden their http URLs via js */
-        final String hlsMaster = new Regex(src, "\"hls\"\\s*:\\s*\"(https?://[^\"]+)").getMatch(0);
+        final String mp4Master = new Regex(src, "(\"|')mp4\\1\\s*:\\s*(\"|')(https?://[^\"']+)").getMatch(2);
+        if (mp4Master != null) {
+            return mp4Master;
+        }
+        final String hlsMaster = new Regex(src, "(\"|')hls\\1\\s*:\\s*(\"|')(https?://[^\"']+)").getMatch(2);
         if (hlsMaster != null) {
             return hlsMaster;
         } else {
