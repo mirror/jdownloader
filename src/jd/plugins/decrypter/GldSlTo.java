@@ -17,9 +17,11 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -30,6 +32,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -52,6 +55,10 @@ public class GldSlTo extends antiDDoSForDecrypt {
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "goldesel.sx", "goldesel.to", "saugen.to", "laden.to", "blockbuster.to" });
         return ret;
+    }
+
+    protected List<String> getDeadDomains() {
+        return Arrays.asList(new String[] { "saugen.to", "laden.to", "blockbuster.to" });
     }
 
     public static String[] getAnnotationNames() {
@@ -78,11 +85,20 @@ public class GldSlTo extends antiDDoSForDecrypt {
     private static final String HTML_CAPTCHA       = "Klicke in den gestrichelten Kreis, der sich somit von den anderen unterscheidet";
     private static final String HTML_LIMIT_REACHED = "class=\"captchaWait\"";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String contenturl = param.getCryptedUrl();
+        /* Make sure that old URLs keep working even if domain isdown otherwise don't touch added URL. */
+        final List<String> deadDomains = getDeadDomains();
+        if (deadDomains != null) {
+            /* Change domain in added URL if we know that the domain inside added URL is dead. */
+            final String domain = Browser.getHost(contenturl, true);
+            if (deadDomains.contains(domain)) {
+                contenturl = contenturl.replaceFirst(Pattern.quote(domain) + "/", this.getHost() + "/");
+            }
+        }
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(contenturl);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -188,12 +204,12 @@ public class GldSlTo extends antiDDoSForDecrypt {
             if (br.containsHTML(HTML_CAPTCHA)) {
                 for (int i = 1; i <= 3; i++) {
                     if (this.isAbort()) {
-                        logger.info("Decryption aborted by user: " + parameter);
-                        return decryptedLinks;
+                        logger.info("Decryption aborted by user: " + contenturl);
+                        return ret;
                     }
                     final String capLink = br.getRegex("\"(inc/cirlecaptcha\\.php[^<>\"]*?)\"").getMatch(0);
                     if (capLink == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
+                        logger.warning("Decrypter broken for link: " + contenturl);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     final File file = this.getLocalCaptchaFile();
@@ -247,7 +263,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
                 final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(finallink));
                 fp.add(dl);
                 distribute(dl);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
             counter++;
             if (this.isAbort()) {
@@ -255,14 +271,14 @@ public class GldSlTo extends antiDDoSForDecrypt {
             }
         }
         /* Only 1 link + wrong captcha --> */
-        if (decryptedLinks.size() == 0 && captchafailed) {
+        if (ret.size() == 0 && captchafailed) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        if (decryptedLinks.size() == 0) {
+        if (ret.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 
     /* Prevent confusion */
