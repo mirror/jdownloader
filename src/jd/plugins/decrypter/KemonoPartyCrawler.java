@@ -20,17 +20,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.KemonoPartyConfig;
-import org.jdownloader.plugins.components.config.KemonoPartyConfig.TextCrawlMode;
-import org.jdownloader.plugins.components.config.KemonoPartyConfigCoomerParty;
-import org.jdownloader.plugins.config.PluginJsonConfig;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -42,6 +36,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.KemonoParty;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.KemonoPartyConfig;
+import org.jdownloader.plugins.components.config.KemonoPartyConfig.TextCrawlMode;
+import org.jdownloader.plugins.components.config.KemonoPartyConfigCoomerParty;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KemonoPartyCrawler extends PluginForDecrypt {
@@ -92,6 +94,18 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         }
     }
 
+    private int getMaxPage(Browser br, final String portal, final String username, int maxPage) {
+        final String[] pages = br.getRegex("href=\"/" + Pattern.quote(portal) + "/user/" + Pattern.quote(username) + "\\?o=\\d+\"[^>]*>\\s*(?:<b>)?\\s*(\\d+)").getColumn(0);
+        int ret = maxPage;
+        for (final String pageStr : pages) {
+            final int page = Integer.parseInt(pageStr);
+            if (page > ret) {
+                ret = page;
+            }
+        }
+        return ret;
+    }
+
     private ArrayList<DownloadLink> crawlProfile(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_PROFILE);
@@ -111,14 +125,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Find number of last page (for logging purposes) */
-        final String[] pages = br.getRegex("href=\"/" + Regex.escape(portal) + "/user/" + Regex.escape(username) + "\\?o=\\d+\"\\s*>\\s*(\\d+)").getColumn(0);
-        int maxpage = 1;
-        for (final String pageStr : pages) {
-            final int page = Integer.parseInt(pageStr);
-            if (page > maxpage) {
-                maxpage = page;
-            }
-        }
+        int maxpage = getMaxPage(br, portal, username, 1);
         int totalNumberofItems = -1;
         String totalNumberofItemsStr = br.getRegex("Showing \\d+ - \\d+ of (\\d+)").getMatch(0);
         if (totalNumberofItemsStr != null) {
@@ -145,8 +152,9 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                     numberofAddedItems++;
                 }
             }
+            maxpage = getMaxPage(br, portal, username, maxpage);
             logger.info("Crawled page " + page + "/" + maxpage + " | Found items: " + ret.size() + "/" + totalNumberofItemsStr);
-            final String nextpageurl = br.getRegex("(/[^\"]+\\?o=\\d+)\"\\s*>\\s*" + (page + 1)).getMatch(0);
+            final String nextpageurl = br.getRegex("(/[^\"]+\\?o=\\d+)\"[^>]*>(?:<b>)?\\s*" + (page + 1)).getMatch(0);
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
