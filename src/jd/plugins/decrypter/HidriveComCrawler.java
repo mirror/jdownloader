@@ -62,7 +62,7 @@ public class HidriveComCrawler extends PluginForDecrypt {
         /* Remove "#$": Required in browser to display paths properly but it is not part of the id we need! */
         String baseFolderID = urlregex.getMatch(0).replace("#$", "");
         if (baseFolderID.contains("#")) {
-            /* E.g. vhs.cbepww#file_id=b1234567.12 */
+            /* E.g. someFolderTitle#file_id=b1234567.12 */
             baseFolderID = baseFolderID.substring(0, baseFolderID.lastIndexOf("#"));
         }
         String internalPath = urlregex.getMatch(1);
