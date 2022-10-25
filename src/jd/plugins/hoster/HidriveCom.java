@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -51,12 +53,14 @@ public class HidriveCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                       = false;
-    private static final int     FREE_MAXCHUNKS                    = 1;
-    private static final int     FREE_MAXDOWNLOADS                 = 20;
-    public static final String   PROPERTY_ACCESS_TOKEN             = "PROPERTY_ACCESS_TOKEN";
-    public static final String   PROPERTY_ACCESS_TOKEN_VALID_UNTIL = "PROPERTY_ACCESS_TOKEN_VALID_UNTIL";
-    public static final String   PROPERTY_DOWNLOAD_CODE            = "PROPERTY_DOWNLOAD_CODE";
+    private static final boolean           FREE_RESUME                       = false;
+    private static final int               FREE_MAXCHUNKS                    = 1;
+    private static final int               FREE_MAXDOWNLOADS                 = 20;
+    public static final String             PROPERTY_ACCESS_TOKEN             = "PROPERTY_ACCESS_TOKEN";
+    public static final String             PROPERTY_ACCESS_TOKEN_VALID_UNTIL = "PROPERTY_ACCESS_TOKEN_VALID_UNTIL";
+    public static final String             PROPERTY_DOWNLOAD_CODE            = "PROPERTY_DOWNLOAD_CODE";
+    private static AtomicReference<String> token                             = new AtomicReference<String>();
+    private static AtomicLong              tokenValidUntil                   = new AtomicLong(0);
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -95,27 +99,6 @@ public class HidriveCom extends PluginForHost {
         this.setBrowserExclusive();
         final Browser brAPI = prepBRAPI(br.cloneBrowser());
         if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_FILE_AS_PART_OF_FOLDER)) {
-            if (link.getLongProperty(PROPERTY_ACCESS_TOKEN_VALID_UNTIL, 0) <= System.currentTimeMillis()) {
-                logger.info("Refreshing token...");
-                final HidriveComCrawler crawlerPlugin = (HidriveComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
-                /*
-                 * This obtains a new token, sets the header and returns a dummy DownloadLink containing that data so next time we got that
-                 * token right away.
-                 */
-                final DownloadLink dummyResult = crawlerPlugin.crawlFolder(new CryptedLink(link.getPluginPatternMatcher(), null), true).get(0);
-                link.setProperty(PROPERTY_ACCESS_TOKEN, dummyResult.getStringProperty(PROPERTY_ACCESS_TOKEN));
-                link.setProperty(PROPERTY_ACCESS_TOKEN_VALID_UNTIL, dummyResult.getLongProperty(PROPERTY_ACCESS_TOKEN_VALID_UNTIL, 0));
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                // /* 2022-10-24: Alternative way to obtain directurl */
-                // final boolean alternativeWay = false;
-                // if (alternativeWay) {
-                // final String file_id = new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_FILE_AS_PART_OF_FOLDER).getMatch(1);
-                // br.getPage("https://my.hidrive.com/api/file/url?pid=" + file_id);
-                // // throw new PluginException(LinkStatus.ERROR_FATAL, "Access token expired");
-                // final Map<String, Object> json = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                // final String directurl = json.get("url").toString();
-                // }
-            }
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(getDirectDownloadurl(link));
@@ -153,7 +136,7 @@ public class HidriveCom extends PluginForHost {
                 if (passCode != null) {
                     query.add("password", Encoding.urlEncode(passCode));
                 }
-                brAPI.postPage("https://my.hidrive.com/api/sharelink/info", query);
+                brAPI.postPage(HidriveComCrawler.API_BASE + "/sharelink/info", query);
                 final Map<String, Object> entries = JSonStorage.restoreFromString(brAPI.toString(), TypeRef.HASHMAP);
                 if (brAPI.getHttpConnection().getResponseCode() == 404 || brAPI.getHttpConnection().getResponseCode() == 410) {
                     /* {"msg":"Not Found: Invalid share id 'XXXXYYYY'","code":"404"} */
@@ -229,20 +212,54 @@ public class HidriveCom extends PluginForHost {
         doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private String getAccessToken(final DownloadLink link) {
-        return link.getStringProperty(PROPERTY_ACCESS_TOKEN);
+    private String getAccessToken(final DownloadLink link) throws Exception {
+        final String storedToken = link.getStringProperty(PROPERTY_ACCESS_TOKEN);
+        if (storedToken != null && link.getLongProperty(PROPERTY_ACCESS_TOKEN_VALID_UNTIL, 0) > System.currentTimeMillis()) {
+            return storedToken;
+        } else {
+            logger.info("Token on DownloadLink expired");
+            synchronized (token) {
+                if (token.get() == null || tokenValidUntil.get() <= System.currentTimeMillis()) {
+                    logger.info("Refreshing token...");
+                    final HidriveComCrawler crawlerPlugin = (HidriveComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
+                    /*
+                     * This obtains a new token, sets the header and returns a dummy DownloadLink containing that data so next time we got
+                     * that token right away.
+                     */
+                    final DownloadLink dummyResult = crawlerPlugin.crawlFolder(new CryptedLink(link.getPluginPatternMatcher(), null), true).get(0);
+                    token.set(dummyResult.getStringProperty(PROPERTY_ACCESS_TOKEN));
+                    tokenValidUntil.set(dummyResult.getLongProperty(PROPERTY_ACCESS_TOKEN_VALID_UNTIL, 0));
+                    /* Set new token on DownloadLink so it will be available throughout JDownloader restarts */
+                    link.setProperty(PROPERTY_ACCESS_TOKEN, token.get());
+                    link.setProperty(PROPERTY_ACCESS_TOKEN_VALID_UNTIL, tokenValidUntil.get());
+                    // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    // /* 2022-10-24: Alternative way to obtain directurl */
+                    // final boolean alternativeWay = false;
+                    // if (alternativeWay) {
+                    // final String file_id = new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_FILE_AS_PART_OF_FOLDER).getMatch(1);
+                    // br.getPage(HidriveComCrawler.API_BASE + "/file/url?pid=" + file_id);
+                    // // throw new PluginException(LinkStatus.ERROR_FATAL, "Access token expired");
+                    // final Map<String, Object> json = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                    // final String directurl = json.get("url").toString();
+                    // }
+                } else {
+                    logger.info("Using existing token obtained by other plugin instance");
+                }
+            }
+            return token.get();
+        }
     }
 
-    private String getDirectDownloadurl(final DownloadLink link) {
+    private String getDirectDownloadurl(final DownloadLink link) throws Exception {
         if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_FILE_AS_PART_OF_FOLDER)) {
             final String fileID = new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_FILE_AS_PART_OF_FOLDER).getMatch(1);
-            return "https://my.hidrive.com/api/file?attachment=true&pid=" + Encoding.urlEncode(fileID) + "&access_token=" + getAccessToken(link);
+            return HidriveComCrawler.API_BASE + "/file?attachment=true&pid=" + Encoding.urlEncode(fileID) + "&access_token=" + getAccessToken(link);
         } else if (link.hasProperty(PROPERTY_DOWNLOAD_CODE)) {
             /*
              * E.g. required for password protected files as user has to enter correct password in order to get this string in order to be
              * able to download.
              */
-            return "https://my.hidrive.com/api/sharelink/download?id=" + this.getUniqueID(link) + "&download_code=" + link.getStringProperty(PROPERTY_DOWNLOAD_CODE);
+            return HidriveComCrawler.API_BASE + "/sharelink/download?id=" + this.getUniqueID(link) + "&download_code=" + link.getStringProperty(PROPERTY_DOWNLOAD_CODE);
         } else {
             /* Alternative: https://my.hidrive.com/api/sharelink/download?id=<fid> */
             return "https://www.hidrive.strato.com/wget/" + this.getUniqueID(link);

@@ -47,7 +47,8 @@ public class HidriveComCrawler extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String URLREGEX = "https?://[^/]+/share/([^/#]+)(/.+)?";
+    public static String        API_BASE = "https://my.hidrive.com/api";
+    private static final String URLREGEX = "https?://[^/]+/share/([^/]+)(/.+)?";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -59,14 +60,18 @@ public class HidriveComCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex urlregex = new Regex(param.getCryptedUrl(), URLREGEX);
         /* Remove "#$": Required in browser to display paths properly but it is not part of the id we need! */
-        final String baseFolderID = urlregex.getMatch(0).replace("#$", "");
+        String baseFolderID = urlregex.getMatch(0).replace("#$", "");
+        if (baseFolderID.contains("#")) {
+            /* E.g. vhs.cbepww#file_id=b1234567.12 */
+            baseFolderID = baseFolderID.substring(0, baseFolderID.lastIndexOf("#"));
+        }
         String internalPath = urlregex.getMatch(1);
         if (internalPath == null) {
             internalPath = "/";
         }
         HidriveCom.prepBRAPI(this.br);
         /* Check if this folder is available. */
-        br.getPage("https://my.hidrive.com/api/share/info?id=" + Encoding.urlEncode(baseFolderID));
+        br.getPage(API_BASE + "/share/info?id=" + Encoding.urlEncode(baseFolderID));
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -103,7 +108,7 @@ public class HidriveComCrawler extends PluginForDecrypt {
             return ret;
         }
         final UrlQuery folderOverviewQuery = new UrlQuery();
-        folderOverviewQuery.add("path", internalPath);
+        folderOverviewQuery.add("path", Encoding.isUrlCoded(internalPath) ? internalPath : URLEncode.encodeURIComponent(internalPath));
         folderOverviewQuery.add("fields", Encoding.urlEncode("id,path,readable,writable,members.id,members.parent_id,members.name,members.mtime,members.mime_type,members.path,members.readable,members.writable,members.type,members.image.width,members.image.height,members.image.exif.Orientation,members.size"));
         folderOverviewQuery.add("members", "all");
         folderOverviewQuery.add("limit", Encoding.urlEncode("0,5000"));
