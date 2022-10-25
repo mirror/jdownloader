@@ -150,6 +150,8 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "pornditt.com" });
         /* 2022-10-17 */
         ret.add(new String[] { "donkparty.com" });
+        /* 2022-10-25 */
+        ret.add(new String[] { "myxvids.com" });
         return ret;
     }
 
