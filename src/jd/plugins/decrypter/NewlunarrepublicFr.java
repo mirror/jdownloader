@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -25,23 +24,23 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newlunarrepublic.fr" }, urls = { "http://(www\\.)?newlunarrepublic\\.fr/episodes/.+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newlunarrepublic.fr" }, urls = { "https?://(?:www\\.)?newlunarrepublic\\.fr/(episodes|films)/.+" })
 public class NewlunarrepublicFr extends PluginForDecrypt {
-
     public NewlunarrepublicFr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         final String[] links = br.getRegex("\"([^<>\"]*?\\.(?:webm|mkv|srt))\"").getColumn(0);
@@ -51,25 +50,19 @@ public class NewlunarrepublicFr extends PluginForDecrypt {
         }
         for (String singleLink : links) {
             /* For subtitles */
-            if (!singleLink.startsWith("http")) {
-                singleLink = "http://www.newlunarrepublic.fr" + singleLink;
-            }
-            singleLink = "directhttp://" + singleLink;
-            final DownloadLink dl = createDownloadlink(singleLink);
+            singleLink = br.getURL(singleLink).toString();
+            final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
             /* IMPORTANT: Their .webm urls won't work without correct Referer */
             dl.setProperty("refURL", this.br.getURL());
             /* It makes no sense to leave the direct urls in these case as they won't work in browser without the correct Referer. */
             dl.setContentUrl(parameter);
             decryptedLinks.add(dl);
         }
-
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
     }
-
 }

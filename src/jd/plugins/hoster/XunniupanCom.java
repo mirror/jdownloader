@@ -53,7 +53,7 @@ public class XunniupanCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xunniupan.com", "xun-niu.com" });
+        ret.add(new String[] { "xunniupan.co", "xunniupan.com", "xun-niu.com" });
         return ret;
     }
 
@@ -68,6 +68,11 @@ public class XunniupanCom extends PluginForHost {
 
     public static String[] getAnnotationUrls() {
         return buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
@@ -145,8 +150,8 @@ public class XunniupanCom extends PluginForHost {
         final String fid = getFID(link);
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            final boolean skipWaittime = true;
-            final boolean skipCaptcha = true;
+            final boolean skipWaittime = false;
+            final boolean skipCaptcha = false;
             if (!skipWaittime) {
                 /* 2019-09-12: Defaultvalue = 50 */
                 int wait = 50;
@@ -250,11 +255,13 @@ public class XunniupanCom extends PluginForHost {
         String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
+            boolean valid = false;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
+                    valid = true;
                     return dllink;
                 }
             } catch (final Exception e) {
@@ -263,6 +270,9 @@ public class XunniupanCom extends PluginForHost {
             } finally {
                 if (con != null) {
                     con.disconnect();
+                }
+                if (!valid) {
+                    link.removeProperty(property);
                 }
             }
         }
