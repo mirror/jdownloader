@@ -17,7 +17,11 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Locale;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,11 +33,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangakakalot.com" }, urls = { "https?://(www\\.)?(manganelo|readmanganato|manganato|mangakakalot|chapmanganato)\\.com/(?:manga-|chapter)[^\\s$]+" })
 public class Mangakakalot extends antiDDoSForDecrypt {
@@ -55,14 +54,14 @@ public class Mangakakalot extends antiDDoSForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
         if (param.getCryptedUrl().matches(TYPE_MANGA)) {
             String[] chapters = br.getRegex("<a[^>]+class\\s*=\\s*\"chapter-name[^\"]*\"[^>]+href\\s*=\\s*\"([^\"]+)\"").getColumn(0);
             if (chapters != null && chapters.length > 0) {
                 for (String chapter : chapters) {
-                    final DownloadLink dd = createDownloadlink(Encoding.htmlDecode(chapter));
-                    decryptedLinks.add(dd);
+                    final DownloadLink dd = createDownloadlink(Encoding.htmlDecode(chapter).trim());
+                    ret.add(dd);
                 }
                 String fpName = br.getRegex("<title>\\s*([^<]+)\\s+Manga\\s+Online").getMatch(0);
                 if (StringUtils.isNotEmpty(fpName)) {
@@ -70,7 +69,7 @@ public class Mangakakalot extends antiDDoSForDecrypt {
                     fp.setName(Encoding.htmlDecode(fpName.trim()));
                 }
             }
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         } else if (param.getCryptedUrl().matches(TYPE_MANGA_CHAPTER)) {
             final String chapterNumber = new Regex(param.getCryptedUrl(), TYPE_MANGA_CHAPTER).getMatch(1);
             //
@@ -128,16 +127,17 @@ public class Mangakakalot extends antiDDoSForDecrypt {
                     realURL = url;
                 }
                 if (!dups.add(realURL)) {
+                    /* Skip links that we've already added. */
                     continue;
                 }
                 final DownloadLink link = createDownloadlink(realURL);
                 final String ext = Plugin.getFileNameExtensionFromURL(realURL);
                 if (chapterTitle != null && ext != null) {
-                    link.setFinalFileName(mangaTitle + "_" + chapterTitle + "-Page_" + String.format(Locale.US, "%0" + padLength + "d", pageNumber) + ext);
+                    link.setFinalFileName(mangaTitle + "_" + chapterTitle + "-Page_" + StringUtils.formatByPadLength(padLength, pageNumber) + ext);
                 }
                 link.setAvailable(true);
                 link._setFilePackage(fp);
-                decryptedLinks.add(link);
+                ret.add(link);
                 distribute(link);
                 pageNumber++;
             }
@@ -145,6 +145,6 @@ public class Mangakakalot extends antiDDoSForDecrypt {
             /* Unsupported URL -> Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unsupported:" + param.getCryptedUrl());
         }
-        return decryptedLinks;
+        return ret;
     }
 }
