@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -32,9 +31,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animestash.info" }, urls = { "http://(www\\.)?animestash\\.info/downloads/go/\\d+" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animestash.info" }, urls = { "https?://(?:www\\.)?animestash\\.info/downloads/go/\\d+" })
 public class NmeStashInfo extends PluginForDecrypt {
-
     /* must be static so all plugins share same lock */
     private static Object LOCK = new Object();
 
@@ -61,11 +59,12 @@ public class NmeStashInfo extends PluginForDecrypt {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             String finallink = br.getRedirectLocation();
-            if (finallink == null) return null;
+            if (finallink == null) {
+                return null;
+            }
             decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
         }
-
     }
 
     private boolean getUserLogin() throws IOException, DecrypterException {
@@ -91,9 +90,13 @@ public class NmeStashInfo extends PluginForDecrypt {
                     this.getPluginConfig().setProperty("user", Property.NULL);
                     this.getPluginConfig().setProperty("pass", Property.NULL);
                     username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
-                    if (username == null) return false;
+                    if (username == null) {
+                        return false;
+                    }
                     password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
-                    if (password == null) return false;
+                    if (password == null) {
+                        return false;
+                    }
                     br.postPage(POSTPAGE, "user=" + Encoding.urlEncode(username) + "&passwrd=" + Encoding.urlEncode(password) + "&cookielength=2&hash_passwrd=");
                 } else {
                     this.getPluginConfig().setProperty("user", username);
@@ -101,7 +104,6 @@ public class NmeStashInfo extends PluginForDecrypt {
                     this.getPluginConfig().save();
                     return true;
                 }
-
             }
         }
         return false;
@@ -111,5 +113,4 @@ public class NmeStashInfo extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
