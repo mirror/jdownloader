@@ -51,7 +51,7 @@ public class PasfoxCom extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* 2022-10-25: This plugin is broken */
+            /* 2022-10-25: This plugin is broken see ticket https://svn.jdownloader.org/issues/90267 */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         Form captchaForm = br.getFormbyActionRegex(".*validateCaptcha.*");
