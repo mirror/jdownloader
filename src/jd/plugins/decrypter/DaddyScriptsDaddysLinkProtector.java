@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -35,15 +36,45 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect.dmd247.com", "isra.click" }, urls = { "https?://(?:www\\.)?protect\\.dmd247\\.com/[^<>\"/]+", "https?://(?:www\\.)?isra\\.click/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
     public DaddyScriptsDaddysLinkProtector(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "protect.dmd247.com" });
+        ret.add(new String[] { "isra.click" });
+        ret.add(new String[] { "lnk.snahp.eu" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^<>\"/]+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     /* Tags: Daddy's Link Protector */
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"error\"")) {
@@ -120,14 +151,14 @@ public class DaddyScriptsDaddysLinkProtector extends antiDDoSForDecrypt {
             if (singleLink.contains(this.getHost())) {
                 continue;
             }
-            decryptedLinks.add(createDownloadlink(singleLink));
+            ret.add(createDownloadlink(singleLink));
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     @Override
