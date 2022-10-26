@@ -26,39 +26,40 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/(?:videos|music)/[a-z0-9\\-]+-(\\d+)/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/(?:videos|music|sound-effects)/[a-z0-9\\-]+-(\\d+)/?" })
 public class PixabayComCrawler extends PluginForDecrypt {
     public PixabayComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_VIDEO = "https?://(?:www\\.)?pixabay\\.com/videos/[a-z0-9\\-]+-(\\d+)/?";
-    private static final String TYPE_MUSIC = "https?://(?:www\\.)?pixabay\\.com/music/[a-z0-9\\-]+-(\\d+)/?";
+    private final String TYPE_VIDEO         = "https?://(?:www\\.)?pixabay\\.com/videos/[a-z0-9\\-]+-(\\d+)/?";
+    private final String TYPE_MUSIC         = "https?://(?:www\\.)?pixabay\\.com/music/[a-z0-9\\-]+-(\\d+)/?";
+    private final String TYPE_SOUND_EFFECTS = "https?://(?:www\\.)?pixabay\\.com/sound-effects/[a-z0-9\\-]+-(\\d+)/?";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (parameter.matches(TYPE_VIDEO)) {
-            final String finallink = this.br.getRegex("<iframe[^>]*src=\"((?:https?:)?//player\\.vimeo\\.com/video/[^\"]+)\"").getMatch(0);
+            final String finallink = this.br.getRegex("\"contentUrl\"\\s*:\\s*\"([^\"]+)").getMatch(0);
             if (finallink == null) {
                 logger.info("Failed to find any downloadable content");
             } else {
-                decryptedLinks.add(createDownloadlink(finallink));
+                ret.add(createDownloadlink(br.getURL(finallink).toString()));
             }
         } else {
+            /* Music, sound effects */
             final String finallink = this.br.getRegex("<a href=\"(https?://[^\"]+)\"[^>]*class=\"audio-download download-button\"").getMatch(0);
             if (finallink == null) {
-                logger.info("Failed to find any downloadable content");
-            } else {
-                final DownloadLink music = createDownloadlink(finallink);
-                music.setAvailable(true);
-                decryptedLinks.add(music);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final DownloadLink music = createDownloadlink(finallink);
+            music.setAvailable(true);
+            ret.add(music);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
