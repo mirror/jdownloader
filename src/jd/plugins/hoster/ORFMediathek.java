@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -31,12 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "https?://tvthek\\.orf\\.atdecrypted\\d+" })
 public class ORFMediathek extends PluginForHost {
@@ -183,13 +183,18 @@ public class ORFMediathek extends PluginForHost {
             if (best == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (StringUtils.containsIgnoreCase(best.getDownloadurl(), "geoprotection_")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Geo-blocked");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
             }
             dl = new HLSDownloader(link, br, best.getDownloadurl());
             dl.startDownload();
         } else if ("hds".equals(link.getStringProperty("delivery"))) {
             br.getPage(dllink);
             br.followRedirect(true);
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+            } else if (StringUtils.containsIgnoreCase(br.getURL(), "geoprotection_")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+            }
             final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
             if (all == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -204,7 +209,7 @@ public class ORFMediathek extends PluginForHost {
                 protected URLConnectionAdapter onNextFragment(URLConnectionAdapter connection, int fragmentIndex) throws IOException, PluginException {
                     if (fragmentIndex == 1 && StringUtils.containsIgnoreCase(connection.getRequest().getLocation(), "geoprotection_")) {
                         connection.disconnect();
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Geo-blocked");
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
                     }
                     return super.onNextFragment(connection, fragmentIndex);
                 }

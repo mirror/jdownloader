@@ -359,7 +359,7 @@ public class InstaGramCom extends PluginForHost {
          * higher than before then but it can also get smaller - which is okay as it is the original content.
          */
         /* 2020-10-07: Doesn't work anymore, see new method (old iPhone API endpoint) */
-        // String drlink = dllink.replace(resolution_inside_url, "/");
+        // String dllink = dllink.replace(resolution_inside_url, "/");
         /* Important: Do not jump into this handling when downloading videos! */
         /*
          * Source of this idea:
