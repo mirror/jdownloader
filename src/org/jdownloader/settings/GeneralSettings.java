@@ -354,6 +354,7 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isDownloadSpeedLimitRememberedEnabled();
 
     @AboutConfig
+    @DescriptionForConfigEntry("Enables permanent RegEx search in bottom search bar in LinkGrabber and Downloadlist.")
     @DefaultBooleanValue(false)
     boolean isFilterRegex();
 
