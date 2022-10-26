@@ -212,7 +212,7 @@ public class PornHubCom extends PluginForHost {
                 }
             };
             HTTPConnectionImpl.addSSLSocketStreamOptionsModifier((SSLSocketStreamOptionsModifier) modifier);
-        } catch (Throwable e) {
+        } catch (final Throwable ignore) {
         }
     }
 

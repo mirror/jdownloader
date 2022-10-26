@@ -40,12 +40,11 @@ public class OpenloadTVStream extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        String page = br.toString();
         String fpName = br.getRegex("<title>\\s*([^<]+)\\s+\\|\\s+(?:Just Watch|Clip Watching)").getMatch(0);
         String itemName = new Regex(parameter, "/(?:tvshows|movies|episodes)/([^/]+)").getMatch(0);
         // Handle TV show overview pages

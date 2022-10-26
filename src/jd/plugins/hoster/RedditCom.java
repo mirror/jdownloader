@@ -32,13 +32,17 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.config.RedditConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -129,7 +133,7 @@ public class RedditCom extends PluginForHost {
 
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
-        ret.add("https?://v\\.redd\\.it/([a-z0-9]+)|https?://i\\.redd\\.it/([a-z0-9]+)\\.[A-Za-z]{2,5}|reddidtext://[a-z0-9]+");
+        ret.add("https?://v\\.redd\\.it/[a-z0-9]+|https?://i\\.redd\\.it/[a-z0-9]+\\.[A-Za-z]{2,5}|reddidtext://[a-z0-9]+");
         return ret.toArray(new String[0]);
     }
 
@@ -149,24 +153,50 @@ public class RedditCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        // return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        String fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        if (fid == null) {
-            fid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
         }
-        return fid;
+        if (link.getPluginPatternMatcher().matches(PATTERN_IMAGE)) {
+            return new Regex(link.getPluginPatternMatcher(), PATTERN_IMAGE).getMatch(0);
+        } else if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO)) {
+            return new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO).getMatch(0);
+        } else if (link.getPluginPatternMatcher().matches(PATTERN_TEXT)) {
+            return new Regex(link.getPluginPatternMatcher(), PATTERN_TEXT).getMatch(0);
+        } else {
+            /* Unsupported pattern -> This should never happen! */
+            return null;
+        }
     }
 
-    private static final String TYPE_TEXT = "reddidtext://([a-z0-9]+)";
+    @Override
+    public void onPluginAssigned(final DownloadLink link) {
+        if (link != null && link.getPluginPatternMatcher() != null) {
+            if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO)) {
+                if (PluginJsonConfig.get(RedditConfig.class).isVideoUseDirecturlAsContentURL()) {
+                    link.setContentUrl(getVideoHLSUrls(this.getFID(link)));
+                } else {
+                    link.setContentUrl(link.getPluginPatternMatcher());
+                }
+            }
+        }
+    }
+
+    private final String PATTERN_IMAGE = "https?://i\\.redd\\.it/([a-z0-9]+)\\.[A-Za-z]{2,5}";
+    private final String PATTERN_VIDEO = "https?://v\\.redd\\.it/([a-z0-9]+)";
+    private final String PATTERN_TEXT  = "reddidtext://([a-z0-9]+)";
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         br.setAllowedResponseCodes(new int[] { 400 });
         if (link.hasProperty(PROPERTY_CRAWLER_FILENAME)) {
             link.setFinalFileName(link.getStringProperty(PROPERTY_CRAWLER_FILENAME));
         }
-        if (link.getPluginPatternMatcher().matches(TYPE_TEXT)) {
+        if (link.getPluginPatternMatcher().matches(PATTERN_TEXT)) {
             if (!link.hasProperty(PROPERTY_POST_TEXT)) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -178,9 +208,27 @@ public class RedditCom extends PluginForHost {
                 /* Fallback: Use this if no name was set in crawler. */
                 link.setFinalFileName(this.getFID(link) + ".mp4");
             }
-            br.getPage(br.getPage("https://v.redd.it/" + this.getFID(link) + "/HLSPlaylist.m3u8"));
+            br.getPage(getVideoHLSUrls(this.getFID(link)));
             if (this.br.getHttpConnection().getResponseCode() == 400 || this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!LinkCrawlerDeepInspector.looksLikeMpegURL(br.getHttpConnection())) {
+                /* Obligatory seconds check. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!isDownload) {
+                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                final List<M3U8Playlist> list = M3U8Playlist.loadM3U8(hlsbest.getDownloadurl(), br);
+                final HLSDownloader downloader = new HLSDownloader(link, br, br.getURL(), list);
+                final StreamInfo streamInfo = downloader.getProbe();
+                if (streamInfo == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    final long estimatedFilesize = downloader.getEstimatedSize();
+                    if (estimatedFilesize > 0) {
+                        link.setDownloadSize(estimatedFilesize);
+                    }
+                }
             }
         } else {
             /* Image */
@@ -212,14 +260,18 @@ public class RedditCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public static final String getVideoHLSUrls(final String videoID) {
+        return "https://v.redd.it/" + videoID + "/HLSPlaylist.m3u8";
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         handleDownload(link, RESUME, MAXCHUNKS, "free_directlink");
     }
 
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (link.getPluginPatternMatcher().matches(TYPE_TEXT)) {
+        if (link.getPluginPatternMatcher().matches(PATTERN_TEXT)) {
             /* Write text to file */
             final File dest = new File(link.getFileOutput());
             IO.writeToFile(dest, link.getStringProperty(PROPERTY_POST_TEXT).getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
