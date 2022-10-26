@@ -18,10 +18,12 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import org.appwork.utils.DebugMode;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -50,30 +52,30 @@ public class PasfoxCom extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* 2022-10-25: This plugin is broken see ticket https://svn.jdownloader.org/issues/90267 */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         Form captchaForm = br.getFormbyActionRegex(".*validateCaptcha.*");
         if (captchaForm == null) {
             captchaForm = br.getFormbyProperty("id", "form_captcha");
         }
-        if (captchaForm == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (captchaForm != null) {
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* 2022-10-25: This plugin is partly broken see ticket https://svn.jdownloader.org/issues/90267 */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String csrftoken = br.getRegex("name=\"csrf-token\" content=\"([^\"]+)\"").getMatch(0);
+            if (csrftoken == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            br.submitForm(captchaForm);
+            // br.getPage(param.getCryptedUrl());
+            // br.getHeaders().put("Content-Type", "application/json");
+            // br.getHeaders().put("x-csrf-token", csrftoken);
+            // br.getHeaders().put("x-livewire", "true");
+            // br.getHeaders().put("Origin", "https://" + this.getHost());
+            // br.postPageRaw("https://pasfox.com/livewire/message/show-paste", "TODO");
         }
-        final String csrftoken = br.getRegex("name=\"csrf-token\" content=\"([^\"]+)\"").getMatch(0);
-        if (csrftoken == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getHeaders().put("Content-Type", "application/json");
-        br.getHeaders().put("x-csrf-token", csrftoken);
-        br.getHeaders().put("x-livewire", "true");
-        br.getHeaders().put("Origin", "https://" + this.getHost());
-        br.postPageRaw("https://pasfox.com/livewire/message/show-paste", "TODO");
-        // final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-        // captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-        br.submitForm(captchaForm);
-        String html = br.getRegex("<div class=\"card__body flex\">(.*?)<div class=\"card__footer\">").getMatch(0);
+        String html = br.getRegex("id=\"myTabContent\"(.*?)</div>\\s*</div>").getMatch(0);
         if (html == null) {
             /* Fallback */
             logger.warning("Fallback required! Possible crawler failure!");
