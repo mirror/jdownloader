@@ -3149,8 +3149,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
              * It's important that we check the contentURL too as we do alter pluginPatternMatcher in { @link
              * #correctDownloadLink(DownloadLink) }
              */
-            if (link.getContentUrl() != null) {
-                result = new Regex(new URL(link.getContentUrl()).getPath(), url_name_RegEx).getMatch(0);
+            final String contentURL = getPluginContentURL(link);
+            if (contentURL != null) {
+                result = new Regex(new URL(contentURL).getPath(), url_name_RegEx).getMatch(0);
             }
             if (result == null) {
                 result = new Regex(new URL(link.getPluginPatternMatcher()).getPath(), url_name_RegEx).getMatch(0);
