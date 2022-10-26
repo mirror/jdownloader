@@ -356,7 +356,8 @@ public class PixaBayCom extends PluginForHost {
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
+        /* Captcha is typically required when official download is used. */
         return true;
     }
 
