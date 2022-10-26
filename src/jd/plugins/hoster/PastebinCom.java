@@ -15,9 +15,20 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.decrypter.AbstractPastebinCrawler;
 import jd.plugins.decrypter.PastebinComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -43,5 +54,46 @@ public class PastebinCom extends AbstractPastebinHoster {
 
     public static String[] getAnnotationUrls() {
         return PastebinComCrawler.getAnnotationUrls();
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        this.setBrowserExclusive();
+        final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(this.getHost());
+        /* If the content is offline, the following call will throw an appropriate exception. */
+        ((AbstractPastebinCrawler) plg).preProcessAndGetPlaintextDownloadLink(new CryptedLink(link.getPluginPatternMatcher(), link));
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openHeadConnection(getDirectDownloadURL(link));
+            link.setFinalFileName(Plugin.getFileNameFromHeader(con));
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.getDirectDownloadURL(link), false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    private String getDirectDownloadURL(final DownloadLink link) {
+        return "https://" + this.getHost() + "/dl/" + this.getFID(link);
     }
 }
