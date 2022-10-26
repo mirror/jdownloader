@@ -521,7 +521,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @return
      */
     public String getCustomUrl() {
-        final PluginForHost plugin = getDefaultPlugin();
+        PluginForHost plugin = getLivePlugin();
+        if (plugin == null) {
+            plugin = getDefaultPlugin();
+        }
         if (plugin != null) {
             return plugin.getPluginCustomURL(this);
         } else {
@@ -1032,7 +1035,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     * 
+     *
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
