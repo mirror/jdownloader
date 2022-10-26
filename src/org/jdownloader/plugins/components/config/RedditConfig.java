@@ -23,7 +23,7 @@ public interface RedditConfig extends PluginConfigInterface {
     final String                                 text_CrawlUrlsInsidePostText            = "Crawl URLs inside post-text?";
     final String                                 text_ProfileCrawlerMaxPages             = "[Unfinished feature] User crawler: Crawl mas X last pages (-1 = unlimited, 0 = disable user crawler)";
     final String                                 text_SubredditCrawlerMaxPages           = "[Unfinished feature] Subreddit crawler: Crawl mas X last pages (-1 = unlimited, 0 = disable subreddit crawler)";
-    final String                                 text_VideoUseDirecturlAsContentURL      = "[Restart required] Videos: Use direct URL as content URL (URL you get when doing CTRL + C)?";
+    final String                                 text_VideoUseDirecturlAsContentURL      = "Videos: Use direct URL as content URL (URL you get when doing CTRL + C)?";
 
     public static class TRANSLATION {
         public String getPreferredCommentsPackagenameScheme_label() {
