@@ -5,10 +5,7 @@ AVI:::52494646.*:::AVI Video Container:::((.*\.divx)|(.*\.avi)|(.*\.xvid)|(.*\.m
 BZ2:::425a68363141.*::::::.*\.bz2
 DOC:::d0cf11e0a1b1.*:::Document Format:::.*\.doc
 GZ:::1f8b0800.*::::::.*\.gz
-JPG:::ffd8ffe0[a-f0-9]{4}4a.*:::JPG Image:::((.*\.jpg)|(.*\.jpeg))
-JPG:::ffd8ffe1[a-f0-9]{4}45.*:::JPG Image:::((.*\.jpg)|(.*\.jpeg))
-JPG:::ffd8ffee.*:::JPG Image:::((.*\.jpg)|(.*\.jpeg))
-JPG:::ffd8ffdb.*:::JPG Image:::((.*\.jpg)|(.*\.jpeg))
+JPG:::ffd8ff.*:::JPG Image:::((.*\.jpg)|(.*\.jpeg))
 M4A:::000000206674.*::::::((.*\.m4a)|(.*\.mp4)|(.*\.m4v))
 MDF:::00ffffffffff.*::::::.*\.mdf
 MKA:::1a45.*:::Matroska Audio file:::.*\.mka
@@ -39,7 +36,7 @@ CLASS:::cafebabe.*:::Java binary:::.+\.class
 BMP:::424d1.*:::Bitmap:::.+\.bmp
 CUE:::46494c452022.*:::Queue file:::.+\.cue
 BIN:::63070.*:::Binary image:::.+\.bin
-DLL:::4d5a53010100.*:::Library:::.+\.dll
+DLL:::4d5a53010100.*:::Library:::.+\.dllsch
 CAB:::495363280400.*::::::.+\.cab
 PNG:::89504e470d0a.*:::PNG Imagefile:::.+\.png
 ICO:::000001000a00.*:::Icon Imagefile:::.+\.ico

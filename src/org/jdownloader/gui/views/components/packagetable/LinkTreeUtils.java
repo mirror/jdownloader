@@ -184,8 +184,9 @@ public class LinkTreeUtils {
         case CONTENT:
             switch (link.getUrlProtection()) {
             case UNSET:
-                if (link.getContentUrl() != null) {
-                    return link.getContentUrl();
+                final String contentURL = link.getContentUrl();
+                if (contentURL != null) {
+                    return contentURL;
                 } else {
                     return link.getPluginPatternMatcher();
                 }
