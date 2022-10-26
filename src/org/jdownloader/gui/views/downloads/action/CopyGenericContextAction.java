@@ -214,10 +214,12 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         case ORIGIN:
             return link.getOriginUrl();
         case CONTENT:
-            if (link.getContentUrl() != null) {
-                return link.getContentUrl();
+            final String contentURL = link.getContentUrl();
+            if (contentURL != null) {
+                return contentURL;
+            } else {
+                return link.getPluginPatternMatcher();
             }
-            return link.getPluginPatternMatcher();
         default:
             return null;
         }
