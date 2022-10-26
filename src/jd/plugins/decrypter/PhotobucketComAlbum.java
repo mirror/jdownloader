@@ -71,13 +71,13 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("^https?://(?:(next|app)\\.)?" + buildHostsPatternPart(domains) + "/u/[^/]+(?:/a/[a-f0-9\\-]+)?$");
+            ret.add("^https?://(?:(next|app)\\.)?" + buildHostsPatternPart(domains) + "/(u/[^/]+(?:/a/[a-f0-9\\-]+)?$|user/[^/]+)");
         }
         return ret.toArray(new String[0]);
     }
 
     private final String       TYPE_ALBUM = "https?://[^/]+/u/([^/]+)/a/([a-f0-9\\-]+)(/p/([a-f0-9\\-]+))?";
-    private final String       TYPE_USER  = "https?://[^/]+/u/([^/]+)$";
+    private final String       TYPE_USER  = "https?://[^/]+/(?:u|user)/([^/]+)$";
     public static final String API_BASE   = "https://app.photobucket.com/api/graphql/v2";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -104,7 +104,7 @@ public class PhotobucketComAlbum extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        this.handleErrors(entries);
+        handleErrors(entries);
         final List<Map<String, Object>> albums = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/getAllPublicAlbums");
         if (albums == null || albums.isEmpty()) {
             /* User doesn't have any (public) albums */
