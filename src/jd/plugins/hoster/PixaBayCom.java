@@ -17,6 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -35,11 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/(?:en/)?(?:(?:photos|illustrations|vectors|images/download)/)?([a-z0-9\\-]+)-(\\d+)/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/(?:en/)?(?:(?:photos|gifs|illustrations|vectors|images/download)/)?([a-z0-9\\-]+)-(\\d+)/?" })
 public class PixaBayCom extends PluginForHost {
     public PixaBayCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,10 +65,6 @@ public class PixaBayCom extends PluginForHost {
             }
         }
         link.setPluginPatternMatcher(url);
-    }
-
-    @Override
-    public void setLinkID(DownloadLink link, String linkID) {
     }
 
     @Override
@@ -196,6 +192,7 @@ public class PixaBayCom extends PluginForHost {
                     throw new IOException();
                 }
             } catch (final Exception e) {
+                link.removeProperty(property);
                 logger.log(e);
                 return null;
             } finally {
@@ -295,9 +292,7 @@ public class PixaBayCom extends PluginForHost {
         login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        /* Free accounts do not have captchas. */
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
@@ -313,7 +308,7 @@ public class PixaBayCom extends PluginForHost {
             if (this.quality_download_id == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "https://pixabay.com/images/download/" + this.quality_download_id + "?attachment";
+            dllink = "https://" + this.getHost() + "/images/download/" + this.quality_download_id + "?attachment";
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 dl.startDownload();
@@ -358,6 +353,11 @@ public class PixaBayCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         handleDownload(link, account);
+    }
+
+    @Override
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
     }
 
     @Override
