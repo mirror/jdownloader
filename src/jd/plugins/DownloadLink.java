@@ -30,6 +30,19 @@ import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
+import jd.config.Property;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.plugins.DownloadLinkDatabindingInterface.Key;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -60,19 +73,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
-import jd.config.Property;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.plugins.DownloadLinkDatabindingInterface.Key;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.HashInfo;
-import jd.plugins.download.HashInfo.TYPE;
-
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
  * dargestellt
@@ -85,7 +85,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         FALSE(_GUI.T.linkgrabber_onlinestatus_offline()),
         UNCHECKABLE(_GUI.T.linkgrabber_onlinestatus_uncheckable()),
         TRUE(_GUI.T.linkgrabber_onlinestatus_online());
-
         private final String exp;
 
         private AvailableStatus(String exp) {
@@ -126,9 +125,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String               PROPERTY_CHUNKS                     = "CHUNKS";
     private static final String               URL_ORIGIN                          = "URL_ORIGIN";
     private static final String               URL_REFERRER                        = "URL_REFERRER";
-    private static final String               URL_CONTAINER                       = "URL_CONTAINER";
-    private static final String               URL_CONTENT                         = "URL_CONTENT";
-    private static final String               URL_CUSTOM                          = "URL_CUSTOM";
+    public static final String                URL_CONTAINER                       = "URL_CONTAINER";
+    public static final String                URL_CONTENT                         = "URL_CONTENT";
+    public static final String                URL_CUSTOM                          = "URL_CUSTOM";
     private static final String               VARIANT_SUPPORT                     = "VARIANT_SUPPORT";
     public static final String                PROPERTY_JOB_ID                     = "JOB_ID";
     private volatile AvailableStatus          availableStatus                     = AvailableStatus.UNCHECKED;
@@ -482,7 +481,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * variants. http://svn.jdownloader.org/issues/51004
      */
     public String getContentUrl() {
-        return getStringProperty(URL_CONTENT);
+        final PluginForHost plugin = getDefaultPlugin();
+        if (plugin != null) {
+            return plugin.getPluginContentURL(this);
+        } else {
+            return getStringProperty(URL_CONTENT);
+        }
     }
 
     /**
@@ -491,15 +495,21 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @since JD2
      */
     public void setContentUrl(final String url) {
-        if (!StringUtils.equals(url, getContentUrl())) {
+        final PluginForHost plugin = getDefaultPlugin();
+        final boolean changedFlag;
+        if (plugin != null) {
+            changedFlag = plugin.setPluginContentURL(url, this);
+        } else if (!StringUtils.equals(url, getContentUrl())) {
             if (StringUtils.isEmpty(url)) {
-                removeProperty(URL_CONTENT);
+                changedFlag = removeProperty(URL_CONTENT);
             } else {
-                setProperty(URL_CONTENT, url);
+                changedFlag = setProperty(URL_CONTENT, url);
             }
-            if (hasNotificationListener()) {
-                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CONTENT, url));
-            }
+        } else {
+            return;
+        }
+        if (changedFlag && hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CONTENT, url));
         }
     }
 
@@ -511,7 +521,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @return
      */
     public String getCustomUrl() {
-        return getStringProperty(URL_CUSTOM);
+        final PluginForHost plugin = getDefaultPlugin();
+        if (plugin != null) {
+            return plugin.getPluginCustomURL(this);
+        } else {
+            return getStringProperty(URL_CUSTOM);
+        }
     }
 
     /**
@@ -522,15 +537,21 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @param url
      */
     public void setCustomURL(final String url) {
-        if (!StringUtils.equals(url, getContainerUrl())) {
+        final PluginForHost plugin = getDefaultPlugin();
+        final boolean changedFlag;
+        if (plugin != null) {
+            changedFlag = plugin.setPluginCustomURL(url, this);
+        } else if (!StringUtils.equals(url, getCustomUrl())) {
             if (StringUtils.isEmpty(url)) {
-                removeProperty(URL_CUSTOM);
+                changedFlag = removeProperty(URL_CUSTOM);
             } else {
-                setProperty(URL_CUSTOM, url);
+                changedFlag = setProperty(URL_CUSTOM, url);
             }
-            if (hasNotificationListener()) {
-                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CUSTOM, url));
-            }
+        } else {
+            return;
+        }
+        if (changedFlag && hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CUSTOM, url));
         }
     }
 
@@ -540,7 +561,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * http://svn.jdownloader.org/issues/51004
      */
     public String getContainerUrl() {
-        return getStringProperty(URL_CONTAINER);
+        final PluginForHost plugin = getDefaultPlugin();
+        if (plugin != null) {
+            return plugin.getPluginContainerURL(this);
+        } else {
+            return getStringProperty(URL_CONTAINER);
+        }
     }
 
     /**
@@ -550,15 +576,21 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * @param url
      */
     public void setContainerUrl(final String url) {
-        if (!StringUtils.equals(url, getContainerUrl())) {
+        final PluginForHost plugin = getDefaultPlugin();
+        final boolean changedFlag;
+        if (plugin != null) {
+            changedFlag = plugin.setPluginContainerURL(url, this);
+        } else if (!StringUtils.equals(url, getContainerUrl())) {
             if (StringUtils.isEmpty(url)) {
-                removeProperty(URL_CONTAINER);
+                changedFlag = removeProperty(URL_CONTAINER);
             } else {
-                setProperty(URL_CONTAINER, url);
+                changedFlag = setProperty(URL_CONTAINER, url);
             }
-            if (hasNotificationListener()) {
-                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CONTAINER, url));
-            }
+        } else {
+            return;
+        }
+        if (changedFlag && hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.URL_CONTAINER, url));
         }
     }
 
@@ -1000,7 +1032,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     *
+     * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -1626,9 +1658,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Returns whether or not a download password is required to download this item. 7 </br>
-     * In most of all cases, this cannot be known until downloads are started but in some instances this can be set e.g. during folder
-     * crawling already.
+     * Returns whether or not a download password is required to download this item. 7 </br> In most of all cases, this cannot be known
+     * until downloads are started but in some instances this can be set e.g. during folder crawling already.
      */
     public boolean isPasswordProtected() {
         return this.getBooleanProperty(PROPERTY_PASSWORD_PROTECTED, false);
