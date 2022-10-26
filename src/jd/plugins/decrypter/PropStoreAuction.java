@@ -28,6 +28,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "propstoreauction.com" }, urls = { "https?://(?:www\\\\.)?propstoreauction\\.com/lot-details/index/catalog/.+" })
 public class PropStoreAuction extends antiDDoSForDecrypt {
@@ -35,21 +37,23 @@ public class PropStoreAuction extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> links = new ArrayList<String>();
-        final String parameter = param.toString();
         getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.br.setFollowRedirects(true);
-        String fpName = br.getRegex("<title[^>]*>\\s*([^<]+)\\s*").getMatch(0);
+        String title = br.getRegex("<title[^>]*>\\s*([^<]+)\\s*").getMatch(0);
         Collections.addAll(links, br.getRegex("<div[^>]*class\\s*=\\s*\"carousel-item modal-trigger\"[^>]*style\\s*=\\s*\"background-image:url\\('\\s*([^']+)\\s*").getColumn(0));
         for (String link : links) {
             link = br.getURL(Encoding.htmlDecode(link)).toString().replaceAll("(\\-\\d+)(\\.\\w+)$", "$2");
             decryptedLinks.add(createDownloadlink(link));
         }
-        if (StringUtils.isNotEmpty(fpName)) {
+        if (StringUtils.isNotEmpty(title)) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName));
+            fp.setName(Encoding.htmlDecode(title).trim());
             fp.addLinks(decryptedLinks);
             fp.addLinks(decryptedLinks);
         }

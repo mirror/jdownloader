@@ -46,7 +46,7 @@ public class SubSceneCom extends antiDDoSForHost {
         br.setFollowRedirects(true);
         try {
             getPage(link.getPluginPatternMatcher());
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             logger.log(e);
             if (Thread.currentThread() instanceof SingleDownloadController && e.getLinkStatus() == LinkStatus.ERROR_CAPTCHA) {
                 return AvailableStatus.UNCHECKABLE;
