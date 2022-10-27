@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
-import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -47,16 +46,6 @@ public class PorngoCom extends KernelVideoSharingComV2 {
 
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
-    }
-
-    @Override
-    protected String getFileTitle(final DownloadLink link) {
-        String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-        if (title == null) {
-            /* Fallback */
-            title = super.getFileTitle(link);
-        }
-        return title;
     }
 
     @Override

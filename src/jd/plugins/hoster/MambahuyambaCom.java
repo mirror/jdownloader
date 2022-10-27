@@ -20,12 +20,13 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.plugins.DownloadLink;
+import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class FapalityCom extends KernelVideoSharingComV2 {
-    public FapalityCom(final PluginWrapper wrapper) {
+public class MambahuyambaCom extends KernelVideoSharingComV2 {
+    public MambahuyambaCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -33,7 +34,7 @@ public class FapalityCom extends KernelVideoSharingComV2 {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "fapality.com" });
+        ret.add(new String[] { "most.mambahuyamba.com", "huyamba.info", "pornogovno.me" });
         return ret;
     }
 
@@ -47,19 +48,32 @@ public class FapalityCom extends KernelVideoSharingComV2 {
     }
 
     public static String[] getAnnotationUrls() {
-        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://" + buildHostsPatternPart(domains) + "/(video/\\d+/|embed/\\d+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceAll("/embed/", "/"));
+    protected String regexNormalTitleWebsite(final Browser br) {
+        String title = br.getRegex("class=\"videotitle\"><h1>([^<>\"]+)<").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)</h1>").getMatch(0);
+        }
+        if (title != null) {
+            return title;
+        } else {
+            /* Fallback to upper handling */
+            return super.regexNormalTitleWebsite(br);
+        }
     }
 
     @Override
     protected String regexEmbedTitleWebsite(final Browser br) {
-        String title = br.getRegex("class=\"simple-title\" itemprop=\"name\">([^<>\"]+)<").getMatch(0);
+        String title = HTMLSearch.searchMetaTag(br, "og:title");
         if (title == null) {
-            title = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+            title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
         }
         if (title != null) {
             return title;
@@ -70,7 +84,23 @@ public class FapalityCom extends KernelVideoSharingComV2 {
     }
 
     @Override
+    protected boolean hasFUIDInsideURLAtTheEnd(final String url) {
+        return true;
+    }
+
+    @Override
+    protected String getFUIDFromURL(final String url) {
+        final String fuid = new Regex(url, "https?://[^/]+/video/(\\d+)/?$").getMatch(0);
+        if (fuid != null) {
+            return fuid;
+        } else {
+            /* Fallback to upper handling */
+            return super.getFUIDFromURL(url);
+        }
+    }
+
+    @Override
     String generateContentURL(final String host, final String fuid, final String urlSlug) {
-        return generateContentURLDefaultVideosPatternOnlyNumbers(host, fuid);
+        return "https://" + this.getHost() + "/video/" + fuid + "/";
     }
 }
