@@ -60,6 +60,7 @@ import jd.parser.html.HTMLSearch;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -466,7 +467,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         dllink = null;
         prepBR(this.br);
         if (link.getReferrerUrl() != null) {
-            /* E.g. embedded videos from camwhores.tv by camseek.com. */
+            /* Rarely needed e.g. for embedded videos from camwhores.tv by camseek.com. */
             br.getHeaders().put("Referer", link.getReferrerUrl());
         }
         final String weakFilename = getWeakFilename(link);
@@ -636,6 +637,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
             }
             if (!StringUtils.isEmpty(this.dllink) && !this.isHLS(this.dllink) && !isDownload && !enableFastLinkcheck()) {
+                /* 2022-10-27: TODO: Set estimated filesize for HLS URLs */
                 URLConnectionAdapter con = null;
                 try {
                     /* if you don't do this then referrer is fked for the download! -raztoki */
@@ -844,6 +846,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
+    /** Returns true if we know that this is a private video based on prior check and stored property. */
     protected boolean isPrivateVideo(final DownloadLink link) {
         if (link.hasProperty(PROPERTY_IS_PRIVATE_VIDEO)) {
             return true;
@@ -940,7 +943,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Broken video (?)");
                 }
-            } else if (br.getHttpConnection().getResponseCode() == 403) {
+            }
+            if (br.getHttpConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (br.getHttpConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
@@ -989,7 +993,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                         exceptionNoFile();
                     }
                 }
-                link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL());
+                link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toString());
             }
         } else {
             logger.info("Re-using stored directurl");
@@ -1066,7 +1070,6 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(false);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
@@ -1082,7 +1085,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                         logger.info("Trust cookies without check");
                         return;
                     }
-                    getPage(getProtocol() + "www." + this.getHost() + "/");
+                    getPage(getProtocol() + this.appendWWWIfRequired(this.getHost()) + "/");
                     if (isLoggedIN(br)) {
                         logger.info("Cookie login successful");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -1094,7 +1097,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
                 /* 2020-11-04: Login-URL that fits most of all websites (example): https://www.porngem.com/login-required/ */
                 logger.info("Performing full login");
-                getPage(getProtocol() + "www." + this.getHost() + "/login/");
+                getPage(getProtocol() + this.appendWWWIfRequired(this.getHost()) + "/login/");
                 /*
                  * 2017-01-21: This request will usually return a json with some information about the account.
                  */
@@ -1110,7 +1113,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 loginform.put("pass", Encoding.urlEncode(account.getPass()));
                 this.submitForm(loginform);
                 if (!isLoggedIN(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
@@ -1559,6 +1562,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     /** Returns user preferred quality inside given quality map. Returns best, if user selection is not present in map. */
     protected final String handleQualitySelection(final DownloadLink link, final HashMap<Integer, String> qualityMap) {
         if (qualityMap.isEmpty()) {
+            logger.info("Cannot perform quality selection: qualityMap is empty");
             return null;
         }
         logger.info("Total found qualities: " + qualityMap.size());
@@ -1601,17 +1605,17 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     protected boolean isValidDirectURL(final String url) {
         if (url == null) {
             return false;
-        } else if (!url.matches("^(?:https?://|/).*get_file.+\\.mp4.*")) {
+        } else if (!url.matches("(?i)^(?:https?://|/).*get_file.+\\.mp4.*")) {
             // logger.info("Skipping invalid video URL (= doesn't match expected pattern): " + url);
             return false;
         } else if (StringUtils.endsWithCaseInsensitive(url, "jpg/")) {
             // logger.info("Skipping invalid video URL (= picture): " + url);
             return false;
-        } else if (url.contains("_preview.mp4")) {
+        } else if (StringUtils.containsIgnoreCase(url, "_preview.mp4")) {
             /* E.g. a lot of websites! */
             // logger.info("Skipping invalid video URL (= preview): " + url);
             return false;
-        } else if (url.contains("_trailer.mp4")) {
+        } else if (StringUtils.containsIgnoreCase(url, "_trailer.mp4")) {
             /* 2020-11-04: E.g. privat-zapisi.biz! */
             // logger.info("Skipping invalid video URL (= trailer): " + url);
             return false;
