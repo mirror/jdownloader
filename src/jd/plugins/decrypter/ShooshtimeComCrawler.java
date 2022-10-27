@@ -32,8 +32,8 @@ public class ShooshtimeComCrawler extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replaceFirst("http://", "https://");
         br.setFollowRedirects(false);
         br.getPage(parameter);
@@ -43,7 +43,7 @@ public class ShooshtimeComCrawler extends PluginForDecrypt {
         final String redirect = br.getRedirectLocation();
         if (redirect != null && !this.canHandle(redirect)) {
             /* Advertising or externally hosted content. */
-            decryptedLinks.add(createDownloadlink(redirect));
+            ret.add(createDownloadlink(redirect));
         } else {
             /* Selfhosted content -> Pass to hostplugin */
             /*
@@ -51,8 +51,8 @@ public class ShooshtimeComCrawler extends PluginForDecrypt {
              * KernelVideoSharing sites only contain [a-z0-9\\-].
              */
             final String correctedURL = parameter.replace("_", "-");
-            decryptedLinks.add(createDownloadlink(correctedURL));
+            ret.add(createDownloadlink(correctedURL));
         }
-        return decryptedLinks;
+        return ret;
     }
 }
