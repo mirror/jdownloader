@@ -41,6 +41,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.GenericM3u8;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|(?:\\?|%3F)[^\\s<>\"']*|#.*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
@@ -115,6 +116,8 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
     public static ArrayList<DownloadLink> parseM3U8(final PluginForDecrypt plugin, final String m3u8URL, final Browser br, final String referer, final String cookiesString, final String finalName, final String preSetName) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (br.containsHTML("#EXT-X-STREAM-INF")) {
+            final List<HlsContainer> hlsContainers = new ArrayList<HlsContainer>();
+            final ArrayList<URL> urls = new ArrayList<URL>();
             final String sessionDataTitle = br.getRegex("#EXT-X-SESSION-DATA:DATA-ID\\s*=\\s*\"[^\"]*title\"[^\r\n]*VALUE\\s*=\\s*\"(.*?)\"").getMatch(0);
             final ArrayList<String> infos = new ArrayList<String>();
             for (final String line : Regex.getLines(br.toString())) {
@@ -127,36 +130,47 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     if (hlsContainer.size() > 1) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else if (hlsContainer.size() == 1) {
-                        final HlsContainer hls = hlsContainer.get(0);
-                        final URL url = br.getURL(line);
-                        final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), url.toString(), true);
-                        if (finalName != null) {
-                            link.setFinalFileName(finalName);
-                        }
-                        link.setProperty("m3u8Source", m3u8URL);
-                        if (StringUtils.isNotEmpty(preSetName)) {
-                            link.setProperty("preSetName", preSetName);
-                        } else if (StringUtils.isNotEmpty(sessionDataTitle)) {
-                            link.setProperty("preSetName", sessionDataTitle);
-                        }
-                        if (hls.getBandwidth() > 0) {
-                            link.setProperty("hlsBandwidth", hls.getBandwidth());
-                        }
-                        link.setProperty("Referer", referer);
-                        link.setProperty("cookies", cookiesString);
-                        addToResults(plugin, ret, br, url, link);
+                        hlsContainers.add(hlsContainer.get(0));
+                        urls.add(br.getURL(line));
+                    } else {
+                        // Parser found multiple HlsContainers? This should never happen!
                     }
                     infos.clear();
                 } else {
                     infos.add(line);
                 }
             }
+            /*
+             * TODO: Put bandwidth into filenames if same resolution (width!) video is available multiple times and/or use label in filename
+             * or at least set label as property, see: https://svn.jdownloader.org/issues/90277
+             */
+            int index = 0;
+            for (final HlsContainer hls : hlsContainers) {
+                final URL url = urls.get(index);
+                final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), url.toString(), true);
+                if (finalName != null) {
+                    link.setFinalFileName(finalName);
+                }
+                link.setProperty("m3u8Source", m3u8URL);
+                if (StringUtils.isNotEmpty(preSetName)) {
+                    link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetName);
+                } else if (StringUtils.isNotEmpty(sessionDataTitle)) {
+                    link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, sessionDataTitle);
+                }
+                if (hls.getBandwidth() > 0) {
+                    link.setProperty("hlsBandwidth", hls.getBandwidth());
+                }
+                link.setProperty("Referer", referer);
+                link.setProperty("cookies", cookiesString);
+                addToResults(plugin, ret, br, url, link);
+                index++;
+            }
         } else {
             final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), "m3u8" + m3u8URL.substring(4), true);
             if (finalName != null) {
                 link.setFinalFileName(finalName);
             }
-            link.setProperty("preSetName", preSetName);
+            link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetName);
             link.setProperty("Referer", referer);
             link.setProperty("cookies", cookiesString);
             ret.add(link);
