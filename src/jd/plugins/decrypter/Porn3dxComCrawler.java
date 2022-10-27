@@ -45,8 +45,9 @@ public class Porn3dxComCrawler extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -84,15 +85,15 @@ public class Porn3dxComCrawler extends PluginForDecrypt {
                 MediadeliveryNet.setFilename(dl);
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 index++;
             }
-            return decryptedLinks;
+            return ret;
         }
         final String embedURL = br.getRegex("(https?://[^/]+/videos/embed/[a-f0-9\\-]+)").getMatch(0);
         if (embedURL != null) {
             /* Self-embedded video hosted most likely on tube.porn3dx.com (peertube instance). */
-            decryptedLinks.add(createDownloadlink(embedURL));
+            ret.add(createDownloadlink(embedURL));
         } else {
             final String filenameBase;
             if (authorSlug != null && titleSlug != null) {
@@ -110,7 +111,7 @@ public class Porn3dxComCrawler extends PluginForDecrypt {
                 image.setFinalFileName(filenameBase + "_" + String.format(Locale.US, "%0" + padLength + "d", counter) + ".jpg");
                 image.setAvailable(true);
                 image._setFilePackage(fp);
-                decryptedLinks.add(image);
+                ret.add(image);
                 counter++;
             }
             final String imageURLLarge = br.getRegex("(https?://media\\.[^/]+/post/\\d+/large\\.[a-z]+)").getMatch(0);
@@ -119,12 +120,12 @@ public class Porn3dxComCrawler extends PluginForDecrypt {
                 image.setFinalFileName(filenameBase + Plugin.getFileNameExtensionFromString(imageURLLarge));
                 image.setAvailable(true);
                 image._setFilePackage(fp);
-                decryptedLinks.add(image);
+                ret.add(image);
             }
         }
-        if (decryptedLinks.isEmpty()) {
+        if (ret.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

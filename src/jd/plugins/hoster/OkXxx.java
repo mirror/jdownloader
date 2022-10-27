@@ -60,18 +60,6 @@ public class OkXxx extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getFileTitle(final DownloadLink link) {
-        String filetitle = br.getRegex("class=\"title-holder\">\\s*<h1>([^<>\"]+)</h1>").getMatch(0);
-        if (filetitle == null) {
-            filetitle = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-        }
-        if (filetitle == null) {
-            filetitle = br.getRegex("<title>([^<>\"]+) - OK\\.XXX</title>").getMatch(0);
-        }
-        return filetitle;
-    }
-
-    @Override
     String generateContentURL(final String host, final String fuid, final String urlSlug) {
         if (host == null || fuid == null) {
             return null;

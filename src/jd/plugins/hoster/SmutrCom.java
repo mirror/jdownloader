@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -61,12 +62,17 @@ public class SmutrCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getFileTitle(final DownloadLink link) {
-        String filetitle = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
-        if (filetitle == null) {
-            filetitle = br.getRegex("<title>([^<>\"]+) Porn Video</title>").getMatch(0);
+    protected String regexNormalTitleWebsite(final Browser br) {
+        String title = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<title>([^<>\"]+) Porn Video</title>").getMatch(0);
         }
-        return filetitle;
+        if (title != null) {
+            return title;
+        } else {
+            /* Fallback to upper handling */
+            return super.regexNormalTitleWebsite(br);
+        }
     }
 
     @Override
