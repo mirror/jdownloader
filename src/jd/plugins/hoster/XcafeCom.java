@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -56,13 +57,13 @@ public class XcafeCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getFileTitle(final DownloadLink link) {
-        final String fileTitle = br.getRegex("class=\"video_title\" itemprop=\"name\"[^>]*>([^<]+)<").getMatch(0);
-        if (fileTitle != null) {
-            return fileTitle;
+    protected String regexNormalTitleWebsite(final Browser br) {
+        final String title = br.getRegex("class=\"video_title\" itemprop=\"name\"[^>]*>([^<]+)<").getMatch(0);
+        if (title != null) {
+            return title;
         } else {
-            /* Fallback to upper code */
-            return super.getFileTitle(link);
+            /* Fallback to upper handling */
+            return super.regexNormalTitleWebsite(br);
         }
     }
 

@@ -852,6 +852,10 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
+    /**
+     * Contains logic to determine best file title. </br>
+     * Warning: Most time you want to override getTitleURL, regexEmbedTitleWebsite or regexNormalTitleWebsite instead of this!!
+     */
     protected String getFileTitle(final DownloadLink link) {
         final String fuid = this.getFUID(link);
         final String titleUrl = getTitleURL(br, link);

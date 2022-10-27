@@ -56,7 +56,7 @@ public class FapalityCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String regexEmbedTitleWebsite(final Browser br) {
+    protected String regexNormalTitleWebsite(final Browser br) {
         String title = br.getRegex("class=\"simple-title\" itemprop=\"name\">([^<>\"]+)<").getMatch(0);
         if (title == null) {
             title = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
@@ -65,7 +65,7 @@ public class FapalityCom extends KernelVideoSharingComV2 {
             return title;
         } else {
             /* Fallback to upper handling */
-            return super.regexEmbedTitleWebsite(br);
+            return super.regexNormalTitleWebsite(br);
         }
     }
 

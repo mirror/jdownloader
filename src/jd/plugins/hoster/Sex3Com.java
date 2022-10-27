@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -55,13 +56,14 @@ public class Sex3Com extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getFileTitle(final DownloadLink link) {
-        String fileTitle = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
-        if (fileTitle == null) {
-            /* Fallback to template */
-            fileTitle = super.getFileTitle(link);
+    protected String regexNormalTitleWebsite(final Browser br) {
+        String title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+        if (title != null) {
+            return title;
+        } else {
+            /* Fallback to upper handling */
+            return super.regexNormalTitleWebsite(br);
         }
-        return fileTitle;
     }
 
     @Override
