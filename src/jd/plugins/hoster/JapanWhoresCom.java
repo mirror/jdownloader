@@ -20,7 +20,6 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -57,7 +56,7 @@ public class JapanWhoresCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String regexNormalTitleWebsite(final Browser br) {
-        String title = br.getRegex("(?i)name=\"DC\\.title\" content=\"([^\"]*?)(?: at Japanese Whores)?\"").getMatch(0);
+        final String title = br.getRegex("name=\"DC\\.title\"[^>]*content=\"([^\"]+)\"").getMatch(0);
         if (title != null) {
             return title;
         } else {
@@ -66,13 +65,7 @@ public class JapanWhoresCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getFileTitle(final DownloadLink link) {
-        final String title = regexNormalTitleWebsite(br);
-        /* Prefer regexed title over fuid/title from inside URL. */
-        if (title != null) {
-            return title;
-        } else {
-            return this.getFUID(link);
-        }
+    protected boolean preferTitleHTML() {
+        return true;
     }
 }

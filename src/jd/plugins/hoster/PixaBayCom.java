@@ -36,6 +36,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -56,15 +57,15 @@ public class PixaBayCom extends PluginForHost {
     private String quality_max         = null;
     private String quality_download_id = null;
 
-    public void correctDownloadLink(final DownloadLink link) {
+    private String getContentURL(final DownloadLink link) {
         String url = link.getPluginPatternMatcher().replace("http://", "https://");
         if (StringUtils.containsIgnoreCase(url, "/images/download/")) {
             final String fid = getFID(link);
             if (fid != null) {
-                url = "https://pixabay.com/dummy-" + fid;
+                return "https://pixabay.com/dummy-" + fid;
             }
         }
-        link.setPluginPatternMatcher(url);
+        return url;
     }
 
     @Override
@@ -81,30 +82,61 @@ public class PixaBayCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account);
+    }
+
+    private boolean isAnimation(final Browser br) {
+        return isAnimation(br.getURL());
+    }
+
+    private boolean isAnimation(final String url) {
+        if (StringUtils.containsIgnoreCase(url, "/gifs/")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+        final String contenturl = getContentURL(link);
+        final String fid = this.getFID(link);
+        final String assumedFileExtension;
+        if (isAnimation(link.getPluginPatternMatcher())) {
+            assumedFileExtension = ".gif";
+        } else {
+            assumedFileExtension = ".jpg";
+        }
+        if (!link.isNameSet()) {
+            /* Set weak filename */
+            if (link.getPluginPatternMatcher().contains("/gifs/")) {
+                link.setName(fid + assumedFileExtension);
+            } else {
+                link.setName(fid + assumedFileExtension);
+            }
+        }
         this.setBrowserExclusive();
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            this.login(aa, false);
+        if (account != null) {
+            this.login(account, false);
         }
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("?")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), getHost() + "/dummy-")) {
+        if (StringUtils.containsIgnoreCase(contenturl, getHost() + "/dummy-") && this.canHandle(br.getURL())) {
+            /* Correct added URL */
             link.setPluginPatternMatcher(br.getURL());
         }
-        final String fallback_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        String filename = br.getRegex("<title>\\s*([^<>]*?)\\s*(?:-\\s*Free photo on Pixabay)?\\s*</title>").getMatch(0);
+        String fileTitle = br.getRegex("(?i)<title>\\s*([^<>]*?)\\s*(?:-\\s*Free \\w+ on Pixabay)?\\s*</title>").getMatch(0);
         /* Find filesize based on whether user has an account or not. Users with account can download the best quality/original. */
         String filesize = null;
-        if (aa != null) {
+        if (account != null) {
             int heightMax = 0;
             int heightTmp = 0;
-            final String[] qualityInfo = br.getRegex("(<td>\\s*<input type=\"radio\" name=\"download\".*?/td></tr>)").getColumn(0);
+            final String[] qualityInfo = br.getRegex("(<td>\\s*<input type=\"radio\" name=\"download\".*?</td>\\s*</tr>)").getColumn(0);
             for (final String quality : qualityInfo) {
                 // logger.info("quality: " + quality);
                 /* Old: TODO: Check if these ones still exist. */
@@ -138,21 +170,27 @@ public class PixaBayCom extends PluginForHost {
                 }
             }
         }
-        if (filename == null) {
-            filename = fallback_filename;
+        if (fileTitle == null) {
+            /* Fallback */
+            fileTitle = fid;
         }
-        /* Also as fallback for account download: Grab publicly visible image (lowest quality). */
+        /*
+         * Also as fallback if account download fails or no official download button is given: Grab publicly visible image (lowest quality).
+         */
         if (filesize == null || quality_download_id == null) { // No account
-            String dllink = br.getRegex("(https?://cdn[^<>\"\\s]+)\\s*1\\.333x").getMatch(0);
+            String dllink = br.getRegex("id=\"media_container\" class=\"init\"[^>]*>\\s*<img src=\"(https?://[^\"]+)\"").getMatch(0); // gifs
+            if (dllink == null) {
+                dllink = br.getRegex("(https?://cdn[^<>\"\\s]+)\\s*1\\.333x").getMatch(0);
+            }
             if (dllink == null) {
                 dllink = br.getRegex("(https?://cdn[^<>\"\\s]+)\\s*1x").getMatch(0);
             }
             if (dllink != null) {
-                String ext = dllink.substring(dllink.lastIndexOf("."));
+                final String ext = Plugin.getFileNameExtensionFromURL(dllink);
                 link.setProperty("free_directlink", dllink);
-                filename = Encoding.htmlDecode(filename.trim());
-                filename = encodeUnicode(filename) + ext;
-                link.setFinalFileName(filename);
+                fileTitle = Encoding.htmlDecode(fileTitle.trim());
+                fileTitle = encodeUnicode(fileTitle) + ext;
+                link.setFinalFileName(fileTitle);
                 return AvailableStatus.TRUE; // <=== No account
             }
         }
@@ -163,9 +201,9 @@ public class PixaBayCom extends PluginForHost {
         if (quality_max == null) {
             quality_max = "10000";
         }
-        filename = Encoding.htmlDecode(filename.trim());
-        filename = encodeUnicode(filename) + ".jpg";
-        link.setFinalFileName(filename);
+        fileTitle = Encoding.htmlDecode(fileTitle).trim();
+        fileTitle = encodeUnicode(fileTitle) + assumedFileExtension;
+        link.setFinalFileName(fileTitle);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -308,7 +346,13 @@ public class PixaBayCom extends PluginForHost {
             if (this.quality_download_id == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "https://" + this.getHost() + "/images/download/" + this.quality_download_id + "?attachment";
+            final String downloadtype;
+            if (isAnimation(br)) {
+                downloadtype = "animations";
+            } else {
+                downloadtype = "images";
+            }
+            dllink = "/" + downloadtype + "/download/" + this.quality_download_id + "?attachment";
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 dl.startDownload();
@@ -346,8 +390,9 @@ public class PixaBayCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, account);
         /* Login not needed here as we already logged in above. */
+        // 2022-10-27: wtf what does this do and why is it here?
         String dllink = this.br.getRegex("name=\"download\" value=\"([^<>\"]*?)\" data-perm=\"auth\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

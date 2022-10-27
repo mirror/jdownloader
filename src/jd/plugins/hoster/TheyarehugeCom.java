@@ -67,30 +67,6 @@ public class TheyarehugeCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getFileTitle(final DownloadLink link) {
-        String filename = br.getRegex("class=\"cs_headline\">([^<>\"]+)<").getMatch(0);
-        String title_url = null;
-        if (link.getPluginPatternMatcher().matches(type_embedded)) {
-            /* Filenames for embed URLs */
-            final String originalURL = br.getRegex("(https?://[^/]+/v/[^/]+)").getMatch(0);
-            if (originalURL != null) {
-                title_url = this.getURLTitleCorrected(originalURL);
-            }
-        } else {
-            title_url = this.getURLTitleCorrected(br.getURL());
-            if (title_url == null) {
-                title_url = this.getURLTitleCorrected(link.getPluginPatternMatcher());
-            }
-        }
-        /* Now decide which filename we want to use */
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = title_url;
-        }
-        return filename;
-    }
-
-    @Override
     protected String getURLTitle(final String url) {
         if (url == null) {
             return null;

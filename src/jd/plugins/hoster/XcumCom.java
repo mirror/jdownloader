@@ -71,15 +71,6 @@ public class XcumCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getFileTitle(final DownloadLink link) {
-        String fileTitle = br.getRegex("class=\"video\"><h2>([^<>\"]+)<").getMatch(0);
-        if (fileTitle == null) {
-            fileTitle = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
-        }
-        return fileTitle;
-    }
-
-    @Override
     String generateContentURL(final String host, final String fuid, final String urlSlug) {
         if (host == null || fuid == null) {
             return null;

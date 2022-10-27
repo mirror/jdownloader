@@ -854,10 +854,10 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     /**
      * Contains logic to determine best file title. </br>
-     * Warning: Most time you want to override getTitleURL, regexEmbedTitleWebsite or regexNormalTitleWebsite instead of this!!
+     * Override the following functions if you want to modify filenames: {@link #regexNormalTitleWebsite()},
+     * {@link #regexEmbedTitleWebsite()}, {@link #preferTitleHTML()}
      */
-    protected String getFileTitle(final DownloadLink link) {
-        final String fuid = this.getFUID(link);
+    private String getFileTitle(final DownloadLink link) {
         final String titleUrl = getTitleURL(br, link);
         String titleFromHtml = null;
         /* For embed URLs the title might be in a different part of the html -> Check for this first */
@@ -872,7 +872,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             titleFromHtml = Encoding.htmlDecode(titleFromHtml).trim();
             titleFromHtml = cleanupFilename(br, titleFromHtml);
         }
-        final boolean titleFromURLEqualsFuid = StringUtils.equalsIgnoreCase(titleUrl, fuid);
+        final boolean titleFromURLEqualsFuid = StringUtils.equalsIgnoreCase(titleUrl, this.getFUID(link));
         if (titleFromHtml != null && (this.preferTitleHTML() || titleFromURLEqualsFuid)) {
             return titleFromHtml;
         } else if (!StringUtils.isEmpty(titleUrl)) {

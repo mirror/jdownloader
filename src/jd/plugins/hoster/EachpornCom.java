@@ -60,12 +60,6 @@ public class EachpornCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getFileTitle(final DownloadLink link) {
-        String fileTitle = br.getRegex("<title>([^<>\"]+) - EachPorn</title>").getMatch(0);
-        return fileTitle;
-    }
-
-    @Override
     String generateContentURL(final String host, final String fuid, final String urlSlug) {
         if (host == null || fuid == null || urlSlug == null) {
             return null;
