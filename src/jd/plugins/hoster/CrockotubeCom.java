@@ -88,10 +88,6 @@ public class CrockotubeCom extends KernelVideoSharingComV2 {
         }
         return filename_url;
     }
-    // @Override
-    // protected String getFileTitle(final DownloadLink link) {
-    // return this.getURLTitle(link.getPluginPatternMatcher());
-    // }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
