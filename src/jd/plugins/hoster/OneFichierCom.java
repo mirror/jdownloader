@@ -529,6 +529,8 @@ public class OneFichierCom extends PluginForHost {
             } else {
                 errorAccessControlLimit(link);
             }
+        } else if (ibr.containsHTML("(?i)>\\s*Your requests are too fast")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate limit reached", 30 * 1000l);
         } else if (ibr.getURL().contains("/?c=DB")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
         } else if (responsecode == 403) {
