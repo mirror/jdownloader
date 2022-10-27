@@ -21,6 +21,7 @@ import java.util.List;
 import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -69,7 +70,7 @@ public class FrprnCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String regexEmbedTitleWebsite() {
+    protected String regexEmbedTitleWebsite(final Browser br) {
         /* 2021-03-02 */
         return br.getRegex("<title>(.*?)</title>").getMatch(0);
     }

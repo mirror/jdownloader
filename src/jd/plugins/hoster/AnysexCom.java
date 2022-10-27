@@ -19,8 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
-import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -51,16 +51,17 @@ public class AnysexCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String getFileTitle(final DownloadLink link) {
-        String fileTitle = br.getRegex("<title>([^<>\"]+) - AnySex\\.com Video</title>").getMatch(0);
-        if (fileTitle == null) {
-            fileTitle = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)</h1>").getMatch(0);
+    protected String regexNormalTitleWebsite(final Browser br) {
+        String title = br.getRegex("<title>([^<>\"]+) - AnySex\\.com Video</title>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)</h1>").getMatch(0);
         }
-        if (fileTitle == null) {
-            /* Fallback to template */
-            fileTitle = super.getFileTitle(link);
+        if (title != null) {
+            return title;
+        } else {
+            /* Fallback to upper handling */
+            return super.regexNormalTitleWebsite(br);
         }
-        return fileTitle;
     }
 
     @Override
