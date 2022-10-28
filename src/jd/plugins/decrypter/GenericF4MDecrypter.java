@@ -35,6 +35,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -176,5 +177,10 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
 
     private static final boolean isValidURLName(final String urlName) {
         return urlName != null && !"manifest.f4m".equalsIgnoreCase(urlName);
+    }
+
+    @Override
+    public boolean hasCaptcha(CryptedLink link, Account acc) {
+        return false;
     }
 }
