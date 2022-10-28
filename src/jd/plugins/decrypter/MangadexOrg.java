@@ -6,6 +6,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -15,13 +22,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangadex.org" }, urls = { "https?://(?:www\\.)?mangadex\\.(?:org|cc)/(chapter/[a-f0-9\\-]+|title/[a-f0-9\\-]+)(/[^/]*\\?tab=(art|chapters))?" })
 public class MangadexOrg extends antiDDoSForDecrypt {
@@ -94,7 +94,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
                             } else if (dups.add(fileName)) {
                                 final String url = "https://uploads.mangadex.org/covers/" + mangaID + "/" + fileName;
                                 final DownloadLink link = createDownloadlink("directhttp://" + url);
-                                link.setProperty("refURL", param.getCryptedUrl());
+                                link.setReferrerUrl(param.getCryptedUrl());
                                 link.setAvailable(true);
                                 final String volumeString;
                                 if (volume == null) {
@@ -249,7 +249,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
                 } else {
                     url = baseUrl + "/data/" + hash + "/" + url;
                     final DownloadLink link = createDownloadlink("directhttp://" + url);
-                    link.setProperty("refURL", param.getCryptedUrl());
+                    link.setReferrerUrl(param.getCryptedUrl());
                     link.setAvailable(true);
                     if (titleForFilename != null) {
                         link.setFinalFileName(titleForFilename + "-Page_" + pageIndex + Plugin.getFileNameExtensionFromURL(url));

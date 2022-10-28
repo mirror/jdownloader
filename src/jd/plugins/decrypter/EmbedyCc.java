@@ -21,6 +21,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -32,9 +35,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "embedy.cc" }, urls = { "https?://(?:www\\.)?embedy\\.cc/movies/([A-Za-z0-9=]+)" })
 public class EmbedyCc extends PluginForDecrypt {
@@ -100,7 +100,7 @@ public class EmbedyCc extends PluginForDecrypt {
                 /* Hoster by embedy.cc and/or vk.com[vk.me] */
                 // dl.setFinalFileName(fpName + "_" + quality + ".mp4");
                 // dl.setAvailable(true);
-                // dl.setProperty("refURL", parameter);
+                // dl.setReferrerUrl(parameter);
                 // dl.setProperty("requestType", "GET");
                 decryptedLinks.add(dl);
             }
@@ -128,7 +128,7 @@ public class EmbedyCc extends PluginForDecrypt {
                     /* Hoster by embedy.cc and/or vk.com[vk.me] */
                     dl.setFinalFileName(fpName + "_" + quality + ".mp4");
                     dl.setAvailable(true);
-                    dl.setProperty("refURL", parameter);
+                    dl.setReferrerUrl(parameter);
                     dl.setProperty("requestType", "GET");
                 } else {
                     dl = createDownloadlink(url);

@@ -95,12 +95,16 @@ public class DirectHTTP extends antiDDoSForHost {
      * Otherwise, Content-Disposition filename will be used (or filename from inside URL as fallback).
      */
     public static final String  FIXNAME                  = "fixName";
-    public static final String  FORCE_NORESUME           = "forcenochunkload";
+    public static final String  FORCE_NORESUME           = "forcenochunkload";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               // TODO:
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             // Remove
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             // this?
     public static final String  FORCE_NOCHUNKS           = "forcenochunk";
     public static final String  FORCE_NOVERIFIEDFILESIZE = "forcenoverifiedfilesize";
     public static final String  TRY_ALL                  = "tryall";
     public static final String  POSSIBLE_URLPARAM        = "POSSIBLE_GETPARAM";
-    public static final String  BYPASS_CLOUDFLARE_BGJ    = "bpCfBgj";
+    public static final String  BYPASS_CLOUDFLARE_BGJ    = "bpCfBgj";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        // TODO:
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             // Remove
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             // this?
     public static final String  PROPERTY_COOKIES         = "COOKIES";
     public static final String  PROPERTY_MAX_CONCURRENT  = "PROPERTY_MAX_CONCURRENT";
     public static final String  PROPERTY_RATE_LIMIT      = "PROPERTY_RATE_LIMIT";
@@ -110,6 +114,7 @@ public class DirectHTTP extends antiDDoSForHost {
     private static final String PROPERTY_DISABLE_PREFIX  = "disable_";
     private static final String PROPERTY_ENABLE_PREFIX   = "enable_";
     private static final String PROPERTY_OPTION_SET      = "optionSet";
+    private final String        PROPERTY_LAST_REFERER    = "lastRefURL";
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
@@ -606,7 +611,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
                 if (urlConnection.getResponseCode() == 403 || urlConnection.getResponseCode() == 405) {
                     boolean retry = false;
-                    if (downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER, null) != null && optionSet.add(PROPERTY_DISABLE_PREFIX + LinkCrawler.PROPERTY_AUTO_REFERER)) {
+                    if (downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER) != null && optionSet.add(PROPERTY_DISABLE_PREFIX + LinkCrawler.PROPERTY_AUTO_REFERER)) {
                         retry = true;
                     } else if (optionSet.add(PROPERTY_ENABLE_PREFIX + "selfReferer")) {
                         retry = true;
@@ -1090,7 +1095,7 @@ public class DirectHTTP extends antiDDoSForHost {
                 putSessionValue(downloadLink, SESSION_AUTHORIZATION, auth);
             }
             final String referer = urlConnection.getRequestProperty(HTTPConstants.HEADER_REQUEST_REFERER);
-            downloadLink.setProperty("lastRefURL", referer);
+            downloadLink.setProperty(PROPERTY_LAST_REFERER, referer);
             final RequestMethod requestMethod = urlConnection.getRequestMethod();
             downloadLink.setProperty("allowOrigin", urlConnection.getHeaderField("access-control-allow-origin"));
             downloadLink.removeProperty(IOEXCEPTIONS);
@@ -1148,17 +1153,12 @@ public class DirectHTTP extends antiDDoSForHost {
             return status;
         } catch (final PluginException e2) {
             /* try referer set by flashgot and check if it works then */
-            if (downloadLink.getBooleanProperty("tryoldref", false) == false && downloadLink.getStringProperty("referer", null) != null) {
-                downloadLink.setProperty("tryoldref", true);
-                return this.requestFileInformation(downloadLink, retry + 1, optionSet);
-            } else {
-                final String finalFileName = downloadLink.getFinalFileName();
-                resetDownloadlink(downloadLink);
-                if (finalFileName != null) {
-                    downloadLink.setFinalFileName(finalFileName);
-                }
-                throw e2;
+            final String finalFileName = downloadLink.getFinalFileName();
+            resetDownloadlink(downloadLink);
+            if (finalFileName != null) {
+                downloadLink.setFinalFileName(finalFileName);
             }
+            throw e2;
         } catch (IOException e) {
             logger.log(e);
             final String finalFileName = downloadLink.getFinalFileName();
@@ -1237,7 +1237,7 @@ public class DirectHTTP extends antiDDoSForHost {
         link.removeProperty(IOEXCEPTIONS);
         link.removeProperty(DirectHTTP.NORESUME);
         link.removeProperty(DirectHTTP.NOCHUNKS);
-        link.removeProperty("lastRefURL");
+        link.removeProperty(PROPERTY_LAST_REFERER);
         link.removeProperty(PROPERTY_REQUEST_TYPE);
         link.removeProperty("streamMod");
         link.removeProperty("allowOrigin");
@@ -1258,7 +1258,7 @@ public class DirectHTTP extends antiDDoSForHost {
 
     private String getRefererURL(final DownloadLink link) {
         /* Last referer used by this plugin with given DownloadLink. */
-        final String lastReferer = link.getStringProperty("lastRefURL");
+        final String lastReferer = link.getStringProperty(PROPERTY_LAST_REFERER);
         if (this.isValidReferer(lastReferer)) {
             return lastReferer;
         }
@@ -1272,10 +1272,10 @@ public class DirectHTTP extends antiDDoSForHost {
         if (this.isValidReferer(oldRefProperty2)) {
             return oldRefProperty2;
         }
-        final String linkCrawlerAutoReferer = link.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER);
-        if (this.isValidReferer(linkCrawlerAutoReferer)) {
-            return linkCrawlerAutoReferer;
-        }
+        // final String linkCrawlerAutoReferer = link.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER);
+        // if (this.isValidReferer(linkCrawlerAutoReferer)) {
+        // return linkCrawlerAutoReferer;
+        // }
         final String pluginReferer = link.getReferrerUrl();
         if (this.isValidReferer(pluginReferer)) {
             return pluginReferer;
@@ -1320,25 +1320,22 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
             }
         }
-        /*
-         * seems like flashgot catches the wrong referer and some downloads do not work then, we do not set referer as a workaround
-         */
-        if (getValidReferer(downloadLink.getStringProperty("refURL", null)) != null) {
-            /* refURL is for internal use */
-            br.getHeaders().put("Referer", downloadLink.getStringProperty("refURL", null));
-        }
+        // TODO: Remove thils old Flashgot stuff?
         /*
          * try the referer set by flashgot, maybe it works
          */
-        if ((getPluginConfig().getBooleanProperty(AUTO_USE_FLASHGOT_REFERER, AUTO_USE_FLASHGOT_REFERER_default) || downloadLink.getBooleanProperty("tryoldref", false)) && getValidReferer(downloadLink.getStringProperty("referer", null)) != null) {
-            /* refURL is for internal use */
-            downloadLink.setProperty("tryoldref", true);
-            br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
-        }
+        // if ((getPluginConfig().getBooleanProperty(AUTO_USE_FLASHGOT_REFERER, AUTO_USE_FLASHGOT_REFERER_default) ||
+        // downloadLink.getBooleanProperty("tryoldref", false)) && getValidReferer(downloadLink.getStringProperty("referer", null)) != null)
+        // {
+        // /* refURL is for internal use */
+        // downloadLink.setProperty("tryoldref", true);
+        // br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
+        // }
         if (downloadLink.getStringProperty(DirectHTTP.PROPERTY_COOKIES, null) != null) {
             br.getCookies(getDownloadURL(downloadLink)).add(Cookies.parseCookies(downloadLink.getStringProperty(DirectHTTP.PROPERTY_COOKIES, null), Browser.getHost(getDownloadURL(downloadLink)), null));
         }
-        long linkCrawlerRuleID = downloadLink.getLongProperty("lcrID", -1);
+        /* Check for cookies by LinkCrawler rule */
+        final long linkCrawlerRuleID = downloadLink.getLongProperty("lcrID", -1);
         if (linkCrawlerRuleID != -1) {
             final List<String[]> linkCrawlerRuleCookies = LinkCrawler.getLinkCrawlerRuleCookies(linkCrawlerRuleID, true);
             if (linkCrawlerRuleCookies != null && linkCrawlerRuleCookies.size() > 0) {
@@ -1348,17 +1345,12 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
             }
         }
-        if (getValidReferer(downloadLink.getStringProperty("Referer", null)) != null) {
-            // used in MANY plugins!
-            br.getHeaders().put("Referer", downloadLink.getStringProperty("Referer", null));
-        }
-        if (getValidReferer(downloadLink.getStringProperty("lastRefURL", null)) != null) {
-            // used in MANY plugins!
-            br.getHeaders().put("Referer", downloadLink.getStringProperty("lastRefURL", null));
-        }
-        if (!br.getHeaders().contains("Referer") && (optionSet == null || !optionSet.contains(PROPERTY_DISABLE_PREFIX + LinkCrawler.PROPERTY_AUTO_REFERER))) {
-            if (getValidReferer(downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER, null)) != null) {
-                br.getHeaders().put("Referer", downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER, null));
+        final String refererUrl = this.getRefererURL(downloadLink);
+        if (refererUrl != null) {
+            br.getHeaders().put("Referer", refererUrl);
+        } else if (optionSet == null || !optionSet.contains(PROPERTY_DISABLE_PREFIX + LinkCrawler.PROPERTY_AUTO_REFERER)) {
+            if (this.isValidReferer(downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER))) {
+                br.getHeaders().put("Referer", downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER));
             }
         }
         if (optionSet != null && optionSet.contains(PROPERTY_ENABLE_PREFIX + "selfReferer")) {
