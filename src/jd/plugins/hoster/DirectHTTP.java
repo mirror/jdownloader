@@ -1262,9 +1262,15 @@ public class DirectHTTP extends antiDDoSForHost {
         if (this.isValidReferer(lastReferer)) {
             return lastReferer;
         }
+        /* This was used in some older plugins. */
         final String oldRefProperty1 = link.getStringProperty("Referer");
         if (this.isValidReferer(oldRefProperty1)) {
             return oldRefProperty1;
+        }
+        /* This was used in some older plugins and by Flashgot(?) */
+        final String oldRefProperty2 = link.getStringProperty("refURL");
+        if (this.isValidReferer(oldRefProperty2)) {
+            return oldRefProperty2;
         }
         final String linkCrawlerAutoReferer = link.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER);
         if (this.isValidReferer(linkCrawlerAutoReferer)) {
