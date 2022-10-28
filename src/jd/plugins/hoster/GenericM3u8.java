@@ -85,6 +85,15 @@ public class GenericM3u8 extends PluginForHost {
         return requestFileInformation(link, link.getPluginPatternMatcher());
     }
 
+    private String getReferer(final DownloadLink link) {
+        final String referOld = link.getStringProperty("Referer"); // backward compatibility
+        if (referOld != null) {
+            return referOld;
+        } else {
+            return link.getReferrerUrl();
+        }
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link, final String dllink) throws Exception {
         checkFFProbe(link, "Download a HLS Stream");
         this.setBrowserExclusive();
@@ -93,7 +102,7 @@ public class GenericM3u8 extends PluginForHost {
             final String host = Browser.getHost(dllink);
             br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
         }
-        final String referer = link.getStringProperty("Referer");
+        final String referer = getReferer(link);
         if (referer != null) {
             br.getPage(referer);
             br.followRedirect();
@@ -169,19 +178,19 @@ public class GenericM3u8 extends PluginForHost {
         handleFree(link, link.getPluginPatternMatcher());
     }
 
-    public void handleFree(final DownloadLink url, final String dllink) throws Exception {
-        checkFFmpeg(url, "Download a HLS Stream");
-        final String cookiesString = url.getStringProperty("cookies", null);
+    public void handleFree(final DownloadLink link, final String dllink) throws Exception {
+        checkFFmpeg(link, "Download a HLS Stream");
+        final String cookiesString = link.getStringProperty("cookies", null);
         if (cookiesString != null) {
             final String host = Browser.getHost(dllink);
             br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
         }
-        final String referer = url.getStringProperty("Referer", null);
+        final String referer = this.getReferer(link);
         if (referer != null) {
             br.getPage(referer);
             br.followRedirect();
         }
-        dl = new HLSDownloader(url, br, dllink);
+        dl = new HLSDownloader(link, br, dllink);
         dl.startDownload();
     }
 

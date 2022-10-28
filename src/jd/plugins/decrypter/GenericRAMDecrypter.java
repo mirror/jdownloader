@@ -29,7 +29,7 @@ public class GenericRAMDecrypter extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
@@ -39,12 +39,12 @@ public class GenericRAMDecrypter extends PluginForDecrypt {
             for (final String videoURL : videoURLs) {
                 if (dups.add(videoURL)) {
                     final DownloadLink downloadLink = createDownloadlink(videoURL);
-                    downloadLink.setProperty("Referer", param.getCryptedUrl());
+                    downloadLink.setReferrerUrl(param.getCryptedUrl());
                     ret.add(downloadLink);
                 }
             }
         }
-        if (ret.size() == 0) {
+        if (ret.isEmpty()) {
             return null;
         } else {
             return ret;

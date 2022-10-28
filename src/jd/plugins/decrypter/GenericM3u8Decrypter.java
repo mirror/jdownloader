@@ -35,6 +35,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -199,6 +200,11 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean hasCaptcha(CryptedLink link, Account acc) {
+        return false;
     }
     // @Override
     // public Class<GenericM3u8DecrypterConfig> getConfigInterface() {
