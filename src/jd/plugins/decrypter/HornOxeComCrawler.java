@@ -24,47 +24,47 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "https?://(www\\.)?hornoxe\\.com/(?!category)[a-z0-9\\-]+/" })
-public class HrnOxCm extends PluginForDecrypt {
-    public HrnOxCm(PluginWrapper wrapper) {
+public class HornOxeComCrawler extends PluginForDecrypt {
+    public HornOxeComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static final String INVALIDLINKS = "https?://(www\\.)?hornoxe\\.com/(picdumps|sonstiges|eigener\\-content|comics\\-cartoons|amazon|witze|fun\\-clips|fun\\-bilder|sexy|kurzfilme|bastelstunde|games|fun\\-links|natur\\-technik|feed|shop|category|images|page)/.*?";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS)) {
             logger.info("Link invalid: " + parameter);
-            return decryptedLinks;
+            return ret;
         }
         br.getPage(parameter);
-        if (!br.getURL().matches("https?://(www\\.)?hornoxe\\.com/.+")) {
+        if (!this.canHandle(br.getURL())) {
             // covers redirects, may or may not be supported content.
-            decryptedLinks.add(createDownloadlink(br.getURL()));
-            return decryptedLinks;
+            ret.add(createDownloadlink(br.getURL()));
+            return ret;
         }
-        if (br.containsHTML(">Seite nicht gefunden<") || br.containsHTML("No htmlCode read") || br.containsHTML(">404 \\- Not Found<")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String pageName = br.getRegex("og:title\" content=\"(.*?)\" />").getMatch(0);
         if (pageName == null) {
             pageName = br.getRegex("<title>(.*?) \\- Hornoxe\\.com</title>").getMatch(0);
         }
         if (pageName == null) {
-            logger.warning("Decrypter failed for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         pageName = Encoding.htmlDecode(pageName.trim());
         // Check if there are embedded links
         String externID = br.getRegex("\"(//(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http:" + externID));
+            ret.add(createDownloadlink("http:" + externID));
         }
         // Check if we have a single video
         final String file = br.getRegex("(file\":|src\\s*=\\s*)\"(https?://videos\\.hornoxe\\.com/[^\"]+)").getMatch(1);
@@ -72,8 +72,8 @@ public class HrnOxCm extends PluginForDecrypt {
             final DownloadLink vid = createDownloadlink(file.replace("hornoxe.com", "hornoxedecrypted.com"));
             vid.setFinalFileName(pageName + getFileNameExtensionFromURL(file));
             vid.setProperty("Referer", parameter);
-            decryptedLinks.add(vid);
-            return decryptedLinks;
+            ret.add(vid);
+            return ret;
         }
         // Check if we have a picdump
         String[] urls = null;
@@ -91,9 +91,9 @@ public class HrnOxCm extends PluginForDecrypt {
             if (title != null) {
                 fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(title.trim()));
-                fp.addLinks(decryptedLinks);
+                fp.addLinks(ret);
             }
-            add(decryptedLinks, urls, fp);
+            add(ret, urls, fp);
             String[] pageqs = br.getRegex("\"page-numbers\" href=\"(.*?nggpage\\=\\d+)").getColumn(0);
             if (pageqs == null || pageqs.length == 0) {
                 pageqs = br.getRegex("<a href=\"(https?://[^\"]*?/\\d+/)\">\\d+").getColumn(0);
@@ -108,19 +108,19 @@ public class HrnOxCm extends PluginForDecrypt {
                         urls = br.getRegex("\"(https?://(www\\.)hornoxe\\.com/wp\\-content/uploads[^<>\"]+)\"").getColumn(0);
                     }
                 }
-                add(decryptedLinks, urls, fp);
+                add(ret, urls, fp);
             }
-            return decryptedLinks;
+            return ret;
         }
         // Check if it's an image
         final String image = br.getRegex("\"(https?://(www\\.)hornoxe\\.com/wp\\-content/uploads[^<>\"]+)\"").getMatch(0);
         if (image != null) {
             final DownloadLink img = createDownloadlink("directhttp://" + image);
             img.setFinalFileName(pageName + image.substring(image.lastIndexOf(".")));
-            decryptedLinks.add(img);
-            return decryptedLinks;
+            ret.add(img);
+            return ret;
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private void add(ArrayList<DownloadLink> decryptedLinks, String[] urls, FilePackage fp) {
@@ -138,7 +138,7 @@ public class HrnOxCm extends PluginForDecrypt {
         }
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

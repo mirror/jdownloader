@@ -3,6 +3,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -12,6 +14,11 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ram" }, urls = { "https?://.+/.*\\.ram($|\\?[^\\s<>\"']*)" })
 public class GenericRAMDecrypter extends PluginForDecrypt {
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.GENERIC };
+    }
+
     @Override
     public Boolean siteTesterDisabled() {
         return Boolean.TRUE;

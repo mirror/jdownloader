@@ -20,6 +20,15 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Files;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -31,15 +40,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Files;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "f4m" }, urls = { "https?://.+\\.f4m($|\\?[^\\s<>\"']*|#.*)" })
 public class GenericF4MDecrypter extends PluginForDecrypt {
@@ -118,6 +118,7 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
         br.getPage(url);
         br.followRedirect();
         if (br.containsHTML("#EXTM3U")) {
+            /* No playlist but a single stream */
             final DownloadLink m3u8 = new DownloadLink(null, null, plugin.getHost(), br.getURL(), true);
             m3u8.setProperty("Referer", referer);
             m3u8.setProperty("cookies", cookiesString);

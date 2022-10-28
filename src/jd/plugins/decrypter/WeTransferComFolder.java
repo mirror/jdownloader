@@ -120,7 +120,6 @@ public class WeTransferComFolder extends PluginForDecrypt {
                 continue;
             }
             final DownloadLink dl = this.createDownloadlink("http://wetransferdecrypted/" + id_main + "/" + security_hash + "/" + id_single);
-            dl.setProperty("referer", refererValue);
             dl.setReferrerUrl(refererValue);
             String filename = null;
             /* Add folderID as root of the path because otherwise files could be mixed up - there is no real "base folder name" given! */

@@ -41,6 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
+import jd.plugins.decrypter.ImgSrcRuCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
@@ -101,10 +102,19 @@ public class ImgSrcRu extends PluginForHost {
         this.br = ibr;
     }
 
+    private String getReferer(final DownloadLink link) {
+        final String referOld = link.getStringProperty("Referer"); // backward compatibility
+        if (referOld != null) {
+            return referOld;
+        } else {
+            return link.getReferrerUrl();
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br = prepBrowser(br, false);
-        final String r = link.getStringProperty("Referer", null);
+        final String r = getReferer(link);
         if (r != null) {
             br.getHeaders().put("Referer", r);
         }
@@ -221,23 +231,23 @@ public class ImgSrcRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setAllowedResponseCodes(new int[] { 410 });
-        jd.plugins.decrypter.ImgSrcRu.getPage(br, url);
+        ImgSrcRuCrawler.getPage(br, url);
         if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String enterOver18 = br.getRegex("(/main/warn[^<>\"\\']*over18[^<>\"\\']*)").getMatch(-1);
         if (enterOver18 != null) {
             logger.info("Entering over18 content: " + enterOver18);
-            jd.plugins.decrypter.ImgSrcRu.getPage(br, enterOver18);
+            ImgSrcRuCrawler.getPage(br, enterOver18);
         } else if (br.containsHTML(">This album has not been checked by the moderators yet\\.|<u>Proceed at your own risk</u>")) {
             // /main/passcheck.php?ad=\d+ links can not br.getURL + "?warned=yeah"
             // lets look for the link
             final String yeah = br.getRegex("/[^/]+/a\\d+\\.html\\?warned=yeah").getMatch(-1);
             if (yeah != null) {
-                jd.plugins.decrypter.ImgSrcRu.getPage(br, yeah);
+                ImgSrcRuCrawler.getPage(br, yeah);
             } else {
                 // fail over
-                jd.plugins.decrypter.ImgSrcRu.getPage(br, br.getURL() + "?warned=yeah");
+                ImgSrcRuCrawler.getPage(br, br.getURL() + "?warned=yeah");
             }
         }
         // needs to be before password
@@ -255,7 +265,7 @@ public class ImgSrcRu extends PluginForHost {
                     }
                     continueForm.put("pwd", Encoding.urlEncode(password));
                 }
-                jd.plugins.decrypter.ImgSrcRu.submitForm(br, continueForm);
+                ImgSrcRuCrawler.submitForm(br, continueForm);
                 if (isPasswordProtected(br)) {
                     link.setProperty("pass", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -269,7 +279,7 @@ public class ImgSrcRu extends PluginForHost {
                 logger.warning("Couldn't process Album forward");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            jd.plugins.decrypter.ImgSrcRu.getPage(br, newLink);
+            ImgSrcRuCrawler.getPage(br, newLink);
         }
         if (isPasswordProtected(br)) {
             Form pwForm = br.getFormbyProperty("name", "passchk");
@@ -286,7 +296,7 @@ public class ImgSrcRu extends PluginForHost {
                 }
             }
             pwForm.put("pwd", Encoding.urlEncode(password));
-            jd.plugins.decrypter.ImgSrcRu.submitForm(br, pwForm);
+            ImgSrcRuCrawler.submitForm(br, pwForm);
             pwForm = br.getFormbyProperty("name", "passchk");
             if (pwForm != null) {
                 link.setProperty("pass", Property.NULL);
