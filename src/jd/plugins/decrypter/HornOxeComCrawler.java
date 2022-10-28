@@ -71,7 +71,7 @@ public class HornOxeComCrawler extends PluginForDecrypt {
         if (file != null) {
             final DownloadLink vid = createDownloadlink(file.replace("hornoxe.com", "hornoxedecrypted.com"));
             vid.setFinalFileName(pageName + getFileNameExtensionFromURL(file));
-            vid.setProperty("Referer", parameter);
+            vid.setReferrerUrl(parameter);
             ret.add(vid);
             return ret;
         }
