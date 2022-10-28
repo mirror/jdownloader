@@ -23,6 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -36,15 +43,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.GenericM3u8;
 import jd.plugins.hoster.VivaTv;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mtv.de", "mtviggy.com", "southpark.de", "southpark.cc.com", "mtv.com.au", "mtv.co.uk", "mtv.com", "cc.com", "funnyclips.cc", "comedycentral.tv", "nick.de", "tvland.com", "spike.com", "thedailyshow.cc.com", "tosh.cc.com", "mtvu.com" }, urls = { "https?://(?:www\\.)?mtv\\.de/.+", "https?://(?:www\\.)?(?:mtviggy|mtvdesi|mtvk)\\.com/.+", "https?://(?:www\\.)?southpark\\.de/.+", "https?://southpark\\.cc\\.com/.+", "https?://(?:www\\.)?mtv\\.com\\.au/.+", "https?://(?:www\\.)?mtv\\.co\\.uk/.+", "https?://(?:www\\.)?mtv\\.com/.+", "https?://(?:www\\.)?cc\\.com/.+", "https?://de\\.funnyclips\\.cc/.+", "https?://(?:www\\.)?comedycentral\\.tv/.+", "https?://(?:www\\.)?nick\\.de/.+", "https?://(?:www\\.)?tvland\\.com/.+", "https?://(?:www\\.)?spike\\.com/.+", "https?://thedailyshow\\.cc\\.com/.+",
         "https?://tosh\\.cc\\.com/.+", "https?://(?:www\\.)?mtvu\\.com/.+" })
@@ -52,8 +53,8 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     public VivaTvDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /** Tags: Viacom International Media Networks Northern Europe, mrss, gameone.de */
+
     /** Additional thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/mtv.py */
     /* Additional information/methods can be found in the VivaTv host plugin */
     /** TODO: mtvplay.tv */
@@ -223,7 +224,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                         hlsBR.getPage(hlsMaster);
                         /* 2021-08-05: Only pick best quality for now */
                         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(hlsBR));
-                        final DownloadLink dl = this.createDownloadlink(hlsbest.getDownloadurl().replaceFirst("https?://", "m3u8s://"));
+                        final DownloadLink dl = this.createDownloadlink(GenericM3u8.createURLForThisPlugin(hlsbest.getDownloadurl()));
                         dl.setAvailable(true);
                         dl._setFilePackage(fp);
                         dl.setFinalFileName(filenameBase + ".mp4");

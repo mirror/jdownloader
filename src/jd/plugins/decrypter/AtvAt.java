@@ -43,6 +43,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.GenericM3u8;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "https?://(?:www\\.)?atv\\.at/([a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/|tv/[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+)" })
 public class AtvAt extends PluginForDecrypt {
@@ -193,7 +194,7 @@ public class AtvAt extends PluginForDecrypt {
                 br.getPage(hdHLSPart);
                 final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(this.br);
                 final HlsContainer best = HlsContainer.findBestVideoByBandwidth(hlsContainers);
-                final DownloadLink link = this.createDownloadlink(best.getDownloadurl().replaceFirst("https://", "m3u8s://"));
+                final DownloadLink link = this.createDownloadlink(GenericM3u8.createURLForThisPlugin(best.getDownloadurl()));
                 String finalname = hybrid_name + "_";
                 finalname += "hlsHD_part_";
                 finalname += df.format(partCounter) + "_";

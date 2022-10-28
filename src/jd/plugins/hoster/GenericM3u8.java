@@ -17,6 +17,14 @@ package jd.plugins.hoster;
 
 import java.net.URL;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -27,14 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+" })
 public class GenericM3u8 extends PluginForHost {
@@ -187,7 +187,7 @@ public class GenericM3u8 extends PluginForHost {
 
     /** Converts given URL into an URL which this plugin can handle. */
     public static String createURLForThisPlugin(final String url) {
-        final String protocolPart = new Regex(url, "http(s?://)").getMatch(0);
+        final String protocolPart = new Regex(url, "(?i)^http(s?://)").getMatch(0);
         if (protocolPart != null) {
             return url.replaceFirst("https?://", "m3u8" + protocolPart);
         } else {
@@ -197,6 +197,7 @@ public class GenericM3u8 extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(final DownloadLink link, final Account acc) {
+        /* This is a generic plugin. Captchas are never required for direct HLS downloads. */
         return false;
     }
 
