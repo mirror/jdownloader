@@ -31,6 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.GenericM3u8;
 import jd.plugins.hoster.MetArtCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -239,7 +240,7 @@ public class MetArt extends PluginForDecrypt {
             }
             if (ret.isEmpty() && !teasersO.isEmpty()) {
                 /* No downloads found -> Fallback to trailer download */
-                final DownloadLink trailer = this.createDownloadlink(br.getURL("/api/m3u8/" + uuid + "/720.m3u8").toString().replaceFirst("https?://", "m3u8s://"));
+                final DownloadLink trailer = this.createDownloadlink(GenericM3u8.createURLForThisPlugin(br.getURL("/api/m3u8/" + uuid + "/720.m3u8").toString()));
                 trailer.setAvailable(true);
                 trailer.setFinalFileName(modelname + " - " + title + " - teaser.mp4");
                 trailer._setFilePackage(fp);

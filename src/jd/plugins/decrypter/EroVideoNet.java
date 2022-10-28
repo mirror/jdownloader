@@ -33,6 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.hoster.GenericM3u8;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ero-video.net" }, urls = { "https?://(?:[a-z0-9]+\\.)?ero\\-video\\.net/movie/\\?mcd=[A-Za-z0-9]+" })
 public class EroVideoNet extends PornEmbedParser {
@@ -114,7 +115,7 @@ public class EroVideoNet extends PornEmbedParser {
             if (hlsURL != null) {
                 br.getPage(hlsURL);
                 final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-                final DownloadLink link = this.createDownloadlink(hlsbest.getDownloadurl().replaceAll("https?://", "m3u8s://"));
+                final DownloadLink link = this.createDownloadlink(GenericM3u8.createURLForThisPlugin(hlsbest.getDownloadurl()));
                 if (title != null) {
                     link.setFinalFileName(title + ".mp4");
                 }

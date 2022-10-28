@@ -20,6 +20,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.GenericM3u8;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rozhlas.cz" }, urls = { "https?://(?:[a-z0-9]+\\.)?rozhlas\\.cz/([a-z0-9\\-]+)\\-(\\d+)" })
 public class RozhlasCz extends PluginForDecrypt {
@@ -72,7 +73,7 @@ public class RozhlasCz extends PluginForDecrypt {
                 // mpd master: https://croaod.cz/stream/<someHash>.m4a/manifest.mpd
                 // hls master: https://croaod.cz/stream/<someHash>.m4a/master.m3u8
                 // hls chunklist (usually there is only one quality available): https://croaod.cz/stream/<someHash>.m4a/chunklist.m3u8
-                link = this.createDownloadlink("m3u8s://croaod.cz/stream/" + mpdStreamingHash + ".m4a/chunklist.m3u8");
+                link = this.createDownloadlink(GenericM3u8.createURLForThisPlugin("https://croaod.cz/stream/" + mpdStreamingHash + ".m4a/chunklist.m3u8"));
                 ext = "m4a";
             }
             link.setFinalFileName(trackNumber + "." + trackTitle + "." + ext);
