@@ -122,7 +122,6 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
             /* No playlist but a single stream */
             final DownloadLink m3u8 = new DownloadLink(null, null, plugin.getHost(), br.getURL(), true);
             m3u8.setReferrerUrl(referer);
-            ;
             m3u8.setProperty("cookies", cookiesString);
             ret.add(m3u8);
             return ret;
