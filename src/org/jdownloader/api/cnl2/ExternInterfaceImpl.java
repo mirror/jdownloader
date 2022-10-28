@@ -675,7 +675,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 final List<CrawledLink> links = new ArrayList<CrawledLink>();
                 for (int index = 0; index < urls.length; index++) {
                     final DownloadLink downloadLink = new DownloadLink(null, null, null, urls[index], true);
-                    downloadLink.setProperty("referer", referer);
+                    downloadLink.setReferrerUrl(referer);
                     downloadLink.setDownloadPassword(getValue(downloadPasswords, index));
                     downloadLink.setComment(getValue(desc, index));
                     downloadLink.setForcedFileName(getValue(fnames, index));

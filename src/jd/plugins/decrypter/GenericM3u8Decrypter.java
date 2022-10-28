@@ -161,7 +161,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 if (hls.getBandwidth() > 0) {
                     link.setProperty("hlsBandwidth", hls.getBandwidth());
                 }
-                link.setProperty("Referer", referer);
+                link.setReferrerUrl(referer);
                 link.setProperty("cookies", cookiesString);
                 addToResults(plugin, ret, br, url, link);
                 index++;
@@ -172,7 +172,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 link.setFinalFileName(finalName);
             }
             link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetName);
-            link.setProperty("Referer", referer);
+            link.setReferrerUrl(referer);
             link.setProperty("cookies", cookiesString);
             ret.add(link);
         }

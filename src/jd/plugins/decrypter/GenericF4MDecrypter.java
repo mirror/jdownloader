@@ -121,7 +121,8 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
         if (br.containsHTML("#EXTM3U")) {
             /* No playlist but a single stream */
             final DownloadLink m3u8 = new DownloadLink(null, null, plugin.getHost(), br.getURL(), true);
-            m3u8.setProperty("Referer", referer);
+            m3u8.setReferrerUrl(referer);
+            ;
             m3u8.setProperty("cookies", cookiesString);
             ret.add(m3u8);
             return ret;
@@ -132,7 +133,7 @@ public class GenericF4MDecrypter extends PluginForDecrypt {
             final String linkURL = "f4m" + url.substring(4);
             for (final HDSContainer container : containers) {
                 final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), linkURL, true);
-                link.setProperty("Referer", referer);
+                link.setReferrerUrl(referer);
                 link.setProperty("cookies", cookiesString);
                 String fileName = null;
                 final ExtensionsFilterInterface fileType;

@@ -79,6 +79,15 @@ public class GenericF4M extends PluginForHost {
         return -1;
     }
 
+    private String getReferer(final DownloadLink link) {
+        final String referOld = link.getStringProperty("Referer"); // backward compatibility
+        if (referOld != null) {
+            return referOld;
+        } else {
+            return link.getReferrerUrl();
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         return AvailableStatus.TRUE;
@@ -86,12 +95,12 @@ public class GenericF4M extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        final String cookiesString = downloadLink.getStringProperty("cookies", null);
+        final String cookiesString = downloadLink.getStringProperty("cookies");
         if (cookiesString != null) {
             final String host = Browser.getHost(downloadLink.getPluginPatternMatcher());
             br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
         }
-        final String referer = downloadLink.getStringProperty("Referer", null);
+        final String referer = getReferer(downloadLink);
         if (referer != null) {
             br.getPage(referer);
         }

@@ -316,7 +316,6 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
             for (String dl : imgs) {
                 String upid = new Regex(dl, "/(\\d+)\\.html").getMatch(0);
                 final DownloadLink img = createDownloadlink("https://decryptedimgsrc.ru" + dl);
-                img.setProperty("Referer", currentLink);
                 img.setReferrerUrl(currentLink);
                 img.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
                 img.setFinalFileName(upid);

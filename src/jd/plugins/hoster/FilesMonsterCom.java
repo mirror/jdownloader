@@ -21,6 +21,13 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,13 +50,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download\\.php\\?id=|dl/.*?/free/2/).+" })
 public class FilesMonsterCom extends PluginForHost {
@@ -181,11 +181,20 @@ public class FilesMonsterCom extends PluginForHost {
         return new Regex(mainlink, "filesmonster\\.com/(?:download\\.php\\?id=|dl/)([^/]+)").getMatch(0);
     }
 
+    private String getReferer(final DownloadLink link) {
+        final String referOld = link.getStringProperty("referer_url"); // backward compatibility
+        if (referOld != null) {
+            return referOld;
+        } else {
+            return link.getReferrerUrl();
+        }
+    }
+
     private String getNewTemporaryLink(final String mainlink, final String originalfilename) throws Exception {
         /* Find a new temporary link */
         final String mainlinkpart = getMainLinkID(mainlink);
         String temporaryLink = null;
-        final String referer_url = this.getDownloadLink().getStringProperty("referer_url");
+        final String referer_url = getReferer(this.getDownloadLink());
         if (referer_url != null) {
             logger.info("Accessing URL with referer: " + referer_url);
             br.getPage(mainlink + "&wbst=" + referer_url);

@@ -63,11 +63,20 @@ public class HornOxeCom extends PluginForHost {
         }
     }
 
+    private String getReferer(final DownloadLink link) {
+        final String referOld = link.getStringProperty("Referer"); // backward compatibility
+        if (referOld != null) {
+            return referOld;
+        } else {
+            return link.getReferrerUrl();
+        }
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         URLConnectionAdapter con = null;
-        br.getHeaders().put("Referer", link.getStringProperty("Referer"));
+        br.getHeaders().put("Referer", getReferer(link));
         // stupid site doesn't always accept connection
         boolean worked = false;
         int repeat = 3;
