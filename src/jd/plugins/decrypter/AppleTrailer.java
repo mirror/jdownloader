@@ -58,7 +58,7 @@ public class AppleTrailer extends PluginForDecrypt {
     // }
     private String                        parameter      = null;
     private String                        title          = null;
-    private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();;
+    private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private final HashSet<String>         dupe           = new HashSet<String>();
 
     @Override

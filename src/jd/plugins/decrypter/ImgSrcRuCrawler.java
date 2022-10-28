@@ -47,10 +47,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class ImgSrcRu extends PluginForDecrypt {
+public class ImgSrcRuCrawler extends PluginForDecrypt {
     // dev notes
     // &pwd= is a md5 hash id once you've provided password for that album.
-    public ImgSrcRu(PluginWrapper wrapper) {
+    public ImgSrcRuCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -317,6 +317,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 String upid = new Regex(dl, "/(\\d+)\\.html").getMatch(0);
                 final DownloadLink img = createDownloadlink("https://decryptedimgsrc.ru" + dl);
                 img.setProperty("Referer", currentLink);
+                img.setReferrerUrl(currentLink);
                 img.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
                 img.setFinalFileName(upid);
                 img.setAvailable(true);
