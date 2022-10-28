@@ -53,7 +53,7 @@ public class NewlunarrepublicFr extends PluginForDecrypt {
             singleLink = br.getURL(singleLink).toString();
             final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
             /* IMPORTANT: Their .webm urls won't work without correct Referer */
-            dl.setProperty("refURL", this.br.getURL());
+            dl.setReferrerUrl(this.br.getURL());
             /* It makes no sense to leave the direct urls in these case as they won't work in browser without the correct Referer. */
             dl.setContentUrl(parameter);
             decryptedLinks.add(dl);

@@ -20,6 +20,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,17 +42,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youku.com" }, urls = { "https?://k\\.youku\\.com/player/getFlvPath/.*?fileid/[A-F0-9\\-]+.+|https?://[A-Za-z0-9\\-]+\\.youku\\.com/playlist/m3u8.*?psid=[a-f0-9]{32}.+" })
 public class YoukuCom extends antiDDoSForHost {
@@ -110,9 +110,8 @@ public class YoukuCom extends antiDDoSForHost {
                         con = br.openHeadConnection(this.dllink);
                     }
                 }
-                if (!con.getContentType().contains("html")) {
+                if (this.looksLikeDownloadableContent(con)) {
                     if (link.getFinalFileName() == null) {
-                        /* Only use server-filename e.g. for URLs sent over via Flashgot or similar. */
                         link.setFinalFileName(getFileNameFromHeader(con));
                     }
                     link.setDownloadSize(con.getLongContentLength());

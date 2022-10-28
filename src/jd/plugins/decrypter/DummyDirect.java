@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -26,11 +31,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dummydirect.jdownloader.org" }, urls = { "https?://dummydirect\\.jdownloader\\.org/[a-f0-9A-F]+" })
 public class DummyDirect extends PluginForDecrypt {
@@ -66,7 +66,7 @@ public class DummyDirect extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String hex = new Regex(parameter, "https?://dummydirect\\.jdownloader\\.org/([a-f0-9A-F]+)").getMatch(0);
         final HashMap<String, Object> params = JSonStorage.restoreFromString(new String(HexFormatter.hexToByteArray(hex), "UTF-8"), TypeRef.HASHMAP);
@@ -88,7 +88,7 @@ public class DummyDirect extends PluginForDecrypt {
             }
             final String referer = (String) params.get("referer");
             if (StringUtils.isNotEmpty(referer)) {
-                link.setProperty("refURL", referer);
+                link.setReferrerUrl(referer);
             }
             final String postData = (String) params.get("postData");
             if (StringUtils.isNotEmpty(postData)) {
@@ -107,9 +107,9 @@ public class DummyDirect extends PluginForDecrypt {
             if (!Boolean.TRUE.equals(recheck)) {
                 link.setAvailable(true);
             }
-            decryptedLinks.add(link);
+            ret.add(link);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     @Override
