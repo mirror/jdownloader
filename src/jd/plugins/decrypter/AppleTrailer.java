@@ -23,6 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -37,11 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * @author raztoki
@@ -58,7 +58,7 @@ public class AppleTrailer extends PluginForDecrypt {
     // }
     private String                        parameter      = null;
     private String                        title          = null;
-    private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(); ;
+    private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();;
     private final HashSet<String>         dupe           = new HashSet<String>();
 
     @Override
@@ -186,7 +186,7 @@ public class AppleTrailer extends PluginForDecrypt {
                         dlLink.setDownloadSize(SizeFormatter.getSize(size));
                     }
                     dlLink.setFinalFileName(name);
-                    dlLink.setProperty("Referer", br.getURL());
+                    dlLink.setReferrerUrl(br.getURL());
                     dlLink.setProperty("pSize", pSize);
                     dlLink.setAvailable(true);
                     temp.add(dlLink);
@@ -202,7 +202,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     String name = title + " - " + names[h] + " (" + p_q(pSize) + ")." + url[1];
                     DownloadLink dlLink = createDownloadlink(url[0].replace(".apple.com", ".appledecrypted.com"));
                     dlLink.setFinalFileName(name);
-                    dlLink.setProperty("Referer", br.getURL());
+                    dlLink.setReferrerUrl(br.getURL());
                     dlLink.setProperty("pSize", pSize);
                     dlLink.setAvailable(true);
                     temp.add(dlLink);
@@ -249,7 +249,7 @@ public class AppleTrailer extends PluginForDecrypt {
             dlLink.setProperty("pSize", psize);
             dlLink.setFinalFileName(name);
             dlLink.setAvailable(true);
-            dlLink.setProperty("Referer", br2.getURL());
+            dlLink.setReferrerUrl(br2.getURL());
             temp.add(dlLink);
         }
         decryptedLinks.addAll(analyseUserSettings(temp));
@@ -285,7 +285,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     dlLink.setProperty("pSize", psize);
                     dlLink.setFinalFileName(name);
                     dlLink.setAvailable(true);
-                    dlLink.setProperty("Referer", br2.getURL());
+                    dlLink.setReferrerUrl(br2.getURL());
                     temp.add(dlLink);
                 }
                 if (containsHD) {
@@ -409,7 +409,7 @@ public class AppleTrailer extends PluginForDecrypt {
                 dlLink.setProperty("pSize", psize);
                 dlLink.setFinalFileName(name);
                 dlLink.setAvailable(true);
-                dlLink.setProperty("Referer", br.getURL());
+                dlLink.setReferrerUrl(br.getURL());
                 temp.add(dlLink);
             } else {
                 logger.warning("Possible plugin error! Please confirm if videos are present in your browser. If so, please report plugin error to JDownloader Development Team! page : " + br2.getURL() + " parameter : " + parameter);
@@ -472,7 +472,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     dlLink.setProperty("pSize", psize);
                     dlLink.setFinalFileName(name);
                     dlLink.setAvailable(true);
-                    dlLink.setProperty("Referer", br.getURL());
+                    dlLink.setReferrerUrl(br.getURL());
                     final ArrayList<DownloadLink> holder;
                     if (temp.containsKey(trailerName)) {
                         holder = temp.get(trailerName);
@@ -568,7 +568,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     }
                     dlLink.setProperty("pSize", format);
                     dlLink.setFinalFileName(fname);
-                    dlLink.setProperty("Referer", br.getURL());
+                    dlLink.setReferrerUrl(br.getURL());
                     dlLink.setAvailable(true);
                     temp.add(dlLink);
                 }
@@ -603,7 +603,7 @@ public class AppleTrailer extends PluginForDecrypt {
                         DownloadLink dlLink = createDownloadlink(url);
                         dlLink.setFinalFileName(filename + " (" + p_q(pSize) + ")" + extension);
                         dlLink.setAvailable(true);
-                        dlLink.setProperty("Referer", br.getURL());
+                        dlLink.setReferrerUrl(br.getURL());
                         dlLink.setProperty("pSize", pSize);
                         temp.add(dlLink);
                         // lets see if we can add the other formats 20140224, generally found links are 480 others are cock blocked.
@@ -619,7 +619,7 @@ public class AppleTrailer extends PluginForDecrypt {
                             DownloadLink d = createDownloadlink(u);
                             d.setFinalFileName(filename + " (" + p_q(n) + ")" + extension);
                             d.setAvailable(true);
-                            d.setProperty("Referer", br.getURL());
+                            d.setReferrerUrl(br.getURL());
                             d.setProperty("pSize", n);
                             temp.add(d);
                             p.remove(n);
@@ -660,7 +660,7 @@ public class AppleTrailer extends PluginForDecrypt {
                             DownloadLink dlLink = createDownloadlink(url);
                             dlLink.setFinalFileName(video_name + extension);
                             dlLink.setAvailable(true);
-                            dlLink.setProperty("Referer", br.getURL());
+                            dlLink.setReferrerUrl(br.getURL());
                             temp.add(dlLink);
                         }
                     }
@@ -713,7 +713,7 @@ public class AppleTrailer extends PluginForDecrypt {
                         dlLink.setLinkID(getHost() + "://" + filmID + "/" + Hash.getMD5(clipTitle) + "/" + format);
                         dlLink.setFinalFileName(fname);
                         dlLink.setProperty("pSize", format);
-                        dlLink.setProperty("Referer", br.getURL());
+                        dlLink.setReferrerUrl(br.getURL());
                         dlLink.setAvailable(true);
                         temp.add(dlLink);
                     }

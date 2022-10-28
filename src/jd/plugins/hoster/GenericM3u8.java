@@ -88,12 +88,12 @@ public class GenericM3u8 extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final String dllink) throws Exception {
         checkFFProbe(link, "Download a HLS Stream");
         this.setBrowserExclusive();
-        final String cookiesString = link.getStringProperty("cookies", null);
+        final String cookiesString = link.getStringProperty("cookies");
         if (cookiesString != null) {
             final String host = Browser.getHost(dllink);
             br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
         }
-        final String referer = link.getStringProperty("Referer", null);
+        final String referer = link.getStringProperty("Referer");
         if (referer != null) {
             br.getPage(referer);
             br.followRedirect();

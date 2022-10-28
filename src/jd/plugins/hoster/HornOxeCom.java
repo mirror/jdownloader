@@ -75,8 +75,8 @@ public class HornOxeCom extends PluginForHost {
             final Browser br2 = br.cloneBrowser();
             try {
                 con = br2.openGetConnection(link.getDownloadURL());
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                     link.setProperty("DDLink", br2.getURL());
                     worked = true;
                     break;

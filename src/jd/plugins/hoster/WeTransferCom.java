@@ -19,6 +19,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.PostRequest;
@@ -30,10 +34,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com", "boards.wetransfer.com" }, urls = { "https?://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}", "https?://boards\\.wetransfer\\.com/board/[a-z0-9]+" })
 public class WeTransferCom extends PluginForHost {
@@ -95,7 +95,10 @@ public class WeTransferCom extends PluginForHost {
             if (security_hash == null || id_main == null || id_single == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String referer = link.getStringProperty("referer");
+            String referer = link.getStringProperty("referer"); // backward compatibility
+            if (referer == null) {
+                referer = link.getReferrerUrl();
+            }
             if (referer == null) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

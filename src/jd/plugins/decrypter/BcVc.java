@@ -20,6 +20,13 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -31,13 +38,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?(?:bc\\.vc|bcvc\\.live|bcvc\\.xyz)/(\\d+/.+|[A-Za-z0-9]{5,7})" })
 public class BcVc extends antiDDoSForDecrypt {
@@ -58,7 +58,7 @@ public class BcVc extends antiDDoSForDecrypt {
                 }
                 if (!StringUtils.containsIgnoreCase(finalLinkInsideLink, getHost() + "/")) {
                     final DownloadLink link = createDownloadlink(finalLinkInsideLink);
-                    link.setProperty("Referer", param.toString());
+                    link.setReferrerUrl(param.toString());
                     ret.add(link);
                     return ret;
                 } else {
@@ -67,7 +67,8 @@ public class BcVc extends antiDDoSForDecrypt {
             }
         }
         /**
-         * we have to rename them here because we can damage urls within urls.</br> URLs containing www. will always be offline.
+         * we have to rename them here because we can damage urls within urls.</br>
+         * URLs containing www. will always be offline.
          */
         param.setCryptedUrl(param.getCryptedUrl().replaceFirst("://www.", "://").replaceFirst("http://", "https://"));
         br.setFollowRedirects(false);

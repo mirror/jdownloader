@@ -4,6 +4,10 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -20,18 +24,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bentbox.co" }, urls = { "https?://(?:www\\.)?bentbox\\.co/box(_view)?\\?[a-zA-Z0-9]+" })
-public class BentBoxCo extends PluginForDecrypt {
-    public BentBoxCo(PluginWrapper wrapper) {
+public class BentBoxCoCrawler extends PluginForDecrypt {
+    public BentBoxCoCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -76,7 +76,7 @@ public class BentBoxCo extends PluginForDecrypt {
             if (StringUtils.isNotEmpty(cookie)) {
                 downloadLink.setProperty("cookies", cookie);
             }
-            downloadLink.setProperty("Referer", parameter.getCryptedUrl());
+            downloadLink.setReferrerUrl(parameter.getCryptedUrl());
             String fileName = downloadFile[1];
             if (!StringUtils.endsWithCaseInsensitive(fileName, ".mp4") && !StringUtils.endsWithCaseInsensitive(fileName, ".jpg")) {
                 final String urlExtension = getFileNameExtensionFromURL(downloadFile[0]);

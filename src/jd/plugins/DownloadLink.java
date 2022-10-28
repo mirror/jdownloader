@@ -30,19 +30,6 @@ import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
-import jd.config.Property;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.plugins.DownloadLinkDatabindingInterface.Key;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.HashInfo;
-import jd.plugins.download.HashInfo.TYPE;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -73,6 +60,19 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
+import jd.config.Property;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.plugins.DownloadLinkDatabindingInterface.Key;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
+
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
  * dargestellt
@@ -85,6 +85,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         FALSE(_GUI.T.linkgrabber_onlinestatus_offline()),
         UNCHECKABLE(_GUI.T.linkgrabber_onlinestatus_uncheckable()),
         TRUE(_GUI.T.linkgrabber_onlinestatus_online());
+
         private final String exp;
 
         private AvailableStatus(String exp) {
@@ -622,7 +623,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /**
      * Definition:<br>
      * The Referrer Url. In some cases, like CNL, or copy and paste from the browser, we can access the currently loaded page in the
-     * browser. This can be considered as a kind of Referrer. IF available, we should store it here. http://svn.jdownloader.org/issues/51004
+     * browser. This can be considered as a kind of Referrer. IF available, we should store it here.
      */
     public String getReferrerUrl() {
         return getStringProperty(URL_REFERRER);
@@ -1661,8 +1662,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Returns whether or not a download password is required to download this item. 7 </br> In most of all cases, this cannot be known
-     * until downloads are started but in some instances this can be set e.g. during folder crawling already.
+     * Returns whether or not a download password is required to download this item. 7 </br>
+     * In most of all cases, this cannot be known until downloads are started but in some instances this can be set e.g. during folder
+     * crawling already.
      */
     public boolean isPasswordProtected() {
         return this.getBooleanProperty(PROPERTY_PASSWORD_PROTECTED, false);
