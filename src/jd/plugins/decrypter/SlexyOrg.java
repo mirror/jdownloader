@@ -2,6 +2,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.config.SlexyOrgPluginConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.HTMLParser;
@@ -10,13 +14,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.plugins.components.config.SlexyOrgPluginConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slexy.org" }, urls = { "http://(www\\.)?slexy\\.org/(?:view|raw)/[0-9A-Za-z]+" })
 public class SlexyOrg extends PluginForDecrypt {
-
     public SlexyOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -32,7 +31,7 @@ public class SlexyOrg extends PluginForDecrypt {
         final String parameter = param.toString();
         if (!SlexyOrgPluginConfig.MODE.CRAWL.equals(mode)) {
             final DownloadLink link = createDownloadlink("directhttp://" + parameter.replaceAll("/view/", "/raw/"));
-            link.setProperty("Referer", parameter.replaceAll("/raw/", "/view"));
+            link.setReferrerUrl(parameter.replaceAll("/raw/", "/view"));
             decryptedLinks.add(link);
         }
         if (!SlexyOrgPluginConfig.MODE.DOWNLOAD.equals(mode)) {

@@ -3,6 +3,11 @@ package jd.plugins.decrypter;
 import java.net.URL;
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.config.WallPapersCraftComConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -10,11 +15,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.config.WallPapersCraftComConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wallpaperscraft.com" }, urls = { "https?://(?:www\\.)?wallpaperscraft\\.com/(download/[^/]+_\\d+/\\d+x\\d+|wallpaper/[^/]+_\\d+)" })
 public class WallPapersCraftCom extends PluginForDecrypt {
@@ -57,7 +57,7 @@ public class WallPapersCraftCom extends PluginForDecrypt {
             final DownloadLink downloadLink = createDownloadlink("directhttp://" + imageURL.toString());
             final String name = Plugin.getFileNameFromURL(imageURL);
             downloadLink.setForcedFileName(name);
-            downloadLink.setProperty("Referer", br.getURL());
+            downloadLink.setReferrerUrl(br.getURL());
             downloadLink.setAvailable(true);
             ret.add(downloadLink);
         }

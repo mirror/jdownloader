@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
@@ -28,10 +27,8 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trailers.apple.com" }, urls = { "https?://\\w+\\.appledecrypted\\.com/.+" })
 public class TrailersAppleCom extends PluginForHost {
-
     // DEV NOTES
     // yay for fun times
-
     public TrailersAppleCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -57,7 +54,6 @@ public class TrailersAppleCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), p640, "Enable '" + p640 + "'.").setDefaultValue(p640_default));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), p480, "Enable '" + p480 + "'.").setDefaultValue(p480_default));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), p360, "Enable '" + p360 + "'.").setDefaultValue(p360_default));
-
     }
 
     @Override
@@ -75,14 +71,6 @@ public class TrailersAppleCom extends PluginForHost {
     }
 
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return false;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return false;
-        }
         return false;
     }
 
@@ -92,10 +80,14 @@ public class TrailersAppleCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         br.setFollowRedirects(true);
+        String referer = downloadLink.getStringProperty("Referer"); // backward compatibility
+        if (referer == null) {
+            referer = downloadLink.getReferrerUrl();
+        }
         br.getHeaders().put("User-Agent", "QuickTime/7.2 (qtver=7.2;os=Windows NT 5.1Service Pack 3)");
-        br.getHeaders().put("Referer", downloadLink.getStringProperty("Referer"));
+        br.getHeaders().put("Referer", referer);
         br.getHeaders().put("Accept", null);
         br.getHeaders().put("Accept-Language", null);
         br.getHeaders().put("Accept-Charset", null);
@@ -140,5 +132,4 @@ public class TrailersAppleCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
