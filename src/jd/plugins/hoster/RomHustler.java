@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.utils.StringUtils;
@@ -24,22 +26,51 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.RomHustlerCrawler;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.org" }, urls = { "https?://(?:www\\.)?romhustler\\.(?:net|org)/(?:file|download)/\\d+/[A-Za-z0-9/\\+=%]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { RomHustlerCrawler.class })
 public class RomHustler extends PluginForHost {
     public RomHustler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    public static List<String[]> getPluginDomains() {
+        return RomHustlerCrawler.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/roms/(?:file|download)/.+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     public String getAGBLink() {
-        return "http://romhustler.net/disclaimer.php";
+        return "https://romhustler.org/disclaimer";
     }
 
     public int getMaxSimultanFreeDownloadNum() {
@@ -61,18 +92,19 @@ public class RomHustler extends PluginForHost {
         return prepBr;
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
+    /** 2022-10-31: This website is similar to romulation.org? */
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException, IOException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser(br);
-        final String decrypterLink = downloadLink.getStringProperty("decrypterLink", null);
+        final String decrypterLink = link.getStringProperty("decrypterLink");
         if (decrypterLink == null) {
             /* This should never happen. */
             // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(link.getPluginPatternMatcher());
             String filename = br.getRegex("itemprop=\"name\">([^<>]+)</h1>").getMatch(0);
             if (filename != null) {
-                downloadLink.setName(filename + " " + System.currentTimeMillis());
+                link.setName(filename + " " + System.currentTimeMillis());
             }
         } else {
             br.getPage(decrypterLink);
@@ -91,6 +123,10 @@ public class RomHustler extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.containsHTML("(?i)>\\s*File too big for guests")) {
+            throw new AccountRequiredException();
+        }
         boolean skipWaittime = true;
         if (!skipWaittime) {
             int wait = 8;
@@ -120,8 +156,12 @@ public class RomHustler extends PluginForHost {
             ddlink += "/1";
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, ddlink, true, -4);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String filename = getFileNameFromHeader(dl.getConnection());

@@ -164,6 +164,7 @@ public class RomulationOrg extends PluginForHost {
                 dl.getConnection().disconnect();
             } catch (Throwable ignore) {
             }
+            link.removeProperty(directlinkproperty);
             return false;
         }
     }

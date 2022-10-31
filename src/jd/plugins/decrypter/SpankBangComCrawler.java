@@ -31,11 +31,14 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -44,8 +47,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.SpankBangCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SpankBangComCrawler extends PluginForDecrypt {
@@ -88,41 +91,53 @@ public class SpankBangComCrawler extends PluginForDecrypt {
         Browser.setRequestIntervalLimitGlobal(getHost(), 3000);
     }
 
-    private static final String           DOMAIN           = "spankbang.com";
-    private LinkedHashMap<String, String> foundQualities   = new LinkedHashMap<String, String>();
-    private String                        parameter        = null;
+    private static final String DOMAIN           = "spankbang.com";
     /** Settings stuff */
-    private static final String           FASTLINKCHECK    = "FASTLINKCHECK";
-    private static final String           ALLOW_BEST       = "ALLOW_BEST";
-    private static final String           ALLOW_240p       = "ALLOW_240p";
-    private static final String           ALLOW_320p       = "ALLOW_320p";
-    private static final String           ALLOW_480p       = "ALLOW_480p";
-    private static final String           ALLOW_720p       = "ALLOW_720p";
-    private static final String           ALLOW_1080p      = "ALLOW_1080p";
-    private static final String           ALLOW_4k         = "ALLOW_4k";
-    private PluginForHost                 plugin           = null;
-    private final String                  PATTERN_PLAYLIST = "https?://[^/]+/([a-z0-9]+)/playlist/(\\w+)";
+    private static final String FASTLINKCHECK    = "FASTLINKCHECK";
+    private static final String ALLOW_BEST       = "ALLOW_BEST";
+    private static final String ALLOW_240p       = "ALLOW_240p";
+    private static final String ALLOW_320p       = "ALLOW_320p";
+    private static final String ALLOW_480p       = "ALLOW_480p";
+    private static final String ALLOW_720p       = "ALLOW_720p";
+    private static final String ALLOW_1080p      = "ALLOW_1080p";
+    private static final String ALLOW_4k         = "ALLOW_4k";
+    private SpankBangCom        plugin           = null;
+    private final String        PATTERN_PLAYLIST = "https?://[^/]+/([a-z0-9]+)/playlist/(\\w+)";
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
         return 1;
     }
 
+    public static Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
+        /* www = English language */
+        br.setCookie("spankbang.com", "language", "www");
+        br.getHeaders().put("Accept-Language", "en");
+        return br;
+    }
+
     private void getPage(final String page) throws Exception {
+        plugin.getPage(page);
+    }
+
+    private void prepCrawlerplugin() throws PluginException {
         if (plugin == null) {
-            plugin = getNewPluginForHostInstance(getHost());
+            plugin = (SpankBangCom) getNewPluginForHostInstance(this.getHost());
             if (plugin == null) {
                 throw new IllegalStateException("Plugin not found!");
             }
         }
-        ((jd.plugins.hoster.SpankBangCom) plugin).getPage(page);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        br.setFollowRedirects(true);
-        /* www = English language */
-        br.setCookie(this.getHost(), "language", "www");
-        br.getHeaders().put("Accept-Language", "en");
+        prepBR(br);
+        prepCrawlerplugin();
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            /* Login whenever account is available so we can e.g. handle private videos too. */
+            plugin.login(account, false);
+        }
         if (param.getCryptedUrl().matches(PATTERN_PLAYLIST)) {
             return this.crawlPlaylist(param);
         } else {
@@ -187,12 +202,12 @@ public class SpankBangComCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, true);
-        parameter = param.toString().replace("/embed/", "/video/");
+        final String addedurl = param.getCryptedUrl().replace("/embed/", "/video/");
         br.setAllowedResponseCodes(new int[] { 503 });
-        getPage(parameter);
+        getPage(addedurl);
         checkErrors(br);
         if (isPrivate(this.br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new AccountRequiredException();
         } else if (br.getHttpConnection().getResponseCode() == 503) {
             logger.info("Server error 503: Cannot crawl new URLs at the moment");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -206,21 +221,21 @@ public class SpankBangComCrawler extends PluginForDecrypt {
             if (title == null) {
                 title = br.getRegex("<h1\\s*title\\s*=\\s*\"(.*?)\"").getMatch(0);
                 if (title == null) {
-                    title = new Regex(parameter, "/video/(.+)").getMatch(0);
+                    title = new Regex(addedurl, "/video/(.+)").getMatch(0);
                     title = Encoding.urlDecode(title, false);
                 }
             }
         }
         String videoID = br.getRegex("\"embedUrl\"\\s*:\\s*\"https?://[^/]+/([a-z0-9]+)/embed").getMatch(0);
         if (videoID == null) {
-            videoID = getFid(parameter);
+            videoID = getFid(addedurl);
         }
         if (videoID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        foundQualities = findQualities(this.br, parameter);
+        final LinkedHashMap<String, String> foundQualities = findQualities(this.br, addedurl);
         if (foundQualities == null || foundQualities.size() == 0 || title == null) {
-            throw new DecrypterException("Decrypter broken for link: " + parameter);
+            throw new DecrypterException("Decrypter broken for link: " + addedurl);
         }
         title = Encoding.htmlDecode(title.trim());
         fp.setName(title);
@@ -279,7 +294,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
                 video.setLinkID("spankbangcom_" + videoID + "_" + selectedQualityValue);
                 video.setProperty("plain_filename", finalname);
                 video.setProperty("plain_directlink", directlink);
-                video.setProperty("mainlink", parameter);
+                video.setProperty("mainlink", addedurl);
                 video.setProperty("quality", selectedQualityValue);
                 fp.add(video);
                 ret.add(video);
@@ -289,7 +304,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
             }
         }
         if (ret.size() == 0) {
-            logger.info(DOMAIN + ": None of the selected qualities were found, decrypting done...");
+            logger.info(DOMAIN + ": None of the selected qualities were found");
         }
         return ret;
     }
@@ -420,7 +435,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
     }
 
     public static boolean isPrivate(final Browser br) {
-        return br.containsHTML("this video is private\\.?\\s*<");
+        return br.containsHTML("(?i)>\\s*(this video is private\\.?|Dieses Video ist privat|Este vídeo es privado)");
     }
 
     /**

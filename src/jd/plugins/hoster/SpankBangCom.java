@@ -26,8 +26,15 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -44,6 +51,7 @@ public class SpankBangCom extends antiDDoSForHost {
     public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
+        this.enablePremium("https://www.spankbang.com/");
     }
 
     public static List<String[]> getPluginDomains() {
@@ -115,9 +123,17 @@ public class SpankBangCom extends antiDDoSForHost {
         super.getPage(page);
     }
 
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
+        SpankBangComCrawler.prepBR(br);
+        if (account != null) {
+            this.login(account, false);
+        }
         server_issues = false;
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
@@ -185,7 +201,11 @@ public class SpankBangCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
+        handleDownload(link, null);
+    }
+
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        requestFileInformation(link, account);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (dllink == null) {
@@ -209,6 +229,87 @@ public class SpankBangCom extends antiDDoSForHost {
         }
     }
 
+    public boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force) {
+                        /* Don't validate cookies */
+                        return false;
+                    }
+                    getPage("https://www." + this.getHost() + "/");
+                    if (this.isLoggedin(br)) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return true;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                getPage("https://www." + this.getHost() + "/users/auth?ajax=1&login=1&_=" + System.currentTimeMillis());
+                final Form loginform = br.getFormbyProperty("id", "auth_login_form");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("l_username", Encoding.urlEncode(account.getUser()));
+                loginform.put("l_password", Encoding.urlEncode(account.getPass()));
+                submitForm(loginform);
+                if (StringUtils.equalsIgnoreCase(br.getRequest().getHtmlCode(), "OK")) {
+                    logger.info("Looks like login was successful");
+                    getPage("/");
+                } else {
+                    logger.info("Looks like login failed");
+                }
+                if (!isLoggedin(br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        return br.containsHTML("/users/logout");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.handleDownload(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
+        return false;
+    }
+
     @Override
     public String getDescription() {
         return "JDownloader's SpankBang Plugin helps downloading Videoclips from spankbang.com. SpankBang provides different video qualities.";
@@ -217,7 +318,7 @@ public class SpankBangCom extends antiDDoSForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, "Fast linkcheck (filesize won't be shown in linkgrabber)?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.SpankBangCom.ALLOW_BEST", "Always only grab best available resolution?")).setDefaultValue(true);
+        final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, "Always only grab best available resolution?").setDefaultValue(true);
         getConfig().addEntry(cfg);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_240p", "Grab 240p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_320p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_320p", "Grab 320p?")).setDefaultValue(true));
