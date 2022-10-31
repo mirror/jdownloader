@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +48,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class SpankBangCom extends PluginForDecrypt {
-    public SpankBangCom(PluginWrapper wrapper) {
+public class SpankBangComCrawler extends PluginForDecrypt {
+    public SpankBangComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -75,7 +76,7 @@ public class SpankBangCom extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:([a-z]{2}|www)\\.)?" + buildHostsPatternPart(domains) + "/(?:[a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/([^/]+)?)");
+            ret.add("https?://(?:([a-z]{2}|www)\\.)?" + buildHostsPatternPart(domains) + "/(?:[a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/([^/]+)?|[a-z0-9\\-]+/playlist/\\w+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -87,19 +88,20 @@ public class SpankBangCom extends PluginForDecrypt {
         Browser.setRequestIntervalLimitGlobal(getHost(), 3000);
     }
 
-    private static final String           DOMAIN         = "spankbang.com";
-    private LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
-    private String                        parameter      = null;
+    private static final String           DOMAIN           = "spankbang.com";
+    private LinkedHashMap<String, String> foundQualities   = new LinkedHashMap<String, String>();
+    private String                        parameter        = null;
     /** Settings stuff */
-    private static final String           FASTLINKCHECK  = "FASTLINKCHECK";
-    private static final String           ALLOW_BEST     = "ALLOW_BEST";
-    private static final String           ALLOW_240p     = "ALLOW_240p";
-    private static final String           ALLOW_320p     = "ALLOW_320p";
-    private static final String           ALLOW_480p     = "ALLOW_480p";
-    private static final String           ALLOW_720p     = "ALLOW_720p";
-    private static final String           ALLOW_1080p    = "ALLOW_1080p";
-    private static final String           ALLOW_4k       = "ALLOW_4k";
-    private PluginForHost                 plugin         = null;
+    private static final String           FASTLINKCHECK    = "FASTLINKCHECK";
+    private static final String           ALLOW_BEST       = "ALLOW_BEST";
+    private static final String           ALLOW_240p       = "ALLOW_240p";
+    private static final String           ALLOW_320p       = "ALLOW_320p";
+    private static final String           ALLOW_480p       = "ALLOW_480p";
+    private static final String           ALLOW_720p       = "ALLOW_720p";
+    private static final String           ALLOW_1080p      = "ALLOW_1080p";
+    private static final String           ALLOW_4k         = "ALLOW_4k";
+    private PluginForHost                 plugin           = null;
+    private final String                  PATTERN_PLAYLIST = "https?://[^/]+/([a-z0-9]+)/playlist/(\\w+)";
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -116,30 +118,85 @@ public class SpankBangCom extends PluginForDecrypt {
         ((jd.plugins.hoster.SpankBangCom) plugin).getPage(page);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
-        final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, true);
-        parameter = param.toString().replace("/embed/", "/video/");
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
         /* www = English language */
         br.setCookie(this.getHost(), "language", "www");
         br.getHeaders().put("Accept-Language", "en");
+        if (param.getCryptedUrl().matches(PATTERN_PLAYLIST)) {
+            return this.crawlPlaylist(param);
+        } else {
+            return crawlSingleVideo(param);
+        }
+    }
+
+    private ArrayList<DownloadLink> crawlPlaylist(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.getPage(param.getCryptedUrl());
+        this.checkErrors(br);
+        final Regex playlistInfo = new Regex(param.getCryptedUrl(), PATTERN_PLAYLIST);
+        final String playlistID = playlistInfo.getMatch(0);
+        final String playlistSlug = playlistInfo.getMatch(1);
+        if (playlistID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(playlistSlug);
+        final String totalNumberofItemsStr = br.getRegex("(?i)records in total\\s*<b>(\\d+)").getMatch(0);
+        if (totalNumberofItemsStr == null) {
+            logger.warning("Failed to find totalNumberofItems");
+        }
+        final HashSet<String> dupes = new HashSet<String>();
+        int page = 1;
+        do {
+            final String[] urls = br.getRegex("\"(/" + playlistID + "-[a-z0-9]+/playlist/[^\"]+)\"").getColumn(0);
+            int numberofNewItems = 0;
+            for (String url : urls) {
+                if (!dupes.add(url)) {
+                    continue;
+                }
+                numberofNewItems++;
+                url = br.getURL(url).toString();
+                final DownloadLink video = this.createDownloadlink(url);
+                video._setFilePackage(fp);
+                ret.add(video);
+                distribute(video);
+            }
+            logger.info("Crawled page " + 1 + " | Found items so far: " + ret.size() + " of " + totalNumberofItemsStr);
+            final String nextPageURL = br.getRegex("<a href=\"(/[^\"]+)\">" + (page + 1) + "</a>").getMatch(0);
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (numberofNewItems == 0) {
+                logger.info("Stopping because: Failed to find any new items on current page");
+                break;
+            } else if (nextPageURL == null) {
+                logger.info("Stopping because: Reached last page");
+                break;
+            } else {
+                page++;
+                br.getPage(nextPageURL);
+            }
+        } while (true);
+        return ret;
+    }
+
+    /** Crawls single videos and single videos that are parts of a playlist. */
+    private ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
+        final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, true);
+        parameter = param.toString().replace("/embed/", "/video/");
         br.setAllowedResponseCodes(new int[] { 503 });
         getPage(parameter);
-        logger.info(br.toString());
-        if (isOffline(this.br)) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
-        } else if (isPrivate(this.br)) {
-            decryptedLinks.add(createOfflinelink(parameter, "PRIVATE_VIDEO"));
-            return decryptedLinks;
+        checkErrors(br);
+        if (isPrivate(this.br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 503) {
             logger.info("Server error 503: Cannot crawl new URLs at the moment");
-            decryptedLinks.add(createOfflinelink(parameter, "SERVER_ERROR_503"));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* Decrypt start */
         final FilePackage fp = FilePackage.getInstance();
         /* Decrypt qualities START */
         /* 2020-05-11: Prefer filenames from inside URL as they are always 'good'. */
@@ -154,7 +211,13 @@ public class SpankBangCom extends PluginForDecrypt {
                 }
             }
         }
-        final String fid = getFid(parameter);
+        String videoID = br.getRegex("\"embedUrl\"\\s*:\\s*\"https?://[^/]+/([a-z0-9]+)/embed").getMatch(0);
+        if (videoID == null) {
+            videoID = getFid(parameter);
+        }
+        if (videoID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         foundQualities = findQualities(this.br, parameter);
         if (foundQualities == null || foundQualities.size() == 0 || title == null) {
             throw new DecrypterException("Decrypter broken for link: " + parameter);
@@ -207,28 +270,34 @@ public class SpankBangCom extends PluginForDecrypt {
             final String directlink = foundQualities.get(selectedQualityValue);
             if (directlink != null) {
                 final String finalname = title + "_" + selectedQualityValue + ".mp4";
-                final DownloadLink dl = createDownloadlink("http://spankbangdecrypted.com/" + UniqueAlltimeID.create());
-                dl.setFinalFileName(finalname);
-                dl.setContentUrl("http://spankbang.com/" + fid + "/video/?quality=" + selectedQualityValue);
+                final DownloadLink video = createDownloadlink("http://spankbangdecrypted.com/" + UniqueAlltimeID.create());
+                video.setFinalFileName(finalname);
+                // dl.setContentUrl(br.getURL());
                 if (fastcheck) {
-                    dl.setAvailable(true);
+                    video.setAvailable(true);
                 }
-                dl.setLinkID("spankbangcom_" + fid + "_" + selectedQualityValue);
-                dl.setProperty("plain_filename", finalname);
-                dl.setProperty("plain_directlink", directlink);
-                dl.setProperty("mainlink", parameter);
-                dl.setProperty("quality", selectedQualityValue);
-                fp.add(dl);
-                decryptedLinks.add(dl);
+                video.setLinkID("spankbangcom_" + videoID + "_" + selectedQualityValue);
+                video.setProperty("plain_filename", finalname);
+                video.setProperty("plain_directlink", directlink);
+                video.setProperty("mainlink", parameter);
+                video.setProperty("quality", selectedQualityValue);
+                fp.add(video);
+                ret.add(video);
                 if (best) {
                     break;
                 }
             }
         }
-        if (decryptedLinks.size() == 0) {
+        if (ret.size() == 0) {
             logger.info(DOMAIN + ": None of the selected qualities were found, decrypting done...");
         }
-        return decryptedLinks;
+        return ret;
+    }
+
+    private void checkErrors(final Browser br) throws PluginException {
+        if (isOffline(this.br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     public static LinkedHashMap<String, String> findQualities(final Browser br, final String source_url) throws DecrypterException, PluginException, IOException {
@@ -249,7 +318,8 @@ public class SpankBangCom extends PluginForDecrypt {
             if (x_csrftoken != null) {
                 request.getHeaders().put("x-csrftoken", x_csrftoken);
             }
-            final String page = br.getPage(request);
+            final Browser brc = br.cloneBrowser();
+            final String page = brc.getPage(request);
             if (page.matches("(?s)^\\s*\\{.*") && page.matches("(?s).*\\}\\s*$")) {
                 final Map<String, Object> map = JSonStorage.restoreFromString(page, TypeRef.HASHMAP);
                 final String stream_url_m3u8 = String.valueOf(map.get("m3u8"));
@@ -346,7 +416,7 @@ public class SpankBangCom extends PluginForDecrypt {
     }
 
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*this video is (no longer available|private|under review)|>\\s*este vídeo já não está disponível|video_removed_page") || !br.getURL().contains("/video");
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*this video is (no longer available|private|under review)|>\\s*este vídeo já não está disponível|video_removed_page");
     }
 
     public static boolean isPrivate(final Browser br) {
