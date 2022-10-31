@@ -15,8 +15,12 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.net.URLEncoder;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -30,7 +34,9 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,20 +44,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?art/[\\w\\-]+|https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/(?:[^/]+/)?journal/[\\w\\-]+" })
 public class DeviantArtCom extends PluginForHost {
     private boolean            DOWNLOADS_STARTED                = false;
     private String             DLLINK                           = null;
-    private final String       COOKIE_HOST                      = "http://www.deviantart.com";
     private final String       NICE_HOST                        = "deviantart.com";
     private final String       NICE_HOSTproperty                = "deviantartcom";
     private final String       INVALIDLINKS                     = "https?://(www\\.)?forum\\.deviantart\\.com/(?:[^/]+/)?art/general";
     private final String       MATURECONTENTFILTER              = ">Mature Content Filter<";
-    private static Object      LOCK                             = new Object();
     public static final String FASTLINKCHECK_2                  = "FASTLINKCHECK_2";
     public static final String FORCEHTMLDOWNLOAD                = "FORCEHTMLDOWNLOAD";
     public static final String CRAWL_GIVEN_OFFSETS_INDIVIDUALLY = "CRAWL_GIVEN_OFFSETS_INDIVIDUALLY";
@@ -63,10 +63,10 @@ public class DeviantArtCom extends PluginForHost {
     private final String       TYPE_DOWNLOADFORBIDDEN_SWF       = "class=\"flashtime\"";
     private final String       TYPE_ACCOUNTNEEDED               = "has limited the viewing of this artwork<";
     private boolean            HTMLALLOWED                      = false;
-    private final String       LINKTYPE_ART                     = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?art/[^<>\"/]+";
-    private final String       LINKTYPE_JOURNAL                 = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?journal/[\\w\\-]+";
-    private final String       LINKTYPE_STATUS                  = "https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+";
-    private final String       TYPE_BLOG_OFFLINE                = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?blog/.+";
+    private final String       PATTERN_ART                      = "https?://[^/]+/(?:[^/]+/)?art/[^<>\"/]+";
+    private final String       LINKTYPE_JOURNAL                 = "https?://[^/]+/(?:[^/]+/)?journal/[\\w\\-]+";
+    private final String       LINKTYPE_STATUS                  = "https?://[^/]+/status/\\d+";
+    private final String       TYPE_BLOG_OFFLINE                = "https?://[^/]+/(?:[^/]+/)?blog/.+";
 
     /**
      * @author raztoki
@@ -75,12 +75,12 @@ public class DeviantArtCom extends PluginForHost {
     public DeviantArtCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
-        this.enablePremium(COOKIE_HOST.replace("http://", "https://") + "/join/");
+        this.enablePremium("https://www." + this.getHost() + "/join/");
     }
 
     @Override
     public String getAGBLink() {
-        return COOKIE_HOST + "/";
+        return "https://www." + this.getHost() + "/about/policy/service/";
     }
 
     @SuppressWarnings("deprecation")
@@ -95,16 +95,18 @@ public class DeviantArtCom extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal(getHost(), 1500);
     }
 
-    /**
-     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
-     */
+    @Override
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
         prepBR(this.br);
         if (link.getDownloadURL().matches(INVALIDLINKS)) {
@@ -117,14 +119,8 @@ public class DeviantArtCom extends PluginForHost {
         if (this.getPluginConfig().getBooleanProperty(FASTLINKCHECK_ALL, default_FASTLINKCHECK_ALL) && !DOWNLOADS_STARTED) {
             return AvailableStatus.UNCHECKABLE;
         }
-        boolean loggedIn = false;
-        final Account acc = AccountController.getInstance().getValidAccount(this);
-        if (acc != null) {
-            try {
-                login(this.br, acc, false);
-                loggedIn = true;
-            } catch (final Exception e) {
-            }
+        if (account != null) {
+            login(account, false);
         }
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("/error\\-title\\-oops\\.png\\)") || br.getHttpConnection().getResponseCode() == 404) {
@@ -217,7 +213,7 @@ public class DeviantArtCom extends PluginForHost {
             }
             filesize = getfileSize();
             ext = "html";
-            if (br.containsHTML(MATURECONTENTFILTER) && !loggedIn) {
+            if (br.containsHTML(MATURECONTENTFILTER) && account == null) {
                 link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
                 link.setName(filename + "." + ext);
                 if (filesize != null) {
@@ -238,7 +234,7 @@ public class DeviantArtCom extends PluginForHost {
             if (filesize == null) {
                 filesize = getfileSize();
             }
-            if (br.containsHTML(MATURECONTENTFILTER) && !loggedIn) {
+            if (br.containsHTML(MATURECONTENTFILTER) && account == null) {
                 link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
                 link.setName(filename);
                 if (filesize != null) {
@@ -282,7 +278,7 @@ public class DeviantArtCom extends PluginForHost {
                     if (con.getResponseCode() == 404 || (con.getContentType().contains("html") && !HTMLALLOWED)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
-                        link.setDownloadSize(con.getLongContentLength());
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                         // link.setContentUrl("dlLink"); // Gives Oops, 404 not found after some time.
                     }
                 } finally {
@@ -396,9 +392,9 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         DOWNLOADS_STARTED = true;
-        requestFileInformation(downloadLink);
+        requestFileInformation(link);
         if (br.containsHTML(TYPE_ACCOUNTNEEDED) || br.containsHTML(MATURECONTENTFILTER)) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
@@ -411,12 +407,12 @@ public class DeviantArtCom extends PluginForHost {
         br.getHeaders().put("Accept-Encoding", "identity");
         boolean resume = true;
         if (HTMLALLOWED) {
-            downloadLink.setVerifiedFileSize(-1);
+            link.setVerifiedFileSize(-1);
             resume = false;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, resume, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlLink, resume, 1);
         if (dl.getConnection().getContentType().contains("html") && !HTMLALLOWED) {
-            handleServerErrors(downloadLink);
+            handleServerErrors(link);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -429,10 +425,10 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         DOWNLOADS_STARTED = true;
         /* This will also log in */
-        requestFileInformation(downloadLink);
+        requestFileInformation(link);
         final String dlLink = getDllink();
         if (dlLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -442,12 +438,12 @@ public class DeviantArtCom extends PluginForHost {
         /* Disable chunks as we only download pictures */
         boolean resume = true;
         if (HTMLALLOWED) {
-            downloadLink.setVerifiedFileSize(-1);
+            link.setVerifiedFileSize(-1);
             resume = false;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, resume, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlLink, resume, 1);
         if (dl.getConnection().getContentType().contains("html") && !HTMLALLOWED) {
-            handleServerErrors(downloadLink);
+            handleServerErrors(link);
             br.followConnection();
             if (br.containsHTML("><title>Redirection</title>")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: unknown redirect", 5 * 60 * 1000l);
@@ -568,44 +564,58 @@ public class DeviantArtCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
-        account.setValid(true);
-        ai.setStatus("Free Registered User");
+        login(account, true);
+        account.setType(AccountType.FREE);
         return ai;
     }
 
-    private boolean isCookieSet(Browser br, String key) {
-        final String value = br.getCookie(getHost(), key);
-        return StringUtils.isNotEmpty(value) && !StringUtils.equalsIgnoreCase(value, "deleted");
-    }
-
-    public void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+    public void login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
-                boolean requestMain = true;
-                if (cookies != null) {
-                    br.setCookies(account.getHoster(), cookies);
-                    br.getPage("https://www.deviantart.com/");
-                    requestMain = false;
-                    if (!isCookieSet(br, "userinfo") || !isCookieSet(br, "auth") || !isCookieSet(br, "auth_secure")) {
-                        br.clearCookies(getHost());
-                    } else {
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                final Cookies userCookies = account.loadUserCookies();
+                /* 2022-10-31: Normal login process won't work due to their anti DDoS protection -> Only cookie login is possible */
+                final boolean allowCookieLoginOnly = true;
+                if (userCookies == null && allowCookieLoginOnly) {
+                    showCookieLoginInfo();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+                }
+                if (userCookies != null) {
+                    br.setCookies(this.getHost(), userCookies);
+                    br.getPage("https://www." + this.getHost());
+                    if (this.isLoggedIN(br)) {
+                        logger.info("User cookie login successful");
                         return;
+                    } else {
+                        logger.info("User cookie login failed");
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                } else if (cookies != null) {
+                    br.setCookies(this.getHost(), cookies);
+                    br.getPage("https://www. " + this.getHost());
+                    if (this.isLoggedIN(br)) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(br.getHost());
                     }
                 }
-                if (requestMain) {
-                    br.getPage("https://www.deviantart.com/");
-                }
-                Thread.sleep(2000);
-                br.getPage("https://www.deviantart.com/users/login"); // Not allowed to go directly to /users/login/
+                logger.info("Performing full login");
+                br.getHeaders().put("Referer", "https://www." + this.getHost());
+                br.getPage("https://www." + this.getHost() + "/users/login"); // Not allowed to go directly to /users/login/
                 if (br.containsHTML("Please confirm you are human")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 }
-                if (false && (br.containsHTML("Please confirm you are human") || (br.containsHTML("px-blocked") && br.containsHTML("g-recaptcha")))) {
+                final boolean allowCaptcha = false;
+                if (allowCaptcha && (br.containsHTML("Please confirm you are human") || (br.containsHTML("px-blocked") && br.containsHTML("g-recaptcha")))) {
                     // disabled because perimeterx code is incomplete
                     final DownloadLink dummyLink = new DownloadLink(this, "Account Login", getHost(), getHost(), true);
                     final DownloadLink odl = this.getDownloadLink();
@@ -622,35 +632,33 @@ public class DeviantArtCom extends PluginForHost {
                     br.setCookie(getHost(), "_pxCaptcha", URLEncoder.encode(captcha.getToken(), "UTF-8") + ":" + uuid + ":" + vid);
                     br.getPage("https://www.deviantart.com/users/login");
                 }
-                final Form loginform = br.getFormbyKey("username");
+                final Form loginform = br.getFormbyActionRegex("(?i).*do/signin");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("remember_me", "1");
-                Thread.sleep(5000);
+                loginform.put("remember", "on");
                 br.submitForm(loginform);
-                if (!isCookieSet(br, "userinfo") || !isCookieSet(br, "auth") || !isCookieSet(br, "auth_secure") || br.getFormbyKey("username") != null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (!isLoggedIN(br)) {
+                    throw new AccountInvalidException();
                 }
-                account.saveCookies(br.getCookies(account.getHoster()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
-                    account.clearCookies("");
-                }
+                account.saveCookies(br.getCookies(this.getHost()), "");
+            } catch (final AccountInvalidException e) {
+                account.clearCookies("");
                 throw e;
             }
         }
     }
 
-    public static void prepBR(final Browser br) {
+    private boolean isLoggedIN(final Browser br) {
+        return br.containsHTML("/users/logout");
+    }
+
+    public static Browser prepBR(final Browser br) {
         /* Needed to view mature content */
         br.setCookie("deviantart.com", "agegate_state", "1");
+        return br;
     }
 
     @Override
@@ -698,6 +706,11 @@ public class DeviantArtCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbinfo.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+    }
+
+    @Override
+    public boolean hasCaptcha(DownloadLink link, Account acc) {
+        return false;
     }
 
     @Override

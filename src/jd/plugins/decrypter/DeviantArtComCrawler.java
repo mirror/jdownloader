@@ -17,9 +17,14 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
@@ -35,16 +40,18 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
+import jd.plugins.hoster.DeviantArtCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!(?:[^/]+/)?art/|status/)[^<>\"]+" })
-public class DeviantArtCom extends PluginForDecrypt {
+public class DeviantArtComCrawler extends PluginForDecrypt {
     /**
      * @author raztoki
      */
-    public DeviantArtCom(PluginWrapper wrapper) {
+    public DeviantArtComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -69,12 +76,12 @@ public class DeviantArtCom extends PluginForDecrypt {
     // I've created the plugin this way to allow users to grab as little or as
     // much, content as they wish. Hopefully this wont create any
     // issues.
-    private static final String TYPE_COLLECTIONS              = "https?://[\\w\\.\\-]*?deviantart\\.com/.*?/collections(/.+)?";
-    private static final String TYPE_CATPATH_ALL              = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath(=.+)?";
-    private static final String TYPE_CATPATH_1                = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
-    private static final String TYPE_CATPATH_2                = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
-    private static final String TYPE_JOURNAL                  = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?journal.+";
-    private static final String LINKTYPE_JOURNAL              = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?journal/[\\w\\-]+/?";
+    private static final String PATTERN_COLLECTIONS           = "https?://[\\w\\.\\-]*?deviantart\\.com/.*?/collections(/.+)?";
+    private static final String PATTERN_CATPATH_ALL           = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath(=.+)?";
+    private static final String PATTERN_CATPATH_1             = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
+    private static final String PATTERN_CATPATH_2             = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
+    private static final String PATTERN_JOURNAL               = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?journal.+";
+    private static final String PATTERN_JOURNAL2              = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?journal/[\\w\\-]+/?";
     private static final String TYPE_BLOG                     = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?blog/(\\?offset=\\d+)?";
     // private static final String TYPE_INVALID = "https?://[\\w\\.\\-]*?deviantart\\.com/stats/*?";
     private String              parameter                     = null;
@@ -90,12 +97,11 @@ public class DeviantArtCom extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        JDUtilities.getPluginForHost(this.getHost());
-        jd.plugins.hoster.DeviantArtCom.prepBR(this.br);
-        fastLinkCheck = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.DeviantArtCom.FASTLINKCHECK_2, false);
-        forceHtmlDownload = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.DeviantArtCom.FORCEHTMLDOWNLOAD, false);
-        crawlGivenOffsetsIndividually = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(jd.plugins.hoster.DeviantArtCom.CRAWL_GIVEN_OFFSETS_INDIVIDUALLY, jd.plugins.hoster.DeviantArtCom.default_CRAWL_GIVEN_OFFSETS_INDIVIDUALLY);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        DeviantArtCom.prepBR(this.br);
+        fastLinkCheck = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(DeviantArtCom.FASTLINKCHECK_2, false);
+        forceHtmlDownload = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(DeviantArtCom.FORCEHTMLDOWNLOAD, false);
+        crawlGivenOffsetsIndividually = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(DeviantArtCom.CRAWL_GIVEN_OFFSETS_INDIVIDUALLY, DeviantArtCom.default_CRAWL_GIVEN_OFFSETS_INDIVIDUALLY);
         parameter = param.toString();
         /* Remove trash */
         final String replace = new Regex(parameter, "(#.+)").getMatch(0);
@@ -104,69 +110,60 @@ public class DeviantArtCom extends PluginForDecrypt {
         }
         /* Fix journallinks: http://xx.deviantart.com/journal/poll/xx/ */
         parameter = parameter.replaceAll("/(poll|stats)/", "/");
-        if (parameter.matches(LINKTYPE_JOURNAL)) {
+        if (parameter.matches(PATTERN_JOURNAL2)) {
             final DownloadLink journal = createDownloadlink(parameter.replace("deviantart.com/", "deviantartdecrypted.com/"));
             journal.setName(new Regex(parameter, "deviantart\\.com/(?:[^/]+/)?journal/([\\w\\-]+)").getMatch(0));
             if (fastLinkCheck) {
                 journal.setAvailable(true);
             }
             distribute(journal);
-            return decryptedLinks;
+            return ret;
         }
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         /* Login if possible. Sometimes not all items of a gallery are visible without being logged in. */
-        final Account acc = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
-        if (acc != null) {
-            try {
-                // broken at the moment
-                // jd.plugins.hoster.DeviantArtCom.login(this.br, acc, false);
-            } catch (final Throwable e) {
-            }
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            final DeviantArtCom plg = (DeviantArtCom) this.getNewPluginForHostInstance(this.getHost());
+            plg.login(account, false);
         }
-        if (parameter.matches(TYPE_JOURNAL)) {
+        if (parameter.matches(PATTERN_JOURNAL)) {
             br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {
-                distribute(this.createOfflinelink(this.parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            decryptJournals();
-        } else if (new Regex(parameter, Pattern.compile(TYPE_COLLECTIONS, Pattern.CASE_INSENSITIVE)).matches()) {
+            crawlJournals();
+        } else if (new Regex(parameter, Pattern.compile(PATTERN_COLLECTIONS, Pattern.CASE_INSENSITIVE)).matches()) {
             br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {
-                distribute(this.createOfflinelink(this.parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            decryptCollections();
+            crawlCollections();
         } else if (parameter.matches(TYPE_BLOG)) {
             br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {
-                distribute(this.createOfflinelink(this.parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            decryptBlog();
+            crawlBlog();
         } else if (StringUtils.containsIgnoreCase(parameter, "/gallery/") || StringUtils.containsIgnoreCase(parameter, "/favourites/")) {
             br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {
-                distribute(this.createOfflinelink(this.parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            decryptStandard();
+            crawlStandard();
         } else {
-            logger.info("Link unsupported: " + parameter);
-            return decryptedLinks;
+            return this.crawlProfile(param);
         }
         if (decryptedUrlsNum == 0) {
-            logger.info("Link probably offline: " + parameter);
-            return decryptedLinks;
+            logger.info("Failed to find any results: " + parameter);
+            return ret;
         }
-        return decryptedLinks;
+        return ret;
     }
 
-    private void decryptJournals() throws DecrypterException, IOException {
+    private void crawlJournals() throws DecrypterException, IOException, PluginException {
         if (br.containsHTML("class=\"empty\\-state journal\"")) {
-            distribute(this.createOfflinelink(parameter));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String username = getSiteUsername();
         if (username == null) {
@@ -230,7 +227,7 @@ public class DeviantArtCom extends PluginForDecrypt {
         } while (next != null);
     }
 
-    private void decryptCollections() throws DecrypterException {
+    private void crawlCollections() throws DecrypterException {
         final String[] links = br.getRegex("<a href=\"(https?://[^<>\"/]+\\.deviantart\\.com/(?:[^/]+/)?(art|journal)/[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Plugin broken for link: " + parameter);
@@ -250,10 +247,9 @@ public class DeviantArtCom extends PluginForDecrypt {
         }
     }
 
-    private void decryptBlog() throws DecrypterException, IOException {
-        if (br.containsHTML(">Sorry\\! This blog entry cannot be displayed")) {
-            distribute(this.createOfflinelink(this.parameter));
-            return;
+    private void crawlBlog() throws DecrypterException, IOException, PluginException {
+        if (br.containsHTML("(?i)>\\s*Sorry\\! This blog entry cannot be displayed")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex("name=\"og:title\" content=\"([^<>\"]*?) on DeviantArt\"").getMatch(0);
         final FilePackage fp;
@@ -267,10 +263,6 @@ public class DeviantArtCom extends PluginForDecrypt {
         final boolean stop_after_first_run = getOffsetFromURL() != null;
         int currentOffset = 0;
         do {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user: " + parameter);
-                return;
-            }
             logger.info("Decrypting offset " + currentOffset);
             if (currentOffset > 0) {
                 accessOffset(currentOffset);
@@ -291,14 +283,17 @@ public class DeviantArtCom extends PluginForDecrypt {
                 }
                 distribute(dl);
             }
+            if (this.isAbort()) {
+                logger.info("Crawler aborted by user");
+                return;
+            }
             currentOffset += 5;
         } while (br.containsHTML("class=\"next\"><a class=\"away\" data\\-offset=\"\\d+\"") && !stop_after_first_run);
     }
 
-    private void decryptStandard() throws DecrypterException, IOException {
+    private void crawlStandard() throws DecrypterException, IOException, PluginException {
         if (br.containsHTML("class=\"empty\\-state gallery\"|class=\"empty\\-state faves\"")) {
-            distribute(this.createOfflinelink(parameter));
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Correct input links */
         if (parameter.matches("https?://[^<>\"/]+\\.deviantart\\.com/(?:[^/]+/)?gallery/\\?\\d+")) {
@@ -317,7 +312,7 @@ public class DeviantArtCom extends PluginForDecrypt {
         }
         // find and set page type
         String pagetype = "";
-        if (parameter.matches(TYPE_CATPATH_2)) {
+        if (parameter.matches(PATTERN_CATPATH_2)) {
             pagetype = new Regex(parameter, "deviantart\\.com/(?:[^/]+/)?gallery/\\?catpath=([a-z0-9]+)").getMatch(0);
             /* First letter = capital letter */
             pagetype = pagetype.substring(0, 1).toUpperCase() + pagetype.substring(1, pagetype.length());
@@ -491,6 +486,53 @@ public class DeviantArtCom extends PluginForDecrypt {
         } while (has_more || maxOffset > 0 && currentOffset >= maxOffset);
     }
 
+    private ArrayList<DownloadLink> crawlProfile(final CryptedLink param) throws IOException, PluginException {
+        br.getPage(parameter);
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String username = new Regex(br.getURL(), "https?://[^/]+/([^/\\?]+)").getMatch(0);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String csrftoken = br.getRegex("window\\.__CSRF_TOKEN__\\s*=\\s*'([^<>\"\\']+)';").getMatch(0);
+        if (csrftoken == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(username);
+        final UrlQuery query = new UrlQuery();
+        query.add("username", username);
+        query.add("offset", "24");
+        query.add("limit", "24");
+        query.add("all_folder", "true");
+        query.add("csrf_token", Encoding.urlEncode(csrftoken));
+        br.getPage("/_napi/da-user-profile/api/gallery/contents?" + query.toString());
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final List<Map<String, Object>> results = (List<Map<String, Object>>) entries.get("results");
+        if (results.isEmpty()) {
+            logger.info("This profile doesn't contain any items");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        for (final Map<String, Object> result : results) {
+            final Map<String, Object> deviation = (Map<String, Object>) result.get("deviation");
+            final Map<String, Object> author = (Map<String, Object>) deviation.get("author");
+            final String type = deviation.get("type").toString();
+            if (!type.equalsIgnoreCase("image")) {
+                logger.info("Skipping unsupported type: " + type);
+                continue;
+            }
+            final DownloadLink link = this.createDownloadlink(deviation.get("url").toString());
+            link.setName(deviation.get("title") + " by " + author.get("username") + "_" + author.get("userId") + ".jpg");
+            link.setAvailable(true);
+            link._setFilePackage(fp);
+            ret.add(link);
+            distribute(link);
+        }
+        if ((Boolean) entries.get("hasMore")) {
+            logger.info("Looks like more items are available but this crawler cannot yet handle pagiantion!");
+        }
+        return ret;
+    }
+
     private void accessOffset(final int offset) throws IOException {
         if (parameter.contains("?")) {
             br.getPage(parameter + "&offset=" + offset);
@@ -511,7 +553,6 @@ public class DeviantArtCom extends PluginForDecrypt {
         return new Regex(parameter, "https?://(?:www\\.)?([A-Za-z0-9\\-]+)\\.deviantart.com/.+").getMatch(0);
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
