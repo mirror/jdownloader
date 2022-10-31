@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -265,8 +266,29 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             root.getPage("https://archive.org/download/" + subfolderPath + "/");
             return this.crawlXML(root, xml, subfolderPath);
         }
-        /** TODO: 2020-09-29: Consider taking the shortcut here to always use that XML straight away (?!) */
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String videoJson = br.getRegex("class=\"js-tv3-init\"[^>]*value='(\\{.*?\\})").getMatch(0);
+        if (videoJson != null) {
+            /* 2022-10-31: Example: https://archive.org/details/MSNBCW_20211108_030000_Four_Seasons_Total_Documentary */
+            final Map<String, Object> entries = JSonStorage.restoreFromString(videoJson, TypeRef.MAP);
+            final String slug = entries.get("TV3.identifier").toString();
+            final List<String> urls = (List<String>) entries.get("TV3.clipstream_clips");
+            final int padLength = StringUtils.getPadLength(urls.size());
+            int position = 1;
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(slug);
+            for (final String url : urls) {
+                final DownloadLink video = this.createDownloadlink(url);
+                video.setFinalFileName(slug + "_" + StringUtils.formatByPadLength(padLength, position) + ".mp4");
+                video.setAvailable(true);
+                video._setFilePackage(fp);
+                ret.add(video);
+                position++;
+            }
+            /* Do not stop here maybe we will find some more downloadable items. */
+            // return ret;
+        }
+        /** TODO: 2020-09-29: Consider taking the shortcut here to always use that XML straight away (?!) */
         int page = 2;
         do {
             if (br.containsHTML("This item is only available to logged in Internet Archive users")) {

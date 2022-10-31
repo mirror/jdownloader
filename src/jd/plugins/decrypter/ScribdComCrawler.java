@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -29,17 +32,16 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "scribd.com" }, urls = { "https?://(?:(?:www|[a-z]{2})\\.)?scribd\\.com/(?:(?!doc/)collections/\\d+/[A-Za-z0-9\\-_%]+|user/\\d+/[^/]+|(?:audiobook|listen)/\\d+(?:/[^/]+)?)" })
-public class ScribdCom extends PluginForDecrypt {
-    public ScribdCom(PluginWrapper wrapper) {
+public class ScribdComCrawler extends PluginForDecrypt {
+    public ScribdComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -62,10 +64,9 @@ public class ScribdCom extends PluginForDecrypt {
             fpname = "scribd.com collection - " + Encoding.htmlDecode(new Regex(parameter, "scribd\\.com/collections/\\d+/([A-Za-z0-9\\-_]+)").getMatch(0));
             final String collection_id = new Regex(parameter, "/collections/(\\d+)/").getMatch(0);
             br.getPage(parameter);
-            if (br.getURL().equals("http://www.scribd.com/")) {
-                logger.info("Link offline: " + parameter);
-                decryptedLinks.add(getOfflineLink(parameter));
-                return decryptedLinks;
+            if (!this.canHandle(br.getURL())) {
+                /* E.g. redirect to mainpage */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final String documentsnum_str = br.getRegex("class=\"subtitle\">(\\d+) books").getMatch(0);
@@ -208,8 +209,7 @@ public class ScribdCom extends PluginForDecrypt {
             // id = br.getRegex("\"id\":(\\d+)").getMatch(0);
             // }
             if (id == null) {
-                decryptedLinks.add(getOfflineLink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             int documentsNum;
@@ -220,8 +220,7 @@ public class ScribdCom extends PluginForDecrypt {
             if (doccount != null) {
                 documentsNum = Integer.parseInt(doccount);
                 if (documentsNum == 0) {
-                    decryptedLinks.add(getOfflineLink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } else {
                 documentsNum = 36;
@@ -237,8 +236,7 @@ public class ScribdCom extends PluginForDecrypt {
                 // https://de.scribd.com/profiles/content.json?content_key=authored_documents&id=229905341&page=2
                 br.getPage("https://de.scribd.com/profiles/content.json?content_key=all_documents&id=" + id + "&page=" + page);
                 if (!this.br.getHttpConnection().getContentType().contains("json")) {
-                    decryptedLinks.add(getOfflineLink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 br.getRequest().setHtmlCode(Encoding.unicodeDecode(br.toString()));
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
@@ -248,8 +246,7 @@ public class ScribdCom extends PluginForDecrypt {
                 final String[][] uplInfo = br.getRegex("href=\"(https?://([a-z]{2}|www)\\.scribd\\.com/(?:doc|document)/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
                 if (uplInfo == null || uplInfo.length == 0) {
                     if (decryptedLinks.size() == 0 && br.containsHTML("\"has_more\":false")) {
-                        decryptedLinks.add(getOfflineLink(parameter));
-                        return decryptedLinks;
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -272,19 +269,10 @@ public class ScribdCom extends PluginForDecrypt {
             } while (decryptedLinksNum < documentsNum && this.br.containsHTML("\"has_more\":true"));
         }
         if (decryptedLinks.size() == 0) {
-            decryptedLinks.add(getOfflineLink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         fp.setName(fpname);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
-    }
-
-    private DownloadLink getOfflineLink(final String parameter) {
-        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-        offline.setFinalFileName(new Regex(parameter, "scribd\\.com/(.+)").getMatch(0));
-        offline.setAvailable(false);
-        offline.setProperty("offline", true);
-        return offline;
     }
 }

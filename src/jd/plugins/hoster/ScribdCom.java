@@ -23,6 +23,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,14 +50,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "https?://(?:www\\.)?(?:(?:de|ru|es)\\.)?scribd\\.com/(doc|document|book|embeds|read)/\\d+" })
 public class ScribdCom extends PluginForHost {
@@ -99,7 +99,7 @@ public class ScribdCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean checkViaJson) throws IOException, PluginException, InterruptedException {
         br.setFollowRedirects(false);
         // final boolean checkViaJson = !link.getPluginPatternMatcher().matches(TYPE_AUDIO);
-        String filename = null;
+        String title = null;
         String description = null;
         final String fid = this.getFID(link);
         boolean is_audiobook = false;
@@ -115,7 +115,7 @@ public class ScribdCom extends PluginForHost {
             }
             br.setFollowRedirects(true);
             br.getPage("https://www." + this.getHost() + "/scepub/" + fid + "/book_metadata.json?token=" + token);
-            filename = PluginJSonUtils.getJson(br, "title");
+            title = PluginJSonUtils.getJson(br, "title");
         } else {
             int counter400 = 0;
             do {
@@ -150,27 +150,27 @@ public class ScribdCom extends PluginForHost {
             try {
                 final String json1 = br.getRegex(">Scribd\\.current_doc\\s*?=\\s*?(\\{.*?\\})</script>").getMatch(0);
                 final String json2 = br.getRegex("ReactDOM\\.render\\(React\\.createElement\\(Scribd\\.BookPage\\.Modules\\.Header, (\\{.*?), document\\.getElementById").getMatch(0);
-                final String json3 = br.getRegex("<script type=\"application/json\" data-hypernova-key=\"doc_page\"[^>]+><[^\\{]*?(\\{.*?)</script>").getMatch(0);
+                final String json3 = br.getRegex("<script type=\"application/json\" data-hypernova-key=\"doc_page\"[^>]+><[^\\{]*?(\\{[^<]*\\})[^\\}<]*</script>").getMatch(0);
                 if (json1 != null) {
                     /* Type 1 */
                     json_type = 1;
                     entries = JavaScriptEngineFactory.jsonToJavaMap(json1);
                     is_audiobook = ((Boolean) entries.get("is_audiobook")).booleanValue();
-                    filename = (String) entries.get("title");
+                    title = (String) entries.get("title");
                     description = (String) entries.get("description");
                 } else if (json2 != null) {
                     /* Type 2 */
                     json_type = 2;
                     entries = JavaScriptEngineFactory.jsonToJavaMap(json2);
                     is_audiobook = ((Boolean) entries.get("is_audiobook")).booleanValue();
-                    filename = (String) entries.get("document_title");
+                    title = (String) entries.get("document_title");
                     description = (String) entries.get("document_description");
                     is_deleted = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "document/deleted")).booleanValue();
                 } else {
                     json_type = 3;
                     entries = JavaScriptEngineFactory.jsonToJavaMap(json3);
                     entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "page/word_document");
-                    filename = (String) entries.get("title");
+                    title = (String) entries.get("title");
                     // final boolean show_archive_paywall = ((Boolean) entries.get("show_archive_paywall")).booleanValue();
                 }
                 /* 2019-08-11: TODO: Find out what these are good for: 'secret_password' and 'access_key' */
@@ -181,11 +181,14 @@ public class ScribdCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        if (StringUtils.isEmpty(filename)) {
+        if (StringUtils.isEmpty(title)) {
             /* Fallback */
-            filename = fid;
+            title = new Regex(br.getURL(), "/document/\\d+/([^/]+)").getMatch(0); // url slug
+            if (title == null) {
+                title = fid;
+            }
         }
-        link.setName(Encoding.htmlDecode(filename).trim() + "." + getExtension(is_audiobook));
+        link.setName(Encoding.htmlDecode(title).trim() + "." + getExtension(is_audiobook));
         if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
             link.setComment(description);
         }
