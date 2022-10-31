@@ -22,6 +22,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -37,13 +44,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RecurbateCom extends antiDDoSForHost {
@@ -74,7 +74,7 @@ public class RecurbateCom extends antiDDoSForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "recurbate.com" });
+        ret.add(new String[] { "recurbate.com", "recurbate.cc" });
         return ret;
     }
 
@@ -203,7 +203,8 @@ public class RecurbateCom extends antiDDoSForHost {
             if (dllink == null) {
                 if (StringUtils.containsIgnoreCase(brc.toString(), "shall_signin")) {
                     /**
-                     * Free users can watch one video per IP per X time. </br> This error should only happen in logged-out state.
+                     * Free users can watch one video per IP per X time. </br>
+                     * This error should only happen in logged-out state.
                      */
                     errorDailyDownloadlimitReached(account);
                 } else if (StringUtils.containsIgnoreCase(brc.toString(), "shall_subscribe")) {
@@ -279,8 +280,8 @@ public class RecurbateCom extends antiDDoSForHost {
                 final Cookies userCookies = account.loadUserCookies();
                 if (userCookies == null) {
                     /**
-                     * 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment.</br> Login
-                     * page: https://recurbate.com/signin
+                     * 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment.</br>
+                     * Login page: https://recurbate.com/signin
                      */
                     /* Only display cookie login instructions on first login attempt */
                     if (!account.hasEverBeenValid()) {

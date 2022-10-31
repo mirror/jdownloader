@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -31,14 +35,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents.BrowserName;
+import jd.plugins.decrypter.SpankBangComCrawler;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-@PluginDependencies(dependencies = { jd.plugins.decrypter.SpankBangCom.class })
+@PluginDependencies(dependencies = { SpankBangComCrawler.class })
 public class SpankBangCom extends antiDDoSForHost {
     public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,7 +47,7 @@ public class SpankBangCom extends antiDDoSForHost {
     }
 
     public static List<String[]> getPluginDomains() {
-        return jd.plugins.decrypter.SpankBangCom.getPluginDomains();
+        return SpankBangComCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -136,12 +137,12 @@ public class SpankBangCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             getPage(mainlink);
-            if (jd.plugins.decrypter.SpankBangCom.isOffline(this.br)) {
+            if (SpankBangComCrawler.isOffline(this.br)) {
                 /* Main videolink offline --> Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* Main videolink online --> Refresh directlink ... */
-            final LinkedHashMap<String, String> foundQualities = jd.plugins.decrypter.SpankBangCom.findQualities(this.br, mainlink);
+            final LinkedHashMap<String, String> foundQualities = SpankBangComCrawler.findQualities(this.br, mainlink);
             if (foundQualities != null) {
                 dllink = foundQualities.get(quality);
             }
@@ -171,7 +172,7 @@ public class SpankBangCom extends antiDDoSForHost {
                 return true;
             } else if (!url.contains("m3u8") && looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
                 return true;
             } else {
