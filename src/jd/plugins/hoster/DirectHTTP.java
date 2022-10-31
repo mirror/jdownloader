@@ -306,12 +306,10 @@ public class DirectHTTP extends antiDDoSForHost {
 
     private final String  SSLTRUSTALL                       = "SSLTRUSTALL";
     private final boolean SSLTRUSTAL_default                = true;
-    private final String  AUTO_USE_FLASHGOT_REFERER         = "AUTO_USE_FLASHGOT_REFERER";
     private final boolean AUTO_USE_FLASHGOT_REFERER_default = true;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SSLTRUSTALL, JDL.L("plugins.hoster.http.ssltrustall", "Ignore SSL issues?")).setDefaultValue(SSLTRUSTAL_default));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AUTO_USE_FLASHGOT_REFERER, "Auto use referer set by Flashgot?").setDefaultValue(AUTO_USE_FLASHGOT_REFERER_default));
     }
 
     private boolean isSSLTrustALL() {
