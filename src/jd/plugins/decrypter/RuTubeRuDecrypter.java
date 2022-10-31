@@ -27,6 +27,8 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -103,16 +105,13 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
             // since we know the embed url for player/embed link types no need todo this step
             getPage(br, "http://" + this.getHost() + "/api/video/" + videoHash);
             /* 2020-02-11: This may return HTTP/1.1 401 UNAUTHORIZED for normal offline content too. */
-            if (br.containsHTML("<root><detail>Not found</detail></root>") || br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<root><detail>Not found</detail></root>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            videoID = br.getRegex("/embed/(\\d{3,})").getMatch(0);
-            if (videoID == null) {
-                /* Assume that this video is offline. */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            videoID = entries.get("track_id").toString();
         }
-        final Browser ajax = getAjaxBR(br);
+        final Browser ajax = getAjaxBR(br.cloneBrowser());
         getPage(ajax, "http://" + this.getHost() + "/api/play/options/" + videoID + "/?format=json&no_404=true&sqr4374_compat=1&referer=" + Encoding.urlEncode(param.getCryptedUrl()) + "&_t=" + System.currentTimeMillis());
         final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
         videoHash = (String) entries.get("effective_video");
@@ -123,8 +122,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         } else if (StringUtils.isEmpty(videoHash)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String contentURL = "https://rutube.ru/video/" + videoHash;
-        final DownloadLink ret = super.createDownloadlink(contentURL);
+        final DownloadLink ret = super.createDownloadlink("https://" + this.getHost() + "/video/" + videoHash);
         final String title = (String) entries.get("title");
         final long durationSeconds = ((Number) entries.get("duration")).longValue();
         final String videoDescription = (String) entries.get("description");
@@ -168,7 +166,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
             }
             final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             final XPath xPath = XPathFactory.newInstance().newXPath();
-            final Browser streamBR = getAjaxBR(br);
+            final Browser streamBR = getAjaxBR(br.cloneBrowser());
             streamBR.getPage(streamDefault);
             Document d = parser.parse(new ByteArrayInputStream(streamBR.toString().getBytes("UTF-8")));
             String baseUrl = xPath.evaluate("/manifest/baseURL", d).trim();
@@ -228,12 +226,11 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
     }
 
     private Browser getAjaxBR(final Browser br) {
-        final Browser ajax = br.cloneBrowser();
         // rv40.0 don't get "video_balancer".
-        ajax.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
-        ajax.getHeaders().put("Accept", "*/*");
-        ajax.getHeaders().put("Content-Type", "application/json");
-        return ajax;
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("Content-Type", "application/json");
+        return br;
     }
 
     /**
