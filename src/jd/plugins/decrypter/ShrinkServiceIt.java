@@ -18,13 +18,13 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
@@ -44,7 +44,7 @@ public class ShrinkServiceIt extends PluginForDecrypt {
     private final String API_BASE = "https://www.shrink-service.it/v3/api";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -52,28 +52,40 @@ public class ShrinkServiceIt extends PluginForDecrypt {
         } else if (br._getURL().getPath().equals("/HTTP404.html")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* 2022-06-07: Plugin broken --> And website is broken */
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String cookie_bypass_v1 = br.getCookie(br.getHost(), "cookie_bypass_v1", Cookies.NOTDELETEDPATTERN);
+        String cookie_bypass_v1 = br.getCookie(br.getHost(), "cookie_bypass_v1", Cookies.NOTDELETEDPATTERN);
         if (cookie_bypass_v1 == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* 2022-11-02 */
+            cookie_bypass_v1 = "false";
         }
-        br.postPage(API_BASE + "/prototype/init", "req=init&uri=" + Encoding.urlEncode(br.getURL()) + "&cookie_bypass_v1=" + Encoding.urlEncode(cookie_bypass_v1));
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final Map<String, Object> settings = (Map<String, Object>) entries.get("settings");
-        final String rcKey = settings.get("rv2pk").toString();
-        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, rcKey).getToken();
-        br.postPage("/recaptcha.php", "v=v3&response=" + Encoding.urlEncode(recaptchaV2Response));
-        String finallink = br.getRegex("<input type='hidden'[^<>\">]*?value='([^<>\"']*?)'>").getMatch(0);
+        final Browser brc = br.cloneBrowser();
+        brc.postPage(API_BASE + "/prototype/init", "req=init&uri=" + Encoding.urlEncode(br.getURL()) + "&cookie_bypass_v1=" + Encoding.urlEncode(cookie_bypass_v1));
+        String finallink = null;
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+        final Map<String, Object> response0 = (Map<String, Object>) entries.get("0");
+        if (response0 != null) {
+            finallink = (String) response0.get("destination");
+            if (finallink == null) {
+                /* 2022-11-02: Unsure about that */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
         if (StringUtils.isEmpty(finallink)) {
-            /* 2021-12-10: adshnk.com --> Skips captcha and waittime */
-            finallink = PluginJSonUtils.getJson(br, "destination");
+            logger.info("Looks like captcha is required");
+            final Map<String, Object> settings = (Map<String, Object>) entries.get("settings");
+            final String rcKey = settings.get("rv2pk").toString();
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, rcKey).getToken();
+            br.postPage("/recaptcha.php", "v=v3&response=" + Encoding.urlEncode(recaptchaV2Response));
+            finallink = br.getRegex("<input type='hidden'[^<>\">]*?value='([^<>\"']*?)'>").getMatch(0);
+            if (StringUtils.isEmpty(finallink)) {
+                /* 2021-12-10: adshnk.com --> Skips captcha and waittime */
+                finallink = PluginJSonUtils.getJson(br, "destination");
+            }
+        } else {
+            logger.info("Skipped captcha");
         }
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (finallink.equals("")) {
             /* Empty field --> Offline/invalid url */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -83,7 +95,7 @@ public class ShrinkServiceIt extends PluginForDecrypt {
         finallink = finallink.replace("&colon;", ":");
         finallink = finallink.replace("&period;", ".");
         finallink = finallink.replace("&quest;", "?");
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 }

@@ -26,6 +26,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,11 +52,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" })
 public class ImageFap extends PluginForHost {
@@ -506,26 +506,27 @@ public class ImageFap extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 429 rate limit reached", 5 * 60 * 1000l);
                 }
-            } else if (StringUtils.containsIgnoreCase(br.getURL(), "rl_captcha.php")) {
+            } else if (isCaptchaRateLimited(br)) {
                 /*
                  * 2020-10-14: Captcha required. Solving it will remove the rate limit FOR THIS BROWSER SESSION! All other browser sessions
                  * (including new sessions) with the current IP will still be rate-limited until one captcha is solved.
                  */
-                final Form captchaform = br.getForm(0);
-                if (captchaform == null || !br.containsHTML("/captcha\\.php") || !captchaform.hasInputFieldByName("captcha")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate limit reached and failed to handle captcha", 5 * 60 * 1000l);
-                }
                 if (SubConfiguration.getConfig("imagefap.com").getBooleanProperty(FORCE_RECONNECT_ON_RATELIMIT, defaultFORCE_RECONNECT_ON_RATELIMIT)) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate limit reached user prefers reconnect over captcha solving", 5 * 60 * 1000l);
+                }
+                final Form captchaform = br.getForm(0);
+                final String captchaurl = br.getRegex("(/captcha\\.php|/captcha)").getMatch(0);
+                if (captchaform == null || captchaurl == null || !captchaform.hasInputFieldByName("captcha")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate limit reached and failed to handle captcha", 5 * 60 * 1000l);
                 }
                 final String code;
                 try {
                     if (plugin instanceof PluginForDecrypt) {
                         final PluginForDecrypt pluginForDecrypt = (PluginForDecrypt) plugin;
-                        code = ReflectionUtils.invoke(plugin.getClass(), "getCaptchaCode", plugin, String.class, "/captcha.php", pluginForDecrypt.getCurrentLink());
+                        code = ReflectionUtils.invoke(plugin.getClass(), "getCaptchaCode", plugin, String.class, captchaurl, pluginForDecrypt.getCurrentLink());
                     } else {
                         final PluginForHost pluginForHost = (PluginForHost) plugin;
-                        code = ReflectionUtils.invoke(plugin.getClass(), "getCaptchaCode", plugin, String.class, "/captcha.php", pluginForHost.getDownloadLink());
+                        code = ReflectionUtils.invoke(plugin.getClass(), "getCaptchaCode", plugin, String.class, captchaurl, pluginForHost.getDownloadLink());
                     }
                 } catch (InvocationTargetException e) {
                     if (e.getTargetException() instanceof Exception) {
@@ -537,7 +538,7 @@ public class ImageFap extends PluginForHost {
                 captchaform.put("captcha", Encoding.urlEncode(code));
                 br.submitForm(captchaform);
                 br.followRedirect(true);
-                if (StringUtils.containsIgnoreCase(br.getURL(), "rl_captcha.php")) {
+                if (isCaptchaRateLimited(br)) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate limit reached and remained after captcha", 5 * 60 * 1000l);
                 } else {
                     synchronized (sessionCookies) {
@@ -546,6 +547,14 @@ public class ImageFap extends PluginForHost {
                 }
             }
             return br.getRequest();
+        }
+    }
+
+    public static boolean isCaptchaRateLimited(final Browser br) {
+        if (StringUtils.containsIgnoreCase(br.getURL(), "rl_captcha.php") || StringUtils.containsIgnoreCase(br.getURL(), "/human-verification")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -600,19 +609,19 @@ public class ImageFap extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Reconnect if rate limit is reached and captcha is required?");
-            put("LABEL_FILENAME", "Define custom filename for pictures:");
-            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'\r\n*photoID* = id of the image\r\n*galleryID* = id of the gallery");
-        }
-    };
+                                                  {
+                                                      put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Reconnect if rate limit is reached and captcha is required?");
+                                                      put("LABEL_FILENAME", "Define custom filename for pictures:");
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'\r\n*photoID* = id of the image\r\n*galleryID* = id of the gallery");
+                                                  }
+                                              };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Führe einen Reconnect durch, wenn das Rate-Limit erreicht ist und ein Captcha benötigt wird?");
-            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
-            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'\r\n*photoID* = id des Bildes\r\n*galleryID* = id der Gallery");
-        }
-    };
+                                                  {
+                                                      put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Führe einen Reconnect durch, wenn das Rate-Limit erreicht ist und ein Captcha benötigt wird?");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'\r\n*photoID* = id des Bildes\r\n*galleryID* = id der Gallery");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
