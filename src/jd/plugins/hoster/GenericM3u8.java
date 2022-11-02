@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.appwork.utils.Regex;
@@ -39,6 +40,12 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+" })
 public class GenericM3u8 extends PluginForHost {
     public static final String PRESET_NAME_PROPERTY = "preSetName";
+    public static final String PROPERTY_HEIGHT      = "height";
+    public static final String PROPERTY_WIDTH       = "width";
+    public static final String PROPERTY_BANDWIDTH   = "hlsBandwidth";
+    public static final String PROPERTY_CODEC_TYPE  = "codec_type";
+    public static final String PROPERTY_CODEC_NAME  = "codec_name";
+    public static final String PROPERTY_BITRATE     = "bitrate";
 
     public GenericM3u8(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,8 +55,9 @@ public class GenericM3u8 extends PluginForHost {
     public String getHost(final DownloadLink link, final Account account, boolean includeSubdomain) {
         if (link != null) {
             return Browser.getHost(link.getPluginPatternMatcher(), includeSubdomain);
+        } else {
+            return super.getHost(link, account, includeSubdomain);
         }
-        return super.getHost(link, account, includeSubdomain);
     }
 
     @Override
@@ -86,7 +94,7 @@ public class GenericM3u8 extends PluginForHost {
     }
 
     private String getReferer(final DownloadLink link) {
-        final String referOld = link.getStringProperty("Referer"); // backward compatibility
+        final String referOld = link.getStringProperty("Referer"); // backward compatibility TODO: Delete this in 2024
         if (referOld != null) {
             return referOld;
         } else {
@@ -112,9 +120,10 @@ public class GenericM3u8 extends PluginForHost {
         if (downloader.isEncrypted()) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS(" + downloader.getEncryptionMethod() + ") is not supported!");
         } else if (streamInfo == null) {
+            /* Invalid/broken stream */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final int hlsBandwidth = link.getIntegerProperty("hlsBandwidth", -1);
+        final int hlsBandwidth = link.getIntegerProperty(PROPERTY_BANDWIDTH, 0);
         if (hlsBandwidth > 0) {
             for (M3U8Playlist playList : downloader.getPlayLists()) {
                 playList.setAverageBandwidth(hlsBandwidth);
@@ -130,10 +139,18 @@ public class GenericM3u8 extends PluginForHost {
         String audioq = null;
         String extension = "m4a";
         for (Stream s : streamInfo.getStreams()) {
+            link.setProperty(PROPERTY_CODEC_TYPE, s.getCodec_type());
+            link.setProperty(PROPERTY_CODEC_NAME, s.getCodec_name());
+            final int bitrate = s.parseBitrate();
+            if (bitrate != -1) {
+                link.setProperty(PROPERTY_BITRATE, bitrate);
+            }
             if ("video".equalsIgnoreCase(s.getCodec_type())) {
                 extension = "mp4";
                 if (s.getHeight() > 0) {
                     videoq = s.getHeight() + "p";
+                    link.setProperty(PROPERTY_HEIGHT, s.getHeight());
+                    link.setProperty(PROPERTY_WIDTH, s.getWidth());
                 }
             } else if ("audio".equalsIgnoreCase(s.getCodec_type())) {
                 if (s.getBit_rate() != null) {
@@ -154,6 +171,7 @@ public class GenericM3u8 extends PluginForHost {
             if (name == null) {
                 name = link.isNameSet() ? link.getName() : getFileNameFromURL(new URL(link.getPluginPatternMatcher()));
             }
+            /* .m3u8 is not a valid file extension */
             if (StringUtils.endsWithCaseInsensitive(name, ".m3u8")) {
                 name = name.substring(0, name.length() - 5);
             }
@@ -173,6 +191,64 @@ public class GenericM3u8 extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public static void setFilename(final DownloadLink link) throws MalformedURLException {
+        if (link.getFinalFileName() != null) {
+            /**
+             * No not modify filename once final name has been set. </br>
+             * This e.g. allows other plugins/crawlers to set desired filenames telling this plugin not to use the default filenames down
+             * below.
+             */
+            return;
+        }
+        final int videoHeight = link.getIntegerProperty(PROPERTY_HEIGHT, 0);
+        final int bitrate = link.getIntegerProperty(PROPERTY_BITRATE, -1);
+        String name = link.getStringProperty(PRESET_NAME_PROPERTY);
+        if (name == null) {
+            name = link.isNameSet() ? link.getName() : getFileNameFromURL(new URL(link.getPluginPatternMatcher()));
+        }
+        /* .m3u8 is not a valid file extension */
+        if (StringUtils.endsWithCaseInsensitive(name, ".m3u8")) {
+            name = name.substring(0, name.length() - 5);
+        }
+        final String codecType = link.getStringProperty(PROPERTY_CODEC_TYPE);
+        final String codedName = link.getStringProperty(PROPERTY_CODEC_NAME);
+        String extension = ".m4a";
+        String audioq = null;
+        String videoq = null;
+        if ("video".equalsIgnoreCase(codecType)) {
+            extension = "mp4";
+            if (videoHeight > 0) {
+                videoq = videoHeight + "p";
+            }
+        } else if ("audio".equalsIgnoreCase(codecType)) {
+            if (bitrate != -1) {
+                if (codedName != null) {
+                    audioq = codedName + " " + (bitrate / 1024) + "kbits";
+                } else {
+                    audioq = (bitrate / 1024) + "kbits";
+                }
+            } else {
+                if (codedName != null) {
+                    audioq = codedName;
+                }
+            }
+        }
+        if (videoq != null && audioq != null) {
+            name += " (" + videoq + "_" + audioq + ")";
+            extension = ".mp4";
+        } else if (videoq != null) {
+            name += " (" + videoq + ")";
+            extension = ".mp4";
+        } else if (audioq != null) {
+            name += " (" + audioq + ")";
+            if (StringUtils.containsIgnoreCase(audioq, "mp3")) {
+                extension = ".mp3";
+            }
+        }
+        name += extension;
+        link.setFinalFileName(name);
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         handleFree(link, link.getPluginPatternMatcher());
@@ -180,7 +256,7 @@ public class GenericM3u8 extends PluginForHost {
 
     public void handleFree(final DownloadLink link, final String dllink) throws Exception {
         checkFFmpeg(link, "Download a HLS Stream");
-        final String cookiesString = link.getStringProperty("cookies", null);
+        final String cookiesString = link.getStringProperty("cookies");
         if (cookiesString != null) {
             final String host = Browser.getHost(dllink);
             br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
