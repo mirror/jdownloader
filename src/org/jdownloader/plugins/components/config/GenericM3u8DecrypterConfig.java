@@ -1,21 +1,40 @@
 package org.jdownloader.plugins.components.config;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "m3u8", type = Type.CRAWLER)
 public interface GenericM3u8DecrypterConfig extends PluginConfigInterface {
-    /* 2022-08-30: TODO: So far this is only a mockup and isn't being used. */
-    // public static final GenericM3u8DecrypterConfig.TRANSLATION TRANSLATION = new TRANSLATION();
+    public static final GenericM3u8DecrypterConfig.TRANSLATION TRANSLATION                       = new TRANSLATION();
     // final String text_CrawlMode = "Select crawl mode";
-    //
-    // public static class TRANSLATION {
-    // public String getCrawlMode_label() {
-    // return text_CrawlMode;
-    // }
-    // }
-    //
+    final String                                               text_EnableFastLinkcheck          = "Enable fast linkcheck?";
+    final String                                               text_AddBandwidthValueToFilenames = "Add bandwidth value to filenames?";
+
+    public static class TRANSLATION {
+        // public String getCrawlMode_label() {
+        // return text_CrawlMode;
+        // }
+        public String getEnableFastLinkcheck_label() {
+            return text_EnableFastLinkcheck;
+        }
+
+        public String getAddBandwidthValueToFilenames_label() {
+            return text_AddBandwidthValueToFilenames;
+        }
+    }
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_EnableFastLinkcheck)
+    @Order(1)
+    boolean isEnableFastLinkcheck();
+
+    void setEnableFastLinkcheck(boolean b);
     // public static enum CrawlMode implements LabelInterface {
     // ALL {
     // @Override
@@ -45,9 +64,17 @@ public interface GenericM3u8DecrypterConfig extends PluginConfigInterface {
     //
     // @AboutConfig
     // @DefaultEnumValue("ALL")
-    // @Order(40)
+    // @Order(10)
     // @DescriptionForConfigEntry(text_CrawlMode)
     // CrawlMode getCrawlMode();
     //
     // void setCrawlMode(final CrawlMode mode);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_AddBandwidthValueToFilenames)
+    @Order(20)
+    boolean isAddBandwidthValueToFilenames();
+
+    void setAddBandwidthValueToFilenames(boolean b);
 }

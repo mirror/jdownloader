@@ -24,6 +24,8 @@ import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -46,6 +48,7 @@ public class GenericM3u8 extends PluginForHost {
     public static final String PROPERTY_CODEC_TYPE  = "codec_type";
     public static final String PROPERTY_CODEC_NAME  = "codec_name";
     public static final String PROPERTY_BITRATE     = "bitrate";
+    public static final String PROPERTY_FRAME_RATE  = "framerate";
 
     public GenericM3u8(PluginWrapper wrapper) {
         super(wrapper);
@@ -191,7 +194,7 @@ public class GenericM3u8 extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public static void setFilename(final DownloadLink link) throws MalformedURLException {
+    public static void setFilename(final DownloadLink link, final boolean setFinalFilename) throws MalformedURLException {
         if (link.getFinalFileName() != null) {
             /**
              * No not modify filename once final name has been set. </br>
@@ -202,9 +205,10 @@ public class GenericM3u8 extends PluginForHost {
         }
         final int videoHeight = link.getIntegerProperty(PROPERTY_HEIGHT, 0);
         final int bitrate = link.getIntegerProperty(PROPERTY_BITRATE, -1);
+        final int bandwidth = link.getIntegerProperty(PROPERTY_BANDWIDTH, 0);
         String name = link.getStringProperty(PRESET_NAME_PROPERTY);
         if (name == null) {
-            name = link.isNameSet() ? link.getName() : getFileNameFromURL(new URL(link.getPluginPatternMatcher()));
+            name = link.isNameSet() ? link.getName() : getFileNameFromURL(new URL(link.getPluginPatternMatcher().replaceFirst("m3u8s?", "https://")));
         }
         /* .m3u8 is not a valid file extension */
         if (StringUtils.endsWithCaseInsensitive(name, ".m3u8")) {
@@ -245,8 +249,22 @@ public class GenericM3u8 extends PluginForHost {
                 extension = ".mp3";
             }
         }
+        final boolean includeBandwidthInFilename;
+        if (videoq == null && audioq == null) {
+            includeBandwidthInFilename = true;
+        } else {
+            includeBandwidthInFilename = PluginJsonConfig.get(GenericM3u8DecrypterConfig.class).isAddBandwidthValueToFilenames();
+        }
+        // if (includeBandwidthInFilename && bandwidth > 0) {
+        if (includeBandwidthInFilename) {
+            name += "_bandwidth_" + bandwidth;
+        }
         name += extension;
-        link.setFinalFileName(name);
+        if (setFinalFilename) {
+            link.setFinalFileName(name);
+        } else {
+            link.setName(name);
+        }
     }
 
     @Override
