@@ -40,6 +40,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -63,14 +64,17 @@ public class ProLeechLink extends antiDDoSForHost {
         }
     }
 
-    private static MultiHosterManagement        mhm                                     = new MultiHosterManagement("proleech.link");
+    private static MultiHosterManagement        mhm                                                               = new MultiHosterManagement("proleech.link");
     /** Contains all filenames of files we attempted to download or downloaded via this account. */
-    private static CopyOnWriteArrayList<String> deleteDownloadHistoryFilenameWhitelist  = new CopyOnWriteArrayList<String>();
+    private static CopyOnWriteArrayList<String> deleteDownloadHistoryFilenameWhitelist                            = new CopyOnWriteArrayList<String>();
     // private static List<String> deleteDownloadHistoryFilenameBlacklist = new ArrayList<String>();
-    private static final String                 API_BASE                                = "https://proleech.link/dl/debrid/deb_api.php";
-    private static final String                 PROPERTY_ACCOUNT_apiuser                = "apiuser";
-    private static final String                 PROPERTY_ACCOUNT_apikey                 = "apikey";
-    private static final String                 PROPERTY_ACCOUNT_api_login_dialog_shown = "api_login_dialog_shown";
+    private final String                        API_BASE                                                          = "https://proleech.link/dl/debrid/deb_api.php";
+    private final String                        PROPERTY_MAXCHUNKS                                                = "proleechlink_maxchunks";
+    private final String                        PROPERTY_PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION = "PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION";
+    private final String                        PROPERTY_ACCOUNT_apiuser                                          = "apiuser";
+    private final String                        PROPERTY_ACCOUNT_apikey                                           = "apikey";
+    private final String                        PROPERTY_ACCOUNT_api_login_dialog_shown                           = "api_login_dialog_shown";
+    private final String                        PROPERTY_ACCOUNT_api_usage_hint_dialog_shown                      = "api_usage_hint_dialog_shown";
 
     @Override
     public String getAGBLink() {
@@ -206,7 +210,7 @@ public class ProLeechLink extends antiDDoSForHost {
                 getPage("/page/hostlist");
                 filehosts_premium_onlineArray = regexPremiumHostsOnlineWebsite(br);
                 trafficmaxDailyStr = this.regexMaxDailyTrafficWebsite(br);
-            } catch (final Throwable e) {
+            } catch (final Exception e) {
                 logger.log(e);
                 logger.info("Failed to fetch list of supported hosts from website");
             }
@@ -322,41 +326,47 @@ public class ProLeechLink extends antiDDoSForHost {
         account.saveCookies(br.getCookies(br.getHost()), "api");
     }
 
-    private Thread showAPIUsageRecommended() {
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Proleech.link - Webseiten Modus aktiv";
-                        message += "Hallo liebe(r) proleech NutzerIn\r\n";
-                        message += "Du verwendest proleech.link aktuell im Webseiten-Modus!\r\n";
-                        message += "Wir empfehlen, den API Modus zu verwenden.\r\n";
-                        message += "Diesen findest du unter: Einstellungen - Plugins - proleech.link - Enable API\r\n";
-                        message += "Sobald der API Modus aktiviert ist, findest du deine speziellen JD Zugangsdaten unter: proleech.link/jdownloader\r\n";
-                        message += "Falls du eben bereits deine API Zugangsdaten eingegeben hast wirst du gleich eine Fehlermeldung erhalten und musst es nach dem Ändern der Einstellung erneut versuchen.\r\n";
-                    } else {
-                        title = "Proleech.link - Website mode active";
-                        message += "Hello dear proleech user\r\n";
-                        message += "You are currently using proleech in website mode.\r\n";
-                        message += "It is recommended to use the API mode instead.\r\n";
-                        message += "You can enable it under Settings - Plugins - proleech.link - Enable API\r\n";
-                        message += "Once enabled, you can find your special JD login credentials here: proleech.link/jdownloader\r\n";
-                        message += "If you've already filled in your API login credentials just now, you will see an error soon and will have to enter your login credentials again after changing the above mentioned setting.\r\n";
+    private Thread showAPIUsageRecommended(final Account account, final boolean forceShowDialog) {
+        synchronized (account) {
+            if (account.hasProperty(PROPERTY_ACCOUNT_api_usage_hint_dialog_shown) && !forceShowDialog) {
+                return null;
+            }
+            account.setProperty(PROPERTY_ACCOUNT_api_usage_hint_dialog_shown, true);
+            final Thread thread = new Thread() {
+                public void run() {
+                    try {
+                        String message = "";
+                        final String title;
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            title = "Proleech.link - Webseiten Modus aktiv";
+                            message += "Hallo liebe(r) proleech NutzerIn\r\n";
+                            message += "Du verwendest proleech.link derzeit im Webseiten-Modus!\r\n";
+                            message += "Wir empfehlen, den API Modus zu verwenden.\r\n";
+                            message += "Diesen findest du unter: Einstellungen - Plugins - proleech.link - Enable API\r\n";
+                            message += "Sobald der API Modus aktiviert ist, findest du deine speziellen JD Zugangsdaten unter: proleech.link/jdownloader\r\n";
+                            message += "Falls du eben bereits deine API Zugangsdaten eingegeben hast wirst du gleich eine Fehlermeldung erhalten und musst es nach dem Ändern der Einstellung erneut versuchen.\r\n";
+                        } else {
+                            title = "Proleech.link - Website mode active";
+                            message += "Hello dear proleech user\r\n";
+                            message += "You are currently using proleech in website mode.\r\n";
+                            message += "It is recommended to use the API mode instead.\r\n";
+                            message += "You can enable it under Settings - Plugins - proleech.link - Enable API\r\n";
+                            message += "Once enabled, you can find your special JD login credentials here: proleech.link/jdownloader\r\n";
+                            message += "If you've already filled in your API login credentials just now, you will see an error soon and will have to enter your login credentials again after changing the above mentioned setting.\r\n";
+                        }
+                        final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                        dialog.setTimeout(2 * 60 * 1000);
+                        final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                        ret.throwCloseExceptions();
+                    } catch (final Throwable e) {
+                        getLogger().log(e);
                     }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(2 * 60 * 1000);
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                }
+                };
             };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
+            thread.setDaemon(true);
+            thread.start();
+            return thread;
+        }
     }
 
     private Thread showAPILoginInformation() {
@@ -429,7 +439,7 @@ public class ProLeechLink extends antiDDoSForHost {
         return br.getRegex("(\\d+(?:\\.\\d+)? GB) Daily Traff?ic").getMatch(0);
     }
 
-    private boolean isLoggedin(final Browser br) throws PluginException {
+    private boolean isLoggedinWebsite(final Browser br) throws PluginException {
         final boolean cookie_ok_amember_nr = br.getCookie("amember_nr", Cookies.NOTDELETEDPATTERN) != null;
         final boolean cookie_ok_amember_ru = br.getCookie("amember_ru", Cookies.NOTDELETEDPATTERN) != null;
         final boolean cookie_ok_amember_rp = br.getCookie("amember_rp", Cookies.NOTDELETEDPATTERN) != null;
@@ -465,7 +475,7 @@ public class ProLeechLink extends antiDDoSForHost {
                     }
                     getPage("https://" + this.getHost() + "/member");
                     br.followRedirect();
-                    loggedIN = this.isLoggedin(this.br);
+                    loggedIN = this.isLoggedinWebsite(this.br);
                 }
                 if (!loggedIN) {
                     logger.info("Performing full login");
@@ -511,10 +521,10 @@ public class ProLeechLink extends antiDDoSForHost {
                     if (!br.getURL().contains("/member")) {
                         getPage("/member");
                     }
-                    if (!isLoggedin(this.br)) {
+                    if (!isLoggedinWebsite(this.br)) {
                         /* On failure, recommend user to use API mode instead of website mode! */
-                        showAPIUsageRecommended();
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        showAPIUsageRecommended(account, true);
+                        throw new AccountInvalidException();
                     }
                 }
                 /*
@@ -589,12 +599,12 @@ public class ProLeechLink extends antiDDoSForHost {
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
                 return true;
-            } catch (PluginException e) {
+            } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
                 } else if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
-                    /* 2020-06-18: Recommend API usage on e.g. Cloudflare failure or any other unexpected failure! */
-                    showAPIUsageRecommended();
+                    /* 2020-06-18: Recommend API usage on e.g. Cloudflare failure or any other unexpected failures! */
+                    showAPIUsageRecommended(account, false);
                 }
                 throw e;
             }
@@ -661,7 +671,7 @@ public class ProLeechLink extends antiDDoSForHost {
                     // found_downloadurl_in_cloud_downloads = true;
                 } else {
                     final long userDefinedWaitHours = PluginJsonConfig.get(this.getConfigInterface()).getAllowDownloadlinkGenerationOnlyEveryXHours();
-                    final long timestamp_next_downloadlink_generation_allowed = link.getLongProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", 0) + (userDefinedWaitHours * 60 * 60 * 1000);
+                    final long timestamp_next_downloadlink_generation_allowed = link.getLongProperty(PROPERTY_PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION, 0) + (userDefinedWaitHours * 60 * 60 * 1000);
                     if (userDefinedWaitHours > 0 && timestamp_next_downloadlink_generation_allowed > System.currentTimeMillis()) {
                         final long waittime_until_next_downloadlink_generation_is_allowed = timestamp_next_downloadlink_generation_allowed - System.currentTimeMillis();
                         final String waittime_until_next_downloadlink_generation_is_allowed_Str = TimeFormatter.formatSeconds(waittime_until_next_downloadlink_generation_is_allowed / 1000, 0);
@@ -681,7 +691,7 @@ public class ProLeechLink extends antiDDoSForHost {
                         triedAPI = true;
                         try {
                             dllink = getDllinkAPI(apiuser, apikey, link, account);
-                        } catch (final Throwable e) {
+                        } catch (final Exception e) {
                             logger.log(e);
                             logger.info("API in website mode failed");
                         }
@@ -708,7 +718,7 @@ public class ProLeechLink extends antiDDoSForHost {
                         post.put("boxlinklist", "0");
                         sendRequest(post);
                         dllink = getDllinkWebsite(link, account);
-                        if (StringUtils.isEmpty(dllink) && !validatedCookies && !this.isLoggedin(this.br)) {
+                        if (StringUtils.isEmpty(dllink) && !validatedCookies && !this.isLoggedinWebsite(this.br)) {
                             /* Bad login - try again with fresh / validated cookies! */
                             loginWebsite(account, null, true);
                             sendRequest(post);
@@ -717,8 +727,8 @@ public class ProLeechLink extends antiDDoSForHost {
                     }
                 }
             }
-            link.setProperty("PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION", System.currentTimeMillis());
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            link.setProperty(PROPERTY_PROLEECH_TIMESTAMP_LAST_SUCCESSFUL_DOWNLOADLINK_CREATION, System.currentTimeMillis());
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, this.getMaxChunks(link));
             /* Now we are definitely loggedIN */
             isLoggedIN = true;
         }
@@ -744,7 +754,7 @@ public class ProLeechLink extends antiDDoSForHost {
         }
     }
 
-    /** Deletes entries from serverside download history if: File is successfully downloaded, file is olde than X days */
+    /** Deletes entries from serverside download history if: File is successfully downloaded or file is older than X days. */
     private void clearDownloadHistoryWebsite(final Account account, final boolean isLoggedIN) {
         synchronized (account) {
             try {
@@ -838,7 +848,7 @@ public class ProLeechLink extends antiDDoSForHost {
                 } else {
                     logger.info("Not deleting download history - used has disabled this setting");
                 }
-            } catch (final Throwable e) {
+            } catch (final Exception e) {
                 e.printStackTrace();
                 logger.info("Error occured in delete-download-history handling");
             }
@@ -959,7 +969,7 @@ public class ProLeechLink extends antiDDoSForHost {
                 logger.info("Checking for directurl of NON-forced cloud download URL");
             }
             getPage("https://" + this.getHost() + "/mydownloads");
-            if (!this.isLoggedin(this.br)) {
+            if (!this.isLoggedinWebsite(this.br)) {
                 /* Ensure that we're logged-in */
                 loginWebsite(account, null, true);
                 getPage("/mydownloads");
@@ -1033,7 +1043,21 @@ public class ProLeechLink extends antiDDoSForHost {
          * 2020-06-04: E.g. success response: {"error":0,"message":"OK","hoster":"http:CENSORED","link":"http:CENSORED","size":"10.15 MB"}
          */
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Number max_chunks = (Number) entries.get("max_chunks");
+        if (max_chunks != null) {
+            link.setProperty(PROPERTY_MAXCHUNKS, max_chunks);
+        }
         return (String) entries.get("link");
+    }
+
+    public int getMaxChunks(final DownloadLink link) {
+        final int maxChunksStored = link.getIntegerProperty(PROPERTY_MAXCHUNKS, 1);
+        if (maxChunksStored > 1) {
+            /* Minus maxChunksStored -> Up to X chunks */
+            return -maxChunksStored;
+        } else {
+            return maxChunksStored;
+        }
     }
 
     private void checkErrorsAPI(final DownloadLink link, final Account account) throws Exception {
@@ -1066,7 +1090,7 @@ public class ProLeechLink extends antiDDoSForHost {
                 case -6:
                     apiAccountInvalid(account);
                 case -5:
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free accounts are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("Free accounts are not supported");
                 case -1:
                     /* {"error":-1,"message":"API key is invalid. Please update new API key https:\/\/proleech.link\/jdownloader."} */
                     apiAccountInvalid(account);
@@ -1120,9 +1144,9 @@ public class ProLeechLink extends antiDDoSForHost {
             logger.log(npe);
         }
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API Username/API Key ungültig!\r\n Siehe proleech.link/jdownloader", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("API Username/API Key ungültig!\r\n Siehe proleech.link/jdownloader");
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API Username/API Key invalid!\r\n See proleech.link/jdownloader", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("API Username/API Key invalid!\r\n See proleech.link/jdownloader");
         }
     }
 
@@ -1139,9 +1163,9 @@ public class ProLeechLink extends antiDDoSForHost {
             logger.log(npe);
         }
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API API Key ungültig!\r\n Siehe proleech.link/jdownloader", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("API Key ungültig!\r\n Siehe proleech.link/jdownloader");
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "API Key invalid!\r\n See proleech.link/jdownloader", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("API Key invalid!\r\n See proleech.link/jdownloader");
         }
     }
 
@@ -1195,7 +1219,7 @@ public class ProLeechLink extends antiDDoSForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        throw new AccountRequiredException();
     }
 
     @Override
@@ -1203,6 +1227,6 @@ public class ProLeechLink extends antiDDoSForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 }

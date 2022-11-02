@@ -48,7 +48,6 @@ import jd.plugins.PluginForHost;
 public class FreeM3DownloadNet extends PluginForHost {
     public FreeM3DownloadNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
@@ -213,9 +212,6 @@ public class FreeM3DownloadNet extends PluginForHost {
                     captchaRequired = false;
                     postdata.put("h", "");
                 }
-                // final String continueURL = "https://free-mp3-download.net/dl.php?" + query.toString();
-                // br.setFollowRedirects(false);
-                // br.getPage(continueURL);
                 br.postPageRaw("/dl.php?", JSonStorage.serializeToJson(postdata));
                 dllink = br.getRedirectLocation();
                 if (dllink == null || br.getRequest().getHtmlCode().startsWith("http")) {
