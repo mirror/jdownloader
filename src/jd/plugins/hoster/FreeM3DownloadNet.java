@@ -21,9 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -193,31 +193,33 @@ public class FreeM3DownloadNet extends PluginForHost {
             String dllink = null;
             synchronized (antiCaptchaCookies) {
                 requestFileInformation(link);
-                final UrlQuery query = new UrlQuery();
-                query.add("i", this.getFID(link));
+                final HashMap<String, Object> postdata = new HashMap<String, Object>();
+                postdata.put("i", Integer.parseInt(this.getFID(link)));
                 /* Random 20 char lowercase string --> We'll just use an UUID */
-                final String str = UUID.randomUUID().toString();
-                query.add("ch", str);
+                // final String str = UUID.randomUUID().toString();
+                // postdata.put("ch", str);
                 if (getPreferFlac(link)) {
-                    query.add("f", "flac");
+                    postdata.put("f", "flac");
                     link.setProperty(PROPERTY_PREFER_FLAC, true);
                 } else {
-                    query.add("f", "mp3");
+                    postdata.put("f", "mp3");
                 }
                 boolean captchaRequired;
                 if (br.containsHTML("class=\"g-recaptcha\"")) {
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    query.add("h", Encoding.urlEncode(recaptchaV2Response));
                     captchaRequired = true;
+                    postdata.put("h", recaptchaV2Response);
                 } else {
                     captchaRequired = false;
+                    postdata.put("h", "");
                 }
-                final String continueURL = "https://free-mp3-download.net/dl.php?" + query.toString();
-                br.setFollowRedirects(false);
-                br.getPage(continueURL);
+                // final String continueURL = "https://free-mp3-download.net/dl.php?" + query.toString();
+                // br.setFollowRedirects(false);
+                // br.getPage(continueURL);
+                br.postPageRaw("/dl.php?", JSonStorage.serializeToJson(postdata));
                 dllink = br.getRedirectLocation();
-                if (dllink == null) {
-                    dllink = br.getRegex("(https?://.+\\.(?:mp3|flac))").getMatch(0);
+                if (dllink == null || br.getRequest().getHtmlCode().startsWith("http")) {
+                    dllink = br.getRequest().getHtmlCode();
                 }
                 if (StringUtils.isEmpty(dllink)) {
                     if (br.containsHTML("^https?://free-mp3-download.net/?$")) {

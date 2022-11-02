@@ -15,7 +15,8 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "mega.co.nz", type = Type.HOSTER)
 public interface MegaConzConfig extends PluginConfigInterface {
-    public static final MegaConzConfig.TRANSLATION TRANSLATION = new TRANSLATION();
+    public static final TRANSLATION TRANSLATION                                                     = new TRANSLATION();
+    final String                    text_AllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore = "Automatically start from zero if file was downloaded partially via multihoster and is then tried to be resumed directly via MEGA?";
 
     public static class TRANSLATION {
         public String getCheckReserverTraffic_label() {
@@ -55,7 +56,7 @@ public interface MegaConzConfig extends PluginConfigInterface {
         }
 
         public String getAllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore_label() {
-            return "Automatically start from zero if file was downloaded partially via multihoster and is then tried to be resumed directly via MEGA?\r\nThis setting is important because JD cannot resume MEGA downloads started via multihoster directly via MEGA!\r\nBy default, JD will not resume in this situation and display an error message instead.";
+            return text_AllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore;
         }
 
         public String getCrawlerSetFullPathAsPackagename_label() {
@@ -172,7 +173,7 @@ public interface MegaConzConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("ALLOW_START_FROM_ZERO_IF_DOWNLOAD_WAS_STARTED_VIA_MULTIHOSTER")
-    @DescriptionForConfigEntry("Automatically start from zero if file was downloaded partially via multihoster and is then tried to be resumed directly via MEGA?\r\nThis setting is important because JD cannot resume MEGA downloads started via multihoster directly via MEGA!\r\nBy default, JD will not resume in this situation and display an error message instead.")
+    @DescriptionForConfigEntry(text_AllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore)
     @Order(100)
     boolean isAllowStartFromZeroIfDownloadWasStartedViaMultihosterBefore();
 
