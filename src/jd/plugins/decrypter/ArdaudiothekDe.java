@@ -69,38 +69,70 @@ public class ArdaudiothekDe extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String episodeTargetID = null;
+        final boolean doSpecialHandlingToFindSingleEpisodePosition = true;
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String json = br.getRegex("type=\"application/json\">([^<]+)<").getMatch(0);
-        final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
-        final Map<String, Object> podcast = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/initialData/data/result");
-        final Map<String, Object> podcastEpisode = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/initialData/data/item");
-        if (podcast == null && podcastEpisode == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final List<Map<String, Object>> episodes;
+        List<Map<String, Object>> episodes = null;
+        int infiniteLoopPreventionCounter = -1;
         FilePackage fp = null;
-        if (podcast != null) {
-            final String podcastTitle = podcast.get("title").toString();
-            final String podcastDescription = (String) podcast.get("description");
-            fp = FilePackage.getInstance();
-            fp.setName(podcastTitle);
-            fp.setComment(podcastDescription);
-            fp.addLinks(ret);
-            final Map<String, Object> items = (Map<String, Object>) podcast.get("items");
-            episodes = (List<Map<String, Object>>) items.get("nodes");
-        } else {
-            /* Single episode */
-            episodes = new ArrayList<Map<String, Object>>();
-            episodes.add(podcastEpisode);
-        }
+        String urlToAccess = param.getCryptedUrl();
+        Map<String, Object> publicationService = null;
+        do {
+            infiniteLoopPreventionCounter++;
+            br.getPage(urlToAccess);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            urlToAccess = null;
+            final String json = br.getRegex("type=\"application/json\">([^<]+)<").getMatch(0);
+            final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+            final Map<String, Object> podcast = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/initialData/data/result");
+            final Map<String, Object> podcastEpisode = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/initialData/data/item");
+            if (podcast == null && podcastEpisode == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (podcast != null) {
+                publicationService = (Map<String, Object>) podcast.get("publicationService");
+                final String podcastTitle = podcast.get("title").toString();
+                final String podcastDescription = (String) podcast.get("description");
+                fp = FilePackage.getInstance();
+                fp.setName(podcastTitle);
+                fp.setComment(podcastDescription);
+                fp.addLinks(ret);
+                final Map<String, Object> items = (Map<String, Object>) podcast.get("items");
+                episodes = (List<Map<String, Object>>) items.get("nodes");
+                break;
+            } else {
+                /* Single episode */
+                publicationService = (Map<String, Object>) podcastEpisode.get("publicationService");
+                episodeTargetID = podcastEpisode.get("id").toString();
+                if (doSpecialHandlingToFindSingleEpisodePosition) {
+                    /*
+                     * Access main podcast URL but then later only pick this episode so we get to know the position of that single added
+                     * episode.
+                     */
+                    final Map<String, Object> programSet = (Map<String, Object>) podcastEpisode.get("programSet");
+                    urlToAccess = programSet.get("path").toString();
+                    logger.info("Accessing main podcast URL: " + urlToAccess);
+                    continue;
+                } else {
+                    episodes = new ArrayList<Map<String, Object>>();
+                    episodes.add(podcastEpisode);
+                    break;
+                }
+            }
+        } while (infiniteLoopPreventionCounter <= 1 && urlToAccess != null);
+        // String tvRadioStationTitle = null;
+        // if (publicationService != null) {
+        // tvRadioStationTitle = publicationService.get("title").toString();
+        // }
         final int padLength = StringUtils.getPadLength(episodes.size());
         int position = 1;
         for (final Map<String, Object> episode : episodes) {
+            final String episodeID = episode.get("id").toString();
             final String episodeSummary = (String) episode.get("summary");
+            /* Is available if we open the single URL to an episode. */
+            final String episodeFullDescription = (String) episode.get("description");
             final List<Map<String, Object>> audios = (List<Map<String, Object>>) episode.get("audios");
             /* Find direct-url: We prefer original downloadurl and only use streaming URL as fallback. */
             String urlStreaming = null;
@@ -125,7 +157,9 @@ public class ArdaudiothekDe extends PluginForDecrypt {
             if (fp != null) {
                 link._setFilePackage(fp);
             }
-            if (!StringUtils.isEmpty(episodeSummary)) {
+            if (!StringUtils.isEmpty(episodeFullDescription)) {
+                link.setComment(episodeFullDescription);
+            } else if (!StringUtils.isEmpty(episodeSummary)) {
                 link.setComment(episodeSummary);
             }
             /* Estimate filesize based on bitrate of 160kb/s */
@@ -133,7 +167,18 @@ public class ArdaudiothekDe extends PluginForDecrypt {
             if (durationSeconds != null) {
                 link.setDownloadSize((durationSeconds.longValue() * 160 * 1024) / 8);
             }
-            ret.add(link);
+            final String path = (String) episode.get("path");
+            if (!StringUtils.isEmpty(path)) {
+                link.setContentUrl(br.getURL(path).toString());
+            }
+            if (StringUtils.equals(episodeID, episodeTargetID)) {
+                /* User wants to have one specific episode only */
+                ret.clear();
+                ret.add(link);
+                break;
+            } else {
+                ret.add(link);
+            }
             position++;
         }
         return ret;

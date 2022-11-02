@@ -20,10 +20,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
@@ -116,6 +119,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
 
     public static ArrayList<DownloadLink> parseM3U8(final PluginForDecrypt plugin, final String m3u8URL, final Browser br, final String referer, final String cookiesString, final String finalName, final String preSetName) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final GenericM3u8DecrypterConfig cfg = PluginJsonConfig.get(GenericM3u8DecrypterConfig.class);
         if (br.containsHTML("#EXT-X-STREAM-INF")) {
             final List<HlsContainer> hlsContainers = new ArrayList<HlsContainer>();
             final ArrayList<URL> urls = new ArrayList<URL>();
@@ -134,7 +138,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                         hlsContainers.add(hlsContainer.get(0));
                         urls.add(br.getURL(line));
                     } else {
-                        // Parser found multiple HlsContainers? This should never happen!
+                        // Parser found multiple HlsContainers? This should never happen and indicates a problem with this parser!
                     }
                     infos.clear();
                 } else {
@@ -149,31 +153,45 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             for (final HlsContainer hls : hlsContainers) {
                 final URL url = urls.get(index);
                 final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), url.toString(), true);
-                if (finalName != null) {
-                    link.setFinalFileName(finalName);
-                }
                 link.setProperty("m3u8Source", m3u8URL);
-                if (StringUtils.isNotEmpty(preSetName)) {
+                if (!StringUtils.isEmpty(preSetName)) {
                     link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetName);
                 } else if (StringUtils.isNotEmpty(sessionDataTitle)) {
                     link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, sessionDataTitle);
                 }
-                if (hls.getBandwidth() > 0) {
-                    link.setProperty("hlsBandwidth", hls.getBandwidth());
-                }
+                hls.setPropertiesOnDownloadLink(link);
                 link.setReferrerUrl(referer);
                 link.setProperty("cookies", cookiesString);
+                if (cfg.isEnableFastLinkcheck() && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    link.setAvailable(true);
+                }
+                if (finalName != null) {
+                    link.setFinalFileName(finalName);
+                } else {
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        GenericM3u8.setFilename(link, false);
+                    }
+                }
                 addToResults(plugin, ret, br, url, link);
                 index++;
             }
         } else {
             final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), "m3u8" + m3u8URL.substring(4), true);
-            if (finalName != null) {
-                link.setFinalFileName(finalName);
-            }
-            link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetName);
             link.setReferrerUrl(referer);
             link.setProperty("cookies", cookiesString);
+            if (cfg.isEnableFastLinkcheck() && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                link.setAvailable(true);
+            }
+            if (finalName != null) {
+                link.setFinalFileName(finalName);
+            } else {
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    GenericM3u8.setFilename(link, false);
+                }
+            }
+            if (!StringUtils.isEmpty(preSetName)) {
+                link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetName);
+            }
             ret.add(link);
         }
         return ret;
@@ -206,8 +224,9 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, Account acc) {
         return false;
     }
-    // @Override
-    // public Class<GenericM3u8DecrypterConfig> getConfigInterface() {
-    // return GenericM3u8DecrypterConfig.class;
-    // }
+
+    @Override
+    public Class<GenericM3u8DecrypterConfig> getConfigInterface() {
+        return GenericM3u8DecrypterConfig.class;
+    }
 }
