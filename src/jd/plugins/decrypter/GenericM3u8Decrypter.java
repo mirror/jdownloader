@@ -42,6 +42,7 @@ import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -87,6 +88,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 source = source.getSourceLink();
             }
         }
+        /* Look for referer inside URL and prefer that */
         String forced_referer = new Regex(param.getCryptedUrl(), "((\\&|\\?|#)forced_referer=.+)").getMatch(0);
         if (forced_referer != null) {
             forced_referer = new Regex(forced_referer, "forced_referer=([A-Za-z0-9=]+)").getMatch(0);
@@ -149,10 +151,30 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
              * TODO: Put bandwidth into filenames if same resolution (width!) video is available multiple times and/or use label in filename
              * or at least set label as property, see: https://svn.jdownloader.org/issues/90277
              */
+            final String finalFallbackTitle = new Regex(m3u8URL, "/([^/]+)\\.m3u8").getMatch(0);
+            FilePackage fp = FilePackage.getInstance();
+            if (finalName != null) {
+                fp.setName(finalName);
+            } else if (preSetName != null) {
+                fp.setName(preSetName);
+            } else {
+                fp = null;
+            }
             int index = 0;
             for (final HlsContainer hls : hlsContainers) {
                 final URL url = urls.get(index);
-                final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), url.toString(), true);
+                if (fp == null) {
+                    final String singleStreamFallbackTitle = new Regex(url.toString(), "/([^/]+)\\.m3u8").getMatch(0);
+                    if (singleStreamFallbackTitle != null) {
+                        fp = FilePackage.getInstance();
+                        fp.setName(singleStreamFallbackTitle);
+                    } else if (finalFallbackTitle != null) {
+                        /* TODO: Maybe ignore this if it is "master" (from "master.m3u8"). */
+                        fp = FilePackage.getInstance();
+                        fp.setName(finalFallbackTitle);
+                    }
+                }
+                final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), GenericM3u8.createURLForThisPlugin(url.toString()), true);
                 link.setProperty("m3u8Source", m3u8URL);
                 if (!StringUtils.isEmpty(preSetName)) {
                     link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetName);
@@ -162,7 +184,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 hls.setPropertiesOnDownloadLink(link);
                 link.setReferrerUrl(referer);
                 link.setProperty("cookies", cookiesString);
-                if (cfg.isEnableFastLinkcheck() && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                if (cfg.isEnableFastLinkcheck()) {
                     link.setAvailable(true);
                 }
                 if (finalName != null) {
@@ -172,14 +194,17 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                         GenericM3u8.setFilename(link, false);
                     }
                 }
+                if (fp != null) {
+                    link._setFilePackage(fp);
+                }
                 addToResults(plugin, ret, br, url, link);
                 index++;
             }
         } else {
-            final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), "m3u8" + m3u8URL.substring(4), true);
+            final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), GenericM3u8.createURLForThisPlugin(m3u8URL), true);
             link.setReferrerUrl(referer);
             link.setProperty("cookies", cookiesString);
-            if (cfg.isEnableFastLinkcheck() && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (cfg.isEnableFastLinkcheck()) {
                 link.setAvailable(true);
             }
             if (finalName != null) {
