@@ -215,9 +215,6 @@ public class ProLeechLink extends antiDDoSForHost {
             ai.setUnlimitedTraffic();
         } else {
             final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-            /* 2022-11-03: Do not use "traffic_left" as this field is always 0(?) */
-            // final Number traffic_left = (Number) entries.get("traffic_left");
-            final Object trafficusedTodayO = entries.get("used_today");
             /* Small workaround: Use website to find daily max traffic value as API doesn't provide that information. */
             try {
                 final Browser brc = br.cloneBrowser();
@@ -233,7 +230,7 @@ public class ProLeechLink extends antiDDoSForHost {
             final Object premiumO = entries.get("premium");
             final String premiumStatusStr = premiumO != null ? premiumO.toString() : null;
             String expiredate = (String) entries.get("subscriptions_date");
-            if ("true".equalsIgnoreCase(premiumStatusStr) || "yes".equalsIgnoreCase(premiumStatusStr)) {
+            if (StringUtils.equalsIgnoreCase(premiumStatusStr, "true") || StringUtils.equalsIgnoreCase(premiumStatusStr, "yes")) {
                 account.setType(AccountType.PREMIUM);
                 if (!StringUtils.isEmpty(expiredate) && expiredate.matches("\\d{4}-\\d{2}-\\d{2}")) {
                     /* 2020-06-04: Should expire at the end of the last day */
@@ -243,6 +240,9 @@ public class ProLeechLink extends antiDDoSForHost {
                     ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH) - aLittleBitLess, br);
                 }
                 final long trafficmaxDaily = SizeFormatter.getSize(trafficmaxDailyStr);
+                /* 2022-11-03: Do not use "traffic_left" as this field is always 0(?) */
+                // final Number traffic_left = (Number) entries.get("traffic_left");
+                final Object trafficusedTodayO = entries.get("used_today");
                 if (trafficusedTodayO instanceof String) {
                     ai.setTrafficLeft(trafficmaxDaily - SizeFormatter.getSize(trafficusedTodayO.toString()));
                 } else if (trafficusedTodayO instanceof Number) {
@@ -533,7 +533,7 @@ public class ProLeechLink extends antiDDoSForHost {
                  * 2019-11-19: Important! This is NOT the 'daily traffic used' - this is the total traffic ever used with the current
                  * account! We can display it in the account status but we cannot use this to calculate the remaining traffic!
                  */
-                final String total_traffic_ever_used_with_this_accountStr = br.getRegex("Bandwidth Used\\s*:\\s*<span[^<>]*><b>\\s*(\\d+(?:\\.\\d{1,2})[ ]*[A-Za-z]+)\\s*<").getMatch(0);
+                final String total_traffic_ever_used_with_this_accountStr = br.getRegex("(?i)Bandwidth Used\\s*:\\s*<span[^<>]*><b>\\s*(\\d+(?:\\.\\d{1,2})[ ]*[A-Za-z]+)\\s*<").getMatch(0);
                 final String activeSubscription = br.getRegex("am-list-subscriptions\">\\s*<li[^<]*>(.*?)</li>").getMatch(0);
                 String accountStatus = null;
                 if (activeSubscription != null) {
@@ -558,10 +558,10 @@ public class ProLeechLink extends antiDDoSForHost {
                         getPage("/downloader");
                         int maxfiles_per_day_used = 0;
                         int maxfiles_per_day_maxvalue = 0;
-                        final Regex maxfiles_per_day = br.getRegex("<li>Files per day:\\s*?<b>\\s*?(\\d+)?\\s*?/\\s*?(\\d+)\\s*?</li>");
+                        final Regex maxfiles_per_day = br.getRegex("(?i)<li>Files per day\\s*:\\s*?<b>\\s*?(\\d+)?\\s*?/\\s*?(\\d+)\\s*?</li>");
                         final String maxfiles_per_day_usedStr = maxfiles_per_day.getMatch(0);
                         final String maxfiles_per_day_maxvalueStr = maxfiles_per_day.getMatch(1);
-                        final String max_free_filesize = br.getRegex("<li>Max\\. Filesize: <b>(\\d+ [^<>\"]+)</li>").getMatch(0);
+                        final String max_free_filesize = br.getRegex("(?i)<li>Max\\. Filesize\\s*:\\s*<b>(\\d+ [^<>\"]+)</li>").getMatch(0);
                         if (maxfiles_per_day_usedStr != null) {
                             maxfiles_per_day_used = Integer.parseInt(maxfiles_per_day_usedStr);
                         }
