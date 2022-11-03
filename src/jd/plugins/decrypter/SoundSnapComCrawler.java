@@ -40,7 +40,7 @@ public class SoundSnapComCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         // final String thisnodeID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
@@ -49,15 +49,15 @@ public class SoundSnapComCrawler extends PluginForDecrypt {
         }
         String[] ids = br.getRegex("node(-|/)(\\d+)").getColumn(1);
         if (ids.length == 0) {
-            ids = br.getRegex("\"nid\":\"(\\d+)\"").getColumn(0);
+            ids = br.getRegex("\"nid\":\"?(\\d+)\"?").getColumn(0);
         }
         if (ids.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String id : ids) {
-            decryptedLinks.add(createDownloadlink("https://www." + this.getHost() + "/node/" + id));
+            ret.add(createDownloadlink("https://www." + this.getHost() + "/node/" + id));
         }
-        return decryptedLinks;
+        return ret;
     }
 
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {

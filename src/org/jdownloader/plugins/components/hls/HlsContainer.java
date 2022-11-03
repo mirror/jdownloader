@@ -90,9 +90,9 @@ public class HlsContainer {
                     final String framerate = new Regex(streamInfo, "(?:,|^)\\s*FRAME-RATE\\s*=\\s*(\\d+)").getMatch(0);
                     final String codecs = new Regex(streamInfo, "(?:,|^)\\s*CODECS\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
                     final String name = new Regex(streamInfo, "(?:,|^)\\s*NAME\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
-                    final String uri = new Regex(streamInfo, "(?:,|^)\\s*URI\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
-                    final String language = new Regex(streamInfo, "(?:,|^)\\s*LANGUAGE\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
-                    final String type = new Regex(streamInfo, "(?:,|^)\\s*TYPE\\s*=\\s*([^<>\"]+)").getMatch(0);
+                    // final String uri = new Regex(streamInfo, "(?:,|^)\\s*URI\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
+                    // final String language = new Regex(streamInfo, "(?:,|^)\\s*LANGUAGE\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
+                    // final String type = new Regex(streamInfo, "(?:,|^)\\s*TYPE\\s*=\\s*([^<>\"]+)").getMatch(0);
                     final String url = br.getURL(stream[1]).toString();
                     final HlsContainer hls = new HlsContainer();
                     if (programID != null) {
@@ -395,7 +395,7 @@ public class HlsContainer {
         if (getCodecType(CODEC_TYPE.VIDEO) != null) {
             return true;
         } else if (this.width == -1 && this.height == -1) {
-            /* wtf case */
+            /* wtf case (typically audio) */
             return false;
         } else {
             return true;
@@ -426,6 +426,7 @@ public class HlsContainer {
         }
     }
 
+    /** Returns video resulution as string <width>x<height> e.g. 1920x1080. */
     public String getResolution() {
         return this.getWidth() + "x" + this.getHeight();
     }
@@ -484,6 +485,7 @@ public class HlsContainer {
         if (this.getBandwidth() > 0) {
             link.setProperty(GenericM3u8.PROPERTY_BANDWIDTH, this.getBandwidth());
         }
+        link.setProperty(GenericM3u8.PROPERTY_FILE_EXTENSION, this.getFileExtension());
         // TODO: Set type of content e.g. audio, video, subtitle
     }
 }
