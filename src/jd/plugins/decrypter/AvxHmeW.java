@@ -19,11 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-
-import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -41,6 +37,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Time;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 /**
  * @author typek_pb
@@ -81,11 +83,11 @@ public class AvxHmeW extends PluginForDecrypt {
     }
 
     private static final String TYPE_REDIRECT = "https?://[^/]+/go/([a-f0-9]{32}/\\d+/?|[A-Za-z0-9\\-_:%]+/?|\\d+/[^\"]+)";
+    private static AtomicLong   LAST_DIRECT   = new AtomicLong(-1);
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
-        /* 2021-03-11: Test to see if we got less captcha failures with this... */
-        return 2;
+        return 1;
     }
 
     @SuppressWarnings("deprecation")
@@ -116,8 +118,16 @@ public class AvxHmeW extends PluginForDecrypt {
             // br.getHeaders().put("Sec-Fetch-User", "?1");
             // br.getHeaders().put("Sec-Fetch-Dest", "document");
             // br.getHeaders().put("Accept-Language", "de-DE,de;q=0.9,en;q=0.8,en-US;q=0.7");
-            br.getPage(param.getCryptedUrl());
-            followInternalRedirects();
+            synchronized (LAST_DIRECT) {
+                final long last = LAST_DIRECT.get();
+                final long wait = 10000 - (Time.systemIndependentCurrentJVMTimeMillis() - last);
+                if (wait > 0) {
+                    sleep(wait, param);
+                }
+                br.getPage(param.getCryptedUrl());
+                followInternalRedirects();
+                LAST_DIRECT.set(Time.systemIndependentCurrentJVMTimeMillis());
+            }
             String link = br.getRedirectLocation();
             if (link == null) {
                 boolean captchaError = false;
@@ -148,6 +158,7 @@ public class AvxHmeW extends PluginForDecrypt {
                         captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     }
                     br.submitForm(captchaForm);
+                    LAST_DIRECT.set(Time.systemIndependentCurrentJVMTimeMillis());
                     followInternalRedirects();
                     /*
                      * 2021-03-11: Sometimes they may first ask for an invisible reCaptchaV2 and then for a normal reCaptchaV2 afterwards...
@@ -163,7 +174,7 @@ public class AvxHmeW extends PluginForDecrypt {
             if (link != null && !link.matches(this.getSupportedLinks().pattern())) {
                 decryptedLinks.add(createDownloadlink(link));
             } else {
-                logger.warning("Failed to find any result");
+                logger.warning("Failed to find any result:" + link);
             }
         } else {
             br.setFollowRedirects(true);

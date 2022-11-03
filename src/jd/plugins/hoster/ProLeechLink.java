@@ -9,26 +9,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.ProleechLinkConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -48,6 +28,25 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.ProleechLinkConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "" })
 public class ProLeechLink extends antiDDoSForHost {
@@ -216,7 +215,7 @@ public class ProLeechLink extends antiDDoSForHost {
             }
             ai.setUnlimitedTraffic();
         } else {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             trafficusedTodayStr = (String) entries.get("used_today");
             /* Small workaround: Use website to find daily max traffic value as API doesn't provide that information. */
             try {
@@ -257,7 +256,7 @@ public class ProLeechLink extends antiDDoSForHost {
         }
         /* Host specific traffic limits would be here: http://proleech.link/dl/debrid/deb_api.php?limits */
         this.getPage(API_BASE + "?hosts");
-        final String[] supportedhostsAPI = JSonStorage.restoreFromString(br.toString(), TypeRef.STRING_ARRAY);
+        final String[] supportedhostsAPI = restoreFromString(br.toString(), TypeRef.STRING_ARRAY);
         for (final String filehost_premium_online : supportedhostsAPI) {
             if (filehost_premium_online.contains("/")) {
                 /* 2019-11-11: WTF They sometimes display multiple domains of one filehost in one entry, separated by ' / ' */
@@ -307,7 +306,7 @@ public class ProLeechLink extends antiDDoSForHost {
             query.add("link", "null");
             this.getPage(API_BASE + "?" + query.toString());
             /* 2020-06-04: We expect this - otherwise probably wrong logindata: {"error":1,"message":"Link not supported or empty link."} */
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final Number error = (Number) entries.get("error");
             if (error.intValue() != 1) {
                 apiAccountInvalid(account);
@@ -1042,10 +1041,12 @@ public class ProLeechLink extends antiDDoSForHost {
         /*
          * 2020-06-04: E.g. success response: {"error":0,"message":"OK","hoster":"http:CENSORED","link":"http:CENSORED","size":"10.15 MB"}
          */
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Number max_chunks = (Number) entries.get("max_chunks");
-        if (max_chunks != null) {
+        if (max_chunks != null && max_chunks.intValue() > 0) {
             link.setProperty(PROPERTY_MAXCHUNKS, max_chunks);
+        } else {
+            link.removeProperty(PROPERTY_MAXCHUNKS);
         }
         return (String) entries.get("link");
     }
@@ -1062,7 +1063,7 @@ public class ProLeechLink extends antiDDoSForHost {
 
     private void checkErrorsAPI(final DownloadLink link, final Account account) throws Exception {
         try {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final Number errorcode = (Number) entries.get("error");
             final String message = (String) entries.get("message");
             if (errorcode != null && message != null) {
