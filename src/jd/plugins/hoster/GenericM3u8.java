@@ -30,7 +30,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
@@ -99,12 +98,7 @@ public class GenericM3u8 extends PluginForHost {
     }
 
     private String getReferer(final DownloadLink link) {
-        final String referOld = link.getStringProperty("Referer"); // backward compatibility TODO: Delete this in 2024
-        if (referOld != null) {
-            return referOld;
-        } else {
-            return link.getReferrerUrl();
-        }
+        return link.getStringProperty("Referer", link.getReferrerUrl());
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final String dllink) throws Exception {
@@ -308,12 +302,7 @@ public class GenericM3u8 extends PluginForHost {
 
     /** Converts given URL into an URL which this plugin can handle. */
     public static String createURLForThisPlugin(final String url) {
-        final String protocolPart = new Regex(url, "(?i)^http(s?://)").getMatch(0);
-        if (protocolPart != null) {
-            return url.replaceFirst("^https?://", "m3u8" + protocolPart);
-        } else {
-            return url;
-        }
+        return url == null ? null : url.replaceFirst("^http(s?://)", "m3u8$1");
     }
 
     @Override

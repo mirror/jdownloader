@@ -18,16 +18,10 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -47,6 +41,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.GenericM3u8;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|(?:\\?|%3F)[^\\s<>\"']*|#.*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
@@ -123,8 +126,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final GenericM3u8DecrypterConfig cfg = PluginJsonConfig.get(GenericM3u8DecrypterConfig.class);
         if (br.containsHTML("#EXT-X-STREAM-INF")) {
-            final List<HlsContainer> hlsContainers = new ArrayList<HlsContainer>();
-            final ArrayList<URL> urls = new ArrayList<URL>();
+            final Map<HlsContainer, URL> hlsContainers = new HashMap<HlsContainer, URL>();
             final String sessionDataTitle = br.getRegex("#EXT-X-SESSION-DATA:DATA-ID\\s*=\\s*\"[^\"]*title\"[^\r\n]*VALUE\\s*=\\s*\"(.*?)\"").getMatch(0);
             final ArrayList<String> infos = new ArrayList<String>();
             for (final String line : Regex.getLines(br.toString())) {
@@ -137,8 +139,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     if (hlsContainer.size() > 1) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else if (hlsContainer.size() == 1) {
-                        hlsContainers.add(hlsContainer.get(0));
-                        urls.add(br.getURL(line));
+                        hlsContainers.put(hlsContainer.get(0), br.getURL(line));
                     } else {
                         // Parser found multiple HlsContainers? This should never happen and indicates a problem with this parser!
                     }
@@ -160,9 +161,9 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             } else {
                 fp = null;
             }
-            int index = 0;
-            for (final HlsContainer hls : hlsContainers) {
-                final URL url = urls.get(index);
+            for (final Entry<HlsContainer, URL> entry : hlsContainers.entrySet()) {
+                final HlsContainer hls = entry.getKey();
+                final URL url = entry.getValue();
                 if (fp == null) {
                     final String singleStreamFallbackTitle = new Regex(url.toString(), "/([^/]+)\\.m3u8").getMatch(0);
                     if (singleStreamFallbackTitle != null) {
@@ -176,7 +177,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 }
                 final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), GenericM3u8.createURLForThisPlugin(url.toString()), true);
                 link.setProperty("m3u8Source", m3u8URL);
-                if (!StringUtils.isEmpty(preSetName)) {
+                if (StringUtils.isNotEmpty(preSetName)) {
                     link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetName);
                 } else if (StringUtils.isNotEmpty(sessionDataTitle)) {
                     link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, sessionDataTitle);
@@ -198,7 +199,6 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     link._setFilePackage(fp);
                 }
                 addToResults(plugin, ret, br, url, link);
-                index++;
             }
         } else {
             final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), GenericM3u8.createURLForThisPlugin(m3u8URL), true);
@@ -214,7 +214,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     GenericM3u8.setFilename(link, false);
                 }
             }
-            if (!StringUtils.isEmpty(preSetName)) {
+            if (StringUtils.isNotEmpty(preSetName)) {
                 link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetName);
             }
             ret.add(link);
@@ -232,7 +232,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             try {
                 con = brc.openRequestConnection(new HeadRequest(url));
                 if (con.isOK() && (LinkCrawlerDeepInspector.looksLikeMpegURL((con)) || StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), ".m3u8"))) {
-                    link.setPluginPatternMatcher("m3u8" + url.toString().substring(4));
+                    link.setPluginPatternMatcher(GenericM3u8.createURLForThisPlugin(url.toString()));
                     results.add(link);
                 }
             } catch (final Throwable e) {
