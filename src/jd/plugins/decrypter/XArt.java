@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.IOException;
@@ -27,12 +26,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.Files;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -40,18 +44,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.XArtCom;
 import jd.plugins.hoster.XArtCom.XArtConfigInterface;
-import jd.utils.JDUtilities;
-
-import org.appwork.utils.Files;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "x-art.com" }, urls = { "^https?://(www\\.)?x-art\\.com/(members/)?.+" })
 public class XArt extends PluginForDecrypt {
-
     public XArt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -65,7 +62,7 @@ public class XArt extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>() {
             /**
              *
@@ -112,10 +109,9 @@ public class XArt extends PluginForDecrypt {
             }
         }
         if (!prem) {
-            logger.warning("You need to use an Account with this provider");
-            return ret;
+            throw new AccountRequiredException();
         }
-        if (url.matches("^https?://(www\\.)?x-art\\.com/(members/)?(videos|galleries)/[a-zA0-9\\-\\_]+/?$")) {
+        if (url.matches("^https?://[^/]+/(members/)?(videos|galleries)/[a-zA0-9\\-\\_]+/?$")) {
             parseUrl(br, this, ret, url, false);
         } else {
             br.getPage(url);
@@ -140,7 +136,7 @@ public class XArt extends PluginForDecrypt {
         br.getPage(url);
         final XArtConfigInterface cfg = PluginJsonConfig.get(XArtCom.XArtConfigInterface.class);
         String title = br.getRegex("<div class=\"small-12 medium-12 large-12 columns\">\\s*<h1>([a-zA-Z0-9\\_\\-\\ ]*)<\\/h1>").getMatch(0);
-        if (url.matches("^https?://(www\\.)?x-art\\.com/(members/)?galleries/[a-zA0-9\\-\\_]+/?$")) {
+        if (url.matches("^https?://[^/]+/(members/)?galleries/[a-zA0-9\\-\\_]+/?$")) {
             final String fid = new Regex(url, "/galleries/([^/]+)").getMatch(0);
             final FilePackage fp;
             if (title != null) {
@@ -175,7 +171,6 @@ public class XArt extends PluginForDecrypt {
                 }
                 final boolean allQualities = returnAll || (!cfg.isGrab1200pImagesVersionEnabled() && !cfg.isGrab2000pImagesVersionEnabled() && !cfg.isGrab4000pImagesVersionEnabled());
                 final boolean bestOnly = !returnAll && cfg.isGrabBestImagesVersionEnabled();
-
                 if ((allQualities || cfg.isGrab4000pImagesVersionEnabled()) && qualities.containsKey("lrg")) {
                     results.add(qualities.get("lrg"));
                 }
@@ -185,7 +180,6 @@ public class XArt extends PluginForDecrypt {
                 if ((!bestOnly || results.isEmpty()) && (allQualities || cfg.isGrab1200pImagesVersionEnabled()) && qualities.containsKey("sml")) {
                     results.add(qualities.get("sml"));
                 }
-
                 if (fp != null) {
                     fp.addLinks(results);
                 }
@@ -238,7 +232,6 @@ public class XArt extends PluginForDecrypt {
             }
             final boolean allQualities = returnAll || (!cfg.isGrab4KVideoEnabled() && !cfg.isGrab1080pVideoEnabled() && !cfg.isGrab720pVideoEnabled() && !cfg.isGrab540pVideoEnabled() && !cfg.isGrab360pVideoEnabled());
             final boolean bestOnly = !returnAll && cfg.isGrabBestVideoVersionEnabled();
-
             if ((allQualities || cfg.isGrab4KVideoEnabled()) && qualities.containsKey("4k")) {
                 results.addAll(qualities.get("4k"));
             }
@@ -259,24 +252,21 @@ public class XArt extends PluginForDecrypt {
             }
             ret.addAll(results);
         }
-
     }
 
     private boolean login(final Account account) throws Exception {
+        if (account == null) {
+            throw new AccountRequiredException();
+        }
         this.setBrowserExclusive();
-        final PluginForHost plugin = JDUtilities.getPluginForHost(this.getHost());
+        final XArtCom plugin = (XArtCom) this.getNewPluginForHostInstance(this.getHost());
         try {
-            if (plugin != null) {
-                ((jd.plugins.hoster.XArtCom) plugin).login(account, br, false);
-            } else {
-                return false;
-            }
+            plugin.login(account, br, false);
+            return true;
         } catch (final PluginException e) {
             logger.log(e);
             account.setValid(false);
             return false;
         }
-        return true;
     }
-
 }
