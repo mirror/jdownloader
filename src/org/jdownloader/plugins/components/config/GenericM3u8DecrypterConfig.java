@@ -33,6 +33,7 @@ public interface GenericM3u8DecrypterConfig extends PluginConfigInterface {
     @DescriptionForConfigEntry(text_EnableFastLinkcheck)
     @Order(1)
     boolean isEnableFastLinkcheck();
+    // TODO: Rename this and change it to ENUM so users can fine-tune how fast linkcheck should be e.g. with estimated filesize or without
 
     void setEnableFastLinkcheck(boolean b);
     // public static enum CrawlMode implements LabelInterface {

@@ -23,6 +23,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -41,15 +50,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.GenericM3u8;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|(?:\\?|%3F)[^\\s<>\"']*|#.*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
@@ -161,6 +161,8 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             } else {
                 fp = null;
             }
+            Long estimatedDurationMillis = null;
+            M3U8Playlist dummy = new M3U8Playlist();
             for (final Entry<HlsContainer, URL> entry : hlsContainers.entrySet()) {
                 final HlsContainer hls = entry.getKey();
                 final URL url = entry.getValue();
@@ -187,13 +189,30 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 link.setProperty("cookies", cookiesString);
                 if (cfg.isEnableFastLinkcheck()) {
                     link.setAvailable(true);
+                    if (hls.getAverageBandwidth() > 0 || hls.getBandwidth() > 0) {
+                        if (estimatedDurationMillis == null) {
+                            /**
+                             * Load first item to get the estimated play-duration which we expect to be the same for all items. </br>
+                             * Based on this we can set estimated filesizes while at the same time providing a super fast crawling
+                             * experience.
+                             */
+                            // final List<M3U8Playlist> playlist = hls.getM3U8(br);
+                            dummy = hls.getM3U8(br).get(0);
+                            estimatedDurationMillis = dummy.getEstimatedDuration();
+                            link.setDownloadSize(dummy.getEstimatedSize());
+                        } else {
+                            final long bandwidthToUse = Math.max(hls.getAverageBandwidth(), hls.getBandwidth());
+                            link.setDownloadSize(bandwidthToUse / 8 * (estimatedDurationMillis / 1000));
+                        }
+                    }
+                    if (estimatedDurationMillis != null) {
+                        link.setProperty(GenericM3u8.PROPERTY_DURATION_ESTIMATED_MILLIS, estimatedDurationMillis);
+                    }
                 }
                 if (finalName != null) {
                     link.setFinalFileName(finalName);
                 } else {
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        GenericM3u8.setFilename(link, false);
-                    }
+                    GenericM3u8.setFilename(link, false);
                 }
                 if (fp != null) {
                     link._setFilePackage(fp);
@@ -204,15 +223,15 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), GenericM3u8.createURLForThisPlugin(m3u8URL), true);
             link.setReferrerUrl(referer);
             link.setProperty("cookies", cookiesString);
-            if (cfg.isEnableFastLinkcheck()) {
-                link.setAvailable(true);
-            }
+            link.setAvailable(true);
+            /* TODO: Set estimated filesize here */
+            // final List<M3U8Playlist> list = M3U8Playlist.parseM3U8(br);
+            // final long estimatedDurationMillis = list.get(0).getEstimatedDuration();
+            // link.setDownloadSize(list.get(0).getAverageBandwidth() / 8 * (estimatedDurationMillis / 1000));
             if (finalName != null) {
                 link.setFinalFileName(finalName);
             } else {
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    GenericM3u8.setFilename(link, false);
-                }
+                GenericM3u8.setFilename(link, false);
             }
             if (StringUtils.isNotEmpty(preSetName)) {
                 link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetName);
