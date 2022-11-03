@@ -9,6 +9,25 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.ProleechLinkConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -28,25 +47,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.ProleechLinkConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "proleech.link" }, urls = { "" })
 public class ProLeechLink extends antiDDoSForHost {
@@ -200,7 +200,6 @@ public class ProLeechLink extends antiDDoSForHost {
             logger.log(e);
         }
         String trafficmaxDailyStr = null;
-        String trafficusedTodayStr = null;
         if (useAPILoginWorkaround()) {
             /* 2020-06-04: Only premium users can get/see their apikey on the proleech website */
             account.setType(AccountType.PREMIUM);
@@ -216,7 +215,9 @@ public class ProLeechLink extends antiDDoSForHost {
             ai.setUnlimitedTraffic();
         } else {
             final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-            trafficusedTodayStr = (String) entries.get("used_today");
+            /* 2022-11-03: Do not use "traffic_left" as this field is always 0(?) */
+            // final Number traffic_left = (Number) entries.get("traffic_left");
+            final Object trafficusedTodayO = entries.get("used_today");
             /* Small workaround: Use website to find daily max traffic value as API doesn't provide that information. */
             try {
                 final Browser brc = br.cloneBrowser();
@@ -242,8 +243,10 @@ public class ProLeechLink extends antiDDoSForHost {
                     ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH) - aLittleBitLess, br);
                 }
                 final long trafficmaxDaily = SizeFormatter.getSize(trafficmaxDailyStr);
-                if (!StringUtils.isEmpty(trafficusedTodayStr)) {
-                    ai.setTrafficLeft(trafficmaxDaily - SizeFormatter.getSize(trafficusedTodayStr));
+                if (trafficusedTodayO instanceof String) {
+                    ai.setTrafficLeft(trafficmaxDaily - SizeFormatter.getSize(trafficusedTodayO.toString()));
+                } else if (trafficusedTodayO instanceof Number) {
+                    ai.setTrafficLeft(trafficmaxDaily - ((Number) trafficusedTodayO).longValue());
                 }
                 ai.setTrafficMax(trafficmaxDaily);
             } else {
