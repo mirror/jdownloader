@@ -18,6 +18,16 @@ package jd.plugins.hoster;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -29,27 +39,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+" })
 public class GenericM3u8 extends PluginForHost {
-    public static final String PRESET_NAME_PROPERTY    = "preSetName";
-    public static final String PROPERTY_HEIGHT         = "height";
-    public static final String PROPERTY_WIDTH          = "width";
-    public static final String PROPERTY_BANDWIDTH      = "hlsBandwidth";
-    public static final String PROPERTY_CODEC_TYPE     = "codec_type";
-    public static final String PROPERTY_CODEC_NAME     = "codec_name";
-    public static final String PROPERTY_BITRATE        = "bitrate";
-    public static final String PROPERTY_FRAME_RATE     = "framerate";
-    public static final String PROPERTY_FILE_EXTENSION = "file_extension";
+    public static final String PRESET_NAME_PROPERTY               = "preSetName";
+    public static final String PROPERTY_HEIGHT                    = "height";
+    public static final String PROPERTY_WIDTH                     = "width";
+    public static final String PROPERTY_BANDWIDTH                 = "hlsBandwidth";
+    public static final String PROPERTY_BANDWIDTH_AVERAGE         = "hlsBandwidthAverage";
+    public static final String PROPERTY_CODEC_TYPE                = "codec_type";
+    public static final String PROPERTY_CODEC_NAME                = "codec_name";
+    public static final String PROPERTY_BITRATE                   = "bitrate";
+    public static final String PROPERTY_FRAME_RATE                = "framerate";
+    public static final String PROPERTY_FILE_EXTENSION            = "file_extension";
+    public static final String PROPERTY_DURATION_ESTIMATED_MILLIS = "duration_estimated_millis";
 
     public GenericM3u8(PluginWrapper wrapper) {
         super(wrapper);
@@ -134,10 +136,8 @@ public class GenericM3u8 extends PluginForHost {
         } else {
             link.setDownloadSize(Math.max(link.getKnownDownloadSize(), estimatedSize));
         }
-        String videoq = null;
-        String audioq = null;
         String extension = "m4a";
-        for (Stream s : streamInfo.getStreams()) {
+        for (final Stream s : streamInfo.getStreams()) {
             final int bitrate = s.parseBitrate();
             if (bitrate != -1) {
                 link.setProperty(PROPERTY_BITRATE, bitrate);
@@ -147,64 +147,28 @@ public class GenericM3u8 extends PluginForHost {
                 link.setProperty(PROPERTY_CODEC_NAME, s.getCodec_name());
                 extension = "mp4";
                 if (s.getHeight() > 0) {
-                    videoq = s.getHeight() + "p";
                     link.setProperty(PROPERTY_HEIGHT, s.getHeight());
                     link.setProperty(PROPERTY_WIDTH, s.getWidth());
                 }
             } else if ("audio".equalsIgnoreCase(s.getCodec_type())) {
                 link.setProperty(PROPERTY_CODEC_TYPE, "audio");
                 link.setProperty(PROPERTY_CODEC_NAME, s.getCodec_name());
-                if (s.getBit_rate() != null) {
-                    if (s.getCodec_name() != null) {
-                        audioq = s.getCodec_name() + " " + (Integer.parseInt(s.getBit_rate()) / 1024) + "kbits";
-                    } else {
-                        audioq = (Integer.parseInt(s.getBit_rate()) / 1024) + "kbits";
-                    }
-                } else {
-                    if (s.getCodec_name() != null) {
-                        audioq = s.getCodec_name();
-                    }
-                }
             }
         }
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             link.setFinalFileName(null);
             link.setName(null);
         }
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            setFilename(link, true);
-        } else {
-            if (link.getFinalFileName() == null) {
-                String name = link.getStringProperty(PRESET_NAME_PROPERTY);
-                if (name == null) {
-                    name = link.isNameSet() ? link.getName() : getFileNameFromURL(new URL(link.getPluginPatternMatcher()));
-                }
-                /* .m3u8 is not a valid file extension */
-                if (StringUtils.endsWithCaseInsensitive(name, ".m3u8")) {
-                    name = name.substring(0, name.length() - 5);
-                }
-                if (videoq != null && audioq != null) {
-                    name += " (" + videoq + "_" + audioq + ")";
-                } else if (videoq != null) {
-                    name += " (" + videoq + ")";
-                } else if (audioq != null) {
-                    name += " (" + audioq + ")";
-                    if (StringUtils.containsIgnoreCase(audioq, "mp3")) {
-                        extension = "mp3";
-                    }
-                }
-                name += "." + extension;
-                link.setFinalFileName(name);
-            }
-        }
+        setFilename(link, true);
         return AvailableStatus.TRUE;
     }
 
     public static void setFilename(final DownloadLink link, final boolean setFinalFilename) throws MalformedURLException {
         if (link.getFinalFileName() != null) {
             /**
-             * No not modify filename once final name has been set. </br> This e.g. allows other plugins/crawlers to set desired filenames
-             * telling this plugin not to use the default filenames down below.
+             * No not modify filename once final name has been set. </br>
+             * This e.g. allows other plugins/crawlers to set desired filenames telling this plugin not to use the default filenames down
+             * below.
              */
             return;
         }
@@ -215,7 +179,7 @@ public class GenericM3u8 extends PluginForHost {
         if (name == null) {
             name = link.isNameSet() ? link.getName() : getFileNameFromURL(new URL(link.getPluginPatternMatcher().replaceFirst("m3u8s?", "https://")));
         }
-        /* .m3u8 is not a valid file extension */
+        /* .m3u8 is not a valid file extension and we don't want to have this in our filename */
         if (StringUtils.endsWithCaseInsensitive(name, ".m3u8")) {
             name = name.substring(0, name.length() - 5);
         }

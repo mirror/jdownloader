@@ -6,11 +6,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.http.Browser;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment.X_KEY_METHOD;
+
+import jd.http.Browser;
 
 public class M3U8Playlist {
     public static class M3U8Segment {
@@ -23,6 +23,7 @@ public class M3U8Playlist {
             // SAMPLE-AES means that the Media Segments contain media samples, such as audio or video, that are encrypted
             // https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/HLS_Sample_Encryption/Encryption/Encryption.html
             SAMPLE_AES("SAMPLE-AES");
+
             private final String method;
 
             public String getMethod() {
@@ -499,6 +500,7 @@ public class M3U8Playlist {
         }
     }
 
+    /** Returns estimated duration in milliseconds. */
     public long getEstimatedDuration() {
         long duration = 0;
         for (final M3U8Segment segment : segments) {
