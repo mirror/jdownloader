@@ -7,15 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-import jd.plugins.DownloadLink;
-import jd.plugins.hoster.GenericM3u8;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.logging.LogController;
+
+import jd.http.Browser;
+import jd.plugins.DownloadLink;
+import jd.plugins.hoster.GenericM3u8;
 
 public class HlsContainer {
     public static List<HlsContainer> findBestVideosByBandwidth(final List<HlsContainer> media) {
@@ -271,6 +271,7 @@ public class HlsContainer {
         AVC(CODEC_TYPE.VIDEO, "avc", "mp4", "avc\\d+"),
         HEVC(CODEC_TYPE.VIDEO, "hevc", "mp4", "(hev|hvc)\\d+"),
         UNKNOWN(CODEC_TYPE.UNKNOWN, null, null, null);
+
         private final CODEC_TYPE type;
 
         public CODEC_TYPE getType() {
@@ -368,6 +369,7 @@ public class HlsContainer {
         return null;
     }
 
+    /** Returns un-parsed codecs string. */
     public String getCodecs() {
         return this.codecs;
     }
@@ -389,7 +391,7 @@ public class HlsContainer {
         if (getCodecType(CODEC_TYPE.VIDEO) != null) {
             return true;
         } else if (this.width == -1 && this.height == -1) {
-            /* wtf case (typically audio) */
+            /* Audio/subtitle */
             return false;
         } else {
             return true;
@@ -487,7 +489,8 @@ public class HlsContainer {
         if (this.getAverageBandwidth() > 0) {
             link.setProperty(GenericM3u8.PROPERTY_BANDWIDTH_AVERAGE, this.getAverageBandwidth());
         }
-        link.setProperty(GenericM3u8.PROPERTY_FILE_EXTENSION, this.getFileExtension(null));
+        link.setProperty(GenericM3u8.PROPERTY_M3U8_NAME, this.getName());
+        link.setProperty(GenericM3u8.PROPERTY_M3U8_CODECS, this.getCodecs());
         // TODO: Set type of content e.g. audio, video, subtitle
     }
 }

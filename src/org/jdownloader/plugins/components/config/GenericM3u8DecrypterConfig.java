@@ -2,7 +2,9 @@ package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
@@ -11,16 +13,12 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "m3u8", type = Type.CRAWLER)
 public interface GenericM3u8DecrypterConfig extends PluginConfigInterface {
     public static final GenericM3u8DecrypterConfig.TRANSLATION TRANSLATION                       = new TRANSLATION();
-    // final String text_CrawlMode = "Select crawl mode";
-    final String                                               text_EnableFastLinkcheck          = "Enable fast linkcheck?";
+    final String                                               text_CrawlSpeedMode               = "Crawl mode";
     final String                                               text_AddBandwidthValueToFilenames = "Add bandwidth value to filenames?";
 
     public static class TRANSLATION {
-        // public String getCrawlMode_label() {
-        // return text_CrawlMode;
-        // }
-        public String getEnableFastLinkcheck_label() {
-            return text_EnableFastLinkcheck;
+        public String getCrawlSpeedMode_label() {
+            return text_CrawlSpeedMode;
         }
 
         public String getAddBandwidthValueToFilenames_label() {
@@ -28,48 +26,34 @@ public interface GenericM3u8DecrypterConfig extends PluginConfigInterface {
         }
     }
 
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry(text_EnableFastLinkcheck)
-    @Order(1)
-    boolean isEnableFastLinkcheck();
-    // TODO: Rename this and change it to ENUM so users can fine-tune how fast linkcheck should be e.g. with estimated filesize or without
+    public static enum CrawlSpeedMode implements LabelInterface {
+        SLOW {
+            @Override
+            public String getLabel() {
+                return "Slow: Check individual streams in host plugin";
+            }
+        },
+        FAST {
+            @Override
+            public String getLabel() {
+                return "Fast: Trust crawler and obtain estimated filesizes";
+            }
+        },
+        SUPERFAST {
+            @Override
+            public String getLabel() {
+                return "Super fast: Trust crawler and do not obtain estimated filesize";
+            }
+        };
+    }
 
-    void setEnableFastLinkcheck(boolean b);
-    // public static enum CrawlMode implements LabelInterface {
-    // ALL {
-    // @Override
-    // public String getLabel() {
-    // return "All qualities";
-    // }
-    // },
-    // BEST {
-    // @Override
-    // public String getLabel() {
-    // return "Only the best quality";
-    // }
-    // },
-    // WORST {
-    // @Override
-    // public String getLabel() {
-    // return "Only the worst quality";
-    // }
-    // },
-    // SELECTED {
-    // @Override
-    // public String getLabel() {
-    // return "Only selected qualities";
-    // }
-    // };
-    // }
-    //
-    // @AboutConfig
-    // @DefaultEnumValue("ALL")
-    // @Order(10)
-    // @DescriptionForConfigEntry(text_CrawlMode)
-    // CrawlMode getCrawlMode();
-    //
-    // void setCrawlMode(final CrawlMode mode);
+    @AboutConfig
+    @DefaultEnumValue("FAST")
+    @Order(10)
+    @DescriptionForConfigEntry(text_CrawlSpeedMode)
+    CrawlSpeedMode getCrawlSpeedMode();
+
+    void setCrawlSpeedMode(final CrawlSpeedMode mode);
 
     @AboutConfig
     @DefaultBooleanValue(false)
