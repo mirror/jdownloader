@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -38,8 +39,6 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -68,7 +67,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         CrawledLink source = getCurrentLink();
         String referer = null;
         String cookiesString = null;
@@ -114,15 +113,18 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 }
             }
         }
-        br.getPage(param.getCryptedUrl());
         br.followRedirect(true);
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!LinkCrawlerDeepInspector.looksLikeMpegURL(br.getHttpConnection())) {
+            logger.info("!Response is not a valid HLS construct according to headers!");
+            /* This is only an indicator. Continue anyways. */
         }
-        return parseM3U8(this, param.getCryptedUrl(), br, referer, cookiesString, null, null);
+        return parseM3U8(this, param.getCryptedUrl(), br, referer, cookiesString, null);
     }
 
-    public static ArrayList<DownloadLink> parseM3U8(final PluginForDecrypt plugin, final String m3u8URL, final Browser br, final String referer, final String cookiesString, final String finalName, final String preSetName) throws Exception {
+    public static ArrayList<DownloadLink> parseM3U8(final PluginForDecrypt plugin, final String m3u8URL, final Browser br, final String referer, final String cookiesString, final String preSetName) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final GenericM3u8DecrypterConfig cfg = PluginJsonConfig.get(GenericM3u8DecrypterConfig.class);
         if (br.containsHTML("#EXT-X-STREAM-INF")) {
@@ -154,9 +156,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
              */
             final String finalFallbackTitle = new Regex(m3u8URL, "/([^/]+)\\.m3u8").getMatch(0);
             FilePackage fp = FilePackage.getInstance();
-            if (finalName != null) {
-                fp.setName(finalName);
-            } else if (preSetName != null) {
+            if (preSetName != null) {
                 fp.setName(preSetName);
             } else {
                 fp = null;
@@ -209,63 +209,33 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                         link.setProperty(GenericM3u8.PROPERTY_DURATION_ESTIMATED_MILLIS, estimatedDurationMillis);
                     }
                 }
-                if (finalName != null) {
-                    link.setFinalFileName(finalName);
-                } else {
-                    GenericM3u8.setFilename(link, false);
-                }
                 if (fp != null) {
                     link._setFilePackage(fp);
                 }
-                addToResults(plugin, ret, br, url, link);
+                GenericM3u8.setFilename(link, false);
+                ret.add(link);
             }
         } else {
             final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), GenericM3u8.createURLForThisPlugin(m3u8URL), true);
             link.setReferrerUrl(referer);
             link.setProperty("cookies", cookiesString);
             link.setAvailable(true);
-            /* TODO: Set estimated filesize here */
-            // final List<M3U8Playlist> list = M3U8Playlist.parseM3U8(br);
-            // final long estimatedDurationMillis = list.get(0).getEstimatedDuration();
-            // link.setDownloadSize(list.get(0).getAverageBandwidth() / 8 * (estimatedDurationMillis / 1000));
-            if (finalName != null) {
-                link.setFinalFileName(finalName);
-            } else {
-                GenericM3u8.setFilename(link, false);
-            }
+            final List<M3U8Playlist> list = M3U8Playlist.parseM3U8(br);
+            final HLSDownloader downloader = new HLSDownloader(link, br, m3u8URL, list);
+            downloader.getProbe(); // without this we can't get an estimated filesize
+            link.setDownloadSize(downloader.getEstimatedSize());
+            link.setProperty(GenericM3u8.PROPERTY_DURATION_ESTIMATED_MILLIS, list.get(0).getEstimatedDuration());
             if (StringUtils.isNotEmpty(preSetName)) {
                 link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetName);
             }
+            GenericM3u8.setFilename(link, false);
             ret.add(link);
         }
         return ret;
     }
 
-    private static void addToResults(final PluginForDecrypt plugin, final List<DownloadLink> results, final Browser br, final URL url, final DownloadLink link) {
-        if (StringUtils.endsWithCaseInsensitive(url.getPath(), ".m3u8")) {
-            results.add(link);
-        } else {
-            final Browser brc = br.cloneBrowser();
-            brc.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = brc.openRequestConnection(new HeadRequest(url));
-                if (con.isOK() && (LinkCrawlerDeepInspector.looksLikeMpegURL((con)) || StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), ".m3u8"))) {
-                    link.setPluginPatternMatcher(GenericM3u8.createURLForThisPlugin(url.toString()));
-                    results.add(link);
-                }
-            } catch (final Throwable e) {
-                plugin.getLogger().log(e);
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
-        }
-    }
-
     @Override
-    public boolean hasCaptcha(CryptedLink link, Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final Account acc) {
         return false;
     }
 

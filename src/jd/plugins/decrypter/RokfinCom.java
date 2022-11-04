@@ -72,7 +72,7 @@ public class RokfinCom extends PluginForDecrypt {
                 }
                 brc = br.cloneBrowser();
                 brc.getPage(m3u8);
-                final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, m3u8, brc, null, null, null, title);
+                final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, m3u8, brc, null, null, title);
                 if (ret.size() > 1) {
                     final FilePackage fp = FilePackage.getInstance();
                     fp.setName(title);
@@ -97,7 +97,7 @@ public class RokfinCom extends PluginForDecrypt {
             }
             brc = br.cloneBrowser();
             brc.getPage(m3u8);
-            final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, m3u8, brc, null, null, null, title);
+            final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, m3u8, brc, null, null, title);
             if (ret.size() > 1) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(title);
