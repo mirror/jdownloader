@@ -23,17 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig.CrawlSpeedMode;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -50,6 +39,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.GenericM3u8;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig.CrawlSpeedMode;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|(?:\\?|%3F)[^\\s<>\"']*|#.*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
@@ -193,9 +192,8 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     if (hls.getAverageBandwidth() > 0 || hls.getBandwidth() > 0) {
                         if (estimatedDurationMillis == null) {
                             /**
-                             * Load first item to get the estimated play-duration which we expect to be the same for all items. </br>
-                             * Based on this we can set estimated filesizes while at the same time providing a super fast crawling
-                             * experience.
+                             * Load first item to get the estimated play-duration which we expect to be the same for all items. </br> Based
+                             * on this we can set estimated filesizes while at the same time providing a super fast crawling experience.
                              */
                             final List<M3U8Playlist> playlist = hls.getM3U8(br);
                             estimatedDurationMillis = M3U8Playlist.getEstimatedDuration(playlist);
@@ -205,13 +203,11 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                              * TODO: Maybe prefer smaller of both possible bandwidth values for filesize calculation as that seems to be
                              * more accurate?
                              */
-                            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                                final long bandwidthToUse = Math.min(hls.getAverageBandwidth(), hls.getBandwidth());
-                                link.setDownloadSize(bandwidthToUse / 8 * (estimatedDurationMillis / 1000));
-                            } else {
-                                final long bandwidthToUse = Math.max(hls.getAverageBandwidth(), hls.getBandwidth());
-                                link.setDownloadSize(bandwidthToUse / 8 * (estimatedDurationMillis / 1000));
+                            int bandwidth = hls.getAverageBandwidth();
+                            if (bandwidth < 0) {
+                                bandwidth = hls.getBandwidth();
                             }
+                            link.setDownloadSize(bandwidth / 8 * (estimatedDurationMillis / 1000));
                         }
                     }
                     if (estimatedDurationMillis != null) {

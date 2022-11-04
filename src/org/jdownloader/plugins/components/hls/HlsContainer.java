@@ -7,15 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.plugins.DownloadLink;
+import jd.plugins.hoster.GenericM3u8;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.logging.LogController;
-
-import jd.http.Browser;
-import jd.plugins.DownloadLink;
-import jd.plugins.hoster.GenericM3u8;
 
 public class HlsContainer {
     public static List<HlsContainer> findBestVideosByBandwidth(final List<HlsContainer> media) {
@@ -243,7 +243,10 @@ public class HlsContainer {
     public List<M3U8Playlist> getM3U8(final Browser br) throws IOException {
         if (m3u8List == null) {
             setM3U8(loadM3U8(br));
-            final int bandwidth = Math.max(getAverageBandwidth(), getBandwidth());
+            int bandwidth = getAverageBandwidth();
+            if (bandwidth < 0) {
+                bandwidth = getBandwidth();
+            }
             if (m3u8List != null && bandwidth > 0) {
                 for (final M3U8Playlist m3u8 : m3u8List) {
                     m3u8.setAverageBandwidth(bandwidth);
@@ -268,10 +271,11 @@ public class HlsContainer {
         // https://wiki.multimedia.cx/index.php/MPEG-4_Audio#Audio_Object_Types
         MP3(CODEC_TYPE.AUDIO, "mp3,", "mp3", "mp4a\\.40\\.34"),
         AAC(CODEC_TYPE.AUDIO, "aac", "m4a", "mp4a\\.40\\.(1|2|3|4|5|6)"),
+        AC3(CODEC_TYPE.AUDIO, "ac3", "ac3", "ac-3"), // AC-3 (Dolby Digital), up to 5.1
+        EC3(CODEC_TYPE.AUDIO, "ec3", "ec3", "ec-3"), // EC-3 (Dolby Digital Plus) up to 15.1
         AVC(CODEC_TYPE.VIDEO, "avc", "mp4", "avc\\d+"),
         HEVC(CODEC_TYPE.VIDEO, "hevc", "mp4", "(hev|hvc)\\d+"),
         UNKNOWN(CODEC_TYPE.UNKNOWN, null, null, null);
-
         private final CODEC_TYPE type;
 
         public CODEC_TYPE getType() {
@@ -330,19 +334,23 @@ public class HlsContainer {
             this.raw = raw;
             this.codec = CODEC.parse(raw);
         }
+
+        public static List<StreamCodec> parse(final String raw) {
+            final String[] codecs = raw != null ? raw.split(",") : null;
+            if (codecs != null) {
+                final List<StreamCodec> ret = new ArrayList<StreamCodec>();
+                for (final String codec : codecs) {
+                    ret.add(new StreamCodec(codec));
+                }
+                return ret;
+            } else {
+                return null;
+            }
+        }
     }
 
     public List<StreamCodec> getStreamCodecs() {
-        final String[] codecs = this.codecs != null ? this.codecs.split(",") : null;
-        if (codecs != null) {
-            final List<StreamCodec> ret = new ArrayList<StreamCodec>();
-            for (final String codec : codecs) {
-                ret.add(new StreamCodec(codec));
-            }
-            return ret;
-        } else {
-            return null;
-        }
+        return StreamCodec.parse(getCodecs());
     }
 
     public StreamCodec getCodecType(CODEC_TYPE type) {
