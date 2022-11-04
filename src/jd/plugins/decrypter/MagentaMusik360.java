@@ -78,7 +78,7 @@ public class MagentaMusik360 extends PluginForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     br2.getPage(src);
-                    final ArrayList<DownloadLink> found = GenericM3u8Decrypter.parseM3U8(this, href, br2, null, null, null, title + "-" + originalTitle + "_" + quality);
+                    final ArrayList<DownloadLink> found = GenericM3u8Decrypter.parseM3U8(this, href, br2, null, null, title + "-" + originalTitle + "_" + quality);
                     ret.addAll(found);
                 }
             }

@@ -40,7 +40,7 @@ public class ComunidadmontepinarEs extends antiDDoSForDecrypt {
             final String season = new Regex(parameter.getCryptedUrl(), "/(\\d+)").getMatch(0);
             final String episode = new Regex(parameter.getCryptedUrl(), "/\\d+x(\\d+)").getMatch(0);
             final String title = "Comunidad Montepinar - La Que Se Avecina" + "_S" + season + "E" + episode;
-            final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, src, brc, parameter.getCryptedUrl(), null, null, title);
+            final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, src, brc, parameter.getCryptedUrl(), null, title);
             decryptedLinks.addAll(ret);
             final String subtitles[][] = br.getRegex("kind\\s*=\\s*\"captions\"\\s*src\\s*=\\s*\"([^\"]*\\.vtt)\"\\s*srclang\\s*=\\s*\"(.*?)\"").getMatches();
             if (subtitles != null && subtitles.length > 0) {

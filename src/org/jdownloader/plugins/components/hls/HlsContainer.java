@@ -240,7 +240,7 @@ public class HlsContainer {
         return sb.toString();
     }
 
-    public List<M3U8Playlist> getM3U8(Browser br) throws IOException {
+    public List<M3U8Playlist> getM3U8(final Browser br) throws IOException {
         if (m3u8List == null) {
             setM3U8(loadM3U8(br));
             final int bandwidth;

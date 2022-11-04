@@ -83,7 +83,7 @@ public class Viet69Net extends antiDDoSForDecrypt {
                     if (StringUtils.containsIgnoreCase(link, ".m3u8")) {
                         final Browser brc = br2.cloneBrowser();
                         brc.getPage(link);
-                        final ArrayList<DownloadLink> downloadLinks = GenericM3u8Decrypter.parseM3U8(this, link, brc, param.getCryptedUrl(), null, null, title);
+                        final ArrayList<DownloadLink> downloadLinks = GenericM3u8Decrypter.parseM3U8(this, link, brc, param.getCryptedUrl(), null, title);
                         if (downloadLinks != null) {
                             decryptedLinks.addAll(downloadLinks);
                         }

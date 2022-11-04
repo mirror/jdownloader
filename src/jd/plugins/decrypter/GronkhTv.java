@@ -44,7 +44,7 @@ public class GronkhTv extends PluginForDecrypt {
         } else {
             final Browser brc = br.cloneBrowser();
             brc.getPage(m3u8);
-            final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, m3u8, brc, null, null, null, title);
+            final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, m3u8, brc, null, null, title);
             if (ret.size() > 1) {
                 for (DownloadLink link : ret) {
                     link.setContentUrl(parameter.getCryptedUrl());

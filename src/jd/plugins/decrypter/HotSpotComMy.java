@@ -44,7 +44,7 @@ public class HotSpotComMy extends antiDDoSForDecrypt {
             } else {
                 name = null;
             }
-            final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, parameter.getCryptedUrl(), br, parameter.getCryptedUrl(), null, null, name);
+            final ArrayList<DownloadLink> ret = GenericM3u8Decrypter.parseM3U8(this, parameter.getCryptedUrl(), br, parameter.getCryptedUrl(), null, name);
             for (DownloadLink link : ret) {
                 link.setContentUrl(parameter.getCryptedUrl());
             }
