@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -69,7 +70,7 @@ public class MegaDebridEu extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ac = new AccountInfo();
+        final AccountInfo ac = new AccountInfo();
         prepBrowser(br);
         login(account);
         final String daysLeft = PluginJSonUtils.getJson(br, "vip_end");
@@ -78,7 +79,6 @@ public class MegaDebridEu extends PluginForHost {
         } else if ("0".equals(daysLeft)) {
             ac.setExpired(true);
             account.setType(AccountType.FREE);
-            ac.setStatus("Free Account!");
             return ac;
         } else {
             throw new AccountInvalidException();
@@ -101,7 +101,6 @@ public class MegaDebridEu extends PluginForHost {
         }
         ac.setMultiHostSupport(this, supportedHosts);
         account.setType(AccountType.PREMIUM);
-        ac.setStatus("Premium Account");
         return ac;
     }
 
@@ -190,8 +189,12 @@ public class MegaDebridEu extends PluginForHost {
         }
         dllink = dllink.replace("\\", "").replace("\"", "");
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             mhm.handleErrorGeneric(account, link, "unknown_dl_error", 50, 1 * 60 * 1000l);
         }
         this.dl.startDownload();
