@@ -23,6 +23,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig.CrawlSpeedMode;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -39,15 +50,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.GenericM3u8;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|(?:\\?|%3F)[^\\s<>\"']*|#.*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
@@ -112,7 +114,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 }
             }
         }
-        br.followRedirect(true);
+        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -126,6 +128,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
     public static ArrayList<DownloadLink> parseM3U8(final PluginForDecrypt plugin, final String m3u8URL, final Browser br, final String referer, final String cookiesString, final String preSetName) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final GenericM3u8DecrypterConfig cfg = PluginJsonConfig.get(GenericM3u8DecrypterConfig.class);
+        final CrawlSpeedMode mode = cfg.getCrawlSpeedMode();
         if (br.containsHTML("#EXT-X-STREAM-INF")) {
             final Map<HlsContainer, URL> hlsContainers = new HashMap<HlsContainer, URL>();
             final String sessionDataTitle = br.getRegex("#EXT-X-SESSION-DATA:DATA-ID\\s*=\\s*\"[^\"]*title\"[^\r\n]*VALUE\\s*=\\s*\"(.*?)\"").getMatch(0);
@@ -185,25 +188,37 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, sessionDataTitle);
                 }
                 hls.setPropertiesOnDownloadLink(link);
-                if (cfg.isEnableFastLinkcheck()) {
+                if (mode == CrawlSpeedMode.FAST) {
                     link.setAvailable(true);
                     if (hls.getAverageBandwidth() > 0 || hls.getBandwidth() > 0) {
                         if (estimatedDurationMillis == null) {
                             /**
-                             * Load first item to get the estimated play-duration which we expect to be the same for all items. </br> Based
-                             * on this we can set estimated filesizes while at the same time providing a super fast crawling experience.
+                             * Load first item to get the estimated play-duration which we expect to be the same for all items. </br>
+                             * Based on this we can set estimated filesizes while at the same time providing a super fast crawling
+                             * experience.
                              */
                             final List<M3U8Playlist> playlist = hls.getM3U8(br);
                             estimatedDurationMillis = M3U8Playlist.getEstimatedDuration(playlist);
                             link.setDownloadSize(M3U8Playlist.getEstimatedSize(playlist));
                         } else {
-                            final long bandwidthToUse = Math.max(hls.getAverageBandwidth(), hls.getBandwidth());
-                            link.setDownloadSize(bandwidthToUse / 8 * (estimatedDurationMillis / 1000));
+                            /*
+                             * TODO: Maybe prefer smaller of both possible bandwidth values for filesize calculation as that seems to be
+                             * more accurate?
+                             */
+                            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                                final long bandwidthToUse = Math.min(hls.getAverageBandwidth(), hls.getBandwidth());
+                                link.setDownloadSize(bandwidthToUse / 8 * (estimatedDurationMillis / 1000));
+                            } else {
+                                final long bandwidthToUse = Math.max(hls.getAverageBandwidth(), hls.getBandwidth());
+                                link.setDownloadSize(bandwidthToUse / 8 * (estimatedDurationMillis / 1000));
+                            }
                         }
                     }
                     if (estimatedDurationMillis != null) {
                         link.setProperty(GenericM3u8.PROPERTY_DURATION_ESTIMATED_MILLIS, estimatedDurationMillis);
                     }
+                } else if (mode == CrawlSpeedMode.SUPERFAST) {
+                    link.setAvailable(true);
                 }
                 if (fp != null) {
                     link._setFilePackage(fp);
@@ -215,7 +230,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), GenericM3u8.createURLForThisPlugin(m3u8URL), true);
             link.setReferrerUrl(referer);
             link.setProperty("cookies", cookiesString);
-            if (cfg.isEnableFastLinkcheck()) {
+            if (mode == CrawlSpeedMode.SUPERFAST) {
                 link.setAvailable(true);
             }
             if (StringUtils.isNotEmpty(preSetName)) {
