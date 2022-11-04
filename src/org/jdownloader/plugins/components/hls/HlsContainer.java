@@ -7,15 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.plugins.DownloadLink;
+import jd.plugins.hoster.GenericM3u8;
+
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.logging.LogController;
-
-import jd.http.Browser;
-import jd.plugins.DownloadLink;
-import jd.plugins.hoster.GenericM3u8;
 
 public class HlsContainer {
     public static List<HlsContainer> findBestVideosByBandwidth(final List<HlsContainer> media) {
@@ -243,12 +243,7 @@ public class HlsContainer {
     public List<M3U8Playlist> getM3U8(final Browser br) throws IOException {
         if (m3u8List == null) {
             setM3U8(loadM3U8(br));
-            final int bandwidth;
-            if (getAverageBandwidth() > 0) {
-                bandwidth = getAverageBandwidth();
-            } else {
-                bandwidth = getBandwidth();
-            }
+            final int bandwidth = Math.max(getAverageBandwidth(), getBandwidth());
             if (m3u8List != null && bandwidth > 0) {
                 for (final M3U8Playlist m3u8 : m3u8List) {
                     m3u8.setAverageBandwidth(bandwidth);
@@ -276,7 +271,6 @@ public class HlsContainer {
         AVC(CODEC_TYPE.VIDEO, "avc", "mp4", "avc\\d+"),
         HEVC(CODEC_TYPE.VIDEO, "hevc", "mp4", "(hev|hvc)\\d+"),
         UNKNOWN(CODEC_TYPE.UNKNOWN, null, null, null);
-
         private final CODEC_TYPE type;
 
         public CODEC_TYPE getType() {
