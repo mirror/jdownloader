@@ -34,6 +34,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.decrypter.FilemoonSxCrawler;
 
@@ -185,6 +186,17 @@ public class FilemoonSx extends XFileSharingProBasic {
     }
 
     @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
+        /* 2022-11-04 */
+        final String betterFilename = new Regex(html, "<h3[^>]*>([^<]+)</h3>").getMatch(0);
+        if (betterFilename != null) {
+            fileInfo[0] = betterFilename;
+        }
+        return fileInfo;
+    }
+
+    @Override
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
         /* First bring up saved final links */
         String dllink = checkDirectLink(link, account);
@@ -201,6 +213,15 @@ public class FilemoonSx extends XFileSharingProBasic {
             dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
         }
         handleDownload(link, account, dllink, null);
+    }
+
+    @Override
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, html, link, account, checkAll);
+        /* 2022-11-04: Website failure after captcha on "/download/..." page */
+        if (br.containsHTML("(?i)class=\"error e404\"|>\\s*Page not found")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+        }
     }
 
     @Override

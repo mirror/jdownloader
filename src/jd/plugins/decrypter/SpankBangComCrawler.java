@@ -102,7 +102,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
     private static final String ALLOW_1080p      = "ALLOW_1080p";
     private static final String ALLOW_4k         = "ALLOW_4k";
     private SpankBangCom        plugin           = null;
-    private final String        PATTERN_PLAYLIST = "https?://[^/]+/([a-z0-9]+)/playlist/(\\w+)";
+    private final String        PATTERN_PLAYLIST = "https?://[^/]+/([a-z0-9]+)(-[a-z0-9]+)?/playlist/(\\w+)";
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -145,67 +145,78 @@ public class SpankBangComCrawler extends PluginForDecrypt {
         }
     }
 
+    /** Crawls playlists and links to single videos in context of playlist. */
     private ArrayList<DownloadLink> crawlPlaylist(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
         this.checkErrors(br);
-        final Regex playlistInfo = new Regex(param.getCryptedUrl(), PATTERN_PLAYLIST);
-        final String playlistID = playlistInfo.getMatch(0);
-        final String playlistSlug = playlistInfo.getMatch(1);
-        if (playlistID == null) {
-            /* Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(playlistSlug);
-        final String totalNumberofItemsStr = br.getRegex("(?i)records in total\\s*<b>(\\d+)").getMatch(0);
-        if (totalNumberofItemsStr == null) {
-            logger.warning("Failed to find totalNumberofItems");
-        }
-        final HashSet<String> dupes = new HashSet<String>();
-        int page = 1;
-        do {
-            final String[] urls = br.getRegex("\"(/" + playlistID + "-[a-z0-9]+/playlist/[^\"]+)\"").getColumn(0);
-            int numberofNewItems = 0;
-            for (String url : urls) {
-                if (!dupes.add(url)) {
-                    continue;
+        /* We can't know what we get solely based on URL structure. */
+        if (this.isSingleVideo(br)) {
+            return this.parseCrawlSingleVideo(br);
+        } else {
+            final Regex playlistInfo = new Regex(param.getCryptedUrl(), PATTERN_PLAYLIST);
+            final String playlistID = playlistInfo.getMatch(0);
+            final String playlistSlug = playlistInfo.getMatch(1);
+            if (playlistID == null) {
+                /* Developer mistake */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(playlistSlug);
+            final String totalNumberofItemsStr = br.getRegex("(?i)records in total\\s*<b>(\\d+)").getMatch(0);
+            if (totalNumberofItemsStr == null) {
+                logger.warning("Failed to find totalNumberofItems");
+            }
+            final HashSet<String> dupes = new HashSet<String>();
+            int page = 1;
+            do {
+                final String[] urls = br.getRegex("\"(/" + playlistID + "-[a-z0-9]+/playlist/[^\"]+)\"").getColumn(0);
+                int numberofNewItems = 0;
+                for (String url : urls) {
+                    if (!dupes.add(url)) {
+                        continue;
+                    }
+                    numberofNewItems++;
+                    url = br.getURL(url).toString();
+                    final DownloadLink video = this.createDownloadlink(url);
+                    video._setFilePackage(fp);
+                    ret.add(video);
+                    distribute(video);
                 }
-                numberofNewItems++;
-                url = br.getURL(url).toString();
-                final DownloadLink video = this.createDownloadlink(url);
-                video._setFilePackage(fp);
-                ret.add(video);
-                distribute(video);
-            }
-            logger.info("Crawled page " + 1 + " | Found items so far: " + ret.size() + " of " + totalNumberofItemsStr);
-            final String nextPageURL = br.getRegex("<a href=\"(/[^\"]+)\">" + (page + 1) + "</a>").getMatch(0);
-            if (this.isAbort()) {
-                logger.info("Stopping because: Aborted by user");
-                break;
-            } else if (numberofNewItems == 0) {
-                logger.info("Stopping because: Failed to find any new items on current page");
-                break;
-            } else if (nextPageURL == null) {
-                logger.info("Stopping because: Reached last page");
-                break;
-            } else {
-                page++;
-                br.getPage(nextPageURL);
-            }
-        } while (true);
-        return ret;
+                logger.info("Crawled page " + 1 + " | Found items so far: " + ret.size() + " of " + totalNumberofItemsStr);
+                final String nextPageURL = br.getRegex("<a href=\"(/[^\"]+)\">" + (page + 1) + "</a>").getMatch(0);
+                if (this.isAbort()) {
+                    logger.info("Stopping because: Aborted by user");
+                    break;
+                } else if (numberofNewItems == 0) {
+                    logger.info("Stopping because: Failed to find any new items on current page");
+                    break;
+                } else if (nextPageURL == null) {
+                    logger.info("Stopping because: Reached last page");
+                    break;
+                } else {
+                    page++;
+                    br.getPage(nextPageURL);
+                }
+            } while (true);
+            return ret;
+        }
     }
 
     /** Crawls single videos and single videos that are parts of a playlist. */
     private ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param) throws Exception {
+        br.setAllowedResponseCodes(new int[] { 503 });
+        getPage(param.getCryptedUrl().replace("/embed/", "/video/"));
+        return parseCrawlSingleVideo(br);
+    }
+
+    /** Crawls single video which needs to be accessed in beforehand via given browser instance. */
+    private ArrayList<DownloadLink> parseCrawlSingleVideo(final Browser br) throws Exception {
+        checkErrors(br);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, true);
-        final String addedurl = param.getCryptedUrl().replace("/embed/", "/video/");
-        br.setAllowedResponseCodes(new int[] { 503 });
-        getPage(addedurl);
-        checkErrors(br);
+        final String currenturl = br.getURL();
         if (isPrivate(this.br)) {
             throw new AccountRequiredException();
         } else if (br.getHttpConnection().getResponseCode() == 503) {
@@ -221,21 +232,23 @@ public class SpankBangComCrawler extends PluginForDecrypt {
             if (title == null) {
                 title = br.getRegex("<h1\\s*title\\s*=\\s*\"(.*?)\"").getMatch(0);
                 if (title == null) {
-                    title = new Regex(addedurl, "/video/(.+)").getMatch(0);
-                    title = Encoding.urlDecode(title, false);
+                    title = new Regex(currenturl, "/video/(.+)").getMatch(0);
                 }
             }
         }
-        String videoID = br.getRegex("\"embedUrl\"\\s*:\\s*\"https?://[^/]+/([a-z0-9]+)/embed").getMatch(0);
+        if (title == null) {
+            title = br._getURL().getPath();
+        }
+        String videoID = findVideoID(br);
         if (videoID == null) {
-            videoID = getFid(addedurl);
+            videoID = getFid(currenturl);
         }
         if (videoID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final LinkedHashMap<String, String> foundQualities = findQualities(this.br, addedurl);
+        final LinkedHashMap<String, String> foundQualities = findQualities(this.br, currenturl);
         if (foundQualities == null || foundQualities.size() == 0 || title == null) {
-            throw new DecrypterException("Decrypter broken for link: " + addedurl);
+            throw new DecrypterException("Decrypter broken for link: " + currenturl);
         }
         title = Encoding.htmlDecode(title.trim());
         fp.setName(title);
@@ -276,7 +289,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
         if (q240p) {
             selectedQualities.add("240p");
         }
-        final String predefinedVariant = UrlQuery.parse(param.getCryptedUrl()).get("quality");
+        final String predefinedVariant = UrlQuery.parse(currenturl).get("quality");
         for (final String selectedQualityValue : selectedQualities) {
             // if quality marker is in the url. skip all others
             if (predefinedVariant != null && !predefinedVariant.equalsIgnoreCase(selectedQualityValue)) {
@@ -294,7 +307,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
                 video.setLinkID("spankbangcom_" + videoID + "_" + selectedQualityValue);
                 video.setProperty("plain_filename", finalname);
                 video.setProperty("plain_directlink", directlink);
-                video.setProperty("mainlink", addedurl);
+                video.setProperty("mainlink", currenturl);
                 video.setProperty("quality", selectedQualityValue);
                 fp.add(video);
                 ret.add(video);
@@ -307,6 +320,19 @@ public class SpankBangComCrawler extends PluginForDecrypt {
             logger.info(DOMAIN + ": None of the selected qualities were found");
         }
         return ret;
+    }
+
+    /** If this returns true this indicates that given browser instance has currently opened a single video. */
+    private boolean isSingleVideo(final Browser br) {
+        if (findVideoID(br) != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private String findVideoID(final Browser br) {
+        return br.getRegex("\"embedUrl\"\\s*:\\s*\"https?://[^/]+/([a-z0-9]+)/embed").getMatch(0);
     }
 
     private void checkErrors(final Browser br) throws PluginException {
