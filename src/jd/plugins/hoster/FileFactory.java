@@ -30,6 +30,17 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.loggingv3.NullLogger;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -55,17 +66,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.loggingv3.NullLogger;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FileFactory extends PluginForHost {
@@ -676,7 +676,7 @@ public class FileFactory extends PluginForHost {
         if (StringUtils.isEmpty(dlUrl)) {
             dlUrl = this.checkDirectLink(link, directlinkproperty);
         }
-        String passCode = link.getStringProperty("pass", null);
+        String passCode = link.getDownloadPassword();
         try {
             long waittime;
             if (dlUrl != null) {
@@ -761,8 +761,9 @@ public class FileFactory extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (passCode != null) {
-                link.setProperty("pass", passCode);
+                link.setDownloadPassword(passCode);
             }
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
             // add download slot
             controlSlot(+1, account);
             try {
@@ -1275,7 +1276,7 @@ public class FileFactory extends PluginForHost {
             }
         }
         requestFileInformationAPI(link, account, apiKey);
-        String passCode = link.getStringProperty("pass", null);
+        String passCode = link.getDownloadPassword();
         final String directlinkproperty;
         if (account == null) {
             directlinkproperty = "directurl_free";
@@ -1298,7 +1299,7 @@ public class FileFactory extends PluginForHost {
                 }
                 if (StringUtils.isEmpty(passCode)) {
                     logger.info("User has entered blank password!");
-                    link.setProperty("pass", Property.NULL);
+                    link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password", 1 * 60 * 1001);
                 }
             }
