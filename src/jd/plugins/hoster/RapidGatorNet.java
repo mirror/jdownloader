@@ -32,23 +32,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
@@ -70,6 +53,23 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RapidGatorNet extends antiDDoSForHost {
@@ -1169,6 +1169,9 @@ public class RapidGatorNet extends antiDDoSForHost {
             requestFileInformation(link);
             if (hotLinkURL != null) {
                 doFree(link, account);
+            } else if (isBuyFile(br, link, account)) {
+                /* 2022-11-07: can be *bypassed* by using api mode */
+                handlePremium_api(link, account);
             } else {
                 handlePremium_web(link, account);
             }
@@ -1648,7 +1651,7 @@ public class RapidGatorNet extends antiDDoSForHost {
              * downloads or upon instant retry of an e.g. interrupted free download --> Reconnect is not required
              */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can't download more than one file within a certain time period in free mode", 10 * 60 * 1000l);
-        } else if (br.containsHTML("(?i)/wallet/BuyFile/id/")) {
+        } else if (isBuyFile(br, link, account)) {
             /* 2022-11-07: Files that need to be purchased separately in order to be able to download them. */
             if (account == null) {
                 throw new AccountRequiredException();
@@ -1663,6 +1666,10 @@ public class RapidGatorNet extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Denied by IP", 2 * 60 * 60 * 1000l);
             }
         }
+    }
+
+    private boolean isBuyFile(final Browser br, final DownloadLink link, final Account account) {
+        return br != null && br.containsHTML("(?i)/wallet/BuyFile/id/");
     }
 
     private void handleErrorsBasic() throws PluginException {

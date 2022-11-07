@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.HostPlugin;
 import jd.plugins.decrypter.CamwhoresTvCrawler;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CamwhoresTv extends KernelVideoSharingComV2 {
@@ -49,6 +49,11 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
 
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+    }
+
+    @Override
+    protected String getWorkingDomain(final String url) {
+        return getHost();
     }
 
     /**
