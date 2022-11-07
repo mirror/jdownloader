@@ -887,21 +887,7 @@ public class OldRAFDownload extends DownloadInterface {
             /* save absolutepath as final location property */
             // downloadable.setFinalFileOutput(outputCompleteFile.getAbsolutePath());
             try {
-                Date lastModifiedDate = null;
-                if (this.downloadable instanceof DownloadLink) {
-                    final long lastModifiedTimestampDownloadLink = ((DownloadLink) this.downloadable).getLastModifiedTimestamp();
-                    if (lastModifiedTimestampDownloadLink != -1) {
-                        lastModifiedDate = new Date(lastModifiedTimestampDownloadLink);
-                    }
-                }
-                if (lastModifiedDate == null) {
-                    /* Try to get this date from header */
-                    lastModifiedDate = TimeFormatter.parseDateString(connection.getHeaderField("Last-Modified"));
-                    if (lastModifiedDate != null && this.downloadable instanceof DownloadLink) {
-                        /* Save this information on DownloadLink. */
-                        ((DownloadLink) this.downloadable).setLastModifiedTimestamp(lastModifiedDate.getTime());
-                    }
-                }
+                final Date lastModifiedDate = HTTPDownloader.getLastModifiedDate(this.getDownloadable(), this.connection);
                 if (lastModifiedDate != null && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                     /* set original lastModified timestamp */
                     outputCompleteFile.setLastModified(lastModifiedDate.getTime());
