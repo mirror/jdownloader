@@ -1648,6 +1648,13 @@ public class RapidGatorNet extends antiDDoSForHost {
              * downloads or upon instant retry of an e.g. interrupted free download --> Reconnect is not required
              */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can't download more than one file within a certain time period in free mode", 10 * 60 * 1000l);
+        } else if (br.containsHTML("(?i)/wallet/BuyFile/id/")) {
+            /* 2022-11-07: Files that need to be purchased separately in order to be able to download them. */
+            if (account == null) {
+                throw new AccountRequiredException();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "You need to buy this file");
+            }
         } else if (br.containsHTML("Denied by IP") && false) {
             // disabled because I don't know the exact HTML of this error
             if (account != null) {
