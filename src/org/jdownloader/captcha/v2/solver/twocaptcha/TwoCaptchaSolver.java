@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.solver.twocaptcha;
 
 import java.io.IOException;
+import java.util.Map;
 
 import jd.http.Browser;
 
@@ -13,6 +14,8 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.HCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
@@ -49,7 +52,7 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
 
     @Override
     protected boolean isChallengeSupported(Challenge<?> c) {
-        return c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge;
+        return c instanceof RecaptchaV2Challenge || c instanceof HCaptchaChallenge || c instanceof BasicCaptchaChallenge;
     }
 
     @Override
@@ -57,6 +60,9 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
         Challenge<String> captchaChallenge = job.getChallenge();
         if (captchaChallenge instanceof RecaptchaV2Challenge) {
             handleRecaptchaV2(job);
+            return;
+        } else if (captchaChallenge instanceof HCaptchaChallenge) {
+            handleHCaptcha(job);
             return;
         }
         job.showBubble(this);
@@ -101,57 +107,131 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
         }
     }
 
+    /**
+     * http://2captcha.com/2captcha-api#error_handling
+     *
+     * @param job
+     * @param challenge
+     * @param response
+     * @return
+     * @throws InterruptedException
+     * @throws Exception
+     */
+    private boolean handleResponse(CESSolverJob<String> job, final String challengeID, final String challengeResponse) throws InterruptedException, Exception {
+        if ("CAPCHA_NOT_READY".equals(challengeResponse)) {
+            Thread.sleep(5000);
+            return false;
+        } else if ("ERROR_CAPTCHA_UNSOLVABLE".equals(challengeResponse)) {
+            return true;
+        } else if ("IP_BANNED".equals(challengeResponse)) {
+            throw new Exception(challengeResponse);
+        } else if (challengeResponse.startsWith("ERROR")) {
+            throw new Exception(challengeResponse);
+        } else if (challengeResponse.startsWith("OK|")) {
+            job.setAnswer(new TwoCaptchaResponse(job.getChallenge(), this, challengeID, challengeResponse.substring(3)));
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void handleHCaptcha(CESSolverJob<String> job) throws InterruptedException {
+        final HCaptchaChallenge challenge = (HCaptchaChallenge) job.getChallenge();
+        job.showBubble(this);
+        checkInterruption();
+        try {
+            challenge.sendStatsSolving(this);
+            final Browser br = new Browser();
+            br.setReadTimeout(5 * 60000);
+            job.setStatus(SolverStatus.SOLVING);
+            UrlQuery q = new UrlQuery();
+            // http://2captcha.com/2captcha-api#solving_hcaptcha
+            final String apiKey = config.getApiKey();
+            q.appendEncoded("key", apiKey);
+            q.appendEncoded("method", "hcaptcha");
+            q.appendEncoded("json", "1");
+            q.appendEncoded("sitekey", challenge.getSiteKey());
+            q.appendEncoded("pageurl", challenge.getSiteUrl());
+            final AbstractHCaptcha<?> hCaptcha = challenge.getAbstractCaptchaHelperHCaptcha();
+            if (hCaptcha != null && AbstractHCaptcha.TYPE.INVISIBLE.equals(hCaptcha.getType())) {
+                q.appendEncoded("invisible", "1");
+            }
+            final String json = br.getPage("http://2captcha.com/in.php?" + q.toString());
+            final BalanceResponse response = JSonStorage.restoreFromString(json, new TypeRef<BalanceResponse>() {
+            });
+            if (1 == response.getStatus()) {
+                final String id = response.getRequest();
+                job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
+                while (job.getJob().isAlive() && !job.getJob().isSolved()) {
+                    q = new UrlQuery();
+                    q.appendEncoded("key", apiKey);
+                    q.appendEncoded("action", "get");
+                    q.appendEncoded("id", id);
+                    final String challengeResponse = br.getPage("http://2captcha.com/res.php?" + q.toString());
+                    logger.info(challengeResponse);
+                    if (handleResponse(job, id, challengeResponse)) {
+                        return;
+                    }
+                }
+            } else {
+                job.getLogger().warning(json);
+            }
+        } catch (Exception e) {
+            job.getChallenge().sendStatsError(this, e);
+            job.getLogger().log(e);
+        }
+    }
+
     private void handleRecaptchaV2(CESSolverJob<String> job) throws InterruptedException {
         final RecaptchaV2Challenge challenge = (RecaptchaV2Challenge) job.getChallenge();
         job.showBubble(this);
         checkInterruption();
         try {
-            job.getChallenge().sendStatsSolving(this);
-            Browser br = new Browser();
+            challenge.sendStatsSolving(this);
+            final Browser br = new Browser();
             br.setReadTimeout(5 * 60000);
-            // Put your CAPTCHA image file, file object, input stream,
-            // or vector of bytes here:
             job.setStatus(SolverStatus.SOLVING);
             UrlQuery q = new UrlQuery();
-            // https://2captcha.com/2captcha-api
+            // http://2captcha.com/2captcha-api#solving_recaptchav2_new
+            // http://2captcha.com/2captcha-api#solving_recaptchav3
             q.appendEncoded("key", config.getApiKey());
             q.appendEncoded("method", "userrecaptcha");
             q.appendEncoded("json", "1");
             q.appendEncoded("googlekey", challenge.getSiteKey());
-            q.appendEncoded("pageurl", challenge.getSiteDomain());
+            q.appendEncoded("pageurl", challenge.getSiteUrl());
             final AbstractRecaptchaV2<?> recaptchaChallenge = challenge.getAbstractCaptchaHelperRecaptchaV2();
             if (recaptchaChallenge != null) {
-                if (challenge.getV3Action() != null && challenge.getV3Action().containsKey("action")) {
+                if (challenge.isEnterprise()) {
+                    q.appendEncoded("enterprise", "1");
+                }
+                final Map<String, Object> action = challenge.getV3Action();
+                if (action != null && action.containsKey("action")) {
                     q.appendEncoded("version", "v3");
-                    q.appendEncoded("action", String.valueOf(challenge.getV3Action().get("action")));
-                } else if (TYPE.INVISIBLE.equals(challenge.getAbstractCaptchaHelperRecaptchaV2().getType())) {
+                    q.appendEncoded("action", String.valueOf(action.get("action")));
+                } else if (TYPE.INVISIBLE.equals(recaptchaChallenge.getType())) {
                     q.appendEncoded("invisible", "1");
                 }
             }
-            String json = br.getPage("http://2captcha.com/in.php?" + q.toString());
-            BalanceResponse response = JSonStorage.restoreFromString(json, new TypeRef<BalanceResponse>() {
+            final String json = br.getPage("http://2captcha.com/in.php?" + q.toString());
+            final BalanceResponse response = JSonStorage.restoreFromString(json, new TypeRef<BalanceResponse>() {
             });
             if (1 == response.getStatus()) {
-                String id = response.getRequest();
+                final String id = response.getRequest();
                 job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 20)));
-                while (true) {
+                while (job.getJob().isAlive() && !job.getJob().isSolved()) {
                     q = new UrlQuery();
                     q.appendEncoded("key", config.getApiKey());
                     q.appendEncoded("action", "get");
                     q.appendEncoded("id", id);
-                    json = br.getPage("http://2captcha.com/res.php?" + q.toString());
-                    logger.info(json);
-                    if ("CAPCHA_NOT_READY".equals(json)) {
-                        Thread.sleep(1000);
-                        continue;
+                    final String challengeResponse = br.getPage("http://2captcha.com/res.php?" + q.toString());
+                    logger.info(challengeResponse);
+                    if (handleResponse(job, id, challengeResponse)) {
+                        return;
                     }
-                    if (json.startsWith("OK|")) {
-                        job.setAnswer(new TwoCaptchaResponse(challenge, this, id, json.substring(3)));
-                    }
-                    return;
                 }
+            } else {
+                job.getLogger().warning(json);
             }
-            System.out.println(json);
         } catch (Exception e) {
             job.getChallenge().sendStatsError(this, e);
             job.getLogger().log(e);
@@ -161,11 +241,11 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
     protected boolean validateLogins() {
         if (!CFG_TWO_CAPTCHA.ENABLED.isEnabled()) {
             return false;
-        }
-        if (StringUtils.isEmpty(CFG_TWO_CAPTCHA.API_KEY.getValue())) {
+        } else if (StringUtils.isEmpty(CFG_TWO_CAPTCHA.API_KEY.getValue())) {
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     @Override
