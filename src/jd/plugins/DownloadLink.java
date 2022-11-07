@@ -121,6 +121,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public static final String                PROPERTY_EXTRACTION_STATUS          = "EXTRACTION_STATUS";
     public static final String                PROPERTY_CUSTOM_MESSAGE             = "CUSTOM_MESSAGE";
     public static final String                PROPERTY_MIME_HINT                  = "MIME_HINT";
+    public static final String                PROPERTY_LAST_MODIFIED              = "LAST_MODIFIED";
     private static final long                 serialVersionUID                    = 1981079856214268373L;
     private static final String               UNKNOWN_FILE_NAME                   = "unknownFileName";
     private static final String               PROPERTY_CHUNKS                     = "CHUNKS";
@@ -1892,6 +1893,23 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             return hashInfo.getHash();
         }
         return null;
+    }
+
+    /**
+     * This date will later be written in the file if wanted by the user. </br>
+     * Preferable not(!) set this because in most of all cases this information will be obtained via the "Last-Modified" header once a
+     * download is complete.
+     */
+    public void setLastModifiedTimestamp(final long timestamp) {
+        this.setProperty(PROPERTY_LAST_MODIFIED, timestamp);
+    }
+
+    /**
+     * Returns timestamp when this file was last modified. </br>
+     * Typically only given [before download] if provided by an API and set on this DownloadLink.
+     */
+    public long getLastModifiedTimestamp() {
+        return this.getLongProperty(PROPERTY_LAST_MODIFIED, -1);
     }
 
     /**
