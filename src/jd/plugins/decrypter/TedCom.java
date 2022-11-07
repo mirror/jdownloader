@@ -111,19 +111,17 @@ public class TedCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        decryptAll();
+        crawlAll();
         return decryptedLinks;
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private void decryptAll() throws Exception {
+    private void crawlAll() throws Exception {
         final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.TedCom.formats;
         final LinkedHashMap<String, DownloadLink> foundVideoLinks = new LinkedHashMap();
-        final String json;
-        Map<String, Object> entries;
+        String json;
         if (parameter.matches(TYPE_PLAYLIST)) {
             /*
              * We could crawl from here straight away but this way we won't be able to find all qualities thus we prefer to decrypt one by
@@ -139,13 +137,16 @@ public class TedCom extends PluginForDecrypt {
                 return;
             }
             json = this.br.getRegex("<script>q\\(\"permalink\\.init\",(\\{.*?)</script>").getMatch(0);
-            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
-            entries = (Map<String, Object>) entries.get("__INITIAL_DATA__");
-            final List<Object> videos = (List) entries.get("talks");
-            for (final Object videoo : videos) {
-                entries = (Map<String, Object>) videoo;
-                final String url_single_video = (String) entries.get("canonical");
-                if (url_single_video == null) {
+            if (json == null) {
+                /* 2022-11-07 */
+                json = br.getRegex("type=\"application/json\">(\\{.*?\\})</script>").getMatch(0);
+            }
+            final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
+            final Map<String, Object> playlist = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/playlist");
+            final List<Map<String, Object>> videos = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(playlist, "videos/nodes");
+            for (final Map<String, Object> video : videos) {
+                final String url_single_video = (String) video.get("canonicalUrl");
+                if (StringUtils.isEmpty(url_single_video)) {
                     throw new DecrypterException("Decrypter broken");
                 }
                 decryptedLinks.add(createDownloadlink(url_single_video));
@@ -162,8 +163,7 @@ public class TedCom extends PluginForDecrypt {
             }
             json = this.br.getRegex("id=\"__NEXT_DATA__\" type=\"application/json\">(\\{.*?\\})</script>").getMatch(0);
             if (json == null) {
-                this.decryptedLinks.add(this.createOfflinelink(parameter));
-                return;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Map<String, Object> root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json);
             final Map<String, Object> videoData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "props/pageProps/videoData");

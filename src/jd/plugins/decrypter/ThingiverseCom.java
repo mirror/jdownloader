@@ -24,6 +24,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thingiverse.com" }, urls = { "https?://(www\\.)?thingiverse\\.com/(thing:\\d+|make:\\d+|[^/]+/(about|designs|collections(/[^/]+)?|makes|likes|things)|groups/[^/]+(/(things|about))?)" })
 public class ThingiverseCom extends antiDDoSForDecrypt {
@@ -34,7 +35,7 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
     private final String API_BASE = "https://api.thingiverse.com";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String fpName = null;
         if (new Regex(param.getCryptedUrl(), "/([^/]+/(about|designs|collections(/[^/]+)?|makes|likes|things)|groups/[^/]+(/(things|about))?)").matches()) {
@@ -45,7 +46,7 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
             String[] links = getAPISearchLinks(br);
             if (links != null && links.length > 0) {
                 for (String link : links) {
-                    decryptedLinks.add(createDownloadlink(br.getURL(link).toString()));
+                    ret.add(createDownloadlink(br.getURL(link).toString()));
                 }
             }
         } else if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "/thing:")) {
@@ -56,12 +57,12 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
             }
             fpName = br.getRegex("<title>\\s*([^<]+?)\\s*-\\s*Thingiverse").getMatch(0);
             final String thingID = new Regex(br.getURL(), "thing:(\\d+).*").getMatch(0);
-            final DownloadLink link = createDownloadlink("directhttp://https://www.thingiverse.com/thing:" + thingID + "/zip");
+            final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin("https://cdn.thingiverse.com/tv-zip/" + thingID));
             if (fpName != null) {
                 fpName = Encoding.htmlOnlyDecode(fpName);
                 link.setFinalFileName(fpName + ".zip");
             }
-            decryptedLinks.add(link);
+            ret.add(link);
             // Images to see what we've downloaded (in case the label doesn't make much sense in hindsight).
             final String[] imageLinks = br.getRegex("<div class=\"gallery-photo\"[^>]*data-full=\"([^\"]+)\"[^>]*>").getColumn(0);
             if (imageLinks != null && imageLinks.length > 0) {
@@ -71,7 +72,7 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
                     if (fpName != null) {
                         imageDL.setFinalFileName(fpName + "_" + imageLink.hashCode() + ".jpg");
                     }
-                    decryptedLinks.add(imageDL);
+                    ret.add(imageDL);
                 }
             }
         } else if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "/make:")) {
@@ -96,7 +97,7 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* This result will go back into this crawler to find the .zip files. */
-            decryptedLinks.add(createDownloadlink(thingURL));
+            ret.add(createDownloadlink(thingURL));
         } else {
             /* Unsupported URL --> Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -104,9 +105,9 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName).trim());
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private String getAuthToken(final Browser br) throws Exception {

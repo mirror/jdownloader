@@ -130,14 +130,16 @@ public class UploadhavenCom extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (this.isRefererProtected(br)) {
             /* We can't obtain more file information in this state! */
-            link.setComment("Hotlink protection active. Please set original site as DownloadPassword!");
+            if (StringUtils.isEmpty(link.getComment())) {
+                link.setComment("This link is referer-protected. Enter the correct referer into the 'Download password' field to be able to download this item.");
+            }
             return AvailableStatus.TRUE;
-        } else if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/error") || !br.getURL().contains(this.getFID(link))) {
+        } else if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("File: ([^<>\"]+)<br>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
-            filename = br.getRegex(">\\s*Download file \\- ([^<>\"]+)\\s*?<").getMatch(0);
+            filename = br.getRegex("(?i)>\\s*Download file \\- ([^<>\"]+)\\s*?<").getMatch(0);
         }
         String filesize = br.getRegex("Size:\\s+(.*?) +\\s+").getMatch(0);
         if (!StringUtils.isEmpty(filename)) {
@@ -169,7 +171,11 @@ public class UploadhavenCom extends PluginForHost {
                 for (int i = 0; i <= 2; i++) {
                     br.clearAll();
                     prepBR(this.br);
-                    userReferer = getUserInput("Enter referer?", link);
+                    try {
+                        userReferer = getUserInput("Enter referer?", link);
+                    } catch (final PluginException abortException) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Enter referer as password to be able to download this item");
+                    }
                     try {
                         new URL(userReferer);
                     } catch (final MalformedURLException e) {
@@ -263,6 +269,7 @@ public class UploadhavenCom extends PluginForHost {
                     throw new IOException();
                 }
             } catch (final Exception e) {
+                link.removeProperty(property);
                 logger.log(e);
                 return null;
             } finally {

@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -25,11 +27,10 @@ import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KatfileCom extends XFileSharingProBasic {
@@ -154,8 +155,17 @@ public class KatfileCom extends XFileSharingProBasic {
     protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
         boolean isoffline = super.isOffline(link, br, html);
         if (!isoffline) {
-            isoffline = new Regex(html, "/404-remove|>The file expired>The file was deleted by its owner").matches();
+            isoffline = new Regex(html, "(?i)/404-remove|>The file expired>The file was deleted by its owner").matches();
         }
         return isoffline;
+    }
+
+    @Override
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, html, link, account, checkAll);
+        /* 2022-11-07 */
+        if (br.containsHTML("(?i)>\\s*This file is available for Premium")) {
+            throw new AccountRequiredException();
+        }
     }
 }
