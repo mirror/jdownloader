@@ -33,6 +33,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -316,7 +317,7 @@ public class GoogleDrive extends PluginForHost {
 
     /** Contains all fields we need for file/folder API requests. */
     public static final String getFieldsAPI() {
-        return "kind,mimeType,id,name,size,description,md5Checksum,exportLinks,capabilities(canDownload),resourceKey";
+        return "kind,mimeType,id,name,size,description,md5Checksum,exportLinks,capabilities(canDownload),resourceKey,modifiedTime";
     }
 
     /** Multiple factors decide whether we want to use the API for downloading or use the website. */
@@ -349,9 +350,9 @@ public class GoogleDrive extends PluginForHost {
         final String md5Checksum = (String) entries.get("md5Checksum");
         final long fileSize = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
         final String description = (String) entries.get("description");
-        final boolean canDownload = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "capabilities/canDownload")).booleanValue();
         /* E.g. application/vnd.google-apps.document | application/vnd.google-apps.spreadsheet */
         final String googleDriveDocumentType = new Regex(mimeType, "application/vnd\\.google-apps\\.(.+)").getMatch(0);
+        final String modifiedTime = (String) entries.get("modifiedTime");
         if (googleDriveDocumentType != null) {
             final Map<String, Object> exportFormatDownloadurls = entries.containsKey("exportLinks") ? (Map<String, Object>) entries.get("exportLinks") : null;
             parseGoogleDocumentProperties(link, filename, googleDriveDocumentType, exportFormatDownloadurls);
@@ -368,7 +369,11 @@ public class GoogleDrive extends PluginForHost {
         if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
             link.setComment(description);
         }
-        link.setProperty(PROPERTY_CAN_DOWNLOAD, canDownload);
+        if (modifiedTime != null) {
+            final long lastModifiedDate = TimeFormatter.getMilliSeconds(modifiedTime, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
+            link.setLastModifiedTimestamp(lastModifiedDate);
+        }
+        link.setProperty(PROPERTY_CAN_DOWNLOAD, ((Boolean) JavaScriptEngineFactory.walkJson(entries, "capabilities/canDownload")).booleanValue());
     }
 
     /** Sets filename- and required parameters for GDocs files. */

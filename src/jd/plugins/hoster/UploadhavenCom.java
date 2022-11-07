@@ -137,11 +137,11 @@ public class UploadhavenCom extends PluginForHost {
         } else if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("File: ([^<>\"]+)<br>").getMatch(0);
+        String filename = br.getRegex("(?i)File\\s*:\\s*([^<>\"]+)<br>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             filename = br.getRegex("(?i)>\\s*Download file \\- ([^<>\"]+)\\s*?<").getMatch(0);
         }
-        String filesize = br.getRegex("Size:\\s+(.*?) +\\s+").getMatch(0);
+        String filesize = br.getRegex("(?i)Size\\s*:\\s+(.*?) +\\s+").getMatch(0);
         if (!StringUtils.isEmpty(filename)) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
