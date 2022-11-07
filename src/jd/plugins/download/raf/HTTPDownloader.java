@@ -29,29 +29,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashInfo;
-import jd.plugins.download.HashInfo.TYPE;
-import jd.plugins.download.HashResult;
-import jd.plugins.download.raf.BytesMappedFile.BytesMappedFileCallback;
-import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
-import jd.plugins.download.raf.HTTPChunk.ERROR;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.JsonConfig;
@@ -69,6 +46,30 @@ import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
+
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
+import jd.plugins.download.HashResult;
+import jd.plugins.download.raf.BytesMappedFile.BytesMappedFileCallback;
+import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
+import jd.plugins.download.raf.HTTPChunk.ERROR;
 
 public class HTTPDownloader extends DownloadInterface implements FileBytesCacheFlusher, BytesMappedFileCallback {
     public static enum STATEFLAG {
@@ -1079,10 +1080,10 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
     protected void finalizeDownload(File outputPartFile, File outputCompleteFile) throws Exception {
         if (downloadable.rename(outputPartFile, outputCompleteFile)) {
             try {
-                final Date last = TimeFormatter.parseDateString(connection.getHeaderField("Last-Modified"));
-                if (last != null && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                final Date lastModifiedDate = getLastModifiedDate(this.getDownloadable(), this.connection);
+                if (lastModifiedDate != null && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                     /* set original lastModified timestamp */
-                    outputCompleteFile.setLastModified(last.getTime());
+                    outputCompleteFile.setLastModified(lastModifiedDate.getTime());
                 } else {
                     /* set current timestamp as lastModified timestamp */
                     outputCompleteFile.setLastModified(System.currentTimeMillis());
@@ -1093,6 +1094,21 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         } else {
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(), LinkStatus.VALUE_LOCAL_IO_ERROR);
         }
+    }
+
+    public static Date getLastModifiedDate(final Object downloadable, final URLConnectionAdapter con) {
+        Date lastModifiedDate = null;
+        if (downloadable instanceof DownloadLinkDownloadable) {
+            final long lastModifiedTimestampDownloadLink = ((DownloadLinkDownloadable) downloadable).getDownloadLink().getLastModifiedTimestamp();
+            if (lastModifiedTimestampDownloadLink != -1) {
+                lastModifiedDate = new Date(lastModifiedTimestampDownloadLink);
+            }
+        }
+        if (lastModifiedDate == null) {
+            /* Try to get this date from header */
+            lastModifiedDate = TimeFormatter.parseDateString(con.getHeaderField("Last-Modified"));
+        }
+        return lastModifiedDate;
     }
 
     public boolean isResumedDownload() {
