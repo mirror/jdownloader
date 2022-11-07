@@ -1442,4 +1442,8 @@ public class DirectHTTP extends antiDDoSForHost {
     public Boolean siteTesterDisabled() {
         return Boolean.TRUE;
     }
+
+    public static String createURLForThisPlugin(final String url) {
+        return url == null ? null : "directhttp://" + url;
+    }
 }
