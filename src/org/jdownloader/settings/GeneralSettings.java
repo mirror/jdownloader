@@ -14,7 +14,6 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
@@ -498,15 +497,27 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction action);
 
-    public static enum CreateFolderTrigger {
-        @EnumLabel("When the actual Download starts")
-        ON_DOWNLOAD_START,
-        @EnumLabel("When the links are added to the Downloadlist")
-        ON_LINKS_ADDED,
+    /**
+     * TODO: Rename ON_DOWNLOAD_START to ON_DOWNLOAD_ATTEMPT once the following ticket is being worked on:
+     * https://svn.jdownloader.org/issues/90261
+     */
+    public static enum CreateFolderTrigger implements LabelInterface {
+        ON_DOWNLOAD_START {
+            @Override
+            public String getLabel() {
+                return "When the download is attempted to be started";
+            }
+        },
+        ON_LINKS_ADDED {
+            @Override
+            public String getLabel() {
+                return "When the links are added to the downloadlist";
+            }
+        };
     }
 
     @AboutConfig
-    @DescriptionForConfigEntry("Create subfolders after adding links? When should we create the final Downloaddirectory?")
+    @DescriptionForConfigEntry("When should JD create the final download directory?")
     @DefaultEnumValue("ON_DOWNLOAD_START")
     CreateFolderTrigger getCreateFolderTrigger();
 
