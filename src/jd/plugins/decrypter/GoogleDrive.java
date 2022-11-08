@@ -21,13 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -47,6 +40,13 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { jd.plugins.hoster.GoogleDrive.class })
@@ -198,8 +198,7 @@ public class GoogleDrive extends PluginForDecrypt {
         if (param.getDownloadLink() != null && param.getDownloadLink().hasProperty(PROPERTY_SPECIAL_SHORTCUT_FOLDER)) {
             /**
              * 2021-05-31: Workaround for special folder shortcuts --> FolderID will change and we cannot use the given folderID via API!
-             * </br>
-             * Very rare case!!
+             * </br> Very rare case!!
              */
             websiteBR.getPage(param.getCryptedUrl());
             final String newFolderID = this.getFolderID(websiteBR.getURL());
@@ -224,9 +223,9 @@ public class GoogleDrive extends PluginForDecrypt {
         queryFolder.add("supportsAllDrives", "true");
         queryFolder.add("includeItemsFromAllDrives", "true");
         /**
-         * pageSize = up to how many items get returned per request. </br>
-         * 2021-02-25: Appearently the GDrive API decides randomly how many items it wants to return but it doesn't matter as we got
-         * pagination. It worked fine in my tests in their API explorer but in reality the max number of items I got was 30.
+         * pageSize = up to how many items get returned per request. </br> 2021-02-25: Appearently the GDrive API decides randomly how many
+         * items it wants to return but it doesn't matter as we got pagination. It worked fine in my tests in their API explorer but in
+         * reality the max number of items I got was 30.
          */
         queryFolder.add("pageSize", "200");
         queryFolder.appendEncoded("fields", "kind,nextPageToken,incompleteSearch,files(" + jd.plugins.hoster.GoogleDrive.getFieldsAPI() + ")");
@@ -258,16 +257,15 @@ public class GoogleDrive extends PluginForDecrypt {
             }
             if (page == 0 && subfolderPath == null) {
                 /**
-                 * Workaround to find the name of the folder we're currently in. </br>
-                 * TODO: Find a way to do this via API.
+                 * Workaround to find the name of the folder we're currently in. </br> TODO: Find a way to do this via API.
                  */
                 /* Leave this in the loop! It doesn't really belong here but it's only a workaround and only executed once! */
                 logger.info("Trying to find title of current folder");
                 try {
                     /**
                      * 2020-12-09: psp: This is a workaround because API doesn't return name of the current folder or I'm just too stupid
-                     * ... </br>
-                     * Basically for big folder structures we really only need to do this once and after that we'll use the API only!
+                     * ... </br> Basically for big folder structures we really only need to do this once and after that we'll use the API
+                     * only!
                      */
                     /*
                      * TODO Login when API once API login is possible -> Then we'd be able to crawl private folders which are restricted to
@@ -566,7 +564,7 @@ public class GoogleDrive extends PluginForDecrypt {
                 dl = createDownloadlink(generateFileURL(id, resourceKey));
                 final String googleDriveDocumentType = new Regex(mimeType, "application/vnd\\.google-apps\\.(.+)").getMatch(0);
                 if (googleDriveDocumentType != null) {
-                    jd.plugins.hoster.GoogleDrive.parseGoogleDocumentProperties(dl, title, googleDriveDocumentType, null);
+                    jd.plugins.hoster.GoogleDrive.parseGoogleDocumentProperties(this, dl, title, googleDriveDocumentType, null);
                 } else {
                     dl.setName(title);
                 }
@@ -675,7 +673,7 @@ public class GoogleDrive extends PluginForDecrypt {
             if (isFile) {
                 /* Single file */
                 dl = createDownloadlink(generateFileURL(id, resourceKey));
-                jd.plugins.hoster.GoogleDrive.parseFileInfoAPI(dl, resource);
+                jd.plugins.hoster.GoogleDrive.parseFileInfoAPI(this, dl, resource);
                 if (subfolder != null) {
                     folderPath = subfolder;
                     /*
@@ -741,10 +739,10 @@ public class GoogleDrive extends PluginForDecrypt {
     public class GdriveException extends Exception {
         private int    gdrivestatus = -1;
         private String offlineTitle = null;
+
         // public GdriveException(final int gdrivestatus) {
         // this.gdrivestatus = gdrivestatus;
         // }
-
         public GdriveException(final int gdrivestatus, final String offlineTitle) {
             this.gdrivestatus = gdrivestatus;
             this.offlineTitle = offlineTitle;
