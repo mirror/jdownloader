@@ -26,7 +26,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -302,6 +301,7 @@ public class CooldebridCom extends PluginForHost {
                 br.getPage(WEBSITE_BASE);
                 final Form loginform = br.getFormbyProperty("id", "login_form");
                 if (loginform == null) {
+                    logger.warning("Failed to find loginform");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 loginform.setAction("/api/login.php");
