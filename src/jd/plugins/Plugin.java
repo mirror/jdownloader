@@ -38,6 +38,31 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.components.SiteType.SiteTemplate;
+import jd.utils.JDUtilities;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
@@ -63,6 +88,7 @@ import org.jdownloader.auth.Login;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.dialog.AskForUserAndPasswordDialog;
 import org.jdownloader.gui.dialog.AskUsernameAndPasswordDialogInterface;
@@ -81,31 +107,6 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
-
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.BrowserSettingsThread;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -453,9 +454,8 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br>
-     * Pass fileExtension with dot(s) to this! </br>
-     * Only replaces extensions with one dot e.g. ".mp4", NOT e.g. ".tar.gz".
+     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br> Pass
+     * fileExtension with dot(s) to this! </br> Only replaces extensions with one dot e.g. ".mp4", NOT e.g. ".tar.gz".
      *
      * @param filenameOrg
      *            Original filename
@@ -465,11 +465,7 @@ public abstract class Plugin implements ActionListener {
      *
      * @return Filename with new extension
      */
-    protected String correctOrApplyFileNameExtension(final String filenameOrg, final String newExtension) {
-        return correctOrApplyFileNameExtension(filenameOrg, newExtension);
-    }
-
-    public static String correctOrApplyFileNameExtensionStatic(final String filenameOrg, final String newExtension) {
+    public String correctOrApplyFileNameExtension(final String filenameOrg, final String newExtension) {
         if (StringUtils.isEmpty(filenameOrg) || StringUtils.isEmpty(newExtension)) {
             return filenameOrg;
         } else if (!filenameOrg.contains(".")) {
@@ -477,13 +473,19 @@ public abstract class Plugin implements ActionListener {
             return filenameOrg + newExtension;
         } else {
             /* Replace existing extension with new extension. */
-            final String filenameWithoutExtension = filenameOrg.substring(0, filenameOrg.lastIndexOf("."));
-            return filenameWithoutExtension + newExtension;
+            final int lastIndex = filenameOrg.lastIndexOf(".");
+            final String fileExtension = lastIndex + 1 < filenameOrg.length() ? filenameOrg.substring(lastIndex + 1) : null;
+            if (CompiledFiletypeFilter.getExtensionsFilterInterface(fileExtension) != null) {
+                final String filenameWithoutExtension = filenameOrg.substring(0, lastIndex);
+                return filenameWithoutExtension + newExtension;
+            } else {
+                return filenameOrg + newExtension;
+            }
         }
     }
 
     /** Adds extension to given filename (it it's not already in this filename). */
-    public static String applyFilenameExtension(final String filenameOrg, final String fileExtension) {
+    public String applyFilenameExtension(final String filenameOrg, final String fileExtension) {
         if (filenameOrg == null) {
             return null;
         } else if (fileExtension == null) {

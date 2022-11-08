@@ -39,14 +39,25 @@ public class CompiledFiletypeFilter {
         public ExtensionsFilterInterface getSource();
     }
 
+    private static List<ExtensionsFilterInterface> EXTENSIONSFILTERINTERFACES;
+    {
+        EXTENSIONSFILTERINTERFACES = new ArrayList<ExtensionsFilterInterface>();
+        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(VideoExtensions.values()));
+        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(ArchiveExtensions.values()));
+        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(AudioExtensions.values()));
+        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(ExecutableExtensions.values()));
+        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(HashExtensions.values()));
+        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(DocumentExtensions.values()));
+        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(ImageExtensions.values()));
+        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(SubtitleExtensions.values()));
+    }
+
     public static ExtensionsFilterInterface getExtensionsFilterInterface(final String fileExtension) {
         if (fileExtension != null) {
-            for (final ExtensionsFilterInterface[] extensions : new ExtensionsFilterInterface[][] { ExecutableExtensions.values(), HashExtensions.values(), AudioExtensions.values(), DocumentExtensions.values(), ArchiveExtensions.values(), ImageExtensions.values(), VideoExtensions.values(), SubtitleExtensions.values() }) {
-                for (final ExtensionsFilterInterface extension : extensions) {
-                    final Pattern pattern = extension.getPattern();
-                    if (pattern != null && pattern.matcher(fileExtension).matches()) {
-                        return extension;
-                    }
+            for (final ExtensionsFilterInterface extension : EXTENSIONSFILTERINTERFACES) {
+                final Pattern pattern = extension.getPattern();
+                if (pattern != null && pattern.matcher(fileExtension).matches()) {
+                    return extension;
                 }
             }
         }
