@@ -31,7 +31,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -170,11 +169,10 @@ public class GenericM3u8 extends PluginForHost {
         final int bandwidth = link.getIntegerProperty(PROPERTY_BANDWIDTH, 0);
         String name = link.getStringProperty(PRESET_NAME_PROPERTY);
         if (name == null) {
-            name = link.isNameSet() ? link.getName() : getFileNameFromURL(new URL(link.getPluginPatternMatcher().replaceFirst("m3u8s?", "https://")));
-        }
-        /* .m3u8 is not a valid file extension and we don't want to have this in our filename */
-        if (StringUtils.endsWithCaseInsensitive(name, ".m3u8")) {
-            name = name.substring(0, name.length() - 5);
+            name = link.isNameSet() ? link.getName() : getFileNameFromURL(new URL(link.getPluginPatternMatcher().replaceFirst("^m3u8s?", "https://")));
+            /* .m3u8 is not a valid file extension and we don't want to have this in our filename */
+            name = name.replaceFirst("(?i)\\.m3u8$", "");
+            name = plugin.correctOrApplyFileNameExtension(name, ".dummy").replaceFirst("\\.dummy$", "");
         }
         String assumedFileExtension = null;
         final String codecsString = link.getStringProperty(PROPERTY_M3U8_CODECS, link.getStringProperty(PROPERTY_FFMPEG_CODECS, null));
@@ -220,15 +218,7 @@ public class GenericM3u8 extends PluginForHost {
         } else if (audioq != null) {
             name += " (" + audioq + ")";
         }
-        final boolean includeBandwidthInFilename;
-        if (videoq == null && audioq == null) {
-            /* Force bandwidth value in filename */
-            includeBandwidthInFilename = true;
-        } else {
-            /* Add bandwidth value to filename if user wants it */
-            includeBandwidthInFilename = PluginJsonConfig.get(GenericM3u8DecrypterConfig.class).isAddBandwidthValueToFilenames();
-        }
-        if (includeBandwidthInFilename && bandwidth > 0) {
+        if (bandwidth > 0 && ((videoq == null && audioq == null) || PluginJsonConfig.get(GenericM3u8DecrypterConfig.class).isAddBandwidthValueToFilenames())) {
             name += "_bw_" + bandwidth;
         }
         name = plugin.correctOrApplyFileNameExtension(name, "." + assumedFileExtension);
