@@ -30,17 +30,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.loggingv3.NullLogger;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -66,6 +55,17 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
+
+import org.appwork.loggingv3.NullLogger;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FileFactory extends PluginForHost {
@@ -107,6 +107,11 @@ public class FileFactory extends PluginForHost {
         return buildAnnotationNames(getPluginDomains());
     }
 
+    /**
+     * https://api.filefactory.com
+     *
+     * @return
+     */
     protected String getAuthKey() {
         return "cfbc9099994d3bafd5a5f13c38c542f0";
     }
@@ -283,6 +288,9 @@ public class FileFactory extends PluginForHost {
                 // ERR_API_INTERNAL_ERROR
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
             case 702:
+                if ("Invalid authorization key".equals(errormessage)) {
+                    useAPI.set(false);
+                }
                 /* This should never happen */
                 // ERR_API_REQ_MALFORMED
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
@@ -367,16 +375,20 @@ public class FileFactory extends PluginForHost {
         if (urls == null || urls.length == 0) {
             return false;
         }
-        if (useAPI.get()) {
+        boolean useAPI = useAPI(null);
+        if (useAPI) {
             final Account account = AccountController.getInstance().getValidAccount(getHost());
-            final String apiKey = account != null ? getApiKey(account) : null;
-            if (!StringUtils.isEmpty(apiKey)) {
-                checkLinks_API(urls, account, apiKey);
-            } else {
-                checkLinks_API(urls, null, null);
+            useAPI = useAPI(account);
+            if (useAPI) {
+                final String apiKey = account != null ? getApiKey(account) : null;
+                if (!StringUtils.isEmpty(apiKey)) {
+                    checkLinks_API(urls, account, apiKey);
+                } else {
+                    checkLinks_API(urls, null, null);
+                }
             }
         }
-        if (!useAPI.get()) {
+        if (!useAPI) {
             final Browser br = new Browser();
             br.setCookiesExclusive(true);
             br.getHeaders().put("Accept-Encoding", "identity");
@@ -532,7 +544,7 @@ public class FileFactory extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         if (!isMail(account.getUser())) {
             throw new AccountInvalidException("Please enter your E-Mail address as username!");
-        } else if (useAPI.get()) {
+        } else if (useAPI(account)) {
             ai = fetchAccountInfo_API(account, ai);
         } else {
             loginWebsite(account, true, br);
@@ -652,14 +664,15 @@ public class FileFactory extends PluginForHost {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        if (useAPI.get()) {
-            handleDownload_API(link, null);
+        final Account account = null;
+        if (useAPI(account)) {
+            handleDownload_API(link, account);
         } else {
-            requestFileInformationWebsite(null, link);
+            requestFileInformationWebsite(account, link);
             if (br.getURL().contains(TRAFFICSHARELINK) || br.containsHTML(TRAFFICSHARETEXT)) {
-                handleTrafficShare(link, null);
+                handleTrafficShare(link, account);
             } else {
-                doFree(link, null);
+                doFree(link, account);
             }
         }
     }
@@ -796,7 +809,7 @@ public class FileFactory extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         // reset setter
         link.setProperty(dlRedirects, Property.NULL);
-        if (useAPI.get()) {
+        if (useAPI(account)) {
             handleDownload_API(link, account);
         } else {
             requestFileInformationWebsite(account, link);
@@ -992,11 +1005,15 @@ public class FileFactory extends PluginForHost {
         return getAvailableStatus(link);
     }
 
+    private boolean useAPI(final Account account) {
+        return useAPI.get();
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
         final Account account = AccountController.getInstance().getValidAccount(this);
-        if (useAPI.get()) {
+        if (useAPI(account)) {
             final String apiKey = account != null ? getApiKey(account) : null;
             if (!StringUtils.isEmpty(apiKey)) {
                 return requestFileInformationAPI(link, account, apiKey);

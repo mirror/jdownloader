@@ -466,11 +466,14 @@ public abstract class Plugin implements ActionListener {
      * @return Filename with new extension
      */
     public String correctOrApplyFileNameExtension(final String filenameOrg, final String newExtension) {
-        if (StringUtils.isEmpty(filenameOrg) || StringUtils.isEmpty(newExtension)) {
+        if (StringUtils.isEmpty(filenameOrg) || StringUtils.isEmpty(newExtension) || !newExtension.startsWith(".")) {
             return filenameOrg;
         } else if (!filenameOrg.contains(".")) {
             /* Filename doesn't contain an extension at all -> Add extension to filename. */
             return filenameOrg + newExtension;
+        } else if (StringUtils.endsWithCaseInsensitive(filenameOrg, newExtension)) {
+            /* Filename already contains target-extension. */
+            return filenameOrg;
         } else {
             /* Replace existing extension with new extension. */
             final int lastIndex = filenameOrg.lastIndexOf(".");
@@ -484,14 +487,13 @@ public abstract class Plugin implements ActionListener {
         }
     }
 
-    /** Adds extension to given filename (it it's not already in this filename). */
+    /** Adds extension to given filename (if it's not already in this filename). */
     public String applyFilenameExtension(final String filenameOrg, final String fileExtension) {
         if (filenameOrg == null) {
             return null;
-        } else if (fileExtension == null) {
+        } else if (StringUtils.isEmpty(fileExtension) || !fileExtension.startsWith(".")) {
             return filenameOrg;
-        }
-        if (filenameOrg.toLowerCase(Locale.ENGLISH).endsWith(fileExtension)) {
+        } else if (StringUtils.endsWithCaseInsensitive(filenameOrg, fileExtension)) {
             /* Filename already contains target-extension. */
             return filenameOrg;
         } else {
