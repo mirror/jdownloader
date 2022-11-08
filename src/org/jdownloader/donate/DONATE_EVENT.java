@@ -170,6 +170,10 @@ public enum DONATE_EVENT {
                 return true;
             } else if (year == 2022 && month == Calendar.APRIL && day == 17) {
                 return true;
+            } else if (year == 2023 && month == Calendar.APRIL && day == 9) {
+                return true;
+            } else if (year == 2024 && month == Calendar.MARCH && day == 31) {
+                return true;
             } else {
                 return false;
             }
@@ -197,6 +201,10 @@ public enum DONATE_EVENT {
             } else if (month == Calendar.NOVEMBER && day == 26 && year == 2021) {
                 return true;
             } else if (month == Calendar.NOVEMBER && day == 25 && year == 2022) {
+                return true;
+            } else if (month == Calendar.NOVEMBER && day == 24 && year == 2023) {
+                return true;
+            } else if (month == Calendar.NOVEMBER && day == 29 && year == 2024) {
                 return true;
             } else {
                 return false;
