@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -24,9 +26,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tistory.com" }, urls = { "https?://[a-z0-9]+\\.tistory\\.com/\\d+" })
 public class TistoryCom extends PluginForDecrypt {
@@ -34,32 +37,31 @@ public class TistoryCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.getPage(parameter);
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String addedurl = param.toString();
+        br.setFollowRedirects(true);
+        br.getPage(addedurl);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex("<title>[^\"/]+ :: ([^<>\"]+)</title>").getMatch(0);
         final String[] links = br.getRegex("class=\"imageblock\".*?<img src=\"(http[^<>\"]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter may be broken (not all links have pictures) for link: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            logger.warning("Decrypter may be broken (not all links have pictures) for link: " + addedurl);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         for (final String singleLink : links) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
+            final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(singleLink));
             dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
             dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
