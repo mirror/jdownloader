@@ -151,10 +151,6 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     infos.add(line);
                 }
             }
-            /*
-             * TODO: Put bandwidth into filenames if same resolution (width!) video is available multiple times and/or use label in filename
-             * or at least set label as property, see: https://svn.jdownloader.org/issues/90277
-             */
             final String finalFallbackTitle = new Regex(m3u8URL, "/([^/]+)\\.m3u8").getMatch(0);
             FilePackage fp = FilePackage.getInstance();
             if (preSetName != null) {
