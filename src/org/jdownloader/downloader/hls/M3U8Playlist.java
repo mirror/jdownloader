@@ -509,6 +509,7 @@ public class M3U8Playlist {
         return duration;
     }
 
+    /** Returns estimated duration in milliseconds. */
     public static long getEstimatedDuration(List<M3U8Playlist> list) {
         long duration = 0;
         for (final M3U8Playlist playList : list) {
