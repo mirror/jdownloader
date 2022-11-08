@@ -19,18 +19,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
@@ -40,6 +28,18 @@ import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.Cookies;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+" })
 public class GenericM3u8 extends PluginForHost {
@@ -147,12 +147,12 @@ public class GenericM3u8 extends PluginForHost {
             } else if ("audio".equalsIgnoreCase(s.getCodec_type())) {
             }
         }
+        final long estimatedDurationMillis = M3U8Playlist.getEstimatedDuration(downloader.getPlayLists());
+        if (estimatedDurationMillis > 0) {
+            link.setProperty(PROPERTY_DURATION_ESTIMATED_MILLIS, estimatedDurationMillis);
+        }
         if (ffmpegCodecs.length() > 0) {
             link.setProperty(PROPERTY_FFMPEG_CODECS, ffmpegCodecs.toString());
-        }
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            link.setFinalFileName(null);
-            link.setName(null);
         }
         setFilename(link, true);
         return AvailableStatus.TRUE;
@@ -161,8 +161,9 @@ public class GenericM3u8 extends PluginForHost {
     public static void setFilename(final DownloadLink link, final boolean setFinalFilename) throws MalformedURLException {
         if (link.getFinalFileName() != null) {
             /**
-             * No not modify filename once final name has been set. </br> This e.g. allows other plugins/crawlers to set desired filenames
-             * telling this plugin not to use the default filenames down below.
+             * No not modify filename once final name has been set. </br>
+             * This e.g. allows other plugins/crawlers to set desired filenames telling this plugin not to use the default filenames down
+             * below.
              */
             return;
         }
@@ -231,7 +232,7 @@ public class GenericM3u8 extends PluginForHost {
         if (includeBandwidthInFilename && bandwidth > 0) {
             name += "_bw_" + bandwidth;
         }
-        name += "." + assumedFileExtension;
+        name = Plugin.correctOrApplyFileNameExtensionStatic(name, "." + assumedFileExtension);
         if (setFinalFilename) {
             link.setFinalFileName(name);
         } else {
