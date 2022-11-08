@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -26,31 +27,57 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.YoutubeDashV2;
 
 /**
- * Only direct links are suported + those we have plugins for. => for example mtv doesn't work.
- *
- * following have been tested: youtube.com, img.zoznam.sk
  *
  * @author butkovip
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "https?://(?:www\\.)?topky\\.sk/cl/\\d+/\\d+/([a-zA-Z0-9\\-]+)" }, names = { "topky.sk" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = {}, names = {})
 public class TopkySk extends PluginForDecrypt {
     public TopkySk(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "topky.sk" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/cl?/\\d+/\\d+/([a-zA-Z0-9\\-]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink cryptedLink, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.clearCookies(getHost());
-        final String parameter = cryptedLink.toString();
-        br.getPage(parameter);
+        final String addedurl = cryptedLink.toString();
+        br.setFollowRedirects(true);
+        br.getPage(addedurl);
         // extract img.zoznam.sk like vids
         String[][] links = br.getRegex("fo\\.addVariable[(]\"file\", \"(.*?)\"[)]").getMatches();
         if (null != links && 0 < links.length) {
             for (String[] link : links) {
                 if (null != link && 1 == link.length && null != link[0] && 0 < link[0].length()) {
-                    decryptedLinks.add(createDownloadlink(link[0]));
+                    ret.add(createDownloadlink(link[0]));
                 }
             }
         }
@@ -59,27 +86,34 @@ public class TopkySk extends PluginForDecrypt {
         if (null != links && 0 < links.length) {
             for (String[] link : links) {
                 if (null != link && 1 == link.length && null != link[0] && 0 < link[0].length()) {
-                    decryptedLinks.add(createDownloadlink(YoutubeDashV2.generateContentURL(link[0])));
+                    ret.add(createDownloadlink(YoutubeDashV2.generateContentURL(link[0])));
                 }
             }
         }
-        // extract topky.sk vids
+        // extract instagram links
+        final String[] instagramlinks = br.getRegex("data-instgrm-permalink=\"(https?://[^\"]+)").getColumn(0);
+        if (null != instagramlinks && 0 < instagramlinks.length) {
+            for (final String instagramlink : instagramlinks) {
+                ret.add(createDownloadlink(instagramlink));
+            }
+        }
+        // extract topky.sk http vids
         final String finallink = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
         if (finallink != null) {
-            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+            ret.add(createDownloadlink("directhttp://" + finallink));
         }
         /* 2022-06-14: Selfhosted hls */
-        final String[] hlsplaylists = br.getRegex("(https://img\\.topky\\.sk/video/\\d+/master\\.m3u8)").getColumn(0);
+        final String[] hlsplaylists = br.getRegex("(https?://img\\.topky\\.sk/video/\\d+/master\\.m3u8)").getColumn(0);
         for (final String hlsplaylist : hlsplaylists) {
-            decryptedLinks.add(createDownloadlink(hlsplaylist));
+            ret.add(createDownloadlink(hlsplaylist));
         }
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            logger.info("Found no downloadable content for link: " + parameter);
+        if (ret == null || ret.size() == 0) {
+            logger.info("Found no downloadable content for link: " + addedurl);
         }
-        return decryptedLinks;
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

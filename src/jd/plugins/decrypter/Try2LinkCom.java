@@ -26,6 +26,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "try2link.com" }, urls = { "https?://(?:www\\.)?try2link\\.com/([A-Za-z0-9]+)" })
 public class Try2LinkCom extends MightyScriptAdLinkFly {
@@ -40,6 +42,9 @@ public class Try2LinkCom extends MightyScriptAdLinkFly {
         br.setFollowRedirects(false);
         // /* Pre-set Referer to skip multiple ad pages e.g. try2link.com -> forex-gold.net -> try2link.com */
         getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String location = br.getRequest().getLocation();
         final UrlQuery query = UrlQuery.parse(location);
         final String urlBase64Decoded = Encoding.Base64Decode(query.get("k"));
