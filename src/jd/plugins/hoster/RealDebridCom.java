@@ -351,7 +351,6 @@ public class RealDebridCom extends PluginForHost {
         final boolean resume = true;
         final Browser br2 = br.cloneBrowser();
         br2.setAllowedResponseCodes(new int[0]);
-        boolean increment = false;
         try {
             dl = new jd.plugins.BrowserAdapter().openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(downloadLink), resume, resume ? maxChunks : 1);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -359,10 +358,15 @@ public class RealDebridCom extends PluginForHost {
                     dl.getConnection().disconnect();
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "RD still processing download", 5 * 60 * 1000l);
                 }
-                /* content disposition, lets download it */
-                RUNNING_DOWNLOADS.incrementAndGet();
-                increment = true;
-                dl.startDownload();
+                /* We have a file, let's download it. */
+                try {
+                    RUNNING_DOWNLOADS.incrementAndGet();
+                    dl.startDownload();
+                } finally {
+                    if (RUNNING_DOWNLOADS.decrementAndGet() == 0) {
+                        MAX_DOWNLOADS.set(Integer.MAX_VALUE);
+                    }
+                }
             } else {
                 try {
                     br2.followConnection(true);
@@ -390,9 +394,6 @@ public class RealDebridCom extends PluginForHost {
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable t) {
-            }
-            if (increment && RUNNING_DOWNLOADS.decrementAndGet() == 0) {
-                MAX_DOWNLOADS.set(Integer.MAX_VALUE);
             }
         }
     }
