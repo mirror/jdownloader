@@ -56,7 +56,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
             /** file-up.org domains */
             "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc", "uploadboy.com", "uploadboy.me" };
     /* This list contains all hosts which need special Patterns (see below) - all other XFS hosts have the same folder patterns! */
-    private static final String[] specialDomains = { "usersfiles.com", "userscloud.com", "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm", "takefile.link" };
+    private static final String[] specialDomains = { "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm", "takefile.link" };
 
     public static String[] getAnnotationNames() {
         return getAllDomains();
@@ -88,9 +88,6 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
          * Now add special patterns - this might be ugly but usually we do not get new specialDomains! Keep in mind that their patterns have
          * to be in order and the number of patterns has to be the same as the total number of domains!
          */
-        /* userscloud.com & usersfiles.com */
-        ret.add("https?://(?:www\\.)?usersfiles\\.com/go/[a-zA-Z0-9]{12}/?");
-        ret.add("https?://(?:www\\.)?userscloud\\.com/go/[a-zA-Z0-9]{12}/?");
         /* hotlink.cc & ex-load.com */
         ret.add("https?://(?:www\\.)?hotlink\\.cc/folder/[a-f0-9\\-]+");
         ret.add("https?://(?:www\\.)?ex\\-load\\.com/folder/[a-f0-9\\-]+");
@@ -106,7 +103,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         /* file.al */
         ret.add("https?://(?:www\\.)?file\\.al/public/\\d+/.+");
         /* send.cm */
-        ret.add("https?://(?:www\\.)?send\\.cm/s/.+");
+        ret.add("https?://(?:www\\.)?(send\\.cm|sendit\\.cloud)/s/.+");
         ret.add("https?://(?:www\\.)?takefile\\.link/folder/[a-f0-9\\-]+");
         for (String[] takeFileVirtual : TakefileLink.getVirtualPluginDomains()) {
             ret.add("https?://" + Pattern.quote(takeFileVirtual[0]) + "/folder/[a-f0-9\\-]+");

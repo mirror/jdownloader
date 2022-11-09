@@ -173,15 +173,15 @@ public class GoogleHelper {
     }
 
     private Thread showCookieLoginInformation(final String host) {
-        final String serviceName;
+        final String serviceNameForUser;
         final String realhost;
         if (host.contains("google")) {
             /* For GoogleDrive downloads */
             realhost = "google.com";
-            serviceName = "Google";
+            serviceNameForUser = "Google/GoogleDrive";
         } else {
             realhost = "youtube.com";
-            serviceName = "YouTube";
+            serviceNameForUser = "YouTube";
         }
         final Thread thread = new Thread() {
             public void run() {
@@ -190,14 +190,14 @@ public class GoogleHelper {
                     String message = "";
                     final String title;
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = serviceName + " - Login";
-                        message += "Hallo liebe(r) " + serviceName + " NutzerIn\r\n";
-                        message += "Um deinen " + serviceName + " Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
+                        title = serviceNameForUser + " - Login";
+                        message += "Hallo liebe(r) " + serviceNameForUser + " NutzerIn\r\n";
+                        message += "Um deinen " + serviceNameForUser + " Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
                         message += "Öffne " + realhost + " in deinem Browser und folge dieser Anleitung:\r\n";
                         message += help_article_url;
                     } else {
-                        title = serviceName + " - Login";
-                        message += "Hello dear " + serviceName + " user\r\n";
+                        title = serviceNameForUser + " - Login";
+                        message += "Hello dear " + serviceNameForUser + " user\r\n";
                         message += "Open " + realhost + " in your browser and follow these instructions:\r\n";
                         message += help_article_url;
                     }
