@@ -31,7 +31,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
@@ -273,13 +272,6 @@ public class RealDebridCom extends PluginForHost {
             /* 2020-08-11: Free accounts cannot be used to download anything */
             ai.setProperty("multiHostSupport", Property.NULL);
             ai.setTrafficLeft(0);
-            final boolean test20221109 = false;
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && test20221109) {
-                final ArrayList<String> supportedHosts = new ArrayList<String>();
-                supportedHosts.add("drive.google.com");
-                ai.setMultiHostSupport(this, supportedHosts);
-                ai.setUnlimitedTraffic();
-            }
         }
         return ai;
     }

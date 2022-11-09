@@ -38,7 +38,7 @@ public class DaofileCom extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null 4dignum solvemedia reCaptchaV2<br />
+     * captchatype-info: 2022-11-09: hcaptcha <br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
