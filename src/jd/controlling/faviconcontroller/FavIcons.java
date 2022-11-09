@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -473,7 +474,12 @@ public class FavIcons {
         return null;
     }
 
-    private static boolean isSameDomain(Browser br, String host) {
+    private static boolean isSameDomain(final Browser br, String host) throws IOException {
+        if (host.matches("(?i)^https?://.+")) {
+            host = new URL(host).getHost();
+        } else {
+            host = host;
+        }
         final URL url = br != null ? br._getURL() : null;
         if (url == null) {
             return false;
@@ -494,14 +500,35 @@ public class FavIcons {
         return true;
     }
 
-    public static BufferedImage download_FavIconTag(String host, LogInterface logger) throws IOException {
+    private static boolean isFavIconURL(String host) {
+        try {
+            if (!host.matches("(?i)^https?://.+")) {
+                return false;
+            } else {
+                final String path = new URL(host).getFile();
+                return path.matches("(?i).+\\.(ico|png|svg)$");
+            }
+        } catch (MalformedURLException e) {
+            return false;
+        }
+    }
+
+    public static BufferedImage download_FavIconTag(final String host, LogInterface logger) throws IOException {
         final Browser favBr = new Browser();
         favBr.setLogger(logger);
         favBr.setConnectTimeout(10000);
         favBr.setReadTimeout(10000);
-        if (!host.matches("(?i)^https?://.+")) {
+        final List<String> websites = new ArrayList<String>();
+        if (!isFavIconURL(host)) {
+            if (host.matches("(?i)^https?://.+")) {
+                websites.add(host);
+            } else {
+                websites.addAll(Arrays.asList(new String[] { "https://" + host, "http://" + host }));
+            }
+        }
+        for (final String website : websites) {
             try {
-                favBr.getPage("https://" + host);
+                favBr.getPage(website);
                 if (favBr.getRedirectLocation() != null) {
                     favBr.followRedirect(true);
                     if (!isSameDomain(favBr, host)) {
@@ -510,20 +537,13 @@ public class FavIcons {
                 }
             } catch (final IOException e) {
                 logger.log(e);
-                favBr.getPage("http://" + host);
-                if (favBr.getRedirectLocation() != null) {
-                    favBr.followRedirect(true);
-                    if (!isSameDomain(favBr, host)) {
-                        logger.info("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
-                    }
-                }
             }
         }
         return download_FavIconTag(favBr, host, logger);
     }
 
     public static BufferedImage download_FavIconTag(Browser favBr, String host, LogInterface logger) throws IOException {
-        final Set<String> favIconURLs = getFavIcons(favBr, host, logger);
+        final Set<String> favIconURLs = getFavIconURLs(favBr, host, logger);
         for (final String favIconURL : favIconURLs) {
             try {
                 final Browser brc = favBr.cloneBrowser();
@@ -538,9 +558,9 @@ public class FavIcons {
         return null;
     }
 
-    public static Set<String> getFavIcons(final Browser favBr, final String host, LogInterface logger) throws IOException {
+    public static Set<String> getFavIconURLs(final Browser favBr, final String host, LogInterface logger) throws IOException {
         final Set<String> ret = new LinkedHashSet<String>();
-        if (host.matches("(?i)^https?://.+")) {
+        if (isFavIconURL(host)) {
             ret.add(host);
         } else {
             String urls[] = favBr.getRegex("rel=('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*?href=('|\")([^>'\"]*?\\.(ico|png|svg).*?)('|\")").getColumn(4);

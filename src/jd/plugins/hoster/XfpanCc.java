@@ -15,13 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
-import jd.controlling.faviconcontroller.FavIcons;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -82,15 +80,9 @@ public class XfpanCc extends PluginForHost {
     }
 
     @Override
-    public BufferedImage getFavIcon(String host) throws IOException {
+    public Object getFavIcon(String host) throws IOException {
         if (getHost().equals(host)) {
-            final Browser br = new Browser();
-            br.setFollowRedirects(true);
-            br.setLogger(getLogger());
-            br.setConnectTimeout(10000);
-            br.setReadTimeout(10000);
-            br.getPage("http://" + host);// https not configured, returns different favicon
-            return FavIcons.download_FavIconTag(br, host, getLogger());
+            return "http://" + host;// https not configured, returns different favicon
         } else {
             return null;
         }
