@@ -99,7 +99,7 @@ public class GenericM3u8 extends PluginForHost {
         return requestFileInformation(link, link.getPluginPatternMatcher());
     }
 
-    /** Wrapüper function for backward compatibility. */
+    /** Wrapper function for backward compatibility. */
     private String getReferer(final DownloadLink link) {
         return link.getStringProperty("Referer", link.getReferrerUrl());
     }
