@@ -273,10 +273,12 @@ public class RealDebridCom extends PluginForHost {
             /* 2020-08-11: Free accounts cannot be used to download anything */
             ai.setProperty("multiHostSupport", Property.NULL);
             ai.setTrafficLeft(0);
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            final boolean test20221109 = false;
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && test20221109) {
                 final ArrayList<String> supportedHosts = new ArrayList<String>();
                 supportedHosts.add("drive.google.com");
                 ai.setMultiHostSupport(this, supportedHosts);
+                ai.setUnlimitedTraffic();
             }
         }
         return ai;
@@ -409,10 +411,13 @@ public class RealDebridCom extends PluginForHost {
     private AvailableStatus check(final Account account, DownloadLink link) throws Exception {
         if (account != null && !isDirectRealDBUrl(link)) {
             final String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
-            final String password = link.getStringProperty("pass", null);
+            String downloadPassword = link.getDownloadPassword();
+            if (downloadPassword == null) {
+                downloadPassword = "";
+            }
             final CheckLinkResponse checkresp;
             try {
-                checkresp = callRestAPI(account, "/unrestrict/check", new UrlQuery().append("link", dllink, true).append("password", password, true), CheckLinkResponse.TYPE);
+                checkresp = callRestAPI(account, "/unrestrict/check", new UrlQuery().append("link", dllink, true).append("password", downloadPassword, true), CheckLinkResponse.TYPE);
             } catch (final APIException e) {
                 switch (e.getError()) {
                 case FILE_UNAVAILABLE:
@@ -457,8 +462,11 @@ public class RealDebridCom extends PluginForHost {
             showMessage(link, "Task " + (startTaskIndex + 1) + ": Generating Link");
             /* request Download */
             final String dllink = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
-            final String password = link.getStringProperty("pass", null);
-            final UnrestrictLinkResponse linkresp = callRestAPI(account, "/unrestrict/link", new UrlQuery().append("link", dllink, true).append("password", password, true), UnrestrictLinkResponse.TYPE);
+            String downloadPassword = link.getDownloadPassword();
+            if (downloadPassword == null) {
+                downloadPassword = "";
+            }
+            final UnrestrictLinkResponse linkresp = callRestAPI(account, "/unrestrict/link", new UrlQuery().append("link", dllink, true).append("password", downloadPassword, true), UnrestrictLinkResponse.TYPE);
             final String genLnk = linkresp.getDownload();
             if (StringUtils.isEmpty(genLnk) || !genLnk.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
