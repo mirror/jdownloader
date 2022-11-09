@@ -15,7 +15,6 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -28,7 +27,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.controlling.faviconcontroller.FavIcons;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -110,21 +108,13 @@ public class GoogleDrive extends PluginForHost {
     }
 
     @Override
-    public BufferedImage getFavIcon(String host) throws IOException {
+    public Object getFavIcon(String host) throws IOException {
         if ("drive.google.com".equals(host) || "docs.google.com".equals(host)) {
-            /* required because website redirects to login page */
-            final Browser br = new Browser();
-            br.setFollowRedirects(true);
-            br.setLogger(getLogger());
-            br.setConnectTimeout(10000);
-            br.setReadTimeout(10000);
-            final String url;
             if ("docs.google.com".equals(host)) {
-                url = "https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico";
+                return "https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico";
             } else {
-                url = "https://drive.google.com/favicon.ico";
+                return "https://drive.google.com/favicon.ico";
             }
-            return FavIcons.download_FavIconTag(br, url, host, getLogger());
         } else {
             return null;
         }
