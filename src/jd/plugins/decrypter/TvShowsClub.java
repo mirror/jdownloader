@@ -24,49 +24,64 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvshows.club" }, urls = { "https?://(www\\.)?tvshows\\.(club|show)/[^/]+(/[^/]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvshows.club" }, urls = { "https?://(?:www\\.)?tvshows\\.(club|show)/[^/]+(/[^/]+)?" })
 public class TvShowsClub extends antiDDoSForDecrypt {
     public TvShowsClub(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String addedlink = param.getCryptedUrl();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(addedlink);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fpName = br.getRegex("<title>(?:TV Show\\s+)?([^<]+)(?:\\s+(?:Today&#039\\;s TV Series|TV show. List of all seasons))").getMatch(0);
-        ArrayList<String> links = new ArrayList<String>();
-        Collections.addAll(links, br.getRegex("<div[^>]+itemprop\\s*=\\s*\"containsSeason\"[^>]+>\\s*<div[^>]+class\\s*=\\s*\"card\"[^>]*>\\s*<a[^>]+href\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0));
-        String[] encodedLinks = br.getRegex("arr\\s*\\[\\s*\"[^\"]+\"\\s*\\]\\s*=\\s*\"([^\"]+)\"").getColumn(0);
-        if (encodedLinks != null && encodedLinks.length > 0) {
-            for (String encodedLink : encodedLinks) {
-                encodedLink = Encoding.Base64Decode(encodedLink);
-                if (StringUtils.startsWithCaseInsensitive(encodedLink, "aHR")) {
-                    encodedLink = Encoding.Base64Decode(encodedLink);
+        final ArrayList<String> episodes = new ArrayList<String>();
+        Collections.addAll(episodes, br.getRegex("<div[^>]+itemprop\\s*=\\s*\"containsSeason\"[^>]+>\\s*<div[^>]+class\\s*=\\s*\"card\"[^>]*>\\s*<a[^>]+href\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0));
+        final String[] base64Strings = br.getRegex("<script defer src=\"data:text/javascript;base64,([a-zA-Z0-9_/\\+\\=\\-%]+)").getColumn(0);
+        for (final String base64String : base64Strings) {
+            final String decodedStr = Encoding.Base64Decode(base64String);
+            final String[] encodedLinks = new Regex(decodedStr, "arr\\s*\\[\\s*\"[^\"]+\"\\s*\\]\\s*=\\s*\"([^\"]+)\"").getColumn(0);
+            if (encodedLinks != null && encodedLinks.length > 0) {
+                for (final String encodedLink : encodedLinks) {
+                    String decodedLink = Encoding.Base64Decode(encodedLink);
+                    /* Check for double-encoded data */
+                    if (StringUtils.startsWithCaseInsensitive(decodedLink, "aHR")) {
+                        decodedLink = Encoding.Base64Decode(decodedLink);
+                    }
+                    if (StringUtils.isNotEmpty(decodedLink)) {
+                        ret.add(this.createDownloadlink(decodedLink));
+                    }
                 }
-                if (StringUtils.isNotEmpty(encodedLink)) {
-                    links.add(encodedLink);
-                }
+                break;
             }
         }
-        for (String link : links) {
-            link = Encoding.htmlDecode(link).replaceAll("^//", "https://");
-            if (link.startsWith("/")) {
-                link = br.getURL(link).toString();
+        if (episodes.size() > 0) {
+            logger.info("Found episode-URLs which will go into this crawler again: " + episodes.size());
+            for (String link : episodes) {
+                link = Encoding.htmlDecode(link).replaceAll("^//", "https://");
+                if (link.startsWith("/")) {
+                    link = br.getURL(link).toString();
+                }
+                ret.add(createDownloadlink(link));
             }
-            decryptedLinks.add(createDownloadlink(link));
         }
         if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
