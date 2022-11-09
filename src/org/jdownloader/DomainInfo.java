@@ -19,7 +19,6 @@ import jd.utils.JDUtilities;
 import org.appwork.swing.components.IDIcon;
 import org.appwork.swing.components.IconIdentifier;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.images.Interpolation;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
@@ -50,7 +49,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
         } else {
             this.domain = Property.dedupeString(domain);
         }
-        this.iconIdentifier = new IconIdentifier("DomainInfo", tld);
+        this.iconIdentifier = new IconIdentifier("DomainInfo", domain);
     }
 
     public String toString() {
@@ -69,32 +68,55 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
 
     protected Icon hosterIcon = null;
 
-    /**
-     * Returns a
-     *
-     * @return
-     */
-    public Icon getFavIcon(final boolean updatePermission) {
-        Icon icon = hosterIcon;
-        if (icon == null) {
-            final String hardcodedFavIcon = HARDCODEDFAVICONS.get(tld);
+    protected void setHosterIcon(Icon icon) {
+        this.hosterIcon = icon;
+    }
+
+    protected Icon getHosterIcon() {
+        return hosterIcon;
+    }
+
+    protected Icon getIcon(final String domain, final FavIconRequestor requestor, int width, int height, final boolean updatePermission) {
+        Icon ret = null;
+        final NewTheme theme = NewTheme.I();
+        if (theme.hasIcon("fav/big." + domain)) {
+            ret = new AbstractIcon("fav/big." + domain, -1);
+        }
+        if (ret == null && theme.hasIcon("fav/" + domain)) {
+            ret = new AbstractIcon("fav/" + domain, -1);
+        }
+        if (ret != null && ret.getIconHeight() >= height && ret.getIconWidth() >= width) {
+            return IconIO.getScaledInstance(ret, width, height);
+        } else {
+            return getFavIcon(domain, requestor, width, height, updatePermission);
+        }
+    }
+
+    protected Icon getFavIcon(final String domain, final FavIconRequestor requestor, int width, int height, final boolean updatePermission) {
+        Icon ret = getHosterIcon();
+        if (ret == null) {
+            final String hardcodedFavIcon = HARDCODEDFAVICONS.get(domain);
             if (hardcodedFavIcon != null) {
-                icon = NewTheme.I().getIcon(hardcodedFavIcon, -1);
+                ret = NewTheme.I().getIcon(hardcodedFavIcon, -1);
             } else {
-                icon = FavIcons.getFavIcon(tld, this, updatePermission);
-                if (icon == null && !updatePermission) {
-                    icon = FavIcons.getDefaultIcon(tld, false);
+                ret = FavIcons.getFavIcon(domain, requestor, updatePermission);
+                if (ret == null && !updatePermission) {
+                    ret = FavIcons.getDefaultIcon(domain, false);
                 }
             }
-            if (icon != null) {
-                icon = new ImageIcon(IconIO.getCroppedImage(IconIO.toBufferedImage(icon)));
-                icon = IconIO.getScaledInstance(icon, WIDTH, HEIGHT, Interpolation.BICUBIC);
-            }
-            if (updatePermission) {
-                hosterIcon = icon;
-            }
         }
-        return icon;
+        if (ret != null) {
+            ret = new ImageIcon(IconIO.getCroppedImage(IconIO.toBufferedImage(ret)));
+            ret = IconIO.getScaledInstance(ret, width, height);
+        }
+        if (updatePermission) {
+            setHosterIcon(ret);
+        }
+        return ret;
+    }
+
+    public Icon getFavIcon(final boolean updatePermission) {
+        return getFavIcon(getDomain(), this, WIDTH, HEIGHT, updatePermission);
     }
 
     public Icon getFavIcon() {
@@ -103,17 +125,9 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
 
     public Icon setFavIcon(Icon icon) {
         if (icon == null) {
-            icon = hosterIcon;
-            if (icon != null) {
-                return icon;
-            }
-            icon = FavIcons.getFavIcon(getTld(), this);
+            icon = getFavIcon(true);
         }
-        if (icon != null) {
-            icon = new ImageIcon(IconIO.getCroppedImage(IconIO.toBufferedImage(icon)));
-            icon = IconIO.getScaledInstance(icon, WIDTH, HEIGHT, Interpolation.BICUBIC);
-        }
-        hosterIcon = icon;
+        setHosterIcon(icon);
         return icon;
     }
 
@@ -157,30 +171,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
     }
 
     public Icon getIcon(int size, final boolean updatePermission) {
-        Icon ret = null;
-        final String tld = getTld();
-        if (NewTheme.I().hasIcon("fav/big." + tld)) {
-            ret = new AbstractIcon("fav/big." + tld, -1);
-        }
-        if (ret == null && NewTheme.I().hasIcon("fav/" + tld)) {
-            ret = new AbstractIcon("fav/" + tld, -1);
-        }
-        if (ret != null && ret.getIconHeight() >= size && ret.getIconWidth() >= size) {
-            return IconIO.getScaledInstance(ret, size, size);
-        }
-        final String hardcodedFavIcon = HARDCODEDFAVICONS.get(tld);
-        if (hardcodedFavIcon != null) {
-            ret = NewTheme.I().getIcon(hardcodedFavIcon, -1);
-        } else {
-            ret = FavIcons.getFavIcon(tld, null, updatePermission);
-            if (ret == null && !updatePermission) {
-                ret = FavIcons.getDefaultIcon(tld, false);
-            }
-        }
-        if (ret != null && (ret.getIconHeight() >= size && ret.getIconWidth() >= size)) {
-            return IconIO.getScaledInstance(ret, size, size);
-        }
-        return null;
+        return getIcon(getDomain(), null, size, size, updatePermission);
     }
 
     @Deprecated

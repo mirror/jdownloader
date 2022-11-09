@@ -150,6 +150,7 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
             q.appendEncoded("key", apiKey);
             q.appendEncoded("method", "hcaptcha");
             q.appendEncoded("json", "1");
+            q.appendEncoded("soft_id", "3724");
             q.appendEncoded("sitekey", challenge.getSiteKey());
             q.appendEncoded("pageurl", challenge.getSiteUrl());
             final AbstractHCaptcha<?> hCaptcha = challenge.getAbstractCaptchaHelperHCaptcha();
@@ -197,6 +198,7 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
             q.appendEncoded("key", config.getApiKey());
             q.appendEncoded("method", "userrecaptcha");
             q.appendEncoded("json", "1");
+            q.appendEncoded("soft_id", "3724");
             q.appendEncoded("googlekey", challenge.getSiteKey());
             q.appendEncoded("pageurl", challenge.getSiteUrl());
             final AbstractRecaptchaV2<?> recaptchaChallenge = challenge.getAbstractCaptchaHelperRecaptchaV2();

@@ -101,7 +101,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
         setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
             /*
              * (non-Javadoc)
-             *
+             * 
              * @see org.appwork.swing.exttable.ExtDefaultRowSorter#compare(java.lang .Object, java.lang.Object)
              */
             @Override
@@ -216,7 +216,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                         labels[i].setVisible(true);
                         labels[i].setIcon(icon);
                         if (FULL_HOSTNAME && domainInfos.length == 1) {
-                            labels[0].setText(domainInfo.getTld());
+                            labels[0].setText(domainInfo.getDomain());
                         }
                         i++;
                     }
@@ -228,7 +228,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                 labels[0].setVisible(true);
                 labels[0].setIcon(dl.getFavIcon());
                 if (FULL_HOSTNAME) {
-                    labels[0].setText(dl.getTld());
+                    labels[0].setText(dl.getDomain());
                 } else {
                     labels[0].setText(null);
                 }
@@ -262,7 +262,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
         if (obj instanceof AbstractPackageChildrenNode) {
             final DomainInfo di = ((AbstractPackageChildrenNode<?>) obj).getDomainInfo();
             if (di != null) {
-                return new IconLabelToolTip(di.getTld(), di.getFavIcon());
+                return new IconLabelToolTip(di.getDomain(), di.getFavIcon());
             }
         } else if (obj instanceof AbstractPackageNode) {
             final DomainInfo[] di = ((AbstractPackageNode<?, ?>) obj).getView().getDomainInfos();

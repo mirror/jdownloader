@@ -63,6 +63,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class FavIcons {
@@ -234,7 +235,21 @@ public class FavIcons {
                 THREAD_POOL.execute(new Runnable() {
                     public void run() {
                         BufferedImage favicon = null;
-                        final LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
+                        LogSource pluginLogger = null;
+                        LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
+                        if (false && existingHostPlugin == null) {
+                            final LogSource logger = LogController.getFastPluginLogger("FavIcons");
+                            try {
+                                existingHostPlugin = new PluginFinder(logger)._assignHost(host);
+                            } catch (Exception e) {
+                                logger.log(e);
+                            } finally {
+                                if (favicon != null) {
+                                    logger.clear();
+                                }
+                                logger.close();
+                            }
+                        }
                         if (existingHostPlugin != null) {
                             if (existingHostPlugin.hasFeature(LazyPlugin.FEATURE.INTERNAL)) {
                                 synchronized (LOCK) {

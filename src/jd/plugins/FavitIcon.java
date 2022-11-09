@@ -39,7 +39,7 @@ public class FavitIcon implements Icon, FavIconRequestor, IDIcon {
     @Override
     public IconIdentifier getIdentifier() {
         final IconIdentifier ret = new IconIdentifier("Favit");
-        ret.add(new IconIdentifier("tld", domainInfo.getTld()));
+        ret.add(new IconIdentifier("tld", domainInfo.getDomain()));
         if (icon instanceof IDIcon) {
             ret.add(((IDIcon) icon).getIdentifier());
         } else {
