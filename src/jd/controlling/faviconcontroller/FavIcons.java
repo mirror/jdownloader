@@ -234,6 +234,7 @@ public class FavIcons {
             if (enqueueFavIcon) {
                 THREAD_POOL.execute(new Runnable() {
                     public void run() {
+                        final List<String> tryHosts = new ArrayList<String>();
                         BufferedImage favicon = null;
                         LogSource pluginLogger = null;
                         LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
@@ -265,7 +266,18 @@ public class FavIcons {
                                 try {
                                     final PluginForHost pluginInstance = existingHostPlugin.newInstance(null, false);
                                     pluginInstance.setLogger(logger);
-                                    favicon = pluginInstance.getFavIcon(host);
+                                    final Object result = pluginInstance.getFavIcon(host);
+                                    if (result instanceof BufferedImage) {
+                                        favicon = (BufferedImage) result;
+                                    } else if (result instanceof String) {
+                                        tryHosts.add((String) result);
+                                    } else if (result instanceof List) {
+                                        for (final Object elem : (List) result) {
+                                            if (elem instanceof String) {
+                                                tryHosts.add((String) elem);
+                                            }
+                                        }
+                                    }
                                 } catch (Exception e) {
                                     logger.log(e);
                                 } finally {
@@ -277,7 +289,6 @@ public class FavIcons {
                             }
                         }
                         if (favicon == null) {
-                            final List<String> tryHosts = new ArrayList<String>();
                             tryHosts.add(host);
                             if (!host.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
                                 final String domain;
@@ -488,21 +499,23 @@ public class FavIcons {
         favBr.setLogger(logger);
         favBr.setConnectTimeout(10000);
         favBr.setReadTimeout(10000);
-        try {
-            favBr.getPage("https://" + host);
-            if (favBr.getRedirectLocation() != null) {
-                favBr.followRedirect(true);
-                if (!isSameDomain(favBr, host)) {
-                    throw new IOException("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
+        if (!host.matches("(?i)^https?://.+")) {
+            try {
+                favBr.getPage("https://" + host);
+                if (favBr.getRedirectLocation() != null) {
+                    favBr.followRedirect(true);
+                    if (!isSameDomain(favBr, host)) {
+                        throw new IOException("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
+                    }
                 }
-            }
-        } catch (final IOException e) {
-            logger.log(e);
-            favBr.getPage("http://" + host);
-            if (favBr.getRedirectLocation() != null) {
-                favBr.followRedirect(true);
-                if (!isSameDomain(favBr, host)) {
-                    logger.info("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
+            } catch (final IOException e) {
+                logger.log(e);
+                favBr.getPage("http://" + host);
+                if (favBr.getRedirectLocation() != null) {
+                    favBr.followRedirect(true);
+                    if (!isSameDomain(favBr, host)) {
+                        logger.info("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
+                    }
                 }
             }
         }
@@ -527,25 +540,29 @@ public class FavIcons {
 
     public static Set<String> getFavIcons(final Browser favBr, final String host, LogInterface logger) throws IOException {
         final Set<String> ret = new LinkedHashSet<String>();
-        String urls[] = favBr.getRegex("rel=('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*?href=('|\")([^>'\"]*?\\.(ico|png|svg).*?)('|\")").getColumn(4);
-        if (urls != null) {
-            ret.addAll(Arrays.asList(urls));
-        }
-        urls = favBr.getRegex("href=('|\")([^>'\"]*?\\.(ico|png|svg).*?)('|\")[^>]*?rel=('|\")(SHORTCUT |apple-touch-)?ICON('|\")").getColumn(1);
-        if (urls != null) {
-            ret.addAll(Arrays.asList(urls));
-        }
-        if (ret.size() == 0) {
-            /*
-             * workaround for hoster with not complete url, eg rapidshare.com
-             */
-            String url = favBr.getRegex("rel=('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?\\.(ico|png|svg).*?)('|\")").getMatch(3);
-            if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) {
-                url = "http://" + url;
+        if (host.matches("(?i)^https?://.+")) {
+            ret.add(host);
+        } else {
+            String urls[] = favBr.getRegex("rel=('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*?href=('|\")([^>'\"]*?\\.(ico|png|svg).*?)('|\")").getColumn(4);
+            if (urls != null) {
+                ret.addAll(Arrays.asList(urls));
             }
-            ret.add(url);
+            urls = favBr.getRegex("href=('|\")([^>'\"]*?\\.(ico|png|svg).*?)('|\")[^>]*?rel=('|\")(SHORTCUT |apple-touch-)?ICON('|\")").getColumn(1);
+            if (urls != null) {
+                ret.addAll(Arrays.asList(urls));
+            }
+            if (ret.size() == 0) {
+                /*
+                 * workaround for hoster with not complete url, eg rapidshare.com
+                 */
+                String url = favBr.getRegex("rel=('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?\\.(ico|png|svg).*?)('|\")").getMatch(3);
+                if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) {
+                    url = "http://" + url;
+                }
+                ret.add(url);
+            }
+            ret.add("/favicon.ico");
         }
-        ret.add("/favicon.ico");
         return ret;
     }
 
