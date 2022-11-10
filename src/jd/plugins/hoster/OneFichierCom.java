@@ -533,6 +533,13 @@ public class OneFichierCom extends PluginForHost {
         } else if (ibr.getURL().contains("/?c=DB")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal database error", 5 * 60 * 1000l);
         } else if (responsecode == 403) {
+            if (ibr.containsHTML("(?i)>\\s*Premium status must not be used on professional services")) {
+                if (account != null) {
+                    throw new AccountUnavailableException("Premium status must not be used on professional services (VPN, proxies, ...). Use CDN credits", 30 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 15 * 60 * 1000l);
         } else if (responsecode == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);

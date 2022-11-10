@@ -1379,18 +1379,23 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     protected void cleanupMaps(final CrawledPackage pkg, final CrawledPackageMappingID lastKnownMapping, List<CrawledLink> links) {
         if (links != null && links.size() > 0) {
             final TYPE type = pkg != null ? pkg.getType() : null;
-            for (CrawledLink l : links) {
+            for (final CrawledLink l : links) {
                 removeCrawledLinkByLinkID(l);
-                if ((lastKnownMapping != null && removeFromMap(variousMap, lastKnownMapping, l) != null) || TYPE.VARIOUS == type) {
+                if (lastKnownMapping != null) {
+                    if (removeFromMap(variousMap, lastKnownMapping, l) != null) {
+                        continue;
+                    } else if (removeFromMap(offlineMap, lastKnownMapping, l) != null) {
+                        continue;
+                    } else if (removeFromMap(badMappingMap, lastKnownMapping, l) != null) {
+                        continue;
+                    } else {
+                        continue;
+                    }
+                } else if (TYPE.VARIOUS == type && removeFromMap(variousMap, null, l) != null) {
                     continue;
-                } else if ((lastKnownMapping != null && removeFromMap(offlineMap, lastKnownMapping, l) != null) || TYPE.OFFLINE == type) {
+                } else if (TYPE.OFFLINE == type && removeFromMap(offlineMap, null, l) != null) {
                     continue;
-                } else if (lastKnownMapping != null && removeFromMap(badMappingMap, lastKnownMapping, l) != null) {
-                    continue;
-                } else if (lastKnownMapping != null) {
-                    continue;
-                }
-                if (removeFromMap(badMappingMap, null, l) == null) {
+                } else if (removeFromMap(badMappingMap, null, l) == null) {
                     if (removeFromMap(variousMap, null, l) == null) {
                         removeFromMap(offlineMap, null, l);
                     }
@@ -1436,9 +1441,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, List<CrawledLink> plinks) {
