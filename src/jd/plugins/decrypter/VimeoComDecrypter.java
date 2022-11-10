@@ -299,9 +299,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     brc.setAllowedResponseCodes(410);
                     brc.setFollowRedirects(false);
                     brc.getPage(url);
-                    if (brc.getHttpConnection().getResponseCode() == 410) {
+                    if (brc.getHttpConnection().getResponseCode() == 403) {
+                        /* 403 could also mean that an account is required but probably not here in this context. */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (brc.getHttpConnection().getResponseCode() == 410) {
                         // expired link
-                        link.setAvailable(false);
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     if (brc.getRedirectLocation() != null) {
                         fileName = UrlQuery.parse(brc.getRedirectLocation()).getDecoded("filename");

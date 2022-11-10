@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.plugins.Account;
@@ -12,9 +15,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CyberdropMeAlbum;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { CyberdropMeAlbum.class })
@@ -51,7 +51,9 @@ public class CyberdropMe extends DirectHTTP {
     @Override
     protected int getMaxChunks(DownloadLink downloadLink, Set<String> optionSet, int chunks) {
         if ("bunkr.is".equals(getHost()) && chunks != 1) {
-            return -3;
+            /* 2022-11-10: TODO: Is the limit supposed to be max 3 or 1? */
+            // return -3;
+            return 1;
         } else {
             return chunks;
         }
