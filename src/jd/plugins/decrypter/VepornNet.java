@@ -76,7 +76,7 @@ public class VepornNet extends antiDDoSForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.containsHTML(">Site is too crowded<")) {
+        if (br.containsHTML("(?i)>\\s*Site is too crowded\\s*<")) {
             for (int i = 1; i <= 3; i++) {
                 sleep(i * 3 * 1001l, param);
                 getPage(parameter);
@@ -90,15 +90,21 @@ public class VepornNet extends antiDDoSForDecrypt {
         } else if (!this.canHandle(br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fpName = br.getRegex("(rhgd)").getMatch(0);
+        String fpName = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+        /* 2022-06-21: Most likely videos embedded on streamtape.com */
+        final String[] embedURLs = br.getRegex("<iframe src=\"(https?://[^\"]+)\"").getColumn(0);
+        if (embedURLs.length > 0) {
+            for (final String embedURL : embedURLs) {
+                ret.add(this.createDownloadlink(embedURL));
+            }
+        }
+        final boolean tryOldHandling = embedURLs == null || embedURLs.length == 0;
         final String[] links = br.getRegex("comment\\((\\d+)\\)").getColumn(0);
-        if (links.length > 0) {
+        if (links.length > 0 && tryOldHandling) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             int counter = 1;
             for (final String singleLink : links) {
-                if (this.isAbort()) {
-                    return ret;
-                }
+                logger.info("Crawling video item " + counter + "/" + links.length);
                 final Browser br = this.br.cloneBrowser();
                 getPage(br, "/ajax.php?page=video_play&thumb&theme=&video=&id=" + singleLink + "&server=" + counter);
                 if (br.containsHTML(">Site is too crowded<")) {
@@ -118,19 +124,15 @@ public class VepornNet extends antiDDoSForDecrypt {
                     }
                 }
                 ret.add(createDownloadlink(finallink));
+                if (this.isAbort()) {
+                    return ret;
+                }
                 counter++;
-            }
-        }
-        /* 2022-06-21: Most likely videos embedded on streamtape.com */
-        final String[] embedURLs = br.getRegex("<iframe src=\"(https?://[^\"]+)\"").getColumn(0);
-        if (embedURLs.length > 0) {
-            for (final String embedURL : embedURLs) {
-                ret.add(this.createDownloadlink(embedURL));
             }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(fpName).trim());
             fp.addLinks(ret);
         }
         return ret;
