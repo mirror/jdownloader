@@ -30,6 +30,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class Viet69Net extends antiDDoSForDecrypt {
@@ -40,7 +42,7 @@ public class Viet69Net extends antiDDoSForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "viet69.in", "viet69.net", "viet69.co" });
+        ret.add(new String[] { "viet69.gg", "viet69.in", "viet69.net", "viet69.co" });
         return ret;
     }
 
@@ -66,11 +68,14 @@ public class Viet69Net extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String title = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ").trim();
-        String[] videoDetails = br.getRegex("<div\\s+class\\s*=\\s*\"movieLoader\"\\s+data-movie\\s*=\\s*\"([^\"\\s]+)\"\\s+data-type\\s*=\\s*\"([^\"]*)\"").getRow(0);
+        final String[] videoDetails = br.getRegex("<div\\s+class\\s*=\\s*\"movieLoader\"\\s+data-movie\\s*=\\s*\"([^\"\\s]+)\"\\s+data-type\\s*=\\s*\"([^\"]*)\"").getRow(0);
         if (videoDetails != null && videoDetails.length > 1) {
             final Browser br2 = br.cloneBrowser();
             postPage(br2, "/get.video.php", "movie_id=" + videoDetails[0] + "&type=" + videoDetails[1] + "&index=1");
@@ -85,14 +90,14 @@ public class Viet69Net extends antiDDoSForDecrypt {
                         brc.getPage(link);
                         final ArrayList<DownloadLink> downloadLinks = GenericM3u8Decrypter.parseM3U8(this, link, brc, param.getCryptedUrl(), null, title);
                         if (downloadLinks != null) {
-                            decryptedLinks.addAll(downloadLinks);
+                            ret.addAll(downloadLinks);
                         }
                     } else {
                         final DownloadLink downloadLink = createDownloadlink(Encoding.htmlDecode(link));
                         if (title != null) {
                             downloadLink.setName(title);
                         }
-                        decryptedLinks.add(downloadLink);
+                        ret.add(downloadLink);
                     }
                 }
             } else {
@@ -100,7 +105,7 @@ public class Viet69Net extends antiDDoSForDecrypt {
                 final String[] embedURLs = br2.getRegex("<iframe[^>]*src=\"(https?://[^\"]+)").getColumn(0);
                 if (embedURLs != null && embedURLs.length > 0) {
                     for (final String embedURL : embedURLs) {
-                        decryptedLinks.add(this.createDownloadlink(embedURL));
+                        ret.add(this.createDownloadlink(embedURL));
                     }
                 }
             }
@@ -108,8 +113,8 @@ public class Viet69Net extends antiDDoSForDecrypt {
         if (title != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(title.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

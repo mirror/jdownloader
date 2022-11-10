@@ -18,9 +18,12 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -60,9 +63,47 @@ public class FilexCx extends YetiShareCore {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:(www|n3)\\.)?" + YetiShareCore.buildHostsPatternPart(domains) + YetiShareCore.getDefaultAnnotationPatternPart());
+            ret.add("https?://(?:(www|n3)\\.)?" + YetiShareCore.buildHostsPatternPart(domains) + "/(?!folder|shared)(video/embed/[A-Za-z0-9]+(/\\d+x\\d+/[^/<>]+)?|[A-Za-z0-9]+(?:/[^/<>]+)?)");
         }
         return ret.toArray(new String[0]);
+    }
+
+    final String PATTERN_EMBED = "(?i)https?://[^/]+/video/embed/([A-Za-z0-9]+)(/\\d+x\\d+/([^/<>]+))?";
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        /* link cleanup, but respect users protocol choosing or forced protocol */
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return;
+        }
+        super.correctDownloadLink(link);
+        /* Change embed URLs -> Normal file-URLs. */
+        final Regex embed = new Regex(link.getPluginPatternMatcher(), PATTERN_EMBED);
+        if (embed.matches()) {
+            final String host = Browser.getHost(link.getPluginPatternMatcher(), true);
+            final String filenameInsideURL = embed.getMatch(2);
+            String newurl = "https://" + appendWWWIfRequired(host) + "/" + embed.getMatch(0);
+            if (filenameInsideURL != null) {
+                newurl += "/" + filenameInsideURL;
+            }
+            link.setPluginPatternMatcher(newurl);
+        }
+    }
+
+    protected String appendWWWIfRequired(final String host) {
+        if (!requires_WWW() || StringUtils.startsWithCaseInsensitive(host, "www.")) {
+            // do not modify host
+            return host;
+        } else {
+            final String hostTld = Browser.getHost(host, false);
+            if (!StringUtils.equalsIgnoreCase(host, hostTld)) {
+                // keep subdomain
+                return host;
+            } else {
+                // add www.
+                return "www." + host;
+            }
+        }
     }
 
     @Override
