@@ -44,7 +44,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DeviantArtCom;
 
@@ -574,7 +573,6 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
                     break;
                 }
             }
-            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
             int numberofNewItems = 0;
             for (final Map<String, Object> result : results) {
                 final Map<String, Object> deviation = (Map<String, Object>) result.get("deviation");
