@@ -76,7 +76,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return buildAnnotationUrls(getPluginDomains());
     }
 
-    private static final String EXTENSIONS = "(?:mp4|m4v|mp3|jpe?g|zip|rar|png)";
+    private static final String EXTENSIONS = "(?:mp4|m4v|mp3|jpe?g|zip|rar|png|gif)";
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
