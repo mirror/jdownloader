@@ -20,6 +20,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Request;
@@ -31,10 +34,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hoerbuch.in", "hi10anime.com", "watchseries-online.pl", "scene-rls.com", "urbanmusicdaily.me", "ddmkv.me", "links.ddmkv.me", "linx.cloud", "cgpersia.com" }, urls = { "https?://(www\\.)?hoerbuch\\.in/blog\\.php\\?id=[\\d]+", "https?://(www\\.)?hi10anime\\.com/\\?page_id=.+", "https?://(\\w+\\.)?watchseries-online\\.(?:ch|pl|be)/episode/.+", "https?://((www|nfo)\\.)?scene-rls\\.(com|net)/[\\w-/]+/?$", "https?://(www\\.)?urbanmusicdaily\\.me/videos/[\\w\\-]+/", "https?://(www\\.)?ddmkv\\.me/\\d{4}/\\d{2}/[\\w\\-]+\\.html", "https?://(www\\.)?links\\.ddmkv\\.me/\\?p=\\d+", "https?://(www\\.)?linx\\.cloud/[\\w\\-]+\\d+/", "https?://(?:www\\.)?cgpersia\\.com/\\d+/\\d+/[^/$]+\\.html?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hoerbuch.in", "hi10anime.com", "scene-rls.com", "cgpersia.com" }, urls = { "https?://(www\\.)?hoerbuch\\.in/blog\\.php\\?id=[\\d]+", "https?://(www\\.)?hi10anime\\.com/\\?page_id=.+", "https?://((www|nfo)\\.)?scene-rls\\.(com|net)/[\\w-/]+/?$", "https?://(?:www\\.)?cgpersia\\.com/\\d+/\\d+/[^/$]+\\.html?" })
 public class Wrdprss extends antiDDoSForDecrypt {
     private HashMap<String, String[]> defaultPasswords = new HashMap<String, String[]>();
 
@@ -52,9 +52,9 @@ public class Wrdprss extends antiDDoSForDecrypt {
     private String parameter = null;
 
     @SuppressWarnings("deprecation")
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        parameter = param.toString().replace("watchseries-online.ch/", "watchseries-online.pl/").replaceFirst("https://((?:www\\.)?linx\\.cloud/)", "http://$1");
+        parameter = param.toString().replace("watchseries-online.ch/", "watchseries-online.pl/");
         if (StringUtils.startsWithCaseInsensitive(param.getCryptedUrl(), "https")) {
             parameter = parameter.replaceFirst("^http://", "https://");
         }
@@ -134,29 +134,6 @@ public class Wrdprss extends antiDDoSForDecrypt {
                 decryptedLinks.add(dLink);
             }
         }
-        if (parameter.contains("urbanmusicdaily\\.me/")) {
-            // lets look for embeded types
-            String[] embed = br.getRegex("file\\s*:\\s*(\"|')(https?://.*?)\\1").getColumn(1);
-            if (embed != null) {
-                for (final String link : embed) {
-                    if (kanHandle(link)) {
-                        decryptedLinks.add(createDownloadlink(link));
-                    }
-                }
-            }
-            embed = br.getRegex("<iframe[^>]*>.*?</iframe>").getColumn(-1);
-            if (embed != null) {
-                for (final String link : embed) {
-                    String l = new Regex(link, "src=(\"|')(.*?)\\1").getMatch(1);
-                    if (inValidate(l)) {
-                        l = new Regex(link, "src=([^\\s]*)").getMatch(0);
-                    }
-                    if (l != null && kanHandle(link)) {
-                        decryptedLinks.add(createDownloadlink(l));
-                    }
-                }
-            }
-        }
         return decryptedLinks;
     }
 
@@ -164,8 +141,6 @@ public class Wrdprss extends antiDDoSForDecrypt {
         final boolean ch = !canHandle(link);
         if (!ch) {
             return ch;
-        } else if ("urbanmusicdaily.me".equalsIgnoreCase(this.getHost())) {
-            return !link.contains("urbanmusicdaily.me") && !link.matches(".+(\\.|/)(css|xml|jpe?g|png|gif|ico).*");
         } else {
             return !link.matches(".+\\.(css|xml)(.*)?");
         }
