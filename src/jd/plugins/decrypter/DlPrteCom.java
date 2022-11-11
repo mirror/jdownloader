@@ -257,8 +257,8 @@ public class DlPrteCom extends antiDDoSForDecrypt {
         return v;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+        return true;
     }
 }

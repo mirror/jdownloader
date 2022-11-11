@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -28,22 +27,22 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xfast.link" }, urls = { "https?://(?:www\\.)?xfast\\.link/[A-Za-z0-9]+" })
 public class XfastLink extends antiDDoSForDecrypt {
-
     public XfastLink(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String addedlink = param.getCryptedUrl();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        getPage(addedlink);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("he entered link does not exist")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Form dlform = br.getFormbyKey("form__token");
         if (dlform == null) {
@@ -60,16 +59,14 @@ public class XfastLink extends antiDDoSForDecrypt {
         submitForm(dlform);
         final String finallink = br.getRedirectLocation();
         if (finallink == null || finallink.contains(this.getHost() + "/")) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-
-        return decryptedLinks;
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
         return 1;
     }
-
 }

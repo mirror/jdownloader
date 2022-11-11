@@ -44,6 +44,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DeviantArtCom;
 
@@ -77,13 +78,16 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
     // I've created the plugin this way to allow users to grab as little or as
     // much, content as they wish. Hopefully this wont create any
     // issues.
-    private static final String PATTERN_COLLECTIONS           = "https?://[\\w\\.\\-]*?deviantart\\.com/.*?/collections(/.+)?";
+    private final String        PATTERN_USER                  = "^https?://[^/]+/([\\w\\-]+)$";
+    private final String        PATTERN_USER_FAVORITES        = "^https?://[^/]+/([\\w\\-]+)/favourites.*";
+    private final String        PATTERN_GALLERY               = "^https?://[^/]+/([\\w\\-]+)/gallery/(\\d+)/([\\w\\-]+)$";
+    private final String        PATTERN_COLLECTIONS           = "https?://[\\w\\.\\-]*?deviantart\\.com/.*?/collections(/.+)?";
     private static final String PATTERN_CATPATH_ALL           = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath(=.+)?";
     private static final String PATTERN_CATPATH_1             = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
     private static final String PATTERN_CATPATH_2             = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
     private static final String PATTERN_JOURNAL               = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?journal.+";
     private static final String PATTERN_JOURNAL2              = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?journal/[\\w\\-]+/?";
-    private static final String TYPE_BLOG                     = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?blog/(\\?offset=\\d+)?";
+    private static final String PATTERN_BLOG                  = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?blog/(\\?offset=\\d+)?";
     // private static final String TYPE_INVALID = "https?://[\\w\\.\\-]*?deviantart\\.com/stats/*?";
     private String              parameter                     = null;
     private boolean             fastLinkCheck                 = false;
@@ -128,7 +132,9 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
             final DeviantArtCom plg = (DeviantArtCom) this.getNewPluginForHostInstance(this.getHost());
             plg.login(account, false);
         }
-        if (parameter.matches(PATTERN_JOURNAL)) {
+        if (param.getCryptedUrl().matches(PATTERN_USER_FAVORITES)) {
+            return this.crawlProfileFavorites(param);
+        } else if (parameter.matches(PATTERN_JOURNAL)) {
             br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -140,20 +146,16 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             crawlCollections();
-        } else if (parameter.matches(TYPE_BLOG)) {
+        } else if (parameter.matches(PATTERN_BLOG)) {
             br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             crawlBlog();
-        } else if (StringUtils.containsIgnoreCase(parameter, "/gallery/") || StringUtils.containsIgnoreCase(parameter, "/favourites/")) {
-            br.getPage(parameter);
-            if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            crawlStandard();
+        } else if (parameter.matches(PATTERN_GALLERY)) {
+            return this.crawlProfileOrGallery(param);
         } else {
-            return this.crawlProfile(param);
+            return this.crawlProfileOrGallery(param);
         }
         if (decryptedUrlsNum == 0) {
             logger.info("Failed to find any results: " + parameter);
@@ -487,56 +489,114 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
         } while (has_more || maxOffset > 0 && currentOffset >= maxOffset);
     }
 
-    private ArrayList<DownloadLink> crawlProfile(final CryptedLink param) throws IOException, PluginException {
-        br.getPage(parameter);
+    private ArrayList<DownloadLink> crawlProfileFavorites(final CryptedLink param) throws IOException, PluginException {
+        final String username = new Regex(param.getCryptedUrl(), PATTERN_USER_FAVORITES).getMatch(0);
+        if (username == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(username + " - Favorites");
+        final UrlQuery query = new UrlQuery();
+        query.add("username", username);
+        query.add("all_folder", "true");
+        return this.crawlPagination(fp, "/_napi/da-user-profile/api/collection/contents", query);
+    }
+
+    private ArrayList<DownloadLink> crawlProfileOrGallery(final CryptedLink param) throws IOException, PluginException {
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String username = new Regex(br.getURL(), "https?://[^/]+/([^/\\?]+)").getMatch(0);
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final Regex gallery = new Regex(br.getURL(), PATTERN_GALLERY);
+        String galleryID = null;
+        String gallerySlug = null;
+        if (gallery.matches()) {
+            galleryID = gallery.getMatch(1);
+            gallerySlug = gallery.getMatch(2);
+        }
+        if (username == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String csrftoken = br.getRegex("window\\.__CSRF_TOKEN__\\s*=\\s*'([^<>\"\\']+)';").getMatch(0);
         if (csrftoken == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(username);
+        if (gallerySlug != null) {
+            fp.setName(username + " - " + gallerySlug.replace("-", " ").trim());
+        } else {
+            fp.setName(username);
+        }
+        final UrlQuery query = new UrlQuery();
+        query.add("username", username);
+        if (galleryID != null) {
+            query.add("folderid", galleryID);
+        } else {
+            query.add("all_folder", "true");
+        }
+        return crawlPagination(fp, "/_napi/da-user-profile/api/gallery/contents", query);
+    }
+
+    private ArrayList<DownloadLink> crawlPagination(final FilePackage fp, final String action, final UrlQuery query) throws IOException, PluginException {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String csrftoken = br.getRegex("window\\.__CSRF_TOKEN__\\s*=\\s*'([^<>\"\\']+)';").getMatch(0);
+        if (csrftoken == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int page = 0;
         final int maxItemsPerPage = 24;
-        int offset = 24;
+        int offset = 0;
         final HashSet<String> dupes = new HashSet<String>();
+        query.add("limit", Integer.toString(maxItemsPerPage));
+        query.add("csrf_token", Encoding.urlEncode(csrftoken));
         do {
-            page++;
-            final UrlQuery query = new UrlQuery();
-            query.add("username", username);
             query.addAndReplace("offset", Integer.toString(offset));
-            query.add("limit", Integer.toString(maxItemsPerPage));
-            query.add("all_folder", "true");
-            query.add("csrf_token", Encoding.urlEncode(csrftoken));
-            br.getPage("/_napi/da-user-profile/api/gallery/contents?" + query.toString());
+            page++;
+            br.getPage(action + "?" + query.toString());
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Number nextOffset = (Number) entries.get("nextOffset");
             final List<Map<String, Object>> results = (List<Map<String, Object>>) entries.get("results");
             if (results.isEmpty()) {
-                logger.info("This profile doesn't contain any items");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (ret.isEmpty()) {
+                    logger.info("This item doesn't contain any items");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    logger.info("Stopping because: Current page doesn't contain any items");
+                    break;
+                }
             }
+            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
             int numberofNewItems = 0;
             for (final Map<String, Object> result : results) {
                 final Map<String, Object> deviation = (Map<String, Object>) result.get("deviation");
                 final Map<String, Object> author = (Map<String, Object>) deviation.get("author");
                 final String type = deviation.get("type").toString();
                 final String url = deviation.get("url").toString();
-                if (!type.equalsIgnoreCase("image")) {
-                    /* TODO: Check/Add support for other types */
-                    logger.info("Skipping unsupported type: " + type + " | URL: " + url);
-                    continue;
-                }
                 if (dupes.add(url)) {
                     numberofNewItems++;
                     final DownloadLink link = this.createDownloadlink(deviation.get("url").toString());
-                    link.setName(deviation.get("title") + " by " + author.get("username") + "_" + author.get("userId") + ".jpg");
+                    /**
+                     * This file extension may change later when file is downloaded. </br>
+                     * 2022-11-11: Items of type "literature" (or simply != "image") will not get any file extension at all at this moment.
+                     */
+                    String assumedFileExtension = "";
+                    if (type.equalsIgnoreCase("image")) {
+                        assumedFileExtension = ".jpg";
+                    }
+                    link.setName(deviation.get("title") + " by " + author.get("username") + "_" + author.get("userId") + assumedFileExtension);
                     link.setAvailable(true);
-                    link._setFilePackage(fp);
+                    if (fp != null) {
+                        link._setFilePackage(fp);
+                    }
                     ret.add(link);
                     distribute(link);
                 }
