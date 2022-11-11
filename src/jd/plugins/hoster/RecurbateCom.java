@@ -59,13 +59,9 @@ public class RecurbateCom extends antiDDoSForHost {
 
     /* DEV NOTES */
     // Tags: Porn plugin
-    /* Connection stuff */
-    /* Global limits */
-    private final boolean      resume                  = true;
-    private final int          free_maxchunks          = -2;
-    /* Free (+ free account) and premium specific limits */
     private final int          free_maxdownloads       = 1;
-    private final int          premium_maxdownloads    = 10;
+    /* 2022-11-11: Changed from 10 to 1 because starting 10 downloads at the same time triggered Cloudflare pretty fast. */
+    private final int          premium_maxdownloads    = 1;
     public static final String PROPERTY_DATE           = "date";
     public static final String PROPERTY_DATE_ORIGINAL  = "date_original";
     public static final String PROPERTY_DATE_TIMESTAMP = "date_timestamp";
@@ -116,10 +112,17 @@ public class RecurbateCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         final String fid = getFID(link);
         if (!link.isNameSet()) {
             /* Set fallback filename e.g. for offline items. */
             link.setName(fid + ".mp4");
+        }
+        if (account != null) {
+            this.login(account, false);
         }
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
@@ -172,6 +175,9 @@ public class RecurbateCom extends antiDDoSForHost {
         handleDownload(link, null);
     }
 
+    private final boolean RESUMABLE = true;
+    private final int     MAXCHUNKS = -2;
+
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         final String directurlproperty;
         if (account != null) {
@@ -179,41 +185,50 @@ public class RecurbateCom extends antiDDoSForHost {
         } else {
             directurlproperty = "directlink";
         }
-        if (!this.attemptStoredDownloadurlDownload(link, directurlproperty, resume, free_maxchunks)) {
-            requestFileInformation(link);
-            checkErrors(br, account);
+        if (!this.attemptStoredDownloadurlDownload(link, directurlproperty, RESUMABLE, MAXCHUNKS)) {
+            requestFileInformation(link, account);
+            checkErrors(br, link, account);
             if (account != null && !this.isLoggedin(br)) {
                 throw new AccountUnavailableException("Session expired?", 30 * 1000l);
             }
-            final String token = br.getRegex("data-token\\s*=\\s*\"([a-f0-9]{64})\"").getMatch(0);
-            if (token == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.setCookie(br.getHost(), "im18", "true");
-            br.setCookie(br.getHost(), "im18_ets", Long.toString(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000));
-            br.setCookie(br.getHost(), "im18_its", Long.toString(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000));
-            final Browser brc = br.cloneBrowser();
-            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            brc.getHeaders().put("Accept", "*/*");
-            final UrlQuery query = new UrlQuery();
-            query.add("video", this.getFID(link));
-            query.add("token", token);
-            brc.getPage("/api/get.php?" + query.toString());
-            final String dllink = brc.getRegex("<source\\s*src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"\\s*/>").getMatch(0);
-            if (dllink == null) {
-                if (StringUtils.containsIgnoreCase(brc.toString(), "shall_signin")) {
-                    /**
-                     * Free users can watch one video per IP per X time. </br>
-                     * This error should only happen in logged-out state.
-                     */
-                    errorDailyDownloadlimitReached(account);
-                } else if (StringUtils.containsIgnoreCase(brc.toString(), "shall_subscribe")) {
-                    errorDailyDownloadlimitReached(account);
-                } else {
+            /*
+             * Official downloadlinks are only available for "Ultimate" users. Those can download much faster and with an "unlimited"
+             * amount.
+             */
+            final String officialDownloadlink = br.getRegex("recu-link download\" href=\"(https?://[^\"]+)").getMatch(0);
+            if (officialDownloadlink != null) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, officialDownloadlink, RESUMABLE, MAXCHUNKS);
+            } else {
+                final String token = br.getRegex("data-token\\s*=\\s*\"([a-f0-9]{64})\"").getMatch(0);
+                if (token == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                br.setCookie(br.getHost(), "im18", "true");
+                br.setCookie(br.getHost(), "im18_ets", Long.toString(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000));
+                br.setCookie(br.getHost(), "im18_its", Long.toString(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000));
+                final Browser brc = br.cloneBrowser();
+                brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                brc.getHeaders().put("Accept", "*/*");
+                final UrlQuery query = new UrlQuery();
+                query.add("video", this.getFID(link));
+                query.add("token", token);
+                brc.getPage("/api/get.php?" + query.toString());
+                final String streamLink = brc.getRegex("<source\\s*src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"\\s*/>").getMatch(0);
+                if (streamLink == null) {
+                    if (StringUtils.containsIgnoreCase(brc.toString(), "shall_signin")) {
+                        /**
+                         * Free users can watch one video per IP per X time. </br>
+                         * This error should only happen in logged-out state.
+                         */
+                        errorDailyDownloadlimitReached(account);
+                    } else if (StringUtils.containsIgnoreCase(brc.toString(), "shall_subscribe")) {
+                        errorDailyDownloadlimitReached(account);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, streamLink, RESUMABLE, MAXCHUNKS);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, free_maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
@@ -296,6 +311,7 @@ public class RecurbateCom extends antiDDoSForHost {
                     return false;
                 }
                 br.getPage("https://" + this.getHost() + "/account.php");
+                checkForIPBlocked(br, null, account);
                 if (this.isLoggedin(br)) {
                     logger.info("User cookie login successful");
                     return true;
@@ -336,7 +352,7 @@ public class RecurbateCom extends antiDDoSForHost {
         } else {
             logger.warning("Failed to find nickname in HTML");
         }
-        final String plan = br.getRegex("<span class=\"plan-name\"[^>]*>\\s*([^<]+)\\s*</span>").getMatch(0);
+        final String plan = br.getRegex("(?i)<span class=\"plan-name\"[^>]*>\\s*([^<]+)\\s*</span>").getMatch(0);
         if (plan != null) {
             if (plan.equalsIgnoreCase("Basic")) {
                 account.setType(AccountType.FREE);
@@ -356,14 +372,16 @@ public class RecurbateCom extends antiDDoSForHost {
                 ai.setStatus(plan);
             }
             ai.setStatus("Plan: " + plan);
+        } else {
+            /* This should never happen */
+            account.setType(AccountType.UNKNOWN);
         }
-        checkErrors(br, account);
+        checkErrors(br, null, account);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, false);
         handleDownload(link, account);
     }
 
@@ -378,10 +396,30 @@ public class RecurbateCom extends antiDDoSForHost {
         return free_maxdownloads;
     }
 
-    private void checkErrors(final Browser br, final Account account) throws AccountUnavailableException {
+    private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         /* 2021-10-11: Very interesting: While this is happening, users will still get 1 free view without account. */
-        if ((account == null || account.getType() == AccountType.FREE) && br.containsHTML("(?i)Sorry guys, but due to the high load.*Basic \\(Free\\).*accounts are temporary limited to")) {
+        checkForIPBlocked(br, link, account);
+        if ((account == null || account.getType() == AccountType.FREE || account.getType() == AccountType.UNKNOWN) && br.containsHTML("(?i)Sorry guys, but due to the high load.*Basic \\(Free\\).*accounts are temporary limited to")) {
             throw new AccountUnavailableException("Free accounts are temporarily limited to 0 video views", 5 * 60 * 1000);
+        }
+    }
+
+    private void checkForIPBlocked(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        if (isIPBlocked(br)) {
+            if (link == null) {
+                throw new AccountUnavailableException("IP blocked", 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "IP blocked", 5 * 60 * 1000l);
+            }
+        }
+    }
+
+    /** Checks for rate-limit/Cloudflare block. */
+    private boolean isIPBlocked(final Browser br) {
+        if (br.containsHTML("(?i)RecuSec Access Forbidden\\s*<|Hey dude, you want to break my site")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
