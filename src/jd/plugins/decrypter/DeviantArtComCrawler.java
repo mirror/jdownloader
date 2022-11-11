@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -499,37 +500,64 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
-        final UrlQuery query = new UrlQuery();
-        query.add("username", username);
-        query.add("offset", "24");
-        query.add("limit", "24");
-        query.add("all_folder", "true");
-        query.add("csrf_token", Encoding.urlEncode(csrftoken));
-        br.getPage("/_napi/da-user-profile/api/gallery/contents?" + query.toString());
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final List<Map<String, Object>> results = (List<Map<String, Object>>) entries.get("results");
-        if (results.isEmpty()) {
-            logger.info("This profile doesn't contain any items");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        for (final Map<String, Object> result : results) {
-            final Map<String, Object> deviation = (Map<String, Object>) result.get("deviation");
-            final Map<String, Object> author = (Map<String, Object>) deviation.get("author");
-            final String type = deviation.get("type").toString();
-            if (!type.equalsIgnoreCase("image")) {
-                logger.info("Skipping unsupported type: " + type);
+        int page = 0;
+        final int maxItemsPerPage = 24;
+        int offset = 24;
+        final HashSet<String> dupes = new HashSet<String>();
+        do {
+            page++;
+            final UrlQuery query = new UrlQuery();
+            query.add("username", username);
+            query.addAndReplace("offset", Integer.toString(offset));
+            query.add("limit", Integer.toString(maxItemsPerPage));
+            query.add("all_folder", "true");
+            query.add("csrf_token", Encoding.urlEncode(csrftoken));
+            br.getPage("/_napi/da-user-profile/api/gallery/contents?" + query.toString());
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Number nextOffset = (Number) entries.get("nextOffset");
+            final List<Map<String, Object>> results = (List<Map<String, Object>>) entries.get("results");
+            if (results.isEmpty()) {
+                logger.info("This profile doesn't contain any items");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            int numberofNewItems = 0;
+            for (final Map<String, Object> result : results) {
+                final Map<String, Object> deviation = (Map<String, Object>) result.get("deviation");
+                final Map<String, Object> author = (Map<String, Object>) deviation.get("author");
+                final String type = deviation.get("type").toString();
+                final String url = deviation.get("url").toString();
+                if (!type.equalsIgnoreCase("image")) {
+                    /* TODO: Check/Add support for other types */
+                    logger.info("Skipping unsupported type: " + type + " | URL: " + url);
+                    continue;
+                }
+                if (dupes.add(url)) {
+                    numberofNewItems++;
+                    final DownloadLink link = this.createDownloadlink(deviation.get("url").toString());
+                    link.setName(deviation.get("title") + " by " + author.get("username") + "_" + author.get("userId") + ".jpg");
+                    link.setAvailable(true);
+                    link._setFilePackage(fp);
+                    ret.add(link);
+                    distribute(link);
+                }
+            }
+            logger.info("Crawled page " + page + " | Offset: " + offset + " | nextOffset: " + nextOffset + " | Found items so far: " + ret.size());
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (!(Boolean) entries.get("hasMore") || nextOffset == null) {
+                logger.info("Stopping because: Reached end");
+                break;
+            } else if (numberofNewItems == 0) {
+                /* Extra fail-safe */
+                logger.info("Stopping because: Failed to find new items on page " + page);
+                break;
+            } else {
+                /* Continue to next page */
+                offset = nextOffset.intValue();
                 continue;
             }
-            final DownloadLink link = this.createDownloadlink(deviation.get("url").toString());
-            link.setName(deviation.get("title") + " by " + author.get("username") + "_" + author.get("userId") + ".jpg");
-            link.setAvailable(true);
-            link._setFilePackage(fp);
-            ret.add(link);
-            distribute(link);
-        }
-        if ((Boolean) entries.get("hasMore")) {
-            logger.info("Looks like more items are available but this crawler cannot yet handle pagiantion!");
-        }
+        } while (true);
         return ret;
     }
 
