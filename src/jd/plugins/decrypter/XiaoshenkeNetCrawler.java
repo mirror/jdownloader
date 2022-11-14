@@ -67,10 +67,10 @@ public class XiaoshenkeNetCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        decryptedLinks.add(createDownloadlink(SxyprnComCrawler.getContentURL("sxyprn.com", contentID)));
-        return decryptedLinks;
+        ret.add(createDownloadlink(SxyprnComCrawler.getContentURL("sxyprn.com", contentID)));
+        return ret;
     }
 }
