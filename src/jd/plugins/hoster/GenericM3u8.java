@@ -94,22 +94,17 @@ public class GenericM3u8 extends PluginForHost {
         }
     }
 
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, link.getPluginPatternMatcher());
+        return requestFileInformation(link, false);
     }
 
-    /** Wrapper function for backward compatibility. */
-    private String getReferer(final DownloadLink link) {
-        return link.getStringProperty("Referer", link.getReferrerUrl());
-    }
-
-    public AvailableStatus requestFileInformation(final DownloadLink link, final String dllink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         checkFFProbe(link, "Check a HLS Stream");
         this.setBrowserExclusive();
         final String cookiesString = link.getStringProperty("cookies");
+        final String downloadurl = link.getPluginPatternMatcher();
         if (cookiesString != null) {
-            final String host = Browser.getHost(dllink);
+            final String host = Browser.getHost(downloadurl);
             br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
         }
         final String referer = getReferer(link);
@@ -117,7 +112,7 @@ public class GenericM3u8 extends PluginForHost {
             br.getPage(referer);
             br.followRedirect();
         }
-        final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
+        final HLSDownloader downloader = new HLSDownloader(link, br, downloadurl);
         final StreamInfo streamInfo = downloader.getProbe();
         if (downloader.isEncrypted()) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS(" + downloader.getEncryptionMethod() + ") is not supported!");
@@ -155,7 +150,17 @@ public class GenericM3u8 extends PluginForHost {
             link.setProperty(PROPERTY_FFMPEG_CODECS, ffmpegCodecs.toString());
         }
         setFilename(this, link, true);
+        if (isDownload) {
+            this.dl = downloader;
+        } else {
+            this.dl = null;
+        }
         return AvailableStatus.TRUE;
+    }
+
+    /** Wrapper function for backward compatibility. */
+    private String getReferer(final DownloadLink link) {
+        return link.getStringProperty("Referer", link.getReferrerUrl());
     }
 
     public static void setFilename(Plugin plugin, final DownloadLink link, final boolean setFinalFilename) throws MalformedURLException {
@@ -233,22 +238,10 @@ public class GenericM3u8 extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        handleFree(link, link.getPluginPatternMatcher());
-    }
-
-    public void handleFree(final DownloadLink link, final String dllink) throws Exception {
-        checkFFmpeg(link, "Download a HLS Stream");
-        final String cookiesString = link.getStringProperty("cookies");
-        if (cookiesString != null) {
-            final String host = Browser.getHost(dllink);
-            br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
+        requestFileInformation(link, true);
+        if (this.dl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String referer = this.getReferer(link);
-        if (referer != null) {
-            br.getPage(referer);
-            br.followRedirect();
-        }
-        dl = new HLSDownloader(link, br, dllink);
         dl.startDownload();
     }
 

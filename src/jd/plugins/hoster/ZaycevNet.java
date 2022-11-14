@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -103,13 +104,27 @@ public class ZaycevNet extends PluginForHost {
             brc.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
             brc.postPageRaw("/api/external/track/filezmeta/", "{\"trackIds\":[\"" + getFID(link) + "\"],\"subscription\":false}");
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
-            final String downloadID = JavaScriptEngineFactory.walkJson(entries, "tracks/{0}/download").toString();
-            if (StringUtils.isEmpty(downloadID)) {
+            final Map<String, Object> track = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "tracks/{0}");
+            final Object downloadIDOrStatus = track.get("download");
+            final String dllink;
+            if (downloadIDOrStatus instanceof String) {
+                final String downloadID = downloadIDOrStatus.toString();
+                brc.getPage("/api/external/track/download/" + downloadID);
+                /* Answer = URL as plaintext */
+                dllink = brc.getRequest().getHtmlCode();
+            } else {
+                /* "download":false --> Download stream */
+                final String streamingID = track.get("streaming").toString();
+                if (StringUtils.isEmpty(streamingID)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                brc.getPage("/api/external/track/play/" + streamingID);
+                final Map<String, Object> streaming = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                dllink = streaming.get("url").toString();
+            }
+            if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            brc.getPage("/api/external/track/download/" + downloadID);
-            /* Answer = URL as plaintext */
-            final String dllink = brc.toString();
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
