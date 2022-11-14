@@ -17,13 +17,17 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -51,7 +55,7 @@ public class FikperCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "https://fikper.com/terms-of-use";
     }
 
     private static List<String[]> getPluginDomains() {
@@ -79,14 +83,23 @@ public class FikperCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME                  = true;
-    private final int     FREE_MAXDOWNLOADS            = 20;
-    private final boolean ACCOUNT_FREE_RESUME          = true;
-    private final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final int FREE_MAXDOWNLOADS            = 20;
+    private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
+            /* Free Account */
+            return false;
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+            /* Premium account */
+            return true;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return false;
+        }
+    }
 
     public int getMaxChunks(final Account account) {
         final AccountType type = account != null ? account.getType() : null;
@@ -156,82 +169,130 @@ public class FikperCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, FREE_RESUME, "free_directlink");
+        handleDownload(link, null);
     }
 
-    private void handleDownload(final DownloadLink link, final boolean resumable, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        if (attemptStoredDownloadurlDownload(link, account)) {
+            logger.info("Re-using previously generated directurl");
+        } else {
+            if (account != null) {
+                this.login(account, false);
+            }
             requestFileInformation(link);
             if (link.isPasswordProtected()) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected items are not yet supported");
             }
             final Object remainingDelay = entries.get("remainingDelay");
-            final int waitSeconds;
-            if (remainingDelay instanceof Number) {
-                waitSeconds = ((Number) remainingDelay).intValue();
-            } else {
-                waitSeconds = Integer.parseInt(remainingDelay.toString());
+            if (remainingDelay != null) {
+                /* Downloadlimit has been reached */
+                final int limitWaitSeconds;
+                if (remainingDelay instanceof Number) {
+                    limitWaitSeconds = ((Number) remainingDelay).intValue();
+                } else {
+                    limitWaitSeconds = Integer.parseInt(remainingDelay.toString());
+                }
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, limitWaitSeconds * 1000l);
             }
-            if (waitSeconds > 60) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1001l);
+            final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
+            final int waitBeforeDownloadMillis = ((Number) entries.get("delayTime")).intValue();
+            final boolean skipPreDownloadWaittime = true; // 2022-11-14: Waittime is skippable
+            final String recaptchaV2Response = getRecaptchaHelper(br).getToken();
+            final long passedTimeDuringCaptcha = Time.systemIndependentCurrentJVMTimeMillis() - timeBefore;
+            final Map<String, Object> postdata = new HashMap<String, Object>();
+            postdata.put("fileHashName", this.getFID(link));
+            postdata.put("downloadToken", entries.get("downloadToken").toString());
+            postdata.put("recaptcha", recaptchaV2Response);
+            final long waitBeforeDownloadMillisLeft = waitBeforeDownloadMillis - passedTimeDuringCaptcha;
+            if (waitBeforeDownloadMillisLeft > 0 && !skipPreDownloadWaittime) {
+                this.sleep(waitBeforeDownloadMillisLeft, link);
             }
-            /* Plugin is not yet finished */
-            if (true) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String downloadToken = entries.get("downloadToken").toString();
-            this.sleep(waitSeconds * 1001l, link);
-            dllink = br.getRegex("").getMatch(0);
+            br.postPageRaw(WEBAPI_BASE, JSonStorage.serializeToJson(postdata));
+            final Map<String, Object> dlresponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String dllink = dlresponse.get("directLink").toString();
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, getMaxChunks(null));
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            link.setProperty(getDirectlinkproperty(account), dl.getConnection().getURL().toString());
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), getMaxChunks(account));
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                checkError429(dl.getConnection());
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
+    private void checkError429(final URLConnectionAdapter con) throws PluginException {
+        if (con.getResponseCode() == 429) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 429 too many connections", 30 * 1000l);
+        }
+    }
+
+    private CaptchaHelperHostPluginRecaptchaV2 getRecaptchaHelper(final Browser br) {
+        final String host = br.getHost(false);
+        return new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Ley0XQeAAAAAK-H0p0T_zeun7NnUgMcLFQy0cU3") {
+            @Override
+            protected String getSiteUrl() {
+                /* We are on subdomain.fikper.com but captcha needs to be solved on fikper.com. */
+                return br._getURL().getProtocol() + "://" + host;
+            }
+        };
+    }
+
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
+        final String property = getDirectlinkproperty(account);
+        final String url = link.getStringProperty(property);
+        if (StringUtils.isEmpty(url)) {
+            return false;
+        }
+        boolean valid = false;
+        boolean throwException = false;
+        try {
+            final Browser brc = br.cloneBrowser();
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, account), this.getMaxChunks(account));
             try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    return dllink;
-                } else {
-                    throw new IOException();
-                }
-            } catch (final Exception e) {
+                checkError429(dl.getConnection());
+            } catch (final PluginException error429) {
+                /* URL is valid but we can't use it right now. */
+                valid = true;
+                throwException = true;
+                throw error429;
+            }
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                valid = true;
+                return true;
+            } else {
                 link.removeProperty(property);
+                brc.followConnection(true);
+                throw new IOException();
+            }
+        } catch (final Throwable e) {
+            if (throwException) {
+                throw e;
+            } else {
                 logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
+                return false;
+            }
+        } finally {
+            if (!valid) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Throwable ignore) {
                 }
+                this.dl = null;
             }
         }
-        return null;
     }
 
     @Override
@@ -302,7 +363,7 @@ public class FikperCom extends PluginForHost {
         if (br.containsHTML("")) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
         } else {
             final String expire = br.getRegex("").getMatch(0);
@@ -320,43 +381,21 @@ public class FikperCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        br.getPage(link.getPluginPatternMatcher());
-        if (account.getType() == AccountType.FREE) {
-            handleDownload(link, ACCOUNT_FREE_RESUME, "account_free_directlink");
-        } else {
-            String dllink = this.checkDirectLink(link, "premium_directlink");
-            if (dllink == null) {
-                dllink = br.getRegex("").getMatch(0);
-                if (StringUtils.isEmpty(dllink)) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                logger.warning("The final dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
-            dl.startDownload();
-        }
+        handleDownload(link, account);
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+    }
+
+    public String getDirectlinkproperty(final Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return "free_directurl";
+        } else {
+            return "account_ " + acc.getType() + "_directurl";
+        }
     }
 
     @Override

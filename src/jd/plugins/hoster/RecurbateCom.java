@@ -27,6 +27,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RecurbateComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -60,8 +62,6 @@ public class RecurbateCom extends antiDDoSForHost {
     /* DEV NOTES */
     // Tags: Porn plugin
     private final int          free_maxdownloads       = 1;
-    /* 2022-11-11: Changed from 10 to 1 because starting 10 downloads at the same time triggered Cloudflare pretty fast. */
-    private final int          premium_maxdownloads    = 1;
     public static final String PROPERTY_DATE           = "date";
     public static final String PROPERTY_DATE_ORIGINAL  = "date_original";
     public static final String PROPERTY_DATE_TIMESTAMP = "date_timestamp";
@@ -368,7 +368,7 @@ public class RecurbateCom extends antiDDoSForHost {
                 }
                 account.setType(AccountType.PREMIUM);
                 account.setConcurrentUsePossible(true);
-                account.setMaxSimultanDownloads(premium_maxdownloads);
+                account.setMaxSimultanDownloads(PluginJsonConfig.get(RecurbateComConfig.class).getMaxSimultanPaidAccountDownloads());
                 ai.setStatus(plan);
             }
             ai.setStatus("Plan: " + plan);
@@ -387,8 +387,7 @@ public class RecurbateCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* 2021-09-28: Tested with up to 18 items but got error 429 quite frequently then --> 10 should be fine. */
-        return premium_maxdownloads;
+        return PluginJsonConfig.get(RecurbateComConfig.class).getMaxSimultanPaidAccountDownloads();
     }
 
     @Override
@@ -421,6 +420,11 @@ public class RecurbateCom extends antiDDoSForHost {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public Class<? extends RecurbateComConfig> getConfigInterface() {
+        return RecurbateComConfig.class;
     }
 
     @Override
