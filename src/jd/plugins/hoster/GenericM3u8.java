@@ -238,6 +238,7 @@ public class GenericM3u8 extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
+        checkFFmpeg(link, "Download a HLS Stream");
         requestFileInformation(link, true);
         if (this.dl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
