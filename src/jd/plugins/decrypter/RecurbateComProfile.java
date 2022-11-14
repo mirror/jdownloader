@@ -82,7 +82,6 @@ public class RecurbateComProfile extends PluginForDecrypt {
         final Set<String> dupes = new HashSet<String>();
         do {
             page += 1;
-            logger.info("Crawling page " + page);
             final String[] videoIDs = br.getRegex("/play\\.php\\?video=(\\d+)").getColumn(0);
             if (videoIDs == null || videoIDs.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -105,8 +104,10 @@ public class RecurbateComProfile extends PluginForDecrypt {
                     distribute(dl);
                 }
             }
+            logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
             final String nextpage = br.getRegex("(/performer/[^/]+/page/" + (page + 1) + ")").getMatch(0);
             if (this.isAbort()) {
+                logger.warning("Stopping because: Aborted by user");
                 break;
             } else if (videoIDs.length == 0) {
                 logger.warning("Stopping because: Failed to find any items on current page");
