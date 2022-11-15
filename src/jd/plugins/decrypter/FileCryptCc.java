@@ -80,7 +80,7 @@ public class FileCryptCc extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /*
          * Not all captcha types change when re-loading page without cookies (recaptchav2 isn't). I tried with new response value - raztoki
          */
@@ -89,6 +89,7 @@ public class FileCryptCc extends PluginForDecrypt {
         if (mirrorIdFromURL == null) {
             param.setCryptedUrl(param.getCryptedUrl() + ".html");
         }
+        String usedPassword = null;
         int cutCaptchaRetryIndex = -1;
         final int cutCaptchaAvoidanceMaxRetries = PluginJsonConfig.get(this.getConfigInterface()).getMaxCutCaptchaAvoidanceRetries();
         cutcaptchaAvoidanceLoop: while (cutCaptchaRetryIndex++ <= cutCaptchaAvoidanceMaxRetries && !this.isAbort()) {
@@ -119,7 +120,7 @@ public class FileCryptCc extends PluginForDecrypt {
             }
             /* Creators can set custom logos on each folder. Each logo has a unique ID. This way we can try specific passwords first. */
             final String customLogoID = br.getRegex("custom/([a-z0-9]+)\\.png").getMatch(0);
-            if ("53d1b".equals(customLogoID)) {
+            if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID)) {
                 logger.info("Found presumed password by custom logo: " + customLogoID);
                 passwords.add(0, "serienfans.org");
             } else if ("51967".equals(customLogoID)) {
@@ -127,8 +128,6 @@ public class FileCryptCc extends PluginForDecrypt {
                 passwords.add(0, "kellerratte");
             }
             int generalLoopCounter = 0;
-            String usedPassword = null;
-            /* Password of which we know that it is correct */
             passwordLoop: while (passwordCounter++ < maxPasswordRetries && containsPassword()) {
                 logger.info("Password attempt: " + passwordCounter + " / " + maxPasswordRetries);
                 Form passwordForm = null;
@@ -173,7 +172,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     logger.info("Stepping out of password loop because the password we got is supposed to be the correct one: " + usedPassword);
                     break;
                 } else if (this.isAbort()) {
-                    return decryptedLinks;
+                    return ret;
                 }
             }
             if (passwordCounter == maxPasswordRetries && containsPassword()) {
@@ -311,7 +310,7 @@ public class FileCryptCc extends PluginForDecrypt {
         }
         if (this.isAbort()) {
             /* Decryption aborted by user */
-            return decryptedLinks;
+            return ret;
         } else if (cutCaptchaRetryIndex >= cutCaptchaAvoidanceMaxRetries && containsCaptcha()) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Unsupported captcha type cutcaptcha");
             // throw new DecrypterRetryException(RetryReason.CAPTCHA, "Unsupported captcha type cutcaptcha", null, null);
@@ -351,84 +350,98 @@ public class FileCryptCc extends PluginForDecrypt {
             logger.info("Crawling all existing mirrors:" + mirrors);
         }
         Collections.sort(mirrors);
-        for (final String mirrorURL : mirrors) {
-            logger.info("Crawling mirror:" + mirrorURL + " / " + mirrors.size());
-            br.getPage(mirrorURL);
-            final ArrayList<DownloadLink> tdl = new ArrayList<DownloadLink>();
-            // Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down!
-            handleCnl2(tdl, param.getCryptedUrl());
-            if (!tdl.isEmpty()) {
-                decryptedLinks.addAll(tdl);
-                if (fpName != null) {
-                    if (fp == null) {
-                        fp = FilePackage.getInstance();
-                        fp.setName(Encoding.htmlDecode(fpName.trim()));
-                    }
-                    fp.addLinks(tdl);
-                }
-                distribute(tdl.toArray(new DownloadLink[0]));
-            } else {
-                /* Second try DLC, then single links */
-                final String dlc_id = br.getRegex("DownloadDLC\\('([^<>\"]*?)'\\)").getMatch(0);
-                if (dlc_id != null) {
-                    logger.info("DLC found - trying to add it");
-                    tdl.addAll(loadcontainer(br.getURL("/DLC/" + dlc_id + ".dlc").toExternalForm()));
-                    if (tdl.isEmpty()) {
-                        logger.warning("DLC for current mirror is empty or something is broken!");
-                        continue;
-                    }
-                    decryptedLinks.addAll(tdl);
-                }
-            }
-            if (this.isAbort()) {
-                return decryptedLinks;
-            }
-        }
-        if (!decryptedLinks.isEmpty()) {
-            logger.info("DLC successfully added");
-            return decryptedLinks;
-        }
-        // this isn't always shown, see 104061178D - raztoki 20141118
-        logger.info("Trying single link handling");
-        final String[] links = br.getRegex("openLink\\('([^<>\"]*?)'").getColumn(0);
-        if (links == null || links.length == 0) {
-            if (br.containsHTML("Der Inhaber dieses Ordners hat leider alle Hoster in diesem Container in seinen Einstellungen deaktiviert\\.")) {
-                return decryptedLinks;
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.setFollowRedirects(false);
-        br.setCookie(this.getHost(), "BetterJsPopCount", "1");
-        linkLoop: for (final String singleLink : links) {
-            if (isAbort()) {
-                break;
-            } else {
-                String finallink = null;
-                int retryLink = 2;
-                while (!isAbort()) {
-                    finallink = handleLink(br, param, singleLink);
-                    if (StringUtils.equals("IGNORE", finallink)) {
-                        continue linkLoop;
-                    } else if (finallink != null || --retryLink == 0) {
-                        logger.info(singleLink + "->" + finallink + "|" + retryLink);
-                        break;
-                    }
-                }
-                if (finallink != null) {
-                    final DownloadLink link = createDownloadlink(finallink);
-                    decryptedLinks.add(link);
+        try {
+            int prgress = 0;
+            for (final String mirrorURL : mirrors) {
+                prgress++;
+                logger.info("Crawling mirror " + prgress + "/" + mirrors.size() + " | " + mirrorURL);
+                br.getPage(mirrorURL);
+                final ArrayList<DownloadLink> tdl = new ArrayList<DownloadLink>();
+                // Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down!
+                handleCnl2(tdl, param.getCryptedUrl());
+                if (!tdl.isEmpty()) {
+                    ret.addAll(tdl);
                     if (fpName != null) {
                         if (fp == null) {
                             fp = FilePackage.getInstance();
-                            fp.setName(Encoding.htmlDecode(fpName.trim()));
+                            fp.setName(Encoding.htmlDecode(fpName).trim());
                         }
-                        fp.add(link);
+                        fp.addLinks(tdl);
                     }
-                    distribute(link);
+                    distribute(tdl.toArray(new DownloadLink[0]));
+                } else {
+                    /* Second try DLC, then single links */
+                    final String dlc_id = br.getRegex("DownloadDLC\\('([^<>\"]*?)'\\)").getMatch(0);
+                    if (dlc_id != null) {
+                        logger.info("DLC found - trying to add it");
+                        tdl.addAll(loadcontainer(br.getURL("/DLC/" + dlc_id + ".dlc").toExternalForm()));
+                        if (tdl.isEmpty()) {
+                            logger.warning("DLC for current mirror is empty or something is broken!");
+                            continue;
+                        }
+                        ret.addAll(tdl);
+                    }
+                }
+                if (this.isAbort()) {
+                    logger.info("Stopping because: Aborted by user");
+                    return ret;
+                }
+            }
+            if (!ret.isEmpty()) {
+                logger.info("CNL/DLC successfully added");
+                return ret;
+            }
+            // this isn't always shown, see 104061178D - raztoki 20141118
+            logger.info("Trying single link handling");
+            final String[] links = br.getRegex("openLink\\('([^<>\"]*?)'").getColumn(0);
+            if (links == null || links.length == 0) {
+                if (br.containsHTML("Der Inhaber dieses Ordners hat leider alle Hoster in diesem Container in seinen Einstellungen deaktiviert\\.")) {
+                    return ret;
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.setFollowRedirects(false);
+            br.setCookie(this.getHost(), "BetterJsPopCount", "1");
+            linkLoop: for (final String singleLink : links) {
+                if (isAbort()) {
+                    break;
+                } else {
+                    String finallink = null;
+                    int retryLink = 2;
+                    while (!isAbort()) {
+                        finallink = handleLink(br, param, singleLink);
+                        if (StringUtils.equals("IGNORE", finallink)) {
+                            continue linkLoop;
+                        } else if (finallink != null || --retryLink == 0) {
+                            logger.info(singleLink + "->" + finallink + "|" + retryLink);
+                            break;
+                        }
+                    }
+                    if (finallink != null) {
+                        final DownloadLink link = createDownloadlink(finallink);
+                        ret.add(link);
+                        if (fpName != null) {
+                            if (fp == null) {
+                                fp = FilePackage.getInstance();
+                                fp.setName(Encoding.htmlDecode(fpName).trim());
+                            }
+                            fp.add(link);
+                        }
+                        distribute(link);
+                    }
+                }
+            }
+        } finally {
+            if (usedPassword != null) {
+                /* Assume that required password is also extract password. */
+                final ArrayList<String> pwlist = new ArrayList<String>();
+                pwlist.add(usedPassword);
+                for (final DownloadLink result : ret) {
+                    result.setSourcePluginPasswordList(pwlist);
                 }
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private String handleLink(final Browser br, final CryptedLink param, final String singleLink) throws Exception {
@@ -533,7 +546,7 @@ public class FileCryptCc extends PluginForDecrypt {
     }
 
     private final boolean containsPassword() {
-        return new Regex(cleanHTML, "<h2>(?:Passwort erforderlich|Password required)</h2>").matches();
+        return new Regex(cleanHTML, "(?i)<h2>(?:Passwort erforderlich|Password required)</h2>").matches();
     }
 
     private final String containsCaptcha = "<h2>(?:Sicherheitsüberprüfung|Security prompt)</h2>";

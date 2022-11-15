@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,12 +54,12 @@ public class BbcComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("unchecked")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("This programme is not currently available on BBC iPlayer")) {
+        } else if (br.containsHTML("(?i)This programme is not currently available on BBC iPlayer")) {
             /* Content is online but not streamable at the moment */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -66,7 +67,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
             return this.crawlEmbed(param);
         }
         String url_name = null;
-        if (decryptedLinks.size() == 0 && param.getCryptedUrl().matches(".+/video/[^/]+/.+")) {
+        if (ret.size() == 0 && param.getCryptedUrl().matches(".+/video/[^/]+/.+")) {
             url_name = new Regex(param.getCryptedUrl(), "/video/[^/]+/(.+)").getMatch(0);
         }
         String pageTitle = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
@@ -120,10 +121,6 @@ public class BbcComDecrypter extends PluginForDecrypt {
         if (jsons == null || jsons.length == 0) {
             /* 2021-08-05: bbc.co.uk/archive/.* */
             jsons = this.br.getRegex("(\\{\"meta\".*?\\})\\);\\s*\\}\\);</script>").getColumn(0);
-        }
-        if (jsons == null) {
-            logger.info("Failed to find any playable content");
-            return decryptedLinks;
         }
         Map<String, Object> entries = null;
         Map<String, Object> entries2 = null;
@@ -260,7 +257,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
             if (!StringUtils.isEmpty(description)) {
                 dl.setComment(description);
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         /* 2022-01-17: New handling */
         final String jsonMorphSingle = br.getRegex("Morph\\.setPayload\\('[^\\']+', (\\{.*?\\})\\);").getMatch(0);
@@ -288,7 +285,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
                         dl.setComment(description);
                     }
                     dl.setName(BbcCom.getFilename(dl));
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
             }
         }
@@ -317,7 +314,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 dl.setProperty(BbcCom.PROPERTY_DATE, dateFormatted);
                 dl.setProperty(BbcCom.PROPERTY_TITLE, title);
                 dl.setName(BbcCom.getFilename(dl));
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         }
         // final String[] newsVpids = br.getRegex("version_offset:(p[a-z0-9]+)").getColumn(0);
@@ -328,25 +325,25 @@ public class BbcComDecrypter extends PluginForDecrypt {
         // }
         // final String jsonMorphMultiple = br.getRegex("Morph\\.setPayload\\('[^\\']+', (\\{.*?\\})\\);").getMatch(0);
         if (this.br.getURL().matches(TYPE_PROGRAMMES)) {
-            if (decryptedLinks.isEmpty()) {
-                decryptedLinks.addAll(crawlProgrammes(param));
+            if (ret.isEmpty()) {
+                ret.addAll(crawlProgrammes(param));
             }
         } else {
-            if (decryptedLinks.isEmpty()) {
+            if (ret.isEmpty()) {
                 /* E.g. bbc.co.uk/programmes/blabla/clips --> Look for clips */
-                decryptedLinks.addAll(lookForProgrammesURLs(param));
+                ret.addAll(lookForProgrammesURLs(param));
             }
         }
-        if (decryptedLinks.size() == 0) {
+        if (ret.size() == 0) {
             logger.info("Failed to find any playable content --> Probably only irrelevant photo content or no content at all --> Adding offline url");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (pageTitle != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(pageTitle).trim());
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /** Recursive function to find specific map in json */
@@ -396,8 +393,12 @@ public class BbcComDecrypter extends PluginForDecrypt {
         return ret;
     }
 
-    /** Crawls single 'programmes' clips. */
-    private ArrayList<DownloadLink> crawlProgrammes(final CryptedLink param) throws PluginException {
+    /**
+     * Crawls single 'programmes' clips.
+     *
+     * @throws IOException
+     */
+    private ArrayList<DownloadLink> crawlProgrammes(final CryptedLink param) throws PluginException, IOException {
         final Regex urlInfo = new Regex(param.getCryptedUrl(), TYPE_PROGRAMMES);
         if (!urlInfo.matches()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -439,7 +440,14 @@ public class BbcComDecrypter extends PluginForDecrypt {
             /* Old fallback from 2017 */
             final String[] videoIDs = this.br.getRegex("episode_id=([pbm][a-z0-9]{7})").getColumn(0);
             for (final String vpid : videoIDs) {
-                ret.add(createDownloadlink(String.format("http://www.bbc.co.uk/iplayer/episode/%s", vpid)));
+                ret.add(createDownloadlink(br.getURL("/iplayer/episode/" + vpid).toString()));
+            }
+        }
+        if (ret.isEmpty()) {
+            /* 2022-11-15 */
+            final String[] episodeURLs = this.br.getRegex("(/iplayer/episode/[a-z0-9]+)").getColumn(0);
+            for (final String episodeURL : episodeURLs) {
+                ret.add(createDownloadlink(br.getURL(episodeURL).toString()));
             }
         }
         return ret;
