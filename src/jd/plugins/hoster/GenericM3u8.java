@@ -19,15 +19,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -39,6 +30,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+" })
 public class GenericM3u8 extends PluginForHost {
@@ -112,48 +112,55 @@ public class GenericM3u8 extends PluginForHost {
             br.getPage(referer);
             br.followRedirect();
         }
-        final HLSDownloader downloader = new HLSDownloader(link, br, downloadurl);
-        final StreamInfo streamInfo = downloader.getProbe();
-        if (downloader.isEncrypted()) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS(" + downloader.getEncryptionMethod() + ") is not supported!");
-        } else if (streamInfo == null) {
-            /* Invalid/broken stream */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final int hlsBandwidth = link.getIntegerProperty(PROPERTY_BANDWIDTH, 0);
-        if (hlsBandwidth > 0) {
-            for (M3U8Playlist playList : downloader.getPlayLists()) {
-                playList.setAverageBandwidth(hlsBandwidth);
+        HLSDownloader downloader = null;
+        try {
+            downloader = new HLSDownloader(link, br, downloadurl);
+            final StreamInfo streamInfo = downloader.getProbe();
+            if (downloader.isEncrypted()) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS(" + downloader.getEncryptionMethod() + ") is not supported!");
+            } else if (streamInfo == null) {
+                /* Invalid/broken stream */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        }
-        final long estimatedSize = downloader.getEstimatedSize();
-        if (estimatedSize > 0) {
-            link.setDownloadSize(estimatedSize);
-        }
-        StringBuilder ffmpegCodecs = new StringBuilder();
-        for (final Stream s : streamInfo.getStreams()) {
+            final int hlsBandwidth = link.getIntegerProperty(PROPERTY_BANDWIDTH, 0);
+            if (hlsBandwidth > 0) {
+                for (M3U8Playlist playList : downloader.getPlayLists()) {
+                    playList.setAverageBandwidth(hlsBandwidth);
+                }
+            }
+            final long estimatedSize = downloader.getEstimatedSize();
+            if (estimatedSize > 0) {
+                link.setDownloadSize(estimatedSize);
+            }
+            StringBuilder ffmpegCodecs = new StringBuilder();
+            for (final Stream s : streamInfo.getStreams()) {
+                if (ffmpegCodecs.length() > 0) {
+                    ffmpegCodecs.append(",");
+                }
+                ffmpegCodecs.append(s.getCodec_name()).append("(").append(s.getCodec_tag_string()).append(")");
+                if ("video".equalsIgnoreCase(s.getCodec_type())) {
+                    link.setProperty(PROPERTY_HEIGHT, s.getHeight());
+                    link.setProperty(PROPERTY_WIDTH, s.getWidth());
+                } else if ("audio".equalsIgnoreCase(s.getCodec_type())) {
+                }
+            }
+            final long estimatedDurationMillis = M3U8Playlist.getEstimatedDuration(downloader.getPlayLists());
+            if (estimatedDurationMillis > 0) {
+                link.setProperty(PROPERTY_DURATION_ESTIMATED_MILLIS, estimatedDurationMillis);
+            }
             if (ffmpegCodecs.length() > 0) {
-                ffmpegCodecs.append(",");
+                link.setProperty(PROPERTY_FFMPEG_CODECS, ffmpegCodecs.toString());
             }
-            ffmpegCodecs.append(s.getCodec_name()).append("(").append(s.getCodec_tag_string()).append(")");
-            if ("video".equalsIgnoreCase(s.getCodec_type())) {
-                link.setProperty(PROPERTY_HEIGHT, s.getHeight());
-                link.setProperty(PROPERTY_WIDTH, s.getWidth());
-            } else if ("audio".equalsIgnoreCase(s.getCodec_type())) {
+            setFilename(this, link, true);
+            if (isDownload) {
+                this.dl = downloader;
+            } else {
+                this.dl = null;
             }
-        }
-        final long estimatedDurationMillis = M3U8Playlist.getEstimatedDuration(downloader.getPlayLists());
-        if (estimatedDurationMillis > 0) {
-            link.setProperty(PROPERTY_DURATION_ESTIMATED_MILLIS, estimatedDurationMillis);
-        }
-        if (ffmpegCodecs.length() > 0) {
-            link.setProperty(PROPERTY_FFMPEG_CODECS, ffmpegCodecs.toString());
-        }
-        setFilename(this, link, true);
-        if (isDownload) {
-            this.dl = downloader;
-        } else {
-            this.dl = null;
+        } finally {
+            if (downloader != null && this.dl == null) {
+                downloader.close();
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -166,9 +173,8 @@ public class GenericM3u8 extends PluginForHost {
     public static void setFilename(Plugin plugin, final DownloadLink link, final boolean setFinalFilename) throws MalformedURLException {
         if (link.getFinalFileName() != null) {
             /**
-             * No not modify filename once final name has been set. </br>
-             * This e.g. allows other plugins/crawlers to set desired filenames telling this plugin not to use the default filenames down
-             * below.
+             * No not modify filename once final name has been set. </br> This e.g. allows other plugins/crawlers to set desired filenames
+             * telling this plugin not to use the default filenames down below.
              */
             return;
         }
@@ -238,12 +244,13 @@ public class GenericM3u8 extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        checkFFmpeg(link, "Download a HLS Stream");
         requestFileInformation(link, true);
         if (this.dl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     /** Converts given URL into an URL which this plugin can handle. */

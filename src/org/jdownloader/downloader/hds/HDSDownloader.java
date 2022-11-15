@@ -28,6 +28,7 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.utils.JDK8BufferHelper;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
@@ -143,7 +144,7 @@ public class HDSDownloader extends DownloadInterface {
                 }
                 final ByteBuffer buffertoWrite = readAndWrite();
                 if (buffertoWrite != null) {
-                    buffertoWrite.flip();
+                    JDK8BufferHelper.flip(buffertoWrite);
                     outStream.write(buffertoWrite.array(), 0, buffertoWrite.remaining());
                 }
             }
@@ -175,7 +176,7 @@ public class HDSDownloader extends DownloadInterface {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Preprocessor (Encryption?) is not supported " + (type & 0x1F) + "(" + type + ")", 24 * 60 * 60 * 1000l);
             }
             type = type & 0x1F;
-            buffer.clear();
+            JDK8BufferHelper.clear(buffer);
             // DataSize UI24 Length of the message. Number of bytes after
             // StreamID to end of packet (Equal to packet length –
             // 11)
@@ -305,7 +306,7 @@ public class HDSDownloader extends DownloadInterface {
     public void handlePayload(final int dataSize, int payloadToRead) throws IOException {
         ensureBufferCapacity(payloadToRead);
         stream.readFully(buffer.array(), buffer.position(), payloadToRead);
-        buffer.position(buffer.position() + payloadToRead);
+        JDK8BufferHelper.position(buffer, buffer.position() + payloadToRead);
         skipBytes(4);
         writeInt32(dataSize + FLV_PACKET_HEADER_SIZE);
     }
@@ -313,7 +314,7 @@ public class HDSDownloader extends DownloadInterface {
     public void ensureBufferCapacity(int payloadToRead) {
         if (payloadToRead > buffer.capacity() - buffer.position()) {
             ByteBuffer newBuffer = ByteBuffer.allocate(buffer.capacity() * 2);
-            buffer.flip();
+            JDK8BufferHelper.flip(buffer);
             newBuffer.put(buffer);
             buffer = newBuffer;
         }

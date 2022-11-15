@@ -22,6 +22,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
+import org.appwork.utils.JDK8BufferHelper;
 import org.jdownloader.logging.LogController;
 
 public class DynByteBuffer {
@@ -47,7 +48,7 @@ public class DynByteBuffer {
     }
 
     public void clear() {
-        this.buffer.clear();
+        JDK8BufferHelper.clear(buffer);
     }
 
     public String toString() {
@@ -84,14 +85,15 @@ public class DynByteBuffer {
         if (this.buffer.remaining() < read) {
             /* first we try to double capactiy */
             ByteBuffer newbuffer = ByteBuffer.allocateDirect(this.buffer.capacity() * 2);
-            this.buffer.flip();
+            JDK8BufferHelper.flip(buffer);
             newbuffer.put(this.buffer);
             this.buffer = newbuffer;
         }
         if (this.buffer.remaining() < read) {
             /* still not enough, so lets increase even more */
             ByteBuffer newbuffer = ByteBuffer.allocateDirect(this.buffer.capacity() + read);
-            this.buffer.flip();
+            // jdk8:flip is in Buffer -> jdk9+:flip override in actual implementation
+            JDK8BufferHelper.flip(buffer);
             newbuffer.put(this.buffer);
             this.buffer = newbuffer;
         }
@@ -102,7 +104,7 @@ public class DynByteBuffer {
     }
 
     public Buffer flip() {
-        return this.buffer.flip();
+        return JDK8BufferHelper.flip(buffer);
     }
 
     public ByteBuffer compact() {
@@ -112,19 +114,20 @@ public class DynByteBuffer {
     public byte[] getLast(int num) {
         final int posi = buffer.position();
         num = Math.min(posi, num);
-        buffer.position(posi - num);
+        JDK8BufferHelper.position(buffer, posi - num);
+        buffer.position();
         final byte[] b = new byte[num];
         buffer.get(b);
-        buffer.position(posi);
+        JDK8BufferHelper.position(buffer, posi);
         return b;
     }
 
     public byte[] getSub(int start, int end) {
         int posi = buffer.position();
-        buffer.position(start);
+        JDK8BufferHelper.position(buffer, start);
         byte[] b = new byte[end - start];
         buffer.get(b);
-        buffer.position(posi);
+        JDK8BufferHelper.position(buffer, posi);
         return b;
     }
 

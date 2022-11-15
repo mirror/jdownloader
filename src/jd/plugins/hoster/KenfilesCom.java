@@ -136,7 +136,7 @@ public class KenfilesCom extends XFileSharingProBasic {
                 final String cryptedScripts[] = new Regex(src, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
-                        dllink = decodeDownloadLink(crypted);
+                        dllink = decodeDownloadLink(link, account, br, crypted);
                         if (dllink != null) {
                             break;
                         }
@@ -148,7 +148,7 @@ public class KenfilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    public String decodeDownloadLink(final String s) {
+    public String decodeDownloadLink(final DownloadLink link, final Account account, final Browser br, final String s) {
         String decoded = null;
         try {
             Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");

@@ -30,7 +30,6 @@ import jd.utils.JDHexUtils;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.logging.LogController;
 
 public final class Utils {
     /**
@@ -65,41 +64,6 @@ public final class Utils {
         } catch (Exception e) {
         }
         return data.toString();
-    }
-
-    public static ByteBuffer readheader(final InputStream in) {
-        ByteBuffer bigbuffer = ByteBuffer.wrap(new byte[4096]);
-        final byte[] minibuffer = new byte[1];
-        int position;
-        int c;
-        boolean complete = false;
-        try {
-            while ((c = in.read(minibuffer)) >= 0) {
-                if (bigbuffer.remaining() < 1) {
-                    final ByteBuffer newbuffer = ByteBuffer.wrap(new byte[bigbuffer.capacity() * 2]);
-                    bigbuffer.flip();
-                    newbuffer.put(bigbuffer);
-                    bigbuffer = newbuffer;
-                }
-                if (c > 0) {
-                    bigbuffer.put(minibuffer);
-                }
-                if (bigbuffer.position() >= 4) {
-                    position = bigbuffer.position();
-                    complete = bigbuffer.get(position - 4) == (byte) 13;
-                    complete &= bigbuffer.get(position - 3) == (byte) 10;
-                    complete &= bigbuffer.get(position - 2) == (byte) 13;
-                    complete &= bigbuffer.get(position - 1) == (byte) 10;
-                    if (complete) {
-                        break;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            LogController.CL().log(e);
-        }
-        bigbuffer.flip();
-        return bigbuffer;
     }
 
     public static InputStream newInputStream(final ByteBuffer buf) {

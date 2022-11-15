@@ -29,7 +29,9 @@ import javax.net.ssl.SSLSocketFactory;
 
 import jd.utils.JDHexUtils;
 
+import org.appwork.utils.JDK8BufferHelper;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 
 public class Proxy extends Thread {
     public final static int FORWARD       = 1 << 1;
@@ -137,7 +139,7 @@ class ProxyThread extends Thread {
             toClient = outgoing.getOutputStream();
             fromClient = incoming.getInputStream();
             if (dothis(Proxy.CHANGE_HEADER) || dothis(Proxy.RECORD_HEADER)) {
-                headerbuffer = Utils.readheader(fromClient);
+                headerbuffer = HTTPConnectionUtils.readheader(fromClient, false);
             }
             if (dothis(Proxy.RECORD_HEADER)) {
                 try {
@@ -181,7 +183,7 @@ class ProxyThread extends Thread {
                 }
             }
             if (dothis(Proxy.CHANGE_HEADER) || dothis(Proxy.RECORD_HEADER)) {
-                headerbuffer.position(0);
+                JDK8BufferHelper.position(headerbuffer, 0);
                 renewbuffer = false;
                 byte[] b = new byte[headerbuffer.limit()];
                 headerbuffer.get(b);
