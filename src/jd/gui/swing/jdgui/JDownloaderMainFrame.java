@@ -268,8 +268,8 @@ public class JDownloaderMainFrame extends ExtJFrame {
     }
 
     private void updateFrameStatus() {
-        FrameStatus newState = FrameStatus.create(JDownloaderMainFrame.this, latestFrameStatus);
-        if (newState.isLocationSet()) {
+        final FrameStatus newState = FrameStatus.create(JDownloaderMainFrame.this, latestFrameStatus);
+        if (newState != null && newState.isLocationSet()) {
             latestFrameStatus = newState;
             if (newState.getExtendedState() == ExtendedState.NORMAL) {
                 latestNormalState = newState.clone();
@@ -278,15 +278,5 @@ public class JDownloaderMainFrame extends ExtJFrame {
                 System.out.println("New Window State: " + JSonStorage.toString(latestFrameStatus));
             }
         }
-        // Rectangle bounds = getGraphicsConfiguration().getBounds();
-        // String dev = getGraphicsConfiguration().getDevice().getIDstring();
-        // Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
-        // bounds.x += insets.left;
-        // bounds.y += insets.top;
-        // bounds.width -= insets.left + insets.right;
-        // bounds.height -= insets.top + insets.bottom;
-        // Rectangle usable = SunGraphicsEnvironment.getUsableBounds(getGraphicsConfiguration().getDevice());
-        // setMaximizedBounds(bounds);
-        // System.out.println("Set max bounds " + bounds + " " + dev + " " + usable);
     }
 }
