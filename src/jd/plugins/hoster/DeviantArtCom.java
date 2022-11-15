@@ -15,6 +15,9 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.net.URLEncoder;
 
 import org.appwork.utils.StringUtils;
@@ -25,7 +28,6 @@ import org.jdownloader.gui.translate._GUI;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -33,6 +35,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -42,13 +45,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?art/[\\w\\-]+|https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/(?:[^/]+/)?journal/[\\w\\-]+" })
 public class DeviantArtCom extends PluginForHost {
-    private boolean            DOWNLOADS_STARTED                = false;
-    private String             DLLINK                           = null;
+    private String             dllink                           = null;
     private final String       NICE_HOST                        = "deviantart.com";
     private final String       NICE_HOSTproperty                = "deviantartcom";
     private final String       INVALIDLINKS                     = "https?://(www\\.)?forum\\.deviantart\\.com/(?:[^/]+/)?art/general";
@@ -57,11 +60,10 @@ public class DeviantArtCom extends PluginForHost {
     public static final String CRAWL_GIVEN_OFFSETS_INDIVIDUALLY = "CRAWL_GIVEN_OFFSETS_INDIVIDUALLY";
     private final String       GENERALFILENAMEREGEX             = "<title[^<>]*>([^<>\"]*?) on deviantART</title>";
     // private static final String DLLINK_REFRESH_NEEDED = "https?://(www\\.)?deviantart\\.com/download/.+";
-    private final String       TYPE_DOWNLOADALLOWED_GENERAL     = "\"label\">\\s*Download";
-    private final String       TYPE_DOWNLOADALLOWED_HTML        = "class=\"text\">HTML download</span>";
+    private final String       TYPE_DOWNLOADALLOWED_HTML        = "(?i)class=\"text\">HTML download</span>";
     private final String       TYPE_DOWNLOADFORBIDDEN_HTML      = "<div class=\"grf\\-indent\"";
     private final String       TYPE_DOWNLOADFORBIDDEN_SWF       = "class=\"flashtime\"";
-    private boolean            HTMLALLOWED                      = false;
+    private boolean            downloadHTML                     = false;
     private final String       PATTERN_ART                      = "https?://[^/]+/(?:[^/]+/)?art/[^<>\"/]+";
     private final String       LINKTYPE_JOURNAL                 = "https?://[^/]+/(?:[^/]+/)?journal/[\\w\\-]+";
     private final String       LINKTYPE_STATUS                  = "https?://[^/]+/status/\\d+";
@@ -102,20 +104,20 @@ public class DeviantArtCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        return requestFileInformation(link, account);
+        return requestFileInformation(link, account, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
-        this.setBrowserExclusive();
-        prepBR(this.br);
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (link.getPluginPatternMatcher().matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        this.setBrowserExclusive();
+        prepBR(this.br);
         // Workaround for a strange bug - DLLINK is not null at the beginning so if multiple links are to be checked they will all get the
         // same filenames
-        DLLINK = null;
+        dllink = null;
         br.setFollowRedirects(true);
-        if (this.getPluginConfig().getBooleanProperty(FASTLINKCHECK_ALL, default_FASTLINKCHECK_ALL) && !DOWNLOADS_STARTED) {
+        if (this.getPluginConfig().getBooleanProperty(FASTLINKCHECK_ALL, default_FASTLINKCHECK_ALL) && !isDownload) {
             return AvailableStatus.UNCHECKABLE;
         }
         if (account != null) {
@@ -124,9 +126,8 @@ public class DeviantArtCom extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("/error\\-title\\-oops\\.png\\)") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        // Motionbooks are not supported (yet)
-        if (br.containsHTML(",target: \\'motionbooks/")) {
+        } else if (br.containsHTML(",target: \\'motionbooks/")) {
+            logger.info("Motionbooks are not supported (yet)");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Redirects can lead to unsupported/offline links/linktypes */
@@ -151,36 +152,22 @@ public class DeviantArtCom extends PluginForHost {
             filename = Encoding.htmlDecode(filename.trim());
         }
         String ext = null;
-        String filesize = null;
+        boolean setOfficialDownloadFilesize = false;
+        final String officialDownloadFilesize = br.getRegex("(?i)>\\s*Image size\\s*</div><div [^>]*>\\d+x\\d+px\\s*(\\d+[^>]+)</div>").getMatch(0);
+        // final boolean accountNeededForOfficialDownload = br.containsHTML("(?i)Log in to download");
+        final String officialDownloadurl = br.getRegex("data-hook=\"download_button\"[^>]*href=\"(https?://[^\"]+)").getMatch(0);
+        final String displayedImageURL = HTMLSearch.searchMetaTag(br, "og:image");
         /* Check if either user wants to download the html code or if we have a linktype which needs this. */
         if (this.getPluginConfig().getBooleanProperty(FORCEHTMLDOWNLOAD, false) || link.getPluginPatternMatcher().matches(LINKTYPE_JOURNAL) || link.getPluginPatternMatcher().matches(LINKTYPE_STATUS)) {
-            HTMLALLOWED = true;
-            DLLINK = br.getURL();
-            if (filename == null) { // Config FilenameFromServer is enabled
-                filename = findServerFilename(filename); // Depends on DLLINK
-            }
-            ext = "html";
-        } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_GENERAL)) {
-            final String ret[] = getDirecturl();
-            if (ret != null) {
-                DLLINK = ret[0];
-                ext = new Regex(ret[1], "span class=\"text\">([A-Za-z0-9]{1,5})\\s*download").getMatch(0);
-                filesize = new Regex(ret[1], "span class=\"text\">([A-Za-z0-9]{1,5})\\s*download\\s*([0-9]+ [KM]B)").getMatch(1);
-                if (ext == null) {
-                    ext = new Regex(ret[1], ">Download</span>[\t\n\r ]+<span class=\"text\">([A-Za-z0-9]{1,5}),? ([^<>\"]*?)</span>").getMatch(0);
-                }
-            }
-            /* Download for other extensions */
-            // filesize = fInfo.getMatch(1);
-            if (ext == null || DLLINK == null) {
-                logger.info("ext: " + ext + ", DLLINK: " + DLLINK);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (filename == null) { // Config FilenameFromServer is enabled
-                filename = findServerFilename(filename); // Depends on DLLINK
-            }
+            downloadHTML = true;
+            dllink = br.getURL();
+            ext = ".html";
+        } else if (officialDownloadurl != null) {
+            this.dllink = officialDownloadurl.replace("&amp;", "&");
+            setOfficialDownloadFilesize = true;
+        } else if (displayedImageURL != null) {
+            this.dllink = displayedImageURL;
         } else if (br.containsHTML(TYPE_DOWNLOADFORBIDDEN_SWF)) {
-            filesize = getImageSize();
             String url_swf_sandbox = br.getRegex("class=\"flashtime\" src=\"(https?://sandbox\\.deviantart\\.com[^<>\"]*?)\"").getMatch(0);
             if (url_swf_sandbox == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -188,117 +175,73 @@ public class DeviantArtCom extends PluginForHost {
             /* Fix that ... */
             url_swf_sandbox = url_swf_sandbox.replace("?", "/?");
             br.getPage(url_swf_sandbox);
-            this.DLLINK = br.getRegex("<param name=\"movie\" value=\"(https?://[^<>\"]*?\\.swf)\"").getMatch(0);
-            if (this.DLLINK == null) {
-                this.DLLINK = br.getRegex("id=\"sandboxembed\" src=\"(http[^<>\"]+\\.swf)\"").getMatch(0);
+            this.dllink = br.getRegex("<param name=\"movie\" value=\"(https?://[^<>\"]*?\\.swf)\"").getMatch(0);
+            if (this.dllink == null) {
+                this.dllink = br.getRegex("id=\"sandboxembed\" src=\"(http[^<>\"]+\\.swf)\"").getMatch(0);
             }
-            if (filename == null) { // Config FilenameFromServer is enabled
-                filename = findServerFilename(filename); // Depends on DLLINK
-            }
-            ext = "swf";
-        } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_HTML)) {
-            HTMLALLOWED = true;
-            if (filename == null) { // Config FilenameFromServer is enabled
-                filename = findServerFilename(filename); // Depends on DLLINK
-            }
-            ext = "html";
-            filesize = getfileSize();
-        } else if (br.containsHTML(TYPE_DOWNLOADFORBIDDEN_HTML)) {
-            HTMLALLOWED = true;
-            // Download whole html site
-            DLLINK = br.getURL();
-            if (filename == null) { // Config FilenameFromServer is enabled
-                filename = findServerFilename(filename); // Depends on DLLINK
-            }
-            filesize = getfileSize();
-            ext = "html";
-            if (this.isAccountRequiredMatureContent(br) && account == null) {
-                link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
-                link.setName(filename + "." + ext);
-                if (filesize != null) {
-                    link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
-                }
-                return AvailableStatus.TRUE;
-            }
+            ext = ".swf";
+        } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_HTML) || br.containsHTML(TYPE_DOWNLOADFORBIDDEN_HTML)) {
+            downloadHTML = true;
+            dllink = br.getURL();
+            ext = ".html";
         } else if (isAccountRequiredUploaderDecision(br)) {
             /* Account needed to view/download */
-            if (filename == null) { // Config FilenameFromServer is enabled
-                filename = findServerFilename(filename); // Depends on DLLINK
-            }
-            filesize = getfileSize();
-            ext = "html";
+            ext = ".html";
         } else {
-            filesize = getImageSize();
-            // Maybe its a video
-            if (filesize == null) {
-                filesize = getfileSize();
-            }
-            if (this.isAccountRequiredMatureContent(br) && account == null) {
-                link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
-                link.setName(filename);
-                if (filesize != null) {
-                    link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
-                }
-                return AvailableStatus.TRUE;
-            }
-            ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
-            if (ext == null) {
-                ext = new Regex(filename, "\\.([A-Za-z0-9]{1,5})$").getMatch(0);
-            }
             /* Workaround for invalid domain(s) e.g. "laur-.deviantart.com" */
-            final String cookie = this.br.getCookie(null, "userinfo");
+            final String cookie = this.br.getCookie(null, "userinfo", Cookies.NOTDELETEDPATTERN);
             if (cookie != null) {
                 br.setCookie(this.getHost(), "userinfo", cookie);
             }
-            if (ext == null || ext.length() > 5) {
-                final String dllink = getCrippledDllink();
-                if (dllink != null) {
-                    ext = getFileNameExtensionFromURL(dllink);
-                }
-            }
-            if (ext == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (filename == null) { // Config FilenameFromServer is enabled
-                filename = findServerFilename(filename); // Depends on DLLINK
-            }
         }
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
-        } else if (this.getPluginConfig().getBooleanProperty(SKIP_FILESIZECHECK, default_SKIP_FILESIZECHECK) == false && !DOWNLOADS_STARTED) {
+        if (filename == null && this.dllink != null) { // Config FilenameFromServer is enabled
+            filename = Plugin.getFileNameFromURL(new URL(this.dllink));
+        }
+        if (ext == null) {
+            ext = Plugin.getFileNameExtensionFromURL(this.dllink);
+        }
+        if (StringUtils.isEmpty(this.dllink)) {
+            this.dllink = getDllink();
+            // if (StringUtils.isEmpty(this.dllink)) {
+            // this.dllink = this.getDirecturl();
+            // }
+        }
+        link.setVerifiedFileSize(-1); // reset this every time as user can change settings
+        if (downloadHTML) {
+            try {
+                link.setDownloadSize(br.getRequest().getHtmlCode().getBytes("UTF-8").length);
+            } catch (final UnsupportedEncodingException ignore) {
+                ignore.printStackTrace();
+            }
+        } else if (officialDownloadFilesize != null && setOfficialDownloadFilesize) {
+            link.setDownloadSize(SizeFormatter.getSize(officialDownloadFilesize.replace(",", "")));
+        } else if (this.getPluginConfig().getBooleanProperty(SKIP_FILESIZECHECK, default_SKIP_FILESIZECHECK) == false && !isDownload && !StringUtils.isEmpty(this.dllink)) {
             final Browser br2 = br.cloneBrowser();
             /* Workaround for old downloadcore bug that can lead to incomplete files */
             br2.getHeaders().put("Accept-Encoding", "identity");
             URLConnectionAdapter con = null;
-            final String dlLink = getDllink();
-            if (dlLink != null) {
+            try {
+                con = br2.openHeadConnection(this.dllink);
+                if (!looksLikeDownloadableContent(con)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String mimeTypeExt = getExtensionFromMimeType(con.getRequest().getResponseHeader("Content-Type"));
+                if (mimeTypeExt != null) {
+                    ext = "." + mimeTypeExt;
+                }
+            } finally {
                 try {
-                    con = br2.openGetConnection(dlLink);
-                    if (con.getResponseCode() == 404 || (con.getContentType().contains("html") && !HTMLALLOWED)) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                        // link.setContentUrl("dlLink"); // Gives Oops, 404 not found after some time.
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (Throwable e) {
-                    }
+                    con.disconnect();
+                } catch (Throwable e) {
                 }
             }
         }
-        ext = ext.toLowerCase().trim();
-        if (!filename.endsWith(ext)) {
-            if (ext.startsWith(".")) {
-                // getFileNameExtensionFromURL
-                filename += ext;
-            } else {
-                filename += "." + ext;
-            }
-        }
-        filename = filename.replaceAll(" +", " ");
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        filename = Encoding.htmlDecode(filename).trim();
+        filename = this.correctOrApplyFileNameExtension(filename, ext);
+        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
@@ -326,6 +269,7 @@ public class DeviantArtCom extends PluginForHost {
         }
     }
 
+    /* TODO: Fix- or delete this */
     private String[] getDirecturl() {
         String ret[] = null;
         final String downloadURLs1[][] = br.getRegex("dev-page-download\"[\t\n\r ]*?href=\"(https?://(?:www\\.)?deviantart\\.com/download/[^<>\"]*?)\"(.*?)</a").getMatches();
@@ -371,75 +315,48 @@ public class DeviantArtCom extends PluginForHost {
         }
     }
 
-    private String getfileSize() {
-        String filesize = br.getRegex("<label>File Size:</label>([^<>\"]*?)<br/>").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("<dt>File Size</dt><dd>([^<>\"]*?)</dd>").getMatch(0);
-        }
-        return filesize;
-    }
-
-    private String getImageSize() {
-        String imagesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
-        if (imagesize == null) {
-            imagesize = br.getRegex("<dt>Image Size</dt><dd>([^<>\"]*?)</dd>").getMatch(0);
-        }
-        return imagesize;
-    }
-
-    private String getCrippledDllink() {
-        String crippleddllink = null;
-        try {
-            final String linkWithExt = getDllink();
-            final String toRemove = new Regex(linkWithExt, "(\\?token=.+)").getMatch(0);
-            if (toRemove != null) {
-                crippleddllink = linkWithExt.replace(toRemove, "");
-            } else {
-                crippleddllink = linkWithExt;
-            }
-        } catch (final Exception e) {
-        }
-        return crippleddllink;
-    }
-
-    private String findServerFilename(final String oldfilename) {
-        // Try to get server filename, if not possible, return old one
-        String newfilename = null;
-        final String dllink = getCrippledDllink();
-        if (dllink != null) {
-            newfilename = new Regex(dllink, "/([^<>\"/]+)$").getMatch(0);
-        } else {
-            newfilename = oldfilename;
-        }
-        return newfilename;
-    }
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        DOWNLOADS_STARTED = true;
-        requestFileInformation(link);
+        handleDownload(link, null);
+    }
+
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        requestFileInformation(link, account, true);
         if (this.isAccountRequired(br)) {
             throw new AccountRequiredException();
-        }
-        final String dlLink = getDllink();
-        if (dlLink == null) {
+        } else if (StringUtils.isEmpty(this.dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         /* Disable chunks as we only download pictures or small files */
         br.getHeaders().put("Accept-Encoding", "identity");
         boolean resume = true;
-        if (HTMLALLOWED) {
+        if (downloadHTML) {
             link.setVerifiedFileSize(-1);
             resume = false;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlLink, resume, 1);
-        if ((!HTMLALLOWED && !this.looksLikeDownloadableContent(dl.getConnection())) || (HTMLALLOWED && !dl.getConnection().getContentType().contains("html"))) {
-            handleServerErrors(link);
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.dllink, resume, 1);
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            handleServerErrors(dl.getConnection());
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con) {
+        if (super.looksLikeDownloadableContent(con)) {
+            return true;
+        } else if (downloadHTML && con.getContentType().contains("html")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -449,57 +366,21 @@ public class DeviantArtCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        DOWNLOADS_STARTED = true;
-        /* This will also log in */
-        requestFileInformation(link);
-        final String dlLink = getDllink();
-        if (dlLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Workaround for old downloadcore bug that can lead to incomplete files */
-        br.getHeaders().put("Accept-Encoding", "identity");
-        /* Disable chunks as we only download pictures */
-        boolean resume = true;
-        if (HTMLALLOWED) {
-            link.setVerifiedFileSize(-1);
-            resume = false;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlLink, resume, 1);
-        if (dl.getConnection().getContentType().contains("html") && !HTMLALLOWED) {
-            handleServerErrors(link);
-            br.followConnection();
-            if (br.containsHTML("><title>Redirection</title>")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: unknown redirect", 5 * 60 * 1000l);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        this.handleDownload(link, account);
     }
 
-    private void handleServerErrors(final DownloadLink dlink) throws PluginException {
+    private void handleServerErrors(final URLConnectionAdapter con) throws PluginException {
         /* Happens sometimes - download should work fine later though. */
-        if (dl.getConnection().getResponseCode() == 403) {
+        if (con.getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
-        }
-        if (dl.getConnection().getResponseCode() == 404) {
-            logger.info(NICE_HOST + ": 404servererror");
-            int timesFailed = dlink.getIntegerProperty(NICE_HOSTproperty + "timesfailed_404servererror", 0);
-            dlink.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                dlink.setProperty(NICE_HOSTproperty + "timesfailed_404servererror", timesFailed);
-                logger.info(NICE_HOST + ": timesfailed_404servererror -> Retrying in 30 minutes");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-            } else {
-                dlink.setProperty(NICE_HOSTproperty + "timesfailed_404servererror", Property.NULL);
-                logger.info(NICE_HOST + ": timesfailed_404servererror - Download must be broken!");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Download broken (deviantart server issue 404)!");
-            }
+        } else if (con.getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 1 * 60 * 1000l);
         }
     }
 
+    /* TODO: Fix- or delete this */
     private String getDllink() throws PluginException {
-        if (DLLINK == null) {
+        if (dllink == null) {
             final String videoStreamURLs[][] = br.getRegex("\"src\":\"(https?:[^<>\"]*?mp4)\"(.*?)\\}").getMatches();
             if (videoStreamURLs != null && videoStreamURLs.length > 0) {
                 int best = -1;
@@ -517,7 +398,7 @@ public class DeviantArtCom extends PluginForHost {
                     bestURL = videoStreamURLs[0][0];
                 }
                 bestURL = bestURL.replace("\\", "");
-                DLLINK = bestURL;
+                dllink = bestURL;
                 return bestURL;
             }
             String dllink = null;
@@ -568,14 +449,14 @@ public class DeviantArtCom extends PluginForHost {
             if (dllink != null) {
                 dllink = dllink.replace("\\", "");
                 dllink = Encoding.htmlDecode(dllink);
-                DLLINK = dllink;
             }
         }
-        return DLLINK;
+        return dllink;
     }
 
+    /* TODO: Fix- or delete this */
     private String getHQpic() {
-        final String hqurl = br.getRegex("class=\"dev\\-content\\-normal[^\"]*?\">[\t\n\r ]+<img collect_rid=\"[0-9:]+\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        final String hqurl = br.getRegex("class=\"dev\\-content\\-normal[^\"]*?\">\\s*<img collect_rid=\"[0-9:]+\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
         return hqurl;
     }
 
@@ -624,7 +505,7 @@ public class DeviantArtCom extends PluginForHost {
                     br.getPage("https://www. " + this.getHost());
                     if (this.isLoggedIN(br)) {
                         logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
@@ -666,7 +547,7 @@ public class DeviantArtCom extends PluginForHost {
                 if (!isLoggedIN(br)) {
                     throw new AccountInvalidException();
                 }
-                account.saveCookies(br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final AccountInvalidException e) {
                 account.clearCookies("");
                 throw e;
@@ -675,7 +556,14 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     private boolean isLoggedIN(final Browser br) {
-        return br.containsHTML("/users/logout");
+        final String loggedINProfileURL = br.getRegex("data-userid=\"\\d+\" data-useruuid=\"[^\"]+\" href=\"(https?://[^\"]+)\"").getMatch(0);
+        if (loggedINProfileURL != null) {
+            return true;
+        } else if (br.containsHTML("/users/logout")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public static Browser prepBR(final Browser br) {
@@ -706,14 +594,14 @@ public class DeviantArtCom extends PluginForHost {
         String decryptOffsetsIndividually = null;
         final String lang = System.getProperty("user.language");
         if ("de".equalsIgnoreCase(lang)) {
-            fastlinkchecktext = "Schnelle Linküberprüfung aktivieren? (Dateiname und -größe werden nicht korrekt angezeigt)";
+            fastlinkchecktext = "Schnelle Linküberprüfung aktivieren? (finaler Dateiname- und Größe werden nicht sofort angezeigt!)?";
             fastlinkcheck_all_text = "Schnelle Linküberprüfung für ALLE Links aktivieren?\r\nBedenke, dass der online-status bis zum Downloadstart nicht aussagekräftig ist!";
             forcehtmldownloadtext = "HTML Code statt dem eigentlichen Inhalt (Dateien/Bilder) laden?";
             decryptOffsetsIndividually = "Bei gegebenem 'offset=XX' im Link nur dieses Crawlen, statt ab diesem bis zum Ende zu crawlen?";
             sbinfo.append("Bitte beachten: solltest Du nur Seite 1 einer Gallerie sammeln wollen, so stelle sicher, dass \"?offset=0\" am Ende der URL steht.\r\n");
             sbinfo.append("Du kannst auch zu einer anderen Seite wechseln, auf Seite 1 klicken und deren URL einfügen.");
         } else {
-            fastlinkchecktext = "Enable fast link check? (file name and size won't be shown correctly until downloadstart)";
+            fastlinkchecktext = "Enable fast link check? (final file name- and size won't be shown until downloadstart!)?";
             fastlinkcheck_all_text = "Enable fast linkcheck for ALL links?\r\nNote that this means that you can't see the real online/offline status until the download is started!";
             forcehtmldownloadtext = "Download html code instead of the media (files/pictures)?";
             decryptOffsetsIndividually = "On given 'offset=XX', crawl only this offset instead of crawling from this offset until the end?";
@@ -732,7 +620,7 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
         return false;
     }
 
