@@ -271,7 +271,10 @@ public enum DONATE_EVENT {
     }
 
     public String getText() {
-        return _GUI.T.DonationDialog_layoutDialogContent_top_text();
+        final GregorianCalendar calendar = new GregorianCalendar();
+        calendar.setTimeInMillis(getNowTimeStamp());
+        final int years = calendar.get(Calendar.YEAR) - 2007;/* 2007-08-03 */
+        return _GUI.T.DonationDialog_layoutDialogContent_top_text(years);
     }
 
     public abstract String getToolTipText();
