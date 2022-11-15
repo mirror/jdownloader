@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,6 +29,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DepicMe extends XFileSharingProBasic {
@@ -131,9 +131,9 @@ public class DepicMe extends XFileSharingProBasic {
     }
 
     @Override
-    protected String getDllinkImagehost(final String src) {
+    protected String getDllinkImagehost(DownloadLink link, Account account, Browser br, final String src) {
         /* 2020-10-08: Special */
-        String dllink = super.getDllinkImagehost(src);
+        String dllink = super.getDllinkImagehost(link, account, br, src);
         if (StringUtils.isEmpty(dllink)) {
             dllink = new Regex(src, "src=\"(https?://[^\"]+)\"[^>]*class=\"pic\"").getMatch(0);
         }
