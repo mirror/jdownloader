@@ -2602,7 +2602,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         }
         if (dllink == null && this.isImagehoster()) {
             /* Used for imagehosts */
-            dllink = getDllinkImagehost(src);
+            dllink = getDllinkImagehost(link, account, br, src);
         }
         if (dllink != null && Encoding.isHtmlEntityCoded(dllink)) {
             /* 2020-02-10: E.g. files.im */
@@ -2611,7 +2611,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         return dllink;
     }
 
-    protected String getDllinkImagehost(final String src) {
+    protected String getDllinkImagehost(DownloadLink link, Account account, Browser br, final String src) {
         /*
          * 2019-07-24: This is basically a small workaround because if a file has a "bad filename" the filename inside our URL may just look
          * like it is a thumbnail although it is not. If we find several URLs and all are the same we may still just take one of them
