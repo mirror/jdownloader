@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.nutils.zip;
 
 import java.io.UnsupportedEncodingException;
@@ -32,6 +31,7 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.JDK8BufferHelper;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.DownloadLinkAggregator;
@@ -67,7 +67,6 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
     private static final int               SLEEP_TIME   = 1000;
     // shared memory name
     private static final String            sharedName   = "JDownloader";
-
     // update thread
     private final AtomicReference<Thread>  updateThread = new AtomicReference<Thread>(null);
     private final LogSource                logger;
@@ -110,7 +109,6 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
                 final HANDLE finalSharedFile = sharedFile;
                 final Pointer finalSharedMemory = Kernel32.INSTANCE.MapViewOfFile(sharedFile, WinNT.SECTION_MAP_WRITE, 0, 0, 1024);
                 finalSharedMemory.setInt(0, VERSION);
-
                 // start periodically update thread
                 final Thread thread = new Thread() {
                     @Override
@@ -174,7 +172,6 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
         final long curDl = dla.getBytesLoaded();
         final long remain = Math.max(0, totalDl - curDl);
         long eta = dla.getEta();
-
         final List<ExtractionController> jobs = ExtractionExtension.getInstance().getJobQueue().getJobs();
         for (final ExtractionController controller : jobs) {
             final ExtractionProgress progress = controller.getExtractionProgress();
@@ -182,7 +179,7 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
                 eta = Math.max(eta, progress.getETA() / 1000);
             }
         }
-        buf.clear();
+        JDK8BufferHelper.clear(buf);
         buf.putInt(VERSION);
         buf.putLong(bps);
         buf.putLong(totalDl);
@@ -192,7 +189,6 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
         buf.putLong(DownloadWatchDog.getInstance().getActiveDownloads());
         buf.putLong(DownloadWatchDog.getInstance().getDownloadSpeedManager().connections());
         buf.putLong(DownloadWatchDog.getInstance().getRunningFilePackages().size());
-
         // formatted eta string
         byte[] etas;
         try {
@@ -203,7 +199,6 @@ public class SharedMemoryState implements GenericConfigEventListener<Boolean> {
             logger.log(e);
             buf.putInt(0);
         }
-
         sharedMemory.write(0, buf.array(), 0, 128);
     }
 

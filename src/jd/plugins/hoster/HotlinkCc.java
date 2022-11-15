@@ -20,10 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoHotlinkCc;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -38,6 +34,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoHotlinkCc;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HotlinkCc extends XFileSharingProBasic {
@@ -196,7 +196,7 @@ public class HotlinkCc extends XFileSharingProBasic {
         Form formf1Premium = super.findFormDownload2Premium(downloadLink, account, br);
         if (formf1Premium == null) {
             /* 2021-01-26 */
-            formf1Premium = this.getOfficialVideoDownloadForm(this.br);
+            formf1Premium = this.getOfficialVideoDownloadForm(downloadLink, account, br);
         }
         fixFormF1(formf1Premium);
         return formf1Premium;
@@ -315,12 +315,12 @@ public class HotlinkCc extends XFileSharingProBasic {
     private boolean premiumWorkaroundActive = false;
 
     @Override
-    protected String getDllinkVideohost(final String src) {
-        final Form officialDownloadForm = this.getOfficialVideoDownloadForm(this.br);
+    protected String getDllinkVideohost(DownloadLink link, Account account, Browser br, final String src) {
+        final Form officialDownloadForm = this.getOfficialVideoDownloadForm(link, account, br);
         if (premiumWorkaroundActive || officialDownloadForm != null) {
             return null;
         } else {
-            return super.getDllinkVideohost(src);
+            return super.getDllinkVideohost(link, account, br, src);
         }
     }
 
@@ -512,7 +512,7 @@ public class HotlinkCc extends XFileSharingProBasic {
             /* E.g. in availablecheck */
             return filesizeStr;
         }
-        final Form videoDownloadForm = this.getOfficialVideoDownloadForm(brc);
+        final Form videoDownloadForm = this.getOfficialVideoDownloadForm(link, account, brc);
         if (videoDownloadForm == null) {
             this.checkErrors(brc, brc.toString(), link, account, false);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -575,8 +575,16 @@ public class HotlinkCc extends XFileSharingProBasic {
         return dllink;
     }
 
-    private Form getOfficialVideoDownloadForm(final Browser br) {
-        return br.getFormByInputFieldKeyValue("op", "download_orig");
+    private Form getOfficialVideoDownloadForm(final DownloadLink downloadLink, final Account account, final Browser br) {
+        Form ret = br.getFormByInputFieldKeyValue("op", "download_orig");
+        if (ret != null) {
+            /* TODO: add handling to support premium mode here? */
+            /* method_premium exists as input field AND button */
+            /* free download button is done via javascript */
+            /* premium download button does send method_premium twice to signal premium download */
+            ret.remove("method_premium");
+        }
+        return ret;
     }
 
     @Override

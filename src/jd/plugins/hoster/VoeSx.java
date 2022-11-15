@@ -146,7 +146,7 @@ public class VoeSx extends XFileSharingProBasic {
     }
 
     @Override
-    protected String getDllinkVideohost(final String src) {
+    protected String getDllinkVideohost(DownloadLink link, Account account, Browser br, final String src) {
         final String mp4Master = new Regex(src, "(\"|')mp4\\1\\s*:\\s*(\"|')(https?://[^\"']+)").getMatch(2);
         if (mp4Master != null) {
             return mp4Master;
@@ -155,7 +155,7 @@ public class VoeSx extends XFileSharingProBasic {
         if (hlsMaster != null) {
             return hlsMaster;
         } else {
-            return super.getDllinkVideohost(src);
+            return super.getDllinkVideohost(link, account, br, src);
         }
     }
 
@@ -173,7 +173,7 @@ public class VoeSx extends XFileSharingProBasic {
         final boolean embedOnly = br.containsHTML(">\\s*This video can be watched as embed only");
         br.setFollowRedirects(true);
         br.getPage("https://" + this.getHost() + "/e/" + this.getFUIDFromURL(link));
-        final String dllink = getDllinkVideohost(br.toString());
+        final String dllink = getDllinkVideohost(link, account, null, br.toString());
         if (StringUtils.isEmpty(dllink) && embedOnly) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
         }

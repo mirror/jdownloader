@@ -77,6 +77,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.JDK8BufferHelper;
 import org.appwork.utils.JVMVersion;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
@@ -657,7 +658,7 @@ public class MegaConz extends PluginForHost {
         for (int i = 0; i < aLong.length; i++) {
             byteBuffer.putLong(aLong[i]);
             aByte.write(byteBuffer.array(), 4, 4);
-            byteBuffer.clear();
+            JDK8BufferHelper.clear(byteBuffer);
         }
         return aByte.toByteArray();
     }

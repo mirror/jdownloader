@@ -192,7 +192,7 @@ public class VuploadCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected String getDllinkVideohost(final String src) {
+    protected String getDllinkVideohost(DownloadLink link, Account account, Browser br, final String src) {
         /* 2021-08-30: Special as upper handling may fail to pick the highest quality in this case. */
         String dllink = null;
         final String[] specialPreferredQuals = new String[] { "1080", "720" };
@@ -206,7 +206,7 @@ public class VuploadCom extends XFileSharingProBasic {
             return dllink;
         } else {
             /* Fallback to upper handling */
-            return super.getDllinkVideohost(src);
+            return super.getDllinkVideohost(link, account, br, src);
         }
     }
 

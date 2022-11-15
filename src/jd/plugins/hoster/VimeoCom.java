@@ -278,7 +278,7 @@ public class VimeoCom extends PluginForHost {
             /* Video titles can be changed afterwards by the puloader - make sure that we always got the currrent title! */
             String videoTitle = null;
             try {
-                final String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(this.br);
+                final String json = getJsonFromHTML(this, this.br);
                 Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
                 entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "vimeo_esi/config/clipData");
                 if (entries != null) {
@@ -440,7 +440,7 @@ public class VimeoCom extends PluginForHost {
                     }
                 } else if (url.matches(jd.plugins.decrypter.VimeoComDecrypter.LINKTYPE_SHOWCASE_VIDEO)) {
                     return VIMEO_URL_TYPE.SHOWCASE_VIDEO;
-                } else if (url.matches("(?i)^https?://(www\\.)?vimeo.com/showcase/\\d+(/embed)?")) {
+                } else if (url.matches(jd.plugins.decrypter.VimeoComDecrypter.LINKTYPE_SHOWCASE)) {
                     return VIMEO_URL_TYPE.SHOWCASE;
                 }
             }
@@ -945,9 +945,32 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
+    public static String getJsonFromHTML(Plugin plugin, final Browser br) {
+        String ret = br.getRegex("window\\.vimeo\\.clip_page_config\\s*=\\s*(\\{.*?\\});").getMatch(0);
+        if (ret == null) {
+            ret = br.getRegex("window\\.vimeo\\.vod_title_page_config\\s*=\\s*(\\{.*?\\});").getMatch(0);
+            if (ret == null) {
+                ret = br.getRegex("window = _extend\\(window, (\\{.*?\\})\\);").getMatch(0);
+                if (ret == null) {
+                    /* 'normal' player.vimeo.com */
+                    ret = br.getRegex("var config = (\\{.*?\\});").getMatch(0);
+                    if (ret == null) {
+                        /* player.vimeo.com with /config */
+                        ret = br.getRegex("^\\s*(\\{.*?\\})\\s*$").getMatch(0);
+                    }
+                }
+            }
+        }
+        if (ret == null) {
+            /* 2022-11-10: player.vimeo.com/video/... */
+            ret = br.getRegex("window\\.playerConfig\\s*=\\s*(\\{.*?\\}); ").getMatch(0);
+        }
+        return ret;
+    }
+
     public static Map<String, Object> apiResponseValidator(final Plugin plugin, final Browser br) {
         try {
-            final String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(br);
+            final String json = getJsonFromHTML(plugin, br);
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
             final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
             final List<Map<String, Object>> downloads = (List<Map<String, Object>>) entries.get("download");
@@ -1008,7 +1031,7 @@ public class VimeoCom extends PluginForHost {
             download_might_be_possible = file_transfer_url != null;
             if (!download_might_be_possible) {
                 try {
-                    final String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(ibr);
+                    final String json = getJsonFromHTML(plugin, ibr);
                     final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
                     /* Empty Array = download possible, null = download NOT possible! */
                     Object download_might_be_possibleO = entries != null ? entries.get("download_config") : null;
@@ -1037,7 +1060,7 @@ public class VimeoCom extends PluginForHost {
         /* player.vimeo.com links = Special case as the needed information is already in our current browser. */
         if ((checkStreams || Boolean.TRUE.equals(subtitles) || Boolean.TRUE.equals(stream) || Boolean.TRUE.equals(hls)) && (configURL != null || ibr.getURL().contains("player.vimeo.com/"))) {
             plugin.getLogger().info("try to find streams");
-            String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(ibr);
+            String json = getJsonFromHTML(plugin, ibr);
             Map<String, Object> entries = null;
             final List<Object> official_downloads_all = new ArrayList<Object>();
             if (json != null) {
@@ -1139,7 +1162,7 @@ public class VimeoCom extends PluginForHost {
     private static List<VimeoContainer> handleDownloadConfig(Plugin plugin, final Browser ibr, final String ID) throws InterruptedException {
         final List<VimeoContainer> ret = new ArrayList<VimeoContainer>();
         try {
-            String json = jd.plugins.decrypter.VimeoComDecrypter.getJsonFromHTML(ibr);
+            String json = getJsonFromHTML(plugin, ibr);
             Map<String, Object> entries = null;
             final List<Object> official_downloads_all = new ArrayList<Object>();
             if (json != null) {

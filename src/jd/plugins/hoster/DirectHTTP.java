@@ -29,23 +29,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -81,11 +64,28 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+
 /**
  * TODO: remove after next big update of core to use the public static methods!
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+",
-        "https?(viajd)?://[^/]+/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
+"https?(viajd)?://[^/]+/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
 public class DirectHTTP extends antiDDoSForHost {
     public static final String  ENDINGS                  = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|ape|bin|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nfs|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}(?=\\?|$|#|\"|\r|\n|;))";
     public static final String  NORESUME                 = "nochunkload";
@@ -96,15 +96,15 @@ public class DirectHTTP extends antiDDoSForHost {
      */
     public static final String  FIXNAME                  = "fixName";
     public static final String  FORCE_NORESUME           = "forcenochunkload";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               // TODO:
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             // Remove
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             // this?
+    // Remove
+    // this?
     public static final String  FORCE_NOCHUNKS           = "forcenochunk";
     public static final String  FORCE_NOVERIFIEDFILESIZE = "forcenoverifiedfilesize";
     public static final String  TRY_ALL                  = "tryall";
     public static final String  POSSIBLE_URLPARAM        = "POSSIBLE_GETPARAM";
     public static final String  BYPASS_CLOUDFLARE_BGJ    = "bpCfBgj";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        // TODO:
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             // Remove
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             // this?
+    // Remove
+    // this?
     public static final String  PROPERTY_COOKIES         = "COOKIES";
     public static final String  PROPERTY_MAX_CONCURRENT  = "PROPERTY_MAX_CONCURRENT";
     public static final String  PROPERTY_RATE_LIMIT      = "PROPERTY_RATE_LIMIT";
@@ -545,6 +545,9 @@ public class DirectHTTP extends antiDDoSForHost {
 
     private void setDownloadURL(String newURL, DownloadLink link) throws IOException {
         if (link != null && !StringUtils.equals(link.getDownloadURL(), newURL)) {
+            if (StringUtils.isEmpty(new URL(newURL).getFile())) {
+                throw new IOException("invalid url:" + newURL);
+            }
             link.setUrlDownload(newURL);
             this.customDownloadURL = null;
         } else {
@@ -552,11 +555,11 @@ public class DirectHTTP extends antiDDoSForHost {
         }
     }
 
-    private boolean hasCustomDownloadURL() {
+    protected boolean hasCustomDownloadURL() {
         return customDownloadURL != null;
     }
 
-    private String getDownloadURL(DownloadLink downloadLink) throws IOException {
+    protected String getDownloadURL(DownloadLink downloadLink) throws IOException {
         String ret = customDownloadURL;
         if (ret == null) {
             ret = downloadLink.getDownloadURL();
@@ -973,6 +976,12 @@ public class DirectHTTP extends antiDDoSForHost {
                     }
                     if (hasCustomDownloadURL()) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        final String refreshRedirect = urlConnection.getRequest().getHTMLRefresh();
+                        if (refreshRedirect != null) {
+                            setDownloadURL(refreshRedirect, null);
+                            return this.requestFileInformation(downloadLink, retry + 1, optionSet);
+                        }
                     }
                     /* search urls */
                     final ArrayList<String> embeddedLinks = DirectHTTP.findUrls(pageContent);
@@ -1150,7 +1159,6 @@ public class DirectHTTP extends antiDDoSForHost {
             }
             return status;
         } catch (final PluginException e2) {
-            /* try referer set by flashgot and check if it works then */
             final String finalFileName = downloadLink.getFinalFileName();
             resetDownloadlink(downloadLink);
             if (finalFileName != null) {
@@ -1259,41 +1267,38 @@ public class DirectHTTP extends antiDDoSForHost {
         final String lastReferer = link.getStringProperty(PROPERTY_LAST_REFERER);
         if (this.isValidReferer(lastReferer)) {
             return lastReferer;
+        } else {
+            /* This was used in some older plugins. */
+            final String oldRefProperty1 = link.getStringProperty("Referer", link.getStringProperty("referer"));
+            if (this.isValidReferer(oldRefProperty1)) {
+                return oldRefProperty1;
+            } else {
+                /* This was used in some older plugins and by Flashgot(?) */
+                final String oldRefProperty2 = link.getStringProperty("refURL");
+                if (this.isValidReferer(oldRefProperty2)) {
+                    return oldRefProperty2;
+                } else {
+                    final String pluginReferer = link.getReferrerUrl();
+                    if (this.isValidReferer(pluginReferer)) {
+                        return pluginReferer;
+                    } else {
+                        return null;
+                    }
+                }
+            }
         }
-        /* This was used in some older plugins. */
-        final String oldRefProperty1 = link.getStringProperty("Referer");
-        if (this.isValidReferer(oldRefProperty1)) {
-            return oldRefProperty1;
-        }
-        /* This was used in some older plugins and by Flashgot(?) */
-        final String oldRefProperty2 = link.getStringProperty("refURL");
-        if (this.isValidReferer(oldRefProperty2)) {
-            return oldRefProperty2;
-        }
-        // final String linkCrawlerAutoReferer = link.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER);
-        // if (this.isValidReferer(linkCrawlerAutoReferer)) {
-        // return linkCrawlerAutoReferer;
-        // }
-        final String pluginReferer = link.getReferrerUrl();
-        if (this.isValidReferer(pluginReferer)) {
-            return pluginReferer;
-        }
-        return null;
     }
 
     private boolean isValidReferer(final String referer) {
         if (StringUtils.startsWithCaseInsensitive(referer, "http://") || StringUtils.startsWithCaseInsensitive(referer, "https://")) {
-            return true;
+            try {
+                URLHelper.verifyURL(new URL(referer));
+                return true;
+            } catch (IOException ignore) {
+                return false;
+            }
         } else {
             return false;
-        }
-    }
-
-    protected String getValidReferer(final String referer) {
-        if (isValidReferer(referer)) {
-            return referer;
-        } else {
-            return null;
         }
     }
 
@@ -1318,17 +1323,6 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
             }
         }
-        // TODO: Remove thils old Flashgot stuff?
-        /*
-         * try the referer set by flashgot, maybe it works
-         */
-        // if ((getPluginConfig().getBooleanProperty(AUTO_USE_FLASHGOT_REFERER, AUTO_USE_FLASHGOT_REFERER_default) ||
-        // downloadLink.getBooleanProperty("tryoldref", false)) && getValidReferer(downloadLink.getStringProperty("referer", null)) != null)
-        // {
-        // /* refURL is for internal use */
-        // downloadLink.setProperty("tryoldref", true);
-        // br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
-        // }
         if (downloadLink.getStringProperty(DirectHTTP.PROPERTY_COOKIES, null) != null) {
             br.getCookies(getDownloadURL(downloadLink)).add(Cookies.parseCookies(downloadLink.getStringProperty(DirectHTTP.PROPERTY_COOKIES, null), Browser.getHost(getDownloadURL(downloadLink)), null));
         }
@@ -1345,19 +1339,20 @@ public class DirectHTTP extends antiDDoSForHost {
         }
         final String refererUrl = this.getRefererURL(downloadLink);
         if (refererUrl != null) {
-            br.getHeaders().put("Referer", refererUrl);
+            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, refererUrl);
         } else if (optionSet == null || !optionSet.contains(PROPERTY_DISABLE_PREFIX + LinkCrawler.PROPERTY_AUTO_REFERER)) {
-            if (this.isValidReferer(downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER))) {
-                br.getHeaders().put("Referer", downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER));
+            final String autoRefererUrl = downloadLink.getStringProperty(LinkCrawler.PROPERTY_AUTO_REFERER);
+            if (this.isValidReferer(autoRefererUrl)) {
+                br.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, autoRefererUrl);
             }
         }
         if (optionSet != null && optionSet.contains(PROPERTY_ENABLE_PREFIX + "selfReferer")) {
             final String referer = getDownloadURL(downloadLink);
-            br.getHeaders().put("Referer", referer);
+            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, referer);
         }
         this.downloadWorkaround(br, downloadLink);
         if (downloadLink.hasProperty("allowOrigin")) {
-            final String referer = br.getHeaders().get("Referer");
+            final String referer = br.getHeaders().get(HTTPConstants.HEADER_REQUEST_REFERER);
             if (referer != null) {
                 final URL refURL = new URL(referer);
                 br.getHeaders().put("Origin", refURL.getProtocol() + "://" + refURL.getHost());
@@ -1369,13 +1364,13 @@ public class DirectHTTP extends antiDDoSForHost {
 
     protected void downloadWorkaround(final Browser br, final DownloadLink downloadLink) throws IOException {
         // we shouldn't potentially over right setCustomHeaders..
-        if (br.getHeaders().get("Referer") == null) {
+        if (br.getHeaders().get(HTTPConstants.HEADER_REQUEST_REFERER) == null) {
             final String link = getDownloadURL(downloadLink);
             if (link.contains("sites.google.com")) {
                 /*
                  * It seems google checks referer and ip must have called the page lately. TODO: 2021-12-07 Check if this is still required
                  */
-                br.getHeaders().put("Referer", "https://sites.google.com");
+                br.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, "https://sites.google.com");
             }
         }
     }

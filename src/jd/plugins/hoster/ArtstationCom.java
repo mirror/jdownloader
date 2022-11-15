@@ -31,6 +31,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://[a-z0-9\\-\\.]+\\.artstation\\.com/p/assets/.+" })
 public class ArtstationCom extends PluginForHost {
     public ArtstationCom(PluginWrapper wrapper) {
@@ -153,6 +157,22 @@ public class ArtstationCom extends PluginForHost {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser ret = super.createNewBrowserInstance();
+        ret.setSSLSocketStreamOptions(new SSLSocketStreamOptionsModifier() {
+            @Override
+            public SSLSocketStreamOptions modify(SSLSocketStreamOptions sslSocketStreamOptions, HTTPConnection httpConnection) {
+                // may avoid cloudflare
+                sslSocketStreamOptions.getDisabledCipherSuites().clear();
+                sslSocketStreamOptions.getCustomFactorySettings().add("JSSE_TLS1.3_ENABLED");
+                sslSocketStreamOptions.getCustomFactorySettings().add("BC_TLS1.3_ENABLED");
+                return sslSocketStreamOptions;
+            }
+        });
+        return ret;
     }
 
     public static void login(final Browser br, final Account account, boolean verify) throws Exception {
