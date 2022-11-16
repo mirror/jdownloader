@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -49,6 +50,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?art/[\\w\\-]+|https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/(?:[^/]+/)?journal/[\\w\\-]+" })
 public class DeviantArtCom extends PluginForHost {
@@ -187,12 +189,6 @@ public class DeviantArtCom extends PluginForHost {
                 br.setCookie(this.getHost(), "userinfo", cookie);
             }
         }
-        if (StringUtils.isEmpty(this.dllink)) {
-            this.dllink = getDllink();
-            // if (StringUtils.isEmpty(this.dllink)) {
-            // this.dllink = this.getDirecturl();
-            // }
-        }
         link.setVerifiedFileSize(-1); // reset this every time as user can change settings
         if (downloadHTML) {
             try {
@@ -246,6 +242,14 @@ public class DeviantArtCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private boolean isAccountRequiredForOfficialDownload(final Browser br) {
+        if (br.containsHTML("(?i)aria-label=\"Log in to download\"")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private boolean isAccountRequired(final Browser br) {
         if (isAccountRequiredUploaderDecision(br) || isAccountRequiredMatureContent(br)) {
             return true;
@@ -270,52 +274,6 @@ public class DeviantArtCom extends PluginForHost {
         }
     }
 
-    /* TODO: Fix- or delete this */
-    private String[] getDirecturl() {
-        String ret[] = null;
-        final String downloadURLs1[][] = br.getRegex("dev-page-download\"[\t\n\r ]*?href=\"(https?://(?:www\\.)?deviantart\\.com/download/[^<>\"]*?)\"(.*?)</a").getMatches();
-        if (downloadURLs1 != null) {
-            int best = -1;
-            for (final String downloadURL[] : downloadURLs1) {
-                final String height = new Regex(downloadURL[1], "Download\\s*\\d+\\s*&#215;\\s*(\\d+)\\s*<").getMatch(0);
-                if (height != null) {
-                    if (best == -1 || Integer.parseInt(height) > best) {
-                        ret = downloadURL;
-                        best = Integer.parseInt(height);
-                    }
-                }
-            }
-        }
-        if (ret == null) {
-            final String downloadURLs2[][] = br.getRegex("data-download_url=\"(https?://(?:www\\.)?deviantart\\.com/download/[^<>\"]*?)\"(.*?)</a").getMatches();
-            if (downloadURLs2 != null) {
-                int best = -1;
-                for (final String downloadURL[] : downloadURLs2) {
-                    final String height = new Regex(downloadURL[1], "Download\\s*\\d+\\s*&#215;\\s*(\\d+)\\s*<").getMatch(0);
-                    if (height != null) {
-                        if (best == -1 || Integer.parseInt(height) > best) {
-                            ret = downloadURL;
-                            best = Integer.parseInt(height);
-                        }
-                    }
-                }
-            }
-            if (ret == null) {
-                if (downloadURLs1 != null && downloadURLs1.length > 0) {
-                    ret = downloadURLs1[downloadURLs1.length - 1];
-                } else if (downloadURLs2.length > 0) {
-                    ret = downloadURLs2[downloadURLs2.length - 1];
-                }
-            }
-        }
-        if (ret != null) {
-            ret[0] = Encoding.htmlDecode(ret[0]);
-            return ret;
-        } else {
-            return null;
-        }
-    }
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         handleDownload(link, null);
@@ -328,11 +286,15 @@ public class DeviantArtCom extends PluginForHost {
         final DownloadMode mode = cfg.getDownloadMode();
         if (mode == DownloadMode.OFFICIAL_DOWNLOAD_ONLY && officialDownloadurl == null) {
             /* User only wants to download items with official download option available but it is not available in this case. */
-            if (account == null) {
+            if (!this.isAccountRequiredForOfficialDownload(br)) {
+                /* Looks like official download is not available at all for this item */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Official download not available");
+            } else if (account == null) {
                 /* Account is required to be able to use official download option. */
                 throw new AccountRequiredException();
             } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Official download not available");
+                /* This should never happen! */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Official download broken or login issue");
             }
         }
         if (this.isAccountRequired(br)) {
@@ -391,88 +353,6 @@ public class DeviantArtCom extends PluginForHost {
         }
     }
 
-    /* TODO: Fix- or delete this */
-    private String getDllink() throws PluginException {
-        if (dllink == null) {
-            final String videoStreamURLs[][] = br.getRegex("\"src\":\"(https?:[^<>\"]*?mp4)\"(.*?)\\}").getMatches();
-            if (videoStreamURLs != null && videoStreamURLs.length > 0) {
-                int best = -1;
-                String bestURL = null;
-                for (final String videoStreamURL[] : videoStreamURLs) {
-                    final String height = new Regex(videoStreamURL[1], "height\":\\s*(\\d+)").getMatch(0);
-                    if (height != null) {
-                        if (best == -1 || Integer.parseInt(height) > best) {
-                            bestURL = videoStreamURL[0];
-                            best = Integer.parseInt(height);
-                        }
-                    }
-                }
-                if (bestURL == null) {
-                    bestURL = videoStreamURLs[0][0];
-                }
-                bestURL = bestURL.replace("\\", "");
-                dllink = bestURL;
-                return bestURL;
-            }
-            String dllink = null;
-            /* First try to get downloadlink, if that doesn't exist, try to get the link to the picture which is displayed in browser */
-            /*
-             * NEVER open up this RegEx as sometimes users link downloadlinks in the description --> Open RegEx will lead to plugin errors
-             * in some rare cases
-             */
-            if (dllink == null) {
-                dllink = br.getRegex("dev-page-download\"[\t\n\r ]*?href=\"(https?://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
-            }
-            if (dllink == null) {
-                if (br.containsHTML(">Mature Content</span>")) {
-                    /* Prefer HQ */
-                    dllink = getHQpic();
-                    if (dllink == null) {
-                        dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(htts?://[^<>\"]*?)\"").getMatch(0);
-                    }
-                    if (dllink == null) {
-                        dllink = br.getRegex("<img collect_rid=\"\\d+:\\d+\" src=\"(https?://[^\"]+)").getMatch(0);
-                    }
-                } else {
-                    /* Prefer HQ */
-                    dllink = getHQpic();
-                    if (dllink == null) {
-                        final String images[] = br.getRegex("<img collect_rid=\"[0-9:]+\" src=\"(https?[^<>\"]*?)\"").getColumn(0);
-                        if (images != null && images.length > 0) {
-                            String org = null;
-                            for (String image : images) {
-                                if (image.contains("/pre/") || image.contains("//pre")) {
-                                    continue;
-                                } else {
-                                    org = image;
-                                    break;
-                                }
-                            }
-                            if (org == null) {
-                                dllink = images[0];
-                            } else {
-                                dllink = org;
-                            }
-                        } else {
-                            dllink = br.getRegex("(name|property)=\"og:image\" content=\"(https?://[^<>\"]*?)\"").getMatch(1);
-                        }
-                    }
-                }
-            }
-            if (dllink != null) {
-                dllink = dllink.replace("\\", "");
-                dllink = Encoding.htmlDecode(dllink);
-            }
-        }
-        return dllink;
-    }
-
-    /* TODO: Fix- or delete this */
-    private String getHQpic() {
-        final String hqurl = br.getRegex("class=\"dev\\-content\\-normal[^\"]*?\">\\s*<img collect_rid=\"[0-9:]+\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
-        return hqurl;
-    }
-
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
@@ -483,9 +363,18 @@ public class DeviantArtCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         account.setType(AccountType.FREE);
-        /* TODO: Set found username as Account username if cookie login was used. */
-        // final String profileLoginURL = getProfileLoginURL(this.br);
-        // final String realUsername = new Regex(profileLoginURL, "https?://[^/]+/(.+)").getMatch(0);
+        /**
+         * Try to get unique username even if users use cookie login as they can theoretically enter whatever they want into username field.
+         */
+        final Cookies userCookies = account.loadUserCookies();
+        String realUsername = getUsernameFromCookies(br);
+        if (userCookies != null && !userCookies.isEmpty()) {
+            if (!StringUtils.isEmpty(realUsername)) {
+                account.setUser(realUsername);
+            } else {
+                logger.warning("Failed to find real username inside cookies");
+            }
+        }
         return ai;
     }
 
@@ -580,8 +469,8 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     private boolean isLoggedIN(final Browser br) {
-        final String loggedINProfileURL = getProfileLoginURL(br);
-        if (loggedINProfileURL != null) {
+        final String username = getUsernameFromCookies(br);
+        if (!StringUtils.isEmpty(username) && br.containsHTML("data-hook=\"user_link\" data-username=\"" + Pattern.quote(username))) {
             return true;
         } else if (br.containsHTML("/users/logout")) {
             return true;
@@ -590,8 +479,13 @@ public class DeviantArtCom extends PluginForHost {
         }
     }
 
-    private String getProfileLoginURL(final Browser br) {
-        return br.getRegex("data-userid=\"\\d+\" data-useruuid=\"[^\"]+\" href=\"(https?://[^\"]+)\"").getMatch(0);
+    private String getUsernameFromCookies(final Browser br) {
+        String userinfoCookie = br.getCookie(br.getHost(), "userinfo", Cookies.NOTDELETEDPATTERN);
+        if (userinfoCookie != null) {
+            userinfoCookie = Encoding.htmlDecode(userinfoCookie);
+            return PluginJSonUtils.getJson(userinfoCookie, "username");
+        }
+        return null;
     }
 
     public static Browser prepBR(final Browser br) {
