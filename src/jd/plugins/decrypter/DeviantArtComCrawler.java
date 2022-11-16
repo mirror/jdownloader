@@ -591,6 +591,8 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
                         assumedFileExtension = ".html";
                     } else if (type.equalsIgnoreCase("image")) {
                         assumedFileExtension = ".jpg";
+                    } else {
+                        assumedFileExtension = ".html";
                     }
                     link.setName(deviation.get("title") + " by " + author.get("username") + "_" + author.get("userId") + assumedFileExtension);
                     link.setAvailable(true);
