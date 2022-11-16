@@ -26,6 +26,17 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -49,17 +60,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.PornHubCom;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubComVideoCrawler extends PluginForDecrypt {
@@ -186,11 +186,6 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             /* Either we're not nogged in or current account does not have permission to view this content. */
             throw new AccountRequiredException();
         }
-    }
-
-    private String getLinkDomain(final Browser br, final Account account) {
-        final String ret = Browser.getHost(br._getURL(), false);
-        return ret;
     }
 
     @Override
@@ -334,7 +329,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 foundItems += viewKeys.size();
                 for (final String viewkey : viewKeys) {
                     if (dupes.add(viewkey)) {
-                        final DownloadLink dl = createDownloadlink("https://www." + getLinkDomain(br, account) + "/view_video.php?viewkey=" + viewkey);
+                        final DownloadLink dl = createDownloadlink(br.getURL("/view_video.php?viewkey=" + viewkey).toString());
                         dl.setContainerUrl(containerURL);
                         ret.add(dl);
                         /* Makes testing easier for devs */
@@ -441,8 +436,8 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         final String seeAllURL = br.getRegex("(" + Regex.escape(br._getURL().getPath()) + "/[^\"]+)\" class=\"seeAllButton greyButton float-right\">").getMatch(0);
         if (seeAllURL != null) {
             /**
-             * E.g. users/bla/videos --> /users/bla/videos/favorites </br> Without this we might only see some of all items and no
-             * pagination which is needed to be able to find all items.
+             * E.g. users/bla/videos --> /users/bla/videos/favorites </br>
+             * Without this we might only see some of all items and no pagination which is needed to be able to find all items.
              */
             logger.info("Found seeAllURL: " + seeAllURL);
             PornHubCom.getPage(br, seeAllURL);
@@ -536,7 +531,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             for (final String viewkey : viewkeys) {
                 if (dupes.add(viewkey)) {
                     // logger.info("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey); // For debugging
-                    final DownloadLink dl = createDownloadlink("https://www." + getLinkDomain(br, account) + "/view_video.php?viewkey=" + viewkey);
+                    final DownloadLink dl = createDownloadlink(br.getURL("/view_video.php?viewkey=" + viewkey).toString());
                     if (fp != null) {
                         fp.add(dl);
                     }
@@ -638,7 +633,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 final String viewKey = new Regex(item, "/gif/(\\d+)").getMatch(0);
                 if (viewKey != null && dupes.add(viewKey)) {
                     final String name = new Regex(item, "class\\s*=\\s*\"title\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
-                    final DownloadLink dl = createDownloadlink("https://www." + getLinkDomain(br, account) + "/gif/" + viewKey);
+                    final DownloadLink dl = createDownloadlink(br.getURL("/gif/" + viewKey).toString());
                     final String ext;
                     if (webm) {
                         ext = ".webm";
@@ -694,7 +689,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 foundItems += viewKeys.length;
                 for (final String viewKey : viewKeys) {
                     if (dupes.add(viewKey)) {
-                        final DownloadLink dl = createDownloadlink("https://www." + getLinkDomain(br, account) + "/view_video.php?viewkey=" + viewKey);
+                        final DownloadLink dl = createDownloadlink(br.getURL("/view_video.php?viewkey=" + viewKey).toString());
                         ret.add(dl);
                         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                             distribute(dl);
