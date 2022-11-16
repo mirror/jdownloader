@@ -483,6 +483,9 @@ public class DeviantArtCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         account.setType(AccountType.FREE);
+        /* TODO: Set found username as Account username if cookie login was used. */
+        // final String profileLoginURL = getProfileLoginURL(this.br);
+        // final String realUsername = new Regex(profileLoginURL, "https?://[^/]+/(.+)").getMatch(0);
         return ai;
     }
 
@@ -577,7 +580,7 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     private boolean isLoggedIN(final Browser br) {
-        final String loggedINProfileURL = br.getRegex("data-userid=\"\\d+\" data-useruuid=\"[^\"]+\" href=\"(https?://[^\"]+)\"").getMatch(0);
+        final String loggedINProfileURL = getProfileLoginURL(br);
         if (loggedINProfileURL != null) {
             return true;
         } else if (br.containsHTML("/users/logout")) {
@@ -585,6 +588,10 @@ public class DeviantArtCom extends PluginForHost {
         } else {
             return false;
         }
+    }
+
+    private String getProfileLoginURL(final Browser br) {
+        return br.getRegex("data-userid=\"\\d+\" data-useruuid=\"[^\"]+\" href=\"(https?://[^\"]+)\"").getMatch(0);
     }
 
     public static Browser prepBR(final Browser br) {

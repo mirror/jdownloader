@@ -45,23 +45,24 @@ public class SunnyUsenetCom extends UseNet {
             Form login = null;
             if (cookies != null) {
                 br.setCookies(getHost(), cookies);
-                br.getPage("https://www.sunnyusenet.com/en");
-                br.getPage("https://www.sunnyusenet.com/en/login");
+                br.getPage("https://www." + this.getHost() + "/en");
+                br.getPage("/en/login");
                 login = br.getFormbyActionRegex(".*/login");
                 if (login != null && (login.containsHTML("email") || login.containsHTML("password"))) {
                     br.getCookies(getHost()).clear();
-                } else if (br.getCookie(getHost(), "auth-token") == null) {
+                } else if (br.getCookie(getHost(), "auth-token", Cookies.NOTDELETEDPATTERN) == null) {
                     br.getCookies(getHost()).clear();
                 }
             }
-            if (br.getCookie(getHost(), "auth-token") == null) {
+            if (br.getCookie(getHost(), "auth-token", Cookies.NOTDELETEDPATTERN) == null) {
+                logger.info("Performing full login");
                 account.clearCookies("");
                 final String userName = account.getUser();
                 if (userName == null || !userName.matches("^.+?@.+?\\.[^\\.]+")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail/password for sunnyusenet.com website!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your e-mail address into the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.getPage("https://www.sunnyusenet.com/en");
-                br.getPage("https://www.sunnyusenet.com/en/login");
+                br.getPage("https://www." + this.getHost() + "/en");
+                br.getPage("/en/login");
                 login = br.getFormbyActionRegex(".*/login");
                 login.put("email", Encoding.urlEncode(userName));
                 login.put("password", Encoding.urlEncode(account.getPass()));
@@ -69,14 +70,15 @@ public class SunnyUsenetCom extends UseNet {
                 login = br.getFormbyActionRegex(".*/login");
                 if (login != null && (login.containsHTML("email") || login.containsHTML("password"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (br.getCookie(getHost(), "auth-token") == null) {
+                } else if (br.getCookie(getHost(), "auth-token", Cookies.NOTDELETEDPATTERN) == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+                logger.info("Full login successful");
             }
             account.saveCookies(br.getCookies(getHost()), "");
-            final String yourPackage = br.getRegex(">Plan Type:</h5>\\s*<div class=\"server-settings__value\"><b\\s*class=\"server-settings__value-b\">([^<>\"]+)</b>").getMatch(0);
-            final String expireDate = br.getRegex("Expiration date:\\s*</b>\\s*(\\d+-\\d+-\\d+)\\s*<").getMatch(0);
-            final String connections = br.getRegex(">Connections</h5>\\s*<div class=\"server-settings__value\">\\s*(\\d+)").getMatch(0);
+            final String yourPackage = br.getRegex("(?i)>\\s*Plan Type\\s*:\\s*</h5>\\s*<div class=\"server-settings__value\"><b\\s*class=\"server-settings__value-b\">([^<>\"]+)</b>").getMatch(0);
+            final String expireDate = br.getRegex("(?i)Expiration date\\s*:\\s*</b>\\s*(\\d+-\\d+-\\d+)\\s*<").getMatch(0);
+            final String connections = br.getRegex("(?i)>\\s*Connections\\s*</h5>\\s*<div class=\"server-settings__value\">\\s*(\\d+)").getMatch(0);
             final int packageConnections;
             if (StringUtils.containsIgnoreCase(yourPackage, "UNL")) {
                 packageConnections = 20;
@@ -104,7 +106,7 @@ public class SunnyUsenetCom extends UseNet {
             /* 2020-02-25: They have packages without expire date e.g. "Sunny UNL" */
             if (expireDate != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy'-'MM'-'dd", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
-            } else if (yourPackage == null || !yourPackage.contains("UNL")) {
+            } else if (yourPackage == null || !StringUtils.containsIgnoreCase(yourPackage, "UNL")) {
                 ai.setExpired(true);
             }
         } catch (final PluginException e) {
