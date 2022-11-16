@@ -200,10 +200,6 @@ public class EasyBytezCom extends XFileSharingProBasic {
              * 2022-11-16: Small workaround: This may contain "http://www.easybytez.com/login2.html". This can redirect us to a website
              * which looks like we're not logged in even though login was successful.
              */
-            // try {
-            // loginform.put("redirect", Encoding.urlEncode(br.getURL("/").toString()));
-            // } catch (final Exception e) {
-            // }
             loginform.put("redirect", "%2F");
         }
         return loginform;
