@@ -25,6 +25,7 @@ import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginH
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -51,6 +52,11 @@ import jd.plugins.PluginException;
 public class SpasteCom extends antiDDoSForDecrypt {
     public SpasteCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.PASTEBIN };
     }
 
     /* DEV NOTES */
