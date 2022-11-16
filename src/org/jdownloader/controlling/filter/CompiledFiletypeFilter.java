@@ -5,12 +5,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import jd.plugins.LinkInfo;
-
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.plugins.LinkInfo;
 
 public class CompiledFiletypeFilter {
     private final Pattern[]                   list;
@@ -39,17 +39,19 @@ public class CompiledFiletypeFilter {
         public ExtensionsFilterInterface getSource();
     }
 
-    private static List<ExtensionsFilterInterface> EXTENSIONSFILTERINTERFACES;
-    {
-        EXTENSIONSFILTERINTERFACES = new ArrayList<ExtensionsFilterInterface>();
-        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(VideoExtensions.values()));
-        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(ArchiveExtensions.values()));
-        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(AudioExtensions.values()));
-        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(ExecutableExtensions.values()));
-        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(HashExtensions.values()));
-        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(DocumentExtensions.values()));
-        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(ImageExtensions.values()));
-        EXTENSIONSFILTERINTERFACES.addAll(Arrays.asList(SubtitleExtensions.values()));
+    private static List<ExtensionsFilterInterface> EXTENSIONSFILTERINTERFACES = init();
+
+    private static List<ExtensionsFilterInterface> init() {
+        final ArrayList<ExtensionsFilterInterface> ret = new ArrayList<ExtensionsFilterInterface>();
+        ret.addAll(Arrays.asList(VideoExtensions.values()));
+        ret.addAll(Arrays.asList(ArchiveExtensions.values()));
+        ret.addAll(Arrays.asList(AudioExtensions.values()));
+        ret.addAll(Arrays.asList(ExecutableExtensions.values()));
+        ret.addAll(Arrays.asList(HashExtensions.values()));
+        ret.addAll(Arrays.asList(DocumentExtensions.values()));
+        ret.addAll(Arrays.asList(ImageExtensions.values()));
+        ret.addAll(Arrays.asList(SubtitleExtensions.values()));
+        return ret;
     }
 
     public static ExtensionsFilterInterface getExtensionsFilterInterface(final String fileExtension) {
@@ -72,6 +74,7 @@ public class CompiledFiletypeFilter {
         SHA512,
         PAR2("(vol\\d+\\.par2|vol\\d+\\+\\d+\\.par2|par2)"),
         PAR("(p\\d+|par)");
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -129,6 +132,7 @@ public class CompiledFiletypeFilter {
         RUN,
         PS1,
         CMD;
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -184,6 +188,7 @@ public class CompiledFiletypeFilter {
         SMI, // SAMI
         VTT, // WebVTT
         SUB;// VobSub
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -248,6 +253,7 @@ public class CompiledFiletypeFilter {
         PDF,
         NFO,
         USF;
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -323,6 +329,7 @@ public class CompiledFiletypeFilter {
         SND,
         SPX, // Speex
         NSF;// NES Sound Format, https://wiki.nesdev.com/w/index.php/NSF
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -392,6 +399,7 @@ public class CompiledFiletypeFilter {
         GP3,
         WEBM,
         APNG;
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -480,6 +488,7 @@ public class CompiledFiletypeFilter {
         LZH,
         LHA,
         AA("[a-z]{2}");
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -542,6 +551,7 @@ public class CompiledFiletypeFilter {
         CUR,
         WEBP,
         MVIEW;
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
