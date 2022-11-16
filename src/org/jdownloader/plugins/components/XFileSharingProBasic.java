@@ -3970,6 +3970,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
+                br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
                 if (userCookies == null && this.requiresCookieLogin()) {
@@ -4040,6 +4041,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                 int login_counter = 1;
                 final int maxLoginAttempts = 3;
                 br.clearCookies(getMainPage());
+                // getPage(getMainPage()); //loginForm most likely never included on mainPage and thus we open getLoginURL first
                 boolean userSolvedAtLeastOneLoginCaptcha = false;
                 do {
                     logger.info("Performing full website login attempt: " + login_counter + "/" + maxLoginAttempts + " | Multiple attempts will only happen if a captcha is required");
