@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -188,5 +190,22 @@ public class EasyBytezCom extends XFileSharingProBasic {
         } else {
             return getMainPage() + "/?op=login";
         }
+    }
+
+    @Override
+    public Form findLoginform(final Browser br) {
+        final Form loginform = super.findLoginform(br);
+        if (loginform != null) {
+            /*
+             * 2022-11-16: Small workaround: This may contain "http://www.easybytez.com/login2.html". This can redirect us to a website
+             * which looks like we're not logged in even though login was successful.
+             */
+            // try {
+            // loginform.put("redirect", Encoding.urlEncode(br.getURL("/").toString()));
+            // } catch (final Exception e) {
+            // }
+            loginform.put("redirect", "%2F");
+        }
+        return loginform;
     }
 }
