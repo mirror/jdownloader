@@ -42,7 +42,7 @@ public class CompiledFiletypeFilter {
     private static List<ExtensionsFilterInterface> EXTENSIONSFILTERINTERFACES = init();
 
     private static List<ExtensionsFilterInterface> init() {
-        final ArrayList<ExtensionsFilterInterface> ret = new ArrayList<ExtensionsFilterInterface>();
+        final List<ExtensionsFilterInterface> ret = new ArrayList<ExtensionsFilterInterface>();
         ret.addAll(Arrays.asList(VideoExtensions.values()));
         ret.addAll(Arrays.asList(ArchiveExtensions.values()));
         ret.addAll(Arrays.asList(AudioExtensions.values()));
