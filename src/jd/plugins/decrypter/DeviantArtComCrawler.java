@@ -27,10 +27,12 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig.DownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -89,9 +91,9 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
     private static final String PATTERN_BLOG                  = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?blog/(\\?offset=\\d+)?";
     // private static final String TYPE_INVALID = "https?://[\\w\\.\\-]*?deviantart\\.com/stats/*?";
     private String              parameter                     = null;
-    private boolean             fastLinkCheck                 = false;
+    private final boolean       fastLinkCheck                 = true;
     private boolean             forceHtmlDownload             = false;
-    private boolean             crawlGivenOffsetsIndividually = false;
+    private final boolean       crawlGivenOffsetsIndividually = false;
     private long                decryptedUrlsNum              = 0;
 
     protected void distribute(final DownloadLink dl) {
@@ -103,9 +105,7 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         DeviantArtCom.prepBR(this.br);
-        fastLinkCheck = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(DeviantArtCom.FASTLINKCHECK_2, false);
-        forceHtmlDownload = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(DeviantArtCom.FORCEHTMLDOWNLOAD, false);
-        crawlGivenOffsetsIndividually = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(DeviantArtCom.CRAWL_GIVEN_OFFSETS_INDIVIDUALLY, DeviantArtCom.default_CRAWL_GIVEN_OFFSETS_INDIVIDUALLY);
+        forceHtmlDownload = PluginJsonConfig.get(DeviantArtComConfig.class).getDownloadMode() == DownloadMode.HTML;
         parameter = param.toString();
         /* Remove trash */
         final String replace = new Regex(parameter, "(#.+)").getMatch(0);
@@ -116,7 +116,7 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
         parameter = parameter.replaceAll("/(poll|stats)/", "/");
         if (parameter.matches(PATTERN_JOURNAL2)) {
             final DownloadLink journal = createDownloadlink(parameter.replace("deviantart.com/", "deviantartdecrypted.com/"));
-            journal.setName(new Regex(parameter, "deviantart\\.com/(?:[^/]+/)?journal/([\\w\\-]+)").getMatch(0));
+            journal.setName(new Regex(parameter, "deviantart\\.com/(?:[^/]+/)?journal/([\\w\\-]+)").getMatch(0) + ".html");
             if (fastLinkCheck) {
                 journal.setAvailable(true);
             }
@@ -587,7 +587,9 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
                      * 2022-11-11: Items of type "literature" (or simply != "image") will not get any file extension at all at this moment.
                      */
                     String assumedFileExtension = "";
-                    if (type.equalsIgnoreCase("image")) {
+                    if (forceHtmlDownload) {
+                        assumedFileExtension = ".html";
+                    } else if (type.equalsIgnoreCase("image")) {
                         assumedFileExtension = ".jpg";
                     }
                     link.setName(deviation.get("title") + " by " + author.get("username") + "_" + author.get("userId") + assumedFileExtension);
