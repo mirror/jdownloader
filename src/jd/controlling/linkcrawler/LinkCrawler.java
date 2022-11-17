@@ -2322,7 +2322,7 @@ public class LinkCrawler {
                                 } else {
                                     dummyURL = new URL(maybeURL);
                                 }
-                                if (dummyURL != null && dummyURL.getHost() != null && dummyURL.getHost().contains(".") && StringUtils.isAllNotEmpty(dummyURL.getPath(), dummyURL.getQuery())) {
+                                if (dummyURL != null && dummyURL.getHost() != null && dummyURL.getHost().contains(".") && (StringUtils.isNotEmpty(dummyURL.getFile()) || StringUtils.isNotEmpty(dummyURL.getRef()))) {
                                     possibleEmbeddedLinks.add(dummyURL.toString());
                                 }
                             } catch (final MalformedURLException e) {
