@@ -62,6 +62,7 @@ import jd.parser.html.HTMLSearch;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -161,7 +162,7 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private static Object      CAPTCHA_LOCK               = new Object();
+    private static Object      LOCK                       = new Object();
     public static final String API_BASE                   = "https://www.googleapis.com/drive/v3";
     private final String       PATTERN_GDOC               = "https?://.*/document/d/([a-zA-Z0-9\\-_]+).*";
     private final String       PATTERN_FILE               = "https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
@@ -214,6 +215,7 @@ public class GoogleDrive extends PluginForHost {
     private static final String PROPERTY_FORCED_FINAL_DOWNLOADURL              = "FORCED_FINAL_DOWNLOADURL";
     private static final String PROPERTY_CAN_DOWNLOAD                          = "CAN_DOWNLOAD";
     private final String        PROPERTY_CAN_STREAM                            = "CAN_STREAM";
+    private final String        PROPERTY_IS_PRIVATE_FILE                       = "IS_PRIVATE_FILE";
     private final String        PROPERTY_IS_QUOTA_REACHED_ANONYMOUS            = "IS_QUOTA_REACHED_ANONYMOUS";
     private final String        PROPERTY_IS_QUOTA_REACHED_ACCOUNT              = "IS_QUOTA_REACHED_ACCOUNT";
     private final String        PROPERTY_IS_STREAM_QUOTA_REACHED_ANONYMOUS     = "IS_STREAM_QUOTA_REACHED_ANONYMOUS";
@@ -587,7 +589,7 @@ public class GoogleDrive extends PluginForHost {
         /** In case we were not able to find a final download-URL until now, we'll have to try the more complicated way ... */
         logger.info("Direct download inactive --> Accessing download Overview");
         if (isDownload) {
-            synchronized (CAPTCHA_LOCK) {
+            synchronized (LOCK) {
                 br.getPage(getFileViewURL(link));
                 this.handleErrorsWebsite(this.br, link, account);
             }
@@ -598,8 +600,8 @@ public class GoogleDrive extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)<p class=\"error\\-caption\">\\s*Sorry, we are unable to retrieve this document\\.\\s*</p>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (isAccountRequired(br)) {
-            link.getLinkStatus().setStatusText("You are missing the rights to download this file");
-            throw new AccountRequiredException();
+            logger.info("This is possibly a private file -> Cannot gather more information about it at this stage");
+            return AvailableStatus.TRUE;
         }
         this.handleSpecialCaptcha(br, link, account);
         if (br.containsHTML("video\\.google\\.com/get_player\\?docid=" + Encoding.urlEncode(this.getFID(link)))) {
@@ -741,7 +743,7 @@ public class GoogleDrive extends PluginForHost {
             return null;
         }
         logger.info("Attempting stream download");
-        synchronized (CAPTCHA_LOCK) {
+        synchronized (LOCK) {
             if (account != null) {
                 /* Uses a slightly different request than when not logged in but answer is the same. */
                 /*
@@ -1122,26 +1124,52 @@ public class GoogleDrive extends PluginForHost {
         } else if (isQuotaReachedWebsiteFile(br)) {
             errorDownloadQuotaReachedWebsite(link, account);
         } else if (isAccountRequired(br)) {
-            if (link == null) {
-                /* Looks like failed login -> Should never happen */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login failure", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                if (account != null) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Insufficient permissions (private file)?", 30 * 60 * 1000l);
-                } else {
-                    throw new AccountRequiredException();
-                }
-            }
+            errorAccountRequiredOrPrivateFile(br, link, account);
         } else if (br.getHttpConnection().getResponseCode() == 403) {
             /**
              * Most likely quota error or "Missing permissions" error. </br>
              * 2021-05-19: Important: This can also happen if e.g. this is a private file and permissions are missing! It is hard to detect
-             * the exact reason for error as errormessages differ depending on the user set Google website language!
+             * the exact reason for error as errormessages differ depending on the user set Google website language! </br>
+             * 2022-11-17: Treat this as "Private file" for now
              */
-            if (account != null) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Insufficient permissions (private file) or quota limit reached", 30 * 60 * 1000l);
+            final boolean usePrivateFileHandlingHere = true;
+            if (usePrivateFileHandlingHere) {
+                errorAccountRequiredOrPrivateFile(br, link, account);
             } else {
-                errorDownloadQuotaReachedWebsite(link, account);
+                if (account != null) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Insufficient permissions: Private file or quota limit reached", 30 * 60 * 1000l);
+                } else {
+                    errorDownloadQuotaReachedWebsite(link, account);
+                }
+            }
+        }
+    }
+
+    private void errorAccountRequiredOrPrivateFile(final Browser br, final DownloadLink link, final Account account) throws IOException, InterruptedException, PluginException {
+        synchronized (LOCK) {
+            if (link == null) {
+                /* Problem happened during account-check -> Account must be invalid */
+                throw new AccountInvalidException();
+            } else if (account == null) {
+                logger.info("Looks like a private file and no account given -> Ask user to add one");
+                throw new AccountRequiredException();
+            } else {
+                /*
+                 * Typically Google will redirect us to accounts.google.com for private files but this can also happen when login session is
+                 * expired -> Extra check is needed
+                 */
+                logger.info("Checking if we got a private file or a login session failure");
+                final Browser brc = br.cloneBrowser();
+                final GoogleHelper helper = new GoogleHelper(brc, this.getLogger());
+                if (helper.validateCookies(account)) {
+                    /* Login session looks to be valid -> Looks like what we have is a private file */
+                    /* Store as a property as this information might come in handy in the future. */
+                    link.setProperty(PROPERTY_IS_PRIVATE_FILE, true);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Insufficient permissions: Private file");
+                } else {
+                    /* Login session is invalid -> We got an account problem and not a private file */
+                    GoogleHelper.errorAccountInvalid(account);
+                }
             }
         }
     }
@@ -1367,11 +1395,10 @@ public class GoogleDrive extends PluginForHost {
             loginAPI(br, account);
         } else {
             /* Website login */
-            final GoogleHelper helper = new GoogleHelper(br);
-            helper.setLogger(this.getLogger());
+            final GoogleHelper helper = new GoogleHelper(br, this.getLogger());
             final boolean loggedIN = helper.login(account, forceLoginValidation);
             if (!loggedIN) {
-                throw new AccountUnavailableException("Login failed", 2 * 60 * 60 * 1000l);
+                GoogleHelper.errorAccountInvalid(account);
             }
         }
     }
@@ -1401,7 +1428,7 @@ public class GoogleDrive extends PluginForHost {
             auth_expires_in = ((Number) entries.get("expires_in")).intValue();
             if (StringUtils.isEmpty(access_token)) {
                 /* Permanently disable account */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Token refresh failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException("Token refresh failed");
             }
             logger.info("Successfully obtained new access_token");
             account.setProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN, refresh_token);
@@ -1460,7 +1487,7 @@ public class GoogleDrive extends PluginForHost {
             dialog.interrupt();
         }
         if (StringUtils.isEmpty(access_token)) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Authorization failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("Authorization failed");
         }
         br.getHeaders().put("Authorization", "Bearer " + access_token);
         account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN, access_token);

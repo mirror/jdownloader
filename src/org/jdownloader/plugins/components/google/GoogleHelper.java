@@ -67,7 +67,7 @@ public class GoogleHelper {
         return logger;
     }
 
-    public void setLogger(LogInterface logger) {
+    public void setLogger(final LogInterface logger) {
         this.logger = logger;
     }
 
@@ -78,11 +78,20 @@ public class GoogleHelper {
         }
     }
 
-    public GoogleHelper(Browser ytbr) {
-        this.br = ytbr;
+    public GoogleHelper(final Browser browser) {
+        init(browser, null);
+    }
+
+    public GoogleHelper(final Browser browser, final LogInterface logger) {
+        init(browser, logger);
+    }
+
+    private void init(final Browser browser, final LogInterface logger) {
+        this.br = browser;
         Thread thread = Thread.currentThread();
         boolean forceUpdateAndBypassCache = thread instanceof AccountCheckerThread && ((AccountCheckerThread) thread).getJob().isForce();
         cacheEnabled = !forceUpdateAndBypassCache;
+        this.logger = logger;
     }
 
     private void postPageFollowRedirects(Browser br, String url, UrlQuery post) throws IOException, InterruptedException {
@@ -287,11 +296,7 @@ public class GoogleHelper {
                             /* Give up. We only got these cookies so login via username and password is not possible! */
                             logger.info("Login failed --> No password available but only cookies --> Give up");
                             account.removeProperty(PROPERTY_ACCOUNT_user_agent);
-                            if (account.hasEverBeenValid()) {
-                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                            } else {
-                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                            }
+                            errorAccountInvalid(account);
                         }
                     }
                 }
@@ -450,7 +455,21 @@ public class GoogleHelper {
         }
     }
 
-    private boolean validateCookies(final Account account) throws IOException, InterruptedException {
+    public static void errorAccountInvalid(final Account account) throws AccountInvalidException {
+        final Cookies userCookies = account.loadUserCookies();
+        if (userCookies != null && !userCookies.isEmpty()) {
+            account.removeProperty(PROPERTY_ACCOUNT_user_agent);
+            if (account.hasEverBeenValid()) {
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+            } else {
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+            }
+        } else {
+            throw new AccountInvalidException();
+        }
+    }
+
+    public boolean validateCookies(final Account account) throws IOException, InterruptedException {
         logger.info("Validating cookies");
         /*
          * 2020-09-07: psp: I was unable to just use the google.com cookies for youtube so basically we now expect the user to import the
@@ -464,26 +483,26 @@ public class GoogleHelper {
             return ret;
         } else {
             final boolean useTwoLoginValidations = false;
-            boolean loggedIN = false;
             if (useTwoLoginValidations) {
                 /* Old check */
                 getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
-                loggedIN = validateSuccessOLD();
-                if (!loggedIN) {
+                if (validateSuccessOLD()) {
+                    return true;
+                } else {
                     logger.info("First cookie validation failed --> 2nd validation ...");
                     getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
                     if (br.containsHTML("accounts\\.google\\.com/logout")) {
-                        loggedIN = true;
+                        return true;
                     }
                 }
             } else {
                 /* New check */
                 getPageFollowRedirects(br, "https://www.google.com/?gws_rd=ssl");
                 if (br.containsHTML("accounts\\.google\\.com/logout")) {
-                    loggedIN = true;
+                    return true;
                 }
             }
-            return loggedIN;
+            return false;
         }
     }
 
