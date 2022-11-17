@@ -2276,7 +2276,8 @@ public class LinkCrawler {
     protected DISTRIBUTE distributeEmbeddedLink(final LinkCrawlerGeneration generation, final String url, final CrawledLink source, UnknownCrawledLinkHandler unknownCrawledLinkHandler) {
         final LinkedHashSet<String> possibleEmbeddedLinks = new LinkedHashSet<String>();
         try {
-            final String queryString = new Regex(source.getURL(), "\\?(.+)$").getMatch(0);
+            final String sourceURL = source.getURL();
+            final String queryString = new Regex(sourceURL, "\\?(.+)$").getMatch(0);
             if (StringUtils.isNotEmpty(queryString)) {
                 final String[] parameters = queryString.split("\\&(?!#)", -1);
                 for (final String parameter : parameters) {
@@ -2333,10 +2334,10 @@ public class LinkCrawler {
                     }
                 }
             }
-            if (StringUtils.contains(source.getURL(), "aHR0c") || StringUtils.contains(source.getURL(), "ZnRwOi")) {
-                String base64 = new Regex(source.getURL(), "(aHR0c[0-9a-zA-Z\\+\\/]+(%3D|=){0,2})").getMatch(0);// http
+            if (StringUtils.contains(sourceURL, "aHR0c") || StringUtils.contains(sourceURL, "ZnRwOi")) {
+                String base64 = new Regex(sourceURL, "(aHR0c[0-9a-zA-Z\\+\\/]+(%3D|=){0,2})").getMatch(0);// http
                 if (base64 == null) {
-                    base64 = new Regex(source.getURL(), "(ZnRwOi[0-9a-zA-Z\\+\\/]+(%3D|=){0,2})").getMatch(0);// ftp
+                    base64 = new Regex(sourceURL, "(ZnRwOi[0-9a-zA-Z\\+\\/]+(%3D|=){0,2})").getMatch(0);// ftp
                 }
                 if (base64 != null) {
                     if (base64.contains("%3D")) {

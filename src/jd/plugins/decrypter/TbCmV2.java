@@ -710,7 +710,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         DownloadLink lnk = createLink(l, linkVariants.get(0), cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants);
                         decryptedLinks.add(lnk);
                         if (linkVariants.get(0).getVariant().getGroup() == VariantGroup.SUBTITLES) {
-                            ArrayList<String> extras = CFG_YOUTUBE.CFG.getExtraSubtitles();
+                            List<String> extras = CFG_YOUTUBE.CFG.getExtraSubtitles();
                             if (extras != null) {
                                 for (String s : extras) {
                                     if (s != null) {

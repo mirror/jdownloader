@@ -268,7 +268,11 @@ public interface YoutubeConfig extends PluginConfigInterface {
     // void setBestGroupVariantEnabled(boolean b);
     @AboutConfig
     @DescriptionForConfigEntry("Use this if you want to get more than 1 subtitle per video e.g. [\"de\", \"en\", \"ar\", \"zh-HK\", \"ru\", \"tr\"]")
-    ArrayList<String> getExtraSubtitles();
+    List<String> getExtraSubtitles();
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Use this if you want to get auto translated subtitles. [\"de\", \"en\", \"ar\", \"zh-HK\", \"ru\", \"tr\"]")
+    List<String> getAutoTranslatedSubtitles();
 
     @AboutConfig
     @Deprecated
@@ -462,7 +466,9 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     void setExternMultimediaToolUsageEnabled(boolean b);
 
-    void setExtraSubtitles(ArrayList<String> list);
+    void setExtraSubtitles(List<String> list);
+
+    void setAutoTranslatedSubtitles(List<String> list);
 
     @Deprecated
     void setFilenamePattern(String name);
