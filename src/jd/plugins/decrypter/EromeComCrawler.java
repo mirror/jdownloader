@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.config.EromeComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -80,6 +83,7 @@ public class EromeComCrawler extends PluginForDecrypt {
         if (title == null) {
             title = br.getRegex("class=\"col-sm-12 page-content\">\\s*<h1>([^<]+)</h1>").getMatch(0);
         }
+        final String preloadImage = br.getRegex("<link rel=\"preload\" href=\"(https?://[^\"]+)\" as=\"image\"").getMatch(0);
         final String uploadername = br.getRegex("id=\"user_name\"[^>]*>([^<]+)<").getMatch(0);
         final String bottomAlbumDescription = br.getRegex("<p id=\"legend\"[^>]*>(.*?)</p>").getMatch(0);
         final String[] mediagrouphtmls = br.getRegex("<div class=\"media-group\" id=\"\\d+\"[^>]*>(.*?)</div>\\s*</div>(.*?)").getColumn(0);
@@ -87,6 +91,7 @@ public class EromeComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        int numberOfAddedVideos = 0;
         for (final String mediagrouphtml : mediagrouphtmls) {
             final String directurlImage = new Regex(mediagrouphtml, "class=\"img\" data-src=\"(https?://[^\"]+)\"").getMatch(0);
             final String directurlVideo = new Regex(mediagrouphtml, "<source src=\"(https?://[^\"]+)\" type='video/mp4'").getMatch(0);
@@ -97,7 +102,12 @@ public class EromeComCrawler extends PluginForDecrypt {
                 ret.add(this.createDownloadlink(directurlImage));
             } else {
                 ret.add(this.createDownloadlink(directurlVideo));
+                numberOfAddedVideos++;
             }
+        }
+        /* Add video thumbnail if user wants that. */
+        if (PluginJsonConfig.get(this.getConfigInterface()).isAddThumbnail() && preloadImage != null && numberOfAddedVideos > 0) {
+            ret.add(this.createDownloadlink(preloadImage));
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setCleanupPackageName(false);
@@ -127,5 +137,10 @@ public class EromeComCrawler extends PluginForDecrypt {
             result._setFilePackage(fp);
         }
         return ret;
+    }
+
+    @Override
+    public Class<? extends EromeComConfig> getConfigInterface() {
+        return EromeComConfig.class;
     }
 }
