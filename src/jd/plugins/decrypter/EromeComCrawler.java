@@ -83,7 +83,7 @@ public class EromeComCrawler extends PluginForDecrypt {
         if (title == null) {
             title = br.getRegex("class=\"col-sm-12 page-content\">\\s*<h1>([^<]+)</h1>").getMatch(0);
         }
-        final String preloadImage = br.getRegex("<link rel=\"preload\" href=\"(https?://[^\"]+)\" as=\"image\"").getMatch(0);
+        // final String preloadImage = br.getRegex("<link rel=\"preload\" href=\"(https?://[^\"]+)\" as=\"image\"").getMatch(0);
         final String uploadername = br.getRegex("id=\"user_name\"[^>]*>([^<]+)<").getMatch(0);
         final String bottomAlbumDescription = br.getRegex("<p id=\"legend\"[^>]*>(.*?)</p>").getMatch(0);
         final String[] mediagrouphtmls = br.getRegex("<div class=\"media-group\" id=\"\\d+\"[^>]*>(.*?)</div>\\s*</div>(.*?)").getColumn(0);
@@ -91,8 +91,8 @@ public class EromeComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        int numberOfAddedVideos = 0;
         for (final String mediagrouphtml : mediagrouphtmls) {
+            // class="img" data-src="https://s17.erome.com/889/QzBIbKfm/CljTL4vz.jpeg" >
             final String directurlImage = new Regex(mediagrouphtml, "class=\"img\" data-src=\"(https?://[^\"]+)\"").getMatch(0);
             final String directurlVideo = new Regex(mediagrouphtml, "<source src=\"(https?://[^\"]+)\" type='video/mp4'").getMatch(0);
             if (directurlImage == null && directurlVideo == null) {
@@ -102,12 +102,14 @@ public class EromeComCrawler extends PluginForDecrypt {
                 ret.add(this.createDownloadlink(directurlImage));
             } else {
                 ret.add(this.createDownloadlink(directurlVideo));
-                numberOfAddedVideos++;
+                final String videoThumbnail = new Regex(mediagrouphtml, "poster=\"(https?://[^\"]+)\"").getMatch(0);
+                /* Add video thumbnail if user wants that. */
+                if (PluginJsonConfig.get(this.getConfigInterface()).isAddThumbnail() && videoThumbnail != null) {
+                    ret.add(this.createDownloadlink(videoThumbnail));
+                } else if (videoThumbnail == null) {
+                    logger.warning("Failed to find video thumbnail for video: " + directurlVideo);
+                }
             }
-        }
-        /* Add video thumbnail if user wants that. */
-        if (PluginJsonConfig.get(this.getConfigInterface()).isAddThumbnail() && preloadImage != null && numberOfAddedVideos > 0) {
-            ret.add(this.createDownloadlink(preloadImage));
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setCleanupPackageName(false);
