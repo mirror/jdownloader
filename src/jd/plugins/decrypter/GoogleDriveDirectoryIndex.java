@@ -26,17 +26,6 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.FunctionObject;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -55,6 +44,17 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.FunctionObject;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { jd.plugins.hoster.GoogleDriveDirectoryIndex.class })
@@ -84,8 +84,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
 
     /**
      * Crawler plugin that can handle instances of this project:
-     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md or:</br>
-     * https://github.com/alx-xlx/goindex </br>
+     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md or:</br> https://github.com/alx-xlx/goindex </br>
      * Be sure to add all domains to host plugin GoogleDriveDirectoryIndex.java too!
      */
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
@@ -97,6 +96,14 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         return 1;
     }
 
+    private final static ThreadLocal<String> atobResult = new ThreadLocal<String>();
+
+    public static String atob(String input) {
+        final String ret = Encoding.Base64Decode(input);
+        atobResult.set(ret);
+        return ret;
+    }
+
     private String decodeJSON(final String string) throws Exception {
         if (string != null && string.matches("(?s)^\\s*\\{.*\\}\\s*$")) {
             return string;
@@ -104,15 +111,25 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
             final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
             final ScriptEngine engine = manager.getEngineByName("javascript");
             final Context jsContext = Context.enter();
+            atobResult.set(null);
             try {
                 engine.eval(IO.readInputStreamToString(getClass().getResourceAsStream("/org/jdownloader/plugins/components/GoogleDriveDirectoryIndex.js")));
-                final Method atob = Encoding.class.getMethod("Base64Decode", new Class[] { String.class });
+                final Method atob = getClass().getMethod("atob", new Class[] { String.class });
                 engine.put("atob", new FunctionObject("atob", atob, jsContext.initStandardObjects()));
                 engine.eval("var result=gdidecode(read(\"" + string + "\"));");
                 final String result = StringUtils.valueOfOrNull(engine.get("result"));
                 return result;
+            } catch (Exception e) {
+                final String result = atobResult.get();
+                if (result != null) {
+                    logger.log(e);
+                    return result;
+                } else {
+                    throw e;
+                }
             } finally {
                 Context.exit();
+                atobResult.set(null);
             }
         }
     }
