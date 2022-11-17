@@ -1237,8 +1237,7 @@ public class FileFactory extends PluginForHost {
         return true;
     }
 
-    /* 2022-11-07: disabled due to deactivated api key */
-    private static AtomicBoolean useAPI  = new AtomicBoolean(false);
+    private static AtomicBoolean useAPI  = new AtomicBoolean(true);
     private String               fuid    = null;
     private String               dllink  = null;
     private int                  chunks  = 0;

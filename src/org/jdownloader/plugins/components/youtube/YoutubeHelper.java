@@ -3205,6 +3205,7 @@ public class YoutubeHelper {
 
     private ArrayList<YoutubeSubtitleStorable> loadSubtitles() throws Exception {
         HashMap<String, List<YoutubeSubtitleStorable>> urls = new HashMap<String, List<YoutubeSubtitleStorable>>();
+        YoutubeSubtitleStorable defaultLanguage = null;
         for (String ttsUrl : subtitleUrls) {
             if (ttsUrl.startsWith("[")) {
                 final List<Object> tts = JSonStorage.restoreFromString(ttsUrl, TypeRef.LIST);
@@ -3222,19 +3223,15 @@ public class YoutubeHelper {
                             } else {
                                 url = br.getURL(url).toString();
                             }
-                            String lang = (String) map.get("languageCode");
-                            String name = null;
+                            final String name;
                             if (map.get("name") instanceof Map) {
-                                Map<String, Object> nameMap = (Map<String, Object>) map.get("name");
-                                name = (String) nameMap.get("simpleText");
-                            }
-                            String kind = (String) map.get("kind");
-                            if (name == null) {
+                                final Map<String, Object> nameMap = (Map<String, Object>) map.get("name");
+                                name = StringUtils.valueOrEmpty((String) nameMap.get("simpleText"));
+                            } else {
                                 name = "";
                             }
-                            if (kind == null) {
-                                kind = "";
-                            }
+                            final String lang = (String) map.get("languageCode");
+                            final String kind = StringUtils.valueOrEmpty((String) map.get("kind"));
                             final String lngID = lang + kind;
                             List<YoutubeSubtitleStorable> list = urls.get(lngID);
                             final YoutubeSubtitleStorable info = new YoutubeSubtitleStorable(null, name, lang, null, kind);
@@ -3252,17 +3249,12 @@ public class YoutubeHelper {
                                 info.setMulti(list.size());
                             }
                             list.add(info);
-                            // if ("true".equalsIgnoreCase(track.getAttribute("lang_default"))) {
-                            // defaultLanguage = info;
-                            // }
-                            // System.out.println(lang);
+                            if (defaultLanguage == null && "true".equalsIgnoreCase(StringUtils.valueOfOrNull(map.get("lang_default")))) {
+                                defaultLanguage = info;
+                            }
                         }
                     }
-                    final ArrayList<YoutubeSubtitleStorable> ret = new ArrayList<YoutubeSubtitleStorable>();
-                    for (List<YoutubeSubtitleStorable> list : urls.values()) {
-                        ret.addAll(list);
-                    }
-                    return ret;
+                    break;
                 }
             } else {
                 String xml = getPage(br, replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list")).getHtmlCode();
@@ -3271,7 +3263,6 @@ public class YoutubeHelper {
                 InputSource is = new InputSource(new StringReader(xml));
                 Document doc = docBuilder.parse(is);
                 NodeList tracks = doc.getElementsByTagName("track");
-                YoutubeSubtitleStorable defaultLanguage = null;
                 for (int trackIndex = 0; trackIndex < tracks.getLength(); trackIndex++) {
                     Element track = (Element) tracks.item(trackIndex);
                     String trackID = track.getAttribute("id");
@@ -3312,7 +3303,7 @@ public class YoutubeHelper {
                         info.setMulti(list.size());
                     }
                     list.add(info);
-                    if ("true".equalsIgnoreCase(track.getAttribute("lang_default"))) {
+                    if (defaultLanguage == null && "true".equalsIgnoreCase(track.getAttribute("lang_default"))) {
                         defaultLanguage = info;
                     }
                     // System.out.println(lang);
@@ -3365,9 +3356,55 @@ public class YoutubeHelper {
                 }
             }
         }
+        if (defaultLanguage == null) {
+            for (List<YoutubeSubtitleStorable> subtitles : urls.values()) {
+                for (YoutubeSubtitleStorable subtitle : subtitles) {
+                    defaultLanguage = subtitle;
+                    break;
+                }
+            }
+        }
+        if (defaultLanguage != null) {
+            final Set<Locale> autoTranslatedSubtitlesSet = new HashSet<Locale>();
+            final List<String> autoTranslatedSubtitles = CFG_YOUTUBE.CFG.getAutoTranslatedSubtitles();
+            if (autoTranslatedSubtitles != null && autoTranslatedSubtitles.size() > 0) {
+                for (String autoTranslatedSubtitle : autoTranslatedSubtitles) {
+                    try {
+                        final Locale locale = TranslationFactory.stringToLocale(autoTranslatedSubtitle);
+                        if (!StringUtils.isEmpty(locale.getISO3Language())) {
+                            autoTranslatedSubtitlesSet.add(locale);
+                        }
+                    } catch (Exception e) {
+                        getLogger().log(e);
+                    }
+                }
+            }
+            final Locale desiredLocale = TranslationFactory.getDesiredLocale();
+            for (final Locale autoTranslateSubtitle : autoTranslatedSubtitlesSet) {
+                final String lng = autoTranslateSubtitle.getLanguage();
+                final String iso3Lng = autoTranslateSubtitle.getISO3Language();
+                if (urls.containsKey(lng)) {
+                    continue;
+                } else if (urls.containsKey(iso3Lng)) {
+                    continue;
+                } else {
+                    final YoutubeSubtitleStorable info = new YoutubeSubtitleStorable(null, autoTranslateSubtitle.getDisplayName(desiredLocale), lng, defaultLanguage.getLanguage(), defaultLanguage.getKind());
+                    final String url = defaultLanguage.getFullUrl() + "&tlang=" + lng;
+                    info.setFullUrl(url);
+                    final ArrayList<YoutubeSubtitleStorable> list = new ArrayList<YoutubeSubtitleStorable>();
+                    list.add(info);
+                    urls.put(lng, list);
+                    urls.put(iso3Lng, list);
+                }
+            }
+        }
         final ArrayList<YoutubeSubtitleStorable> ret = new ArrayList<YoutubeSubtitleStorable>();
-        for (List<YoutubeSubtitleStorable> list : urls.values()) {
-            ret.addAll(list);
+        for (final List<YoutubeSubtitleStorable> list : urls.values()) {
+            for (final YoutubeSubtitleStorable entry : list) {
+                if (!ret.contains(entry)) {
+                    ret.add(entry);
+                }
+            }
         }
         return ret;
     }
