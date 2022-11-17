@@ -1447,6 +1447,7 @@ YoutubeHelper_getDescription_age=Proteção de idade true|false
 YoutubeHelper_getDescription_alternative=(se disponível, preferir o alternativo. Ex.: localizado)
 YoutubeHelper_getDescription_audioCodec=Codec de áudio (ex.: MP3, AAC, ...)
 YoutubeHelper_getDescription_audioQuality=Bitrate de áudio (ex.: 128kbit)
+YoutubeHelper_getDescription_best_height=Mehor altura de resolução de vídeo em pixels
 YoutubeHelper_getDescription_category=Categoria
 YoutubeHelper_getDescription_channel=Canal
 YoutubeHelper_getDescription_channel_id=ID do Canal
