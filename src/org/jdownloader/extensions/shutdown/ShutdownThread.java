@@ -23,6 +23,9 @@ public class ShutdownThread extends Thread {
     public void run() {
         if (settings.isShutdownActive() == false) {
             return;
+        } else if (!settings.isShutdownActiveByDefaultEnabled()) {
+            // make sure shutdown is disabled, eg system just goes to standby->no restart-> would still be enabled then
+            settings.setShutdownActive(false);
         }
         final Mode mode = settings.getShutdownMode();
         if (!shutdownInterface.isSupported(mode)) {
