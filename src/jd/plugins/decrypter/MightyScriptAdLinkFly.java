@@ -39,6 +39,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -140,6 +141,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String sourceHost = Browser.getHost(param.getCryptedUrl());
+        br.setCurrentURL("https://ufacw.com");
         correctURL(param);
         ret.addAll(handlePreCrawlProcess(param));
         if (!ret.isEmpty()) {
@@ -159,6 +161,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             logger.info("Found pre-captcha Form");
             this.submitForm(beforeCaptcha);
         }
+        handleLandingRedirect(param, br);
         appVars = regexAppVars(this.br);
         String recaptchaV2Response = null;
         /* 2018-07-18: Not all sites require a captcha to be solved */
@@ -369,6 +372,27 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         }
         ret.add(createDownloadlink(finallink));
         return ret;
+    }
+
+    protected void handleLandingRedirect(final CryptedLink param, Browser br) throws Exception {
+        final Form landingRedirect = br.getFormByRegex("id\\s*=\\s*\"landing\"");
+        if (landingRedirect != null) {
+            final String referer = br.getRequest().getHeaders().get("Referer");
+            final InputField goField = landingRedirect.getInputField("go");
+            if (goField != null) {
+                String goValue = goField.getValue();
+                goValue = Encoding.Base64Decode(goValue != null ? URLEncode.decodeURIComponent(goValue) : null);
+                if (goValue == null || !canHandle(goValue)) {
+                    goValue = referer;
+                }
+                if (goValue != null) {
+                    final String landing = landingRedirect.getAction();
+                    logger.info("fake landing:" + landing + " -> " + goValue);
+                    br.setCurrentURL(landing);
+                    getPage(goValue);
+                }
+            }
+        }
     }
 
     /**

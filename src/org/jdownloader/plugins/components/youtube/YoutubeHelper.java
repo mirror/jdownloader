@@ -3357,10 +3357,15 @@ public class YoutubeHelper {
             }
         }
         if (defaultLanguage == null) {
-            for (List<YoutubeSubtitleStorable> subtitles : urls.values()) {
-                for (YoutubeSubtitleStorable subtitle : subtitles) {
-                    defaultLanguage = subtitle;
-                    break;
+            final List<YoutubeSubtitleStorable> en = urls.get("en");
+            if (en != null) {
+                defaultLanguage = en.get(0);
+            } else {
+                for (List<YoutubeSubtitleStorable> subtitles : urls.values()) {
+                    for (YoutubeSubtitleStorable subtitle : subtitles) {
+                        defaultLanguage = subtitle;
+                        break;
+                    }
                 }
             }
         }
