@@ -2,6 +2,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -11,8 +13,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Regex;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vipergirls.to" }, urls = { "https?://(?:www\\.)?vipergirls\\.to/threads/\\d+(.+)?" })
 public class VipergirlsToBoard extends PluginForDecrypt {
     public VipergirlsToBoard(PluginWrapper wrapper) {
@@ -20,9 +20,9 @@ public class VipergirlsToBoard extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         br.getPage(parameter);
         final String threadID = new Regex(parameter, "threads/(\\d+)").getMatch(0);

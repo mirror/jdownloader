@@ -441,7 +441,9 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 downloadInfo = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
             }
             final Map<String, Object> play_addr = (Map<String, Object>) video.get("play_addr");
-            if (cfg.getDownloadMode() == DownloadMode.API_HD) {
+            final boolean tryHDDownload = false;
+            // if (cfg.getDownloadMode() == DownloadMode.API_HD) {
+            if (tryHDDownload && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 /* User prefers to download HD version */
                 /*
                  * 2022-08-17: Look like HD versions have been disabled serverside see e.g.:
