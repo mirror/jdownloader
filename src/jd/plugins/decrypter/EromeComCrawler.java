@@ -92,7 +92,6 @@ public class EromeComCrawler extends PluginForDecrypt {
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         for (final String mediagrouphtml : mediagrouphtmls) {
-            // class="img" data-src="https://s17.erome.com/889/QzBIbKfm/CljTL4vz.jpeg" >
             final String directurlImage = new Regex(mediagrouphtml, "class=\"img\" data-src=\"(https?://[^\"]+)\"").getMatch(0);
             final String directurlVideo = new Regex(mediagrouphtml, "<source src=\"(https?://[^\"]+)\" type='video/mp4'").getMatch(0);
             if (directurlImage == null && directurlVideo == null) {
