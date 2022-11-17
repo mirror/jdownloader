@@ -563,19 +563,19 @@ public class FavIcons {
         if (isFavIconURL(host)) {
             ret.add(host);
         } else {
-            String urls[] = favBr.getRegex("rel=('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*?href=('|\")([^>'\"]*?\\.(ico|png|svg).*?)('|\")").getColumn(4);
-            if (urls != null) {
+            String urls[] = favBr.getRegex("rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg)[^>'\"]*)('|\")").getColumn(4);
+            if (urls != null && urls.length > 0) {
                 ret.addAll(Arrays.asList(urls));
             }
-            urls = favBr.getRegex("href=('|\")([^>'\"]*?\\.(ico|png|svg).*?)('|\")[^>]*?rel=('|\")(SHORTCUT |apple-touch-)?ICON('|\")").getColumn(1);
-            if (urls != null) {
+            urls = favBr.getRegex("href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg)[^>'\"]*)('|\")[^>]*rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")").getColumn(1);
+            if (urls != null && urls.length > 0) {
                 ret.addAll(Arrays.asList(urls));
             }
             if (ret.size() == 0) {
                 /*
                  * workaround for hoster with not complete url, eg rapidshare.com
                  */
-                String url = favBr.getRegex("rel=('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?\\.(ico|png|svg).*?)('|\")").getMatch(3);
+                String url = favBr.getRegex("rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*href\\s*=\\s*[^>]*//([^>'\"]*\\.(ico|png|svg)[^>'\"]*)('|\")").getMatch(3);
                 if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) {
                     url = "http://" + url;
                 }
