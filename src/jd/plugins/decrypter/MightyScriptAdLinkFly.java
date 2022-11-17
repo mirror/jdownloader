@@ -19,6 +19,13 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,13 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -209,9 +209,9 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         }
                         /**
                          * Some websites do not allow users to access the target URL directly but will require a certain Referer to be set.
-                         * </br> We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another
-                         * website as the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from
-                         * happening.
+                         * </br>
+                         * We pre-set this in our browser but if that same URL is opened in browser, it may redirect to another website as
+                         * the Referer is missing. In this case we'll use the main page to solve the captcha to prevent this from happening.
                          */
                         final String reCaptchaSiteURL;
                         if (this.getSpecialReferer() != null) {
@@ -426,10 +426,10 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         }
         if (firstRedirect != null) {
             /**
-             * Check if this is redirect redirect or if it really is the one we expect. </br> Some websites redirect e.g. to a fake blog and
-             * only redirect back to the usual handling if you re-access the main URL with that fake blog as referer header e.g.:
-             * adshort.co, ez4short.com </br> In some cases this special referer is pre-given via getSpecialReferer in which we do not have
-             * to re-check.
+             * Check if this is redirect redirect or if it really is the one we expect. </br>
+             * Some websites redirect e.g. to a fake blog and only redirect back to the usual handling if you re-access the main URL with
+             * that fake blog as referer header e.g.: adshort.co, ez4short.com </br>
+             * In some cases this special referer is pre-given via getSpecialReferer in which we do not have to re-check.
              */
             if (getSpecialReferer() != null) {
                 /* Assume that redirect redirects to external website and use it as our final result. */
@@ -451,6 +451,8 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     }
                 } else if (regexAppVars(this.br) == null) {
                     logger.warning("Result looks like plugin failure");
+                } else {
+                    logger.info("Referer auto handling successful | Correct referer: " + firstRedirect);
                 }
             }
         }
