@@ -114,11 +114,14 @@ public class RecordbateCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = br.getRegex("source src=\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"").getMatch(0);
-        if (StringUtils.isEmpty(dllink)) {
+        if (!StringUtils.isEmpty(dllink)) {
+            link.setProperty(PROPERTY_DIRECTURL, dllink);
+        } else if (StringUtils.isEmpty(dllink)) {
             /* Maybe stored directurl is available. */
             dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         }
-        if (!StringUtils.isEmpty(dllink)) {
+        final boolean lookForFilesize = true;
+        if (!StringUtils.isEmpty(dllink) && lookForFilesize) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(this.dllink);
@@ -126,7 +129,6 @@ public class RecordbateCom extends PluginForHost {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                link.setProperty(PROPERTY_DIRECTURL, con.getURL().toString());
             } finally {
                 try {
                     con.disconnect();

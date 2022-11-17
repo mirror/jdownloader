@@ -59,7 +59,7 @@ public class RecordbateComProfile extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/performer/(\\w+)(/\\d+)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/performer/(\\w+)(/\\d+/?)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -71,27 +71,45 @@ public class RecordbateComProfile extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* TODO: Add pagination */
         final HashSet<String> dupes = new HashSet<String>();
-        final String[] slugs = br.getRegex("/videos/([^<>\"/]+)").getColumn(0);
-        if (slugs == null || slugs.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         final String username = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
-        int numberofNewItems = 0;
-        for (final String videoslug : slugs) {
-            if (dupes.add(videoslug)) {
-                numberofNewItems++;
-                final DownloadLink video = createDownloadlink(br.getURL("/videos/" + videoslug).toString());
-                video.setName(videoslug + ".mp4");
-                video.setAvailable(true);
-                video._setFilePackage(fp);
-                ret.add(video);
-                distribute(video);
+        int page = 1;
+        do {
+            final String[] slugs = br.getRegex("/videos/([^<>\"/]+)").getColumn(0);
+            if (slugs == null || slugs.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
+            int numberofNewItems = 0;
+            for (final String videoslug : slugs) {
+                if (dupes.add(videoslug)) {
+                    numberofNewItems++;
+                    final DownloadLink video = createDownloadlink(br.getURL("/videos/" + videoslug).toString());
+                    video.setName(videoslug + ".mp4");
+                    video.setAvailable(true);
+                    video._setFilePackage(fp);
+                    ret.add(video);
+                    distribute(video);
+                }
+            }
+            logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
+            final String nextpage = br.getRegex("(/performer/[^/]+/\\d+)\" class=\"page-link\" data-ci-pagination-page=\"" + (page + 1) + "\">").getMatch(0);
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (numberofNewItems == 0) {
+                /* Extra fail-safe */
+                logger.info("Stopping because: Failed to find any new items on current page");
+                break;
+            } else if (nextpage == null) {
+                logger.info("Stopping because: Reached last page: " + page);
+                break;
+            } else {
+                page++;
+                br.getPage(nextpage);
+            }
+        } while (true);
         return ret;
     }
 }
