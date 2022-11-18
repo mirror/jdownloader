@@ -21,26 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.RedditConfig;
-import org.jdownloader.plugins.components.config.RedditConfig.VideoDownloadStreamType;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
@@ -60,6 +40,26 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.RedditConfig;
+import org.jdownloader.plugins.components.config.RedditConfig.VideoDownloadStreamType;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RedditCom extends PluginForHost {
@@ -170,14 +170,14 @@ public class RedditCom extends PluginForHost {
 
     @Override
     public String getPluginContentURL(final DownloadLink link) {
-        if (link != null) {
-            final String pluginMatcher = link.getPluginPatternMatcher();
-            if (pluginMatcher != null && pluginMatcher.matches(PATTERN_VIDEO) && PluginJsonConfig.get(RedditConfig.class).isVideoUseDirecturlAsContentURL()) {
-                final String lastUsedVideoDirecturl = link.getStringProperty(PROPERTY_DIRECTURL_LAST_USED);
-                if (lastUsedVideoDirecturl != null) {
-                    /* Video has been checked- or fully/partially downloaded before -> Return direct link to stream */
-                    return lastUsedVideoDirecturl;
-                } else if (PluginJsonConfig.get(RedditConfig.class).getVideoDownloadStreamType() == VideoDownloadStreamType.HLS) {
+        final String pluginMatcher = link != null ? link.getPluginPatternMatcher() : null;
+        if (pluginMatcher != null && pluginMatcher.matches(PATTERN_VIDEO) && PluginJsonConfig.get(RedditConfig.class).isVideoUseDirecturlAsContentURL()) {
+            final String lastUsedVideoDirecturl = link.getStringProperty(PROPERTY_DIRECTURL_LAST_USED);
+            if (lastUsedVideoDirecturl != null) {
+                /* Video has been checked- or fully/partially downloaded before -> Return direct link to stream */
+                return lastUsedVideoDirecturl;
+            } else {
+                if (PluginJsonConfig.get(RedditConfig.class).getVideoDownloadStreamType() == VideoDownloadStreamType.HLS) {
                     /* HLS */
                     return getVideoHLSPlaylistUrl(link);
                 } else {
@@ -209,8 +209,9 @@ public class RedditCom extends PluginForHost {
             if (!link.hasProperty(PROPERTY_POST_TEXT)) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                return AvailableStatus.TRUE;
             }
-            return AvailableStatus.TRUE;
         } else if (link.getPluginPatternMatcher().contains("v.redd.it")) {
             /* Video */
             if (!link.isNameSet()) {
@@ -220,28 +221,35 @@ public class RedditCom extends PluginForHost {
             if (PluginJsonConfig.get(RedditConfig.class).getVideoDownloadStreamType() == VideoDownloadStreamType.HLS) {
                 /* HLS */
                 br.getPage(getVideoHLSPlaylistUrl(link));
-                this.connectionErrorhandling(br.getHttpConnection());
-                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                this.connectionErrorhandling(br, br.getHttpConnection());
+                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br));
                 link.setProperty(PROPERTY_DIRECTURL_LAST_USED, hlsbest.getDownloadurl());
                 final List<M3U8Playlist> list = M3U8Playlist.loadM3U8(hlsbest.getDownloadurl(), br);
-                final HLSDownloader downloader = new HLSDownloader(link, br, br.getURL(), list);
-                final StreamInfo streamInfo = downloader.getProbe();
-                if (streamInfo == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final long estimatedFilesize = downloader.getEstimatedSize();
-                if (estimatedFilesize > 0) {
-                    link.setDownloadSize(estimatedFilesize);
-                }
-                if (isDownload) {
-                    this.dl = downloader;
-                } else {
-                    this.dl = null;
+                HLSDownloader downloader = null;
+                try {
+                    downloader = new HLSDownloader(link, br, br.getURL(), list);
+                    final StreamInfo streamInfo = downloader.getProbe();
+                    if (streamInfo == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final long estimatedFilesize = downloader.getEstimatedSize();
+                    if (estimatedFilesize > 0) {
+                        link.setDownloadSize(estimatedFilesize);
+                    }
+                    if (isDownload) {
+                        this.dl = downloader;
+                    } else {
+                        this.dl = null;
+                    }
+                } finally {
+                    if (downloader != null && this.dl == null) {
+                        downloader.close();
+                    }
                 }
             } else {
                 /* DASH */
                 br.getPage(getVideoDASHPlaylistUrl(link));
-                this.connectionErrorhandling(br.getHttpConnection());
+                this.connectionErrorhandling(br, br.getHttpConnection());
                 /* Very cheap method to find highest DASH quality without real DASH parser... */
                 final String[] dashRepresentations = br.getRegex("<Representation(.*?)</Representation>").getColumn(0);
                 String highestQualityVideoDownloadurl = null;
@@ -279,8 +287,10 @@ public class RedditCom extends PluginForHost {
     private void checkHttpDirecturlAndSetFilesize(final String url, final DownloadLink link) throws IOException, PluginException {
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(url);
-            this.connectionErrorhandling(con);
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            con = brc.openHeadConnection(url);
+            this.connectionErrorhandling(brc, con);
             if (con.getCompleteContentLength() > 0) {
                 link.setVerifiedFileSize(con.getCompleteContentLength());
             }
@@ -292,12 +302,22 @@ public class RedditCom extends PluginForHost {
         }
     }
 
-    private void connectionErrorhandling(final URLConnectionAdapter con) throws PluginException {
+    private void connectionErrorhandling(Browser br, final URLConnectionAdapter con) throws PluginException {
         if (con.getResponseCode() == 400 || con.getResponseCode() == 404) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (con.getResponseCode() == 403) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403");
-        } else if (!this.looksLikeDownloadableContent(con) && !LinkCrawlerDeepInspector.looksLikeMpegURL(br.getHttpConnection()) && !LinkCrawlerDeepInspector.looksLikeDashURL(br.getHttpConnection())) {
+        } else if (!this.looksLikeDownloadableContent(con) && !LinkCrawlerDeepInspector.looksLikeMpegURL(con) && !LinkCrawlerDeepInspector.looksLikeDashURL(con)) {
             logger.warning("The final dllink seems not to be a file!");
             try {
                 br.followConnection(true);
@@ -354,13 +374,13 @@ public class RedditCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, true, 1);
-                this.connectionErrorhandling(dl.getConnection());
+                this.connectionErrorhandling(br, dl.getConnection());
                 dl.startDownload();
             }
         } else {
             /* Image */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), false, 1);
-            this.connectionErrorhandling(dl.getConnection());
+            this.connectionErrorhandling(br, dl.getConnection());
             dl.startDownload();
         }
     }
