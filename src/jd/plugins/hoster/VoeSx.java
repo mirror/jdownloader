@@ -79,6 +79,14 @@ public class VoeSx extends XFileSharingProBasic {
     }
 
     @Override
+    protected void processFileInfo(String[] fileInfo, Browser altbr, DownloadLink link) {
+        if (fileInfo != null && fileInfo[0] != null) {
+            fileInfo[0] = fileInfo[0].replaceFirst("(\\s*-\\s*VOE\\s*\\|\\s*Content\\s*Delivery\\s*Network\\s*\\(CDN\\)\\s*&\\s*Video\\s*Cloud)", "");
+        }
+        super.processFileInfo(fileInfo, altbr, link);
+    }
+
+    @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
