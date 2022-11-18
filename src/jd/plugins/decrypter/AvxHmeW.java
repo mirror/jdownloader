@@ -21,6 +21,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.appwork.utils.Time;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -37,12 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Time;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 /**
  * @author typek_pb
@@ -93,7 +93,7 @@ public class AvxHmeW extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setAllowedResponseCodes(new int[] { 401 });
         /* 2021-03-11: Do not replace hosts inside URLs anymore as this can lead to wrong redirectURLs breaking the crawling process. */
         // final String parameter = param.toString().replaceFirst("(?i)" + Regex.escape(Browser.getHost(param.toString())), this.getHost());
@@ -172,16 +172,16 @@ public class AvxHmeW extends PluginForDecrypt {
                 }
             }
             if (link != null && !link.matches(this.getSupportedLinks().pattern())) {
-                decryptedLinks.add(createDownloadlink(link));
+                ret.add(createDownloadlink(link));
             } else {
-                logger.warning("Failed to find any result:" + link);
+                /* Item offline or plugin broken. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
             br.setFollowRedirects(true);
             br.getPage(param.getCryptedUrl());
             if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String notThis = "(?:https?:)?" + buildHostsPatternPart(getPluginDomains().get(0)) + "[\\S&]+";
             final HashSet<String> dupe = new HashSet<String>();
@@ -194,16 +194,21 @@ public class AvxHmeW extends PluginForDecrypt {
                         continue;
                     }
                     if (!this.canHandle(link)) {
-                        decryptedLinks.add(createDownloadlink(br.getURL(link).toString()));
+                        ret.add(createDownloadlink(br.getURL(link).toString()));
                     }
                 }
             }
             /* Now find single redirect-URLs */
+            int numberofRedirectURLs = 0;
             final String[] allURLs = HTMLParser.getHttpLinks(this.br.toString(), br.getURL());
             for (final String url : allURLs) {
                 if (url.matches(TYPE_REDIRECT)) {
-                    decryptedLinks.add(createDownloadlink(url));
+                    ret.add(createDownloadlink(url));
+                    numberofRedirectURLs++;
                 }
+            }
+            if (numberofRedirectURLs == 0) {
+                logger.warning("Failed to find any redirect-URLs -> Possible crawler failure");
             }
             // try also LINK</br>, but ignore self site refs + imdb refs
             links = br.getRegex("(" + notThis + ")<br\\s*/\\s*>").getColumn(0);
@@ -215,7 +220,7 @@ public class AvxHmeW extends PluginForDecrypt {
                         continue;
                     }
                     if (!this.canHandle(link)) {
-                        decryptedLinks.add(createDownloadlink(link));
+                        ret.add(createDownloadlink(link));
                     }
                 }
             }
@@ -226,7 +231,7 @@ public class AvxHmeW extends PluginForDecrypt {
                     if (!dupe.add(coverlink)) {
                         continue;
                     }
-                    decryptedLinks.add(createDownloadlink(coverlink));
+                    ret.add(createDownloadlink(coverlink));
                 }
             }
             String fpName = br.getRegex("<title>(.*?)\\s*[\\|/]\\s*AvaxHome.*?</title>").getMatch(0);
@@ -234,12 +239,12 @@ public class AvxHmeW extends PluginForDecrypt {
                 fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             }
             if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlOnlyDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlOnlyDecode(fpName).trim());
+                fp.addLinks(ret);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private void followInternalRedirects() throws IOException {
