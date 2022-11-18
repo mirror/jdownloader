@@ -162,12 +162,12 @@ public class DepicMe extends XFileSharingProBasic {
                     }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
                 }
-                /* Dummy image detection part 2 (lazier attempt). */
                 final String etag = con.getRequest().getResponseHeader("etag");
                 if (StringUtils.equalsIgnoreCase(etag, "\"4c686360-1060\"")) {
                     /* Dummy image containing text "File not found" */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (con.getCompleteContentLength() == 117707) {
+                    /* Dummy image detection part 2 (lazier attempt). */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
