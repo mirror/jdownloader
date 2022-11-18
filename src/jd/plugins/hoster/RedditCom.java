@@ -36,6 +36,7 @@ import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.config.RedditConfig;
+import org.jdownloader.plugins.components.config.RedditConfig.VideoDownloadStreamType;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -86,6 +87,7 @@ public class RedditCom extends PluginForHost {
     public static final String PROPERTY_TYPE_text                   = "text";
     public static final String PROPERTY_TYPE_image                  = "image";
     public static final String PROPERTY_TYPE_video                  = "video";
+    private final String       PROPERTY_DIRECTURL_LAST_USED         = "directurl_last_used";
 
     /** API wiki/docs: https://github.com/reddit-archive/reddit/wiki/API */
     public static final String getApiBaseLogin() {
@@ -138,9 +140,7 @@ public class RedditCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean RESUME       = true;
-    private final int     MAXCHUNKS    = 0;
-    private final int     MAXDOWNLOADS = 20;
+    private final int MAXDOWNLOADS = -1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -169,13 +169,20 @@ public class RedditCom extends PluginForHost {
     }
 
     @Override
-    public String getPluginContentURL(DownloadLink link) {
+    public String getPluginContentURL(final DownloadLink link) {
         if (link != null) {
             final String pluginMatcher = link.getPluginPatternMatcher();
-            if (pluginMatcher != null && pluginMatcher.matches(PATTERN_VIDEO)) {
-                if (PluginJsonConfig.get(RedditConfig.class).isVideoUseDirecturlAsContentURL()) {
-                    /* Return used desired different contentURL. */
-                    return getVideoHLSUrls(this.getFID(link));
+            if (pluginMatcher != null && pluginMatcher.matches(PATTERN_VIDEO) && PluginJsonConfig.get(RedditConfig.class).isVideoUseDirecturlAsContentURL()) {
+                final String lastUsedVideoDirecturl = link.getStringProperty(PROPERTY_DIRECTURL_LAST_USED);
+                if (lastUsedVideoDirecturl != null) {
+                    /* Video has been checked- or fully/partially downloaded before -> Return direct link to stream */
+                    return lastUsedVideoDirecturl;
+                } else if (PluginJsonConfig.get(RedditConfig.class).getVideoDownloadStreamType() == VideoDownloadStreamType.HLS) {
+                    /* HLS */
+                    return getVideoHLSPlaylistUrl(link);
+                } else {
+                    /* DASH */
+                    return getVideoDASHPlaylistUrl(link);
                 }
             }
         }
@@ -205,30 +212,56 @@ public class RedditCom extends PluginForHost {
             }
             return AvailableStatus.TRUE;
         } else if (link.getPluginPatternMatcher().contains("v.redd.it")) {
-            /* HLS Video */
+            /* Video */
             if (!link.isNameSet()) {
                 /* Fallback: Use this if no name was set in crawler. */
                 link.setFinalFileName(this.getFID(link) + ".mp4");
             }
-            br.getPage(getVideoHLSUrls(this.getFID(link)));
-            if (this.br.getHttpConnection().getResponseCode() == 400 || this.br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!LinkCrawlerDeepInspector.looksLikeMpegURL(br.getHttpConnection())) {
-                /* Obligatory seconds check. */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!isDownload) {
+            if (PluginJsonConfig.get(RedditConfig.class).getVideoDownloadStreamType() == VideoDownloadStreamType.HLS) {
+                /* HLS */
+                br.getPage(getVideoHLSPlaylistUrl(link));
+                this.connectionErrorhandling(br.getHttpConnection());
                 final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
+                link.setProperty(PROPERTY_DIRECTURL_LAST_USED, hlsbest.getDownloadurl());
                 final List<M3U8Playlist> list = M3U8Playlist.loadM3U8(hlsbest.getDownloadurl(), br);
                 final HLSDownloader downloader = new HLSDownloader(link, br, br.getURL(), list);
                 final StreamInfo streamInfo = downloader.getProbe();
                 if (streamInfo == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final long estimatedFilesize = downloader.getEstimatedSize();
+                if (estimatedFilesize > 0) {
+                    link.setDownloadSize(estimatedFilesize);
+                }
+                if (isDownload) {
+                    this.dl = downloader;
                 } else {
-                    final long estimatedFilesize = downloader.getEstimatedSize();
-                    if (estimatedFilesize > 0) {
-                        link.setDownloadSize(estimatedFilesize);
+                    this.dl = null;
+                }
+            } else {
+                /* DASH */
+                br.getPage(getVideoDASHPlaylistUrl(link));
+                this.connectionErrorhandling(br.getHttpConnection());
+                /* Very cheap method to find highest DASH quality without real DASH parser... */
+                final String[] dashRepresentations = br.getRegex("<Representation(.*?)</Representation>").getColumn(0);
+                String highestQualityVideoDownloadurl = null;
+                int highestBandwidth = -1;
+                for (final String dashRepresentation : dashRepresentations) {
+                    if (dashRepresentation.contains("\"audio\"")) {
+                        /* Skip audio-only items */
+                        continue;
+                    }
+                    final int bandwidth = Integer.parseInt(new Regex(dashRepresentation, "bandwidth=\"(\\d+)\"").getMatch(0));
+                    if (bandwidth > highestBandwidth) {
+                        highestBandwidth = bandwidth;
+                    }
+                    highestQualityVideoDownloadurl = new Regex(dashRepresentation, "<BaseURL>([^<]+)</BaseURL>").getMatch(0);
+                }
+                if (highestQualityVideoDownloadurl != null) {
+                    highestQualityVideoDownloadurl = br.getURL(highestQualityVideoDownloadurl).toString();
+                    link.setProperty(PROPERTY_DIRECTURL_LAST_USED, highestQualityVideoDownloadurl);
+                    if (!isDownload) {
+                        checkHttpDirecturlAndSetFilesize(highestQualityVideoDownloadurl, link);
                     }
                 }
             }
@@ -238,41 +271,66 @@ public class RedditCom extends PluginForHost {
                 /* Fallback: Use this if no name was set in crawler. */
                 link.setFinalFileName(this.getFID(link) + ".jpg");
             }
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(link.getPluginPatternMatcher());
-                /* 2020-07-24: On offline, they will return a dummy image along with responsecode 404. */
-                if (con.getResponseCode() == 400 || con.getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (con.getContentType().contains("image")) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+            checkHttpDirecturlAndSetFilesize(link.getPluginPatternMatcher(), link);
         }
         return AvailableStatus.TRUE;
     }
 
-    public static final String getVideoHLSUrls(final String videoID) {
+    private void checkHttpDirecturlAndSetFilesize(final String url, final DownloadLink link) throws IOException, PluginException {
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openHeadConnection(url);
+            this.connectionErrorhandling(con);
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+    }
+
+    private void connectionErrorhandling(final URLConnectionAdapter con) throws PluginException {
+        if (con.getResponseCode() == 400 || con.getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (con.getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 403");
+        } else if (!this.looksLikeDownloadableContent(con) && !LinkCrawlerDeepInspector.looksLikeMpegURL(br.getHttpConnection()) && !LinkCrawlerDeepInspector.looksLikeDashURL(br.getHttpConnection())) {
+            logger.warning("The final dllink seems not to be a file!");
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
+    private String getVideoHLSPlaylistUrl(final DownloadLink link) {
+        return getVideoHLSPlaylistUrl(this.getFID(link));
+    }
+
+    public static final String getVideoHLSPlaylistUrl(final String videoID) {
         return "https://v.redd.it/" + videoID + "/HLSPlaylist.m3u8";
+    }
+
+    private String getVideoDASHPlaylistUrl(final DownloadLink link) {
+        return getVideoDASHPlaylistUrl(this.getFID(link));
+    }
+
+    public static final String getVideoDASHPlaylistUrl(final String videoID) {
+        return "https://v.redd.it/" + videoID + "/DASHPlaylist.mpd";
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link, true);
-        handleDownload(link, RESUME, MAXCHUNKS, "free_directlink");
+        handleDownload(link);
     }
 
-    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link, true);
         if (link.getPluginPatternMatcher().matches(PATTERN_TEXT)) {
             /* Write text to file */
             final File dest = new File(link.getFileOutput());
@@ -282,32 +340,27 @@ public class RedditCom extends PluginForHost {
             /* Set progress to finished - the "download" is complete ;) */
             link.getLinkStatus().setStatus(LinkStatus.FINISHED);
         } else if (link.getPluginPatternMatcher().contains("v.redd.it")) {
-            /* HLS video */
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-            if (hlsbest == null) {
-                /* No content available --> Probably the user wants to download hasn't aired yet --> Wait and retry later! */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
+            if (PluginJsonConfig.get(RedditConfig.class).getVideoDownloadStreamType() == VideoDownloadStreamType.HLS) {
+                /* HLS video */
+                if (this.dl == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                checkFFmpeg(link, "Download a HLS Stream");
+                dl.startDownload();
+            } else {
+                /* DASH video */
+                final String directurl = link.getStringProperty(PROPERTY_DIRECTURL_LAST_USED);
+                if (directurl == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, true, 1);
+                this.connectionErrorhandling(dl.getConnection());
+                dl.startDownload();
             }
-            checkFFmpeg(link, "Download a HLS Stream");
-            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
-            dl.startDownload();
         } else {
             /* Image */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), false, 1);
-            if (!dl.getConnection().getContentType().contains("image")) {
-                logger.warning("The final dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-            }
+            this.connectionErrorhandling(dl.getConnection());
             dl.startDownload();
         }
     }
@@ -347,7 +400,7 @@ public class RedditCom extends PluginForHost {
     public void login(final Account account, final boolean validateToken) throws Exception {
         synchronized (account) {
             if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                showUnderDevelopment();
+                showUnderDevelopmentDialog();
                 throw new AccountInvalidException("The login process of this plugin is still under development");
             }
             br.setCookiesExclusive(true);
@@ -560,7 +613,7 @@ public class RedditCom extends PluginForHost {
         return thread;
     }
 
-    private Thread showUnderDevelopment() {
+    private Thread showUnderDevelopmentDialog() {
         final String forumURL = "https://board.jdownloader.org/showthread.php?t=80259";
         final Thread thread = new Thread() {
             public void run() {
