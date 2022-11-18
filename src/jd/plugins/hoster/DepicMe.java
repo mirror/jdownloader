@@ -15,11 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,6 +30,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DepicMe extends XFileSharingProBasic {
@@ -154,17 +155,20 @@ public class DepicMe extends XFileSharingProBasic {
             try {
                 con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
                 if (!this.looksLikeDownloadableContent(con)) {
+                    try {
+                        brc.followConnection(true);
+                    } catch (IOException ignore) {
+                        logger.log(ignore);
+                    }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
                 }
                 final String etag = con.getRequest().getResponseHeader("etag");
                 if (StringUtils.equalsIgnoreCase(etag, "\"4c686360-1060\"")) {
                     /* Dummy image containing text "File not found" */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (con.getCompleteContentLength() == 117707) {
+                } else if (con.getCompleteContentLength() == 117707) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (con.getCompleteContentLength() > 0) {
+                } else if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
