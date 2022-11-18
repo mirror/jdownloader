@@ -563,11 +563,12 @@ public class FavIcons {
         if (isFavIconURL(host)) {
             ret.add(host);
         } else {
-            String urls[] = favBr.getRegex("rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg)[^>'\"]*)('|\")").getColumn(4);
+            final String requestHtml = favBr.toString().replaceAll("(?s)<!--.*?-->", "");
+            String urls[] = new Regex(requestHtml, "rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg)[^>'\"]*)('|\")").getColumn(4);
             if (urls != null && urls.length > 0) {
                 ret.addAll(Arrays.asList(urls));
             }
-            urls = favBr.getRegex("href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg)[^>'\"]*)('|\")[^>]*rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")").getColumn(1);
+            urls = new Regex(requestHtml, "href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg)[^>'\"]*)('|\")[^>]*rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")").getColumn(1);
             if (urls != null && urls.length > 0) {
                 ret.addAll(Arrays.asList(urls));
             }
@@ -575,7 +576,7 @@ public class FavIcons {
                 /*
                  * workaround for hoster with not complete url, eg rapidshare.com
                  */
-                String url = favBr.getRegex("rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*href\\s*=\\s*[^>]*//([^>'\"]*\\.(ico|png|svg)[^>'\"]*)('|\")").getMatch(3);
+                String url = new Regex(requestHtml, "rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*href\\s*=\\s*[^>]*//([^>'\"]*\\.(ico|png|svg)[^>'\"]*)('|\")").getMatch(3);
                 if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) {
                     url = "http://" + url;
                 }
@@ -635,8 +636,9 @@ public class FavIcons {
                         final BufferedImage img = returnBestImage(ret);
                         if (img != null) {
                             return img;
+                        } else {
+                            throw new Throwable("Try again with other ImageLoader");
                         }
-                        throw new Throwable("Try again with other ImageLoader");
                     } catch (Throwable e) {
                         /* maybe redirect to different icon format? */
                         final BufferedImage img = downloadImage(con, logger, new ByteArrayInputStream(bytes));

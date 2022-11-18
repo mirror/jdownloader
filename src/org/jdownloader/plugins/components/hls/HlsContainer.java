@@ -269,12 +269,14 @@ public class HlsContainer {
     public static enum CODEC {
         // http://mp4ra.org/#/codecs
         // https://wiki.multimedia.cx/index.php/MPEG-4_Audio#Audio_Object_Types
-        MP3(CODEC_TYPE.AUDIO, "mp3,", "mp3", "mp4a\\.40\\.34"),
-        AAC(CODEC_TYPE.AUDIO, "aac", "m4a", "mp4a\\.40\\.(1|2|3|4|5|6)"),
-        AC3(CODEC_TYPE.AUDIO, "ac3", "ac3", "ac-3"), // AC-3 (Dolby Digital), up to 5.1
-        EC3(CODEC_TYPE.AUDIO, "ec3", "ec3", "ec-3"), // EC-3 (Dolby Digital Plus) up to 15.1
-        AVC(CODEC_TYPE.VIDEO, "avc", "mp4", "avc\\d+"),
-        HEVC(CODEC_TYPE.VIDEO, "hevc", "mp4", "(hev|hvc)\\d+"),
+        // https://developer.apple.com/documentation/http_live_streaming/http_live_streaming_hls_authoring_specification_for_apple_devices/hls_authoring_specification_for_apple_devices_appendixes
+        MP3(CODEC_TYPE.AUDIO, "mp3,", "mp3", "(mp4a\\.40\\.34|mp3)"),
+        AAC(CODEC_TYPE.AUDIO, "aac", "m4a", "(mp4a\\.40|aac)"),
+        AC3(CODEC_TYPE.AUDIO, "ac3", "ac3", "(ac-3|ac3)"), // AC-3 (Dolby Digital), up to 5.1
+        EC3(CODEC_TYPE.AUDIO, "ec3", "ec3", "(ec-3|ec3)"), // EC-3 (Dolby Digital Plus) up to 15.1
+        FLAC(CODEC_TYPE.VIDEO, "flac", "flac", "fLaC"),
+        AVC(CODEC_TYPE.VIDEO, "avc", "mp4", "(avc1|avc3|h264)"),
+        HEVC(CODEC_TYPE.VIDEO, "hevc", "mp4", "(hev1|hvc1|h265)"),
         UNKNOWN(CODEC_TYPE.UNKNOWN, null, null, null);
         private final CODEC_TYPE type;
 
