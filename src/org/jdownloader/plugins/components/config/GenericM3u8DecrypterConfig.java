@@ -30,25 +30,37 @@ public interface GenericM3u8DecrypterConfig extends PluginConfigInterface {
         SLOW {
             @Override
             public String getLabel() {
-                return "Slow: Check individual streams in host plugin";
+                return "Slow: Check individual streams in host plugin. Host Plugin probes for additional information like resolution, codec and more.";
             }
         },
         FAST {
             @Override
             public String getLabel() {
-                return "Fast: Trust crawler and obtain estimated filesizes";
+                return "Fast: Trust crawler and obtain estimated filesizes. Additional information, like resolution, might not yet be available/known.";
             }
         },
         SUPERFAST {
             @Override
             public String getLabel() {
-                return "Super fast: Trust crawler and do not obtain estimated filesize";
+                return "Super fast: Trust crawler and do not obtain estimated filesize. Additional information, like resolution, might not yet be available/known.";
             }
-        };
+        },
+        AUTOMATIC_FAST {
+            @Override
+            public String getLabel() {
+                return "Automatic: Prefer FAST if non video or resolution is available/known, else fall back to SLOW";
+            }
+        },
+        AUTOMATIC_SUPERFAST {
+            @Override
+            public String getLabel() {
+                return "Automatic: Prefer SUPERFAST if non video or resolution is available/known, else fall back to SLOW";
+            }
+        }
     }
 
     @AboutConfig
-    @DefaultEnumValue("FAST")
+    @DefaultEnumValue("AUTOMATIC_SUPERFAST")
     @Order(10)
     @DescriptionForConfigEntry(text_CrawlSpeedMode)
     CrawlSpeedMode getCrawlSpeedMode();

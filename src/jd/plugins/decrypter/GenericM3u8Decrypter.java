@@ -47,6 +47,7 @@ import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
 import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig.CrawlSpeedMode;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
@@ -182,8 +183,33 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 } else if (StringUtils.isNotEmpty(sessionDataTitle)) {
                     link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, sessionDataTitle);
                 }
+                List<StreamCodec> codecs = hls.getStreamCodecs();
+                Boolean hasVideo = null;
+                Boolean hasAudio = null;
+                if (codecs != null && codecs.size() > 0) {
+                    for (StreamCodec codec : codecs) {
+                        switch (codec.getCodec().getType()) {
+                        case AUDIO:
+                            hasAudio = true;
+                            break;
+                        case VIDEO:
+                            hasVideo = true;
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                    if (hasAudio == null) {
+                        hasAudio = false;
+                    }
+                    if (hasVideo == null) {
+                        hasVideo = false;
+                    }
+                }
+                final boolean isAudioOnly = Boolean.FALSE.equals(hasVideo) && Boolean.TRUE.equals(hasAudio);
+                final boolean isVideo = Boolean.TRUE.equals(hasVideo);
                 hls.setPropertiesOnDownloadLink(link);
-                if (mode == CrawlSpeedMode.FAST) {
+                if (mode == CrawlSpeedMode.FAST || (mode == CrawlSpeedMode.AUTOMATIC_FAST && (isAudioOnly || isVideo && hls.getHeight() > 0))) {
                     link.setAvailable(true);
                     if (hls.getAverageBandwidth() > 0 || hls.getBandwidth() > 0) {
                         if (estimatedDurationMillis == null) {
@@ -209,7 +235,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     if (estimatedDurationMillis != null) {
                         link.setProperty(GenericM3u8.PROPERTY_DURATION_ESTIMATED_MILLIS, estimatedDurationMillis);
                     }
-                } else if (mode == CrawlSpeedMode.SUPERFAST) {
+                } else if (mode == CrawlSpeedMode.SUPERFAST || (mode == CrawlSpeedMode.AUTOMATIC_SUPERFAST && (isAudioOnly || isVideo && hls.getHeight() > 0))) {
                     link.setAvailable(true);
                 }
                 if (fp != null) {
