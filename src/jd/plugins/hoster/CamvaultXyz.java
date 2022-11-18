@@ -178,7 +178,7 @@ public class CamvaultXyz extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 0;
+        return -1;
     }
 
     public boolean login(final Account account, final boolean force) throws Exception {
@@ -353,6 +353,16 @@ public class CamvaultXyz extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
+        }
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        /* 2022-11-18: Only premium users can download files. */
+        if (account != null && account.getType() == AccountType.PREMIUM) {
+            return true;
+        } else {
+            return false;
         }
     }
 
