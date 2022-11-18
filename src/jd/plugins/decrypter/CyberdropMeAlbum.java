@@ -22,16 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -49,6 +39,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CyberdropMeAlbum extends PluginForDecrypt {
@@ -77,7 +77,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return buildAnnotationUrls(getPluginDomains());
     }
 
-    private static final String EXTENSIONS = "(?:mp4|m4v|mp3|jpe?g|zip|rar|png|gif)";
+    private static final String EXTENSIONS = "(?:mp4|m4v|mp3|mov|jpe?g|zip|rar|png|gif|[a-z0-9]{3})";
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -92,11 +92,11 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public static final String TYPE_ALBUM       = "https?://[^/]+/a/([A-Za-z0-9]+)";                                 // album
+    public static final String TYPE_ALBUM       = "https?://[^/]+/a/([A-Za-z0-9]+)";                                // album
     public static final String TYPE_STREAM      = "https?://stream(\\d*)\\.[^/]+/(?:v|d)/(.+\\." + EXTENSIONS + ")"; // bunkr
-    public static final String TYPE_CDN         = "https?://cdn(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";            // bunkr
-    public static final String TYPE_FS          = "https?://fs-(\\d+)\\.[^/]+/(.+\\." + EXTENSIONS + ")";            // cyberdrop
-    public static final String TYPE_MEDIA_FILES = "https?://media-files(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";    // bunkr
+    public static final String TYPE_CDN         = "https?://cdn(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";           // bunkr
+    public static final String TYPE_FS          = "https?://fs-(\\d+)\\.[^/]+/(.+\\." + EXTENSIONS + ")";           // cyberdrop
+    public static final String TYPE_MEDIA_FILES = "https?://media-files(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";   // bunkr
     private PluginForHost      plugin           = null;
 
     private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, final String directurl, final String filename, final String filesizeBytes, final String filesize) throws Exception {
@@ -274,9 +274,8 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
     }
 
     /**
-     * Corrects given URL. </br>
-     * Returns null if given URL is not a known stream/cdn URL. </br>
-     * 2022-03-14: Especially required for bunkr.is video-URLs.
+     * Corrects given URL. </br> Returns null if given URL is not a known stream/cdn URL. </br> 2022-03-14: Especially required for bunkr.is
+     * video-URLs.
      */
     private String correctDirecturl(final String url) {
         final Regex streamregex = new Regex(url, TYPE_STREAM);
