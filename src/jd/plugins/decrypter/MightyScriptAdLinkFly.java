@@ -141,7 +141,6 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String sourceHost = Browser.getHost(param.getCryptedUrl());
-        br.setCurrentURL("https://ufacw.com");
         correctURL(param);
         ret.addAll(handlePreCrawlProcess(param));
         if (!ret.isEmpty()) {
