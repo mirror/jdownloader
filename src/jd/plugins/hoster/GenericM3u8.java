@@ -43,6 +43,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+" })
 public class GenericM3u8 extends PluginForHost {
     public static final String PRESET_NAME_PROPERTY               = "preSetName";
+    public static final String DEPRECATED_NAME_PROPERTY           = "deprecatedName";
     public static final String PROPERTY_HEIGHT                    = "height";
     public static final String PROPERTY_WIDTH                     = "width";
     public static final String PROPERTY_BANDWIDTH                 = "hlsBandwidth";
@@ -180,12 +181,14 @@ public class GenericM3u8 extends PluginForHost {
         }
         final int videoHeight = link.getIntegerProperty(PROPERTY_HEIGHT, 0);
         final int bandwidth = link.getIntegerProperty(PROPERTY_BANDWIDTH, 0);
-        String name = link.getStringProperty(PRESET_NAME_PROPERTY);
+        String name = link.getStringProperty(PRESET_NAME_PROPERTY, link.getStringProperty(DEPRECATED_NAME_PROPERTY));
         if (name == null) {
             name = link.isNameSet() ? link.getName() : getFileNameFromURL(new URL(link.getPluginPatternMatcher().replaceFirst("^m3u8s?", "https://")));
             /* .m3u8 is not a valid file extension and we don't want to have this in our filename */
             name = name.replaceFirst("(?i)\\.m3u8$", "");
             name = plugin.correctOrApplyFileNameExtension(name, ".dummy").replaceFirst("\\.dummy$", "");
+            /* store name as property to avoid name duplication issue */
+            link.setProperty(DEPRECATED_NAME_PROPERTY, name);
         }
         String assumedFileExtension = null;
         final String codecsString = link.getStringProperty(PROPERTY_M3U8_CODECS, link.getStringProperty(PROPERTY_FFMPEG_CODECS, null));

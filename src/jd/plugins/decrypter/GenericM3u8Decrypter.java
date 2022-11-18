@@ -154,8 +154,12 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             }
             final String finalFallbackTitle = new Regex(m3u8URL, "/([^/]+)\\.m3u8").getMatch(0);
             FilePackage fp = FilePackage.getInstance();
-            if (preSetName != null) {
+            if (StringUtils.isNotEmpty(preSetName)) {
                 fp.setName(preSetName);
+            } else if (StringUtils.isNotEmpty(sessionDataTitle)) {
+                fp.setName(sessionDataTitle);
+            } else if (StringUtils.isNotEmpty(finalFallbackTitle) && !StringUtils.equalsIgnoreCase(finalFallbackTitle, "master")) {
+                fp.setName(finalFallbackTitle);
             } else {
                 fp = null;
             }
@@ -163,17 +167,6 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             for (final Entry<HlsContainer, URL> entry : hlsContainers.entrySet()) {
                 final HlsContainer hls = entry.getKey();
                 final URL url = entry.getValue();
-                if (fp == null) {
-                    final String singleStreamFallbackTitle = new Regex(url.toString(), "/([^/]+)\\.m3u8").getMatch(0);
-                    if (singleStreamFallbackTitle != null) {
-                        fp = FilePackage.getInstance();
-                        fp.setName(singleStreamFallbackTitle);
-                    } else if (finalFallbackTitle != null) {
-                        /* TODO: Maybe ignore this if it is "master" (from "master.m3u8"). */
-                        fp = FilePackage.getInstance();
-                        fp.setName(finalFallbackTitle);
-                    }
-                }
                 final DownloadLink link = new DownloadLink(null, null, plugin.getHost(), GenericM3u8.createURLForThisPlugin(url.toString()), true);
                 link.setProperty("m3u8Source", m3u8URL);
                 link.setReferrerUrl(referer);
@@ -187,6 +180,8 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 Boolean hasVideo = null;
                 Boolean hasAudio = null;
                 if (codecs != null && codecs.size() > 0) {
+                    hasVideo = false;
+                    hasAudio = false;
                     for (StreamCodec codec : codecs) {
                         switch (codec.getCodec().getType()) {
                         case AUDIO:
@@ -198,12 +193,6 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                         default:
                             break;
                         }
-                    }
-                    if (hasAudio == null) {
-                        hasAudio = false;
-                    }
-                    if (hasVideo == null) {
-                        hasVideo = false;
                     }
                 }
                 final boolean isAudioOnly = Boolean.FALSE.equals(hasVideo) && Boolean.TRUE.equals(hasAudio);
