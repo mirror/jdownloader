@@ -48,9 +48,9 @@ import jd.plugins.PluginForHost;
  * @author typek_pb
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class AvxHmeW extends PluginForDecrypt {
+public class AvxHmeWCrawler extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
-    public AvxHmeW(PluginWrapper wrapper) {
+    public AvxHmeWCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 

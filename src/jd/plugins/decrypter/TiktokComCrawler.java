@@ -104,16 +104,30 @@ public class TiktokComCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (param.getCryptedUrl().matches(TYPE_REDIRECT) || param.getCryptedUrl().matches(TYPE_APP)) {
             /* Single redirect URLs */
-            br.setFollowRedirects(true);
-            br.getPage(param.getCryptedUrl().replaceFirst("http://", "https://"));
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (!hosterPlugin.canHandle(br.getURL())) {
+            br.setFollowRedirects(false);
+            final String initialURL = param.getCryptedUrl().replaceFirst("http://", "https://");
+            String redirect = initialURL;
+            int loops = 0;
+            do {
+                br.getPage(redirect);
+                redirect = br.getRedirectLocation();
+                if (redirect != null && hosterPlugin.canHandle(redirect)) {
+                    break;
+                } else if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (loops >= 5) {
+                    logger.info("Redirectloop -> URL must be offline");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    loops++;
+                }
+            } while (true);
+            if (redirect == null || !hosterPlugin.canHandle(redirect)) {
                 /* E.g. redirect to mainpage */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            logger.info("Old URL: " + param.getCryptedUrl() + " | New URL: " + br.getURL());
-            ret.add(createDownloadlink(br.getURL()));
+            logger.info("Old URL: " + initialURL + " | New URL: " + redirect);
+            ret.add(createDownloadlink(redirect));
             return ret;
         } else if (hosterPlugin.canHandle(param.getCryptedUrl())) {
             return crawlSingleMedia(param);

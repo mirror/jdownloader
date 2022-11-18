@@ -215,7 +215,7 @@ public class GoogleDrive extends PluginForHost {
     private static final String PROPERTY_FORCED_FINAL_DOWNLOADURL              = "FORCED_FINAL_DOWNLOADURL";
     private static final String PROPERTY_CAN_DOWNLOAD                          = "CAN_DOWNLOAD";
     private final String        PROPERTY_CAN_STREAM                            = "CAN_STREAM";
-    private final String        PROPERTY_IS_PRIVATE_FILE                       = "IS_PRIVATE_FILE";
+    private final String        PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP        = "LAST_IS_PRIVATE_FILE_TIMESTAMP";
     private final String        PROPERTY_IS_QUOTA_REACHED_ANONYMOUS            = "IS_QUOTA_REACHED_ANONYMOUS";
     private final String        PROPERTY_IS_QUOTA_REACHED_ACCOUNT              = "IS_QUOTA_REACHED_ACCOUNT";
     private final String        PROPERTY_IS_STREAM_QUOTA_REACHED_ANONYMOUS     = "IS_STREAM_QUOTA_REACHED_ANONYMOUS";
@@ -1164,7 +1164,7 @@ public class GoogleDrive extends PluginForHost {
                 if (helper.validateCookies(account)) {
                     /* Login session looks to be valid -> Looks like what we have is a private file */
                     /* Store as a property as this information might come in handy in the future. */
-                    link.setProperty(PROPERTY_IS_PRIVATE_FILE, true);
+                    link.setProperty(PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP, System.currentTimeMillis());
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Insufficient permissions: Private file");
                 } else {
                     /* Login session is invalid -> We got an account problem and not a private file */

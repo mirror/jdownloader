@@ -22,8 +22,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
@@ -38,16 +49,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CyberdropMeAlbum extends PluginForDecrypt {
@@ -91,19 +92,19 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public static final String TYPE_ALBUM       = "https?://[^/]+/a/([A-Za-z0-9]+)";                                // album
+    public static final String TYPE_ALBUM       = "https?://[^/]+/a/([A-Za-z0-9]+)";                                 // album
     public static final String TYPE_STREAM      = "https?://stream(\\d*)\\.[^/]+/(?:v|d)/(.+\\." + EXTENSIONS + ")"; // bunkr
-    public static final String TYPE_CDN         = "https?://cdn(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";           // bunkr
-    public static final String TYPE_FS          = "https?://fs-(\\d+)\\.[^/]+/(.+\\." + EXTENSIONS + ")";           // cyberdrop
-    public static final String TYPE_MEDIA_FILES = "https?://media-files(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";   // bunkr
+    public static final String TYPE_CDN         = "https?://cdn(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";            // bunkr
+    public static final String TYPE_FS          = "https?://fs-(\\d+)\\.[^/]+/(.+\\." + EXTENSIONS + ")";            // cyberdrop
+    public static final String TYPE_MEDIA_FILES = "https?://media-files(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";    // bunkr
     private PluginForHost      plugin           = null;
 
-    private DownloadLink add(final List<DownloadLink> decryptedLinks, Set<String> dups, final String directurl, final String filename, final String filesizeBytes, final String filesize) throws Exception {
+    private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, final String directurl, final String filename, final String filesizeBytes, final String filesize) throws Exception {
         if (dups == null || dups.add(directurl)) {
-            final String correctDirectURL = correctDirecturl(directurl);
+            final String correctedDirectURL = correctDirecturl(directurl);
             final DownloadLink dl;
-            if (correctDirectURL != null) {
-                dl = this.createDownloadlink(correctDirectURL);
+            if (correctedDirectURL != null) {
+                dl = this.createDownloadlink(correctedDirectURL);
             } else {
                 dl = this.createDownloadlink(directurl);
             }
@@ -121,11 +122,11 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
                 }
             }
-            if (correctDirectURL != null) {
+            if (correctedDirectURL != null) {
                 // direct assign the dedicated hoster plugin because it does not have any URL regex
                 dl.setDefaultPlugin(plugin);
-                dl.setAvailable(true);
             }
+            dl.setAvailable(true);
             if (filename != null) {
                 dl.setFinalFileName(filename);
             }
@@ -134,7 +135,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             } else if (filesize != null) {
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
             return dl;
         } else {
             return null;
@@ -143,8 +144,8 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String directURL = correctDirecturl(param.getCryptedUrl());
-        if (directURL != null) {
+        final String correctedDirectURL = correctDirecturl(param.getCryptedUrl());
+        if (correctedDirectURL != null) {
             // only if domain already contains specific server number
             add(ret, null, param.getCryptedUrl(), null, null, null);
         } else {
@@ -166,6 +167,17 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             }
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* Double-check for offline */
+            final String albumID = new Regex(br.getURL(), TYPE_ALBUM).getMatch(0);
+            final String buildID = br.getRegex("\"buildId\"\\s*:\\s*\"([^\"]+)").getMatch(0);
+            if (albumID != null && buildID != null) {
+                final Browser brc = br.cloneBrowser();
+                brc.getPage("/_next/data/" + Encoding.urlEncode(buildID) + "/a/" + albumID + ".json");
+                if (brc.getHttpConnection().getResponseCode() == 404) {
+                    /* {"notFound":true} */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
             }
             final String albumjs = br.getRegex("const albumData\\s*=\\s*(\\{.*?\\})").getMatch(0);
             String fpName = new Regex(albumjs, "name\\s*:\\s*'([^\\']+)'").getMatch(0);
@@ -262,8 +274,9 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
     }
 
     /**
-     * Corrects given URL. </br> Returns null if given URL is not a known stream/cdn URL. </br> 2022-03-14: Especially required for bunkr.is
-     * video-URLs.
+     * Corrects given URL. </br>
+     * Returns null if given URL is not a known stream/cdn URL. </br>
+     * 2022-03-14: Especially required for bunkr.is video-URLs.
      */
     private String correctDirecturl(final String url) {
         final Regex streamregex = new Regex(url, TYPE_STREAM);
