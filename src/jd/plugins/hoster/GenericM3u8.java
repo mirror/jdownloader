@@ -19,15 +19,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -39,6 +30,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+" })
 public class GenericM3u8 extends PluginForHost {
@@ -173,9 +173,8 @@ public class GenericM3u8 extends PluginForHost {
     public static void setFilename(Plugin plugin, final DownloadLink link, final boolean setFinalFilename) throws MalformedURLException {
         if (link.getFinalFileName() != null) {
             /**
-             * No not modify filename once final name has been set. </br>
-             * This e.g. allows other plugins/crawlers to set desired filenames telling this plugin not to use the default filenames down
-             * below.
+             * No not modify filename once final name has been set. </br> This e.g. allows other plugins/crawlers to set desired filenames
+             * telling this plugin not to use the default filenames down below.
              */
             return;
         }
@@ -192,16 +191,20 @@ public class GenericM3u8 extends PluginForHost {
         final String codecsString = link.getStringProperty(PROPERTY_M3U8_CODECS, link.getStringProperty(PROPERTY_FFMPEG_CODECS, null));
         String audioq = null;
         String videoq = null;
+        boolean hasVideoCodec = false;
+        boolean hasAudioCodec = false;
         if (codecsString != null) {
             final List<StreamCodec> streamCodecs = StreamCodec.parse(codecsString);
             if (streamCodecs != null) {
                 for (StreamCodec streamCodec : streamCodecs) {
                     switch (streamCodec.getCodec().getType()) {
                     case VIDEO:
+                        hasVideoCodec = true;
                         /* Possibly mixed audio/video --> Prefer video container file extension */
                         assumedFileExtension = streamCodec.getCodec().getDefaultExtension();
                         break;
                     case AUDIO:
+                        hasAudioCodec = true;
                         if (audioq == null) {
                             audioq = streamCodec.getCodec().getCodecName();
                         }
@@ -216,6 +219,9 @@ public class GenericM3u8 extends PluginForHost {
             }
         }
         if (videoHeight > 0) {
+            if (!hasVideoCodec) {
+                plugin.getLogger().warning("no videoCodec detected but has videoHeight:" + videoHeight);
+            }
             videoq = videoHeight + "p";
         }
         if (assumedFileExtension == null) {
