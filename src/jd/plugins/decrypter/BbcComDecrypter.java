@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -394,17 +395,30 @@ public class BbcComDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Crawls single 'programmes' clips.
+     * Crawls single 'programmes' clips. </br>
+     * Typically suck a link will lead to a single /iplayer/episode/... link.
      *
      * @throws IOException
      */
     private ArrayList<DownloadLink> crawlProgrammes(final CryptedLink param) throws PluginException, IOException {
         final Regex urlInfo = new Regex(param.getCryptedUrl(), TYPE_PROGRAMMES);
         if (!urlInfo.matches()) {
+            /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Check if specific episode/expected content is offline */
+        if (br.containsHTML("(?i)>\\s*Sorry, this episode is not currently available")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String contentID = urlInfo.getMatch(0);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String specificIplayerEpisode = br.getRegex("(/iplayer/episode/" + Pattern.quote(contentID) + ")").getMatch(0);
+        if (specificIplayerEpisode != null) {
+            ret.add(this.createDownloadlink(br.getURL(specificIplayerEpisode).toString()));
+            return ret;
+        } else {
+            logger.info("Failed to find specific episode -> Possible crawler failure -> Jumping into old handling/fallback");
+        }
         final String[] jsons = br.getRegex("(\\{\"container\":\"#playout-" + contentID + ".*?\\})\\);").getColumn(0);
         final String date = br.getRegex("class=\"details__streamablefrom\" datetime=\"(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         if (jsons.length > 0) {
@@ -444,7 +458,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
             }
         }
         if (ret.isEmpty()) {
-            /* 2022-11-15 */
+            /* Final fallback */
             final String[] episodeURLs = this.br.getRegex("(/iplayer/episode/[a-z0-9]+)").getColumn(0);
             for (final String episodeURL : episodeURLs) {
                 ret.add(createDownloadlink(br.getURL(episodeURL).toString()));
