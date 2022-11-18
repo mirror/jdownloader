@@ -23,6 +23,7 @@ public interface RedditConfig extends PluginConfigInterface {
     final String                                 text_CrawlUrlsInsidePostText            = "Crawl URLs inside post-text?";
     final String                                 text_ProfileCrawlerMaxPages             = "[Unfinished feature] User crawler: Crawl mas X last pages (-1 = unlimited, 0 = disable user crawler)";
     final String                                 text_SubredditCrawlerMaxPages           = "[Unfinished feature] Subreddit crawler: Crawl mas X last pages (-1 = unlimited, 0 = disable subreddit crawler)";
+    final String                                 text_VideoDownloadStreamType            = "Preferred video download stream type";
     final String                                 text_VideoUseDirecturlAsContentURL      = "Videos: Use direct URL as content URL (URL you get when doing CTRL + C)?";
 
     public static class TRANSLATION {
@@ -205,6 +206,29 @@ public interface RedditConfig extends PluginConfigInterface {
     int getSubredditCrawlerMaxPages();
 
     void setSubredditCrawlerMaxPages(int i);
+
+    public static enum VideoDownloadStreamType implements LabelInterface {
+        DASH {
+            @Override
+            public String getLabel() {
+                return "DASH (higher max. quality)";
+            }
+        },
+        HLS {
+            @Override
+            public String getLabel() {
+                return "HLS";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("DASH")
+    @Order(45)
+    @DescriptionForConfigEntry(text_VideoDownloadStreamType)
+    VideoDownloadStreamType getVideoDownloadStreamType();
+
+    void setVideoDownloadStreamType(final VideoDownloadStreamType mode);
 
     @AboutConfig
     @DefaultBooleanValue(false)
