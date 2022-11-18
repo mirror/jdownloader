@@ -17,6 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.EpornerComConfig;
+import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -26,6 +33,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -35,18 +43,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.config.EpornerComConfig;
-import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:\\w+\\.)?eporner\\.com/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?" })
 public class EPornerCom extends PluginForHost {
-    public String   dllink        = null;
-    private String  vq            = null;
-    private boolean server_issues = false;
+    public String  dllink = null;
+    private String vq     = null;
 
     public EPornerCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,59 +83,50 @@ public class EPornerCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        return requestFileInformation(link, null);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        final String titleByURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        final String fallbackFilename;
+        if (titleByURL != null) {
+            fallbackFilename = titleByURL.replace("-", " ").trim() + ".mp4";
+        } else {
+            fallbackFilename = this.getFID(link) + ".mp4";
+        }
+        if (!link.isNameSet()) {
+            link.setName(fallbackFilename);
+        }
         dllink = null;
-        server_issues = false;
-        /* This would dump our login cookies in account mode! */
-        // this.setBrowserExclusive();
+        if (account != null) {
+            this.login(account, false);
+        }
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (!this.br.getURL().contains(this.getFID(link)) || br.containsHTML("id=\"deletedfile\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?) \\- EPORNER Free HD Porn Tube</title>").getMatch(0);
-        if (filename == null) {
-            /* Filename inside current url */
-            filename = new Regex(this.br.getURL(), this.getSupportedLinks()).getMatch(2);
-            if (filename != null) {
-                /* url filename --> Nicer url filename */
-                filename = filename.replace("-", " ");
-            }
-        }
-        if (filename == null) {
-            /* Fallback to linkid inside url */
-            filename = getFID(link);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        long filesize = 0;
+        String title = br.getRegex("(?i)<title>([^<>\"]*?) \\- EPORNER Free HD Porn Tube\\s*</title>").getMatch(0);
+        long filesizeMax = 0;
         getDllink(this.br, link);
         if (dllink == null) {
             /* First try to get DOWNLOADurls */
-            final String[][] dloadinfo = this.br.getRegex("href=\"(/dload/[^<>\"]+)\">Download MP4 \\(\\d+p, ([^<>\"]+)\\)</a>").getMatches();
+            final String[][] dloadinfo = this.br.getRegex("(?i)href=\"(/dload/[^<>\"]+)\">Download MP4 \\(\\d+p, ([^<>\"]+)\\)</a>").getMatches();
             if (dloadinfo != null && dloadinfo.length != 0) {
-                String tempurl = null;
-                String tempsizeFoundInHTML = null;
-                long tempsizel = 0;
                 for (final String[] dlinfo : dloadinfo) {
-                    tempurl = dlinfo[0];
-                    tempsizeFoundInHTML = dlinfo[1];
-                    tempsizel = SizeFormatter.getSize(tempsizeFoundInHTML);
-                    if (tempsizel > filesize) {
-                        filesize = tempsizel;
-                        dllink = "https://www.eporner.com" + tempurl;
+                    final String directurl = dlinfo[0];
+                    final String tempsizeFoundInHTMLStr = dlinfo[1];
+                    final long tempsizel = SizeFormatter.getSize(tempsizeFoundInHTMLStr);
+                    if (tempsizel > filesizeMax) {
+                        filesizeMax = tempsizel;
+                        dllink = directurl;
                     }
                 }
             }
         }
-        /* Failed to find DOWNLOADurls? Try to get STREAMurl. */
-        if (dllink == null) {
+        /* Failed to find official downloadurl? Try to download stream. */
+        if (dllink == null && isDownload) {
             final String correctedBR = br.toString().replace("\\", "");
             final String continueLink = new Regex(correctedBR, "(\"|\\')(/config\\d+/\\w+/[0-9a-f]+(/)?)(\"|\\')").getMatch(1);
             if (continueLink == null) {
@@ -150,16 +141,23 @@ public class EPornerCom extends PluginForHost {
                 }
             }
         }
-        if ("http://download.eporner.com/na.flv".equalsIgnoreCase(dllink) || "https://download.eporner.com/na.flv".equalsIgnoreCase(dllink)) {
-            server_issues = true;
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            link.setFinalFileName(title + ".mp4");
+        } else {
+            link.setFinalFileName(fallbackFilename);
         }
-        filename = filename.trim();
-        link.setFinalFileName(filename + ".mp4");
+        if (isBadDirecturl(this.dllink)) {
+            /* Video is online but can't be streamed/downloaded at this moment. */
+            return AvailableStatus.TRUE;
+        }
         /*
-         * 2020-05-26: Checking their downloadlink counts to their daily downloadlimit so only check them if the filesize has not been found
-         * already!
+         * 2020-05-26: Checking their downloadlink counts towards their daily downloadlimit so only check them if the filesize has not been
+         * found already!
          */
-        if (link.getView().getBytesTotal() <= 0 && dllink != null && !server_issues) {
+        if (filesizeMax > 0) {
+            link.setDownloadSize(filesizeMax);
+        } else if (link.getView().getBytesTotal() <= 0 && dllink != null) {
             /* Only get filesize from url if we were not able to find it in html --> Saves us time! */
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
@@ -167,13 +165,9 @@ public class EPornerCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    /* 2020-05-26: Probably daily limit reached */
-                    server_issues = true;
+                connectionErrorhandling(con, link, account);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -181,8 +175,6 @@ public class EPornerCom extends PluginForHost {
                 } catch (Throwable e) {
                 }
             }
-        } else if (filesize > 0) {
-            link.setDownloadSize(filesize);
         }
         return AvailableStatus.TRUE;
     }
@@ -193,32 +185,58 @@ public class EPornerCom extends PluginForHost {
         handleDownload(link, null);
     }
 
-    public void handleDownload(DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, account, true);
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (isBadDirecturl(this.dllink)) {
+            errorBrokenVideo();
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        connectionErrorhandling(dl.getConnection(), link, account);
+        dl.startDownload();
+    }
+
+    private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account) throws PluginException {
+        /* E.g. https://static.eporner.com/na.mp4 */
+        if (isBadDirecturl(con.getURL().toString())) {
+            errorBrokenVideo();
+        }
+        /* Double-check for broken/bad/dummy-video */
+        final String etag = con.getRequest().getResponseHeader("etag");
+        if (StringUtils.equalsIgnoreCase(etag, "\"52ee70df-9cdc1\"")) {
+            errorBrokenVideo();
+        }
+        if (!this.looksLikeDownloadableContent(con)) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
             /* 2020-05-26: Limit = 100 videos per day for unregistered users, no limit for registered users */
-            if (br.containsHTML(">\\s*You have downloaded more than|>\\s*Please try again tomorrow or register for free to unlock unlimited")) {
+            if (br.containsHTML("(?i)>\\s*You have downloaded more than|>\\s*Please try again tomorrow or register for free to unlock unlimited")) {
                 if (account != null) {
                     /* 2020-05-26: This should never happen in account mode */
                     throw new AccountUnavailableException("Daily download limit reached or session error", 10 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily download limit reached", 60 * 60 * 1000l);
                 }
+            } else {
+                errorBrokenVideo();
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download server error", 10 * 60 * 1000l);
         }
-        dl.startDownload();
+    }
+
+    private boolean isBadDirecturl(final String url) {
+        if (url != null && url.matches("(?i)https?://[^/]+/na\\.(flv|mp4).*")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void errorBrokenVideo() throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?", 5 * 60 * 1000l);
     }
 
     private void getDllink(final Browser br, final DownloadLink link) {
@@ -335,15 +353,13 @@ public class EPornerCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(false);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, false);
-        this.requestFileInformation(link, account);
         this.handleDownload(link, account);
     }
 
