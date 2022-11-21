@@ -66,7 +66,7 @@ public class Mangakakalot extends antiDDoSForDecrypt {
                 String fpName = br.getRegex("<title>\\s*([^<]+)\\s+Manga\\s+Online").getMatch(0);
                 if (StringUtils.isNotEmpty(fpName)) {
                     fp.setAllowInheritance(true);
-                    fp.setName(Encoding.htmlDecode(fpName.trim()));
+                    fp.setName(Encoding.htmlDecode(fpName).trim());
                 }
             }
             fp.addLinks(ret);
@@ -92,7 +92,12 @@ public class Mangakakalot extends antiDDoSForDecrypt {
                 }
             }
             if (StringUtils.isNotEmpty(mangaTitle)) {
-                fp.setName(mangaTitle);
+                mangaTitle = Encoding.htmlDecode(mangaTitle).trim();
+                if (chapterNumber != null) {
+                    fp.setName(mangaTitle + " Chapter " + chapterNumber);
+                } else {
+                    fp.setName(mangaTitle);
+                }
             }
             //
             // Extract chapter title

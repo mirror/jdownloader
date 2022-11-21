@@ -104,8 +104,19 @@ public class RecordbateCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
             link.setFinalFileName(this.getFID(link) + ".mp4");
+        }
+        if (!isDownload) {
+            /**
+             * Every accessing of this URL will count toward their download-limit. </br>
+             * This is a measure to avoid this because we can expect those links to be online.
+             */
+            return AvailableStatus.TRUE;
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -142,7 +153,7 @@ public class RecordbateCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         if (!attemptStoredDownloadurlDownload(link)) {
-            requestFileInformation(link);
+            requestFileInformation(link, true);
             if (StringUtils.isEmpty(dllink)) {
                 if (br.getURL().matches("https?://[^/]+/upgrade")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reached daily downloadlimit");

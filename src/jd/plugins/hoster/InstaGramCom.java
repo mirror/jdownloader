@@ -623,6 +623,7 @@ public class InstaGramCom extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 prepBRWebsite(br);
+                final boolean allowCookieLoginOnly = true;
                 Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
                 if (cookies != null) {
@@ -652,6 +653,9 @@ public class InstaGramCom extends PluginForHost {
                     } else {
                         errorSessionExpired(account);
                     }
+                } else if (allowCookieLoginOnly) {
+                    showCookieLoginInfo();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 logger.info("Full login required");
                 boolean accountIsForSureInvalid = false;
@@ -810,7 +814,7 @@ public class InstaGramCom extends PluginForHost {
                         logger.warning("Looks like we're not logged in although full login looked successful");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                } catch (final PluginException e) {
+                } catch (final Exception e) {
                     /* Tell user to use cookie login instead */
                     if (!accountIsForSureInvalid) {
                         showCookieLoginInformationWebsiteLoginFailed(account);
