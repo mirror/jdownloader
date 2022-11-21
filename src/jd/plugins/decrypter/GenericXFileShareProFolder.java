@@ -47,14 +47,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.hoster.FileupOrg;
 import jd.plugins.hoster.TakefileLink;
 
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
-    private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "powvideo.net", "youwatch.org", "salefiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "mixshared.com", "longfiles.com", "novafile.com", "novafile.org", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc", "cosmobox.org", "easybytez.com", "userupload.net",
-            /** file-up.org domains */
-            "file-up.org", "file-up.io", "file-up.cc", "file-up.com", "file-upload.org", "file-upload.io", "file-upload.cc", "file-upload.com", "tstorage.info", "fastfile.cc", "uploadboy.com", "uploadboy.me" };
+    private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "powvideo.net", "youwatch.org", "salefiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "mixshared.com", "longfiles.com", "novafile.com", "novafile.org", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc", "cosmobox.org", "easybytez.com", "userupload.net", "tstorage.info", "fastfile.cc", "uploadboy.com", "uploadboy.me" };
     /* This list contains all hosts which need special Patterns (see below) - all other XFS hosts have the same folder patterns! */
     private static final String[] specialDomains = { "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm", "takefile.link" };
 
@@ -67,10 +66,15 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         return getAllDomains();
     }
 
+    private static String[] getFileUpDomains() {
+        return FileupOrg.getPluginDomains().get(0);
+    }
+
     /* Returns Array containing all elements of domains + specialDomains. */
     public static String[] getAllDomains() {
         final List<String> ret = new ArrayList<String>();
         ret.addAll(Arrays.asList(domains));
+        ret.addAll(Arrays.asList(getFileUpDomains()));
         ret.addAll(Arrays.asList(specialDomains));
         for (String[] takeFileVirtual : TakefileLink.getVirtualPluginDomains()) {
             ret.add(takeFileVirtual[0]);
@@ -83,6 +87,9 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         /* First add domains with normal patterns! */
         for (int i = 0; i < domains.length; i++) {
             ret.add("https?://(?:www\\.)?" + Pattern.quote(domains[i]) + "/(users/[a-z0-9_]+(?:/[^\\?\r\n]+)?|folder/\\d+/[^\\?\r\n]+)");
+        }
+        for (final String fileupDomain : getFileUpDomains()) {
+            ret.add("https?://(?:www\\.)?" + Pattern.quote(fileupDomain) + "/users/[a-z0-9_]+(?:/[^\\?\r\n]+)?");
         }
         /*
          * Now add special patterns - this might be ugly but usually we do not get new specialDomains! Keep in mind that their patterns have
@@ -130,9 +137,20 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final PluginForHost hostPlg = this.getNewPluginForHostInstance(this.getHost());
-        if (hostPlg instanceof XFileSharingProBasic) {
-            ((XFileSharingProBasic) hostPlg).prepBrowser(br, this.getHost());
+        PluginForHost hostPlg = null;
+        try {
+            hostPlg = this.getNewPluginForHostInstance(this.getHost());
+            if (hostPlg instanceof XFileSharingProBasic) {
+                ((XFileSharingProBasic) hostPlg).prepBrowser(br, this.getHost());
+            }
+        } catch (final Exception ignore) {
+            /*
+             * Can happen if list of supported hosts here- and in host plugin are not aligned in the right way. As long as no login support
+             * is required we don't care. This will generally happen more often for websites with a lot of domains and such that often
+             * change their main domain e.g. file-upload.com.
+             */
+            logger.log(ignore);
+            logger.warning("!!Developer!! Failed to find host plugin for: " + this.getHost());
         }
         br.setFollowRedirects(true);
         int loginCheckCounter = 0;

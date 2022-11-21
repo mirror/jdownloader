@@ -743,7 +743,9 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         boolean crawlMP4 = cfg.getBooleanProperty(PornHubCom.CRAWL_VIDEO_MP4, true);
         final boolean crawlThumbnail = cfg.getBooleanProperty(PornHubCom.CRAWL_THUMBNAIL, false);
         if (!crawlHLS && !crawlMP4) {
-            crawlHLS = crawlMP4 = true;
+            logger.info("User disabled HLS and HTTP versions -> Force-enable both");
+            crawlHLS = true;
+            crawlMP4 = true;
         }
         final boolean prefer_server_filename = cfg.getBooleanProperty("USE_ORIGINAL_SERVER_FILENAME", false);
         /* Convert embed links to normal links */
@@ -791,6 +793,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 break;
             }
         }
+        /* Important auto fallback because pornhub seems to be slowly removing http URLs and only provide HLS. */
         if (!hasMP4) {
             logger.info("Enable HLS because no MP4 found!");
             crawlHLS = true;

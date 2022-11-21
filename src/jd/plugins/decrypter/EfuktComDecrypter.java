@@ -40,13 +40,13 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         if (parameter.matches(".+view\\.gif\\.php.+")) {
             /* Pass this to host plugin */
-            decryptedLinks.add(this.createDownloadlink(parameter));
-            return decryptedLinks;
+            ret.add(this.createDownloadlink(parameter));
+            return ret;
         }
         setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -56,8 +56,8 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
             redirect = this.br.getRegex("window\\.location[\t\n\r ]*?=[\t\n\r ]*?\\'(https?[^<>\"]*?)\\';").getMatch(0);
         }
         if (redirect != null && !redirect.contains("efukt.com/")) {
-            decryptedLinks.add(createDownloadlink(redirect));
-            return decryptedLinks;
+            ret.add(createDownloadlink(redirect));
+            return ret;
         } else if (redirect != null) {
             getPage(redirect);
             redirect = br.getRedirectLocation();
@@ -65,8 +65,8 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
                 redirect = this.br.getRegex("window\\.location[\t\n\r ]*?=[\t\n\r ]*?\\'(https?[^<>\"]*?)\\';").getMatch(0);
             }
             if (redirect != null && !redirect.contains("efukt.com/")) {
-                decryptedLinks.add(createDownloadlink(redirect));
-                return decryptedLinks;
+                ret.add(createDownloadlink(redirect));
+                return ret;
             }
             br.followRedirect(true);
         }
@@ -75,11 +75,11 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
             main.setFinalFileName(new Regex(parameter, "https?://efukt\\.com/(.+)").getMatch(0));
             main.setAvailable(false);
             main.setProperty("offline", true);
-            decryptedLinks.add(main);
-            return decryptedLinks;
+            ret.add(main);
+            return ret;
         }
         if (br.containsHTML("flashplayer") || br.containsHTML("videoplayer_contents") || br.getURL().contains("view.gif")) {
-            decryptedLinks.add(main);
+            ret.add(main);
         } else {
             /* We should have a picture gallery */
             String title = new Regex(parameter, "efukt\\.com/(\\d+[A-Za-z0-9_\\-]+)\\.html").getMatch(0);
@@ -98,12 +98,12 @@ public class EfuktComDecrypter extends antiDDoSForDecrypt {
             }
             for (final String pic : pics) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + br.getURL(pic));
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

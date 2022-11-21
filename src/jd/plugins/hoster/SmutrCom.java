@@ -18,23 +18,30 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginDependencies;
+import jd.plugins.decrypter.SmutrComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { SmutrComCrawler.class })
 public class SmutrCom extends KernelVideoSharingComV2 {
     public SmutrCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "smutr.com" });
-        return ret;
+        return SmutrComCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -63,10 +70,7 @@ public class SmutrCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String regexNormalTitleWebsite(final Browser br) {
-        String title = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
-        if (title == null) {
-            title = br.getRegex("<title>([^<>\"]+) Porn Video</title>").getMatch(0);
-        }
+        String title = SmutrComCrawler.getFileTitleStatic(br);
         if (title != null) {
             return title;
         } else {

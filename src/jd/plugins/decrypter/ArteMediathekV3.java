@@ -176,8 +176,14 @@ public class ArteMediathekV3 extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlProgram(final CryptedLink param, final Map<String, Object> program) throws IOException, PluginException {
         final Map<String, Object> availability = (Map<String, Object>) program.get("availability");
-        final Object broadcastBegin = availability.get("broadcastBegin");
-        if (broadcastBegin == null) {
+        if (availability == null) {
+            /* Message in browser should be "No video available" */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Boolean hasVideoStreams = (Boolean) availability.get("hasVideoStreams");
+        // final Object broadcastBegin = availability.get("broadcastBegin");
+        // broadcastBegin can be null even for available videos
+        if (hasVideoStreams == null || hasVideoStreams == Boolean.FALSE) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> vid = (Map<String, Object>) program.get("mainVideo");
@@ -187,11 +193,11 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlVideo(final CryptedLink param, final Map<String, Object> vid) throws IOException, PluginException {
         final String kind = vid.get("kind").toString();
         if (!kind.matches("(PROGRAMM|SHOW)")) {
-            logger.info("Unknown kindLabel: " + kind);
             if (kind.equals("LIVE")) {
                 logger.info("Livestreams are not supported");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            logger.info("Unknown kind Label: " + kind);
         }
         final ArteTv hosterplugin = (ArteTv) this.getNewPluginForHostInstance(this.getHost());
         final String videoID = vid.get("programId").toString();

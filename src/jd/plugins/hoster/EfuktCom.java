@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -51,7 +52,9 @@ public class EfuktCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://efukt.com/")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = br.getRegex("<h1\\s*class=\"title\">(.*?)</h1").getMatch(0);
@@ -79,12 +82,9 @@ public class EfuktCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                handleConnectionErrors(con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -103,21 +103,30 @@ public class EfuktCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final URLConnectionAdapter con) throws PluginException {
+        if (!this.looksLikeDownloadableContent(con)) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl.startDownload();
+        final String etag = con.getRequest().getResponseHeader("etag");
+        if (StringUtils.equalsIgnoreCase(etag, "\"637be5da-11d2b\"")) {
+            /* Dummy video containing text "Video removed" */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override
