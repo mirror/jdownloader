@@ -74,7 +74,7 @@ public class MotherLessComCrawler extends PluginForDecrypt {
             regex += "|g/[\\w\\-%]+";
             regex += "|g(i|v)/[a-z0-9\\-_]+";
             regex += "|G[A-F0-9]+/[A-Fa-f0-9]+";
-            regex += "|G[A-F0-9]+";
+            regex += "|G\\d+";
             regex += "|GI[A-F0-9]+";
             regex += "|GV[A-F0-9]+";
             regex += "|u/[^/]+(\\?t=[aiv])?";
@@ -97,7 +97,7 @@ public class MotherLessComCrawler extends PluginForDecrypt {
     // - Server issues can return many 503's in high load situations.
     // - Server also punishes user who downloads with too many connections. This is a linkchecking issue also, as grabs info from headers.
     private final String TYPE_USER                               = "https?://[^/]+/u/.*";
-    private final String TYPE_GALLERY_IMAGE_AND_VIDEO            = "https?://[^/]+/(G([A-Fa-f0-9]+))";
+    private final String TYPE_GALLERY_IMAGE_AND_VIDEO            = "(?i)https?://[^/]+/(G(\\d+))";
     private final String TYPE_GALLERY_IMAGE                      = "https?://[^/]+/GI[A-Fa-f0-9]+$";
     private final String TYPE_GALLERY_VIDEO                      = "https?://[^/]+/GV[A-Fa-f0-9]+$";
     private final String TYPE_GROUP_CATEGORIES_OVERVIEW          = "https?://[^/]+/g/([\\w\\-%]+)$";

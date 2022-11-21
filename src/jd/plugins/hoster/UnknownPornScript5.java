@@ -167,7 +167,9 @@ public class UnknownPornScript5 extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         }
-        if (!inValidateDllink(dllink)) {
+        /* 2022-11-21: Disabled this as their servers will return wrong results when checking multiple items in a short time. */
+        final boolean checkFilesize = false;
+        if (!inValidateDllink(dllink) && checkFilesize) {
             URLConnectionAdapter con = null;
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
