@@ -26,6 +26,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountRequiredException;
@@ -576,14 +577,37 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     private Form getOfficialVideoDownloadForm(final DownloadLink downloadLink, final Account account, final Browser br) {
-        Form ret = br.getFormByInputFieldKeyValue("op", "download_orig");
-        if (ret != null) {
+        final Form ret = br.getFormByInputFieldKeyValue("op", "download_orig");
+        modifyFreeDownloadForm(br, ret);
+        return ret;
+    }
+
+    private boolean modifyFreeDownloadForm(Browser br, Form form) {
+        if (form != null) {
             /* TODO: add handling to support premium mode here? */
             /* method_premium exists as input field AND button */
             /* free download button is done via javascript */
             /* premium download button does send method_premium twice to signal premium download */
-            ret.remove("method_premium");
+            final List<InputField> methodPremiumFields = form.getInputFields("method_premium", null);
+            if (methodPremiumFields.size() > 1) {
+                form.remove("method_premium");
+                return true;
+            }
         }
+        return false;
+    }
+
+    @Override
+    public Form findFormDownload1Free(Browser br) throws Exception {
+        final Form ret = super.findFormDownload1Free(br);
+        modifyFreeDownloadForm(br, ret);
+        return ret;
+    }
+
+    @Override
+    protected Form findFormDownload2Free(Browser br) {
+        final Form ret = super.findFormDownload2Free(br);
+        modifyFreeDownloadForm(br, ret);
         return ret;
     }
 
