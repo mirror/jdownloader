@@ -2262,50 +2262,46 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Tries to find 1st download Form for free(and Free-Account) download. */
     public Form findFormDownload1Free(final Browser br) throws Exception {
-        final Form download1 = br.getFormByInputFieldKeyValue("op", "download1");
-        if (download1 != null) {
-            download1.remove("method_premium");
+        final Form ret = br.getFormByInputFieldKeyValue("op", "download1");
+        if (ret != null) {
+            ret.remove("method_premium");
             /* Fix/Add "method_free" value if necessary. */
-            if (!download1.hasInputFieldByName("method_free") || download1.getInputFieldByName("method_free").getValue() == null) {
-                String method_free_value = download1.getRegex("\"method_free\" value=\"([^<>\"]+)\"").getMatch(0);
+            if (!ret.hasInputFieldByName("method_free") || ret.getInputFieldByName("method_free").getValue() == null) {
+                String method_free_value = ret.getRegex("\"method_free\" value=\"([^<>\"]+)\"").getMatch(0);
                 if (method_free_value == null || method_free_value.equals("")) {
                     method_free_value = "Free Download";
                 }
-                download1.put("method_free", Encoding.urlEncode(method_free_value));
+                ret.put("method_free", Encoding.urlEncode(method_free_value));
             }
         }
-        return download1;
+        return ret;
     }
 
     /** Tries to find 2nd download Form for free(and Free-Account) download. */
     protected Form findFormDownload2Free(final Browser br) {
-        Form dlForm = null;
+        Form ret = null;
         /* First try to find Form for video hosts with multiple qualities. */
         final Form[] forms = br.getForms();
         for (final Form form : forms) {
             final InputField op_field = form.getInputFieldByName("op");
             /* E.g. name="op" value="download_orig" */
             if (form.containsHTML("method_") && op_field != null && op_field.getValue().contains("download")) {
-                dlForm = form;
+                ret = form;
                 break;
             }
         }
         /* Nothing found? Fallback to simpler handling - this is more likely to pickup a wrong Form! */
-        if (dlForm == null) {
-            dlForm = br.getFormbyProperty("name", "F1");
-        }
-        if (dlForm == null) {
-            dlForm = br.getFormByInputFieldKeyValue("op", "download2");
-        }
-        if (dlForm != null && dlForm.hasInputFieldByName("adblock_detected")) {
-            final InputField adb = dlForm.getInputField("adblock_detected");
-            if (StringUtils.isEmpty(adb.getValue())) {
-                dlForm.removeInputField(adb);
-                adb.setValue("0");
-                dlForm.addInputField(adb);
+        if (ret == null) {
+            ret = br.getFormbyProperty("name", "F1");
+            if (ret == null) {
+                ret = br.getFormByInputFieldKeyValue("op", "download2");
             }
         }
-        return dlForm;
+        final InputField adblock_detected = ret != null ? ret.getInputField("adblock_detected") : null;
+        if (adblock_detected != null && StringUtils.isEmpty(adblock_detected.getValue())) {
+            adblock_detected.setValue("0");
+        }
+        return ret;
     }
 
     /**
@@ -3699,7 +3695,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             preciseExpireHTML = getCorrectBR(br);
         }
         // pattern good enough for all html
-        String expireSecond = new Regex(preciseExpireHTML, "(?:Premium(-| )Account expires?|Twoje premium wygaśnie za)\\s*:\\s*(?:</span>)?\\s*(?:</span>)?\\s*(?:<span>)?\\s*([a-zA-Z0-9, ]+)\\s*</").getMatch(-1);
+        String expireSecond = new Regex(preciseExpireHTML, "(?:Premium(-| )Account expires?(?: in)?|Twoje premium wygaśnie za)\\s*:\\s*(?:</span>)?\\s*(?:</span>)?\\s*(?:<span>)?\\s*([a-zA-Z0-9, ]+)\\s*</").getMatch(-1);
         if (StringUtils.isEmpty(expireSecond) && !allHTML) {
             /*
              * Last attempt - wider RegEx but we expect the 'second(s)' value to always be present!! Example: file-up.org:
