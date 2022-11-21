@@ -20,8 +20,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -41,6 +39,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.PornHubCom;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/album/\\d+" })
 public class PornHubComGallery extends PluginForDecrypt {
@@ -82,10 +82,11 @@ public class PornHubComGallery extends PluginForDecrypt {
             }
         }
         final String domainFromURLNew = Browser.getHost(url);
+        PornHubCom.prepBr(br);
         jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(hosterPlugin, account, url);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("class=\"geoBlocked\"")) {
+        } else if (br.containsHTML("class\\s*=\\s*\"geoBlocked\"") || PornHubCom.isGeoRestricted(br)) {
             throw new DecrypterRetryException(RetryReason.GEO);
         }
         final boolean privateImage = br.containsHTML(jd.plugins.hoster.PornHubCom.html_privateimage);
