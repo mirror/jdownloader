@@ -71,7 +71,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "dood.so", "doodstream.com", "dood.to", "doodapi.com", "dood.watch", "dood.cx", "doodstream.co", "dood.la", "dood.ws", "dood.pm", "dood.sh", "dood.one", "dood.tech", "dood.wf", "dood.re" });
+        ret.add(new String[] { "dood.re", "dood.so", "doodstream.com", "dood.to", "doodapi.com", "dood.watch", "dood.cx", "doodstream.co", "dood.la", "dood.ws", "dood.pm", "dood.sh", "dood.one", "dood.tech", "dood.wf" });
         return ret;
     }
 
@@ -229,7 +229,10 @@ public class DoodstreamCom extends XFileSharingProBasic {
 
     @Override
     public String rewriteHost(final String host) {
-        /* 2021-01-15: Main domain has changed from doodstream.com to dood.so */
+        /**
+         * 2021-01-15: Main domain has changed from doodstream.com to dood.so </br>
+         * 2022-11-21: Changed to: dood.re
+         */
         return this.rewriteHost(getPluginDomains(), host);
     }
 

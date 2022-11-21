@@ -180,7 +180,7 @@ public class CooldebridCom extends PluginForHost {
         if (!br.getURL().contains("/generate.html")) {
             br.getPage("/generate.html");
         }
-        final String accountType = br.getRegex("(Free User|Premium User)\\s*</span>").getMatch(0);
+        final String accountType = br.getRegex("(?i)(Free User|Premium User)\\s*</span>").getMatch(0);
         if (accountType == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -190,7 +190,7 @@ public class CooldebridCom extends PluginForHost {
         }
         ai.setTrafficMax(SizeFormatter.getSize(usedTrafficRegex.getMatch(1)));
         ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(usedTrafficRegex.getMatch(0)));
-        final Regex usedLinksRegex = br.getRegex("id=\"used_links\">(\\d+)</span>\\s*/\\s*(\\d+)\\s*links");
+        final Regex usedLinksRegex = br.getRegex("(?i)id=\"used_links\">(\\d+)</span>\\s*/\\s*(\\d+)\\s*links");
         if (!usedLinksRegex.matches()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

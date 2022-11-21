@@ -89,7 +89,7 @@ public class EPornerCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final String titleByURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
-        final String fallbackFilename;
+        String fallbackFilename;
         if (titleByURL != null) {
             fallbackFilename = titleByURL.replace("-", " ").trim() + ".mp4";
         } else {
@@ -107,7 +107,15 @@ public class EPornerCom extends PluginForHost {
         if (!this.br.getURL().contains(this.getFID(link)) || br.containsHTML("id=\"deletedfile\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String betterTitleByURL = new Regex(br.getURL(), this.getSupportedLinks()).getMatch(2);
+        if (betterTitleByURL != null) {
+            fallbackFilename = titleByURL.replace("-", " ").trim() + ".mp4";
+        }
         String title = br.getRegex("(?i)<title>([^<>\"]*?) \\- EPORNER Free HD Porn Tube\\s*</title>").getMatch(0);
+        if (title == null) {
+            /* 2022-11-21 */
+            title = br.getRegex("<title>([^<>\"]+) - EPORNER</title>").getMatch(0);
+        }
         long filesizeMax = 0;
         getDllink(this.br, link);
         if (dllink == null) {

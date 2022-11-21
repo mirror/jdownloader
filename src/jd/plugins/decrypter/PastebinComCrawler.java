@@ -94,7 +94,7 @@ public class PastebinComCrawler extends AbstractPastebinCrawler {
     public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
         final PastebinMetadata metadata = super.crawlMetadata(param, br);
         final String title = br.getRegex("<h1>([^<]+)</h1>").getMatch(0);
-        if (title != null) {
+        if (title != null && !title.trim().equalsIgnoreCase("untitled")) {
             metadata.setTitle(Encoding.htmlDecode(title).trim());
         } else {
             logger.warning("Unable to find paste title");
