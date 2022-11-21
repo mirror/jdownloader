@@ -112,8 +112,8 @@ public class RPNetBiz extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception, PluginException {
         /* Directurls will work without logging in which is why we'll allow handleFree in this case. */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, default_maxchunks);
-        URLConnectionAdapter con = dl.getConnection();
-        List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
+        final URLConnectionAdapter con = dl.getConnection();
+        final List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
         if (!allowedResponseCodes.contains(con.getResponseCode()) || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
             try {
                 br.followConnection();
@@ -132,12 +132,14 @@ public class RPNetBiz extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(link.getPluginPatternMatcher());
-            List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
+            final List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
             if (!allowedResponseCodes.contains(con.getResponseCode()) || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             link.setName(getFileNameFromHeader(con));
-            link.setDownloadSize(con.getLongContentLength());
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+            }
         } finally {
             try {
                 con.disconnect();
@@ -149,10 +151,8 @@ public class RPNetBiz extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (StringUtils.isEmpty(account.getUser())) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "User name can not be empty!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } else if (StringUtils.isEmpty(account.getPass()) || !account.getPass().matches("[a-f0-9]{40}")) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "You need to use API Key as password!\r\nYou can find it here: premium.rpnet.biz/usercp.php?action=showAccountInfo", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (account.getUser() == null || !account.getUser().matches("\\d+") || StringUtils.isEmpty(account.getPass()) || !account.getPass().matches("[a-f0-9]{40}")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your customer ID as username and your API Key as password!\r\nYou can find this data here: premium.rpnet.biz/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         final AccountInfo ai = new AccountInfo();
         prepBrowser();
@@ -165,7 +165,7 @@ public class RPNetBiz extends PluginForHost {
         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("accountInfo");
         final String currentServer = (String) entries.get("currentServer");
-        final long expiryDate = JavaScriptEngineFactory.toLong(entries.get("premiumExpiry"), 0);
+        final long expiryDate = ((Number) entries.get("premiumExpiry")).longValue();
         ai.setValidUntil(expiryDate * 1000, br);
         final String hosts = br.getPage(api_base + "hostlist.php");
         if (hosts != null) {
@@ -445,7 +445,7 @@ public class RPNetBiz extends PluginForHost {
                 Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openGetConnection(dllink);
-                List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
+                final List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
                 if (!allowedResponseCodes.contains(con.getResponseCode()) || con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
