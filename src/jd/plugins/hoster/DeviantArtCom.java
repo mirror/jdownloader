@@ -19,14 +19,16 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.DeviantArtComConfig;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig.DownloadMode;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
@@ -54,20 +56,22 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?art/[\\w\\-]+|https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/(?:[^/]+/)?journal/[\\w\\-]+" })
 public class DeviantArtCom extends PluginForHost {
-    private String       dllink                        = null;
-    private final String INVALIDLINKS                  = "https?://[^/]+/(?:[^/]+/)?art/general";
+    private String             dllink                                = null;
+    private final String       INVALIDLINKS                          = "https?://[^/]+/(?:[^/]+/)?art/general";
     // private static final String DLLINK_REFRESH_NEEDED = "https?://(www\\.)?deviantart\\.com/download/.+";
-    private final String TYPE_DOWNLOADALLOWED_HTML     = "(?i)class=\"text\">HTML download</span>";
-    private final String TYPE_DOWNLOADFORBIDDEN_HTML   = "<div class=\"grf\\-indent\"";
+    private final String       TYPE_DOWNLOADALLOWED_HTML             = "(?i)class=\"text\">HTML download</span>";
+    private final String       TYPE_DOWNLOADFORBIDDEN_HTML           = "<div class=\"grf\\-indent\"";
     @Deprecated
-    private final String TYPE_DOWNLOADFORBIDDEN_SWF    = "class=\"flashtime\"";
-    private boolean      downloadHTML                  = false;
-    private final String PATTERN_ART                   = "https?://[^/]+/(?:[^/]+/)?art/[^<>\"/]+";
-    private final String LINKTYPE_JOURNAL              = "https?://[^/]+/(?:[^/]+/)?journal/[\\w\\-]+";
+    private final String       TYPE_DOWNLOADFORBIDDEN_SWF            = "class=\"flashtime\"";
+    private boolean            downloadHTML                          = false;
+    private final String       PATTERN_ART                           = "https?://[^/]+/(?:[^/]+/)?art/[^<>\"/]+";
+    private final String       LINKTYPE_JOURNAL                      = "https?://[^/]+/(?:[^/]+/)?journal/[\\w\\-]+";
     @Deprecated
-    private final String LINKTYPE_STATUS               = "https?://[^/]+/status/\\d+";
-    private final String TYPE_BLOG_OFFLINE             = "https?://[^/]+/(?:[^/]+/)?blog/.+";
-    private final String PROPERTY_OFFICIAL_DOWNLOADURL = "official_downloadurl";
+    private final String       LINKTYPE_STATUS                       = "https?://[^/]+/status/\\d+";
+    private final String       TYPE_BLOG_OFFLINE                     = "https?://[^/]+/(?:[^/]+/)?blog/.+";
+    public static final String PROPERTY_TYPE                         = "type";
+    private final String       PROPERTY_OFFICIAL_DOWNLOADURL         = "official_downloadurl";
+    private final String       PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL = "image_display_or_preview_url";
 
     /**
      * @author raztoki
@@ -120,20 +124,30 @@ public class DeviantArtCom extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("/error\\-title\\-oops\\.png\\)") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(",target: \\'motionbooks/")) {
-            logger.info("Motionbooks are not supported (yet)");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Redirects can lead to unsupported/offline links/linktypes */
         if (br.getURL().matches(TYPE_BLOG_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String fid = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
         String title = HTMLSearch.searchMetaTag(br, "og:title");
+        String json = br.getRegex("window\\.__INITIAL_STATE__ = JSON\\.parse\\(\"(.*?)\"\\);").getMatch(0);
+        if (json != null) {
+            /* TODO: Make much more use of this json */
+            json = PluginJSonUtils.unescape(json);
+            final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+            final Map<String, Object> entities = (Map<String, Object>) entries.get("@@entities");
+            final Map<String, Object> user = (Map<String, Object>) entities.get("user");
+            final Map<String, Object> deviation = (Map<String, Object>) entities.get("deviation");
+            final Map<String, Object> thisArt = (Map<String, Object>) deviation.get(fid);
+            final Map<String, Object> thisUser = (Map<String, Object>) user.get(thisArt.get("author").toString());
+            title = thisArt.get("title").toString() + " by " + thisUser.get("username"); // prefer title from json
+            link.setProperty(PROPERTY_TYPE, thisArt.get("type"));
+        }
         if (title != null) {
             title = title.replaceAll("(?i) on deviantart$", "");
         }
         if (link.getPluginPatternMatcher().matches(LINKTYPE_STATUS)) {
-            final String fid = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
             if (fid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -150,17 +164,21 @@ public class DeviantArtCom extends PluginForHost {
         }
         link.setProperty(PROPERTY_OFFICIAL_DOWNLOADURL, officialDownloadurl);
         final String displayedImageURL = HTMLSearch.searchMetaTag(br, "og:image");
+        final boolean isImage = StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "image");
+        if (displayedImageURL != null && isImage) {
+            link.setProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL, displayedImageURL);
+        }
         final DeviantArtComConfig cfg = PluginJsonConfig.get(DeviantArtComConfig.class);
-        final DownloadMode mode = cfg.getDownloadMode();
+        final ImageDownloadMode mode = cfg.getImageDownloadMode();
         /* Check if either user wants to download the html code or if we have a linktype which needs this. */
-        if (mode == DownloadMode.HTML || link.getPluginPatternMatcher().matches(LINKTYPE_JOURNAL) || link.getPluginPatternMatcher().matches(LINKTYPE_STATUS)) {
+        if (mode == ImageDownloadMode.HTML || link.getPluginPatternMatcher().matches(LINKTYPE_JOURNAL) || link.getPluginPatternMatcher().matches(LINKTYPE_STATUS) || StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "literature")) {
             downloadHTML = true;
             dllink = br.getURL();
             ext = ".html";
         } else if (officialDownloadurl != null) {
             this.dllink = officialDownloadurl;
             setOfficialDownloadFilesize = true;
-        } else if (displayedImageURL != null) {
+        } else if (displayedImageURL != null && isImage) {
             this.dllink = displayedImageURL;
         } else if (br.containsHTML(TYPE_DOWNLOADFORBIDDEN_SWF)) {
             String url_swf_sandbox = br.getRegex("class=\"flashtime\" src=\"(https?://sandbox\\.deviantart\\.com[^<>\"]*?)\"").getMatch(0);
@@ -196,13 +214,13 @@ public class DeviantArtCom extends PluginForHost {
             } catch (final UnsupportedEncodingException ignore) {
                 ignore.printStackTrace();
             }
-        } else if (officialDownloadFilesize != null && (setOfficialDownloadFilesize || mode == DownloadMode.OFFICIAL_DOWNLOAD_ONLY)) {
+        } else if (officialDownloadFilesize != null && (setOfficialDownloadFilesize || mode == ImageDownloadMode.OFFICIAL_DOWNLOAD_ONLY)) {
             /*
              * Set filesize of official download if: User wants official download and it is available and/or if user wants official
              * downloads only (set filesize even if official downloadurl was not found).
              */
             link.setDownloadSize(SizeFormatter.getSize(officialDownloadFilesize.replace(",", "")));
-        } else if (mode == DownloadMode.OFFICIAL_DOWNLOAD_ELSE_PREVIEW && cfg.isFastLinkcheckForSingleItems() == false && !isDownload && !StringUtils.isEmpty(this.dllink)) {
+        } else if (mode == ImageDownloadMode.OFFICIAL_DOWNLOAD_ELSE_PREVIEW && cfg.isFastLinkcheckForSingleItems() == false && !isDownload && !StringUtils.isEmpty(this.dllink)) {
             final Browser br2 = br.cloneBrowser();
             /* Workaround for old downloadcore bug that can lead to incomplete files */
             br2.getHeaders().put("Accept-Encoding", "identity");
@@ -281,10 +299,13 @@ public class DeviantArtCom extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link, account, true);
+        final boolean isImage = StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "image");
         final String officialDownloadurl = link.getStringProperty(PROPERTY_OFFICIAL_DOWNLOADURL);
         final DeviantArtComConfig cfg = PluginJsonConfig.get(DeviantArtComConfig.class);
-        final DownloadMode mode = cfg.getDownloadMode();
-        if (mode == DownloadMode.OFFICIAL_DOWNLOAD_ONLY && officialDownloadurl == null) {
+        final ImageDownloadMode mode = cfg.getImageDownloadMode();
+        if (this.isAccountRequired(br)) {
+            throw new AccountRequiredException();
+        } else if (isImage && mode == ImageDownloadMode.OFFICIAL_DOWNLOAD_ONLY && officialDownloadurl == null) {
             /* User only wants to download items with official download option available but it is not available in this case. */
             if (!this.isAccountRequiredForOfficialDownload(br)) {
                 /* Looks like official download is not available at all for this item */
@@ -296,9 +317,6 @@ public class DeviantArtCom extends PluginForHost {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Official download broken or login issue");
             }
-        }
-        if (this.isAccountRequired(br)) {
-            throw new AccountRequiredException();
         } else if (StringUtils.isEmpty(this.dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
