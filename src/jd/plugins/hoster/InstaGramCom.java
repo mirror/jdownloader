@@ -623,6 +623,10 @@ public class InstaGramCom extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 prepBRWebsite(br);
+                /*
+                 * 2022-11-21: Normal login via username + password doesn't work reliably anymore as IG is frequently changing their login
+                 * process so cookie login is the way to go for now.
+                 */
                 final boolean allowCookieLoginOnly = true;
                 Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
