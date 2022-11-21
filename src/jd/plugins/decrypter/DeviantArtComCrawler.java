@@ -28,7 +28,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.config.DeviantArtComConfig;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig.DownloadMode;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
@@ -105,7 +105,7 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         DeviantArtCom.prepBR(this.br);
-        forceHtmlDownload = PluginJsonConfig.get(DeviantArtComConfig.class).getDownloadMode() == DownloadMode.HTML;
+        forceHtmlDownload = PluginJsonConfig.get(DeviantArtComConfig.class).getImageDownloadMode() == ImageDownloadMode.HTML;
         parameter = param.toString();
         /* Remove trash */
         final String replace = new Regex(parameter, "(#.+)").getMatch(0);
@@ -599,6 +599,7 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
                     if (fp != null) {
                         link._setFilePackage(fp);
                     }
+                    link.setProperty(DeviantArtCom.PROPERTY_TYPE, type);
                     ret.add(link);
                     distribute(link);
                 }

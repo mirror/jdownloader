@@ -16,7 +16,7 @@ import org.jdownloader.plugins.config.Type;
 public interface DeviantArtComConfig extends PluginConfigInterface {
     final String                    text_FastLinkcheckForSingleItems = "Fast linkcheck for single files (filesize might not be shown until dl is started)?";
     // final String text_PreferServerFilename = "Prefer server filename?";
-    final String                    text_DownloadMode                = "Download mode:";
+    final String                    text_ImageDownloadMode           = "Image download mode:";
     public static final TRANSLATION TRANSLATION                      = new TRANSLATION();
 
     public static class TRANSLATION {
@@ -28,7 +28,7 @@ public interface DeviantArtComConfig extends PluginConfigInterface {
         // }
 
         public String getDownloadMode_label() {
-            return text_DownloadMode;
+            return text_ImageDownloadMode;
         }
     }
 
@@ -49,7 +49,7 @@ public interface DeviantArtComConfig extends PluginConfigInterface {
     //
     // void setPreferServerFilename(boolean b);
 
-    public static enum DownloadMode implements LabelInterface {
+    public static enum ImageDownloadMode implements LabelInterface {
         OFFICIAL_DOWNLOAD_ELSE_PREVIEW {
             @Override
             public String getLabel() {
@@ -73,9 +73,9 @@ public interface DeviantArtComConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("OFFICIAL_DOWNLOAD_ELSE_PREVIEW")
     @Order(30)
-    @DescriptionForConfigEntry(text_DownloadMode)
+    @DescriptionForConfigEntry(text_ImageDownloadMode)
     @DefaultOnNull
-    DownloadMode getDownloadMode();
+    ImageDownloadMode getImageDownloadMode();
 
-    void setDownloadMode(final DownloadMode mediaQualityDownloadMode);
+    void setImageDownloadMode(final ImageDownloadMode mode);
 }

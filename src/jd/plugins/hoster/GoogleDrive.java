@@ -1115,6 +1115,7 @@ public class GoogleDrive extends PluginForHost {
     private void handleErrorsWebsite(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException, IOException {
         handleSpecialCaptcha(br, link, account);
         if (br.getHttpConnection().getResponseCode() == 429) {
+            /* 2022-11-21: This can maybe also indicate a reached quota limit for this file(?) */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests");
         }
         /* Check for other errors */
