@@ -19,17 +19,12 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -54,6 +49,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/([\\w\\-]+/art/[\\w\\-]+-\\d+|status(?:-update)?/\\d+)" })
 public class DeviantArtCom extends PluginForHost {
     // private static final String DLLINK_REFRESH_NEEDED = "https?://(www\\.)?deviantart\\.com/download/.+";
@@ -66,6 +70,7 @@ public class DeviantArtCom extends PluginForHost {
     public static final String PROPERTY_TYPE                         = "type";
     private final String       PROPERTY_OFFICIAL_DOWNLOADURL         = "official_downloadurl";
     private final String       PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL = "image_display_or_preview_url";
+    private final String       PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL = "video_display_or_preview_url";
 
     /**
      * @author raztoki, pspzockerscene, Jiaz
@@ -136,6 +141,7 @@ public class DeviantArtCom extends PluginForHost {
         final String fid = getFID(link);
         String title = null;
         String displayedImageURL = null;
+        String displayedVideoURL = null;
         String officialDownloadurl = null;
         String json = br.getRegex("window\\.__INITIAL_STATE__ = JSON\\.parse\\(\"(.*?)\"\\);").getMatch(0);
         Number officialDownloadsizeBytes = null;
@@ -149,13 +155,70 @@ public class DeviantArtCom extends PluginForHost {
             final Map<String, Object> user = (Map<String, Object>) entities.get("user");
             final Map<String, Object> deviation = (Map<String, Object>) entities.get("deviation");
             final Map<String, Object> thisArt = (Map<String, Object>) deviation.get(fid);
+            link.setProperty(PROPERTY_TYPE, thisArt.get("type"));
             final Map<String, Object> media = (Map<String, Object>) thisArt.get("media");
             if (media != null) {
-                displayedImageURL = (String) media.get("baseUri");
+                try {
+                    final boolean isImage = isImage(link);
+                    final boolean isVideo = isVideo(link);
+                    final String baseUri = (String) media.get("baseUri");
+                    final String prettyName = (String) media.get("prettyName");
+                    final List<Map<String, Object>> types = (List<Map<String, Object>>) media.get("types");
+                    if (types != null && StringUtils.isAllNotEmpty(baseUri, prettyName)) {
+                        Map<String, Object> bestType = null;
+                        final List<String> bestTypesList;
+                        if (isImage) {
+                            bestTypesList = Arrays.asList(new String[] { "fullview" });
+                        } else if (isVideo) {
+                            bestTypesList = Arrays.asList(new String[] { "video" });
+                        } else {
+                            bestTypesList = new ArrayList<String>(0);
+                        }
+                        typeStringLoop: for (final String typeString : bestTypesList) {
+                            for (final Map<String, Object> type : types) {
+                                if (typeString.equals(type.get("t"))) {
+                                    if (isImage) {
+                                        bestType = type;
+                                        break typeStringLoop;
+                                    } else if (isVideo) {
+                                        if (bestType == null || ((Number) type.get("h")).intValue() > ((Number) bestType.get("h")).intValue()) {
+                                            bestType = type;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (bestType != null) {
+                            if (isImage) {
+                                String c = (String) bestType.get("c");
+                                if (c == null) {
+                                    final Number h = (Number) bestType.get("h");
+                                    final Number w = (Number) bestType.get("w");
+                                    if (h != null && w != null) {
+                                        c = "/v1/fit/w_" + w + ",h_" + h + "/";
+                                    }
+                                }
+                                if ("fullview".equals(bestType.get("t")) || true) {
+                                    c = "";// raw image without any processing?
+                                }
+                                if (c != null) {
+                                    final List<String> tokens = (List<String>) media.get("token");
+                                    displayedImageURL = baseUri + c.replaceFirst("<prettyName>", Matcher.quoteReplacement(prettyName));
+                                    if (tokens != null) {
+                                        displayedImageURL = displayedImageURL + "?token=" + tokens.get(0);
+                                    }
+                                }
+                            } else if (isVideo) {
+                                displayedVideoURL = (String) bestType.get("b");
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.log(e);
+                }
             }
             final Map<String, Object> thisUser = (Map<String, Object>) user.get(thisArt.get("author").toString());
             title = thisArt.get("title").toString() + " by " + thisUser.get("username"); // prefer title from json
-            link.setProperty(PROPERTY_TYPE, thisArt.get("type"));
             if (deviationExtendedThisArt != null) {
                 final Map<String, Object> download = (Map<String, Object>) deviationExtendedThisArt.get("download");
                 if (download != null) {
@@ -185,17 +248,22 @@ public class DeviantArtCom extends PluginForHost {
             }
         }
         link.setProperty(PROPERTY_OFFICIAL_DOWNLOADURL, officialDownloadurl);
-        final boolean isImage = StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "image");
+        final boolean isImage = isImage(link);
+        final boolean isVideo = isVideo(link);
+        final boolean isLiterature = isLiterature(link);
         if (displayedImageURL != null && isImage) {
             link.setProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL, displayedImageURL);
+        }
+        if (displayedVideoURL != null && isVideo) {
+            link.setProperty(PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL, displayedVideoURL);
         }
         final DeviantArtComConfig cfg = PluginJsonConfig.get(DeviantArtComConfig.class);
         final ImageDownloadMode mode = cfg.getImageDownloadMode();
         /* Check if either user wants to download the html code or if we have a linktype which needs this. */
-        if (mode == ImageDownloadMode.HTML || link.getPluginPatternMatcher().matches(PATTERN_JOURNAL) || link.getPluginPatternMatcher().matches(LINKTYPE_STATUS) || StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "literature")) {
+        if (mode == ImageDownloadMode.HTML || link.getPluginPatternMatcher().matches(PATTERN_JOURNAL) || link.getPluginPatternMatcher().matches(LINKTYPE_STATUS) || isLiterature) {
             downloadHTML = true;
             ext = ".html";
-        } else if (isImage) {
+        } else if (isImage || isVideo) {
             /* Correct file-extension will be detected later */
             ext = null;
         } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_HTML) || br.containsHTML(TYPE_DOWNLOADFORBIDDEN_HTML)) {
@@ -213,8 +281,8 @@ public class DeviantArtCom extends PluginForHost {
             dllink = this.getDirecturl(link, account);
         } catch (final PluginException e) {
             /**
-             * This will happen if the item is not downloadable. </br>
-             * We're ignoring this during linkcheck as by now we know the file is online.
+             * This will happen if the item is not downloadable. </br> We're ignoring this during linkcheck as by now we know the file is
+             * online.
              */
         }
         if (downloadHTML) {
@@ -241,6 +309,11 @@ public class DeviantArtCom extends PluginForHost {
             try {
                 con = br2.openHeadConnection(dllink);
                 if (!looksLikeDownloadableContent(con)) {
+                    try {
+                        br2.followConnection(true);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (con.getCompleteContentLength() > 0) {
@@ -279,11 +352,28 @@ public class DeviantArtCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private boolean isImage(DownloadLink link) {
+        return StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "image");
+    }
+
+    private boolean isVideo(DownloadLink link) {
+        return StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "film");
+    }
+
+    private boolean isLiterature(DownloadLink link) {
+        return StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "literature");
+    }
+
     private String getAssumedFileExtension(final DownloadLink link) {
         if (PluginJsonConfig.get(DeviantArtComConfig.class).getImageDownloadMode() == ImageDownloadMode.HTML) {
             return ".html";
-        } else if (StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "image")) {
+        } else if (isVideo(link)) {
+            return ".mp4";
+        } else if (isImage(link)) {
+            // TODO: add isGif support
             return ".jpg";
+        } else if (isLiterature(link)) {
+            return ".html";
         } else {
             return ".html";
         }
@@ -327,10 +417,6 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     private String getDirecturl(final DownloadLink link, final Account account) throws PluginException {
-        final boolean isImage = StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "image");
-        final String displayedImageURL = link.getStringProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL);
-        /* officialDownloadurl can be given while account is not given -> Will lead to error 404 then! */
-        final String officialDownloadurl = link.getStringProperty(PROPERTY_OFFICIAL_DOWNLOADURL);
         final long oldVerifiedFilesize = link.getVerifiedFileSize();
         if (oldVerifiedFilesize != -1) {
             link.setVerifiedFileSize(-1);
@@ -340,7 +426,9 @@ public class DeviantArtCom extends PluginForHost {
         String dllink = null;
         if (downloadHTML) {
             dllink = br.getURL();
-        } else if (isImage) {
+        } else if (isImage(link)) {
+            /* officialDownloadurl can be given while account is not given -> Will lead to error 404 then! */
+            final String officialDownloadurl = link.getStringProperty(PROPERTY_OFFICIAL_DOWNLOADURL);
             final DeviantArtComConfig cfg = PluginJsonConfig.get(DeviantArtComConfig.class);
             final ImageDownloadMode mode = cfg.getImageDownloadMode();
             if (mode == ImageDownloadMode.OFFICIAL_DOWNLOAD_ONLY) {
@@ -360,8 +448,12 @@ public class DeviantArtCom extends PluginForHost {
             } else if (account != null && officialDownloadurl != null) {
                 dllink = officialDownloadurl;
             } else {
+                final String displayedImageURL = link.getStringProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL);
                 dllink = displayedImageURL;
             }
+        } else if (isVideo(link)) {
+            /* officialDownloadurl can be given while account is not given -> Will lead to error 404 then! */
+            return link.getStringProperty(PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL);
         }
         return dllink;
     }
