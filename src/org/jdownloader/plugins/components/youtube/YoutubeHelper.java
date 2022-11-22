@@ -1036,7 +1036,7 @@ public class YoutubeHelper {
                 function = new Regex(html5PlayerSource, "(=function\\(a\\)\\{var b=a\\.split\\(\"\"\\),c=\\[.*?\\};)").getMatch(0);
                 cache.put("n_function", function);
             }
-            final String resultKey = "n_result_" + vid.videoID;
+            final String resultKey = "n_result_" + vid.videoID + "_" + Hash.getSHA256(function) + "_" + value;
             final String cachedResult = cache.get(resultKey);
             if (function != null) {
                 if (cachedResult != null) {

@@ -22,17 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.OdyseeComConfig;
-import org.jdownloader.plugins.components.config.OdyseeComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
@@ -45,6 +34,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.OdyseeComConfig;
+import org.jdownloader.plugins.components.config.OdyseeComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OdyseeCom extends PluginForHost {
@@ -333,8 +333,6 @@ public class OdyseeCom extends PluginForHost {
 
     private int getPreferredQualityHeight(final DownloadLink downloadLink, PreferredStreamQuality quality) {
         switch (quality) {
-        case BEST:
-            return -1;
         case Q144P:
             return 144;
         case Q360P:
@@ -343,6 +341,9 @@ public class OdyseeCom extends PluginForHost {
             return 720;
         case Q1080P:
             return 1080;
+        case Q2160P:
+            return 2160;
+        case BEST:
         default:
             return -1;
         }
