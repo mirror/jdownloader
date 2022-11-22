@@ -600,26 +600,35 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
     }
 
     public static HashInfo parseXGoogHash(LogInterface logger, URLConnectionAdapter con) {
-        final String googleHash = con.getRequest().getResponseHeader("X-Goog-Hash");
-        if (googleHash != null) {
-            try {
-                // https://cloud.google.com/storage/docs/hashes-etags
-                // Hashes are base64 encoded. Multiple hashes can be given.
-                // https://cloud.google.com/storage/docs/xml-api/reference-headers#xgooghash
-                String crc32c = new Regex(googleHash, "crc32c=([^,]+)").getMatch(0);
-                String md5 = new Regex(googleHash, "md5=([^,]+)").getMatch(0);
-                if (md5 != null) {
-                    md5 = HexFormatter.byteArrayToHex(Base64.decode(md5));
-                    return HashInfo.newInstanceSafe(md5, HashInfo.TYPE.MD5);
-                } else if (crc32c != null) {
-                    crc32c = HexFormatter.byteArrayToHex(Base64.decode(crc32c));
-                    return HashInfo.newInstanceSafe(crc32c, HashInfo.TYPE.CRC32C);
+        HashInfo ret = null;
+        final List<String> googleHashList = con.getRequest().getResponseHeaders("X-Goog-Hash");
+        for (final String googleHash : googleHashList) {
+            if (googleHash != null) {
+                try {
+                    // https://cloud.google.com/storage/docs/hashes-etags
+                    // Hashes are base64 encoded. Multiple hashes can be given.
+                    // https://cloud.google.com/storage/docs/xml-api/reference-headers#xgooghash
+                    String crc32c = new Regex(googleHash, "crc32c=([^,]+)").getMatch(0);
+                    String md5 = new Regex(googleHash, "md5=([^,]+)").getMatch(0);
+                    final HashInfo hashInfo;
+                    if (md5 != null) {
+                        md5 = HexFormatter.byteArrayToHex(Base64.decode(md5));
+                        hashInfo = HashInfo.newInstanceSafe(md5, HashInfo.TYPE.MD5);
+                    } else if (crc32c != null) {
+                        crc32c = HexFormatter.byteArrayToHex(Base64.decode(crc32c));
+                        hashInfo = HashInfo.newInstanceSafe(crc32c, HashInfo.TYPE.CRC32C);
+                    } else {
+                        continue;
+                    }
+                    if (ret == null || hashInfo.isStrongerThan(ret)) {
+                        ret = hashInfo;
+                    }
+                } catch (final Exception ignore) {
+                    logger.log(ignore);
                 }
-            } catch (final Exception ignore) {
-                logger.log(ignore);
             }
         }
-        return null;
+        return ret;
     }
 
     /**
