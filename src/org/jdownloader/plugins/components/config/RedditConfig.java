@@ -211,7 +211,7 @@ public interface RedditConfig extends PluginConfigInterface {
         DASH {
             @Override
             public String getLabel() {
-                return "DASH (higher max. quality)";
+                return "DASH (possibly higher max. quality)";
             }
         },
         HLS {

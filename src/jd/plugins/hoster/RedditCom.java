@@ -21,26 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.config.Property;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -61,6 +41,26 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
+import jd.PluginWrapper;
+import jd.config.Property;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RedditCom extends PluginForHost {
     public RedditCom(PluginWrapper wrapper) {
@@ -70,24 +70,25 @@ public class RedditCom extends PluginForHost {
         }
     }
 
-    public static final String PROPERTY_SUBREDDIT                   = "subreddit";
-    public static final String PROPERTY_TITLE                       = "title";
-    public static final String PROPERTY_USERNAME                    = "username";
-    public static final String PROPERTY_DATE                        = "date";
-    public static final String PROPERTY_DATE_TIMESTAMP              = "date_timestamp";
-    public static final String PROPERTY_DATE_TIMEDELTA_FORMATTED    = "date_timedelta_formatted";
-    public static final String PROPERTY_INDEX                       = "index";
-    public static final String PROPERTY_INDEX_MAX                   = "index_max";
-    public static final String PROPERTY_SLUG                        = "slug";
-    public static final String PROPERTY_POST_ID                     = "postid";
-    public static final String PROPERTY_POST_TEXT                   = "post_text";
-    public static final String PROPERTY_CRAWLER_FILENAME            = "crawler_filename";
-    public static final String PROPERTY_SERVER_FILENAME_WITHOUT_EXT = "server_filename_without_ext";
-    public static final String PROPERTY_TYPE                        = "type";
-    public static final String PROPERTY_TYPE_text                   = "text";
-    public static final String PROPERTY_TYPE_image                  = "image";
-    public static final String PROPERTY_TYPE_video                  = "video";
-    private final String       PROPERTY_DIRECTURL_LAST_USED         = "directurl_last_used";
+    public static final String PROPERTY_SUBREDDIT                      = "subreddit";
+    public static final String PROPERTY_TITLE                          = "title";
+    public static final String PROPERTY_USERNAME                       = "username";
+    public static final String PROPERTY_DATE                           = "date";
+    public static final String PROPERTY_DATE_TIMESTAMP                 = "date_timestamp";
+    public static final String PROPERTY_DATE_TIMEDELTA_FORMATTED       = "date_timedelta_formatted";
+    public static final String PROPERTY_INDEX                          = "index";
+    public static final String PROPERTY_INDEX_MAX                      = "index_max";
+    public static final String PROPERTY_SLUG                           = "slug";
+    public static final String PROPERTY_POST_ID                        = "postid";
+    public static final String PROPERTY_POST_TEXT                      = "post_text";
+    public static final String PROPERTY_CRAWLER_FILENAME               = "crawler_filename";
+    public static final String PROPERTY_SERVER_FILENAME_WITHOUT_EXT    = "server_filename_without_ext";
+    public static final String PROPERTY_TYPE                           = "type";
+    public static final String PROPERTY_TYPE_text                      = "text";
+    public static final String PROPERTY_TYPE_image                     = "image";
+    public static final String PROPERTY_TYPE_video                     = "video";
+    private final String       PROPERTY_DIRECTURL_LAST_USED            = "directurl_last_used";
+    private final String       PROPERTY_LAST_USED_DOWNLOAD_STREAM_TYPE = "last_used_download_stream_type";
 
     /** API wiki/docs: https://github.com/reddit-archive/reddit/wiki/API */
     public static final String getApiBaseLogin() {
@@ -156,7 +157,8 @@ public class RedditCom extends PluginForHost {
         final String pluginMatcher = link.getPluginPatternMatcher();
         if (pluginMatcher == null) {
             return null;
-        } else if (pluginMatcher.matches(PATTERN_IMAGE)) {
+        }
+        if (pluginMatcher.matches(PATTERN_IMAGE)) {
             return new Regex(pluginMatcher, PATTERN_IMAGE).getMatch(0);
         } else if (pluginMatcher.matches(PATTERN_VIDEO)) {
             return new Regex(pluginMatcher, PATTERN_VIDEO).getMatch(0);
@@ -177,7 +179,7 @@ public class RedditCom extends PluginForHost {
                 /* Video has been checked- or fully/partially downloaded before -> Return direct link to stream */
                 return lastUsedVideoDirecturl;
             } else {
-                if (PluginJsonConfig.get(RedditConfig.class).getVideoDownloadStreamType() == VideoDownloadStreamType.HLS) {
+                if (this.getVideoDownloadStreamType(link) == VideoDownloadStreamType.HLS) {
                     /* HLS */
                     return getVideoHLSPlaylistUrl(link);
                 } else {
@@ -218,7 +220,8 @@ public class RedditCom extends PluginForHost {
                 /* Fallback: Use this if no name was set in crawler. */
                 link.setFinalFileName(this.getFID(link) + ".mp4");
             }
-            if (PluginJsonConfig.get(RedditConfig.class).getVideoDownloadStreamType() == VideoDownloadStreamType.HLS) {
+            final VideoDownloadStreamType dltype = this.getVideoDownloadStreamType(link);
+            if (dltype == VideoDownloadStreamType.HLS) {
                 /* HLS */
                 br.getPage(getVideoHLSPlaylistUrl(link));
                 this.connectionErrorhandling(br, br.getHttpConnection());
@@ -273,6 +276,7 @@ public class RedditCom extends PluginForHost {
                     }
                 }
             }
+            link.setProperty(PROPERTY_LAST_USED_DOWNLOAD_STREAM_TYPE, dltype.name());
         } else {
             /* Image */
             if (!link.isNameSet()) {
@@ -282,6 +286,19 @@ public class RedditCom extends PluginForHost {
             checkHttpDirecturlAndSetFilesize(link.getPluginPatternMatcher(), link);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private VideoDownloadStreamType getVideoDownloadStreamType(final DownloadLink link) {
+        final String lastDownloadStreamTypeString = link.getStringProperty(PROPERTY_LAST_USED_DOWNLOAD_STREAM_TYPE);
+        if (lastDownloadStreamTypeString != null) {
+            /* Prefer last used value */
+            for (final VideoDownloadStreamType dltype : VideoDownloadStreamType.values()) {
+                if (StringUtils.equalsIgnoreCase(dltype.name(), lastDownloadStreamTypeString)) {
+                    return dltype;
+                }
+            }
+        }
+        return PluginJsonConfig.get(RedditConfig.class).getVideoDownloadStreamType();
     }
 
     private void checkHttpDirecturlAndSetFilesize(final String url, final DownloadLink link) throws IOException, PluginException {
@@ -360,7 +377,7 @@ public class RedditCom extends PluginForHost {
             /* Set progress to finished - the "download" is complete ;) */
             link.getLinkStatus().setStatus(LinkStatus.FINISHED);
         } else if (link.getPluginPatternMatcher().contains("v.redd.it")) {
-            if (PluginJsonConfig.get(RedditConfig.class).getVideoDownloadStreamType() == VideoDownloadStreamType.HLS) {
+            if (this.getVideoDownloadStreamType(link) == VideoDownloadStreamType.HLS) {
                 /* HLS video */
                 if (this.dl == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -705,7 +722,10 @@ public class RedditCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
+        if (link != null) {
+            link.removeProperty(PROPERTY_LAST_USED_DOWNLOAD_STREAM_TYPE);
+        }
     }
 
     @Override

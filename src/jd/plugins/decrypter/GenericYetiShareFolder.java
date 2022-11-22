@@ -39,6 +39,8 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -118,7 +120,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlFolderNEW(final CryptedLink param) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String currentFolderID;
         if (param.getCryptedUrl().matches(TYPE_NEW)) {
@@ -163,12 +165,10 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             getPage(parameter);
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.getURL().contains(currentFolderID)) {
             /* 2020-11-12: Invalid folderHash --> Redirect to mainpage */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // final String expectedMaxNumberofItemsPerPage = br.getRegex("var perPage = (\\d+);").getMatch(0);
         final UrlQuery folderquery = new UrlQuery();
@@ -297,7 +297,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                     if (fp != null) {
                         dl._setFilePackage(fp);
                     }
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                 }
             }
@@ -316,7 +316,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                  * not require a password at all but users CAN set a (different) password on them.
                  */
                 // folder.setDownloadPassword(passCode);
-                decryptedLinks.add(folder);
+                ret.add(folder);
                 distribute(folder);
             }
             if (fileHTMLSnippets.length == 0 && folderHashes.length == 0) {
@@ -338,17 +338,14 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                 break;
             }
         } while (!this.isAbort());
-        if (decryptedLinks.size() == 0) {
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            String offlineName = "empty_folder_" + currentFolderID;
+        if (ret.isEmpty()) {
+            String offlineName = currentFolderID;
             if (!StringUtils.isEmpty(subfolderPath)) {
                 offlineName += subfolderPath;
             }
-            offline.setFinalFileName(offlineName);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, offlineName);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlFolderOLD(final CryptedLink param) throws Exception {
@@ -362,12 +359,9 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(folderID)) {
             /* 2019-04-29: E.g. letsupload.co offline folder --> Redirect to /index.html */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        } else if (br.containsHTML("<strong>- There are no files within this folder\\.</strong>")) {
-            logger.info("Folder is empty");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)<strong>-\\s*There are no files within this folder\\.\\s*</strong>")) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
         Form folderPasswordForm = oldStyleGetFolderPasswordForm();
         String folderPassword = null;
