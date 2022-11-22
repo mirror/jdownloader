@@ -102,6 +102,11 @@ public class DeviantArtCom extends PluginForHost {
         }
     }
 
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return false;
+    }
+
     private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
     }
@@ -168,7 +173,6 @@ public class DeviantArtCom extends PluginForHost {
         }
         /* TODO: Test this with video- and animation content */
         String ext = null;
-        boolean setOfficialDownloadFilesize = false;
         final String officialDownloadFilesizeStr = br.getRegex("(?i)>\\s*Image size\\s*</div><div [^>]*>\\d+x\\d+px\\s*(\\d+[^>]+)</div>").getMatch(0);
         // final boolean accountNeededForOfficialDownload = br.containsHTML("(?i)Log in to download");
         if (StringUtils.isEmpty(officialDownloadurl)) {
@@ -205,23 +209,24 @@ public class DeviantArtCom extends PluginForHost {
         try {
             dllink = this.getDirecturl(link, account);
         } catch (final PluginException e) {
+            /**
+             * This will happen if the item is not downloadable. </br>
+             * We're ignoring this during linkcheck as by now we know the file is online.
+             */
         }
-        link.setVerifiedFileSize(-1); // reset this every time as user can change settings
         if (downloadHTML) {
             try {
                 link.setDownloadSize(br.getRequest().getHtmlCode().getBytes("UTF-8").length);
             } catch (final UnsupportedEncodingException ignore) {
                 ignore.printStackTrace();
             }
-        } else if ((officialDownloadFilesizeStr != null || officialDownloadsizeBytes != null) && (setOfficialDownloadFilesize || mode == ImageDownloadMode.OFFICIAL_DOWNLOAD_ONLY)) {
+        } else if (StringUtils.equalsIgnoreCase(dllink, officialDownloadurl) && (officialDownloadFilesizeStr != null || officialDownloadsizeBytes != null)) {
             /*
              * Set filesize of official download if: User wants official download and it is available and/or if user wants official
              * downloads only (set filesize even if official downloadurl was not found).
              */
             if (officialDownloadsizeBytes != null) {
-                /* 2022-11-22: Do not set verifiedFilesize for now. This is still under development. */
-                // link.setVerifiedFileSize(officialDownloadsizeBytes.longValue());
-                link.setDownloadSize(officialDownloadsizeBytes.longValue());
+                link.setVerifiedFileSize(officialDownloadsizeBytes.longValue());
             } else {
                 link.setDownloadSize(SizeFormatter.getSize(officialDownloadFilesizeStr.replace(",", "")));
             }
@@ -308,7 +313,12 @@ public class DeviantArtCom extends PluginForHost {
         final String displayedImageURL = link.getStringProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL);
         /* officialDownloadurl can be given while account is not given -> Will lead to error 404 then! */
         final String officialDownloadurl = link.getStringProperty(PROPERTY_OFFICIAL_DOWNLOADURL);
-        link.setVerifiedFileSize(-1);
+        final long oldVerifiedFilesize = link.getVerifiedFileSize();
+        if (oldVerifiedFilesize != -1) {
+            link.setVerifiedFileSize(-1);
+            /* Don't loose this value. */
+            link.setDownloadSize(oldVerifiedFilesize);
+        }
         String dllink = null;
         if (downloadHTML) {
             dllink = br.getURL();
@@ -317,7 +327,7 @@ public class DeviantArtCom extends PluginForHost {
             final ImageDownloadMode mode = cfg.getImageDownloadMode();
             if (mode == ImageDownloadMode.OFFICIAL_DOWNLOAD_ONLY) {
                 /* User only wants to download items with official download option available but it is not available in this case. */
-                if (!this.isAccountRequiredForOfficialDownload(br)) {
+                if (this.isAccountRequiredForOfficialDownload(br)) {
                     /* Looks like official download is not available at all for this item */
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Official download not available");
                 } else if (account == null) {
@@ -340,40 +350,8 @@ public class DeviantArtCom extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link, account, true);
-        final boolean isImage = StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "image");
-        final String displayedImageURL = link.getStringProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL);
-        /* officialDownloadurl can be given while account is not given -> Will lead to error 404 then! */
-        final String officialDownloadurl = link.getStringProperty(PROPERTY_OFFICIAL_DOWNLOADURL);
         link.setVerifiedFileSize(-1);
-        String dllink = null;
-        boolean resume = true;
-        if (downloadHTML) {
-            link.setVerifiedFileSize(-1);
-            resume = false;
-            dllink = br.getURL();
-        } else if (isImage) {
-            final DeviantArtComConfig cfg = PluginJsonConfig.get(DeviantArtComConfig.class);
-            final ImageDownloadMode mode = cfg.getImageDownloadMode();
-            if (mode == ImageDownloadMode.OFFICIAL_DOWNLOAD_ONLY) {
-                /* User only wants to download items with official download option available but it is not available in this case. */
-                if (!this.isAccountRequiredForOfficialDownload(br)) {
-                    /* Looks like official download is not available at all for this item */
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Official download not available");
-                } else if (account == null) {
-                    /* Account is required to be able to use official download option. */
-                    throw new AccountRequiredException();
-                } else if (officialDownloadurl == null) {
-                    /* This should never happen! */
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Official download broken or login issue");
-                } else {
-                    dllink = officialDownloadurl;
-                }
-            } else if (account != null && officialDownloadurl != null) {
-                dllink = officialDownloadurl;
-            } else {
-                dllink = displayedImageURL;
-            }
-        }
+        final String dllink = this.getDirecturl(link, account);
         if (StringUtils.isEmpty(dllink)) {
             if (this.looksLikeAccountRequired(br)) {
                 throw new AccountRequiredException();
@@ -384,7 +362,7 @@ public class DeviantArtCom extends PluginForHost {
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         /* Disable chunks as we only download pictures or small files */
         br.getHeaders().put("Accept-Encoding", "identity");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, account), 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             handleServerErrors(dl.getConnection());
             try {
