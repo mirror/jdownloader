@@ -192,14 +192,16 @@ public class DeviantArtCom extends PluginForHost {
                             if (isImage) {
                                 String c = (String) bestType.get("c");
                                 if (c == null) {
-                                    final Number h = (Number) bestType.get("h");
-                                    final Number w = (Number) bestType.get("w");
-                                    if (h != null && w != null) {
-                                        c = "/v1/fit/w_" + w + ",h_" + h + "/";
+                                    if ("fullview".equals(bestType.get("t"))) {
+                                        // r=1? o=true??(maybe original)
+                                        c = "";// raw image without any processing?
+                                    } else {
+                                        final Number h = (Number) bestType.get("h");
+                                        final Number w = (Number) bestType.get("w");
+                                        if (h != null && w != null) {
+                                            c = "/v1/fit/w_" + w + ",h_" + h + "/";
+                                        }
                                     }
-                                }
-                                if ("fullview".equals(bestType.get("t")) || true) {
-                                    c = "";// raw image without any processing?
                                 }
                                 if (c != null) {
                                     final List<String> tokens = (List<String>) media.get("token");
