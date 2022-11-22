@@ -22,6 +22,17 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.OdyseeComConfig;
+import org.jdownloader.plugins.components.config.OdyseeComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
@@ -35,20 +46,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.LbryTvConfig;
-import org.jdownloader.plugins.components.config.LbryTvConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class LbryTv extends PluginForHost {
-    public LbryTv(PluginWrapper wrapper) {
+public class OdyseeCom extends PluginForHost {
+    public OdyseeCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
     }
@@ -140,7 +140,7 @@ public class LbryTv extends PluginForHost {
             urlpart = Encoding.htmlDecode(urlpart);
         }
         String resolveString = "lbry://" + urlpart.replace(":", "#");
-        br.postPageRaw("https://api.lbry.tv/api/v1/proxy?m=resolve", "{\"jsonrpc\":\"2.0\",\"method\":\"resolve\",\"params\":{\"urls\":[\"" + resolveString + "\"],\"include_purchase_receipt\":true,\"include_is_my_output\":true}}");
+        br.postPageRaw("https://api.na-backend.odysee.com/api/v1/proxy?m=resolve", "{\"jsonrpc\":\"2.0\",\"method\":\"resolve\",\"params\":{\"urls\":[\"" + resolveString + "\"],\"include_purchase_receipt\":true,\"include_is_my_output\":true}}");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -206,8 +206,7 @@ public class LbryTv extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, PROPERTY_DIRECTURL);
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, PROPERTY_DIRECTURL);
     }
 
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection, final DownloadLink link) {
@@ -219,7 +218,7 @@ public class LbryTv extends PluginForHost {
         }
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
             requestFileInformation(link);
             String dllink = link.getStringProperty(directlinkproperty);
@@ -305,6 +304,7 @@ public class LbryTv extends PluginForHost {
                 throw new IOException();
             }
         } catch (final Throwable e) {
+            link.removeProperty(directlinkproperty);
             logger.log(e);
             try {
                 dl.getConnection().disconnect();
@@ -314,24 +314,24 @@ public class LbryTv extends PluginForHost {
         }
     }
 
-    private LbryTvConfig.PreferredStreamQuality getPreferredQuality(final DownloadLink downloadLink) {
+    private PreferredStreamQuality getPreferredQuality(final DownloadLink downloadLink) {
         final String preferredQuality = downloadLink.getStringProperty(PROPERTY_QUALITY, null);
-        LbryTvConfig.PreferredStreamQuality quality = PluginJsonConfig.get(LbryTvConfig.class).getPreferredStreamQuality();
+        PreferredStreamQuality quality = PluginJsonConfig.get(OdyseeComConfig.class).getPreferredStreamQuality();
         if (preferredQuality != null) {
             try {
-                quality = LbryTvConfig.PreferredStreamQuality.valueOf(preferredQuality);
+                quality = PreferredStreamQuality.valueOf(preferredQuality);
             } catch (IllegalArgumentException ignore) {
                 logger.log(ignore);
             }
         }
         if (quality == null) {
-            return LbryTvConfig.PreferredStreamQuality.BEST;
+            return PreferredStreamQuality.BEST;
         } else {
             return quality;
         }
     }
 
-    private int getPreferredQualityHeight(final DownloadLink downloadLink, LbryTvConfig.PreferredStreamQuality quality) {
+    private int getPreferredQualityHeight(final DownloadLink downloadLink, PreferredStreamQuality quality) {
         switch (quality) {
         case BEST:
             return -1;
@@ -350,7 +350,7 @@ public class LbryTv extends PluginForHost {
 
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
-        return LbryTvConfig.class;
+        return OdyseeComConfig.class;
     }
 
     @Override

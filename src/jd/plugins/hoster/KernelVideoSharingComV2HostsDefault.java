@@ -158,6 +158,8 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "femefun.com" });
         /* 2022-11-21 */
         ret.add(new String[] { "pervertium.com" });
+        /* 2022-11-22 */
+        ret.add(new String[] { "hotshag.com" });
         return ret;
     }
 

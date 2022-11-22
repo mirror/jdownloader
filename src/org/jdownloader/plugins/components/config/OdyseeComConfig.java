@@ -10,7 +10,7 @@ import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "odysee.com", type = Type.HOSTER)
-public interface LbryTvConfig extends PluginConfigInterface {
+public interface OdyseeComConfig extends PluginConfigInterface {
     public static enum PreferredStreamQuality implements LabelInterface {
         BEST {
             @Override
