@@ -204,6 +204,7 @@ public class DeviantArtCom extends PluginForHost {
                                     }
                                 }
                                 if (c != null) {
+                                    c = c.replaceFirst(",q_\\d+(,strp)?", "");
                                     final List<String> tokens = (List<String>) media.get("token");
                                     displayedImageURL = baseUri + c.replaceFirst("<prettyName>", Matcher.quoteReplacement(prettyName));
                                     if (tokens != null) {
