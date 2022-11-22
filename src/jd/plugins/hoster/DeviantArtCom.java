@@ -472,6 +472,8 @@ public class DeviantArtCom extends PluginForHost {
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         /* Disable chunks as we only download pictures or small files */
         br.getHeaders().put("Accept-Encoding", "identity");
+        /* remove hashInfo before download in case quality/mirror/user settings have changed. will be updated again on download */
+        link.setHashInfo(null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, account), 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             handleServerErrors(dl.getConnection());
