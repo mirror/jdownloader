@@ -114,7 +114,7 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
         if (parameter.matches(PATTERN_JOURNAL2)) {
             final DownloadLink journal = createDownloadlink(parameter.replace("deviantart.com/", "deviantartdecrypted.com/"));
             journal.setName(new Regex(parameter, "deviantart\\.com/(?:[^/]+/)?journal/([\\w\\-]+)").getMatch(0) + ".html");
-            if (fastLinkCheck) {
+            if (fastLinkCheck || true) {
                 journal.setAvailable(true);
             }
             distribute(journal);
