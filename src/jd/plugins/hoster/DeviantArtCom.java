@@ -68,7 +68,7 @@ public class DeviantArtCom extends PluginForHost {
     private final String       PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL = "image_display_or_preview_url";
 
     /**
-     * @author raztoki
+     * @author raztoki, pspzockerscene, Jiaz
      */
     @SuppressWarnings("deprecation")
     public DeviantArtCom(PluginWrapper wrapper) {
@@ -118,6 +118,9 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(new URL(link.getPluginPatternMatcher()).getPath() + this.getAssumedFileExtension(link));
+        }
         this.setBrowserExclusive();
         prepBR(this.br);
         br.setFollowRedirects(true);
@@ -259,8 +262,13 @@ public class DeviantArtCom extends PluginForHost {
         }
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
-            title = this.correctOrApplyFileNameExtension(title, ext);
-            link.setFinalFileName(title);
+            if (ext != null) {
+                title = this.correctOrApplyFileNameExtension(title, ext);
+                link.setFinalFileName(title);
+            } else {
+                title = this.correctOrApplyFileNameExtension(title, getAssumedFileExtension(link));
+                link.setName(title);
+            }
         } else if (!StringUtils.isEmpty(dllink)) {
             /* Last resort fallback */
             final String filenameFromURL = Plugin.getFileNameFromURL(new URL(dllink));
@@ -269,6 +277,16 @@ public class DeviantArtCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getAssumedFileExtension(final DownloadLink link) {
+        if (PluginJsonConfig.get(DeviantArtComConfig.class).getImageDownloadMode() == ImageDownloadMode.HTML) {
+            return ".html";
+        } else if (StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "image")) {
+            return ".jpg";
+        } else {
+            return ".html";
+        }
     }
 
     private boolean isAccountRequiredForOfficialDownload(final Browser br) {
