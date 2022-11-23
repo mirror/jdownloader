@@ -36,6 +36,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -122,7 +123,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
         if (account != null) {
             login(this.br, account);
         } else {
-            return;
+            throw new AccountRequiredException();
         }
         if (StringUtils.isNotEmpty(id) && !StringUtils.equalsIgnoreCase(id, "links")) {
             scanID(decryptedLinks, cryptedLink, mapper, id, null, "premium", null);
