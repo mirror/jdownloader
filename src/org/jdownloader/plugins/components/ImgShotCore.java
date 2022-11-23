@@ -25,6 +25,9 @@ public class ImgShotCore extends antiDDoSForHost {
         // this.enablePremium(super.getPurchasePremiumURL());
     }
 
+    public static final String PROPERTY_THUMBNAILURL = "thumbnailurl";
+    public static final String PROPERTY_DIRECTURL    = "directurl";
+
     // public static List<String[]> getPluginDomains() {
     // final List<String[]> ret = new ArrayList<String[]>();
     // // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
