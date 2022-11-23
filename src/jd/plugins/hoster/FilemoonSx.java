@@ -202,6 +202,7 @@ public class FilemoonSx extends XFileSharingProBasic {
         String dllink = checkDirectLink(link, account);
         if (StringUtils.isEmpty(dllink)) {
             requestFileInformationWebsite(link, account, true);
+            this.checkErrors(br, this.getCorrectBR(br), link, account, false);
             this.getPage("/download/" + this.getFUIDFromURL(link));
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdiBGAgAAAAAIQm_arJfGYrzjUNP_TCwkvPlv8k").getToken();
             final Form dlform = new Form();
@@ -221,6 +222,8 @@ public class FilemoonSx extends XFileSharingProBasic {
         /* 2022-11-04: Website failure after captcha on "/download/..." page */
         if (br.containsHTML("(?i)class=\"error e404\"|>\\s*Page not found")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+        } else if (br.containsHTML("(?i)>\\s*This video is not available in your country")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
         }
     }
 

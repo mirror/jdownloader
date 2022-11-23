@@ -74,24 +74,34 @@ public class BcVc extends antiDDoSForDecrypt {
         br.setFollowRedirects(false);
         getPage(param.getCryptedUrl());
         /* Check for direct redirect */
-        String redirect = br.getRedirectLocation();
-        if (redirect == null) {
-            redirect = br.getRegex("top\\.location\\.href = \"((?:https?|ftp)[^<>\"]*?)\"").getMatch(0);
-        }
-        if (redirect != null && !this.canHandle(redirect)) {
-            ret.add(createDownloadlink(redirect));
-            return ret;
-        } else if (redirect != null) {
-            getPage(redirect);
-        }
-        if (StringUtils.endsWithCaseInsensitive(redirect, "//bc.vc/7") || br.getURL().matches("https?://(?:www\\.)?bc.vc/") || br.containsHTML("top\\.location\\.href = \"https?://(?:www\\.)?bc\\.vc/\"") || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getHttpConnection().getResponseCode() == 404) {
+        String redirect = null;
+        int counter = -1;
+        do {
+            counter++;
+            redirect = br.getRedirectLocation();
+            if (redirect == null) {
+                redirect = br.getRegex("top\\.location\\.href = \"((?:https?|ftp)[^<>\"]*?)\"").getMatch(0);
+            }
+            if (redirect == null) {
+                break;
+            }
+            if (!this.canHandle(redirect)) {
+                logger.info("Redirect to external website: " + redirect);
+                ret.add(createDownloadlink(redirect));
+                return ret;
+            } else if (counter >= 5) {
+                logger.info("Too many redirects -> Link is probably offline or redirects to some advertising network");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                getPage(redirect);
+            }
+        } while (true);
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.toString().length() <= 100) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("Unable to connect to database")) {
-            logger.info("Link can't be decrypted because of server problems: " + param.getCryptedUrl());
+        } else if (br.containsHTML("(?i)Unable to connect to database")) {
+            logger.info("Link can't be crawled because of server problems: " + param.getCryptedUrl());
             return ret;
         }
         ret.add(this.crawlBcbclive(param));
