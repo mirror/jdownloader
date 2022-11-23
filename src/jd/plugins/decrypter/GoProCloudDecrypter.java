@@ -200,7 +200,6 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
 
     protected void scanID(final List<DownloadLink> decryptedLinks, CryptedLink cryptedLink, FlexiJSonMapper mapper, String id, Media media, String access, String collectionTitle) throws FlexiParserException, IOException, FlexiMapperException, MalformedURLException, PluginException {
         DownloadLink cacheSource = null;
-        FlexiJSonNodeResponse responseMediaDownload = null;
         FlexiJSonNodeResponse responseMedia = null;
         if (hostConfig.isLocalMediaCacheEnabled()) {
             synchronized (jd.plugins.hoster.GoProCloud.LINKCACHE) {
@@ -237,7 +236,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                 logger.log(e);
             }
             if ("Burst".equals(media.getType())) {
-                responseMediaDownload = GoProCloud.getDownloadResponse(this, br, id, cacheSource);
+                final FlexiJSonNodeResponse responseMediaDownload = GoProCloud.getDownloadResponse(this, br, id, cacheSource);
                 final Download download = mapper.jsonToObject(responseMediaDownload.jsonNode, Download.TYPEREF);
                 iter = new ConcatIterator<Variation>(download.getEmbedded().getSidecar_files(), download.getEmbedded().getFiles());
                 for (Variation v : iter) {
@@ -267,7 +266,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                         }
                         DownloadLink link = createDownloadlink("https://gopro.com/download" + access + "/" + id + "/" + variantID);
                         link.setLinkID(jd.plugins.hoster.GoProCloud.createLinkID(link, null));
-                        GoProCloud.setCache(link, responseMedia.jsonString, responseMediaDownload.jsonString);
+                        GoProCloud.setCache(link, responseMedia != null ? responseMedia.jsonString : null, responseMediaDownload != null ? responseMediaDownload.jsonString : null);
                         setContentUrl(cryptedLink, id, access, link);
                         link.setAvailable(true);
                         if (!setFileSize(id, v, link, cacheSource)) {
@@ -285,7 +284,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                 }
             } else if ("Video".equals(media.getType()) || "TimeLapseVideo".equals(media.getType()) || "BurstVideo".equals(media.getType())) {
                 if (hostConfig.isCrawlDownscaledVariants()) {
-                    responseMediaDownload = GoProCloud.getDownloadResponse(this, br, id, cacheSource);
+                    final FlexiJSonNodeResponse responseMediaDownload = GoProCloud.getDownloadResponse(this, br, id, cacheSource);
                     final Download download = mapper.jsonToObject(responseMediaDownload.jsonNode, Download.TYPEREF);
                     ArrayList<GoProVariant> variants = new ArrayList<GoProVariant>();
                     Collections.sort(download.getEmbedded().getVariations(), new Comparator<Variation>() {
@@ -320,7 +319,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                         if (hostConfig.isAddEachVariantAsExtraLink()) {
                             DownloadLink link = createDownloadlink("https://gopro.com/download" + access + "/" + id + "/" + variantID);
                             link.setLinkID(jd.plugins.hoster.GoProCloud.createLinkID(link, null));
-                            GoProCloud.setCache(link, responseMedia.jsonString, responseMediaDownload.jsonString);
+                            GoProCloud.setCache(link, responseMedia != null ? responseMedia.jsonString : null, responseMediaDownload != null ? responseMediaDownload.jsonString : null);
                             setContentUrl(cryptedLink, id, access, link);
                             GoProCloud.setFinalFileName(hostConfig, media, link, v);
                             fp.add(link);
@@ -337,7 +336,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                     }
                     if (!hostConfig.isAddEachVariantAsExtraLink()) {
                         DownloadLink link = createDownloadlink("https://gopro.com/download" + access + "/" + id + "/video");
-                        GoProCloud.setCache(link, responseMedia.jsonString, responseMediaDownload.jsonString);
+                        GoProCloud.setCache(link, responseMedia != null ? responseMedia.jsonString : null, responseMediaDownload != null ? responseMediaDownload.jsonString : null);
                         setContentUrl(cryptedLink, id, access, link);
                         link.setFinalFileName(media.getFilename());
                         link.setVariantSupport(true);
@@ -355,7 +354,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                     DownloadLink link = createDownloadlink("https://gopro.com/download" + access + "/" + id + "/source");
                     link.setLinkID(jd.plugins.hoster.GoProCloud.createLinkID(link, null));
                     setContentUrl(cryptedLink, id, access, link);
-                    GoProCloud.setCache(link, responseMedia.jsonString, responseMediaDownload.jsonString);
+                    GoProCloud.setCache(link, responseMedia != null ? responseMedia.jsonString : null, null);
                     link.setAvailable(false);
                     GoProCloud.setFinalFileName(hostConfig, media, link, null);
                     // if (hostConfig.isUseOriginalGoProFileNames()) {
@@ -376,7 +375,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                     DownloadLink link = createDownloadlink("https://gopro.com/download" + access + "/" + id + "/" + variantID);
                     link.setLinkID(jd.plugins.hoster.GoProCloud.createLinkID(link, null));
                     setContentUrl(cryptedLink, id, access, link);
-                    GoProCloud.setCache(link, responseMedia.jsonString, responseMediaDownload.jsonString);
+                    GoProCloud.setCache(link, responseMedia != null ? responseMedia.jsonString : null, null);
                     link.setAvailable(true);
                     link.setDownloadSize(media.getFile_size());
                     fp.add(link);

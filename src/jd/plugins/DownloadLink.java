@@ -2150,8 +2150,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public boolean hasGenericVariantSupport() {
-        // TODO
-        return false;
+        return getBooleanProperty("GENERIC_VARIANTS", false);
     }
 
     public boolean hasVariantSupport() {
@@ -2417,12 +2416,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return null;
     }
 
+    @Deprecated
     public boolean isGenericVariantSupport() {
-        return getBooleanProperty("GENERIC_VARIANTS", false);
+        return hasGenericVariantSupport();
     }
 
     public <T extends LinkVariant> List<T> getVariants(final Class<T> type) {
-        if (isGenericVariantSupport() && !GenericVariants.class.equals(type)) {
+        if (hasGenericVariantSupport() && !GenericVariants.class.equals(type)) {
             return null;
         }
         try {
