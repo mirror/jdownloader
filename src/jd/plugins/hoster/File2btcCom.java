@@ -112,7 +112,10 @@ public class File2btcCom extends PluginForHost {
         if (!StringUtils.isEmpty(originalFilename)) {
             link.setName(Encoding.htmlDecode(originalFilename).trim());
         } else {
-            String filetitle = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+            String filetitle = br.getRegex("div style=\"height: 45px;\">([^<]+)</div>").getMatch(0);
+            if (filetitle == null) {
+                filetitle = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+            }
             if (!StringUtils.isEmpty(filetitle)) {
                 filetitle = Encoding.htmlDecode(filetitle.trim());
                 /* Add missing file-extension for videos if needed. */
@@ -157,6 +160,10 @@ public class File2btcCom extends PluginForHost {
             link.removeProperty(directlinkproperty);
         }
         requestFileInformation(link);
+        final String limitWaitMinutesStr = br.getRegex("(?i)>\\s?You have to wait\\s*<b>(\\d+)</b>\\s*minutes?").getMatch(0);
+        if (limitWaitMinutesStr != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(limitWaitMinutesStr) * 60 * 1001l);
+        }
         if (account != null) {
             dllink = br.getRegex("<a href=\"(https?://[^\"]+)\" download>").getMatch(0);
             if (dllink != null) {
@@ -171,9 +178,13 @@ public class File2btcCom extends PluginForHost {
             }
         } else {
             /* 2022-09-26: Pre-download waittime can be skipped. */
+            final String dllinkBase = br.getRegex("use <a href=.(https?://[^<>\"\\']+=)").getMatch(0);
+            if (dllinkBase == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.postPage("/commands/download.php", "hash=" + this.getFID(link));
             this.sleep(1000, link);
-            dllink = "/download.php?secure=" + br.getRequest().getHtmlCode();
+            dllink = dllinkBase + br.getRequest().getHtmlCode();
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
