@@ -64,7 +64,7 @@ public class NewsHostingCom extends UseNet {
         if (ai != null && !ai.isExpired() && ai.isUnlimitedTraffic() && account.getStringProperty(USENET_USERNAME, null) != null) {
             try {
                 verifyUseNetLogins(account);
-                account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
+                account.setRefreshTimeout(5 * 60 * 60 * 1000l);
                 ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                 return ai;
             } catch (InvalidAuthException e2) {
@@ -197,7 +197,7 @@ public class NewsHostingCom extends UseNet {
                 logger.log(e);
                 try {
                     verifyUseNetLogins(account);
-                    account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
+                    account.setRefreshTimeout(5 * 60 * 60 * 1000l);
                     ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                     return ai;
                 } catch (InvalidAuthException e2) {
@@ -209,7 +209,7 @@ public class NewsHostingCom extends UseNet {
                     }
                 }
             }
-            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
+            account.setRefreshTimeout(5 * 60 * 60 * 1000l);
             ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
             return ai;
         }

@@ -1061,7 +1061,7 @@ public class DepositFiles extends antiDDoSForHost {
                 account.setConcurrentUsePossible(false);
             }
             saveAccountData(accountData, account);
-            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
+            account.setRefreshTimeout(5 * 60 * 60 * 1000l);
         } catch (PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                 account.setProperty("accountData", Property.NULL);

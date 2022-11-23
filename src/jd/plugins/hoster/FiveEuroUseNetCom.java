@@ -110,7 +110,7 @@ public class FiveEuroUseNetCom extends UseNet {
             }
             throw e;
         }
-        account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
+        account.setRefreshTimeout(5 * 60 * 60 * 1000l);
         ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
         return ai;
     }

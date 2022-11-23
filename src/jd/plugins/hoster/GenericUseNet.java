@@ -92,7 +92,7 @@ public class GenericUseNet extends UseNet {
             final AccountInfo ai = new AccountInfo();
             ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
             ai.setStatus("Generic usenet:maxDownloads(current)=" + account.getMaxSimultanDownloads());
-            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
+            account.setRefreshTimeout(2 * 60 * 60 * 1000l);
             return ai;
         } catch (InvalidAuthException e) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_DISABLE, e);

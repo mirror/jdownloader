@@ -38,7 +38,7 @@ public class PremiumNewsDe extends UseNet {
             ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
             account.setMaxSimultanDownloads(20);// no way to check account type (silber(8)/gold(20)/platin(20+))
             account.setConcurrentUsePossible(true);
-            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
+            account.setRefreshTimeout(2 * 60 * 60 * 1000l);
             return ai;
         } catch (InvalidAuthException e) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_DISABLE, e);

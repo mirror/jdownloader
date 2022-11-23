@@ -161,7 +161,7 @@ public class PureUseNetNL extends UseNet {
             /* 2020-01-21 - wide open RegEx --> Last chance */
             expireDate = br.getRegex("(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         }
-        account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
+        account.setRefreshTimeout(2 * 60 * 60 * 1000l);
         ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
         if (expireDate != null) {
             /* Premium account with expiredate */
