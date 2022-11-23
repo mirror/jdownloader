@@ -116,7 +116,7 @@ public class SunnyUsenetCom extends UseNet {
             throw e;
         }
         ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
-        account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
+        account.setRefreshTimeout(5 * 60 * 60 * 1000l);
         return ai;
     }
 

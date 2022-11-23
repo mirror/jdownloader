@@ -273,7 +273,7 @@ public class MegaConz extends PluginForHost {
                     ai.setValidUntil(-1);
                     account.setType(AccountType.FREE);
                 }
-                account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
+                account.setRefreshTimeout(2 * 60 * 60 * 1000l);
                 return ai;
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

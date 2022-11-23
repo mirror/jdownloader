@@ -278,8 +278,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                         validatedSession = true;
                     }
                 }
-                /* reduce refresh to avoid false *hack activity* */
-                account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
+                /* reduce refresh to avoid false serverside error *hack activity* */
+                account.setRefreshTimeout(2 * 60 * 60 * 1000l);
                 return validatedSession;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

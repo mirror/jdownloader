@@ -226,7 +226,7 @@ public class MegarapidoNet extends antiDDoSForHost {
          * Less login captchas by less checks --> If user starts downloads in between and session is expired, he will be asked for a captcha
          * anways of course.
          */
-        account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 48 * 60 * 1000l);
+        account.setRefreshTimeout(48 * 60 * 1000l);
         return ai;
     }
 

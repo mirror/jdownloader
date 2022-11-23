@@ -128,7 +128,7 @@ public class MaximumUsenetCom extends UseNet {
             if (nextBillingDate != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(nextBillingDate, "yyyy'-'MM'-'dd", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
             }
-            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
+            account.setRefreshTimeout(5 * 60 * 60 * 1000l);
             account.setMaxSimultanDownloads(50);
             ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
             try {

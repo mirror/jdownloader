@@ -99,7 +99,7 @@ public class NewsAstraWebCom extends UseNet {
                             ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                             // https://www.astraweb.com/, 50
                             account.setMaxSimultanDownloads(50);
-                            account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
+                            account.setRefreshTimeout(5 * 60 * 60 * 1000l);
                             return ai;
                         } catch (InvalidAuthException e) {
                             logger.log(e);
@@ -202,7 +202,7 @@ public class NewsAstraWebCom extends UseNet {
                     // https://middleware.astraweb.com/billing/getBillingEventsForUser?XDEBUG_SESSION_START=PHPSTORM
                     // [{"billing_event_id":xyz,"billing_method_name":"Creditcard","currency_code":"USD","amount":35.88,"created_at":"2020-09-09T10:01:31+00:00","status":"success","description":"12 Months"}
                 }
-                account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
+                account.setRefreshTimeout(5 * 60 * 60 * 1000l);
                 ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                 return ai;
             } catch (final PluginException e) {

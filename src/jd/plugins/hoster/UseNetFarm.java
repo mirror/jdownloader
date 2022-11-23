@@ -217,7 +217,7 @@ public class UseNetFarm extends UseNet {
                             account.setMaxSimultanDownloads(conns.intValue());
                         }
                         ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
-                        account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 2 * 60 * 60 * 1000l);
+                        account.setRefreshTimeout(2 * 60 * 60 * 1000l);
                         return ai;
                     }
                 }

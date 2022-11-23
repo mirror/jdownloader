@@ -163,7 +163,7 @@ public class NewsGroupDirectCom extends UseNet {
                 }
                 // https://newsgroupdirect.com/#pricing
                 account.setMaxSimultanDownloads(50);
-                account.setProperty(Account.PROPERTY_REFRESH_TIMEOUT, 5 * 60 * 60 * 1000l);
+                account.setRefreshTimeout(5 * 60 * 60 * 1000l);
                 ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
                 try {
                     verifyUseNetLogins(account);
