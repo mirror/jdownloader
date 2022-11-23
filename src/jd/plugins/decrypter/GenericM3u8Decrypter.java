@@ -23,6 +23,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig.CrawlSpeedMode;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -39,17 +50,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.GenericM3u8;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig.CrawlSpeedMode;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|(?:\\?|%3F)[^\\s<>\"']*|#.*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
@@ -72,6 +72,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
         CrawledLink source = getCurrentLink();
         String referer = null;
         String cookiesString = null;
+        String preSetTitle = null;
         while (source != null) {
             if (source.getDownloadLink() != null && StringUtils.equals(source.getURL(), param.getCryptedUrl())) {
                 final DownloadLink downloadLink = source.getDownloadLink();
@@ -80,6 +81,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     final String host = Browser.getHost(source.getURL());
                     br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
                 }
+                preSetTitle = downloadLink.getStringProperty(GenericM3u8.PRESET_NAME_PROPERTY);
             }
             if (!StringUtils.equals(source.getURL(), param.getCryptedUrl())) {
                 if (source.getCryptedLink() != null) {
@@ -122,10 +124,10 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             logger.info("!Response is not a valid HLS construct according to headers!");
             /* This is only an indicator. Continue anyways. */
         }
-        return parseM3U8(this, param.getCryptedUrl(), br, referer, cookiesString, null);
+        return parseM3U8(this, param.getCryptedUrl(), br, referer, cookiesString, preSetTitle);
     }
 
-    public static ArrayList<DownloadLink> parseM3U8(final PluginForDecrypt plugin, final String m3u8URL, final Browser br, final String referer, final String cookiesString, final String preSetName) throws Exception {
+    public static ArrayList<DownloadLink> parseM3U8(final PluginForDecrypt plugin, final String m3u8URL, final Browser br, final String referer, final String cookiesString, final String preSetTitle) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final GenericM3u8DecrypterConfig cfg = PluginJsonConfig.get(GenericM3u8DecrypterConfig.class);
         final CrawlSpeedMode mode = cfg.getCrawlSpeedMode();
@@ -154,8 +156,8 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             }
             final String finalFallbackTitle = new Regex(m3u8URL, "/([^/]+)\\.m3u8").getMatch(0);
             FilePackage fp = FilePackage.getInstance();
-            if (StringUtils.isNotEmpty(preSetName)) {
-                fp.setName(preSetName);
+            if (StringUtils.isNotEmpty(preSetTitle)) {
+                fp.setName(preSetTitle);
             } else if (StringUtils.isNotEmpty(sessionDataTitle)) {
                 fp.setName(sessionDataTitle);
             } else if (StringUtils.isNotEmpty(finalFallbackTitle) && !StringUtils.equalsIgnoreCase(finalFallbackTitle, "master")) {
@@ -171,8 +173,8 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 link.setProperty("m3u8Source", m3u8URL);
                 link.setReferrerUrl(referer);
                 link.setProperty("cookies", cookiesString);
-                if (StringUtils.isNotEmpty(preSetName)) {
-                    link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetName);
+                if (StringUtils.isNotEmpty(preSetTitle)) {
+                    link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetTitle);
                 } else if (StringUtils.isNotEmpty(sessionDataTitle)) {
                     link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, sessionDataTitle);
                 }
@@ -203,8 +205,9 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     if (hls.getAverageBandwidth() > 0 || hls.getBandwidth() > 0) {
                         if (estimatedDurationMillis == null) {
                             /**
-                             * Load first item to get the estimated play-duration which we expect to be the same for all items. </br> Based
-                             * on this we can set estimated filesizes while at the same time providing a super fast crawling experience.
+                             * Load first item to get the estimated play-duration which we expect to be the same for all items. </br>
+                             * Based on this we can set estimated filesizes while at the same time providing a super fast crawling
+                             * experience.
                              */
                             final List<M3U8Playlist> playlist = hls.getM3U8(br);
                             estimatedDurationMillis = M3U8Playlist.getEstimatedDuration(playlist);
@@ -245,8 +248,8 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
             if (estimatedDurationMillis > 0) {
                 link.setProperty(GenericM3u8.PROPERTY_DURATION_ESTIMATED_MILLIS, estimatedDurationMillis);
             }
-            if (StringUtils.isNotEmpty(preSetName)) {
-                link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetName);
+            if (StringUtils.isNotEmpty(preSetTitle)) {
+                link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, preSetTitle);
             }
             GenericM3u8.setFilename(plugin, link, false);
             ret.add(link);
