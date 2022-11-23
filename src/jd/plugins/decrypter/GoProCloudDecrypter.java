@@ -124,7 +124,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
         } else {
             return;
         }
-        if (StringUtils.isNotEmpty(id)) {
+        if (StringUtils.isNotEmpty(id) && !StringUtils.equalsIgnoreCase(id, "links")) {
             scanID(decryptedLinks, cryptedLink, mapper, id, null, "premium", null);
         } else {
             int perPage = 100;
