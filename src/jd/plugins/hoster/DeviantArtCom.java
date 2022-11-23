@@ -60,15 +60,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/([\\w\\-]+/art/[\\w\\-]+-\\d+|([\\w\\-]+/)?status(?:-update)?/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/([\\w\\-]+/(art|journal)/[\\w\\-]+-\\d+|([\\w\\-]+/)?status(?:-update)?/\\d+)" })
 public class DeviantArtCom extends PluginForHost {
     // private static final String DLLINK_REFRESH_NEEDED = "https?://(www\\.)?deviantart\\.com/download/.+";
     private final String       TYPE_DOWNLOADALLOWED_HTML             = "(?i)class=\"text\">HTML download</span>";
     private final String       TYPE_DOWNLOADFORBIDDEN_HTML           = "<div class=\"grf\\-indent\"";
     private boolean            downloadHTML                          = false;
-    private final String       PATTERN_ART                           = "https?://[^/]+/([\\w\\-]+)/art/([\\w\\-]+)-(\\d+)";
-    private final String       PATTERN_JOURNAL                       = "https?://[^/]+/([\\w\\-]+)/journal/([\\w\\-]+)-(\\d+)";
-    private final String       PATTERN_STATUS                        = "https?://[^/]+/([\\w\\-]+)/([\\w\\-]+/)?status(?:-update)?/(\\d+)";
+    private final String       PATTERN_ART                           = "(?i)https?://[^/]+/([\\w\\-]+)/art/([\\w\\-]+)-(\\d+)";
+    private final String       PATTERN_JOURNAL                       = "(?i)https?://[^/]+/([\\w\\-]+)/journal/([\\w\\-]+)-(\\d+)";
+    public static final String PATTERN_STATUS                        = "(?i)https?://[^/]+/([\\w\\-]+)/([\\w\\-]+/)?status(?:-update)?/(\\d+)";
+    public static final String PROPERTY_USERNAME                     = "username";
+    public static final String PROPERTY_TITLE                        = "title";
     public static final String PROPERTY_TYPE                         = "type";
     private final String       PROPERTY_OFFICIAL_DOWNLOADURL         = "official_downloadurl";
     private final String       PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL = "image_display_or_preview_url";
@@ -236,9 +238,10 @@ public class DeviantArtCom extends PluginForHost {
             final Map<String, Object> thisUser = (Map<String, Object>) user.get(thisArt.get("author").toString());
             title = (String) thisArt.get("title");
             final String username = thisUser.get("username").toString();
+            link.setProperty(PROPERTY_USERNAME, username);
             if (title != null) {
-                title += " by " + username;
-            } else if (this.isStatus(link)) {
+                title += " by " + username + "_ " + fid;
+            } else if (isStatus(link)) {
                 /* A status typically doesn't have a title so we goota create our own. */
                 title = fid + " by " + username;
             }
@@ -268,6 +271,7 @@ public class DeviantArtCom extends PluginForHost {
         if (title != null) {
             title = title.replaceAll("(?i) on deviantart$", "");
         }
+        link.setProperty(PROPERTY_TITLE, title);
         if (StringUtils.isEmpty(displayedImageURL)) {
             displayedImageURL = HTMLSearch.searchMetaTag(br, "og:image");
         }
@@ -283,7 +287,7 @@ public class DeviantArtCom extends PluginForHost {
         final boolean isImage = isImage(link);
         final boolean isVideo = isVideo(link);
         final boolean isLiterature = isLiterature(link);
-        final boolean isStatus = this.isStatus(link);
+        final boolean isStatus = isStatus(link);
         if (displayedImageURL != null && isImage) {
             link.setProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL, displayedImageURL);
         }
@@ -393,7 +397,7 @@ public class DeviantArtCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private boolean isStatus(DownloadLink link) {
+    public static boolean isStatus(DownloadLink link) {
         if (StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "status") || link.getPluginPatternMatcher().matches(PATTERN_STATUS)) {
             return true;
         } else {
@@ -401,15 +405,15 @@ public class DeviantArtCom extends PluginForHost {
         }
     }
 
-    private boolean isImage(DownloadLink link) {
+    public static boolean isImage(DownloadLink link) {
         return StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "image");
     }
 
-    private boolean isVideo(DownloadLink link) {
+    public static boolean isVideo(DownloadLink link) {
         return StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "film");
     }
 
-    private boolean isLiterature(DownloadLink link) {
+    public static boolean isLiterature(DownloadLink link) {
         return StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "literature");
     }
 
@@ -417,7 +421,7 @@ public class DeviantArtCom extends PluginForHost {
      * Returns assumed file extension based on all information we currently have. Use this only for weak filenames e.g. before linkcheck is
      * done.
      */
-    private String getAssumedFileExtension(final DownloadLink link) {
+    public static String getAssumedFileExtension(final DownloadLink link) {
         if (isVideo(link)) {
             return ".mp4";
         } else if (isImage(link)) {
@@ -427,7 +431,7 @@ public class DeviantArtCom extends PluginForHost {
             } else {
                 return ".jpg";
             }
-        } else if (isLiterature(link) || this.isStatus(link)) {
+        } else if (isLiterature(link) || isStatus(link)) {
             /* TODO: Add proper handling to only download relevant text of this type of link and write it into .txt file. */
             return ".html";
             // return ".txt";
