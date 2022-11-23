@@ -19,18 +19,13 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.FilestoreToConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -43,6 +38,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.FilestoreToConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "https?://(?:www\\.)?filestore\\.to/\\?d=([A-Z0-9]+)" })
 public class FilestoreTo extends PluginForHost {
@@ -127,8 +128,10 @@ public class FilestoreTo extends PluginForHost {
                 logger.info("Performing full login");
                 br.getPage("http://" + this.getHost() + "/login");
                 final Form form = br.getFormbyKey("Email");
-                form.put("EMail", Encoding.urlEncode(account.getUser()));
-                form.put("Password", Encoding.urlEncode(account.getPass()));
+                InputField email = form.getInputFieldByNameRegex("(?i)Email");
+                email.setValue(Encoding.urlEncode(account.getUser()));
+                InputField password = form.getInputFieldByNameRegex("(?i)Password");
+                password.setValue(Encoding.urlEncode(account.getPass()));
                 br.submitForm(form);
                 if (!this.isLoggedinHTML(br)) {
                     throw new AccountInvalidException();
