@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,6 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.GenericM3u8;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dw.com" }, urls = { "https?://(?:www\\.)?dw\\.com/[a-z]{2}/([^/]+)/av-(\\d+)" })
 public class DwCom extends PluginForDecrypt {
@@ -45,25 +48,29 @@ public class DwCom extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = HTMLSearch.searchMetaTag(br, "og:title");
+        if (StringUtils.isEmpty(title)) {
+            /* Fallback */
+            String url_title = new Regex(addedurl, this.getSupportedLinks()).getMatch(0);
+            url_title = Encoding.htmlDecode(url_title);
+            title = url_title.replace("-", " ").trim();
+        }
         final String[] hlsmasters = br.getRegex("src=\"(https?://[^\"]+master\\.m3u8)\" type=\"application/x-mpegURL\"").getColumn(0);
         for (final String hlsmaster : hlsmasters) {
-            ret.add(this.createDownloadlink(hlsmaster));
+            final DownloadLink hls = this.createDownloadlink(hlsmaster);
+            /* Important as this will be used in filenames later. */
+            hls.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, title);
+            ret.add(hls);
         }
         if (ret.isEmpty()) {
             /* Old handling */
             final String lid = new Regex(addedurl, this.getSupportedLinks()).getMatch(1);
-            br.getPage("https://www." + this.getHost() + "/playersources/v-" + lid);
+            br.getPage("/playersources/v-" + lid);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String url_title = new Regex(addedurl, this.getSupportedLinks()).getMatch(0);
-            url_title = Encoding.htmlDecode(url_title);
             final String[] links = br.getRegex("(http[^\"]+\\.mp4)").getColumn(0);
             if (links == null || links.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (title == null) {
-                title = url_title.replace("-", " ");
             }
             for (final String singleLink : links) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
