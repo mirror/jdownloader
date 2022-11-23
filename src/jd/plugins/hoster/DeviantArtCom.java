@@ -21,10 +21,21 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -49,16 +60,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/([\\w\\-]+/art/[\\w\\-]+-\\d+|status(?:-update)?/\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/([\\w\\-]+/art/[\\w\\-]+-\\d+|([\\w\\-]+/)?status(?:-update)?/\\d+)" })
 public class DeviantArtCom extends PluginForHost {
     // private static final String DLLINK_REFRESH_NEEDED = "https?://(www\\.)?deviantart\\.com/download/.+";
     private final String       TYPE_DOWNLOADALLOWED_HTML             = "(?i)class=\"text\">HTML download</span>";
@@ -66,7 +68,7 @@ public class DeviantArtCom extends PluginForHost {
     private boolean            downloadHTML                          = false;
     private final String       PATTERN_ART                           = "https?://[^/]+/([\\w\\-]+)/art/([\\w\\-]+)-(\\d+)";
     private final String       PATTERN_JOURNAL                       = "https?://[^/]+/([\\w\\-]+)/journal/([\\w\\-]+)-(\\d+)";
-    private final String       LINKTYPE_STATUS                       = "https?://[^/]+/([\\w\\-]+)/status(?:-update)?/(\\d+)";
+    private final String       PATTERN_STATUS                        = "https?://[^/]+/([\\w\\-]+)/([\\w\\-]+/)?status(?:-update)?/(\\d+)";
     public static final String PROPERTY_TYPE                         = "type";
     private final String       PROPERTY_OFFICIAL_DOWNLOADURL         = "official_downloadurl";
     private final String       PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL = "image_display_or_preview_url";
@@ -132,13 +134,13 @@ public class DeviantArtCom extends PluginForHost {
         if (account != null) {
             login(account, false);
         }
+        final String fid = getFID(link);
         br.getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("/error\\-title\\-oops\\.png\\)") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!this.canHandle(br.getURL())) {
+        } else if (!this.canHandle(br.getURL()) && !br.getURL().contains(fid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fid = getFID(link);
         String title = null;
         String displayedImageURL = null;
         String displayedVideoURL = null;
@@ -150,11 +152,22 @@ public class DeviantArtCom extends PluginForHost {
             json = PluginJSonUtils.unescape(json);
             final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             final Map<String, Object> entities = (Map<String, Object>) entries.get("@@entities");
-            final Map<String, Object> deviationExtended = (Map<String, Object>) entities.get("deviationExtended");
-            final Map<String, Object> deviationExtendedThisArt = deviationExtended == null ? null : (Map<String, Object>) deviationExtended.get(fid);
             final Map<String, Object> user = (Map<String, Object>) entities.get("user");
             final Map<String, Object> deviation = (Map<String, Object>) entities.get("deviation");
-            final Map<String, Object> thisArt = (Map<String, Object>) deviation.get(fid);
+            Map<String, Object> thisArt = (Map<String, Object>) deviation.get(fid);
+            String alternativeDeviationID = null;
+            if (thisArt == null) {
+                /* E.g. https://www.deviantart.com/shinysmeargle/status-update/12312835 */
+                final Iterator<Entry<String, Object>> iterator = deviation.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Entry<String, Object> entry = iterator.next();
+                    final String key = entry.getKey();
+                    if (key.matches("^\\d+-" + fid + "$")) {
+                        alternativeDeviationID = key;
+                        thisArt = (Map<String, Object>) entry.getValue();
+                    }
+                }
+            }
             link.setProperty(PROPERTY_TYPE, thisArt.get("type"));
             final Map<String, Object> media = (Map<String, Object>) thisArt.get("media");
             if (media != null) {
@@ -221,12 +234,30 @@ public class DeviantArtCom extends PluginForHost {
                 }
             }
             final Map<String, Object> thisUser = (Map<String, Object>) user.get(thisArt.get("author").toString());
-            title = thisArt.get("title").toString() + " by " + thisUser.get("username"); // prefer title from json
-            if (deviationExtendedThisArt != null) {
-                final Map<String, Object> download = (Map<String, Object>) deviationExtendedThisArt.get("download");
-                if (download != null) {
-                    officialDownloadurl = download.get("url").toString();
-                    officialDownloadsizeBytes = (Number) download.get("filesize");
+            title = (String) thisArt.get("title");
+            final String username = thisUser.get("username").toString();
+            if (title != null) {
+                title += " by " + username;
+            } else if (this.isStatus(link)) {
+                /* A status typically doesn't have a title so we goota create our own. */
+                title = fid + " by " + username;
+            }
+            final Map<String, Object> deviationExtended = (Map<String, Object>) entities.get("deviationExtended");
+            if (deviationExtended != null) {
+                Map<String, Object> deviationExtendedThisArt = (Map<String, Object>) deviationExtended.get(fid);
+                if (deviationExtendedThisArt == null && alternativeDeviationID != null) {
+                    /*
+                     * PATTERN_STATUS might be listed with key <someNumbers>-<fid> also typically deviationExtended will only contain one
+                     * item.
+                     */
+                    deviationExtendedThisArt = (Map<String, Object>) deviationExtended.get(alternativeDeviationID);
+                }
+                if (deviationExtendedThisArt != null) {
+                    final Map<String, Object> download = (Map<String, Object>) deviationExtendedThisArt.get("download");
+                    if (download != null) {
+                        officialDownloadurl = download.get("url").toString();
+                        officialDownloadsizeBytes = (Number) download.get("filesize");
+                    }
                 }
             }
         }
@@ -240,8 +271,6 @@ public class DeviantArtCom extends PluginForHost {
         if (StringUtils.isEmpty(displayedImageURL)) {
             displayedImageURL = HTMLSearch.searchMetaTag(br, "og:image");
         }
-        /* TODO: Test this with video- and animation content */
-        String ext = null;
         final String officialDownloadFilesizeStr = br.getRegex("(?i)>\\s*Image size\\s*</div><div [^>]*>\\d+x\\d+px\\s*(\\d+[^>]+)</div>").getMatch(0);
         // final boolean accountNeededForOfficialDownload = br.containsHTML("(?i)Log in to download");
         if (StringUtils.isEmpty(officialDownloadurl)) {
@@ -254,6 +283,7 @@ public class DeviantArtCom extends PluginForHost {
         final boolean isImage = isImage(link);
         final boolean isVideo = isVideo(link);
         final boolean isLiterature = isLiterature(link);
+        final boolean isStatus = this.isStatus(link);
         if (displayedImageURL != null && isImage) {
             link.setProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL, displayedImageURL);
         }
@@ -262,32 +292,30 @@ public class DeviantArtCom extends PluginForHost {
         }
         final DeviantArtComConfig cfg = PluginJsonConfig.get(DeviantArtComConfig.class);
         final ImageDownloadMode mode = cfg.getImageDownloadMode();
+        String forcedExt = null;
         /* Check if either user wants to download the html code or if we have a linktype which needs this. */
-        if (mode == ImageDownloadMode.HTML || link.getPluginPatternMatcher().matches(PATTERN_JOURNAL) || link.getPluginPatternMatcher().matches(LINKTYPE_STATUS) || isLiterature) {
+        if (link.getPluginPatternMatcher().matches(PATTERN_JOURNAL) || link.getPluginPatternMatcher().matches(PATTERN_STATUS) || isLiterature || isStatus) {
             downloadHTML = true;
-            ext = ".html";
-        } else if (isImage || isVideo) {
-            /* Correct file-extension will be detected later */
-            ext = null;
+            forcedExt = ".html";
+        } else if (isImage) {
+            if (mode == ImageDownloadMode.HTML) {
+                downloadHTML = true;
+                forcedExt = ".html";
+            }
         } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_HTML) || br.containsHTML(TYPE_DOWNLOADFORBIDDEN_HTML)) {
             downloadHTML = true;
-            ext = ".html";
-        } else if (looksLikeAccountRequiredUploaderDecision(br)) {
-            /* Account needed to view/download */
-            ext = ".html";
-        } else {
-            /* Undefined case */
-            ext = ".html";
+            forcedExt = ".html";
         }
         String dllink = null;
         try {
             dllink = this.getDirecturl(link, account);
         } catch (final PluginException e) {
             /**
-             * This will happen if the item is not downloadable. </br> We're ignoring this during linkcheck as by now we know the file is
-             * online.
+             * This will happen if the item is not downloadable. </br>
+             * We're ignoring this during linkcheck as by now we know the file is online.
              */
         }
+        String extByMimeType = null;
         if (downloadHTML) {
             try {
                 link.setDownloadSize(br.getRequest().getHtmlCode().getBytes("UTF-8").length);
@@ -322,9 +350,9 @@ public class DeviantArtCom extends PluginForHost {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                final String mimeTypeExt = getExtensionFromMimeType(con.getRequest().getResponseHeader("Content-Type"));
-                if (mimeTypeExt != null) {
-                    ext = "." + mimeTypeExt;
+                final String mimeTypeExtTmp = getExtensionFromMimeType(con.getRequest().getResponseHeader("Content-Type"));
+                if (mimeTypeExtTmp != null) {
+                    extByMimeType = "." + mimeTypeExtTmp;
                 }
             } finally {
                 try {
@@ -333,8 +361,18 @@ public class DeviantArtCom extends PluginForHost {
                 }
             }
         }
-        if (ext == null && dllink != null) {
-            ext = Plugin.getFileNameExtensionFromURL(dllink);
+        final String extByURL = dllink != null ? Plugin.getFileNameExtensionFromURL(dllink) : null;
+        final String ext;
+        if (forcedExt != null) {
+            /* Forced ext has highest priority */
+            ext = forcedExt;
+        } else if (extByMimeType != null) {
+            /* This one we know for sure! */
+            ext = extByMimeType;
+        } else if (extByURL != null) {
+            ext = extByURL;
+        } else {
+            ext = null;
         }
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
@@ -355,6 +393,14 @@ public class DeviantArtCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private boolean isStatus(DownloadLink link) {
+        if (StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "status") || link.getPluginPatternMatcher().matches(PATTERN_STATUS)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private boolean isImage(DownloadLink link) {
         return StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "image");
     }
@@ -367,16 +413,24 @@ public class DeviantArtCom extends PluginForHost {
         return StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), "literature");
     }
 
+    /**
+     * Returns assumed file extension based on all information we currently have. Use this only for weak filenames e.g. before linkcheck is
+     * done.
+     */
     private String getAssumedFileExtension(final DownloadLink link) {
-        if (PluginJsonConfig.get(DeviantArtComConfig.class).getImageDownloadMode() == ImageDownloadMode.HTML) {
-            return ".html";
-        } else if (isVideo(link)) {
+        if (isVideo(link)) {
             return ".mp4";
         } else if (isImage(link)) {
             // TODO: add isGif support
-            return ".jpg";
-        } else if (isLiterature(link)) {
+            if (PluginJsonConfig.get(DeviantArtComConfig.class).getImageDownloadMode() == ImageDownloadMode.HTML) {
+                return ".html";
+            } else {
+                return ".jpg";
+            }
+        } else if (isLiterature(link) || this.isStatus(link)) {
+            /* TODO: Add proper handling to only download relevant text of this type of link and write it into .txt file. */
             return ".html";
+            // return ".txt";
         } else {
             return ".html";
         }

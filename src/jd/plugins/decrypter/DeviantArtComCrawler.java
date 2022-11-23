@@ -47,7 +47,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DeviantArtCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!(?:[^/]+/)?art/|status/)[^<>\"]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/[\\w\\-]+($|/favourites|/gallery/\\d+/[\\w\\-]+)" })
 public class DeviantArtComCrawler extends PluginForDecrypt {
     /**
      * @author raztoki, pspzockerscene
@@ -81,9 +81,6 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
     private final String        PATTERN_USER_FAVORITES = "^https?://[^/]+/([\\w\\-]+)/favourites.*";
     private final String        PATTERN_GALLERY        = "^https?://[^/]+/([\\w\\-]+)/gallery/(\\d+)/([\\w\\-]+)$";
     private final String        PATTERN_COLLECTIONS    = "https?://[\\w\\.\\-]*?deviantart\\.com/.*?/collections(/.+)?";
-    private static final String PATTERN_CATPATH_ALL    = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath(=.+)?";
-    private static final String PATTERN_CATPATH_1      = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
-    private static final String PATTERN_CATPATH_2      = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
     private static final String PATTERN_JOURNAL        = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?journal.+";
     private static final String PATTERN_JOURNAL2       = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?journal/[\\w\\-]+/?";
     private static final String PATTERN_BLOG           = "https?://[\\w\\.\\-]*?deviantart\\.com/(?:[^/]+/)?blog/(\\?offset=\\d+)?";
