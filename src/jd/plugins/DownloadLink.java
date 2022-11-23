@@ -1896,17 +1896,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * This date will later be written in the file if wanted by the user. </br>
-     * Preferable not(!) set this because in most of all cases this information will be obtained via the "Last-Modified" header once a
-     * download is complete.
+     * This date will later be written in the file if wanted by the user. </br> Preferable not(!) set this because in most of all cases this
+     * information will be obtained via the "Last-Modified" header once a download is complete.
      */
     public void setLastModifiedTimestamp(final long timestamp) {
         this.setProperty(PROPERTY_LAST_MODIFIED, timestamp);
     }
 
     /**
-     * Returns timestamp when this file was last modified. </br>
-     * Typically only given [before download] if provided by an API and set on this DownloadLink.
+     * Returns timestamp when this file was last modified. </br> Typically only given [before download] if provided by an API and set on
+     * this DownloadLink.
      */
     public long getLastModifiedTimestamp() {
         return this.getLongProperty(PROPERTY_LAST_MODIFIED, -1);
@@ -2144,6 +2143,15 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.VARIANTS_ENABLED, b));
         }
+    }
+
+    public void setGenericVariantSupport(boolean b) {
+        // TODO
+    }
+
+    public boolean hasGenericVariantSupport() {
+        // TODO
+        return false;
     }
 
     public boolean hasVariantSupport() {
