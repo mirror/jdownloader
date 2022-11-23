@@ -11,6 +11,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -20,6 +22,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import javax.swing.Box;
@@ -41,6 +46,7 @@ import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.Label;
+import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 import jd.gui.swing.jdgui.views.settings.components.TextPane;
@@ -52,12 +58,15 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.EnumKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.LongKeyHandler;
+import org.appwork.storage.config.handler.ObjectKeyHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
 import org.appwork.storage.config.swing.models.ConfigLongSpinnerModel;
@@ -65,7 +74,12 @@ import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.CompareUtils;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.DefaultEvent;
+import org.appwork.utils.event.DontThrowFromCurrentThreadEventSuppressor;
+import org.appwork.utils.event.EventSuppressor;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.os.CrossSystem;
@@ -79,6 +93,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.AccountJsonConfig;
 import org.jdownloader.plugins.config.CustomUI;
@@ -90,7 +105,6 @@ import org.jdownloader.plugins.config.PluginConfigPanelEventSenderEventSender;
 import org.jdownloader.plugins.config.PluginConfigPanelEventSenderListener;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -649,7 +663,18 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
         }
     }
 
-    public void addHandler(ConfigInterface cfg, KeyHandler m) {
+    protected Map<String, Boolean> newMapInstance(KeyHandler m) throws InstantiationException, IllegalAccessException {
+        Map<String, Boolean> value;
+        Class raw = ReflectionUtils.getRaw(m.getTypeRef().getType());
+        if (raw.isInterface()) {
+            raw = HashMap.class;
+        }
+        value = (Map<String, Boolean>) raw.newInstance();
+        value.clear();
+        return value;
+    }
+
+    public void addHandler(final ConfigInterface cfg, final KeyHandler m) {
         DescriptionForConfigEntry anno = (DescriptionForConfigEntry) m.getAnnotation(DescriptionForConfigEntry.class);
         System.out.println("Add " + m.getReadableName());
         String description = getTranslation(m, "_description");
@@ -664,15 +689,176 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel implements
         }
         if (m instanceof BooleanKeyHandler) {
             addPair(label, null, new Checkbox((BooleanKeyHandler) m));
+            return;
         } else if (m instanceof StringKeyHandler) {
             addPair(label, null, new TextInput((StringKeyHandler) m));
+            return;
         } else if (m instanceof IntegerKeyHandler) {
             addPair(label, null, new Spinner(new ConfigIntSpinnerModel((IntegerKeyHandler) m)));
+            return;
         } else if (m instanceof LongKeyHandler) {
             addPair(label, null, new Spinner(new ConfigLongSpinnerModel((LongKeyHandler) m)));
+            return;
         } else if (m instanceof EnumKeyHandler) {
             addPair(label, null, null, new ComboBox<Enum>(m, ((EnumKeyHandler) m).values(), null));
-        } else {
+            return;
+        } else if (m instanceof ObjectKeyHandler) {
+            final Class<?> raw = org.appwork.utils.ReflectionUtils.getRaw(m.getTypeRef().getType());
+            if (Map.class.isAssignableFrom(raw)) {
+                final Type[] types = ((ParameterizedType) m.getTypeRef().getType()).getActualTypeArguments();
+                if (types[0] == String.class && types[1] == Boolean.class) {
+                    try {
+                        Map<String, Boolean> value = (Map<String, Boolean>) m.getValue();
+                        if (value == null) {
+                            value = newMapInstance(m);
+                        }
+                        final Map<String, Boolean> finalValue = value;
+                        final MultiComboBox<String> comp = new MultiComboBox<String>(new ArrayList<String>(value.keySet())) {
+                            private final GenericConfigEventListener<Map<String, Boolean>> listener = new GenericConfigEventListener<Map<String, Boolean>>() {
+                                @Override
+                                public void onConfigValidatorError(KeyHandler<Map<String, Boolean>> keyHandler, Map<String, Boolean> invalidValue, ValidationException validateException) {
+                                }
+
+                                @Override
+                                public void onConfigValueModified(KeyHandler<Map<String, Boolean>> keyHandler, Map<String, Boolean> newValue) {
+                                    updateModel(newValue);
+                                }
+                            };
+                            {
+                                m.getEventSender().addListener(listener, true);
+                                updateModel(finalValue);
+                            }
+
+                            @Override
+                            protected String getLabel(String sc) {
+                                return super.getLabel(sc);
+                            }
+
+                            @Override
+                            protected String getLabel(List<String> list) {
+                                return "[" + list.size() + "/" + getValues().size() + "] " + super.getLabel(list);
+                            }
+
+                            protected void updateModel(final Map<String, Boolean> value) {
+                                final ArrayList<String> selected = new ArrayList<String>();
+                                for (Entry<String, Boolean> es : value.entrySet()) {
+                                    if (es.getValue() == Boolean.TRUE) {
+                                        selected.add(es.getKey());
+                                    }
+                                }
+                                setSelectedItems(selected);
+                            }
+
+                            @Override
+                            public void onChanged() {
+                                super.onChanged();
+                                final Map<String, Boolean> value = (Map<String, Boolean>) m.getValue();
+                                final DontThrowFromCurrentThreadEventSuppressor<DefaultEvent> added = new DontThrowFromCurrentThreadEventSuppressor<DefaultEvent>();
+                                m.getEventSender().addEventSuppressor(added);
+                                try {
+                                    final Map<String, Boolean> ret = newMapInstance(m);
+                                    ret.putAll(value);
+                                    for (String key : ret.keySet()) {
+                                        ret.put(key, isItemSelected(key));
+                                    }
+                                    m.setValue(ret);
+                                } catch (InstantiationException e) {
+                                    LogController.CL().log(e);
+                                } catch (IllegalAccessException e) {
+                                    LogController.CL().log(e);
+                                } finally {
+                                    m.getEventSender().removeEventSuppressor(added);
+                                }
+                            }
+                        };
+                        addPair(label, null, null, comp);
+                    } catch (InstantiationException e) {
+                        LogController.CL().log(e);
+                    } catch (IllegalAccessException e) {
+                        LogController.CL().log(e);
+                    }
+                    return;
+                }
+            } else if (Set.class.isAssignableFrom(raw)) {
+                final Type[] types = ((ParameterizedType) m.getTypeRef().getType()).getActualTypeArguments();
+                if (types[0] instanceof Class && ((Class) types[0]).isEnum()) {
+                    try {
+                        final MultiComboBox<Object> comp = new MultiComboBox<Object>(((Class) types[0]).getEnumConstants()) {
+                            private final GenericConfigEventListener<Set<Enum>> listener = new GenericConfigEventListener<Set<Enum>>() {
+                                @Override
+                                public void onConfigValidatorError(KeyHandler<Set<Enum>> keyHandler, Set<Enum> invalidValue, ValidationException validateException) {
+                                }
+
+                                @Override
+                                public void onConfigValueModified(KeyHandler<Set<Enum>> keyHandler, Set<Enum> newValue) {
+                                    updateModel(newValue);
+                                }
+                            };
+                            {
+                                Set<Enum> value = (Set<Enum>) m.getValue();
+                                if (value == null) {
+                                    value = newSetInstance(m);
+                                    for (Object e : ((Class) types[0]).getEnumConstants()) {
+                                        value.add((Enum) e);
+                                    }
+                                }
+                                m.getEventSender().addListener(listener, true);
+                                updateModel(value);
+                            }
+
+                            @Override
+                            protected String getLabel(List<Object> list) {
+                                return "[" + list.size() + "/" + getValues().size() + "] " + super.getLabel(list);
+                            }
+
+                            protected Set<Enum> newSetInstance(KeyHandler m) throws InstantiationException, IllegalAccessException {
+                                Class raw = ReflectionUtils.getRaw(m.getTypeRef().getType());
+                                if (raw.isInterface()) {
+                                    raw = HashSet.class;
+                                }
+                                final Set<Enum> value = (Set<Enum>) raw.newInstance();
+                                return value;
+                            }
+
+                            protected void updateModel(final Set<Enum> newValue) {
+                                if (newValue == null) {
+                                    setSelectedItems(((Class) types[0]).getEnumConstants());
+                                } else {
+                                    setSelectedItems(newValue.toArray(new Enum[0]));
+                                }
+                            }
+
+                            @Override
+                            public void onChanged() {
+                                super.onChanged();
+                                final EventSuppressor added = new DontThrowFromCurrentThreadEventSuppressor<DefaultEvent>();
+                                m.getEventSender().addEventSuppressor(added);
+                                try {
+                                    final Set<Enum> set = newSetInstance(m);
+                                    for (Object e : getSelectedItems()) {
+                                        set.add((Enum) e);
+                                    }
+                                    m.setValue(set);
+                                } catch (InstantiationException e1) {
+                                    LogController.CL().log(e1);
+                                } catch (IllegalAccessException e1) {
+                                    LogController.CL().log(e1);
+                                } finally {
+                                    m.getEventSender().removeEventSuppressor(added);
+                                }
+                            }
+                        };
+                        addPair(label, null, null, comp);
+                    } catch (InstantiationException e) {
+                        LogController.CL().log(e);
+                    } catch (IllegalAccessException e) {
+                        LogController.CL().log(e);
+                    }
+                    return;
+                }
+            }
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             UIOManager.I().showException("Unsupported Type: " + m, new Exception());
         }
     }
