@@ -579,9 +579,9 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 /* Generic failover */
                 if (StringUtils.isEmpty(fileInfo[1])) {
                     // sync with XFileSharingProBasic.scanInfo- Generic failover
-                    fileInfo[1] = br.getRegex("(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(bytes)(?!ps|/s|\\w|\\s*Storage|\\s*Disk|\\s*Space))").getMatch(0);
+                    fileInfo[1] = br.getRegex("(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(bytes)(?!ps|/s|\\w|\\s*Storage|\\s*Disk|\\s*Space|\\s*traffic))").getMatch(0);
                     if (StringUtils.isEmpty(fileInfo[1])) {
-                        fileInfo[1] = br.getRegex("(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(TB|GB|MB|KB)(?!ps|/s|\\w|\\s*Storage|\\s*Disk|\\s*Space))").getMatch(0);
+                        fileInfo[1] = br.getRegex("(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(TB|GB|MB|KB)(?!ps|/s|\\w|\\s*Storage|\\s*Disk|\\s*Space|\\s*traffic))").getMatch(0);
                     }
                 }
             }

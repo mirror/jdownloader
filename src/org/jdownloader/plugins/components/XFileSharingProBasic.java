@@ -1295,9 +1295,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
 
     protected String scanGenericFileSize(final String html) {
         // sync with YetiShareCore.scanInfo- Generic failover
-        String ret = new Regex(html, "(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(bytes)(?!ps|/s|\\w|\\s*Storage|\\s*Disk|\\s*Space))").getMatch(0);
+        String ret = new Regex(html, "(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(bytes)(?!ps|/s|\\w|\\s*Storage|\\s*Disk|\\s*Space|\\s*traffic))").getMatch(0);
         if (StringUtils.isEmpty(ret)) {
-            ret = new Regex(html, "(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(TB|GB|MB|KB)(?!ps|/s|\\w|\\s*Storage|\\s*Disk|\\s*Space))").getMatch(0);
+            ret = new Regex(html, "(?:>\\s*|\\(\\s*|\"\\s*|\\[\\s*|\\s+)([0-9\\.]+(?:\\s+|\\&nbsp;)?(TB|GB|MB|KB)(?!ps|/s|\\w|\\s*Storage|\\s*Disk|\\s*Space|\\s*traffic))").getMatch(0);
         }
         return ret;
     }
