@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -39,6 +36,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigapeta.com" }, urls = { "https?://[\\w\\.]*?gigapeta\\.com/dl/(\\w+)" })
 public class GigaPetaCom extends PluginForHost {
@@ -228,15 +228,13 @@ public class GigaPetaCom extends PluginForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, link.getPluginPatternMatcher(), true, -6);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
-            }
-            String dllink = br.getRedirectLocation();
-            if (dllink == null) {
+                handleErrors(br, true);
                 Form dlform = br.getFormBySubmitvalue("Download");
                 if (dlform == null) {
                     dlform = br.getForm(0);
-                }
-                if (dlform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (dlform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dlform, true, -6);
             }
