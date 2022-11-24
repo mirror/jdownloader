@@ -58,6 +58,7 @@ import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
 import org.appwork.storage.flexijson.mapper.FlexiMapperException;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
@@ -123,6 +124,8 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
     public String login(Browser br, Account account) throws IOException, PluginException {
         if (account == null) {
             throw new AccountRequiredException();
+        } else if (account.getUser() == null || !account.getUser().matches(".+@.+")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please enter your E-Mail in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         synchronized (account) {
             try {
@@ -138,23 +141,65 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
                     loginData.put("email", account.getUser());
                     loginData.put("password", account.getPass());
                     loginData.put("referrer", "");
-                    loginData.put("two_factor", "");// TODO: unsupported, add support for 2fa
+                    loginData.put("two_factor", "");
                     loginData.put("brand", "");
                     loginData.put("scope", "username, email, me");
                     loginData.put("clientUserAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36");
-                    final PostRequest loginRequest = br.createJSonPostRequest("https://gopro.com/login", loginData);
-                    loginRequest.getHeaders().put("x-csrf-token", token);
-                    br.getPage(loginRequest);
-                    final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
-                    accessToken = (String) response.get("access_token");
+                    Map<String, Object> response = null;
+                    loginLoop: while (!isAbort()) {
+                        final PostRequest loginRequest = br.createJSonPostRequest("https://gopro.com/login", loginData);
+                        loginRequest.getHeaders().put("x-csrf-token", token);
+                        br.getPage(loginRequest);
+                        response = restoreFromString(br.toString(), TypeRef.MAP);
+                        final List<Map<String, Object>> errors = (List<Map<String, Object>>) response.get("_errors");
+                        if (errors != null && errors.size() > 0) {
+                            for (final Map<String, Object> error : errors) {
+                                final Number code = (Number) error.get("code");
+                                switch (code.intValue()) {
+                                case 401:
+                                    // {"_errors":[{"code":401,"description":"Invalid username/password combination."}],"statusCode":401}
+                                    throw new AccountInvalidException("Invalid username/password combination");
+                                case 4014:
+                                    // {"_errors":[{"code":4014,"id":"","description":"Invalid Two-Factor Authentication Code. Please try again or request a new code"}],"statusCode":401}
+                                    logger.info("2FA code required");
+                                    final Browser brc = br.cloneBrowser();
+                                    brc.getPage("https://gopro.com/2fa-code?email=" + URLEncode.encodeURIComponent(account.getUser()));
+                                    final Map<String, Object> twoFACodeRequestResponse = restoreFromString(brc.toString(), TypeRef.MAP);
+                                    final Number statusCode = (Number) twoFACodeRequestResponse.get("statusCode");
+                                    if (statusCode == null || statusCode.intValue() != 200) {
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                    }
+                                    final DownloadLink dl_dummy;
+                                    if (this.getDownloadLink() != null) {
+                                        dl_dummy = this.getDownloadLink();
+                                    } else {
+                                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                                    }
+                                    String twoFACode = getUserInput("Enter GoPro 2-Factor SMS authentication code", dl_dummy);
+                                    if (twoFACode != null) {
+                                        twoFACode = twoFACode.trim();
+                                    }
+                                    if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
+                                        throw new AccountInvalidException("Invalid 2-factor-authentication code format (must be 6 digits) !");
+                                    }
+                                    loginData.put("two_factor", twoFACode);
+                                    continue loginLoop;
+                                default:
+                                    break;
+                                }
+                            }
+                            throw new AccountInvalidException();
+                        }
+                        break;
+                    }
+                    accessToken = response != null ? (String) response.get("access_token") : null;
+                    if (StringUtils.isEmpty(accessToken)) {
+                        throw new AccountInvalidException();
+                    }
                 }
-                if (StringUtils.isEmpty(accessToken)) {
-                    throw new AccountInvalidException();
-                } else {
-                    account.setProperty(ACCESS_TOKEN, accessToken);
-                    br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + accessToken);
-                    return accessToken;
-                }
+                account.setProperty(ACCESS_TOKEN, accessToken);
+                br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + accessToken);
+                return accessToken;
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.removeProperty(ACCESS_TOKEN);

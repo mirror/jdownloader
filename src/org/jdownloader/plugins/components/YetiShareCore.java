@@ -1725,6 +1725,41 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         }
     }
 
+    protected void fillWebsiteLoginForm(Browser br, Form loginform, Account account) {
+        {
+            final String user = Encoding.urlEncode(account.getUser());
+            InputField userField = null;
+            final String userFieldNames[] = new String[] { "username", "loginUsername", "email" };
+            for (String userFieldName : userFieldNames) {
+                userField = loginform.getInputFieldByName(userFieldName);
+                if (userField != null) {
+                    break;
+                }
+            }
+            if (userField != null) {
+                userField.setValue(user);
+            } else {
+                loginform.put(userFieldNames[0], user);
+            }
+        }
+        {
+            final String password = Encoding.urlEncode(account.getPass());
+            InputField passwordField = null;
+            final String passwordFieldNames[] = new String[] { "password", "loginPassword" };
+            for (String passwordFieldName : passwordFieldNames) {
+                passwordField = loginform.getInputFieldByName(passwordFieldName);
+                if (passwordField != null) {
+                    break;
+                }
+            }
+            if (passwordField != null) {
+                passwordField.setValue(password);
+            } else {
+                loginform.put(passwordFieldNames[0], password);
+            }
+        }
+    }
+
     /**
      * @return true: Cookies were validated</br> false: Cookies were not validated
      */
@@ -1781,8 +1816,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                         loginform = new Form();
                         loginform.put("submitme", "1");
                     }
-                    loginform.put("username", Encoding.urlEncode(account.getUser()));
-                    loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    fillWebsiteLoginForm(br, loginform, account);
                     final String action = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
                     loginform.setAction(action);
                     if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
@@ -1807,18 +1841,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                         loginform.put("submit", "Login");
                         loginform.put("submitme", "1");
                     }
-                    if (loginform.hasInputFieldByName("loginUsername") && loginform.hasInputFieldByName("loginPassword")) {
-                        /* 2019-07-08: Rare case: Example: freaktab.org */
-                        loginform.put("loginUsername", Encoding.urlEncode(account.getUser()));
-                        loginform.put("loginPassword", Encoding.urlEncode(account.getPass()));
-                    } else if (loginform.hasInputFieldByName("email")) {
-                        /* 2020-04-30: E.g. filemia.com */
-                        loginform.put("email", Encoding.urlEncode(account.getUser()));
-                        loginform.put("password", Encoding.urlEncode(account.getPass()));
-                    } else {
-                        loginform.put("username", Encoding.urlEncode(account.getUser()));
-                        loginform.put("password", Encoding.urlEncode(account.getPass()));
-                    }
+                    fillWebsiteLoginForm(br, loginform, account);
                     if (br.containsHTML("solvemedia\\.com/papi/")) {
                         /* Handle login-captcha if required */
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
