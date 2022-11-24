@@ -41,6 +41,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.parser.html.HTMLSearch;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -1146,9 +1147,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                     loginform.setMethod(MethodType.POST);
                     // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                loginform.put("remember_me", "1");
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("pass", Encoding.urlEncode(account.getPass()));
+                fillWebsiteLoginForm(br, loginform, account);
                 this.submitForm(loginform);
                 if (!isLoggedIN(br)) {
                     throw new AccountInvalidException();
@@ -1159,6 +1158,41 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                     account.clearCookies("");
                 }
                 throw e;
+            }
+        }
+    }
+
+    protected void fillWebsiteLoginForm(Browser br, Form loginform, Account account) {
+        {
+            final String user = Encoding.urlEncode(account.getUser());
+            InputField userField = null;
+            final String userFieldNames[] = new String[] { "username", "email" };
+            for (String userFieldName : userFieldNames) {
+                userField = loginform.getInputFieldByName(userFieldName);
+                if (userField != null) {
+                    break;
+                }
+            }
+            if (userField != null) {
+                userField.setValue(user);
+            } else {
+                loginform.put(userFieldNames[0], user);
+            }
+        }
+        {
+            final String password = Encoding.urlEncode(account.getPass());
+            InputField passwordField = null;
+            final String passwordFieldNames[] = new String[] { "pass", "password" };
+            for (String passwordFieldName : passwordFieldNames) {
+                passwordField = loginform.getInputFieldByName(passwordFieldName);
+                if (passwordField != null) {
+                    break;
+                }
+            }
+            if (passwordField != null) {
+                passwordField.setValue(password);
+            } else {
+                loginform.put(passwordFieldNames[0], password);
             }
         }
     }

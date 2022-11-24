@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.Cookies;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -47,6 +49,15 @@ public class XfreehdCom extends KernelVideoSharingComV2 {
 
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+    }
+
+    @Override
+    protected boolean isLoggedIN(final Browser br) {
+        if (br.getCookie(br.getHost(), "AVS", Cookies.NOTDELETEDPATTERN) != null) {
+            return br.containsHTML(">\\s*Welcome");
+        } else {
+            return false;
+        }
     }
 
     @Override

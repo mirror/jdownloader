@@ -34,6 +34,7 @@ import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
@@ -57,6 +58,7 @@ import jd.plugins.components.gopro.Variation;
 import jd.plugins.hoster.GoProCloud;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.flexijson.FlexiJSONParser;
 import org.appwork.storage.flexijson.FlexiJSONParser.ParsingError;
 import org.appwork.storage.flexijson.FlexiJSonNode;
@@ -144,10 +146,11 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
             }
             Date scanReadable = new Date(scanUntil);
             while (!isAbort()) {
-                br.getHeaders().put("accept", "application/vnd.gopro.jk.media+json; version=2.0.0");
-                String json = br.getPage("https://api.gopro.com/media/search?fields=camera_model,captured_at,content_title,content_type,created_at,gopro_user_id,gopro_media,filename,file_size,height,fov,id,item_count,moments_count,on_public_profile,orientation,play_as,ready_to_edit,ready_to_view,resolution,source_duration,token,type,width&processing_states=registered,rendering,pretranscoding,transcoding,failure,ready&order_by=captured_at&per_page=" + perPage + "&page=" + page + "&type=" + list.toString());
-                FlexiJSonNode node = new FlexiJSONParser(json).parse();
-                SearchResponse resp = mapper.jsonToObject(node, SearchResponse.TYPEREF);
+                final GetRequest request = br.createGetRequest("https://api.gopro.com/media/search?fields=camera_model,captured_at,content_title,content_type,created_at,gopro_user_id,gopro_media,filename,file_size,height,fov,id,item_count,moments_count,on_public_profile,orientation,play_as,ready_to_edit,ready_to_view,resolution,source_duration,token,type,width&processing_states=registered,rendering,pretranscoding,transcoding,failure,ready&order_by=captured_at&per_page=" + perPage + "&page=" + page + "&type=" + list.toString());
+                request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT, "application/vnd.gopro.jk.media+json; version=2.0.0");
+                final String json = br.getPage(request);
+                final FlexiJSonNode node = new FlexiJSONParser(json).parse();
+                final SearchResponse resp = mapper.jsonToObject(node, SearchResponse.TYPEREF);
                 if (StringUtils.isNotEmpty(resp.getError())) {
                     if (loginRetries > 0) {
                         throw new WTFException();
@@ -158,7 +161,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                     login(this.br, account);
                     continue;
                 }
-                Media[] media = resp.getEmbedded().getMedia();
+                final Media[] media = resp.getEmbedded().getMedia();
                 for (Media m : media) {
                     // System.out.println(m.getCaptured_at() + " - " + scanReadable);
                     if (m.getCaptured_at().getTime() < scanUntil) {

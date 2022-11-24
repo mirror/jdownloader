@@ -3954,6 +3954,41 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         return br != null && (br.containsHTML("(?i)>\\s*You can't login from this IP") || br.containsHTML("(?i)>\\s*Your IP is banned\\s*<"));
     }
 
+    protected void fillWebsiteLoginForm(Browser br, Form loginform, Account account) {
+        {
+            final String user = Encoding.urlEncode(account.getUser());
+            InputField userField = null;
+            final String userFieldNames[] = new String[] { "login", "email" };
+            for (String userFieldName : userFieldNames) {
+                userField = loginform.getInputFieldByName(userFieldName);
+                if (userField != null) {
+                    break;
+                }
+            }
+            if (userField != null) {
+                userField.setValue(user);
+            } else {
+                loginform.put(userFieldNames[0], user);
+            }
+        }
+        {
+            final String password = Encoding.urlEncode(account.getPass());
+            InputField passwordField = null;
+            final String passwordFieldNames[] = new String[] { "password", "pass" };
+            for (String passwordFieldName : passwordFieldNames) {
+                passwordField = loginform.getInputFieldByName(passwordFieldName);
+                if (passwordField != null) {
+                    break;
+                }
+            }
+            if (passwordField != null) {
+                passwordField.setValue(password);
+            } else {
+                loginform.put(passwordFieldNames[0], password);
+            }
+        }
+    }
+
     /**
      * @param validateCookies
      *            true = Check whether stored cookies are still valid, if not, perform full login <br/>
@@ -4058,13 +4093,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                     }
-                    if (loginForm.hasInputFieldByName("email")) {
-                        /* 2019-08-16: Very rare case e.g. filejoker.net, filefox.cc */
-                        loginForm.put("email", Encoding.urlEncode(account.getUser()));
-                    } else {
-                        loginForm.put("login", Encoding.urlEncode(account.getUser()));
-                    }
-                    loginForm.put("password", Encoding.urlEncode(account.getPass()));
+                    fillWebsiteLoginForm(br, loginForm, account);
                     /* Handle login-captcha if required */
                     final int captchasBefore = getChallenges().size();
                     handleCaptcha(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true), br, loginForm);
