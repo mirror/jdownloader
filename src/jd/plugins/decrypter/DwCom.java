@@ -17,8 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.GenericM3u8;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dw.com" }, urls = { "https?://(?:www\\.)?dw\\.com/[a-z]{2}/([^/]+)/av-(\\d+)" })
 public class DwCom extends PluginForDecrypt {
@@ -53,6 +53,8 @@ public class DwCom extends PluginForDecrypt {
             String url_title = new Regex(addedurl, this.getSupportedLinks()).getMatch(0);
             url_title = Encoding.htmlDecode(url_title);
             title = url_title.replace("-", " ").trim();
+        } else {
+            title = Encoding.htmlDecode(title);
         }
         final String[] hlsmasters = br.getRegex("src=\"(https?://[^\"]+master\\.m3u8)\" type=\"application/x-mpegURL\"").getColumn(0);
         for (final String hlsmaster : hlsmasters) {
