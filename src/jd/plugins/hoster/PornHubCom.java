@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
@@ -756,8 +757,9 @@ public class PornHubCom extends PluginForHost {
                             qualityInfo = ((List) qualityInfo).get(0);
                         } else {
                             if (StringUtils.equalsIgnoreCase(format, "mp4")) {
+                                final boolean mp4Workaround = MP4_WORKAROUND.get();
                                 try {
-                                    if (false) {
+                                    if (TRY_MP4.get()) {
                                         final Browser brc = br.cloneBrowser();
                                         brc.setFollowRedirects(true);
                                         // no keep alive for this request
@@ -771,6 +773,11 @@ public class PornHubCom extends PluginForHost {
                                 } catch (IOException ioe) {
                                     plugin.getLogger().log(ioe);
                                 } catch (final JSonMapperException jme) {
+                                    if (!mp4Workaround) {
+                                        MP4_WORKAROUND.set(true);
+                                    } else {
+                                        TRY_MP4.set(false);
+                                    }
                                     plugin.getLogger().log(jme);
                                     plugin.getLogger().info("Found invalid/broken quality: " + dllink_temp);
                                 }
@@ -1471,9 +1478,15 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
+    private static final AtomicBoolean MP4_WORKAROUND = new AtomicBoolean(false);
+    private static final AtomicBoolean TRY_MP4        = new AtomicBoolean(true);
+
     public static Browser prepBr(final Browser br) {
-        // br.setCookie("http://pornhub.com/", "platform", "pc");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:44.0) Gecko/20100101 Firefox/44.0");
+        if (TRY_MP4.get() && MP4_WORKAROUND.get()) {
+            br.setCookie("http://pornhub.com/", "platform", "mac");
+            final int firefoxRevision = 77;
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:" + firefoxRevision + ") Gecko/20100101 Firefox/" + firefoxRevision);
+        }
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.8,de;q=0.6");
         br.getHeaders().put("Accept-Charset", null);
