@@ -323,12 +323,10 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
     }
 
     public static void setFinalFileName(GoProConfig config, Media media, DownloadLink link, Variation source) throws MalformedURLException {
-        // if("Burst".equals(anObject))
-        String name;
-        name = media.getFilename();
+        String name = media.getFilename();
         if (source != null) {
             try {
-                UrlQuery url = UrlQuery.parse(source.getUrl());
+                final UrlQuery url = UrlQuery.parse(source.getUrl());
                 name = HTTPConnectionUtils.parseDispositionHeader(url.getDecoded("response-content-disposition")).getFilename();
             } catch (Exception e) {
             }
