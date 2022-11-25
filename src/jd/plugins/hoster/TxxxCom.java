@@ -29,7 +29,7 @@ public class TxxxCom extends KernelVideoSharingComV2 {
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "txxx.com", "tubecup.com", "videotxxx.com", "txxx.tube" });
+        ret.add(new String[] { "txxx.com", "tubecup.com", "videotxxx.com", "txxx.tube", "txxxporn.tube" });
         return ret;
     }
 
