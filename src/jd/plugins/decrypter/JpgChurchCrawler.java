@@ -32,6 +32,8 @@ import jd.parser.Regex;
 import jd.parser.html.HTMLSearch;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -193,6 +195,15 @@ public class JpgChurchCrawler extends PluginForDecrypt {
                 seek = entries.get("seekEnd").toString();
             }
         } while (true);
+        if (ret.isEmpty()) {
+            final String numberofImagesStr = br.getRegex("data-text=\"image-count\">(\\d+)</span>").getMatch(0);
+            if (numberofImagesStr != null && Integer.parseInt(numberofImagesStr) == 0) {
+                logger.info("This gallery contains zero images");
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         return ret;
     }
 }
