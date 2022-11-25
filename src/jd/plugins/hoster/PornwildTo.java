@@ -22,16 +22,16 @@ import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class JavbangersCom extends KernelVideoSharingComV2 {
-    public JavbangersCom(final PluginWrapper wrapper) {
+public class PornwildTo extends KernelVideoSharingComV2 {
+    public PornwildTo(final PluginWrapper wrapper) {
         super(wrapper);
-        enablePremium("https://www.javbangers.com/");
     }
 
+    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "javbangers.com", "javwhores.com" });
+        ret.add(new String[] { "pornwild.to", "pornwild.com" });
         return ret;
     }
 
@@ -45,19 +45,25 @@ public class JavbangersCom extends KernelVideoSharingComV2 {
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video/\\d+/[a-z0-9\\-]+|embed/\\d+)");
-        }
-        return ret.toArray(new String[0]);
+        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
     }
 
     @Override
-    String generateContentURL(final String host, final String fuid, final String urlSlug) {
-        if (host == null || fuid == null || urlSlug == null) {
-            return null;
-        } else {
-            return this.getProtocol() + this.appendWWWIfRequired(host) + "/video/" + fuid + "/" + urlSlug;
-        }
+    public String rewriteHost(final String host) {
+        /* 2022-11-25: Main domain has changed from pornwild.com to pornwild.to */
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
+    @Override
+    protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlTitle);
+    }
+
+    @Override
+    protected ArrayList<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        /* 2022-11-25 */
+        deadDomains.add("pornwild.com");
+        return deadDomains;
     }
 }
