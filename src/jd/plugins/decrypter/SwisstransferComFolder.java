@@ -79,6 +79,9 @@ public class SwisstransferComFolder extends antiDDoSForDecrypt {
             for (final Map<String, Object> file : ressourcelist) {
                 final String filename = (String) file.get("fileName");
                 final String fileid = (String) file.get("UUID");
+                if (StringUtils.isEmpty(filename) || StringUtils.isEmpty(fileid)) {
+                    continue;
+                }
                 Number filesize = (Number) file.get("sizeUploaded");
                 if (filesize == null) {
                     filesize = (Number) file.get("fileSizeInBytes");
@@ -86,9 +89,6 @@ public class SwisstransferComFolder extends antiDDoSForDecrypt {
                 final Number downloadCounter = (Number) file.get("downloadCounter");
                 final String expiredDate = (String) file.get("expiredDate");
                 final String deletedDate = (String) file.get("deletedDate");
-                if (StringUtils.isEmpty(filename) || StringUtils.isEmpty(fileid)) {
-                    continue;
-                }
                 final DownloadLink dl = createDownloadlink(String.format("directhttp://https://www.swisstransfer.com/api/download/%s/%s", linkUUID, fileid));
                 if (filesize != null) {
                     dl.setVerifiedFileSize(filesize.longValue());
