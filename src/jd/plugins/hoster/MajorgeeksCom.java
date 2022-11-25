@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,14 +32,16 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.MajorgeeksComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { MajorgeeksComCrawler.class })
 public class MajorgeeksCom extends PluginForHost {
     public MajorgeeksCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
@@ -49,10 +50,7 @@ public class MajorgeeksCom extends PluginForHost {
     }
 
     private static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "majorgeeks.com" });
-        return ret;
+        return MajorgeeksComCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -67,7 +65,7 @@ public class MajorgeeksCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:files/details/([^/]+)\\.html|mg/getmirror/([^/]+),\\d+\\.html)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/mg/(?:getmirror|get)/([^/]+),(\\d+)\\.html");
         }
         return ret.toArray(new String[0]);
     }
@@ -75,15 +73,9 @@ public class MajorgeeksCom extends PluginForHost {
     /* Connection stuff */
     private final boolean FREE_RESUME       = true;
     private final int     FREE_MAXCHUNKS    = 0;
-    private final int     FREE_MAXDOWNLOADS = 20;
-
-    public void correctDownloadLink(final DownloadLink link) {
-        /* Corrects all added URL types to one main type. */
-        final String fid_of_mirror_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        if (fid_of_mirror_url != null) {
-            link.setPluginPatternMatcher("https://www." + this.getHost() + "/files/details/" + fid_of_mirror_url + ".html");
-        }
-    }
+    private final int     FREE_MAXDOWNLOADS = -1;
+    /* 2022-11-25: Those links are now handled by a crawler plugin */
+    private final String  PATTERN_LEGACY    = "https?://[^/]+/files/details/.+";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -96,7 +88,8 @@ public class MajorgeeksCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
+        return urlinfo.getMatch(0) + "_" + urlinfo.getMatch(1);
     }
 
     @Override
@@ -110,12 +103,8 @@ public class MajorgeeksCom extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.containsHTML("report_a_bad_link\\.html") && !br.containsHTML("/SoftwareApplication")) {
+        } else if (getFinalRedirectURL(br) == null && !br.containsHTML("alt=\"restore download\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String filesize = br.getRegex("itemprop=\"fileSize\" content=\"([^<>\"]+)\"").getMatch(0);
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
@@ -129,23 +118,25 @@ public class MajorgeeksCom extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         final boolean downloadFromExternalSite = br.containsHTML(">\\s*Download@Authors Site");
         String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null || true) {
-            /**
-             * There can be multiple versions available (multiple OS and 32/64 bit). </br>
-             * Download first version of software from website.
-             */
-            final String continue_url = br.getRegex("(?i)\"/?(mg/get/[^,]*,\\d+\\.html)\"[^>]*><strong>Download").getMatch(0);
-            if (continue_url == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            if (link.getPluginPatternMatcher().matches(PATTERN_LEGACY)) {
+                /**
+                 * There can be multiple versions available (multiple OS and 32/64 bit). </br>
+                 * Download first version of software from website.
+                 */
+                final String continue_url = br.getRegex("(?i)\"/?(mg/get/[^,]*,\\d+\\.html)\"[^>]*><strong>Download").getMatch(0);
+                if (continue_url == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(continue_url);
             }
-            br.getPage("/" + continue_url);
-            final String continue_url2 = br.getRegex("\"/?(index\\.php\\?ct=files\\&action=download[^\"]+)").getMatch(0);
+            final String continue_url2 = getFinalRedirectURL(br);
             if (continue_url2 == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // br.getHeaders().put("Referer", continue_url);
             br.setFollowRedirects(false);
-            br.getPage("/" + continue_url2);
+            br.getPage(continue_url2);
             dllink = br.getRedirectLocation();
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
@@ -187,6 +178,10 @@ public class MajorgeeksCom extends PluginForHost {
         dl.startDownload();
     }
 
+    private String getFinalRedirectURL(final Browser br) {
+        return br.getRegex("\"/?(index\\.php\\?ct=files\\&action=download[^\"]+)").getMatch(0);
+    }
+
     private String checkDirectLink(final DownloadLink link, final String property) {
         String dllink = link.getStringProperty(property);
         if (dllink != null) {
@@ -204,6 +199,7 @@ public class MajorgeeksCom extends PluginForHost {
                     throw new IOException();
                 }
             } catch (final Exception e) {
+                link.removeProperty(property);
                 logger.log(e);
                 return null;
             } finally {
