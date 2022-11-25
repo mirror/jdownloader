@@ -233,6 +233,7 @@ public class RecordbateCom extends PluginForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
+                /* 2022-11-25: Due to Cloudflare on their login page ("/login"), we can only allow cookie login for now. */
                 final Cookies userCookies = account.loadUserCookies();
                 if (userCookies == null || userCookies.isEmpty()) {
                     showCookieLoginInfo();
