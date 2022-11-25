@@ -221,7 +221,7 @@ public class TiktokCom extends PluginForHost {
             }
         }
         boolean webMode = false;
-        if (configUseAPI() || link.hasProperty(PROPERTY_FORCE_API)) {
+        if (useAPI(link)) {
             webMode = false;
             this.checkAvailablestatusAPI(link, account, isDownload);
         } else {
@@ -259,25 +259,10 @@ public class TiktokCom extends PluginForHost {
                     }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?", 10 * 60 * 1000l);
                 }
-                /*
-                 * 2020-05-04: Do not use header anymore as it seems like they've modified all files < December 2019 so their "Header dates"
-                 * are all wrong now.
-                 */
-                // createDate = con.getHeaderField("Last-Modified");
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                final String lastModifiedHeaderValue = brc.getRequest().getResponseHeader("Last-Modified");
-                if (lastModifiedHeaderValue != null) {
-                    link.setProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER, lastModifiedHeaderValue);
-                    if (webMode && !link.hasProperty(PROPERTY_DATE)) {
-                        /*
-                         * Filename has already been set before but date was not available --> Set filename again as date information is
-                         * given now.
-                         */
-                        setFilename(link);
-                    }
-                }
+                missingDateFilenameLastResortHandling(link, con);
             } finally {
                 try {
                     con.disconnect();
@@ -286,6 +271,38 @@ public class TiktokCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void missingDateFilenameLastResortHandling(final DownloadLink link, final URLConnectionAdapter con) {
+        if (getDateFormatted(link) == null && con != null) {
+            if (getAndSetLastModifiedDateFromHeader(link, con)) {
+                /*
+                 * Filename has already been set before but date was not available --> Set filename again as date information is given now.
+                 */
+                setFilename(link);
+            }
+        }
+    }
+
+    private static boolean useAPI(final DownloadLink link) {
+        if (configUseAPI() || link.hasProperty(PROPERTY_FORCE_API)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean getAndSetLastModifiedDateFromHeader(final DownloadLink link, final URLConnectionAdapter con) {
+        if (con == null) {
+            return false;
+        }
+        final String lastModifiedHeaderValue = con.getRequest().getResponseHeader("Last-Modified");
+        if (lastModifiedHeaderValue != null) {
+            link.setProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER, lastModifiedHeaderValue);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -345,7 +362,7 @@ public class TiktokCom extends PluginForHost {
     }
 
     private static String getStoredDirecturlProperty(final DownloadLink link) {
-        if (configUseAPI() || link.hasProperty(PROPERTY_FORCE_API)) {
+        if (useAPI(link)) {
             return PROPERTY_DIRECTURL_API;
         } else {
             return PROPERTY_DIRECTURL_WEBSITE;
@@ -827,10 +844,13 @@ public class TiktokCom extends PluginForHost {
     }
 
     private static String getDateFormatted(final DownloadLink link) {
+        final String lastModifiedHeaderValue = link.getStringProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER);
         if (link.hasProperty(PROPERTY_DATE)) {
+            /* Prefer pre-formatted date obtained via timestamp from API/website-json */
             return link.getStringProperty(PROPERTY_DATE);
-        } else if (link.hasProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER)) {
-            return convertDateFormat(link.getStringProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER));
+        } else if (lastModifiedHeaderValue != null) {
+            /* Use formatted date of "Last-Modified" header of video directurls timestamp as fallback. */
+            return convertDateFormat(lastModifiedHeaderValue);
         } else {
             return null;
         }
@@ -971,7 +991,7 @@ public class TiktokCom extends PluginForHost {
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
-        final String url = this.getStoredDirecturl(link);
+        final String url = getStoredDirecturl(link);
         if (StringUtils.isEmpty(url)) {
             return false;
         }
@@ -980,6 +1000,7 @@ public class TiktokCom extends PluginForHost {
             brc.getHeaders().put("Referer", "https://www." + this.getHost() + "/");
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, RESUME, MAXCHUNKS);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                missingDateFilenameLastResortHandling(link, dl.getConnection());
                 return true;
             } else {
                 brc.followConnection(true);
