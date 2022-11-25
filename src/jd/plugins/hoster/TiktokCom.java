@@ -275,10 +275,13 @@ public class TiktokCom extends PluginForHost {
 
     private void missingDateFilenameLastResortHandling(final DownloadLink link, final URLConnectionAdapter con) {
         if (getDateFormatted(link) == null && con != null) {
-            if (getAndSetLastModifiedDateFromHeader(link, con)) {
+            final String lastModifiedHeaderValue = con.getRequest().getResponseHeader("Last-Modified");
+            if (lastModifiedHeaderValue != null) {
+                link.setProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER, lastModifiedHeaderValue);
                 /*
                  * Filename has already been set before but date was not available --> Set filename again as date information is given now.
                  */
+                logger.info("Re-generating filename as date was missing and has been found now");
                 setFilename(link);
             }
         }
@@ -286,19 +289,6 @@ public class TiktokCom extends PluginForHost {
 
     private static boolean useAPI(final DownloadLink link) {
         if (configUseAPI() || link.hasProperty(PROPERTY_FORCE_API)) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean getAndSetLastModifiedDateFromHeader(final DownloadLink link, final URLConnectionAdapter con) {
-        if (con == null) {
-            return false;
-        }
-        final String lastModifiedHeaderValue = con.getRequest().getResponseHeader("Last-Modified");
-        if (lastModifiedHeaderValue != null) {
-            link.setProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER, lastModifiedHeaderValue);
             return true;
         } else {
             return false;
