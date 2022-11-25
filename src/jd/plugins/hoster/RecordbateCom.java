@@ -20,13 +20,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,6 +44,7 @@ import jd.plugins.PluginForHost;
 public class RecordbateCom extends PluginForHost {
     public RecordbateCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://recordbate.com/register");
     }
 
     @Override
@@ -104,10 +111,10 @@ public class RecordbateCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        return requestFileInformation(link, null, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
             link.setFinalFileName(this.getFID(link) + ".mp4");
         }
@@ -119,6 +126,9 @@ public class RecordbateCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         this.setBrowserExclusive();
+        if (account != null) {
+            this.login(account, false);
+        }
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -152,8 +162,12 @@ public class RecordbateCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
+        handleDownload(link, null);
+    }
+
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if (!attemptStoredDownloadurlDownload(link)) {
-            requestFileInformation(link, true);
+            requestFileInformation(link, account, true);
             if (StringUtils.isEmpty(dllink)) {
                 if (br.getURL().matches("https?://[^/]+/upgrade")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reached daily downloadlimit");
@@ -214,8 +228,101 @@ public class RecordbateCom extends PluginForHost {
         }
     }
 
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies userCookies = account.loadUserCookies();
+                if (userCookies == null || userCookies.isEmpty()) {
+                    showCookieLoginInfo();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+                }
+                logger.info("Attempting user cookie login");
+                this.br.setCookies(this.getHost(), userCookies);
+                if (!force) {
+                    /* Don't validate cookies */
+                    return false;
+                }
+                br.getPage("https://" + this.getHost() + "/myaccount");
+                if (!this.isLoggedin(br)) {
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                    } else {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                    }
+                }
+                logger.info("User cookie login successful");
+                return true;
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        return br.containsHTML("/logout");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        ai.setUnlimitedTraffic();
+        final String planName = br.getRegex("class=\"plan-name\">([^<]+)</span>").getMatch(0);
+        if (planName != null) {
+            ai.setStatus("Plan: " + Encoding.htmlDecode(planName).trim());
+        }
+        /*
+         * Try to find real username of this account as in theory user can enter anything into the username field when adding accounts via
+         * cookie login. This could result in duplicated accounts --> Try to prevent this.
+         */
+        final String username = br.getRegex(">([^<]+)<a href=\"/change-password\"").getMatch(0);
+        if (username != null) {
+            account.setUser(Encoding.htmlDecode(username).trim());
+        }
+        /* 2022-11-25: So far only free accounts are supported */
+        account.setType(AccountType.FREE);
+        // if (br.containsHTML("")) {
+        // account.setType(AccountType.FREE);
+        // /* free accounts can still have captcha */
+        // account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+        // account.setConcurrentUsePossible(false);
+        // } else {
+        // final String expire = br.getRegex("").getMatch(0);
+        // if (expire == null) {
+        // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        // } else {
+        // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+        // }
+        // account.setType(AccountType.PREMIUM);
+        // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        // account.setConcurrentUsePossible(true);
+        // }
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.handleDownload(link, account);
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
+        /* No captchas at all */
+        return false;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        return free_maxdownloads;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
         return free_maxdownloads;
     }
 
