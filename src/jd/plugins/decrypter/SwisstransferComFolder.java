@@ -17,11 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,6 +30,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "swisstransfer.com" }, urls = { "https?://(?:www\\.)?swisstransfer\\.com/d/([a-z0-9\\-]+)" })
 public class SwisstransferComFolder extends antiDDoSForDecrypt {
@@ -49,9 +51,12 @@ public class SwisstransferComFolder extends antiDDoSForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* E.g. response "e034b988-de97-4333-956b-28ba66ed88888 Not found" (with "") */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("^\"late\"$")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Map<String, Object> container = (Map<String, Object>) root.get("container");
+        final Number downloadLimit = (Number) container.get("downloadLimit");
         final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) container.get("files");
         String fpName = (String) container.get("message");
         final FilePackage fp = FilePackage.getInstance();
@@ -78,6 +83,7 @@ public class SwisstransferComFolder extends antiDDoSForDecrypt {
                 if (filesize == null) {
                     filesize = (Number) file.get("fileSizeInBytes");
                 }
+                final Number downloadCounter = (Number) file.get("downloadCounter");
                 final String expiredDate = (String) file.get("expiredDate");
                 final String deletedDate = (String) file.get("deletedDate");
                 if (StringUtils.isEmpty(filename) || StringUtils.isEmpty(fileid)) {
@@ -88,11 +94,21 @@ public class SwisstransferComFolder extends antiDDoSForDecrypt {
                     dl.setVerifiedFileSize(filesize.longValue());
                 }
                 dl.setFinalFileName(filename);
-                if (expiredDate != null || deletedDate != null) {
-                    /* Deleted/expired file with file information still available. */
+                if (deletedDate != null) {
+                    /* Deleted */
                     dl.setAvailable(false);
+                } else if (expiredDate != null) {
+                    final long timeStamp = TimeFormatter.getMilliSeconds(expiredDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+                    if (System.currentTimeMillis() < timeStamp) {
+                        dl.setAvailable(true);
+                    } else {
+                        dl.setAvailable(false);
+                    }
                 } else {
                     dl.setAvailable(true);
+                }
+                if (downloadCounter != null && downloadLimit != null && downloadLimit.longValue() == downloadCounter.longValue()) {
+                    dl.setAvailable(false);
                 }
                 dl._setFilePackage(fp);
                 if (ressourcelist.size() > 1) {
