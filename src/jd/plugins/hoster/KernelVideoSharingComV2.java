@@ -613,7 +613,6 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             return AvailableStatus.TRUE;
         }
         link.removeProperty(PROPERTY_IS_PRIVATE_VIDEO);
-        final boolean maybePrivateVideo = this.looksLikePrivateVideoWebsite(br);
         try {
             /* Only look for downloadurl if we need it! */
             if (isDownload || !this.enableFastLinkcheck()) {
@@ -690,17 +689,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
             }
         } catch (final Exception e) {
-            logger.log(e);
-            if (maybePrivateVideo) {
-                if (isDownload) {
-                    logger.info("Looks like this is a private video");
-                    throw new AccountRequiredException();
-                } else {
-                    return AvailableStatus.TRUE;
-                }
-            } else {
-                throw e;
-            }
+            throw e;
         }
         return AvailableStatus.TRUE;
     }
@@ -835,16 +824,17 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             if (br._getURL().getPath().matches("(?i)/4(04|10)\\.php.*")) {
                 return true;
             } else {
-                return false;
+                if (isOfflineVideoWebsite(br)) {
+                    return true;
+                } else {
+                    return false;
+                }
             }
         }
     }
 
-    protected boolean looksLikePrivateVideoWebsite(final Browser br) {
-        /* 2022-11-22: Generic attempt to detect private videos */
-        /* E.g. anyporn.com, pornwild.com */
-        final String videoErrormessage = br.getRegex("<span class=\"message\">(.*?)</span>").getMatch(0);
-        if (videoErrormessage != null) {
+    protected boolean isOfflineVideoWebsite(final Browser br) {
+        if (br.containsHTML("(?i)>\\s*Sorry, this video was deleted per copyright owner request")) {
             return true;
         } else {
             return false;
@@ -967,7 +957,6 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     protected void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if (!attemptStoredDownloadurlDownload(link, account)) {
             requestFileInformation(link, account, true);
-            final boolean maybePrivateVideo = this.looksLikePrivateVideoWebsite(br);
             try {
                 if (StringUtils.isEmpty(this.dllink)) {
                     if (this.isPrivateVideo(link)) {
@@ -1028,11 +1017,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                     link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toString());
                 }
             } catch (final Exception e) {
-                if (maybePrivateVideo) {
-                    throw new AccountRequiredException();
-                } else {
-                    throw e;
-                }
+                throw e;
             }
         } else {
             logger.info("Re-using stored directurl");
