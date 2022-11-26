@@ -75,6 +75,7 @@ public class MajorgeeksCom extends PluginForHost {
     private final int     FREE_MAXCHUNKS    = 0;
     private final int     FREE_MAXDOWNLOADS = -1;
     /* 2022-11-25: Those links are now handled by a crawler plugin */
+    @Deprecated
     private final String  PATTERN_LEGACY    = "https?://[^/]+/files/details/.+";
 
     @Override
@@ -88,8 +89,20 @@ public class MajorgeeksCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        }
         final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
-        return urlinfo.getMatch(0) + "_" + urlinfo.getMatch(1);
+        if (urlinfo.matches()) {
+            return urlinfo.getMatch(0) + "_" + urlinfo.getMatch(1);
+        } else {
+            /* For PATTERN_LEGACY */
+            try {
+                return new URL(link.getPluginPatternMatcher()).getPath();
+            } catch (final Exception ignore) {
+            }
+            return null;
+        }
     }
 
     @Override
