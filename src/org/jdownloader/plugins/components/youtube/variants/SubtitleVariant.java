@@ -117,10 +117,10 @@ public class SubtitleVariant extends AbstractVariant<YoutubeSubtitleStorable> {
             Integer pref1 = YT_STATICS.SUBTITLE_PREFERRENCE_MAP.get(((SubtitleVariant) o1).getLanguageCode());
             Integer pref2 = YT_STATICS.SUBTITLE_PREFERRENCE_MAP.get(((SubtitleVariant) o2).getLanguageCode());
             if (pref1 == null) {
-                pref1 = Integer.MAX_VALUE;
+                pref1 = Integer.MIN_VALUE;
             }
             if (pref2 == null) {
-                pref2 = Integer.MAX_VALUE;
+                pref2 = Integer.MIN_VALUE;
             }
             int ret = CompareUtils.compare(pref1, pref2);
             if (ret == 0) {

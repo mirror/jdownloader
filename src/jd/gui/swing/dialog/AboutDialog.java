@@ -38,6 +38,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
 
@@ -99,7 +100,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
 
     @Override
     protected boolean isResizable() {
-        return false;
+        return true;
     }
 
     public static Thread showNonBlocking() {
@@ -445,7 +446,10 @@ public class AboutDialog extends AbstractDialog<Integer> {
         contentpane.add(links1stRow, "gaptop 5, growx, pushx, spanx");
         contentpane.add(links2ndRow, "growx, pushx, spanx");
         this.registerEscape(contentpane);
-        return contentpane;
+        final JScrollPane scrollPane = new JScrollPane(contentpane);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        return scrollPane;
     }
 
     private String get7ZipJBindingDetails() {
