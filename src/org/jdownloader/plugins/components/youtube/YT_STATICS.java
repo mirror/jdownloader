@@ -23,9 +23,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
 public class YT_STATICS {
-
     public static final YoutubeConfig           CFG = PluginJsonConfig.get(YoutubeConfig.class);
-
     public static Map<VideoResolution, Integer> SORTIDS_VIDEO_RESOLUTION;
     public static Map<VideoCodec, Integer>      SORTIDS_VIDEO_CODEC;
     public static Map<VideoFrameRate, Integer>  SORTIDS_VIDEO_FRAMERATE;
@@ -33,14 +31,10 @@ public class YT_STATICS {
     public static List<QualitySortIdentifier>   SORTIDS;
     public static Map<AudioCodec, Integer>      SORTIDS_AUDIO_CODEC;
     public static Map<FileContainer, Integer>   SORTIDS_FILE_CONTAINER;
-
     public static HashMap<String, Integer>      SUBTITLE_PREFERRENCE_MAP;
-
     static {
         updateSorterMaps();
-
         GenericConfigEventListener<String[]> listener = new GenericConfigEventListener<String[]>() {
-
             @Override
             public void onConfigValidatorError(KeyHandler<String[]> keyHandler, String[] invalidValue, ValidationException validateException) {
             }
@@ -49,7 +43,6 @@ public class YT_STATICS {
             public void onConfigValueModified(KeyHandler<String[]> keyHandler, String[] newValue) {
                 updateSorterMaps();
             }
-
         };
         CFG_YOUTUBE.QUALITY_SORT_IDENTIFIER_ORDER.getEventSender().addListener(listener);
         CFG_YOUTUBE.QUALITY_SORT_IDENTIFIER_ORDER_AUDIO_BITRATE.getEventSender().addListener(listener);
@@ -67,59 +60,47 @@ public class YT_STATICS {
         SORTIDS_AUDIO_BITRATE = update(AudioBitrate.class, CFG.getQualitySortIdentifierOrderAudioBitrate());
         SORTIDS_AUDIO_CODEC = update(AudioCodec.class, CFG.getQualitySortIdentifierOrderAudioCodec());
         SORTIDS_FILE_CONTAINER = update(FileContainer.class, CFG.getQualitySortIdentifierOrderFiletype());
-
         ArrayList<QualitySortIdentifier> sortIds = new ArrayList<QualitySortIdentifier>();
         for (String s : CFG.getQualitySortIdentifierOrder()) {
             sortIds.add(QualitySortIdentifier.valueOf(s));
         }
         SORTIDS = sortIds;
         updateSubtitlesSorter();
-
     }
 
     protected static void updateSubtitlesSorter() {
         HashMap<String, Integer> prefSubtitles = new HashMap<String, Integer>();
         String[] prefs = CFG_YOUTUBE.CFG.getPreferedSubtitleLanguages();
         int prefID = 0;
-
-        if (prefs != null) {
-
+        if (prefs != null && prefs.length > 0) {
             for (int i = 0; i < prefs.length; i++) {
                 if (prefs[i] != null) {
                     prefSubtitles.put(prefs[i].toLowerCase(Locale.ENGLISH), prefID++);
                 }
-
             }
         }
         prefSubtitles.put(TranslationFactory.getDesiredLanguage().toLowerCase(Locale.ENGLISH), prefID++);
         prefSubtitles.put(Locale.getDefault().getLanguage().toLowerCase(Locale.ENGLISH), prefID++);
-
         prefSubtitles.put("en", prefID++);
-
         SUBTITLE_PREFERRENCE_MAP = prefSubtitles;
     }
 
     private static <T extends Enum> Map<T, Integer> update(Class<T> class1, String[] values) {
         HashMap<T, Integer> ret = new HashMap<T, Integer>();
-
         List<T> lst = defaultEnumList(class1, values);
         for (int i = 0; i < lst.size(); i++) {
             ret.put(lst.get(i), lst.size() - i);
-
         }
         return ret;
     }
 
     public static <T extends Enum> List<T> defaultEnumList(Class<T> cls, String[] value) {
-
         String[] empty = new String[] {};
         if (value == null) {
             value = empty;
-
         }
         List<T> lst = new ArrayList<T>();
         HashSet<String> dupe = new HashSet<String>();
-
         for (String s : value) {
             try {
                 Field field = cls.getDeclaredField(s);
@@ -129,7 +110,6 @@ public class YT_STATICS {
                     lst.add((T) enumValue);
                 }
             } catch (Throwable e) {
-
             }
         }
         for (Enum q : cls.getEnumConstants()) {
@@ -137,11 +117,9 @@ public class YT_STATICS {
                 try {
                     lst.add((T) q);
                 } catch (Throwable e) {
-
                 }
             }
         }
         return lst;
     }
-
 }

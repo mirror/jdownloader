@@ -3204,7 +3204,7 @@ public class YoutubeHelper {
     }
 
     private ArrayList<YoutubeSubtitleStorable> loadSubtitles() throws Exception {
-        HashMap<String, List<YoutubeSubtitleStorable>> urls = new HashMap<String, List<YoutubeSubtitleStorable>>();
+        Map<String, List<YoutubeSubtitleStorable>> urls = new LinkedHashMap<String, List<YoutubeSubtitleStorable>>();
         YoutubeSubtitleStorable defaultLanguage = null;
         for (String ttsUrl : subtitleUrls) {
             if (ttsUrl.startsWith("[")) {
@@ -3232,7 +3232,7 @@ public class YoutubeHelper {
                             }
                             final String lang = (String) map.get("languageCode");
                             final String kind = StringUtils.valueOrEmpty((String) map.get("kind"));
-                            final String lngID = lang + kind;
+                            final String lngID = lang;
                             List<YoutubeSubtitleStorable> list = urls.get(lngID);
                             final YoutubeSubtitleStorable info = new YoutubeSubtitleStorable(null, name, lang, null, kind);
                             info.setFullUrl(url);
@@ -3281,7 +3281,7 @@ public class YoutubeHelper {
                     if (kind == null) {
                         kind = "";
                     }
-                    final String lngID = lang + kind;
+                    final String lngID = lang;
                     if (StringUtils.isNotEmpty(langTrans)) {
                         langOrg = langTrans;
                     }
@@ -3322,9 +3322,9 @@ public class YoutubeHelper {
                             name = "";
                         }
                         if (kind == null) {
-                            kind = "";
+                            kind = defaultLanguage.getKind();
                         }
-                        final String lngID = lang + kind;
+                        final String lngID = lang;
                         if (StringUtils.isNotEmpty(langTrans)) {
                             langOrg = langTrans;
                         }
@@ -3339,7 +3339,7 @@ public class YoutubeHelper {
                         if (!"true".equalsIgnoreCase(cantran)) {
                             continue;
                         }
-                        final YoutubeSubtitleStorable info = new YoutubeSubtitleStorable(ttsUrl, name, lang, defaultLanguage.getLanguage(), defaultLanguage.getKind());
+                        final YoutubeSubtitleStorable info = new YoutubeSubtitleStorable(ttsUrl, name, lang, defaultLanguage.getLanguage(), kind);
                         // br.getPage(new GetRequest(info.createUrl()));
                         if (info._getLocale() == null) {
                             // unknown language
