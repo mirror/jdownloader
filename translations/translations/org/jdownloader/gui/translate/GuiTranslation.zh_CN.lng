@@ -1447,6 +1447,7 @@ YoutubeHelper_getDescription_age=年龄保护 真|假
 YoutubeHelper_getDescription_alternative=(如果有的话则最好选其它的，例如 localized(本地化的))
 YoutubeHelper_getDescription_audioCodec=音频编码解码器(如 Mp3,AAC,…)
 YoutubeHelper_getDescription_audioQuality=音频比特率 (如 128kbit)
+YoutubeHelper_getDescription_best_height=像素为单位的最佳视频分辨率高度
 YoutubeHelper_getDescription_category=类别
 YoutubeHelper_getDescription_channel=频道
 YoutubeHelper_getDescription_channel_id=频道 ID
