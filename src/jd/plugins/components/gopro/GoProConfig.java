@@ -4,7 +4,9 @@ import java.util.Set;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
@@ -52,15 +54,16 @@ public interface GoProConfig extends PluginConfigInterface {
 
     void setLocalMediaCacheEnabled(boolean b);
 
-    @DescriptionForConfigEntry("If enabled, all GoPro Links will get tagged to stay in the linkgrabber. Check the global 'Action On Moving Links To Downloadlist' property in the advanced config.")
-    // TODO:@AboutConfig
-    @DefaultBooleanValue(false)
-    boolean isKeepLinksInLinkgrabber();
-
-    void setKeepLinksInLinkgrabber(boolean b);
-
+    // @DescriptionForConfigEntry("If enabled, all GoPro Links will get tagged to stay in the linkgrabber. Check the global 'Action On Moving Links To Downloadlist' property in the advanced config.")
+    // // TODO:@AboutConfig
+    // @DefaultBooleanValue(false)
+    // boolean isKeepLinksInLinkgrabber();
+    //
+    // void setKeepLinksInLinkgrabber(boolean b);
     @AboutConfig
     @DescriptionForConfigEntry("0 for everything. Set to>0 if you want to crawl only the latest media files")
+    @DefaultIntValue(0)
+    @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getOnlyScanLastXDaysFromLibrary();
 
     void setOnlyScanLastXDaysFromLibrary(int b);

@@ -117,13 +117,6 @@ public class IconKey {
     public static final String ICON_FLAGS_DE                    = "flags/de";
     public static final String ICON_FLAGS_EN                    = "flags/en";
     public static final String ICON_FILEICON                    = "fileIcon";
-    public static final String ICON_FAV_LARGE_NETLOAD_IN        = "fav/large.netload.in";
-    public static final String ICON_FAV_BIG_NETLOAD_IN          = "fav/big.netload.in";
-    public static final String ICON_FAV_LARGE_UPLOADED_TO       = "fav/large.uploaded.to";
-    public static final String ICON_FAV_BIG_SHARE_ONLINE_BIZ    = "fav/big.share-online.biz";
-    public static final String ICON_FAV_BIG_UPLOADED_TO         = "fav/big.uploaded.to";
-    public static final String ICON_FAV_LARGE_SHARE_ONLINE_BIZ  = "fav/large.share-online.biz";
-    public static final String ICON_FAV_FOOTER_UPLOADED_TO      = "fav/footer.uploaded.to";
     public static final String ICON_UPDATERICON0                = "updaterIcon0";
     public static final String ICON_TEST                        = "test";
     public static final String ICON_FALSE_ORANGE                = "false-orange";

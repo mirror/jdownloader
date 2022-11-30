@@ -23,17 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig.CrawlSpeedMode;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -50,6 +39,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.GenericM3u8;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig.CrawlSpeedMode;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8($|(?:\\?|%3F)[^\\s<>\"']*|#.*)" })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
@@ -155,15 +155,15 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 }
             }
             final String finalFallbackTitle = new Regex(m3u8URL, "/([^/]+)\\.m3u8").getMatch(0);
-            FilePackage fp = FilePackage.getInstance();
+            FilePackage fpTemplate = FilePackage.getInstance();
             if (StringUtils.isNotEmpty(preSetTitle)) {
-                fp.setName(preSetTitle);
+                fpTemplate.setName(preSetTitle);
             } else if (StringUtils.isNotEmpty(sessionDataTitle)) {
-                fp.setName(sessionDataTitle);
+                fpTemplate.setName(sessionDataTitle);
             } else if (StringUtils.isNotEmpty(finalFallbackTitle) && !StringUtils.equalsIgnoreCase(finalFallbackTitle, "master")) {
-                fp.setName(finalFallbackTitle);
+                fpTemplate.setName(finalFallbackTitle);
             } else {
-                fp = null;
+                fpTemplate = null;
             }
             Long estimatedDurationMillis = null;
             for (final Entry<HlsContainer, URL> entry : hlsContainers.entrySet()) {
@@ -205,9 +205,8 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     if (hls.getAverageBandwidth() > 0 || hls.getBandwidth() > 0) {
                         if (estimatedDurationMillis == null) {
                             /**
-                             * Load first item to get the estimated play-duration which we expect to be the same for all items. </br>
-                             * Based on this we can set estimated filesizes while at the same time providing a super fast crawling
-                             * experience.
+                             * Load first item to get the estimated play-duration which we expect to be the same for all items. </br> Based
+                             * on this we can set estimated filesizes while at the same time providing a super fast crawling experience.
                              */
                             final List<M3U8Playlist> playlist = hls.getM3U8(br);
                             estimatedDurationMillis = M3U8Playlist.getEstimatedDuration(playlist);
@@ -229,6 +228,15 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                     }
                 } else if (mode == CrawlSpeedMode.SUPERFAST || (mode == CrawlSpeedMode.AUTOMATIC_SUPERFAST && (isAudioOnly || isVideo && hls.getHeight() > 0))) {
                     link.setAvailable(true);
+                }
+                FilePackage fp = fpTemplate;
+                if (cfg.isGroupByResolution() && hls.getHeight() > 0) {
+                    fp = FilePackage.getInstance();
+                    if (fpTemplate != null) {
+                        fp.setName(fpTemplate.getName() + "-" + hls.getHeight());
+                    } else {
+                        fp.setName(String.valueOf(hls.getHeight()));
+                    }
                 }
                 if (fp != null) {
                     link._setFilePackage(fp);
