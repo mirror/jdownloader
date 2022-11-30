@@ -2,6 +2,7 @@ LogAction_actionPerformed_upload_=立即上传
 LogAction_actionPerformed_wait_=请稍候…
 LogAction_actionPerformed_zip_title_=正在创建日志包
 LogAction_getString_uploading_=正在准备您的日志
+LogModel_current=当前会话来自 %s1
 LogModel_getStringValue_between_=介于 %s1 和 %s2 之间\r\n
 LogModel_initColumns_check_upload_=上传吗?
 LogModel_initColumns_time_=时间
