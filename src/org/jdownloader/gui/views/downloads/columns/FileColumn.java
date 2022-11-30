@@ -44,6 +44,7 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
 import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDownloadOrdnerOnColumn;
+import org.jdownloader.gui.views.components.packagetable.context.rename.RenameDialog;
 import org.jdownloader.gui.views.downloads.action.OpenFileAction;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -356,13 +357,19 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
 
     @Override
     public void focusGained(final FocusEvent e) {
-        String txt = editorField.getText();
-        int point = txt.lastIndexOf(".");
-        int pointPart = txt.lastIndexOf(".part");
-        if (pointPart > 0) {
-            point = pointPart;
+        final String txt = editorField.getText();
+        final String withoutArchiveExtension = RenameDialog.removeArchiveExtension(null, txt);
+        int point = -1;
+        if (withoutArchiveExtension != null && !txt.equals(withoutArchiveExtension)) {
+            point = withoutArchiveExtension.length();
+        } else {
+            /* select filename only, try to keep the extension/filetype */
+            point = txt.lastIndexOf(".");
+            int pointPart = txt.lastIndexOf(".part");
+            if (pointPart > 0) {
+                point = pointPart;
+            }
         }
-        /* select filename only, try to keep the extension/filetype */
         if (point > 0 && selectAll == false) {
             editorField.select(0, point);
         } else {

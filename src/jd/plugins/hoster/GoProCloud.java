@@ -26,8 +26,8 @@ import java.util.WeakHashMap;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
 import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -48,6 +48,7 @@ import jd.plugins.components.gopro.GoProConfig;
 import jd.plugins.components.gopro.GoProVariant;
 import jd.plugins.components.gopro.Media;
 import jd.plugins.components.gopro.Variation;
+import jd.plugins.decrypter.GoProCloudDecrypter;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.TypeRef;
@@ -220,7 +221,7 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final boolean hasCache = hasDownloadCache(link);
         final Account account = AccountController.getInstance().getValidAccount(getHost());
         final Variation variation = loadDownloadURL(link, account);
@@ -247,18 +248,19 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
         return AvailableStatus.TRUE;
     }
 
-    protected Variation loadDownloadURL(final DownloadLink link, final Account account) throws IOException, PluginException {
+    protected Variation loadDownloadURL(final DownloadLink link, final Account account) throws Exception {
         final String url = link.getPluginPatternMatcher();
         final Regex reg = new Regex(url, HTTPS_GOPRO_COM_DOWNLOAD_PREMIUM_FREE);
         final String id = reg.getMatch(0);
         final String variant = reg.getMatch(1);
         try {
-            if (isPremium(link)) {
+            final boolean isPremium = isPremium(link);
+            if (isPremium) {
                 login(br, account);
             }
             final FlexiJSonMapper mapper = new FlexiJSonMapper();
-            final Media media = mapper.jsonToObject(getMediaResponse(this, br, id, link).jsonNode, Media.TYPEREF);
-            final Download resp = mapper.jsonToObject(getDownloadResponse(this, br, id, link).jsonNode, Download.TYPEREF);
+            final Media media = mapper.jsonToObject(getMediaResponse(this, isPremium ? account : null, br, id, link).jsonNode, Media.TYPEREF);
+            final Download resp = mapper.jsonToObject(getDownloadResponse(this, isPremium ? account : null, br, id, link).jsonNode, Download.TYPEREF);
             Variation source = null;
             if (link.hasVariantSupport() && !link.hasGenericVariantSupport()) {
                 final GoProVariant activeVariant = (GoProVariant) getActiveVariantByLink(link);
@@ -476,12 +478,35 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    public static FlexiJSonNodeResponse getDownloadResponse(Plugin plugin, Browser br, String id, DownloadLink cacheSource) throws IOException, FlexiParserException {
+    public static Request doAPIRequest(Plugin plugin, Account account, Browser br, final String url) throws Exception {
+        final String usedAccessToken = account != null ? account.getStringProperty(ACCESS_TOKEN, null) : null;
+        Request request = br.createGetRequest(url);
+        request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT, "application/vnd.gopro.jk.media+json; version=2.0.0");
+        br.getPage(request);
+        if (br.getHttpConnection().getResponseCode() == 401 && account != null) {
+            synchronized (account) {
+                if (StringUtils.equals(usedAccessToken, account.getStringProperty(ACCESS_TOKEN, null))) {
+                    account.removeProperty(ACCESS_TOKEN);
+                }
+                if (plugin instanceof GoProCloud) {
+                    ((GoProCloud) plugin).login(br, account);
+                    request = request.cloneRequest();
+                    br.getPage(request);
+                } else if (plugin instanceof GoProCloudDecrypter) {
+                    ((GoProCloudDecrypter) plugin).login(br, account);
+                    request = request.cloneRequest();
+                    br.getPage(request);
+                }
+            }
+        }
+        return request;
+    }
+
+    public static FlexiJSonNodeResponse getDownloadResponse(Plugin plugin, final Account account, Browser br, String id, DownloadLink cacheSource) throws Exception {
         String jsonString = cacheSource != null ? cacheSource.getStringProperty(MEDIA_DOWNLOAD) : null;
         if (StringUtils.isEmpty(jsonString)) {
-            final GetRequest request = br.createGetRequest("https://api.gopro.com/media/" + id + "/download");
-            request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT, "application/vnd.gopro.jk.media+json; version=2.0.0");
-            jsonString = br.getPage(request);
+            Request request = doAPIRequest(plugin, account, br, "https://api.gopro.com/media/" + id + "/download");
+            jsonString = request.getHtmlCode();
         }
         try {
             final FlexiJSonNode ret = new FlexiJSONParser(jsonString).parse();
@@ -495,12 +520,11 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
         }
     }
 
-    public static FlexiJSonNodeResponse getMediaResponse(Plugin plugin, Browser br, String id, DownloadLink cacheSource) throws IOException, FlexiParserException {
+    public static FlexiJSonNodeResponse getMediaResponse(Plugin plugin, final Account account, Browser br, String id, DownloadLink cacheSource) throws Exception {
         String jsonString = cacheSource != null ? cacheSource.getStringProperty(MEDIA) : null;
         if (StringUtils.isEmpty(jsonString)) {
-            final GetRequest request = br.createGetRequest("https://api.gopro.com/media/" + id);
-            request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT, "application/vnd.gopro.jk.media+json; version=2.0.0");
-            jsonString = br.getPage(request);
+            Request request = doAPIRequest(plugin, account, br, "https://api.gopro.com/media/" + id);
+            jsonString = request.getHtmlCode();
         }
         try {
             final FlexiJSonNode ret = new FlexiJSONParser(jsonString).parse();

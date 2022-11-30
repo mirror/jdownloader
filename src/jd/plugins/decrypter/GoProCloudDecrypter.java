@@ -16,13 +16,11 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
@@ -33,8 +31,8 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
@@ -57,14 +55,10 @@ import jd.plugins.components.gopro.SearchResponse;
 import jd.plugins.components.gopro.Variation;
 import jd.plugins.hoster.GoProCloud;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.flexijson.FlexiJSONParser;
 import org.appwork.storage.flexijson.FlexiJSONParser.ParsingError;
 import org.appwork.storage.flexijson.FlexiJSonNode;
-import org.appwork.storage.flexijson.FlexiParserException;
 import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
-import org.appwork.storage.flexijson.mapper.FlexiMapperException;
 import org.appwork.utils.CompareUtils;
 import org.appwork.utils.ConcatIterator;
 import org.appwork.utils.StringUtils;
@@ -93,7 +87,14 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         hostConfig = PluginJsonConfig.get(GoProConfig.class);
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
+            @Override
+            public boolean add(DownloadLink e) {
+                final boolean ret = super.add(e);
+                distribute(e);
+                return ret;
+            }
+        };
         final Account account = AccountController.getInstance().getValidAccount("gopro.com");
         if (param.getCryptedUrl().matches("(?i).*gopro\\.com/v/.+")) {
             decryptSharedLinks(decryptedLinks, account, param);
@@ -103,24 +104,27 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
-    private void decryptSharedLinks(List<DownloadLink> decryptedLinks, Account account, CryptedLink param) throws IOException, FlexiParserException, FlexiMapperException, PluginException {
-        FlexiJSonMapper mapper = new FlexiJSonMapper();
+    private void decryptSharedLinks(List<DownloadLink> decryptedLinks, Account account, CryptedLink param) throws Exception {
+        final FlexiJSonMapper mapper = new FlexiJSonMapper();
         final String singleID = new Regex(param.getCryptedUrl(), ".*/v/[^/]+/([^/]+)$").getMatch(0);
         br.getPage(param.getCryptedUrl());
-        String json = br.getRegex("<script>window.__reflectData=(.*)").getMatch(0);
-        FlexiJSONParser parser = new FlexiJSONParser(json).breakAtEndOfObject().ignoreIssues(new HashSet<ParsingError>(FlexiJSONParser.IGNORE_LIST_JS));
-        FlexiJSonNode node = parser.parse();
-        ReflectData resp = mapper.jsonToObject(node, ReflectData.TYPEREF);
+        final String json = br.getRegex("<script>window.__reflectData=(.*)").getMatch(0);
+        final FlexiJSONParser parser = new FlexiJSONParser(json).breakAtEndOfObject().ignoreIssues(new HashSet<ParsingError>(FlexiJSONParser.IGNORE_LIST_JS));
+        final FlexiJSonNode node = parser.parse();
+        final ReflectData resp = mapper.jsonToObject(node, ReflectData.TYPEREF);
         for (Media m : resp.getCollectionMedia()) {
             if (singleID != null && !StringUtils.equals(singleID, m.getId())) {
                 continue;
+            } else if (isAbort()) {
+                return;
+            } else {
+                scanID(decryptedLinks, account, param, mapper, m.getId(), m, "free", resp.getCollection().getTitle());
             }
-            scanID(decryptedLinks, param, mapper, m.getId(), m, "free", resp.getCollection().getTitle());
         }
     }
 
-    protected void decryptMedialibrary(final ArrayList<DownloadLink> decryptedLinks, final Account account, CryptedLink cryptedLink) throws Exception, IOException, FlexiParserException, FlexiMapperException {
-        FlexiJSonMapper mapper = new FlexiJSonMapper();
+    protected void decryptMedialibrary(final ArrayList<DownloadLink> decryptedLinks, final Account account, CryptedLink cryptedLink) throws Exception {
+        final FlexiJSonMapper mapper = new FlexiJSonMapper();
         String id = new Regex(cryptedLink.getCryptedUrl(), ".*/media-library/([^/]+)").getMatch(0);
         if (account != null) {
             login(this.br, account);
@@ -128,11 +132,10 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
             throw new AccountRequiredException();
         }
         if (StringUtils.isNotEmpty(id) && !StringUtils.equalsIgnoreCase(id, "links")) {
-            scanID(decryptedLinks, cryptedLink, mapper, id, null, "premium", null);
+            scanID(decryptedLinks, account, cryptedLink, mapper, id, null, "premium", null);
         } else {
             int perPage = 100;
             int page = 1;
-            int loginRetries = 0;
             Set<GoProType> toCrawl = getTypesToCrawl();
             String list = "";
             HashSet<String> ids = new HashSet<String>();
@@ -140,42 +143,35 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                 ids.add(e.apiID);
             }
             list = StringUtils.join(ids, ",");
-            long scanUntil = 0;
-            if (hostConfig.getOnlyScanLastXDaysFromLibrary() > 0) {
-                scanUntil = System.currentTimeMillis() - hostConfig.getOnlyScanLastXDaysFromLibrary() * 24 * 60 * 60 * 1000l;
+            long scanUntil = -1;
+            final int onlyScanLastXDaysFromLibrary = hostConfig.getOnlyScanLastXDaysFromLibrary();
+            if (onlyScanLastXDaysFromLibrary > 0) {
+                scanUntil = System.currentTimeMillis() - (onlyScanLastXDaysFromLibrary * 24l * 60 * 60 * 1000l);
             }
-            Date scanReadable = new Date(scanUntil);
             while (!isAbort()) {
-                final GetRequest request = br.createGetRequest("https://api.gopro.com/media/search?fields=camera_model,captured_at,content_title,content_type,created_at,gopro_user_id,gopro_media,filename,file_size,height,fov,id,item_count,moments_count,on_public_profile,orientation,play_as,ready_to_edit,ready_to_view,resolution,source_duration,token,type,width&processing_states=registered,rendering,pretranscoding,transcoding,failure,ready&order_by=captured_at&per_page=" + perPage + "&page=" + page + "&type=" + list.toString());
-                request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT, "application/vnd.gopro.jk.media+json; version=2.0.0");
-                final String json = br.getPage(request);
+                final Request request = GoProCloud.doAPIRequest(this, account, br, "https://api.gopro.com/media/search?fields=camera_model,captured_at,content_title,content_type,created_at,gopro_user_id,gopro_media,filename,file_size,height,fov,id,item_count,moments_count,on_public_profile,orientation,play_as,ready_to_edit,ready_to_view,resolution,source_duration,token,type,width&processing_states=registered,rendering,pretranscoding,transcoding,failure,ready&order_by=captured_at&per_page=" + perPage + "&page=" + page + "&type=" + list.toString());
+                final String json = request.getHtmlCode();
                 final FlexiJSonNode node = new FlexiJSONParser(json).parse();
                 final SearchResponse resp = mapper.jsonToObject(node, SearchResponse.TYPEREF);
                 if (StringUtils.isNotEmpty(resp.getError())) {
-                    if (loginRetries > 0) {
-                        throw new WTFException();
-                    }
-                    loginRetries++;
-                    br.clearAll();
-                    account.removeProperty(GoProCloud.ACCESS_TOKEN);
-                    login(this.br, account);
-                    continue;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final Media[] media = resp.getEmbedded().getMedia();
                 for (Media m : media) {
                     // System.out.println(m.getCaptured_at() + " - " + scanReadable);
-                    if (m.getCaptured_at().getTime() < scanUntil) {
+                    if (scanUntil > 0 && m.getCaptured_at().getTime() < scanUntil) {
                         return;
-                    }
-                    if (isAbort()) {
+                    } else if (isAbort()) {
                         return;
+                    } else {
+                        scanID(decryptedLinks, account, cryptedLink, mapper, m.getId(), m, "premium", null);
                     }
-                    scanID(decryptedLinks, cryptedLink, mapper, m.getId(), m, "premium", null);
                 }
                 if (page >= resp.getPages().getTotal_pages()) {
-                    break;
+                    return;
+                } else {
+                    page++;
                 }
-                page++;
             }
         }
     }
@@ -188,21 +184,17 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
         return toCrawl;
     }
 
-    public void finalizeLink(DownloadLink link) {
-        super.distribute(link);
-    }
-
     @Override
     public CrawledLink convert(DownloadLink link) {
         CrawledLink ret = super.convert(link);
-        if (hostConfig.isKeepLinksInLinkgrabber()) {
-            // TODO
-            // ret.setSticky(StickyOption.STICKY);
-        }
+        // if (hostConfig.isKeepLinksInLinkgrabber()) {
+        // TODO
+        // ret.setSticky(StickyOption.STICKY);
+        // }
         return ret;
     }
 
-    protected void scanID(final List<DownloadLink> decryptedLinks, CryptedLink cryptedLink, FlexiJSonMapper mapper, String id, Media media, String access, String collectionTitle) throws FlexiParserException, IOException, FlexiMapperException, MalformedURLException, PluginException {
+    protected void scanID(final List<DownloadLink> decryptedLinks, final Account account, CryptedLink cryptedLink, FlexiJSonMapper mapper, String id, Media media, String access, String collectionTitle) throws Exception {
         DownloadLink cacheSource = null;
         FlexiJSonNodeResponse responseMedia = null;
         if (hostConfig.isLocalMediaCacheEnabled()) {
@@ -217,7 +209,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
         }
         repeat: for (int i = 0; i < 2; i++) {
             if (media == null) {
-                responseMedia = GoProCloud.getMediaResponse(this, br, id, cacheSource);
+                responseMedia = GoProCloud.getMediaResponse(this, account, br, id, cacheSource);
                 media = mapper.jsonToObject(responseMedia.jsonNode, Media.TYPEREF);
             }
             final FilePackage fp = FilePackage.getInstance();
@@ -225,6 +217,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
             if (collectionTitle != null) {
                 fp.setName("GoPro Collection " + collectionTitle);
             }
+            fp.setIgnoreVarious(Boolean.TRUE);
             HashSet<String> dupe = new HashSet<String>();
             ConcatIterator<Variation> iter;
             Set<GoProType> toCrawl = getTypesToCrawl();
@@ -240,7 +233,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                 logger.log(e);
             }
             if ("Burst".equals(media.getType())) {
-                final FlexiJSonNodeResponse responseMediaDownload = GoProCloud.getDownloadResponse(this, br, id, cacheSource);
+                final FlexiJSonNodeResponse responseMediaDownload = GoProCloud.getDownloadResponse(this, account, br, id, cacheSource);
                 final Download download = mapper.jsonToObject(responseMediaDownload.jsonNode, Download.TYPEREF);
                 iter = new ConcatIterator<Variation>(download.getEmbedded().getSidecar_files(), download.getEmbedded().getFiles());
                 for (Variation v : iter) {
@@ -281,14 +274,13 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                         }
                         fp.add(link);
                         GoProCloud.setFinalFileName(hostConfig, media, link, v);
-                        finalizeLink(link);
                         decryptedLinks.add(link);
                     } finally {
                     }
                 }
             } else if ("Video".equals(media.getType()) || "TimeLapseVideo".equals(media.getType()) || "BurstVideo".equals(media.getType())) {
                 if (hostConfig.isCrawlDownscaledVariants()) {
-                    final FlexiJSonNodeResponse responseMediaDownload = GoProCloud.getDownloadResponse(this, br, id, cacheSource);
+                    final FlexiJSonNodeResponse responseMediaDownload = GoProCloud.getDownloadResponse(this, account, br, id, cacheSource);
                     final Download download = mapper.jsonToObject(responseMediaDownload.jsonNode, Download.TYPEREF);
                     ArrayList<GoProVariant> variants = new ArrayList<GoProVariant>();
                     Collections.sort(download.getEmbedded().getVariations(), new Comparator<Variation>() {
@@ -334,7 +326,6 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                                     continue repeat;
                                 }
                             }
-                            finalizeLink(link);
                             decryptedLinks.add(link);
                         }
                     }
@@ -351,7 +342,6 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                         GoProCloud.setFinalFileName(hostConfig, media, link, download.getEmbedded().getVariations().get(0));
                         link.setVariant(variants.get(0));
                         link.setLinkID(jd.plugins.hoster.GoProCloud.createLinkID(link, variants.get(0)));
-                        finalizeLink(link);
                         decryptedLinks.add(link);
                     }
                 } else {
@@ -370,7 +360,6 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                     fp.add(link);
                     link.setAvailable(true);
                     link.setDownloadSize(media.getFile_size());
-                    finalizeLink(link);
                     decryptedLinks.add(link);
                 }
             } else if ("Photo".equals(media.getType())) {
@@ -390,7 +379,6 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                     // link.setFinalFileName(Files.getFileNameWithoutExtension(media.getFilename()) + "_" + media.getHeight() + "p" + "." +
                     // Files.getExtension(media.getFilename()));
                     // }
-                    finalizeLink(link);
                     decryptedLinks.add(link);
                 } finally {
                 }

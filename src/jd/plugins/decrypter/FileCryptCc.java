@@ -24,21 +24,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.FileCryptConfig;
-import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -63,6 +48,21 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FileCryptConfig;
+import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.(?:cc|co)/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
 public class FileCryptCc extends PluginForDecrypt {
@@ -127,8 +127,8 @@ public class FileCryptCc extends PluginForDecrypt {
                 logger.info("Found presumed password by custom logo: " + customLogoID);
                 passwords.add(0, "kellerratte");
             }
-            int generalLoopCounter = 0;
-            passwordLoop: while (passwordCounter++ < maxPasswordRetries && containsPassword()) {
+            passwords.clear();
+            passwordLoop: while (passwordCounter++ < maxPasswordRetries && containsPassword() && !isAbort()) {
                 logger.info("Password attempt: " + passwordCounter + " / " + maxPasswordRetries);
                 Form passwordForm = null;
                 final Form[] allForms = br.getForms();
@@ -167,15 +167,10 @@ public class FileCryptCc extends PluginForDecrypt {
                 usedPassword = passCode;
                 passwordForm.put("password", Encoding.urlEncode(passCode));
                 submitForm(passwordForm);
-                if (generalLoopCounter > 0) {
-                    /* Additional fail-safe */
-                    logger.info("Stepping out of password loop because the password we got is supposed to be the correct one: " + usedPassword);
-                    break;
-                } else if (this.isAbort()) {
-                    return ret;
-                }
             }
-            if (passwordCounter == maxPasswordRetries && containsPassword()) {
+            if (this.isAbort()) {
+                return ret;
+            } else if (passwordCounter >= maxPasswordRetries && containsPassword()) {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             } else if (usedPassword != null) {
                 logger.info("Saving correct password for future usage: " + usedPassword);
@@ -301,7 +296,9 @@ public class FileCryptCc extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find captcha form");
                 }
             }
-            if (captchaCounter >= maxCaptchaRetries && containsCaptcha()) {
+            if (isAbort()) {
+                return ret;
+            } else if (captchaCounter >= maxCaptchaRetries && containsCaptcha()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
                 logger.info("Stepping out of cutCaptchaAvoidanceLoop");

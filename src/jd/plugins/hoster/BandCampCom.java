@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -24,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -166,14 +166,7 @@ public class BandCampCom extends PluginForHost {
                 tracknumber = "1";
             }
             final int trackNum = Integer.parseInt(tracknumber);
-            final DecimalFormat df;
-            if (trackNum > 999) {
-                df = new DecimalFormat("0000");
-            } else if (trackNum > 99) {
-                df = new DecimalFormat("000");
-            } else {
-                df = new DecimalFormat("00");
-            }
+            final int padLength = Math.max(2, trackNum);
             final String filename = br.getRegex("\"title\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
             final String json_album = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
             if (json_album == null) {
@@ -200,7 +193,7 @@ public class BandCampCom extends PluginForHost {
             link.setProperty("directalbum", Encoding.htmlDecode(album.trim()));
             link.setProperty("directname", Encoding.htmlDecode(filename.trim()));
             link.setProperty("type", "mp3");
-            link.setProperty("directtracknumber", df.format(trackNum));
+            link.setProperty("directtracknumber", StringUtils.formatByPadLength(padLength, trackNum));
             link.setProperty("fromdecrypter", true);
         }
         final String filename = getFormattedFilename(this, link);
@@ -325,13 +318,14 @@ public class BandCampCom extends PluginForHost {
         formattedFilename = formattedFilename.replace("*video_height*", StringUtils.valueOrEmpty(video_height));
         formattedFilename = formattedFilename.replace("*ext*", ext);
         // Insert filename at the end to prevent errors with tags
-        formattedFilename = formattedFilename.replace("*songtitle*", songTitle);
+        formattedFilename = formattedFilename.replace("*songtitle*", StringUtils.valueOrEmpty(songTitle));
         if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMELOWERCASE, defaultFILENAMELOWERCASE)) {
             formattedFilename = formattedFilename.toLowerCase(Locale.ENGLISH);
         }
         if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMESPACE, defaultFILENAMESPACE)) {
             formattedFilename = formattedFilename.replaceAll("\\s+", "_");
         }
+        formattedFilename = formattedFilename.replaceFirst("([-\\s]+" + Pattern.quote(ext) + ")$", ext);
         return formattedFilename;
     }
 

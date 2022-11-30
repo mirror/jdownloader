@@ -28,6 +28,8 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.extensions.extraction.multi.ArchiveType;
+import org.jdownloader.extensions.extraction.split.SplitType;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -199,6 +201,33 @@ public class RenameDialog extends AbstractDialog<Object> {
         }
     }
 
+    public static String removeArchiveExtension(final AbstractNode node, final String name) {
+        if (node == null || node instanceof AbstractPackageChildrenNode) {
+            String ret = name;
+            boolean again = true;
+            while (again) {
+                again = false;
+                for (final ArchiveType archive : ArchiveType.values()) {
+                    if (archive.matches(ret)) {
+                        ret = archive.getMatches(ret)[0];
+                        again = true;
+                        break;
+                    }
+                }
+                for (final SplitType split : SplitType.values()) {
+                    if (split.matches(ret)) {
+                        ret = split.getMatches(ret)[0];
+                        again = true;
+                        break;
+                    }
+                }
+            }
+            return ret;
+        } else {
+            return name;
+        }
+    }
+
     @Override
     public JComponent layoutDialogContent() {
         String allRegex = null;
@@ -206,10 +235,11 @@ public class RenameDialog extends AbstractDialog<Object> {
         int length = 0;
         for (final AbstractNode node : nodes) {
             if (node instanceof AbstractNode) {
-                final String name = node.getName();
+                final String nodeName = node.getName();
+                final String name = removeArchiveExtension(node, nodeName);
                 if (name != null) {
                     allRegex = merge(name, allRegex);
-                    length = name.length();
+                    length = nodeName.length();
                 }
             }
         }
@@ -244,7 +274,12 @@ public class RenameDialog extends AbstractDialog<Object> {
 
     @Override
     protected void initFocus(JComponent focus) {
-        this.txtReplace.selectAll();
+        final int matchIndex = txtReplace.getText().indexOf("$1");
+        if (matchIndex != -1 && matchIndex > 0) {
+            txtReplace.select(0, matchIndex);
+        } else {
+            this.txtReplace.selectAll();
+        }
         this.txtReplace.requestFocusInWindow();
     }
 

@@ -13,8 +13,9 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "m3u8", type = Type.CRAWLER)
 public interface GenericM3u8DecrypterConfig extends PluginConfigInterface {
     public static final GenericM3u8DecrypterConfig.TRANSLATION TRANSLATION                       = new TRANSLATION();
-    final String                                               text_CrawlSpeedMode               = "Crawl mode";
-    final String                                               text_AddBandwidthValueToFilenames = "Add bandwidth value to filenames?";
+    final static String                                        text_CrawlSpeedMode               = "Crawl mode";
+    final static String                                        text_AddBandwidthValueToFilenames = "Add bandwidth value to filenames?";
+    final static String                                        text_GroupByResolution            = "Group by resolution?";
 
     public static class TRANSLATION {
         public String getCrawlSpeedMode_label() {
@@ -23,6 +24,10 @@ public interface GenericM3u8DecrypterConfig extends PluginConfigInterface {
 
         public String getAddBandwidthValueToFilenames_label() {
             return text_AddBandwidthValueToFilenames;
+        }
+
+        public String getGroupByResolution_label() {
+            return text_GroupByResolution;
         }
     }
 
@@ -74,4 +79,12 @@ public interface GenericM3u8DecrypterConfig extends PluginConfigInterface {
     boolean isAddBandwidthValueToFilenames();
 
     void setAddBandwidthValueToFilenames(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_GroupByResolution)
+    @Order(30)
+    boolean isGroupByResolution();
+
+    void setGroupByResolution(boolean b);
 }

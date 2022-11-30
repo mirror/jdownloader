@@ -177,7 +177,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         final List<Map<String, Object>> audios = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);
         // keep old two digits for less than 10 items compatibility
-        final int padLength = Math.min(2, StringUtils.getPadLength(audios.size()));
+        final int padLength = Math.max(2, StringUtils.getPadLength(audios.size()));
         artist = Encoding.htmlDecode(artist).trim();
         album = Encoding.htmlDecode(album).trim();
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
@@ -303,6 +303,8 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 final DownloadLink thumb = createDownloadlink(thumbnail);
                 thumb.setProperties(ret.get(0).getProperties());
                 thumb.setProperty("type", "jpg");
+                thumb.removeProperty("directname");// only use album name for art
+                thumb.setProperty("directtracknumber", StringUtils.formatByPadLength(padLength, 0));
                 final String formattedFilename = BandCampCom.getFormattedFilename(this, thumb);
                 thumb.setFinalFileName(formattedFilename);
                 ret.add(thumb);
@@ -375,6 +377,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         if (cfg.getBooleanProperty(BandCampCom.PACKAGENAMESPACE, BandCampCom.defaultPACKAGENAMESPACE)) {
             formattedpackagename = formattedpackagename.replaceAll("\\s+", "_");
         }
+        formattedpackagename = formattedpackagename.replaceFirst("([-\\s]+$)", "");
         return formattedpackagename;
     }
 
