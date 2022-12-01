@@ -81,6 +81,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.net.BCSSLSocketStreamFactory;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -107,15 +108,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                            {
-                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-                                                                                            }
-                                                                                        });
+        {
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+        }
+    });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    CRAWL_VIDEO_HLS                       = "CRAWL_VIDEO_HLS";
@@ -187,19 +188,28 @@ public class PornHubCom extends PluginForHost {
         this.setConfigElements();
     }
 
+    public static void setSSLSocketStreamOptions(Browser br) {
+        br.setSSLSocketStreamOptions(new SSLSocketStreamOptionsModifier() {
+            @Override
+            public SSLSocketStreamOptions modify(SSLSocketStreamOptions sslSocketStreamOptions, HTTPConnection httpConnection) {
+                final SSLSocketStreamOptions ret = new SSLSocketStreamOptions(sslSocketStreamOptions) {
+                    public org.appwork.utils.net.httpconnection.SSLSocketStreamFactory getSSLSocketStreamFactory() {
+                        return new BCSSLSocketStreamFactory();
+                    };
+                };
+                ret.getDisabledCipherSuites().clear();
+                // ret.setSSLSocketStreamFactory();
+                // ret.getCustomFactorySettings().add("JSSE_TLS1.3_ENABLED");
+                ret.getCustomFactorySettings().add("BC_TLS1.3_ENABLED");
+                return ret;
+            }
+        });
+    }
+
     @Override
     public Browser createNewBrowserInstance() {
         final Browser ret = super.createNewBrowserInstance();
-        ret.setSSLSocketStreamOptions(new SSLSocketStreamOptionsModifier() {
-            @Override
-            public SSLSocketStreamOptions modify(SSLSocketStreamOptions sslSocketStreamOptions, HTTPConnection httpConnection) {
-                // may avoid cloudflare
-                sslSocketStreamOptions.getDisabledCipherSuites().clear();
-                sslSocketStreamOptions.getCustomFactorySettings().add("JSSE_TLS1.3_ENABLED");
-                sslSocketStreamOptions.getCustomFactorySettings().add("BC_TLS1.3_ENABLED");
-                return sslSocketStreamOptions;
-            }
-        });
+        setSSLSocketStreamOptions(ret);
         return ret;
     }
 
@@ -358,7 +368,13 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static boolean isGeoRestricted(final Browser br) {
-        return br.containsHTML(">\\s*This (?:video|content) is unavailable in your country.?\\s*<");
+        final String[] errorMessages = new String[] { "Dieser Inhalt ist in deinem Land nicht verfügbar", "Ce contenu n'est pas disponible dans votre pays", "Este contenido no está disponible en tu país", "Questo contenuto non è disponibile nel tuo Paese", "Este conteúdo não está disponível no seu país", "Ten materiał jest niedostępny w Twoim kraju", "Этот контент не доступен в Вашей стране", "このコンテンツはあなたの国ではご利用いただけません。", "Deze content is niet beschikbaar in je land", "Tento Obsah není ve vaší zemi dostupný", "此内容在您的国家不可播放。" };
+        for (final String errorMessage : errorMessages) {
+            if (br.containsHTML(">\\s*" + Pattern.quote(errorMessage) + "\\.?\\s*<")) {
+                return true;
+            }
+        }
+        return br.containsHTML("class\\s*=\\s*\"geoBlocked\"") || br.containsHTML(">\\s*This (?:video|content) is unavailable in your country.?\\s*<");
     }
 
     public static boolean isFlagged(final Browser br) {
@@ -370,7 +386,11 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static boolean hasOfflineVideoNotice(final Browser br) {
-        return br.containsHTML("<div[^>]*class[^>]*video-notice[^>]*>\\s*<p>\\s*<span>\\s*This video has been disabled");
+        return br.containsHTML("<div[^>]*class[^>]*video-notice[^>]*>\\s*<p>\\s*<span>\\s*This video has been disabled") || br.containsHTML("<h2 style[^>]*>\\s*(This video has been disabled|Dieses Video wurde deaktiviert|Cette vidéo a été désactivée|Este vídeo ha sido deshabilitado|Questo video è stato disattivato|O vídeo foi desativado|Ten film został zablokowany|Это видео было отключено|このビデオは利用できません|Deze video werd uitgeschakeld|Video bylo deaktivováno|此视频已下架)\\.?\\s*</h2>");
+    }
+
+    public static boolean hasPendingReview(final Browser br) {
+        return br.containsHTML("<h2 style[^>]*>\\s*(GIF is unavailable pending review|La GIF è ancora in fase di verifica e non è al momento disponibile|GIF está indisponível com revisão pendente|GIF is niet beschikbaar in afwachting van review)\\.?\\s*</h2>");
     }
 
     private void checkAvailability(final DownloadLink link, final Browser br) throws PluginException {
@@ -386,6 +406,8 @@ public class PornHubCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been disabled");
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (hasPendingReview(br)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unavailable due to pending review");
         }
     }
 
@@ -396,6 +418,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+        prepBr(br);
         final String source_url = link.getStringProperty("mainlink");
         String viewKey = null;
         try {
@@ -491,11 +514,6 @@ public class PornHubCom extends PluginForHost {
                 }
             }
             link.setProperty("webm", webm);
-            if (this.dlUrl == null) {
-                if (br.containsHTML("(?i)>\\s*GIF is unavailable pending review")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GIF is unavailable pending review");
-                }
-            }
         } else {
             /* Required later if e.g. directurl has to be refreshed! */
             isVideo = true;
@@ -508,7 +526,6 @@ public class PornHubCom extends PluginForHost {
                 /* This should never happen as every url goes into the decrypter first! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            prepBr(br);
             br.setFollowRedirects(true);
             getFirstPageWithAccount(this, account, createPornhubVideoLink(this.getHost(), getPreferredSubdomain(link.getPluginPatternMatcher()), Browser.getHost(source_url), viewKey, account));
             checkAvailability(link, br);
@@ -1480,14 +1497,13 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    private static final AtomicBoolean MP4_WORKAROUND = new AtomicBoolean(true);
+    private static final AtomicBoolean MP4_WORKAROUND = new AtomicBoolean(false);
     private static final AtomicBoolean TRY_MP4        = new AtomicBoolean(true);
 
     public static Browser prepBr(final Browser br) {
         if (TRY_MP4.get() && MP4_WORKAROUND.get()) {
             br.setCookie("http://pornhub.com/", "platform", "mac");
-            final int firefoxRevision = 77;
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:" + firefoxRevision + ") Gecko/20100101 Firefox/" + firefoxRevision);
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15");
         }
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.8,de;q=0.6");
@@ -1497,6 +1513,15 @@ public class PornHubCom extends PluginForHost {
         }
         for (String domain : domainsPremium) {
             br.setCookie(domain, "age_verified", "1");
+        }
+        if (getUrlCrawlLanguageHandlingMode() == 0) {
+            // make sure that english language will be used in this mode
+            for (String domain : domainsFree) {
+                br.setCookie(domain, "lang", "en");
+            }
+            for (String domain : domainsPremium) {
+                br.setCookie(domain, "lang", "en");
+            }
         }
         br.setLoadLimit(br.getDefaultLoadLimit() * 4);
         // only evaluated via js

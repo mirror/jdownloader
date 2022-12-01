@@ -244,12 +244,8 @@ public abstract class AbstractFFmpegBinary {
                 if (timeoutReached.get()) {
                     throw new InterruptedException("Timeout!");
                 }
-                if (stdoutThread.isAlive()) {
-                    stdoutThread.join(500);
-                }
-                if (stderrThread.isAlive()) {
-                    stderrThread.join(500);
-                }
+                waitForReader(getLogger(), stdoutThread, 1000);
+                waitForReader(getLogger(), stderrThread, 1000);
                 final String lastStdout;
                 synchronized (stdout) {
                     lastStdout = stdout.toString("UTF-8");
@@ -265,12 +261,8 @@ public abstract class AbstractFFmpegBinary {
                 synchronized (processExitedFlag) {
                     processExitedFlag.notifyAll();
                 }
-                if (stdoutThread.isAlive()) {
-                    stdoutThread.join(500);
-                }
-                if (stderrThread.isAlive()) {
-                    stderrThread.join(500);
-                }
+                waitForReader(getLogger(), stdoutThread, 1000);
+                waitForReader(getLogger(), stderrThread, 1000);
                 final String lastStdout;
                 synchronized (stdout) {
                     lastStdout = stdout.toString("UTF-8");
@@ -349,12 +341,16 @@ public abstract class AbstractFFmpegBinary {
                         }
                     } else {
                         synchronized (processExitedFlag) {
-                            processExitedFlag.wait(100);
+                            if (!processExitedFlag.get()) {
+                                processExitedFlag.wait(100);
+                            }
                         }
                     }
                 } else {
                     synchronized (processExitedFlag) {
-                        processExitedFlag.wait(100);
+                        if (!processExitedFlag.get()) {
+                            processExitedFlag.wait(100);
+                        }
                     }
                 }
             }
@@ -830,6 +826,14 @@ public abstract class AbstractFFmpegBinary {
         }
     }
 
+    private void waitForReader(LogInterface logger, Thread thread, int waitTimeout) throws InterruptedException {
+        if (thread.isAlive()) {
+            logger.info("Wait for Reader:" + thread);
+            thread.join(waitTimeout);
+            logger.info("Reader:" + thread + " still alive?" + thread.isAlive());
+        }
+    }
+
     public String runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException, FFMpegException {
         final LogInterface logger = getLogger();
         logger.info("runCommand(ProcessBuilderFactory):" + commandLine);
@@ -952,10 +956,7 @@ public abstract class AbstractFFmpegBinary {
                     synchronized (processExitedFlag) {
                         processExitedFlag.notifyAll();
                     }
-                    if (stdoutThread.isAlive()) {
-                        logger.info("Wait for Reader:" + stdoutThread);
-                        stdoutThread.join(500);
-                    }
+                    waitForReader(logger, stdoutThread, 1000);
                     // update lastStderr and lastStdout
                     synchronized (stderr) {
                         stderrSize = stderr.size();

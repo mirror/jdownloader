@@ -20,18 +20,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.RFC2047;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
@@ -59,6 +47,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.RFC2047;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -94,12 +94,14 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     protected int getMaxChunks(final Account account) {
-        if (account == null || account.getType() == AccountType.FREE) {
-            /* Free Account and no account */
-            return 1;
-        } else {
-            /* Premium account */
+        final AccountType type = account != null ? account.getType() : AccountType.FREE;
+        switch (type) {
+        case PREMIUM:
+        case LIFETIME:
             return -10;
+        case FREE:
+        default:
+            return 1;
         }
     }
 
@@ -189,11 +191,12 @@ public abstract class K2SApi extends PluginForHost {
             return "freelink1";
         } else {
             switch (account.getType()) {
-            case FREE:
-                return "freelink2";
             case PREMIUM:
-            default:
+            case LIFETIME:
                 return "premlink";
+            case FREE:
+            default:
+                return "freelink2";
             }
         }
     }
@@ -468,8 +471,8 @@ public abstract class K2SApi extends PluginForHost {
                             if (StringUtils.equals((String) root.get("message"), "Invalid request params")) {
                                 /**
                                  * 2022-02-25: Workaround for when checking only one <b>invalid</b> fileID e.g.
-                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br>
-                                 * This may also happen when there are multiple fileIDs to check and all of them are invalid.
+                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br> This may also happen when there are multiple
+                                 * fileIDs to check and all of them are invalid.
                                  */
                                 for (final DownloadLink dl : links) {
                                     dl.setAvailable(false);
@@ -494,6 +497,29 @@ public abstract class K2SApi extends PluginForHost {
         return true;
     }
 
+    protected boolean fetchAdditionalAccountInfo(final Account account, final AccountInfo ai, final Browser br, final String auth_token) {
+        try {
+            if (AccountType.PREMIUM.equals(account.getType()) && ai.getValidUntil() > System.currentTimeMillis() + (5l * 365 * 24 * 60 * 60 * 1000l)) {
+                // only do this Lifetime check for premium type with *far away in future* expire date
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                final String apiDomain = "api." + getInternalAPIDomain();
+                brc.setCookie(apiDomain, "accessToken", auth_token);
+                brc.getPage(getProtocol() + apiDomain + "/v1/users/me");
+                final Map<String, Object> response = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                if (Boolean.TRUE.equals(response.get("isLifetime"))) {
+                    ai.setStatus("Lifetime Account");
+                    ai.setValidUntil(-1);
+                    account.setType(AccountType.LIFETIME);
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            logger.log(e);
+        }
+        return false;
+    }
+
     /*
      * IMPORTANT: Current implementation seems to be correct - admin told us that there are no lifetime accounts (anymore)
      */
@@ -502,13 +528,13 @@ public abstract class K2SApi extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         /* required to get overrides to work */
         prepAPI(br);
-        final String auth_token = getAuthToken(account, null, true);
+        final String auth_token = getAuthToken(br, account, null, true);
         final Map<String, Object> entries;
-        if (!br.getURL().endsWith("/accountinfo")) {
+        if (br.getURL() == null || !br.getURL().endsWith("/accountinfo")) {
             entries = getAccountInfoViaAPI(account, br, auth_token);
         } else {
             /* Request has already been done before. */
-            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         }
         final Number available_traffic = (Number) entries.get("available_traffic");
         /*
@@ -539,13 +565,20 @@ public abstract class K2SApi extends PluginForHost {
             }
             account.setAllowReconnectToResetLimits(true);
         } else {
-            account.setType(AccountType.PREMIUM);
-            ai.setValidUntil(account_expires_timestamp);
-            ai.setStatus("Premium Account");
+            if (AccountType.LIFETIME.equals(account.getType())) {
+                // avoid recheck of lifetime status
+                ai.setValidUntil(-1);
+                ai.setStatus("Lifetime Account");
+            } else {
+                account.setType(AccountType.PREMIUM);
+                ai.setValidUntil(account_expires_timestamp);
+                ai.setStatus("Premium Account");
+            }
         }
         if (available_traffic != null) {
             ai.setTrafficLeft(available_traffic.longValue());
         }
+        fetchAdditionalAccountInfo(account, ai, br, auth_token);
         setAccountLimits(account);
         return ai;
     }
@@ -560,9 +593,11 @@ public abstract class K2SApi extends PluginForHost {
     protected void setAccountLimits(Account account) {
         final int max;
         switch (account.getType()) {
+        case LIFETIME:
         case PREMIUM:
             max = 20;
             break;
+        case FREE:
         default:
             max = 1;
             break;
@@ -706,7 +741,7 @@ public abstract class K2SApi extends PluginForHost {
             }
             if (account != null) {
                 /* Premium + free Account */
-                getURL.put("auth_token", getAuthToken(account, link, false));
+                getURL.put("auth_token", getAuthToken(br, account, link, false));
             }
             Map<String, Object> geturlResponse = postPageRaw(this.br, "/geturl", getURL, account, link);
             final String free_download_key = (String) geturlResponse.get("free_download_key");
@@ -1097,7 +1132,7 @@ public abstract class K2SApi extends PluginForHost {
         REQUESTRECAPTCHA
     }
 
-    protected String getAuthToken(final Account account, final DownloadLink link, final boolean validate) throws Exception {
+    protected String getAuthToken(final Browser br, final Account account, final DownloadLink link, final boolean validate) throws Exception {
         synchronized (account) {
             final String storedAuthToken = account.getStringProperty(PROPERTY_ACCOUNT_AUTHTOKEN);
             if (storedAuthToken != null) {

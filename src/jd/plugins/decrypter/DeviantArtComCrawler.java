@@ -21,11 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -41,7 +36,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DeviantArtCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/[\\w\\-]+($|/favourites|/gallery/\\d+/[\\w\\-]+)" })
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/[\\w\\-]+($|/favourites|/gallery/\\d+/[\\w\\-]+|/gallery/(all|scraps))" })
 public class DeviantArtComCrawler extends PluginForDecrypt {
     /**
      * @author raztoki, pspzockerscene
@@ -112,6 +112,8 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
         if (gallery.matches()) {
             galleryID = gallery.getMatch(1);
             gallerySlug = gallery.getMatch(2);
+        } else {
+            gallerySlug = new Regex(br.getURL(), "/gallery/(all|scraps)").getMatch(0);
         }
         if (username == null) {
             /* Developer mistake */
@@ -132,7 +134,11 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
         if (galleryID != null) {
             query.add("folderid", galleryID);
         } else {
-            query.add("all_folder", "true");
+            if ("scraps".equalsIgnoreCase(gallerySlug)) {
+                query.add("scraps_folder", "true");
+            } else {
+                query.add("all_folder", "true");
+            }
         }
         return crawlPagination(fp, "/_napi/da-user-profile/api/gallery/contents", query);
     }
@@ -180,8 +186,8 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
                     link.setProperty(DeviantArtCom.PROPERTY_USERNAME, username);
                     link.setProperty(DeviantArtCom.PROPERTY_TITLE, title);
                     /**
-                     * This file extension may change later when file is downloaded. </br>
-                     * 2022-11-11: Items of type "literature" (or simply != "image") will not get any file extension at all at this moment.
+                     * This file extension may change later when file is downloaded. </br> 2022-11-11: Items of type "literature" (or simply
+                     * != "image") will not get any file extension at all at this moment.
                      */
                     final String assumedFileExtension = DeviantArtCom.getAssumedFileExtension(link);
                     link.setName(title + " by " + author.get("username") + "_" + deviation.get("deviationId") + assumedFileExtension);

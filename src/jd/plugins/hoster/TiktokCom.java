@@ -27,22 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -63,6 +47,21 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.TiktokComCrawler;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/((@[^/]+)/video/|embed/)(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
 public class TiktokCom extends PluginForHost {
@@ -167,9 +166,11 @@ public class TiktokCom extends PluginForHost {
     public static final String TYPE_PICTURE                                  = "picture";
     public static final String PATTERN_VIDEO                                 = "https?://[^/]+/@([^/]+)/video/(\\d+).*";
     /* API related stuff */
+    public static final String API_CLIENT                                    = "trill";
+    public static final String API_AID                                       = "1180";
     public static final String API_BASE                                      = "https://api-h2.tiktokv.com/aweme/v1";
-    public static final String API_VERSION_NAME                              = "20.9.3";
-    public static final String API_VERSION_CODE                              = "293";
+    public static final String API_VERSION_NAME                              = "25.6.2";
+    public static final String API_VERSION_CODE                              = "250602";
     private final String       PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT = "has_shown_download_mode_hint";
 
     @Override
@@ -222,6 +223,8 @@ public class TiktokCom extends PluginForHost {
         }
         boolean webMode = false;
         if (useAPI(link)) {
+            br.setFollowRedirects(true);
+            br.getPage("https://m.tiktok.com/v/" + fid + ".html");
             webMode = false;
             this.checkAvailablestatusAPI(link, account, isDownload);
         } else {
@@ -341,8 +344,18 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
-    private static boolean configUseAPI() {
+    public static DownloadMode getDownloadMode() {
         final DownloadMode mode = PluginJsonConfig.get(TiktokConfig.class).getDownloadMode();
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            // see 90292
+            return DownloadMode.WEBSITE;
+        } else {
+            return mode;
+        }
+    }
+
+    private static boolean configUseAPI() {
+        final DownloadMode mode = getDownloadMode();
         // if (mode == DownloadMode.API || mode == DownloadMode.API_HD) {
         if (mode == DownloadMode.API) {
             return true;
@@ -428,8 +441,8 @@ public class TiktokCom extends PluginForHost {
             String description = null;
             final boolean useWebsiteEmbed = true;
             /**
-             * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br>
-             * When using an account and potentially downloading private videos however, we can't use the embed way.
+             * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br> When using an account and
+             * potentially downloading private videos however, we can't use the embed way.
              */
             String dllink = null;
             if (account != null) {
@@ -610,7 +623,7 @@ public class TiktokCom extends PluginForHost {
         Map<String, Object> entries = null;
         Map<String, Object> aweme_detail = null;
         try {
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             aweme_detail = (Map<String, Object>) entries.get("aweme_detail");
         } catch (final JSonMapperException jse) {
             /* Fallback */
@@ -620,7 +633,7 @@ public class TiktokCom extends PluginForHost {
             /* Make sure that the next request will not contain a Referer header otherwise we'll get a blank page! */
             br.setCurrentURL("");
             accessAPI(br, "/feed", query);
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             final List<Map<String, Object>> aweme_list = (List<Map<String, Object>>) entries.get("aweme_list");
             for (final Map<String, Object> aweme_detailTmp : aweme_list) {
                 if (StringUtils.equals(aweme_detailTmp.get("aweme_id").toString(), contentID)) {
@@ -632,13 +645,13 @@ public class TiktokCom extends PluginForHost {
         if (aweme_detail == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        parseFileInfoAPI(link, aweme_detail);
+        parseFileInfoAPI(this, link, aweme_detail);
         if (!link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
-    public static void parseFileInfoAPI(final DownloadLink link, final Map<String, Object> aweme_detail) throws PluginException {
+    public static void parseFileInfoAPI(final Plugin plugin, final DownloadLink link, final Map<String, Object> aweme_detail) throws PluginException {
         link.setProperty(PROPERTY_VIDEO_ID, aweme_detail.get("aweme_id").toString());
         final Map<String, Object> status = (Map<String, Object>) aweme_detail.get("status");
         if ((Boolean) status.get("is_delete")) {
@@ -656,7 +669,7 @@ public class TiktokCom extends PluginForHost {
         if (downloadInfo == null) {
             /* Fallback/old way */
             final String downloadJson = video.get("misc_download_addrs").toString();
-            final Map<String, Object> misc_download_addrs = JSonStorage.restoreFromString(downloadJson, TypeRef.HASHMAP);
+            final Map<String, Object> misc_download_addrs = plugin.restoreFromString(downloadJson, TypeRef.MAP);
             downloadInfo = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
         }
         final Map<String, Object> play_addr = (Map<String, Object>) video.get("play_addr");
@@ -669,9 +682,9 @@ public class TiktokCom extends PluginForHost {
              * https://github.com/yt-dlp/yt-dlp/issues/4138#issuecomment-1217380819
              */
             /**
-             * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br>
-             * This is also possible using modified URLs in e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any
-             * "uri_list" which contains the "video_id" parameter which also typically matches play_addr/uri
+             * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br> This is also possible using modified URLs in
+             * e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any "uri_list" which contains the "video_id"
+             * parameter which also typically matches play_addr/uri
              */
             link.setProperty(PROPERTY_DIRECTURL_API, String.format("https://api.tiktokv.com/aweme/v1/play/?video_id=%s&line=0&watermark=0&source=AWEME_DETAIL&is_play_url=1&ratio=default&improve_bitrate=1", play_addr.get("uri").toString()));
             /*
@@ -695,8 +708,8 @@ public class TiktokCom extends PluginForHost {
                 link.setProperty(PROPERTY_DIRECTURL_API, directurl);
                 if (data_size != null) {
                     /**
-                     * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
-                     * If a video is watermarked and downloads are prohibited both versions should be identical.
+                     * Set filesize of download-version because streaming- and download-version are nearly identical. </br> If a video is
+                     * watermarked and downloads are prohibited both versions should be identical.
                      */
                     link.setDownloadSize(data_size.longValue());
                 }
@@ -736,7 +749,7 @@ public class TiktokCom extends PluginForHost {
     }
 
     public static Browser prepBRAPI(final Browser br) {
-        br.getHeaders().put("User-Agent", String.format("com.ss.android.ugc.trill/%s (Linux; U; Android 10; en_US; Pixel 4; Build/QQ3A.200805.001; Cronet/58.0.2991.0)", API_VERSION_CODE));
+        br.getHeaders().put("User-Agent", String.format("com.ss.android.ugc.%s/%s (Linux; U; Android 10; en_US; Pixel 4; Build/QQ3A.200805.001; Cronet/58.0.2991.0)", API_CLIENT, API_VERSION_CODE));
         // br.getHeaders().put("User-Agent", "okhttp");
         br.getHeaders().put("Accept", "application/json");
         br.setCookie(API_BASE, "odin_tt", generateRandomString("0123456789abcdef", 160));
@@ -764,7 +777,7 @@ public class TiktokCom extends PluginForHost {
         query.add("carrier_region", "US");
         query.add("sys_region", "US");
         query.add("region", "US");
-        query.add("app_name", "trill");
+        query.add("app_name", API_CLIENT);
         query.add("app_language", "en");
         query.add("language", "en");
         query.add("timezone_name", Encoding.urlEncode("America/New_York"));
@@ -773,7 +786,7 @@ public class TiktokCom extends PluginForHost {
         query.add("ac", "wifi");
         query.add("mcc_mnc", "310260");
         query.add("is_my_cn", "0");
-        query.add("aid", "1180");
+        query.add("aid", API_AID);
         query.add("ssmix", "a");
         query.add("as", "a1qwert123");
         query.add("cp", "cbfhckdckkde1");
@@ -945,7 +958,7 @@ public class TiktokCom extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
-        final DownloadMode mode = PluginJsonConfig.get(this.getConfigInterface()).getDownloadMode();
+        final DownloadMode mode = getDownloadMode();
         if (!link.hasProperty(PROPERTY_LAST_USED_DOWNLOAD_MODE) || !StringUtils.equals(link.getStringProperty(PROPERTY_LAST_USED_DOWNLOAD_MODE), mode.name())) {
             /* Prevent file corruption */
             logger.info("Resetting progress because user has downloaded using other download mode before");
@@ -1038,7 +1051,7 @@ public class TiktokCom extends PluginForHost {
                 logger.info("Attempting user cookie login");
                 prepBRWebAPI(br);
                 br.getPage("https://us." + this.getHost() + "/passport/web/account/info/?" + getWebsiteQuery().toString());
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final String msg = entries.get("message").toString();
                 if (msg.equals("success")) {
                     /* Save new cookie timestamp */

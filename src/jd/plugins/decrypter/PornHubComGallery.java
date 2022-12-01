@@ -86,7 +86,7 @@ public class PornHubComGallery extends PluginForDecrypt {
         jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(hosterPlugin, account, url);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("class\\s*=\\s*\"geoBlocked\"") || PornHubCom.isGeoRestricted(br)) {
+        } else if (PornHubCom.isGeoRestricted(br)) {
             throw new DecrypterRetryException(RetryReason.GEO);
         }
         final boolean privateImage = br.containsHTML(jd.plugins.hoster.PornHubCom.html_privateimage);

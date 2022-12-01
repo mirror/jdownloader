@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
@@ -31,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uflash.tv" }, urls = { "http://(www\\.)?uflash\\.tv/video/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uflash.tv" }, urls = { "https?://(www\\.)?uflash\\.tv/video/\\d+" })
 public class UflashTv extends PluginForHost {
     public UflashTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,7 +76,7 @@ public class UflashTv extends PluginForHost {
         }
         if (dllink == null) {
             br.getPage("/media/player/config.v89x.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-            dllink = br.getRegex("<src>(http://[^<>\"]*?)</src>").getMatch(0);
+            dllink = br.getRegex("<src>(https?://[^<>\"]*?)</src>").getMatch(0);
         }
         final String ext = ".mp4";
         downloadLink.setFinalFileName(filename + ext);
@@ -83,11 +84,20 @@ public class UflashTv extends PluginForHost {
             dllink = Encoding.htmlDecode(dllink);
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                con = brc.openGetConnection(dllink);
+                if (looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        downloadLink.setDownloadSize(con.getCompleteContentLength());
+                    }
                 } else {
-                    server_issues = true;
+                    brc.followConnection(true);
+                    if (brc.containsHTML(">\\s*404 Not Found\\s*<")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        server_issues = true;
+                    }
                 }
             } finally {
                 try {
@@ -110,9 +120,13 @@ public class UflashTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
+            if (br.containsHTML(">\\s*404 Not Found\\s*<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }
