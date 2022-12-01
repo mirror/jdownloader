@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -34,6 +32,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
@@ -54,6 +54,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
         ret.add(new String[] { "dragsterps-team.tk" });
         ret.add(new String[] { "get.tgdrive.tech" });
         ret.add(new String[] { "mirror.sparrowisland.ga" });
+        ret.add(new String[] { "cdn.web-dl.eu.org" });
         return ret;
     }
 
@@ -76,8 +77,8 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
 
     /**
      * Host plugin that can handle instances of this project:
-     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md </br>
-     * Be sure to add all domains to crawler plugin GoogleDriveDirectoryIndex.java too!
+     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md </br> Be sure to add all domains to crawler
+     * plugin GoogleDriveDirectoryIndex.java too!
      */
     /* Connection stuff */
     private final boolean FREE_RESUME               = true;

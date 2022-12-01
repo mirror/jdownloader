@@ -406,8 +406,8 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             if (cmbType.getSelectedIndex() != 2) {
                 if (txtHost.getDocument().getLength() > 0 && txtPort.getDocument().getLength() > 0) {
                     try {
-                        int port = Integer.parseInt(txtPort.getText());
-                        if (port > 0 && port < 65535) {
+                        int port = Integer.parseInt(txtPort.getText().trim());
+                        if (port > 0 && port <= 65535) {
                             enable = true;
                         }
                     } catch (final Throwable ee) {

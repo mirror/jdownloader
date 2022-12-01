@@ -26,17 +26,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -60,6 +49,14 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.PornHubCom;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubComVideoCrawler extends PluginForDecrypt {
@@ -191,16 +188,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
     @Override
     public Browser createNewBrowserInstance() {
         final Browser ret = super.createNewBrowserInstance();
-        ret.setSSLSocketStreamOptions(new SSLSocketStreamOptionsModifier() {
-            @Override
-            public SSLSocketStreamOptions modify(SSLSocketStreamOptions sslSocketStreamOptions, HTTPConnection httpConnection) {
-                // may avoid cloudflare
-                sslSocketStreamOptions.getDisabledCipherSuites().clear();
-                sslSocketStreamOptions.getCustomFactorySettings().add("JSSE_TLS1.3_ENABLED");
-                sslSocketStreamOptions.getCustomFactorySettings().add("BC_TLS1.3_ENABLED");
-                return sslSocketStreamOptions;
-            }
-        });
+        PornHubCom.setSSLSocketStreamOptions(ret);
         return ret;
     }
 
@@ -436,8 +424,8 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         final String seeAllURL = br.getRegex("(" + Regex.escape(br._getURL().getPath()) + "/[^\"]+)\" class=\"seeAllButton greyButton float-right\">").getMatch(0);
         if (seeAllURL != null) {
             /**
-             * E.g. users/bla/videos --> /users/bla/videos/favorites </br>
-             * Without this we might only see some of all items and no pagination which is needed to be able to find all items.
+             * E.g. users/bla/videos --> /users/bla/videos/favorites </br> Without this we might only see some of all items and no
+             * pagination which is needed to be able to find all items.
              */
             logger.info("Found seeAllURL: " + seeAllURL);
             PornHubCom.getPage(br, seeAllURL);

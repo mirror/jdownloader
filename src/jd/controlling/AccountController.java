@@ -411,8 +411,8 @@ public class AccountController implements AccountControllerListener, AccountProp
             final long currentValidUntilTimeStamp = account.getValidPremiumUntil();
             final boolean hasLastKnownPremiumValidUntilTimeStamp = account.hasProperty(lastKnownValidUntilTimeStampProperty);
             final long lastKnownPremiumValidUntilTimeStamp = account.getLongProperty(lastKnownValidUntilTimeStampProperty, currentValidUntilTimeStamp);
-            final boolean isPremiumAccount = AccountType.PREMIUM.equals(currentAccountType);
-            final boolean wasPremiumAccount = AccountType.PREMIUM.name().equals(lastKnownAccountType);
+            final boolean isPremiumAccount = AccountType.PREMIUM.equals(currentAccountType) || AccountType.LIFETIME.equals(currentAccountType);
+            final boolean wasPremiumAccount = AccountType.PREMIUM.name().equals(lastKnownAccountType) || AccountType.LIFETIME.name().equals(lastKnownAccountType);
             final boolean isPremiumUpgraded = isPremiumAccount && !wasPremiumAccount;
             final boolean isPremiumDowngraded = !isPremiumAccount && wasPremiumAccount;
             final boolean isLimitedRenewal = (currentValidUntilTimeStamp > lastKnownPremiumValidUntilTimeStamp && (currentValidUntilTimeStamp - lastKnownPremiumValidUntilTimeStamp) > minimumExtendTime);

@@ -18,12 +18,15 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:tezfiles\\.com|publish2\\.me)/(?:f(?:ile)?|preview)/([a-z0-9]{13,})(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
 public class TezFilesCom extends K2SApi {
@@ -50,6 +53,12 @@ public class TezFilesCom extends K2SApi {
     @Override
     protected Map<String, Object> getHostMap() {
         return HOST_MAP;
+    }
+
+    @Override
+    protected boolean fetchAdditionalAccountInfo(final Account account, final AccountInfo ai, final Browser br, final String auth_token) {
+        // untested, had no test account with lifetime status
+        return false;
     }
 
     @Override

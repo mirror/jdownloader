@@ -134,6 +134,10 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         }
     }
 
+    private boolean useOldPostRequest(final CryptedLink param) {
+        return false;
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (param.toString().contains("?")) {
@@ -151,12 +155,23 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         if (param.getDownloadLink() != null && param.getDownloadLink().hasProperty(PROPERTY_FOLDER_USE_OLD_POST_REQUEST)) {
             useOldPostRequest = true;
         } else {
-            useOldPostRequest = false;
+            useOldPostRequest = useOldPostRequest(param);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         /* Older versions required urlquery, newer expect json POST body */
         URLConnectionAdapter con = null;
         try {
+            con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
+            if (!looksLikeDownloadableContent(con)) {
+                // initial get request (same as in browser) can set cookies/referer that might avoid 401
+                try {
+                    br.followConnection(true);
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+            } else {
+                con.disconnect();
+            }
             if (useOldPostRequest) {
                 con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, "")));
             } else {
