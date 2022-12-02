@@ -446,10 +446,14 @@ public class AboutDialog extends AbstractDialog<Integer> {
         contentpane.add(links1stRow, "gaptop 5, growx, pushx, spanx");
         contentpane.add(links2ndRow, "growx, pushx, spanx");
         this.registerEscape(contentpane);
-        final JScrollPane scrollPane = new JScrollPane(contentpane);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        return scrollPane;
+        if (isResizable()) {
+            final JScrollPane scrollPane = new JScrollPane(contentpane);
+            scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+            scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+            return scrollPane;
+        } else {
+            return contentpane;
+        }
     }
 
     private String get7ZipJBindingDetails() {
