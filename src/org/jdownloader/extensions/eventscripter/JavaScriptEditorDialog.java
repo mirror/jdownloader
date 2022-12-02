@@ -3,6 +3,7 @@ package org.jdownloader.extensions.eventscripter;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -36,8 +37,9 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
 
 public class JavaScriptEditorDialog extends AbstractDialog<Object> {
-    private static final String                   CLEANUP = "[^\\w\\d\\(\\)\\+\\-\\[\\]\\;\\,/\\\\]";
-    private ScriptEntry                           entry;
+    private static final String                   CLEANUP                  = "[^\\w\\d\\(\\)\\+\\-\\[\\]\\;\\,/\\\\]";
+    private final ScriptEntry                     entry;
+    private final Map<String, Object>             testEventTriggerSettings = new HashMap<String, Object>();
     private JEditorPane                           editor;
     private org.appwork.scheduler.DelayedRunnable delayer;
     private JToolBar                              toolbar;
@@ -71,7 +73,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
         return 1024;
     }
 
-    public TriggerSetupPanel createDefaultTriggerSetupPanel(final ScriptEntry entry) {
+    public TriggerSetupPanel createDefaultTriggerSetupPanel(final ScriptEntry entry, final Map<String, Object> testEventTriggerSettings) {
         final TriggerSetupPanel settingsPanel = new TriggerSetupPanel(0);
         if (entry.getEventTrigger().isSynchronousSupported()) {
             final Map<String, Object> settingsMap = entry.getEventTriggerSettings();
@@ -81,6 +83,11 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
             settingsPanel.executeOnSave(new Runnable() {
                 public void run() {
                     entry.getEventTrigger().setSynchronous(entry.getEventTriggerSettings(), synchronousCheckBox.isSelected());
+                };
+            });
+            settingsPanel.executeOnTestRun(new Runnable() {
+                public void run() {
+                    entry.getEventTrigger().setSynchronous(testEventTriggerSettings, synchronousCheckBox.isSelected());
                 };
             });
         }
@@ -96,7 +103,7 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
         toolbar.setFloatable(false);
         toolbar.setPreferredSize(new Dimension(-1, 22));
         p.add(toolbar);
-        settingsPanel = entry.getEventTrigger().createSettingsPanel(entry, this);
+        settingsPanel = entry.getEventTrigger().createSettingsPanel(entry, testEventTriggerSettings, this);
         final JEditorPane defaults = new JEditorPane();
         final JavaSyntaxKit javaSyntaxKit = new JavaSyntaxKit();
         defaults.setEditorKit(javaSyntaxKit);
@@ -181,7 +188,21 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                extension.runTest(entry.getEventTrigger(), entry.getName(), editor.getText());
+                testEventTriggerSettings.clear();
+                if (settingsPanel != null) {
+                    settingsPanel.testRun();
+                }
+                final ScriptEntry testEntry = new ScriptEntry();
+                testEntry.setEnabled(true);
+                testEntry.setEventTrigger(entry.getEventTrigger());
+                testEntry.setEventTriggerSettings(testEventTriggerSettings);
+                testEntry.setName(entry.getName());
+                testEntry.setScript(getScript());
+                final Map<String, Object> testProperties = entry.getEventTrigger().getTestProperties();
+                testProperties.putAll(testEventTriggerSettings);
+                // we have to remove isSynchronous because method with same name does exist
+                // testProperties.remove("isSynchronous");
+                extension.runScript(testEntry, testProperties, true);
             }
         }));
         relayout();

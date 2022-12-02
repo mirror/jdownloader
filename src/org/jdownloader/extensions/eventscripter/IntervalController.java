@@ -123,6 +123,11 @@ public class IntervalController {
                     }
 
                     @Override
+                    public void start() {
+                        startThread();
+                    }
+
+                    @Override
                     protected void finalizeEnvironment() throws IllegalAccessException {
                         super.finalizeEnvironment();
                         try {

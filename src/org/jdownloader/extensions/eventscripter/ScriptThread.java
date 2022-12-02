@@ -22,8 +22,10 @@ import javax.swing.SwingUtilities;
 import jd.http.Browser;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
 import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
+import net.sourceforge.htmlunit.corejs.javascript.NativeJavaMethod;
 import net.sourceforge.htmlunit.corejs.javascript.ScriptRuntime;
 import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
+import net.sourceforge.htmlunit.corejs.javascript.UniqueTag;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.exceptions.WTFException;
@@ -119,14 +121,18 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
 
     @Override
     public void start() {
-        super.start();
-        if (isSynchronous() && (Application.isHeadless() || !SwingUtilities.isEventDispatchThread())) {
+        startThread();
+        if (!isTestRun() && isSynchronous() && (Application.isHeadless() || !SwingUtilities.isEventDispatchThread())) {
             try {
                 join();
             } catch (InterruptedException e) {
                 getLogger().log(e);
             }
         }
+    }
+
+    protected void startThread() {
+        super.start();
     }
 
     private static final WeakHashMap<Object, UniqueAlltimeID> SCRIPTLOCKS = new WeakHashMap<Object, UniqueAlltimeID>();
@@ -148,9 +154,13 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         return false;
     }
 
+    protected boolean isTestRun() {
+        return false;
+    }
+
     @Override
     public void run() {
-        if (isSynchronous()) {
+        if (isSynchronous() && !isTestRun()) {
             final Object scriptLock = getScriptLock(script);
             synchronized (scriptLock) {
                 if (script.isEnabled()) {
@@ -304,9 +314,13 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             }
         }
         for (Entry<String, Object> es : props.entrySet()) {
-            ScriptableObject.putProperty(scope, es.getKey(), es.getValue());
-            // convert to real js objects
-            // evalTrusted(es.getKey() + " = " + new SimpleMapper().objectToString() + ";");
+            final Object existing = ScriptableObject.getProperty(scope, es.getKey());
+            if (existing instanceof NativeJavaMethod) {
+                // do not replace NativeJavaMethod
+                continue;
+            } else {
+                ScriptableObject.putProperty(scope, es.getKey(), es.getValue());
+            }
         }
     }
 
@@ -314,7 +328,15 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         final List<String> keySet = new ArrayList<String>(props.keySet());
         for (final String key : keySet) {
             final Object value = ScriptableObject.getProperty(scope, key);
-            props.put(key, value);
+            if (UniqueTag.NOT_FOUND.equals(value)) {
+                // do not store NOT_FOUND elements
+                continue;
+            } else if (value instanceof NativeJavaMethod) {
+                // do not store NativeJavaMethod
+                continue;
+            } else {
+                props.put(key, value);
+            }
         }
     }
 
