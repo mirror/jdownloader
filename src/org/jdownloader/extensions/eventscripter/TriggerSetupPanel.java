@@ -8,7 +8,8 @@ import javax.swing.Icon;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 
 public class TriggerSetupPanel extends AbstractConfigPanel {
-    private final List<Runnable> onSaveList = new ArrayList<Runnable>();
+    private final List<Runnable> onSaveList    = new ArrayList<Runnable>();
+    private final List<Runnable> onTestRunList = new ArrayList<Runnable>();
 
     public TriggerSetupPanel(int insets) {
         super(insets);
@@ -43,6 +44,18 @@ public class TriggerSetupPanel extends AbstractConfigPanel {
     public void executeOnSave(Runnable run) {
         if (run != null) {
             onSaveList.add(run);
+        }
+    }
+
+    public void testRun() {
+        for (final Runnable onTestRun : onTestRunList) {
+            onTestRun.run();
+        }
+    }
+
+    public void executeOnTestRun(Runnable run) {
+        if (run != null) {
+            onTestRunList.add(run);
         }
     }
 }

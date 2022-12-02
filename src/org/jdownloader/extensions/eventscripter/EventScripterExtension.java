@@ -433,9 +433,18 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         }
     }
 
-    public void runScript(ScriptEntry script, Map<String, Object> props) {
+    public void runScript(final ScriptEntry script, final Map<String, Object> props) {
+        runScript(script, props, false);
+    }
+
+    public void runScript(final ScriptEntry script, final Map<String, Object> props, final boolean testRun) {
         final boolean isSynchronous = script.getEventTrigger().isSynchronous(script.getEventTriggerSettings());
         new ScriptThread(this, script, props, getLogger()) {
+            @Override
+            protected boolean isTestRun() {
+                return testRun;
+            };
+
             @Override
             public boolean isSynchronous() {
                 return isSynchronous;
@@ -515,15 +524,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 getSettings().setScripts(entries);
             }
         }.start();
-    }
-
-    public void runTest(final EventTrigger eventTrigger, final String name, final String scriptSource) {
-        final ScriptEntry script = new ScriptEntry();
-        script.setEventTrigger(eventTrigger);
-        script.setScript(scriptSource);
-        script.setName(name);
-        script.setEnabled(true);
-        runScript(script, eventTrigger.getTestProperties());
     }
 
     public void runTestCompile(EventTrigger eventTrigger, String script) {

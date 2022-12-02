@@ -549,8 +549,8 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(final ScriptEntry entry, JavaScriptEditorDialog editorDialog) {
-            final TriggerSetupPanel ret = super.createSettingsPanel(entry, editorDialog);
+        public TriggerSetupPanel createSettingsPanel(final ScriptEntry entry, final Map<String, Object> testEventTriggerSettings, JavaScriptEditorDialog editorDialog) {
+            final TriggerSetupPanel ret = super.createSettingsPanel(entry, testEventTriggerSettings, editorDialog);
             final Spinner spinner = new Spinner(1000, Integer.MAX_VALUE);
             try {
                 spinner.setValue(((Number) entry.getEventTriggerSettings().get("interval")).intValue());
@@ -562,13 +562,18 @@ public enum EventTrigger implements LabelInterface {
                     entry.getEventTriggerSettings().put("interval", ((Number) spinner.getValue()).intValue());
                 };
             });
+            ret.executeOnTestRun(new Runnable() {
+                public void run() {
+                    testEventTriggerSettings.put("interval", ((Number) spinner.getValue()).intValue());
+                };
+            });
             ret.addPair(T.T.interval_settings(), null, spinner);
             return ret;
         }
 
         @Override
         public boolean isSynchronousSupported() {
-            return false;
+            return true;
         }
 
         @Override
@@ -603,8 +608,8 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, JavaScriptEditorDialog editorDialog) {
-            final TriggerSetupPanel ret = super.createSettingsPanel(entry, editorDialog);
+        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, final Map<String, Object> testEventTriggerSettings, JavaScriptEditorDialog editorDialog) {
+            final TriggerSetupPanel ret = super.createSettingsPanel(entry, testEventTriggerSettings, editorDialog);
             ret.add(new JLabel(T.T.TOOLBAR_BUTTON_explain()), "spanx");
             SettingsButton toolbarManager = new SettingsButton(new AppAction() {
                 {
@@ -652,8 +657,8 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, JavaScriptEditorDialog editorDialog) {
-            final TriggerSetupPanel ret = super.createSettingsPanel(entry, editorDialog);
+        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, final Map<String, Object> testEventTriggerSettings, JavaScriptEditorDialog editorDialog) {
+            final TriggerSetupPanel ret = super.createSettingsPanel(entry, testEventTriggerSettings, editorDialog);
             ret.add(new JLabel(T.T.MAIN_MENU_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
@@ -698,8 +703,8 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, JavaScriptEditorDialog editorDialog) {
-            final TriggerSetupPanel ret = super.createSettingsPanel(entry, editorDialog);
+        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, final Map<String, Object> testEventTriggerSettings, JavaScriptEditorDialog editorDialog) {
+            final TriggerSetupPanel ret = super.createSettingsPanel(entry, testEventTriggerSettings, editorDialog);
             ret.add(new JLabel(T.T.DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
@@ -745,8 +750,8 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, JavaScriptEditorDialog editorDialog) {
-            final TriggerSetupPanel ret = super.createSettingsPanel(entry, editorDialog);
+        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, final Map<String, Object> testEventTriggerSettings, JavaScriptEditorDialog editorDialog) {
+            final TriggerSetupPanel ret = super.createSettingsPanel(entry, testEventTriggerSettings, editorDialog);
             ret.add(new JLabel(T.T.LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
@@ -792,8 +797,8 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, JavaScriptEditorDialog editorDialog) {
-            final TriggerSetupPanel ret = super.createSettingsPanel(entry, editorDialog);
+        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, final Map<String, Object> testEventTriggerSettings, JavaScriptEditorDialog editorDialog) {
+            final TriggerSetupPanel ret = super.createSettingsPanel(entry, testEventTriggerSettings, editorDialog);
             ret.add(new JLabel(T.T.DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
@@ -838,8 +843,8 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, JavaScriptEditorDialog editorDialog) {
-            final TriggerSetupPanel ret = super.createSettingsPanel(entry, editorDialog);
+        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, final Map<String, Object> testEventTriggerSettings, JavaScriptEditorDialog editorDialog) {
+            final TriggerSetupPanel ret = super.createSettingsPanel(entry, testEventTriggerSettings, editorDialog);
             ret.add(new JLabel(T.T.LINKGRABBER_BOTTOM_BAR_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
@@ -884,8 +889,8 @@ public enum EventTrigger implements LabelInterface {
         }
 
         @Override
-        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, JavaScriptEditorDialog editorDialog) {
-            final TriggerSetupPanel ret = super.createSettingsPanel(entry, editorDialog);
+        public TriggerSetupPanel createSettingsPanel(ScriptEntry entry, final Map<String, Object> testEventTriggerSettings, JavaScriptEditorDialog editorDialog) {
+            final TriggerSetupPanel ret = super.createSettingsPanel(entry, testEventTriggerSettings, editorDialog);
             ret.add(new JLabel(T.T.TRAY_BUTTON_explain()), "spanx");
             ret.addPair("", null, new SettingsButton(new AppAction() {
                 {
@@ -1007,7 +1012,7 @@ public enum EventTrigger implements LabelInterface {
         }
     }
 
-    public TriggerSetupPanel createSettingsPanel(final ScriptEntry entry, final JavaScriptEditorDialog editorDialog) {
-        return editorDialog.createDefaultTriggerSetupPanel(entry);
+    public TriggerSetupPanel createSettingsPanel(final ScriptEntry entry, final Map<String, Object> testEventTriggerSettings, final JavaScriptEditorDialog editorDialog) {
+        return editorDialog.createDefaultTriggerSetupPanel(entry, testEventTriggerSettings);
     }
 }

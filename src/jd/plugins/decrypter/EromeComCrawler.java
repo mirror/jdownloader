@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.config.EromeComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +30,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.jdownloader.plugins.components.config.EromeComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EromeComCrawler extends PluginForDecrypt {
@@ -95,9 +95,8 @@ public class EromeComCrawler extends PluginForDecrypt {
             final String directurlImage = new Regex(mediagrouphtml, "class=\"img\" data-src=\"(https?://[^\"]+)\"").getMatch(0);
             final String directurlVideo = new Regex(mediagrouphtml, "<source src=\"(https?://[^\"]+)\" type='video/mp4'").getMatch(0);
             if (directurlImage == null && directurlVideo == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (directurlImage != null) {
+                continue;
+            } else if (directurlImage != null) {
                 ret.add(this.createDownloadlink(directurlImage));
             } else {
                 ret.add(this.createDownloadlink(directurlVideo));
@@ -109,6 +108,9 @@ public class EromeComCrawler extends PluginForDecrypt {
                     logger.warning("Failed to find video thumbnail for video: " + directurlVideo);
                 }
             }
+        }
+        if (ret.size() == 0) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setCleanupPackageName(false);
