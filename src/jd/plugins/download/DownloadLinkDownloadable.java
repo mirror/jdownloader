@@ -14,6 +14,19 @@ import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 import java.util.zip.Checksum;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -31,19 +44,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.HashInfo.TYPE;
-
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.HashCheckPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
 
 public class DownloadLinkDownloadable implements Downloadable {
     private static volatile boolean crcHashingInProgress = false;
@@ -325,11 +325,12 @@ public class DownloadLinkDownloadable implements Downloadable {
         final String name = getName();
         final List<HashInfo> hashInfos = new ArrayList<HashInfo>();
         for (final HashInfo.TYPE type : HashInfo.TYPE.values()) {
-            if (!HashInfo.TYPE.NONE.equals(type)) {
-                final String hash = new Regex(name, ".*?\\[([A-Fa-f0-9]{" + type.getSize() + "})\\]").getMatch(0);
-                if (hash != null) {
-                    hashInfos.add(new HashInfo(hash, type, false));
-                }
+            if (!type.isAutoMode()) {
+                continue;
+            }
+            final String hash = new Regex(name, ".*?\\[([A-Fa-f0-9]{" + type.getSize() + "})\\]").getMatch(0);
+            if (hash != null) {
+                hashInfos.add(new HashInfo(hash, type, false));
             }
         }
         final FilePackage filePackage = getDownloadLink().getFilePackage();
@@ -371,11 +372,12 @@ public class DownloadLinkDownloadable implements Downloadable {
                                     continue;
                                 }
                                 for (final HashInfo.TYPE type : HashInfo.TYPE.values()) {
-                                    if (!HashInfo.TYPE.NONE.equals(type)) {
-                                        final String hash = new Regex(line, "(?:^|\\s+)([A-Fa-f0-9]{" + type.getSize() + "})(\\s+|$)").getMatch(0);
-                                        if (hash != null) {
-                                            hashInfos.add(new HashInfo(hash, type));
-                                        }
+                                    if (!type.isAutoMode()) {
+                                        continue;
+                                    }
+                                    final String hash = new Regex(line, "(?:^|\\s+)([A-Fa-f0-9]{" + type.getSize() + "})(\\s+|$)").getMatch(0);
+                                    if (hash != null) {
+                                        hashInfos.add(new HashInfo(hash, type));
                                     }
                                 }
                             }

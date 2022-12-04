@@ -31,21 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 
-import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import net.sf.sevenzipjbinding.ArchiveFormat;
-import net.sf.sevenzipjbinding.ExtractOperationResult;
-import net.sf.sevenzipjbinding.IArchiveExtractCallback;
-import net.sf.sevenzipjbinding.IArchiveOpenCallback;
-import net.sf.sevenzipjbinding.IInStream;
-import net.sf.sevenzipjbinding.PropID;
-import net.sf.sevenzipjbinding.SevenZip;
-import net.sf.sevenzipjbinding.SevenZipException;
-import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
-import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
-import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
-
 import org.appwork.utils.Application;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.DebugMode;
@@ -83,6 +68,21 @@ import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.gui.iffileexistsdialog.IfFileExistsDialog;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.updatev2.UpdateController;
+
+import jd.controlling.downloadcontroller.IfFileExistsDialogInterface;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import net.sf.sevenzipjbinding.ArchiveFormat;
+import net.sf.sevenzipjbinding.ExtractOperationResult;
+import net.sf.sevenzipjbinding.IArchiveExtractCallback;
+import net.sf.sevenzipjbinding.IArchiveOpenCallback;
+import net.sf.sevenzipjbinding.IInStream;
+import net.sf.sevenzipjbinding.PropID;
+import net.sf.sevenzipjbinding.SevenZip;
+import net.sf.sevenzipjbinding.SevenZipException;
+import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 public class Multi extends IExtraction {
     private volatile int               crack = 0;
@@ -290,6 +290,20 @@ public class Multi extends IExtraction {
             switch (os.getFamily()) {
             case BSD:
                 switch (arch) {
+                case RISCV:
+                    switch (os) {
+                    case FREEBSD:
+                        if (is64BitJvm) {
+                            libIDs.add("FreeBSD-riscv64");
+                        } else {
+                            libIDs.add("FreeBSD-riscv32");
+                            libIDs.add("FreeBSD-riscv");
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                    break;
                 case X86:
                     switch (os) {
                     case DRAGONFLYBSD:
@@ -322,6 +336,14 @@ public class Multi extends IExtraction {
                 break;
             case LINUX:
                 switch (arch) {
+                case RISCV:
+                    if (is64BitJvm) {
+                        libIDs.add("Linux-riscv64");
+                    } else {
+                        libIDs.add("Linux-riscv32");
+                        libIDs.add("Linux-riscv");
+                    }
+                    break;
                 case ARM:
                     if (is64BitJvm) {
                         if (LibCDetector.isMuslSupported()) {
@@ -1226,25 +1248,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         * 
+                         *
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         * 
+                         *
                          * 0x0004 Archive lock attribute
-                         * 
+                         *
                          * 0x0008 Solid attribute (solid archive)
-                         * 
+                         *
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         * 
+                         *
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         * 
+                         *
                          * 0x0040 Recovery record present
-                         * 
+                         *
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         * 
+                         *
                          * 0x0200 EncryptedVerion
                          */
                         // final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);
