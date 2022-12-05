@@ -11,6 +11,10 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -29,10 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * abstract class to handle sites similar to safelinking type sites. <br />
@@ -313,15 +313,14 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
 
     /** 2021-12-08: Only used by kprotector.com at this moment. */
     public ArrayList<DownloadLink> decryptIt_oldStyle(final CryptedLink param, final ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         // link correction
         parameter = correctLink(param.toString());
         // setuid
         uid = getUID(parameter);
         getPage(parameter);
         if (isOffline()) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // final Form captchaForm = br.getFormByInputFieldPropertyKeyValue("name", "frmprotect");
         // if (captchaForm != null) {
@@ -341,31 +340,29 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
             }
             /* redirect goes to outside link or back own shortlink */
             if (!newparameter.matches(regexLinkD() + "|" + regexLinkP())) {
-                decryptedLinks.add(createDownloadlink(newparameter));
-                return decryptedLinks;
+                ret.add(createDownloadlink(newparameter));
+                return ret;
             }
             parameter = correctLink(newparameter);
             getPage(parameter);
         }
         if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("^.+" + regexSupportedDomains() + "/404$")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This link does not exist")) {
-            decryptedLinks.add(this.createDownloadlink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*This link does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(false);
         if (parameter.matches(regexLinkD())) {
-            decryptedLinks.add(decryptSingleLink(br));
+            ret.add(decryptSingleLink(br));
         } else {
             // handleCaptcha_oldStyle(param);
-            decryptedLinks.addAll(decryptMultipleLinks(param));
+            ret.addAll(decryptMultipleLinks(param));
         }
-        if (decryptedLinks.isEmpty()) {
+        if (ret.isEmpty()) {
             logger.warning("Decrypter out of date for link: " + parameter);
             return null;
         } else {
-            return decryptedLinks;
+            return ret;
         }
     }
 
@@ -514,8 +511,8 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
 
     /**
      * 2020-01-24: I was able to test the following captcha types: reCaptchaV2, basiccaptcha, simplecaptcha, coolcaptcha, fancycaptcha(Fancy
-     * Captcha, fancy), with- and without password and with password + captcha. </br> Seems like the following captcha types are not used
-     * anymore: threeD, qaptcha, cats(CaptchaCatAndDog)
+     * Captcha, fancy), with- and without password and with password + captcha. </br>
+     * Seems like the following captcha types are not used anymore: threeD, qaptcha, cats(CaptchaCatAndDog)
      */
     protected void handleCaptcha_oldStyle(final CryptedLink param) throws Exception {
         br.setFollowRedirects(true);
@@ -706,6 +703,9 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         continue;
                     }
                     break;
+                } else {
+                    logger.info("Sending form without any captcha input -> Looks like neither captcha nor password is required");
+                    submitForm(protectedForm);
                 }
                 break;
             }
