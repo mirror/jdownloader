@@ -3898,6 +3898,11 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                 }
             }
         }
+        if (StringUtils.isEmpty(availabletraffic)) {
+            /* filejoker.net */
+            final String formGroup = new Regex(src, ">\\s*Traffic available(?:\\s*today)?\\s*:?\\s*</[^>]*>(.*?)<div\\s*class\\s*=\\s*\"form-group").getMatch(0);
+            availabletraffic = new Regex(formGroup, "title\\s*=\\s*\"\\s*([0-9\\.]+\\s*[TGMB]+\\s*)(?:available)?").getMatch(0);
+        }
         if (StringUtils.isNotEmpty(availabletraffic)) {
             return availabletraffic;
         } else {

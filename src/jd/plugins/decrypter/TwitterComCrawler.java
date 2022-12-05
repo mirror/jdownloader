@@ -32,17 +32,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.TwitterConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -68,6 +57,17 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.TwitterCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.TwitterConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwitterComCrawler extends PluginForDecrypt {
@@ -280,13 +280,24 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final boolean useNewMethod = true; /* 2021-06-15 */
         if (useNewMethod) {
             br.getPage("https://api.twitter.com/1.1/statuses/show/" + tweetID + ".json?cards_platform=Web-12&include_reply_count=1&include_cards=1&include_user_entities=0&tweet_mode=extended");
-            handleErrorsAPI(this.br);
-            final Map<String, Object> tweet = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            return crawlTweetMap(tweet);
+            try {
+                handleErrorsAPI(this.br);
+                final Map<String, Object> tweet = restoreFromString(br.toString(), TypeRef.MAP);
+                return crawlTweetMap(tweet);
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"code\"\\s*:\\s*34")) {
+                    logger.log(e);
+                } else {
+                    throw e;
+                }
+            }
+        }
+        br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweetID + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
+        final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> tweet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "globalObjects/tweets/" + tweetID);
+        if (tweet == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweetID + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
-            final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final Map<String, Object> tweet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "globalObjects/tweets/" + tweetID);
             return crawlTweetMap(tweet);
         }
     }
@@ -387,8 +398,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final Object userInContextOfTweet = tweet.get("user");
         if (userInContextOfTweet != null) {
             /**
-             * Prefer this as our user object. </br>
-             * It's only included when adding single tweets.
+             * Prefer this as our user object. </br> It's only included when adding single tweets.
              */
             user = (Map<String, Object>) userInContextOfTweet;
         }
@@ -787,8 +797,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
             logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | lastCreatedAtDateStr = " + lastCreatedAtDateStr + " | last nextCursor = " + nextCursor);
             if (tweetMap.size() < expected_items_per_page) {
                 /**
-                 * This can sometimes happen! </br>
-                 * We'll ignore this and let it run into our other fail-safe for when a page contains zero items.
+                 * This can sometimes happen! </br> We'll ignore this and let it run into our other fail-safe for when a page contains zero
+                 * items.
                  */
                 logger.info(String.format("Current page contained only %d of max. %d expected objects --> Reached the end?", tweetMap.size(), expected_items_per_page));
                 // break;
@@ -888,7 +898,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             query.add("features", "%7B%22dont_mention_me_view_api_enabled%22%3Atrue%2C%22interactive_text_enabled%22%3Atrue%2C%22responsive_web_uc_gql_enabled%22%3Atrue%2C%22vibe_api_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Afalse%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D");
             br.getPage("https://twitter.com/i/api/graphql/" + queryID + "/UserTweets?" + query.toString());
             int crawledTweetsThisPage = 0;
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/user/result/timeline_v2/timeline/instructions");
             for (final Map<String, Object> timelineInstruction : timelineInstructions) {
                 if (!timelineInstruction.get("type").toString().equalsIgnoreCase("TimelineAddEntries")) {
@@ -971,8 +981,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Obtains information about given username via old API. </br>
-     * The response of this will also expose the users' userID which is often needed to perform further API requests.
+     * Obtains information about given username via old API. </br> The response of this will also expose the users' userID which is often
+     * needed to perform further API requests.
      */
     private Map<String, Object> getUserInfo(final Browser br, final Account account, final String username) throws Exception {
         this.prepareAPI(br, account);
@@ -990,7 +1000,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 /* {"errors":[{"code":17,"message":"No user matches for specified terms."}]} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Object responseO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+            final Object responseO = restoreFromString(br.toString(), TypeRef.OBJECT);
             if (!(responseO instanceof List)) {
                 logger.warning("Unknown API error/response");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1043,8 +1053,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br>
-     * Scroll down to "Twitter API error codes"
+     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br> Scroll down to "Twitter API error codes"
      */
     private void handleErrorsAPI(final Browser br) throws Exception {
         Map<String, Object> entries = null;
@@ -1070,13 +1079,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 case 63:
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                // case 88:
-                /* {"errors":[{"message":"Rate limit exceeded","code":88}]} */
-                // final String rateLimitResetTimestamp = br.getRequest().getResponseHeader("x-rate-limit-reset");
-                // if (rateLimitResetTimestamp != null && rateLimitResetTimestamp.matches("\\d+")) {
-                // logger.info("Rate-limit reached | Resets in: " +
-                // TimeFormatter.formatMilliSeconds(Long.parseLong(rateLimitResetTimestamp) - System.currentTimeMillis() / 1000, 0));
-                // }
+                    // case 88:
+                    /* {"errors":[{"message":"Rate limit exceeded","code":88}]} */
+                    // final String rateLimitResetTimestamp = br.getRequest().getResponseHeader("x-rate-limit-reset");
+                    // if (rateLimitResetTimestamp != null && rateLimitResetTimestamp.matches("\\d+")) {
+                    // logger.info("Rate-limit reached | Resets in: " +
+                    // TimeFormatter.formatMilliSeconds(Long.parseLong(rateLimitResetTimestamp) - System.currentTimeMillis() / 1000, 0));
+                    // }
                 case 109:
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 case 144:

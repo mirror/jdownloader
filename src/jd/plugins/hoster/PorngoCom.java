@@ -44,6 +44,11 @@ public class PorngoCom extends KernelVideoSharingComV2 {
         return buildSupportedNames(getPluginDomains());
     }
 
+    @Override
+    protected boolean preferTitleHTML() {
+        return true;
+    }
+
     public static String[] getAnnotationUrls() {
         return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
     }
