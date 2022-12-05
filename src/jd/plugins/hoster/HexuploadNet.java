@@ -18,13 +18,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.Time;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -32,6 +29,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.Time;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HexuploadNet extends XFileSharingProBasic {
@@ -51,6 +52,16 @@ public class HexuploadNet extends XFileSharingProBasic {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "hexupload.net", "hexupload.com" });
+        return ret;
+    }
+
+    @Override
+    protected String getDllink(DownloadLink link, Account account, Browser br, String src) {
+        String ret = super.getDllink(link, account, br, src);
+        if (ret == null) {
+            final String base64 = br.getRegex("ldl\\.ld\\('(aHR0c.*?)'").getMatch(0);
+            ret = Encoding.Base64Decode(base64);
+        }
         return ret;
     }
 

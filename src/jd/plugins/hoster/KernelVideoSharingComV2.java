@@ -938,7 +938,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
             /* Remove "mytitle - domain.tld" and similar */
-            title = title.replaceAll("\\s+[\\-/]\\s+" + Pattern.quote(br.getHost()), "");
+            title = title.replaceAll("(?i)\\s+[\\-/]\\s+" + Pattern.quote(br.getHost()), "");
         }
         if (best == null || (title != null && title.length() < best.length())) {
             best = title;
@@ -1194,7 +1194,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         *
+         * 
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
         // final String pc3_vars = br.getRegex("pC3\\s*:\\s*'([^<>\"\\']+)'").getMatch(0);

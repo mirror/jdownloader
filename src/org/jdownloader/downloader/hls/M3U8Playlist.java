@@ -509,18 +509,16 @@ public class M3U8Playlist {
 
     /** Returns estimated duration in milliseconds. */
     public long getEstimatedDuration() {
-        long duration = 0;
-        for (final M3U8Segment segment : segments) {
-            duration += Math.max(0, segment.getDuration());
-        }
-        return duration;
+        return getEstimatedDuration(Arrays.asList(new M3U8Playlist[] { this }));
     }
 
     /** Returns estimated duration in milliseconds. */
     public static long getEstimatedDuration(List<M3U8Playlist> list) {
         long duration = 0;
         for (final M3U8Playlist playList : list) {
-            duration += Math.max(0, playList.getEstimatedDuration());
+            for (final M3U8Segment segment : playList.segments) {
+                duration += Math.max(0, segment.getDuration());
+            }
         }
         return duration;
     }
@@ -556,7 +554,7 @@ public class M3U8Playlist {
     }
 
     public long getEstimatedSize() {
-        return getEstimatedDuration(Arrays.asList(new M3U8Playlist[] { this }));
+        return getEstimatedSize(Arrays.asList(new M3U8Playlist[] { this }));
     }
 
     protected M3U8Segment getLastSegment() {
