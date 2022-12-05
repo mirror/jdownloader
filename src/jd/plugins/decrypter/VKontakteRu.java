@@ -1103,21 +1103,22 @@ public class VKontakteRu extends PluginForDecrypt {
             numberOfEntriesStr = br.getRegex("(?i)Show all (\\d+) albums").getMatch(0);
         }
         if (numberOfEntriesStr == null) {
-            /* 2020-1^0-26 */
-            numberOfEntriesStr = br.getRegex("(?i)>\\s*Photo Albums<span class=\"ui_crumb_count\">(\\d+)<").getMatch(0);
+            /* 2020-10-26 */
+            numberOfEntriesStr = br.getRegex("(?)class=\"ui_crumb\"[^>]*>[^<]+<span class=\"ui_crumb_count\"[^>]*>\\s*([\\d,]+)\\s*</span>").getMatch(0);
         }
         final String startOffset = br.getRegex("var preload\\s*=\\s*\\[(\\d+),\"").getMatch(0);
-        if (numberOfEntriesStr == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (numberOfEntriesStr != null) {
+            numberOfEntriesStr = numberOfEntriesStr.replace(",", "");
+        } else {
+            logger.warning("Failed to find numberOfEntriesStr");
         }
-        numberOfEntriesStr = numberOfEntriesStr.replace(",", "");
-        final int numberOfEntries = (int) StrictMath.ceil((Double.parseDouble(numberOfEntriesStr)));
+        final int numberOfEntries = numberOfEntriesStr != null ? (int) StrictMath.ceil((Double.parseDouble(numberOfEntriesStr))) : -1;
         if (numberOfEntries == 0) {
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final int entries_per_page = 26;
         final int entries_alreadyOnPage = 0;
-        logger.info("Decrypting " + numberOfEntriesStr + " entries for linktype: " + type);
+        logger.info("Crawling " + numberOfEntriesStr + " entries for linktype: " + type);
         int maxLoops = (int) StrictMath.ceil((numberOfEntries - entries_alreadyOnPage) / entries_per_page);
         if (maxLoops < 0) {
             maxLoops = 0;
@@ -1145,6 +1146,9 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Added items from this page: " + addedLinks);
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (numberOfEntriesStr == null) {
+                logger.warning("Stopping because: Failed to find number of entries");
                 break;
             } else if (addedLinks == 0 || addedLinksTotal >= numberOfEntries) {
                 logger.info("Stopping because: Fail safe #1 activated, stopping page parsing at page " + (i + 1) + " of " + (maxLoops + 1) + ", returning " + addedLinksTotal + " results");
@@ -1979,7 +1983,11 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
         if (grabPhoto) {
-            final String[] photo_ids = new Regex(html, "showPhoto\\(\\'(-?\\d+_\\d+)").getColumn(0);
+            String[] photo_ids = new Regex(html, "showPhoto\\(\\'(-?\\d+_\\d+)").getColumn(0);
+            if (photo_ids == null || photo_ids.length == 0) {
+                /* 2022-12-05 */
+                photo_ids = new Regex(html, "data-photo-id=\"(-?\\d+_\\d+)\"").getColumn(0);
+            }
             for (final String photoContentStr : photo_ids) {
                 if (!global_dupes.add(photoContentStr)) {
                     /* Important: Skip dupes so upper handling will e.g. see that nothing has been added! */
@@ -1990,11 +1998,12 @@ public class VKontakteRu extends PluginForDecrypt {
                 ownerIDTemp = wall_id_info[0];
                 contentIDTemp = wall_id_info[1];
                 String picture_preview_json = null;
-                String photo_html = new Regex(html, "showPhoto\\(([^\\)]*?" + photoContentStr + "[^\\)]*?)\\)").getMatch(0);
+                String photo_htmlOLD = new Regex(html, "showPhoto\\(([^\\)]*?" + photoContentStr + "[^\\)]*?)\\)").getMatch(0);
+                String photo_htmlNEW = new Regex(html, "<div [^>]*data-photo-id=\"" + photoContentStr + "\".*?</div>\\s+</div>").getMatch(-1);
                 String single_photo_content_url = null;
-                if (photo_html != null) {
-                    photo_html = photo_html.replace("'", "");
-                    final String[] photoInfoArray = photo_html.split(", ");
+                if (photo_htmlOLD != null) {
+                    photo_htmlOLD = photo_htmlOLD.replace("'", "");
+                    final String[] photoInfoArray = photo_htmlOLD.split(", ");
                     final String photo_list_id_tmp = photoInfoArray[1];
                     if (photo_list_id_tmp.matches("wall-?\\d+_\\d+")) {
                         photo_list_id = photo_list_id_tmp;
@@ -2033,7 +2042,43 @@ public class VKontakteRu extends PluginForDecrypt {
                     }
                     if (picture_preview_json == null) {
                         /* 2020-02-18: This should not be required anymore */
-                        picture_preview_json = new Regex(photo_html, "(\\{(?:\"|\\&quot;)(?:base|temp)(?:\"|\\&quot;).*?\\}),[^\\{\\}]+\\)").getMatch(0);
+                        picture_preview_json = new Regex(photo_htmlOLD, "(\\{(?:\"|\\&quot;)(?:base|temp)(?:\"|\\&quot;).*?\\}),[^\\{\\}]+\\)").getMatch(0);
+                    }
+                } else if (photo_htmlNEW != null) {
+                    /* 2022-12-05 */
+                    final String photo_list_id_tmp = new Regex(photo_htmlNEW, "data-list-id=\"([^\"]+)").getMatch(0);
+                    if (photo_list_id_tmp.matches("wall-?\\d+_\\d+")) {
+                        photo_list_id = photo_list_id_tmp;
+                        final String wall_post_reply_content_idTmp = new Regex(photo_list_id_tmp, "(\\d+)$").getMatch(0);
+                        if (html.contains("?reply=" + wall_post_reply_content_idTmp)) {
+                            isContentFromWallReply = true;
+                            wall_post_reply_content_id = wall_post_reply_content_idTmp;
+                            single_photo_content_url = getProtocol() + this.getHost() + "/wall" + url_source + "?reply=" + wall_post_reply_content_id + "&z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + ownerIDTemp + "_" + wall_post_reply_content_id;
+                            if (!isPostContentURLGivenAndTheSameForAllItems) {
+                                // TODO: Check/fix this part
+                                /* Try to find post_id - if this goes wrong we might not be able to download the content later on. */
+                                final String postIDs = new Regex(html, "<div class=\"wall_text\"><div id=\"wpt(-\\d+_\\d+)\" class=\"wall_post_cont _wall_post_cont\"><div[^>]+>[^>]+</div><div[^>]+><a[^>]+showPhoto\\('" + photoContentStr).getMatch(0);
+                                if (postIDs != null) {
+                                    final String[] wall_post_IDs = postIDs.split("_");
+                                    wall_post_owner_id = wall_post_IDs[0];
+                                    wall_post_content_id = wall_post_IDs[1];
+                                    wall_single_post_url = String.format("https://vk.com/wall%s%s", wall_post_owner_id, wall_post_content_id);
+                                }
+                            }
+                        } else {
+                            /* Link post containing the photo */
+                            single_photo_content_url = getProtocol() + this.getHost() + "/wall" + url_source + "?z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + url_source;
+                            photo_list_id = url_source;
+                        }
+                    } else if (photo_list_id_tmp.matches("tag-?\\d+")) {
+                        /* Different type of wall photos which again need different IDs and have different contentURLs. */
+                        isContentFromWallReply = true;
+                        photo_list_id = photo_list_id_tmp;
+                        if (!isPostContentURLGivenAndTheSameForAllItems) {
+                            /* Try to find post_id - if this goes wrong we might not be able to download the content later on. */
+                            final String tag_id = new Regex(photo_list_id, "(-?\\d+)$").getMatch(0);
+                            single_photo_content_url = String.format("https://vk.com/photo%s?tag=%s", photoContentStr, tag_id);
+                        }
                     }
                 }
                 if (single_photo_content_url == null) {
