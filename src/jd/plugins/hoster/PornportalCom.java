@@ -45,7 +45,6 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -263,7 +262,6 @@ public class PornportalCom extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private String               dllink                       = null;
-    private boolean              server_issues                = false;
     public static final String   PROPERTY_directurl           = "directurl";
 
     public static Browser prepBR(final Browser br) {
@@ -278,7 +276,6 @@ public class PornportalCom extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         dllink = link.getStringProperty(PROPERTY_directurl);
@@ -290,7 +287,7 @@ public class PornportalCom extends PluginForHost {
         String newDirecturl = null;
         try {
             con = br.openHeadConnection(dllink);
-            if (con.getResponseCode() == 472) {
+            if (con.getResponseCode() == 403 || con.getResponseCode() == 472) {
                 /* Directurl needs to be refreshed */
                 logger.info("Directurl needs to be refreshed");
                 if (account == null) {
@@ -346,7 +343,7 @@ public class PornportalCom extends PluginForHost {
                     this.dllink = newDirecturl;
                 }
             } else {
-                this.server_issues = true;
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl did not lead to downloadable content");
             }
         } finally {
             try {
@@ -1057,15 +1054,8 @@ public class PornportalCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
-            if (account == null) {
-                /* E.g. free trailer download and expired downloadurls */
-                throw new AccountRequiredException();
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
