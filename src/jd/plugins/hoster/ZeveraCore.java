@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -35,7 +36,6 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -419,16 +419,16 @@ abstract public class ZeveraCore extends UseNet {
     public AccountInfo fetchAccountInfoAPI(final Browser br, final String client_id, final Account account) throws Exception {
         login(br, account, true, client_id);
         final AccountInfo ai = new AccountInfo();
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final String customerID = entries.get("customer_id").toString();
+        final Map<String, Object> userinfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String customerID = userinfo.get("customer_id").toString();
         if (customerID != null && customerID.length() > 2) {
             /* Don't store the complete customer id as a security purpose. */
             final String shortenedCustomerID = customerID.substring(0, customerID.length() / 2) + "****";
             account.setUser(shortenedCustomerID);
         }
-        final Object fair_use_usedO = entries.get("limit_used");
-        final Object space_usedO = entries.get("space_used");
-        final Object premium_untilO = entries.get("premium_until");
+        final Object fair_use_usedO = userinfo.get("limit_used");
+        final Object space_usedO = userinfo.get("space_used");
+        final Object premium_untilO = userinfo.get("premium_until");
         if (space_usedO != null && space_usedO instanceof Number) {
             ai.setUsedSpace(((Number) space_usedO).longValue());
         } else if (space_usedO != null && space_usedO instanceof Number) {
@@ -477,29 +477,47 @@ abstract public class ZeveraCore extends UseNet {
         }
         callAPI(br, account, "/api/services/list");
         this.handleAPIErrors(br, null, account);
-        entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        // final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final List<String> directdl = (List<String>) entries.get("directdl");
-        final HashSet<String> list = new HashSet<String>();
-        /* 2019-08-05: usenet is not supported when pairing login is used because then we do not have the internal Usenet-Logindata! */
-        if (supportsUsenet(account)) {
-            list.add("usenet");
+        final Map<String, Object> hosterinfo = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final HashSet<String> supportedHostsMainDomains = new HashSet<String>();
+        final String[] hosterListTypesToAdd = new String[] { "directdl", "queue" };
+        for (final String hosterListTypeToAdd : hosterListTypesToAdd) {
+            final List<String> hosts = (List<String>) hosterinfo.get(hosterListTypeToAdd);
+            if (hosts != null) {
+                supportedHostsMainDomains.addAll(hosts);
+            }
         }
+        /*
+         * Function for logging hosts which users might report missing in our list -> With this logger those can be easily identified.
+         */
+        final List<String> cachehosts = (List<String>) hosterinfo.get("cache");
+        for (final String cachehost : cachehosts) {
+            if (!supportedHostsMainDomains.contains(cachehost)) {
+                logger.info("Host which is only in cache list but not in any other supported list: " + cachehost);
+            }
+        }
+        final HashSet<String> supportedHostsAllDomains = new HashSet<String>();
+        final Map<String, Object> aliasesmap = (Map<String, Object>) hosterinfo.get("aliases");
+        for (final String mainDomain : supportedHostsMainDomains) {
+            final List<String> allDomains = (List<String>) aliasesmap.get(mainDomain);
+            if (allDomains != null) {
+                supportedHostsAllDomains.addAll(allDomains);
+            } else {
+                /* Fallback */
+                logger.warning("Possible serverside mistake: Domain is missing in aliases list: " + mainDomain);
+                supportedHostsAllDomains.add(mainDomain);
+            }
+        }
+        if (supportsUsenet(account)) {
+            supportedHostsAllDomains.add("usenet");
+        } else {
+            /* Remove this in case it was contained in the serverside list. */
+            supportedHostsAllDomains.remove("usenet");
+        }
+        ai.setMultiHostSupport(this, new ArrayList<String>(supportedHostsAllDomains));
         if (account.getType() == AccountType.FREE && supportsFreeAccountDownloadMode(account)) {
             /* Display info-dialog regarding free account usage */
             handleFreeModeLoginDialog(account, "https://www." + account.getHoster() + "/free");
         }
-        if (directdl != null) {
-            list.addAll(directdl);
-        }
-        /* Debug function to find entries which are on the "cache" list but not on "directdl". */
-        final List<String> cachehosts = (List<String>) entries.get("cache");
-        for (final String cachehost : cachehosts) {
-            if (!list.contains(cachehost)) {
-                logger.info("Host which is only in cache list but not in directdl list: " + cachehost);
-            }
-        }
-        ai.setMultiHostSupport(this, new ArrayList<String>(list));
         return ai;
     }
 
@@ -766,7 +784,7 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     @Override
-    protected String getUseNetUsername(Account account) {
+    protected String getUseNetUsername(final Account account) {
         if (usePairingLogin(account)) {
             /* Login via access_token:access_token */
             return account.getStringProperty("access_token");
@@ -777,7 +795,7 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     @Override
-    protected String getUseNetPassword(Account account) {
+    protected String getUseNetPassword(final Account account) {
         if (usePairingLogin(account)) {
             /* Login via access_token:access_token */
             return account.getStringProperty("access_token");
@@ -787,9 +805,12 @@ abstract public class ZeveraCore extends UseNet {
         }
     }
 
-    /** true = Account has 'access_token' property, false = Account does not have 'access_token' property. */
+    /**
+     * @return true: Account has 'access_token' property. </br>
+     *         false: Account does not have 'access_token' property.
+     */
     public static boolean setAuthHeader(final Browser br, final Account account) {
-        final String access_token = account.getStringProperty("access_token", null);
+        final String access_token = account.getStringProperty("access_token");
         if (access_token != null) {
             br.getHeaders().put("Authorization", "Bearer " + access_token);
             return true;
@@ -896,7 +917,8 @@ abstract public class ZeveraCore extends UseNet {
         Map<String, Object> entries = null;
         try {
             entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        } catch (final Exception ignore) {
+        } catch (final JSonMapperException ignore) {
+            /* This should never happen. */
             if (link != null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response", 60 * 1000l);
             } else {
@@ -904,7 +926,10 @@ abstract public class ZeveraCore extends UseNet {
             }
         }
         final String status = (String) entries.get("status");
-        final String message = (String) entries.get("message");
+        String message = (String) entries.get("message");
+        /* API can control how long we should wait until next retry. */
+        final Number delaySecondsO = (Number) entries.get("delay");
+        final long retryInMilliseconds = delaySecondsO != null ? delaySecondsO.longValue() * 1000 : 1 * 60 * 1000;
         if ("error".equalsIgnoreCase(status) && !StringUtils.isEmpty(message)) {
             /* This field is not always given! */
             final String errortype = (String) entries.get("error");
@@ -919,7 +944,7 @@ abstract public class ZeveraCore extends UseNet {
                 if (account.getType() == AccountType.FREE) {
                     /* Free */
                     /* 2019-07-27: Original errormessage may cause confusion so we'll slightly modify that. */
-                    String userMsg = "Premium required or activate free mode via premiumize.me/free";
+                    String userMsg = "Premium required or activate free mode via " + this.getHost() + "/free";
                     if (this.supportsFreeAccountDownloadMode(account)) {
                         /* Ask user to unlock free account downloads via website */
                         handleFreeModeDownloadDialog(account, "https://www." + this.br.getHost() + "/free");
@@ -928,12 +953,12 @@ abstract public class ZeveraCore extends UseNet {
                          * User has not enabled free account downloads in plugin settings (this is a rare case which may happen in the
                          * moment when a premium account expires and becomes a free account!)
                          */
-                        userMsg += " AND via Settings->Plugins->Premiumize.me";
+                        userMsg += " AND via Settings->Plugins->" + this.getHost();
                     }
                     mhm.putError(account, link, 5 * 60 * 1000l, userMsg);
                 } else {
                     /* Premium account - probably no traffic left */
-                    throw new AccountUnavailableException("Traffic empty or fair use limit reached?", 5 * 60 * 1000l);
+                    throw new AccountUnavailableException("Traffic empty or fair use limit reached?", retryInMilliseconds);
                 }
             } else if (message.matches("(?i).*customer_id and pin parameter missing or not logged in.*")) {
                 throw new AccountInvalidException();
@@ -944,9 +969,9 @@ abstract public class ZeveraCore extends UseNet {
                 /* E.g. {"status":"error","message":"content not in cache"} */
                 if (account.getType() == AccountType.FREE && this.supportsFreeAccountDownloadMode(account)) {
                     /* Case: User tries to download non-cached-file via free account. */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable via free account because: " + message);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable via free account because: " + message, retryInMilliseconds);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, retryInMilliseconds);
                 }
             } else if (message.matches("(?i).*file not found.*")) {
                 /*
@@ -963,13 +988,22 @@ abstract public class ZeveraCore extends UseNet {
                 /* Unknown error */
                 if (link == null) {
                     /* Account/login related error */
-                    throw new AccountUnavailableException(message, 5 * 60 * 1000l);
+                    throw new AccountUnavailableException(message, retryInMilliseconds);
                 } else if (errortype != null) {
-                    mhm.handleErrorGeneric(account, link, errortype, 2, 5 * 60 * 1000l);
+                    mhm.handleErrorGeneric(account, link, errortype, 2, retryInMilliseconds);
                 } else {
-                    mhm.handleErrorGeneric(account, link, message, 2, 5 * 60 * 1000l);
+                    mhm.handleErrorGeneric(account, link, message, 2, retryInMilliseconds);
                 }
             }
+        } else if ("deferred".equalsIgnoreCase(status)) {
+            /*
+             * Most likely user tried to download a file of a host which is in the "queue" list of supported host. Such files first need to
+             * be downloaded 100% serverside until the user can download them.
+             */
+            if (StringUtils.isEmpty(message)) {
+                message = "Wait for serverside download until you can download this file";
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, retryInMilliseconds);
         }
     }
 
