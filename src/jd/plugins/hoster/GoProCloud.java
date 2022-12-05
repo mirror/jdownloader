@@ -314,7 +314,7 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
             if (source == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                setFinalFileName(PluginJsonConfig.get(GoProConfig.class), media, link, source);
+                setFinalFileName(this, PluginJsonConfig.get(GoProConfig.class), media, link, source);
                 return source;
             }
         } catch (FlexiParserException e) {
@@ -324,7 +324,7 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
         }
     }
 
-    public static void setFinalFileName(GoProConfig config, Media media, DownloadLink link, Variation source) throws MalformedURLException {
+    public static void setFinalFileName(Plugin plugin, GoProConfig config, Media media, DownloadLink link, Variation source) throws MalformedURLException {
         String name = media.getFilename();
         if (source != null) {
             try {
@@ -335,8 +335,12 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
         }
         if (StringUtils.isEmpty(name)) {
             // may happen for shared links;
-            name = new Regex(source.getUrl(), ".*/(.+\\....)\\?").getMatch(0);
-            name = media.getId() + "-" + name;
+            name = source != null ? new Regex(source.getUrl(), ".*/(.+\\....)\\?").getMatch(0) : null;
+            name = media.getId() + "-" + StringUtils.valueOrEmpty(name);
+        }
+        String fileExtension = media.getFile_extension();
+        if (StringUtils.isNotEmpty(fileExtension)) {
+            name = plugin.correctOrApplyFileNameExtension(name, "." + fileExtension);
         }
         if (config.isUseOriginalGoProFileNames()) {
             link.setFinalFileName(name);
