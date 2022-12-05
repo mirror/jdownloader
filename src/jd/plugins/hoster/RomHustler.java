@@ -25,7 +25,6 @@ import org.appwork.utils.StringUtils;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -34,7 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.RomHustlerCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -136,18 +134,24 @@ public class RomHustler extends PluginForHost {
             }
             sleep(wait * 1001l, link);
         }
-        final String fuid = new Regex(link.getDownloadURL(), "/(\\d+)/").getMatch(0);
-        if (fuid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String ddlink = null;
-        if (true) {
-            Browser br2 = br.cloneBrowser();
-            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-            br2.getPage("/link/" + fuid + "?_=" + System.currentTimeMillis());
-            ddlink = PluginJSonUtils.getJson(br2, "hashed");
-        }
+        // final String continuelink = br.getRegex("(/roms/download/guest[^\"\\']+)").getMatch(0);
+        // if (continuelink == null) {
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        // br.getPage(continuelink);
+        String ddlink = br.getRegex("href=\"(https?://dl\\.[^\"]+)").getMatch(0);
+        /* Old handling down below */
+        // final String fuid = new Regex(link.getDownloadURL(), "/(\\d+)/").getMatch(0);
+        // if (fuid == null) {
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        // if (true) {
+        // Browser br2 = br.cloneBrowser();
+        // br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        // br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        // br2.getPage("/link/" + fuid + "?_=" + System.currentTimeMillis());
+        // ddlink = PluginJSonUtils.getJson(br2, "hashed");
+        // }
         if (StringUtils.isEmpty(ddlink) || !ddlink.startsWith("http") || ddlink.length() > 500) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -162,7 +166,11 @@ public class RomHustler extends PluginForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 503 too many connections", 1 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         String filename = getFileNameFromHeader(dl.getConnection());
         filename = Encoding.htmlDecode(filename);
