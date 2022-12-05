@@ -273,7 +273,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                             }
                         }
                         fp.add(link);
-                        GoProCloud.setFinalFileName(hostConfig, media, link, v);
+                        GoProCloud.setFinalFileName(this, hostConfig, media, link, v);
                         decryptedLinks.add(link);
                     } finally {
                     }
@@ -317,7 +317,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                             link.setLinkID(jd.plugins.hoster.GoProCloud.createLinkID(link, null));
                             GoProCloud.setCache(link, responseMedia != null ? responseMedia.jsonString : null, responseMediaDownload != null ? responseMediaDownload.jsonString : null);
                             setContentUrl(cryptedLink, id, access, link);
-                            GoProCloud.setFinalFileName(hostConfig, media, link, v);
+                            GoProCloud.setFinalFileName(this, hostConfig, media, link, v);
                             fp.add(link);
                             link.setAvailable(true);
                             if (!setFileSize(id, v, link, cacheSource)) {
@@ -339,7 +339,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                         link.setVariants(variants);
                         link.setAvailable(true);
                         link.setDownloadSize(media.getFile_size());
-                        GoProCloud.setFinalFileName(hostConfig, media, link, download.getEmbedded().getVariations().get(0));
+                        GoProCloud.setFinalFileName(this, hostConfig, media, link, download.getEmbedded().getVariations().get(0));
                         link.setVariant(variants.get(0));
                         link.setLinkID(jd.plugins.hoster.GoProCloud.createLinkID(link, variants.get(0)));
                         decryptedLinks.add(link);
@@ -350,7 +350,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                     setContentUrl(cryptedLink, id, access, link);
                     GoProCloud.setCache(link, responseMedia != null ? responseMedia.jsonString : null, null);
                     link.setAvailable(false);
-                    GoProCloud.setFinalFileName(hostConfig, media, link, null);
+                    GoProCloud.setFinalFileName(this, hostConfig, media, link, null);
                     // if (hostConfig.isUseOriginalGoProFileNames()) {
                     // link.setFinalFileName(media.getFilename());
                     // } else {
@@ -372,7 +372,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                     link.setAvailable(true);
                     link.setDownloadSize(media.getFile_size());
                     fp.add(link);
-                    GoProCloud.setFinalFileName(hostConfig, media, link, null);
+                    GoProCloud.setFinalFileName(this, hostConfig, media, link, null);
                     // if (hostConfig.isUseOriginalGoProFileNames()) {
                     // link.setFinalFileName(media.getFilename());
                     // } else {

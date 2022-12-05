@@ -15,6 +15,8 @@ public interface Media extends FlexiStorableInterface {
 
     public String getFilename();
 
+    public String getFile_extension();
+
     public String getType();
 
     public int getItem_count();

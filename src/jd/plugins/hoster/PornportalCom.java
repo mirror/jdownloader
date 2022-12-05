@@ -23,16 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.PornportalComConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -54,6 +44,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.PornportalComConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PornportalCom extends PluginForHost {
@@ -288,6 +288,7 @@ public class PornportalCom extends PluginForHost {
         try {
             con = br.openHeadConnection(dllink);
             if (con.getResponseCode() == 403 || con.getResponseCode() == 472) {
+                br.followConnection(true);
                 /* Directurl needs to be refreshed */
                 logger.info("Directurl needs to be refreshed");
                 if (account == null) {
@@ -326,8 +327,10 @@ public class PornportalCom extends PluginForHost {
                 con = br.openHeadConnection(newDirecturl);
             }
             if (con.getResponseCode() == 404) {
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (con.isContentDisposition() || con.getContentType().contains("video")) {
+                br.followConnection(true);
                 if (con.getCompleteContentLength() > 0) {
                     link.setDownloadSize(con.getCompleteContentLength());
                 }
@@ -343,6 +346,7 @@ public class PornportalCom extends PluginForHost {
                     this.dllink = newDirecturl;
                 }
             } else {
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl did not lead to downloadable content");
             }
         } finally {
@@ -765,8 +769,8 @@ public class PornportalCom extends PluginForHost {
                     ai.setStatus("Free Account (Trial)");
                 } else {
                     /**
-                     * Premium accounts must not have any expire-date! </br>
-                     * 2021-06-05: Only set expire-date if it is still valid. Premium accounts are premium as long as "isExpired" != true.
+                     * Premium accounts must not have any expire-date! </br> 2021-06-05: Only set expire-date if it is still valid. Premium
+                     * accounts are premium as long as "isExpired" != true.
                      */
                     account.setType(AccountType.PREMIUM);
                     final String expiryDate = (String) map.get("expiryDate");
@@ -785,8 +789,8 @@ public class PornportalCom extends PluginForHost {
                 }
                 if (!foundValidExpireDate && map.containsKey("addons")) {
                     /**
-                     * Try to find alternative expire-date inside users' additional purchased "bundles". </br>
-                     * Each bundle can have different expire-dates and also separate pricing and so on.
+                     * Try to find alternative expire-date inside users' additional purchased "bundles". </br> Each bundle can have
+                     * different expire-dates and also separate pricing and so on.
                      */
                     logger.info("Looking for alternative expiredate");
                     long highestExpireTimestamp = -1;
