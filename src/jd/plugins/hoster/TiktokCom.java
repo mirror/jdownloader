@@ -141,37 +141,39 @@ public class TiktokCom extends PluginForHost {
     }
 
     // private String dllink = null;
-    public static final String PROPERTY_DIRECTURL_WEBSITE                    = "directurl";
-    public static final String PROPERTY_DIRECTURL_API                        = "directurl_api";
-    public static final String PROPERTY_USERNAME                             = "username";
-    public static final String PROPERTY_USER_ID                              = "user_id";
-    public static final String PROPERTY_VIDEO_ID                             = "videoid";
-    public static final String PROPERTY_DATE                                 = "date";
-    public static final String PROPERTY_DATE_LAST_MODIFIED_HEADER            = "date_last_modified_header";
-    public static final String PROPERTY_DESCRIPTION                          = "description";
-    public static final String PROPERTY_HASHTAGS                             = "hashtags";
-    public static final String PROPERTY_LIKE_COUNT                           = "like_count";
-    public static final String PROPERTY_PLAY_COUNT                           = "play_count";
-    public static final String PROPERTY_SHARE_COUNT                          = "share_count";
-    public static final String PROPERTY_COMMENT_COUNT                        = "comment_count";
-    public static final String PROPERTY_HAS_WATERMARK                        = "has_watermark";
-    public static final String PROPERTY_FORCE_API                            = "force_api";
-    public static final String PROPERTY_LAST_USED_DOWNLOAD_MODE              = "last_used_download_mode";
-    public static final String PROPERTY_ALLOW_HEAD_REQUEST                   = "allow_head_request";
-    public static final String PROPERTY_TYPE                                 = "type";
-    public static final String PROPERTY_INDEX                                = "index";
-    public static final String PROPERTY_INDEX_MAX                            = "index_max";
-    public static final String TYPE_AUDIO                                    = "audio";
-    public static final String TYPE_VIDEO                                    = "video";
-    public static final String TYPE_PICTURE                                  = "picture";
-    public static final String PATTERN_VIDEO                                 = "https?://[^/]+/@([^/]+)/video/(\\d+).*";
+    public static final String PROPERTY_DIRECTURL_WEBSITE                     = "directurl";
+    public static final String PROPERTY_DIRECTURL_API                         = "directurl_api";
+    public static final String PROPERTY_USERNAME                              = "username";
+    public static final String PROPERTY_USER_ID                               = "user_id";
+    public static final String PROPERTY_VIDEO_ID                              = "videoid";
+    public static final String PROPERTY_DATE                                  = "date";
+    public static final String PROPERTY_ATTEMPTED_TO_OBTAIN_DATE_FROM_WEBSITE = "attempted_to_obtain_date_from_website";
+    public static final String PROPERTY_DATE_FROM_WEBSITE                     = "date_from_website";
+    public static final String PROPERTY_DATE_LAST_MODIFIED_HEADER             = "date_last_modified_header";
+    public static final String PROPERTY_DESCRIPTION                           = "description";
+    public static final String PROPERTY_HASHTAGS                              = "hashtags";
+    public static final String PROPERTY_LIKE_COUNT                            = "like_count";
+    public static final String PROPERTY_PLAY_COUNT                            = "play_count";
+    public static final String PROPERTY_SHARE_COUNT                           = "share_count";
+    public static final String PROPERTY_COMMENT_COUNT                         = "comment_count";
+    public static final String PROPERTY_HAS_WATERMARK                         = "has_watermark";
+    public static final String PROPERTY_FORCE_API                             = "force_api";
+    public static final String PROPERTY_LAST_USED_DOWNLOAD_MODE               = "last_used_download_mode";
+    public static final String PROPERTY_ALLOW_HEAD_REQUEST                    = "allow_head_request";
+    public static final String PROPERTY_TYPE                                  = "type";
+    public static final String PROPERTY_INDEX                                 = "index";
+    public static final String PROPERTY_INDEX_MAX                             = "index_max";
+    public static final String TYPE_AUDIO                                     = "audio";
+    public static final String TYPE_VIDEO                                     = "video";
+    public static final String TYPE_PICTURE                                   = "picture";
+    public static final String PATTERN_VIDEO                                  = "https?://[^/]+/@([^/]+)/video/(\\d+).*";
     /* API related stuff */
-    public static final String API_CLIENT                                    = "trill";
-    public static final String API_AID                                       = "1180";
-    public static final String API_BASE                                      = "https://api16-normal-c-useast1a.tiktokv.com/aweme/v1";
-    public static final String API_VERSION_NAME                              = "25.6.2";
-    public static final String API_VERSION_CODE                              = "250602";
-    private final String       PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT = "has_shown_download_mode_hint";
+    public static final String API_CLIENT                                     = "trill";
+    public static final String API_AID                                        = "1180";
+    public static final String API_BASE                                       = "https://api16-normal-c-useast1a.tiktokv.com/aweme/v1";
+    public static final String API_VERSION_NAME                               = "25.6.2";
+    public static final String API_VERSION_CODE                               = "250602";
+    private final String       PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT  = "has_shown_download_mode_hint";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -274,6 +276,31 @@ public class TiktokCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    /**
+     * Handling that tries to find date via website if needed. Call this before download but not during availablecheck as it would prolong
+     * the check!
+     */
+    private void missingDateFilenamePreDownloadHandling(final DownloadLink link, final Account account) {
+        if (!link.hasProperty(PROPERTY_DATE) && !link.hasProperty(PROPERTY_ATTEMPTED_TO_OBTAIN_DATE_FROM_WEBSITE)) {
+            logger.info("Trying to find video create date via date workaround");
+            try {
+                final Browser br3 = br.cloneBrowser();
+                br3.getPage(link.getPluginPatternMatcher());
+                if (getAndSetDateFromWebsite(br3, link)) {
+                    /*
+                     * Filename has already been set before but date was not available --> Set filename again as date information is given
+                     * now.
+                     */
+                    logger.info("Re-generating filename as date was missing and has been found now");
+                    setFilename(link);
+                }
+            } catch (final Exception ignore) {
+                logger.log(ignore);
+                logger.info("Failed to obtain date via website due to Exception");
+            }
+        }
     }
 
     private void missingDateFilenameLastResortHandling(final DownloadLink link, final URLConnectionAdapter con) {
@@ -493,6 +520,7 @@ public class TiktokCom extends PluginForHost {
                 if (commentCountO != null) {
                     setCommentCount(link, (Number) commentCountO);
                 }
+                getAndSetDateFromWebsite(br, link);
                 if (dllink == null) {
                     /* Fallback */
                     if (!isDownload) {
@@ -544,7 +572,7 @@ public class TiktokCom extends PluginForHost {
                 Map<String, Object> videoData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "props/pageProps/videoData");
                 if (videoData == null) {
                     // different videoJson when we do not follow the embed/v2 redirect
-                    Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "source/data/");
+                    final Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "source/data/");
                     if (data != null) {
                         String key = null;
                         for (String keyEntry : data.keySet()) {
@@ -601,7 +629,7 @@ public class TiktokCom extends PluginForHost {
                 }
                 link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
             } else {
-                /* Rev. 40928 and earlier */
+                /* Old deprecated handling of rev. 40928 and earlier */
                 dllink = generateDownloadurlOld(br, fid);
                 link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
             }
@@ -612,6 +640,19 @@ public class TiktokCom extends PluginForHost {
         }
         link.setAvailable(true);
         setFilename(link);
+    }
+
+    private boolean getAndSetDateFromWebsite(final Browser br, final DownloadLink link) {
+        link.setProperty(PROPERTY_ATTEMPTED_TO_OBTAIN_DATE_FROM_WEBSITE, true);
+        final String createDateStr = br.getRegex("(?i)</span><span style=\"margin:0 4px\">[^<]*</span><span>(\\d{4}-\\d{2}-\\d{2})</span></span></a>").getMatch(0);
+        if (createDateStr != null) {
+            logger.info("Successfully found video create date in website html: " + createDateStr);
+            link.setProperty(PROPERTY_DATE_FROM_WEBSITE, createDateStr);
+            return true;
+        } else {
+            logger.warning("Failed to find date via date workaround");
+            return false;
+        }
     }
 
     public void checkAvailablestatusAPI(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
@@ -848,9 +889,13 @@ public class TiktokCom extends PluginForHost {
 
     private static String getDateFormatted(final DownloadLink link) {
         final String lastModifiedHeaderValue = link.getStringProperty(PROPERTY_DATE_LAST_MODIFIED_HEADER);
+        final String dateFromWebsite = link.getStringProperty(PROPERTY_DATE_FROM_WEBSITE);
         if (link.hasProperty(PROPERTY_DATE)) {
             /* Prefer pre-formatted date obtained via timestamp from API/website-json */
             return link.getStringProperty(PROPERTY_DATE);
+        } else if (dateFromWebsite != null) {
+            /* This one is already available in the format we want. */
+            return dateFromWebsite;
         } else if (lastModifiedHeaderValue != null) {
             /* Use formatted date of "Last-Modified" header of video directurls timestamp as fallback. */
             return convertDateFormat(lastModifiedHeaderValue);
@@ -967,6 +1012,7 @@ public class TiktokCom extends PluginForHost {
         }
         /* Remember last used download mode */
         link.setProperty(PROPERTY_LAST_USED_DOWNLOAD_MODE, mode.name());
+        this.missingDateFilenamePreDownloadHandling(link, account);
         if (this.attemptStoredDownloadurlDownload(link)) {
             logger.info("Using stored directurl for downloading");
         } else {
