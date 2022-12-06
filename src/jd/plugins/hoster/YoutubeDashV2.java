@@ -156,6 +156,8 @@ import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInterface {
     private static final String    YT_ALTERNATE_VARIANT = "YT_ALTERNATE_VARIANT";
     private static final String    DASH_AUDIO_FINISHED  = "DASH_AUDIO_FINISHED";
+    private static final String    DASH_AUDIO_ITAG      = "DASH_AUDIO_ITAG";
+    private static final String    DASH_VIDEO_ITAG      = "DASH_VIDEO_ITAG";
     private static final String    DASH_VIDEO_FINISHED  = "DASH_VIDEO_FINISHED";
     private static final String    DASH_AUDIO_LOADED    = "DASH_AUDIO_LOADED";
     private static final String    DASH_VIDEO_LOADED    = "DASH_VIDEO_LOADED";
@@ -476,6 +478,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     // url = url.replace("signature=", "signature=BAD");
                                     // }
                                     try {
+                                        lastCon = null;
                                         lastCon = br.openRequestConnection(new HeadRequest(url));
                                     } catch (IOException e) {
                                         logger.log(e);
@@ -487,9 +490,10 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     if (lastCon != null && lastCon.getResponseCode() == 200) {
                                         workingVideoStream = cache;
                                         // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, cache);
-                                        if (lastCon.getCompleteContentLength() > 0) {
-                                            totalSize += lastCon.getCompleteContentLength();
-                                            data.setDashVideoSize(lastCon.getCompleteContentLength());
+                                        final long contentLenght = lastCon.getCompleteContentLength();
+                                        if (workingVideoStream.getContentLength() != contentLenght) {
+                                            logger.info("update contentLength! itag=" + workingVideoStream.getItag() + " from=" + workingVideoStream.getContentLength() + " to=" + contentLenght);
+                                            workingVideoStream.setContentLength(contentLenght);
                                         }
                                         firstException = null;
                                         ok |= true;
@@ -552,6 +556,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                 } else {
                                     final String url = cache.getBaseUrl();
                                     try {
+                                        lastCon = null;
                                         lastCon = br.openRequestConnection(new HeadRequest(url));
                                     } catch (IOException e) {
                                         logger.log(e);
@@ -562,10 +567,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                     }
                                     if (lastCon != null && lastCon.getResponseCode() == 200) {
                                         workingAudioStream = cache;
-                                        // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, new YoutubeFinalLinkResource(si));
-                                        if (lastCon.getCompleteContentLength() > 0) {
-                                            totalSize += lastCon.getCompleteContentLength();
-                                            data.setDashAudioSize(lastCon.getCompleteContentLength());
+                                        final long contentLenght = lastCon.getCompleteContentLength();
+                                        if (contentLenght > 0) {
+                                            totalSize += contentLenght;
+                                            if (workingAudioStream.getContentLength() != contentLenght) {
+                                                logger.info("update contentLength! itag=" + workingAudioStream.getItag() + " from=" + workingAudioStream.getContentLength() + " to=" + contentLenght);
+                                                workingAudioStream.setContentLength(contentLenght);
+                                            }
                                         }
                                         firstException = null;
                                         ok |= true;
@@ -1036,20 +1044,15 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     }
 
     public static interface YoutubeProperties extends DownloadLinkDatabindingInterface {
-        public static final String DASH_VIDEO_SIZE = "DASH_VIDEO_SIZE";
-        public static final String DASH_AUDIO_SIZE = "DASH_AUDIO_SIZE";
+        @Key(DASH_VIDEO_ITAG)
+        void setDashVideoITag(final int itag);
 
-        @Key(DASH_VIDEO_SIZE)
-        long getDashVideoSize();
+        int getDashVideoITag();
 
-        @Key(DASH_VIDEO_SIZE)
-        void setDashVideoSize(long longContentLength);
+        @Key(DASH_AUDIO_ITAG)
+        void setDashAudioITag(final int itag);
 
-        @Key(DASH_AUDIO_SIZE)
-        long getDashAudioSize();
-
-        @Key(DASH_AUDIO_SIZE)
-        void setDashAudioSize(long longContentLength);
+        int getDashAudioITag();
 
         @Key(DASH_VIDEO_FINISHED)
         void setDashVideoFinished(boolean b);
@@ -1097,21 +1100,26 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         // final String dashFinishedProperty;
         final long chunkOffset;
         final YoutubeFinalLinkResource streamData;
+        final String streamDataID;
         if (isVideoStream) {
-            streamData = getYoutubeFinalLinkResource(downloadLink, YoutubeHelper.YT_STREAM_DATA_VIDEO);
+            streamDataID = YoutubeHelper.YT_STREAM_DATA_VIDEO;
+            streamData = getYoutubeFinalLinkResource(downloadLink, streamDataID);
             dashName = getDashVideoFileName(downloadLink);
             dashChunksProperty = DASH_VIDEO_CHUNKS;
             chunkOffset = 0;
+            data.setDashVideoITag(streamData.getItag().getITAG());
         } else {
-            streamData = getYoutubeFinalLinkResource(downloadLink, YoutubeHelper.YT_STREAM_DATA_AUDIO);
+            streamDataID = YoutubeHelper.YT_STREAM_DATA_AUDIO;
+            streamData = getYoutubeFinalLinkResource(downloadLink, streamDataID);
             dashName = getDashAudioFileName(downloadLink);
             dashChunksProperty = DASH_AUDIO_CHUNKS;
             final AbstractVariant variant = getVariant(downloadLink);
             if (variant.getType() == DownloadType.DASH_AUDIO) {
                 chunkOffset = 0;
             } else {
-                chunkOffset = data.getDashVideoSize();
+                chunkOffset = streamData.getContentLength();
             }
+            data.setDashAudioITag(streamData.getItag().getITAG());
         }
         final String dashPath = new File(downloadLink.getDownloadDirectory(), dashName).getAbsolutePath();
         final DownloadLink dashLink = new DownloadLink(this, dashName, getHost(), streamData.getBaseUrl(), true) {
@@ -1225,25 +1233,17 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
 
             @Override
             public long getVerifiedFileSize() {
-                long ret = -1l;
-                if (isVideoStream) {
-                    ret = data.getDashVideoSize();
-                } else {
-                    ret = data.getDashAudioSize();
-                }
+                final long ret = streamData.getContentLength();
                 if (ret <= 0) {
-                    ret = -1;
+                    return -1;
+                } else {
+                    return ret;
                 }
-                return ret;
             }
 
             @Override
             public long getKnownDownloadSize() {
-                if (isVideoStream) {
-                    return data.getDashVideoSize();
-                } else {
-                    return data.getDashAudioSize();
-                }
+                return getVerifiedFileSize();
             }
 
             @Override
@@ -1251,28 +1251,21 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             }
 
             @Override
-            public void setLinkStatus(int finished) {
+            public void setLinkStatus(final int finished) {
+                final boolean finishedFlag = LinkStatus.FINISHED == finished;
                 if (isVideoStream) {
-                    data.setDashVideoFinished(LinkStatus.FINISHED == finished);
+                    data.setDashVideoFinished(finishedFlag);
                 } else {
-                    data.setDashAudioFinished(LinkStatus.FINISHED == finished);
+                    data.setDashAudioFinished(finishedFlag);
                 }
             }
 
             @Override
             public void setVerifiedFileSize(long length) {
-                if (isVideoStream) {
-                    if (length >= 0) {
-                        data.setDashVideoSize(length);
-                    } else {
-                        data.setDashVideoSize(-1);
-                    }
-                } else {
-                    if (length >= 0) {
-                        data.setDashAudioSize(length);
-                    } else {
-                        data.setDashAudioSize(-1);
-                    }
+                if (streamData.getContentLength() != length) {
+                    logger.info("update contentLength! itag=" + streamData.getItag() + " from=" + streamData.getContentLength() + " to=" + length);
+                    streamData.setContentLength(length);
+                    downloadLink.setProperty(streamDataID, streamData);
                 }
             }
 
@@ -2444,10 +2437,10 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             downloadLink.getTempProperties().removeProperty("ratebypass");
             data.setDashAudioBytesLoaded(0);
             data.setDashAudioFinished(false);
-            data.setDashAudioSize(-1);
+            data.setDashAudioITag(-1);
             data.setDashVideoBytesLoaded(0);
             data.setDashVideoFinished(false);
-            data.setDashVideoSize(-1);
+            data.setDashVideoITag(-1);
             downloadLink.removeProperty(DASH_VIDEO_CHUNKS);
             downloadLink.removeProperty(DASH_AUDIO_CHUNKS);
             for (final Entry<String, Object> entry : downloadLink.getProperties().entrySet()) {
