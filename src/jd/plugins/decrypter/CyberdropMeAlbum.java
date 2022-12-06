@@ -92,11 +92,11 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public static final String TYPE_ALBUM       = "https?://[^/]+/a/([A-Za-z0-9]+)";                                // album
-    public static final String TYPE_STREAM      = "https?://stream(\\d*)\\.[^/]+/(?:v|d)/(.+\\." + EXTENSIONS + ")"; // bunkr
-    public static final String TYPE_CDN         = "https?://cdn(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";           // bunkr
-    public static final String TYPE_FS          = "https?://fs-(\\d+)\\.[^/]+/(.+\\." + EXTENSIONS + ")";           // cyberdrop
-    public static final String TYPE_MEDIA_FILES = "https?://media-files(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";   // bunkr
+    public static final String TYPE_ALBUM       = "(?i)https?://[^/]+/a/([A-Za-z0-9]+)";                                // album
+    public static final String TYPE_STREAM      = "(?i)https?://stream(\\d*)\\.[^/]+/(?:v|d)/(.+\\." + EXTENSIONS + ")"; // bunkr
+    public static final String TYPE_CDN         = "(?i)https?://cdn(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";           // bunkr
+    public static final String TYPE_FS          = "(?i)https?://fs-(\\d+)\\.[^/]+/(.+\\." + EXTENSIONS + ")";           // cyberdrop
+    public static final String TYPE_MEDIA_FILES = "(?i)https?://media-files(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";   // bunkr
     private PluginForHost      plugin           = null;
 
     private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, final String directurl, final String filename, final String filesizeBytes, final String filesize) throws Exception {
