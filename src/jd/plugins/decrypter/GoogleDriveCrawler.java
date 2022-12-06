@@ -565,7 +565,6 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
             if (isFile) {
                 /* Single file */
                 final long fileSize = JavaScriptEngineFactory.toLong(resource.get("fileSize"), -1);
-                /* Single file */
                 dl = createDownloadlink(generateFileURL(id, resourceKey));
                 final String googleDriveDocumentType = new Regex(mimeType, "application/vnd\\.google-apps\\.(.+)").getMatch(0);
                 if (googleDriveDocumentType != null) {
