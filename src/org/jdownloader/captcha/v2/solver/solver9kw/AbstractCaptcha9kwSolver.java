@@ -265,7 +265,7 @@ public abstract class AbstractCaptcha9kwSolver<T> extends CESChallengeSolver<T> 
             Thread.sleep(10000);
             final Challenge<T> captchaChallenge = getChallenge(solverJob);
             queryPoll.appendEncoded("id", captchaID);
-            while (true) {
+            while (solverJob.getJob().isAlive() && !solverJob.getJob().isSolved()) {
                 final String ret = br.getPage(getAPIROOT() + "index.cgi?" + queryPoll.toString());
                 if (StringUtils.isEmpty(ret) || ret == "No htmlCode read") {
                     setdebug(solverJob, "CaptchaID " + captchaID + " - NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");

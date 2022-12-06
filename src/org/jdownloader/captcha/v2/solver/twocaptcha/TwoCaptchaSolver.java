@@ -84,7 +84,7 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
             if (1 == response.getStatus()) {
                 String id = response.getRequest();
                 job.setStatus(new SolverStatus(_GUI.T.DeathByCaptchaSolver_solveBasicCaptchaChallenge_solving(), NewTheme.I().getIcon(IconKey.ICON_WAIT, 10)));
-                while (true) {
+                while (job.getJob().isAlive() && !job.getJob().isSolved()) {
                     UrlQuery queryPoll = createQueryForPolling();
                     queryPoll.appendEncoded("id", id);
                     String ret = br.getPage("http://2captcha.com/res.php?" + queryPoll.toString());
@@ -92,8 +92,7 @@ public class TwoCaptchaSolver extends AbstractTwoCaptchaSolver<String> {
                     if ("CAPCHA_NOT_READY".equals(ret)) {
                         Thread.sleep(5000);
                         continue;
-                    }
-                    if (ret.startsWith("OK|")) {
+                    } else if (ret.startsWith("OK|")) {
                         job.setAnswer(new TwoCaptchaResponse(captchaChallenge, this, id, ret.substring(3)));
                     }
                     return;

@@ -616,7 +616,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         /* E.g. when directurl was re-used successfully, download is already ready to be started! */
         if (dl == null) {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, resume, getMaxChunks(account));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalDownloadURL, resume, getMaxChunks(link, account));
         }
         /* 2020-03-17: Content-Disposition should always be given */
         if (!looksLikeDownloadableContent(dl.getConnection())) {
@@ -711,10 +711,16 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
     }
 
-    private int getMaxChunks(final Account account) {
+    private int getMaxChunks(final DownloadLink link, final Account account) {
         if (account != null && AccountType.PREMIUM.equals(account.getType())) {
-            // 21.11.16, check highest that can be handled without server issues
-            return -5;
+            final long knownDownloadSize = link.getKnownDownloadSize();
+            if (knownDownloadSize > 0 && knownDownloadSize <= 1024l * 1024l) {
+                // small files seem to create issues with multiple connections
+                return 1;
+            } else {
+                // 21.11.16, check highest that can be handled without server issues
+                return -5;
+            }
         } else {
             /* Free & Free account */
             return 1;
@@ -726,7 +732,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         final String dllink = link.getStringProperty(directlinkproperty);
         if (dllink != null) {
             final boolean resume = this.isResumeable(link, account);
-            final int maxchunks = this.getMaxChunks(account);
+            final int maxchunks = this.getMaxChunks(link, account);
             final Browser br2 = this.br.cloneBrowser();
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
@@ -1390,7 +1396,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         if (PluginJsonConfig.get(RapidGatorConfig.class).isExperimentalEnforceSSL()) {
             url = url.replaceFirst("^http://", "https://");
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, getMaxChunks(account));
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, getMaxChunks(link, account));
         dl.setFilenameFix(FIX_FILENAMES);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
@@ -1599,7 +1605,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (PluginJsonConfig.get(RapidGatorConfig.class).isExperimentalEnforceSSL()) {
                 dllink = dllink.replaceFirst("^http://", "https://");
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, getMaxChunks(account));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, getMaxChunks(link, account));
             dl.setFilenameFix(FIX_FILENAMES);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");

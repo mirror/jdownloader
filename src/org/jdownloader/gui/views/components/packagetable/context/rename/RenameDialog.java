@@ -205,19 +205,37 @@ public class RenameDialog extends AbstractDialog<Object> {
         if (node == null || node instanceof AbstractPackageChildrenNode) {
             String ret = name;
             boolean again = true;
-            while (again) {
+            removeLoop: while (again) {
                 again = false;
                 for (final ArchiveType archive : ArchiveType.values()) {
-                    if (archive.matches(ret)) {
-                        ret = archive.getMatches(ret)[0];
-                        again = true;
+                    switch (archive) {
+                    case RAR_MULTI:
+                    case RAR_MULTI2:
+                    case RAR_MULTI3:
+                    case RAR_MULTI4:
+                    case SEVENZIP_PARTS:
+                    case ZIP_MULTI:
+                    case ZIP_MULTI2:
+                        if (archive.matches(ret)) {
+                            ret = archive.getMatches(ret)[0];
+                            again = true;
+                            continue removeLoop;
+                        }
+                        break;
+                    default:
                         break;
                     }
                 }
                 for (final SplitType split : SplitType.values()) {
-                    if (split.matches(ret)) {
-                        ret = split.getMatches(ret)[0];
-                        again = true;
+                    switch (split) {
+                    case XTREMSPLIT:
+                        if (split.matches(ret)) {
+                            ret = split.getMatches(ret)[0];
+                            again = true;
+                            continue removeLoop;
+                        }
+                        break;
+                    default:
                         break;
                     }
                 }
