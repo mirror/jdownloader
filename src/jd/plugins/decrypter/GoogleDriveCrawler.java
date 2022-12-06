@@ -22,6 +22,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -42,20 +49,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { jd.plugins.hoster.GoogleDrive.class })
-public class GoogleDrive extends PluginForDecrypt {
+public class GoogleDriveCrawler extends PluginForDecrypt {
     /**
-     * @author raztoki, pspzockerscene
+     * @author raztoki, pspzockerscene, Jiaz
      */
-    public GoogleDrive(PluginWrapper wrapper) {
+    public GoogleDriveCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -199,7 +199,8 @@ public class GoogleDrive extends PluginForDecrypt {
         if (param.getDownloadLink() != null && param.getDownloadLink().hasProperty(PROPERTY_SPECIAL_SHORTCUT_FOLDER)) {
             /**
              * 2021-05-31: Workaround for special folder shortcuts --> FolderID will change and we cannot use the given folderID via API!
-             * </br> Very rare case!!
+             * </br>
+             * Very rare case!!
              */
             websiteBR.getPage(param.getCryptedUrl());
             final String newFolderID = this.getFolderID(websiteBR.getURL());
@@ -224,9 +225,9 @@ public class GoogleDrive extends PluginForDecrypt {
         queryFolder.add("supportsAllDrives", "true");
         queryFolder.add("includeItemsFromAllDrives", "true");
         /**
-         * pageSize = up to how many items get returned per request. </br> 2021-02-25: Appearently the GDrive API decides randomly how many
-         * items it wants to return but it doesn't matter as we got pagination. It worked fine in my tests in their API explorer but in
-         * reality the max number of items I got was 30.
+         * pageSize = up to how many items get returned per request. </br>
+         * 2021-02-25: Appearently the GDrive API decides randomly how many items it wants to return but it doesn't matter as we got
+         * pagination. It worked fine in my tests in their API explorer but in reality the max number of items I got was 30.
          */
         queryFolder.add("pageSize", "200");
         queryFolder.appendEncoded("fields", "kind,nextPageToken,incompleteSearch,files(" + jd.plugins.hoster.GoogleDrive.getFieldsAPI() + ")");
@@ -243,8 +244,9 @@ public class GoogleDrive extends PluginForDecrypt {
             br.getPage(jd.plugins.hoster.GoogleDrive.API_BASE + "/files?" + queryFolder.toString());
             ((jd.plugins.hoster.GoogleDrive) hostPlugin).handleErrorsAPI(br, null, account);
             final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-            /* 2020-12-10: Will return empty array for private items too! */
-            if (!entries.containsKey("files") || ((List<Object>) entries.get("files")).size() == 0) {
+            /* 2020-12-10: This will return "Offline folder" for private items too! */
+            final Object filesO = entries.get("files");
+            if (filesO == null || ((List<Object>) filesO).size() == 0) {
                 final String offlineFolderTitle;
                 if (!StringUtils.isEmpty(subfolderPath)) {
                     offlineFolderTitle = folderID + "_" + subfolderPath;
@@ -258,15 +260,16 @@ public class GoogleDrive extends PluginForDecrypt {
             }
             if (page == 0 && subfolderPath == null) {
                 /**
-                 * Workaround to find the name of the folder we're currently in. </br> TODO: Find a way to do this via API.
+                 * Workaround to find the name of the folder we're currently in. </br>
+                 * TODO: Find a way to do this via API.
                  */
                 /* Leave this in the loop! It doesn't really belong here but it's only a workaround and only executed once! */
                 logger.info("Trying to find title of current folder");
                 try {
                     /**
                      * 2020-12-09: psp: This is a workaround because API doesn't return name of the current folder or I'm just too stupid
-                     * ... </br> Basically for big folder structures we really only need to do this once and after that we'll use the API
-                     * only!
+                     * ... </br>
+                     * Basically for big folder structures we really only need to do this once and after that we'll use the API only!
                      */
                     /*
                      * TODO Login when API once API login is possible -> Then we'd be able to crawl private folders which are restricted to
@@ -669,7 +672,7 @@ public class GoogleDrive extends PluginForDecrypt {
             try {
                 final Map<String, Object> capabilities = (Map<String, Object>) resource.get("capabilities");
                 canDownload = ((Boolean) capabilities.get("canDownload")).booleanValue();
-            } catch (final Throwable e) {
+            } catch (final Exception ignore) {
             }
             /* 2021-05-31: application/vnd.google-apps.shortcut is (or can be??) a folder shortcut */
             final boolean isShortcutFolder = StringUtils.equalsIgnoreCase(mimeType, "application/vnd.google-apps.shortcut") && !canDownload;
