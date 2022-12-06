@@ -74,6 +74,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.GoogleDriveCrawler;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.raf.HTTPDownloader;
 
@@ -327,14 +328,14 @@ public class GoogleDrive extends PluginForHost {
         }
         prepBrowserAPI(this.br);
         if (fileResourceKey != null) {
-            jd.plugins.decrypter.GoogleDrive.setResourceKeyHeader(br, fid, fileResourceKey);
+            GoogleDriveCrawler.setResourceKeyHeader(br, fid, fileResourceKey);
         }
         final UrlQuery queryFile = new UrlQuery();
         queryFile.appendEncoded("fileId", fid);
         queryFile.add("supportsAllDrives", "true");
         queryFile.appendEncoded("fields", getFieldsAPI());
         queryFile.appendEncoded("key", getAPIKey());
-        br.getPage(jd.plugins.hoster.GoogleDrive.API_BASE + "/files/" + fid + "?" + queryFile.toString());
+        br.getPage(GoogleDrive.API_BASE + "/files/" + fid + "?" + queryFile.toString());
         this.handleErrorsAPI(this.br, link, null);
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         parseFileInfoAPI(this, link, entries);
@@ -1025,7 +1026,7 @@ public class GoogleDrive extends PluginForHost {
                     // queryFile.appendEncoded("fields", getFieldsAPI());
                     queryFile.appendEncoded("key", getAPIKey());
                     queryFile.appendEncoded("alt", "media");
-                    this.dllink = jd.plugins.hoster.GoogleDrive.API_BASE + "/files/" + this.getFID(link) + "?" + queryFile.toString();
+                    this.dllink = GoogleDrive.API_BASE + "/files/" + this.getFID(link) + "?" + queryFile.toString();
                 }
             }
         } else {
