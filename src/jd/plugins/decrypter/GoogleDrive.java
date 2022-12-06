@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -41,10 +42,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -241,7 +242,7 @@ public class GoogleDrive extends PluginForDecrypt {
             logger.info("Working on pagination page " + (page + 1));
             br.getPage(jd.plugins.hoster.GoogleDrive.API_BASE + "/files?" + queryFolder.toString());
             ((jd.plugins.hoster.GoogleDrive) hostPlugin).handleErrorsAPI(br, null, account);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             /* 2020-12-10: Will return empty array for private items too! */
             if (!entries.containsKey("files") || ((List<Object>) entries.get("files")).size() == 0) {
                 final String offlineFolderTitle;
@@ -454,7 +455,7 @@ public class GoogleDrive extends PluginForDecrypt {
             sleep(500, param);
             /* Most common reason of failure: teamDriveID was not found thus the request is wrong! */
             brc.getPage("https://clients6.google.com/drive/v2beta/files?" + query.toString());
-            Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
             final List<Object> items = (List<Object>) entries.get("items");
             if (items == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -559,7 +560,7 @@ public class GoogleDrive extends PluginForDecrypt {
             String folderPath = null;
             if (isFile) {
                 /* Single file */
-                final long fileSize = JavaScriptEngineFactory.toLong(resource.get("fileSize"), 0);
+                final long fileSize = JavaScriptEngineFactory.toLong(resource.get("fileSize"), -1);
                 /* Single file */
                 dl = createDownloadlink(generateFileURL(id, resourceKey));
                 final String googleDriveDocumentType = new Regex(mimeType, "application/vnd\\.google-apps\\.(.+)").getMatch(0);
@@ -568,12 +569,17 @@ public class GoogleDrive extends PluginForDecrypt {
                 } else {
                     dl.setName(title);
                 }
-                if (fileSize > 0) {
+                if (fileSize >= 0) {
                     dl.setVerifiedFileSize(fileSize);
                 }
                 dl.setAvailable(true);
                 if (fp != null) {
                     dl._setFilePackage(fp);
+                }
+                final String modifiedDate = StringUtils.valueOfOrNull(resource.get("modifiedDate"));
+                if (modifiedDate != null) {
+                    final long lastModifiedDate = TimeFormatter.getMilliSeconds(modifiedDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
+                    dl.setLastModifiedTimestamp(lastModifiedDate);
                 }
                 if (subfolder != null) {
                     folderPath = subfolder;
