@@ -262,7 +262,7 @@ public class GoogleDrive extends PluginForHost {
 
     /** Returns true if this link has the worst "Quota reached" status: It is currently not even downloadable via account. */
     private boolean isDownloadQuotaReachedAccount(final DownloadLink link) {
-        if (link.hasProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT)) {
+        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT, 0) < 10 * 60 * 1000l) {
             return true;
         } else {
             return false;
@@ -271,7 +271,7 @@ public class GoogleDrive extends PluginForHost {
 
     /** Returns true if this link has the worst "Streaming Quota reached" status: It is currently not even downloadable via account. */
     private boolean isStreamQuotaReachedAccount(final DownloadLink link) {
-        if (link.hasProperty(PROPERTY_IS_STREAM_QUOTA_REACHED_ACCOUNT)) {
+        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_IS_STREAM_QUOTA_REACHED_ACCOUNT, 0) < 10 * 60 * 1000l) {
             return true;
         } else {
             return false;
@@ -283,7 +283,7 @@ public class GoogleDrive extends PluginForHost {
      * downloadable at all).
      */
     private boolean isDownloadQuotaReachedAnonymous(final DownloadLink link) {
-        if (link.hasProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS)) {
+        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, 0) < 10 * 60 * 1000l) {
             return true;
         } else if (isDownloadQuotaReachedAccount(link)) {
             /* If a file is quota limited in account mode, it is quota limited in anonymous download mode too. */
@@ -778,7 +778,7 @@ public class GoogleDrive extends PluginForHost {
                         errorQuotaReachedInAllModes(link);
                     } else {
                         /* User has never tried non-stream download with account --> This could still work for him. */
-                        link.setProperty(PROPERTY_IS_STREAM_QUOTA_REACHED_ACCOUNT, true);
+                        link.setProperty(PROPERTY_IS_STREAM_QUOTA_REACHED_ACCOUNT, System.currentTimeMillis());
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream Quota reached: Try later or disable stream download in plugin settings and try again", getQuotaReachedWaittime());
                     }
                 } else {
@@ -1318,14 +1318,14 @@ public class GoogleDrive extends PluginForHost {
             if (this.isDownloadQuotaReachedAccount(link)) {
                 errorQuotaReachedInAllModes(link);
             } else {
-                link.setProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT, true);
+                link.setProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT, System.currentTimeMillis());
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: " + getDownloadQuotaReachedHint1(), getQuotaReachedWaittime());
             }
         } else {
             if (this.isDownloadQuotaReachedAccount(link)) {
                 errorQuotaReachedInAllModes(link);
             } else {
-                link.setProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, true);
+                link.setProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, System.currentTimeMillis());
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: Try later or add Google account and retry", getQuotaReachedWaittime());
             }
         }
@@ -1334,10 +1334,10 @@ public class GoogleDrive extends PluginForHost {
     /** Use this for "Quota reached" errors during API download attempts. */
     private void errorQuotaReachedInAPIMode(final DownloadLink link, final Account account) throws PluginException {
         if (PluginJsonConfig.get(GoogleConfig.class).getAPIDownloadMode() == APIDownloadMode.WEBSITE_IF_ACCOUNT_AVAILABLE_AND_FILE_IS_QUOTA_LIMITED && account != null && !this.isDownloadQuotaReachedAccount(link)) {
-            link.setProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, true);
+            link.setProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, System.currentTimeMillis());
             throw new PluginException(LinkStatus.ERROR_RETRY, "Retry with account in website mode to avoid 'Quota reached'");
         } else {
-            link.setProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, true);
+            link.setProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, System.currentTimeMillis());
             if (account != null) {
                 if (this.isDownloadQuotaReachedAccount(link)) {
                     errorQuotaReachedInAllModes(link);

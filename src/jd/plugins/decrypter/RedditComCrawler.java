@@ -41,6 +41,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
@@ -53,12 +54,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.RedditCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reddit.com" }, urls = { "https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[^/]+(?:/comments/[a-z0-9]+(/[A-Za-z0-9\\-_]+/?)?)?|gallery/[a-z0-9]+|user/[^/]+(?:/saved)?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { RedditCom.class })
 public class RedditComCrawler extends PluginForDecrypt {
     public RedditComCrawler(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,30 +78,74 @@ public class RedditComCrawler extends PluginForDecrypt {
         return 1;
     }
 
-    private static final String TYPE_SUBREDDIT          = "(?:https?://[^/]+)?/r/([^/]+)$";
-    private static final String TYPE_SUBREDDIT_COMMENTS = "(?:https?://[^/]+)?/r/([^/]+)/comments/([a-z0-9]+)(/([^/\\?]+)/?)?";
-    private static final String TYPE_GALLERY            = "(?:https?://[^/]+)?/gallery/([a-z0-9]+)";
-    private static final String TYPE_USER               = "(?:https?://[^/]+)?/user/([^/]+)";
-    private static final String TYPE_USER_SAVED_OBJECTS = "(?:https?://[^/]+)?/user/([^/]+)/saved";
+    private static List<String[]> getPluginDomains() {
+        return RedditCom.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        ret.add("https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[^/]+(?:/comments/[a-z0-9]+(/[A-Za-z0-9\\-_]+/?)?)?|gallery/[a-z0-9]+|user/[^/]+(?:/saved)?)" + "|" + PATTERN_SELFHOSTED_VIDEO);
+        return ret.toArray(new String[0]);
+    }
+
+    public static final String  PATTERN_SELFHOSTED_IMAGE   = "https?://i\\.redd\\.it/([a-z0-9]+)\\.[A-Za-z]{2,5}";
+    public static final String  PATTERN_SELFHOSTED_VIDEO   = "https?://v\\.redd\\.it/([a-z0-9]+)";
+    private static final String PATTERN_SUBREDDIT          = "(?:https?://[^/]+)?/r/([^/]+)$";
+    private static final String PATTERN_SUBREDDIT_COMMENTS = "(?:https?://[^/]+)?/r/([^/]+)/comments/([a-z0-9]+)(/([^/\\?]+)/?)?";
+    private static final String PATTERN_GALLERY            = "(?:https?://[^/]+)?/gallery/([a-z0-9]+)";
+    private static final String PATTERN_USER               = "(?:https?://[^/]+)?/user/([^/]+)";
+    private static final String PATTERN_USER_SAVED_OBJECTS = "(?:https?://[^/]+)?/user/([^/]+)/saved";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         RedditCom.prepBRAPI(this.br);
-        if (param.getCryptedUrl().matches(TYPE_USER_SAVED_OBJECTS)) {
+        if (param.getCryptedUrl().matches(PATTERN_SELFHOSTED_VIDEO)) {
+            return crawlSingleVideourl(param);
+        } else if (param.getCryptedUrl().matches(PATTERN_USER_SAVED_OBJECTS)) {
             return crawlUserSavedObjects(param);
-        } else if (param.getCryptedUrl().matches(TYPE_USER)) {
+        } else if (param.getCryptedUrl().matches(PATTERN_USER)) {
             return crawlUser(param);
-        } else if (param.getCryptedUrl().matches(TYPE_SUBREDDIT_COMMENTS)) {
+        } else if (param.getCryptedUrl().matches(PATTERN_SUBREDDIT_COMMENTS)) {
             return crawlCommentURL(param);
-        } else if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
+        } else if (param.getCryptedUrl().matches(PATTERN_GALLERY)) {
             return this.crawlGalleryURL(param);
         } else {
             return crawlSubreddit(param);
         }
     }
 
+    private ArrayList<DownloadLink> crawlSingleVideourl(final CryptedLink param) throws Exception {
+        final String videoID = new Regex(param.getCryptedUrl(), PATTERN_SELFHOSTED_VIDEO).getMatch(0);
+        if (videoID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Browser brc = br.cloneBrowser();
+        brc.setFollowRedirects(false);
+        brc.getPage("https://www." + this.getHost() + "/video/" + videoID);
+        final String redirect = brc.getRedirectLocation();
+        if (redirect == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String commentID = new Regex(redirect, PATTERN_SUBREDDIT_COMMENTS).getMatch(1);
+        if (commentID == null) {
+            /* Redirect to unsupported/unexpected URL. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return crawlComments(commentID);
+    }
+
     private ArrayList<DownloadLink> crawlSubreddit(final CryptedLink param) throws Exception {
         /* Prepare crawl process */
-        final String subredditTitle = new Regex(param.getCryptedUrl(), TYPE_SUBREDDIT).getMatch(0);
+        final String subredditTitle = new Regex(param.getCryptedUrl(), PATTERN_SUBREDDIT).getMatch(0);
         if (subredditTitle == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -118,7 +165,7 @@ public class RedditComCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlUser(final CryptedLink param) throws Exception {
         /* Prepare crawl process */
-        final String userTitle = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
+        final String userTitle = new Regex(param.getCryptedUrl(), PATTERN_USER).getMatch(0);
         if (userTitle == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -239,13 +286,13 @@ public class RedditComCrawler extends PluginForDecrypt {
 
     /** 2020-11-11: Currently does the same as {@link #crawlCommentURL()} */
     private ArrayList<DownloadLink> crawlGalleryURL(final CryptedLink param) throws Exception {
-        final String commentID = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(0);
+        final String commentID = new Regex(param.getCryptedUrl(), PATTERN_GALLERY).getMatch(0);
         return crawlComments(commentID);
     }
 
     /** According to: https://www.reddit.com/r/redditdev/comments/b8yd3r/reddit_api_possible_to_get_posts_by_id/ */
     private ArrayList<DownloadLink> crawlCommentURL(final CryptedLink param) throws Exception {
-        final String commentID = new Regex(param.getCryptedUrl(), TYPE_SUBREDDIT_COMMENTS).getMatch(1);
+        final String commentID = new Regex(param.getCryptedUrl(), PATTERN_SUBREDDIT_COMMENTS).getMatch(1);
         return crawlComments(commentID);
     }
 
@@ -265,9 +312,6 @@ public class RedditComCrawler extends PluginForDecrypt {
         crawledLinks.addAll(this.crawlListing(entries, null));
         return crawledLinks;
     }
-
-    private static final String TYPE_CRAWLED_SELFHOSTED_VIDEO = "https?://v\\.redd\\.it/[a-z0-9]+.*";
-    private static final String TYPE_CRAWLED_SELFHOSTED_IMAGE = "https?://i\\.redd\\.it/[a-z0-9]+.*";
 
     private ArrayList<DownloadLink> crawlListing(final Map<String, Object> entries, FilePackage fp) throws Exception {
         /* https://www.reddit.com/dev/api/#fullnames */
@@ -299,7 +343,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             boolean postContainsRealMedia = true;
-            final String urlSlug = new Regex(permalink, TYPE_SUBREDDIT_COMMENTS).getMatch(3);
+            final String urlSlug = new Regex(permalink, PATTERN_SUBREDDIT_COMMENTS).getMatch(3);
             if (urlSlug == null) {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -342,7 +386,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                 if (maybeExternalURL.startsWith("/")) {
                     maybeExternalURL = br.getURL(maybeExternalURL).toString();
                 }
-                if (!StringUtils.isEmpty(maybeExternalURL) && !this.canHandle(maybeExternalURL)) {
+                if (!StringUtils.isEmpty(maybeExternalURL) && (maybeExternalURL.matches(PATTERN_SELFHOSTED_VIDEO) || maybeExternalURL.matches(PATTERN_SELFHOSTED_IMAGE) || !this.canHandle(maybeExternalURL))) {
                     final String serverFilename = Plugin.getFileNameFromURL(new URL(maybeExternalURL));
                     final String serverFilenameWithoutExt;
                     if (serverFilename.contains(".")) {
@@ -351,14 +395,14 @@ public class RedditComCrawler extends PluginForDecrypt {
                         serverFilenameWithoutExt = serverFilename;
                     }
                     final DownloadLink dl = this.createDownloadlink(maybeExternalURL);
-                    if (maybeExternalURL.matches(TYPE_CRAWLED_SELFHOSTED_VIDEO)) {
+                    if (maybeExternalURL.matches(PATTERN_SELFHOSTED_VIDEO)) {
                         dl.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, serverFilenameWithoutExt);
                         dl.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_video);
                         addedRedditSelfhostedVideo = true;
                         /* Skip availablecheck as we know that this content is online and is a directurl. */
                         dl.setAvailable(true);
                         thisCrawledLinks.add(dl);
-                    } else if (maybeExternalURL.matches(TYPE_CRAWLED_SELFHOSTED_IMAGE)) {
+                    } else if (maybeExternalURL.matches(PATTERN_SELFHOSTED_IMAGE)) {
                         dl.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, serverFilenameWithoutExt);
                         dl.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_image);
                         /* Skip availablecheck as we know that this content is online and is a directurl. */
@@ -438,8 +482,18 @@ public class RedditComCrawler extends PluginForDecrypt {
                                         if (Encoding.isHtmlEntityCoded(hls_url)) {
                                             hls_url = Encoding.htmlDecode(hls_url);
                                         }
-                                        final DownloadLink dl = this.createDownloadlink(hls_url);
-                                        thisCrawledLinks.add(dl);
+                                        final String videoID = new Regex(hls_url, PATTERN_SELFHOSTED_VIDEO).getMatch(0);
+                                        if (videoID != null) {
+                                            final DownloadLink video = this.createDownloadlink("https://v.redd.it/" + videoID);
+                                            video.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_video);
+                                            video.setAvailable(true);
+                                            thisCrawledLinks.add(video);
+                                            addedRedditSelfhostedVideo = true;
+                                        } else {
+                                            /* Most likely directurl */
+                                            final DownloadLink dl = this.createDownloadlink(hls_url);
+                                            thisCrawledLinks.add(dl);
+                                        }
                                     }
                                 }
                             }
