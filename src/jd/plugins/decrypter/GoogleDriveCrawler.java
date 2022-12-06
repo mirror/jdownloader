@@ -48,9 +48,10 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.GoogleDrive;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-@PluginDependencies(dependencies = { jd.plugins.hoster.GoogleDrive.class })
+@PluginDependencies(dependencies = { GoogleDrive.class })
 public class GoogleDriveCrawler extends PluginForDecrypt {
     /**
      * @author raztoki, pspzockerscene, Jiaz
@@ -60,7 +61,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
     }
 
     public static List<String[]> getPluginDomains() {
-        return jd.plugins.hoster.GoogleDrive.getPluginDomains();
+        return GoogleDrive.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -140,7 +141,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
                     throw new GdriveException(GdriveFolderStatus.FOLDER_OFFLINE, new Regex(param.getCryptedUrl(), "https?://[^/]+/(.+)").getMatch(0));
                 }
             }
-            if (jd.plugins.hoster.GoogleDrive.canUseAPI()) {
+            if (GoogleDrive.canUseAPI()) {
                 return this.crawlAPI(param);
             } else {
                 return this.crawlWebsite(param);
@@ -230,9 +231,9 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
          * pagination. It worked fine in my tests in their API explorer but in reality the max number of items I got was 30.
          */
         queryFolder.add("pageSize", "200");
-        queryFolder.appendEncoded("fields", "kind,nextPageToken,incompleteSearch,files(" + jd.plugins.hoster.GoogleDrive.getFieldsAPI() + ")");
+        queryFolder.appendEncoded("fields", "kind,nextPageToken,incompleteSearch,files(" + GoogleDrive.getFieldsAPI() + ")");
         /* API key for testing */
-        queryFolder.appendEncoded("key", jd.plugins.hoster.GoogleDrive.getAPIKey());
+        queryFolder.appendEncoded("key", GoogleDrive.getAPIKey());
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> dupes = new ArrayList<String>();
         if (folderResourceKey != null) {
@@ -241,7 +242,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
         int page = 0;
         do {
             logger.info("Working on pagination page " + (page + 1));
-            br.getPage(jd.plugins.hoster.GoogleDrive.API_BASE + "/files?" + queryFolder.toString());
+            br.getPage(GoogleDrive.API_BASE + "/files?" + queryFolder.toString());
             ((jd.plugins.hoster.GoogleDrive) hostPlugin).handleErrorsAPI(br, null, account);
             final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             /* 2020-12-10: This will return "Offline folder" for private items too! */
@@ -568,7 +569,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
                 dl = createDownloadlink(generateFileURL(id, resourceKey));
                 final String googleDriveDocumentType = new Regex(mimeType, "application/vnd\\.google-apps\\.(.+)").getMatch(0);
                 if (googleDriveDocumentType != null) {
-                    jd.plugins.hoster.GoogleDrive.parseGoogleDocumentProperties(this, dl, title, googleDriveDocumentType, null);
+                    GoogleDrive.parseGoogleDocumentProperties(this, dl, title, googleDriveDocumentType, null);
                 } else {
                     dl.setName(title);
                 }
@@ -594,7 +595,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
                      */
                     final String root_dir_name = new Regex(folderPath, "^/?([^/]+)").getMatch(0);
                     if (root_dir_name != null) {
-                        dl.setProperty(jd.plugins.hoster.GoogleDrive.PROPERTY_ROOT_DIR, root_dir_name);
+                        dl.setProperty(GoogleDrive.PROPERTY_ROOT_DIR, root_dir_name);
                     }
                 }
             } else {
@@ -613,7 +614,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
                 dl.setProperty(PROPERTY_SPECIAL_SHORTCUT_FOLDER, true);
             }
             if (!StringUtils.isEmpty(teamDriveId)) {
-                dl.setProperty(jd.plugins.hoster.GoogleDrive.PROPERTY_TEAM_DRIVE_ID, teamDriveId);
+                dl.setProperty(GoogleDrive.PROPERTY_TEAM_DRIVE_ID, teamDriveId);
             }
             distribute(dl);
             decryptedLinks.add(dl);
@@ -682,7 +683,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
             if (isFile) {
                 /* Single file */
                 dl = createDownloadlink(generateFileURL(id, resourceKey));
-                jd.plugins.hoster.GoogleDrive.parseFileInfoAPI(this, dl, resource);
+                GoogleDrive.parseFileInfoAPI(this, dl, resource);
                 if (subfolder != null) {
                     folderPath = subfolder;
                     /*
@@ -691,7 +692,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
                      */
                     final String root_dir_name = new Regex(folderPath, "^/?([^/]+)").getMatch(0);
                     if (root_dir_name != null) {
-                        dl.setProperty(jd.plugins.hoster.GoogleDrive.PROPERTY_ROOT_DIR, root_dir_name);
+                        dl.setProperty(GoogleDrive.PROPERTY_ROOT_DIR, root_dir_name);
                     }
                     dl.setRelativeDownloadFolderPath(folderPath);
                     if (fp != null) {
@@ -712,7 +713,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
                 }
             }
             if (!StringUtils.isEmpty(teamDriveId)) {
-                dl.setProperty(jd.plugins.hoster.GoogleDrive.PROPERTY_TEAM_DRIVE_ID, teamDriveId);
+                dl.setProperty(GoogleDrive.PROPERTY_TEAM_DRIVE_ID, teamDriveId);
             }
             this.distribute(dl);
             decryptedLinks.add(dl);
