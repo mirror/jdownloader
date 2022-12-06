@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -29,6 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -62,7 +64,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/([\\w\\-]+/(art|journal)/[\\w\\-]+-\\d+|([\\w\\-]+/)?status(?:-update)?/\\d+)" })
 public class DeviantArtCom extends PluginForHost {
-    // private static final String DLLINK_REFRESH_NEEDED = "https?://(www\\.)?deviantart\\.com/download/.+";
     private final String       TYPE_DOWNLOADALLOWED_HTML             = "(?i)class=\"text\">HTML download</span>";
     private final String       TYPE_DOWNLOADFORBIDDEN_HTML           = "<div class=\"grf\\-indent\"";
     private boolean            downloadHTML                          = false;
@@ -522,30 +523,40 @@ public class DeviantArtCom extends PluginForHost {
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link, account, true);
         link.setVerifiedFileSize(-1);
-        final String dllink = this.getDirecturl(link, account);
-        if (StringUtils.isEmpty(dllink)) {
-            if (this.looksLikeAccountRequired(br)) {
-                throw new AccountRequiredException();
-            } else {
+        if (this.downloadHTML) {
+            /* Write text to file */
+            final File dest = new File(link.getFileOutput());
+            IO.writeToFile(dest, br.getRequest().getHtmlCode().getBytes(br.getRequest().getCharsetFromMetaTags()), IO.SYNC.META_AND_DATA);
+            /* Set filesize so user can see it in UI. */
+            link.setVerifiedFileSize(dest.length());
+            /* Set progress to finished - the "download" is complete ;) */
+            link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+        } else {
+            /* Download file */
+            final String dllink = this.getDirecturl(link, account);
+            if (StringUtils.isEmpty(dllink)) {
+                if (this.looksLikeAccountRequired(br)) {
+                    throw new AccountRequiredException();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            /* Workaround for old downloadcore bug that can lead to incomplete files */
+            br.getHeaders().put("Accept-Encoding", "identity");
+            /* Remove hashInfo before download in case quality/mirror/user settings have changed. will be updated again on download */
+            link.setHashInfo(null);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, account), 1);
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                handleServerErrors(dl.getConnection());
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dl.startDownload();
         }
-        /* Workaround for old downloadcore bug that can lead to incomplete files */
-        /* Disable chunks as we only download pictures or small files */
-        br.getHeaders().put("Accept-Encoding", "identity");
-        /* remove hashInfo before download in case quality/mirror/user settings have changed. will be updated again on download */
-        link.setHashInfo(null);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, account), 1);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            handleServerErrors(dl.getConnection());
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
