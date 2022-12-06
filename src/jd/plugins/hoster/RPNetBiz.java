@@ -211,8 +211,8 @@ public class RPNetBiz extends PluginForHost {
          * 2020-05-29: Their queue download does not return any detailed status (only "completed" or "Queued") and needs a long time to
          * complete thus we're trying to avoid this from blocking download slots.
          */
-        final boolean allowQueueToBlockDownloadSlot = false;
         Map<String, Object> entries = null;
+        final boolean allowQueueToBlockDownloadSlot = false;
         if (generatedLink == null) {
             long queueID = link.getLongProperty(PROPERTY_queue_id, 0);
             if (queueID > 0) {
@@ -223,16 +223,18 @@ public class RPNetBiz extends PluginForHost {
                 String apiDownloadLink = api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
                 br.getPage(apiDownloadLink);
                 entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                String objectname = "downloads";
-                Object downloadsO = entries.get(objectname);
+                checkErrors(link, account, entries);
+                Object downloadsO = entries.get("downloads");
                 if (downloadsO == null) {
-                    /* 2020-05-28: New?! */
-                    objectname = "links";
-                    downloadsO = entries.get(objectname);
+                    downloadsO = entries.get("links");
                 }
-                if (downloadsO != null) {
-                    /* Should always be given! */
-                    entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, objectname + "/{0}");
+                if (downloadsO == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (downloadsO instanceof Map) {
+                    entries = (Map<String, Object>) downloadsO;
+                } else {
+                    entries = ((List<Map<String, Object>>) downloadsO).get(0);
                 }
                 checkErrors(link, account, entries);
                 maxChunksO = entries.get("max_connections");
