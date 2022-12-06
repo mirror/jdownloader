@@ -29,19 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -68,6 +55,18 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VimeoCom;
 import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
 import jd.plugins.hoster.VimeoCom.WrongRefererException;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -803,30 +802,28 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     logger.log(e);
                 }
                 /* Grab all qualities possible. */
-                final List<VimeoContainer> allContainers = jd.plugins.hoster.VimeoCom.find(this, urlType, br, videoID, unlistedHash, properties, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE);
-                if (allContainers == null) {
+                final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType, br, videoID, unlistedHash, properties, download, web, web, subtitle);
+                if (containers == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final DecrypterRetryException exceptionForUnsupportedStreamingTypeHLSSplitAudioVideo = new DecrypterRetryException(RetryReason.PLUGIN_DEFECT, "UNSUPPORTED_STREAMING_TYPE_HLS_SPLIT_AUDIO_VIDEO_" + videoID, "Unsupported streaming type! See: https://board.jdownloader.org/showthread.php?t=92106");
-                if (allContainers.isEmpty()) {
-                    throw exceptionForUnsupportedStreamingTypeHLSSplitAudioVideo;
-                }
-                /* Now filter based on user settings. */
-                final List<VimeoContainer> containers = new ArrayList<VimeoContainer>();
-                for (final VimeoContainer container : allContainers) {
-                    if (container.getSource() == Source.DOWNLOAD && this.download == false) {
-                        continue;
-                    } else if (container.getSource() == Source.WEB && this.web == false) {
-                        continue;
-                    } else if (container.getSource() == Source.SUBTITLE && this.subtitle == false) {
-                        continue;
-                    } else {
-                        containers.add(container);
+                } else if (download || web) {
+                    boolean hasVideo = false;
+                    for (final VimeoContainer container : containers) {
+                        switch (container.getSource()) {
+                        case DOWNLOAD:
+                        case HLS:
+                        case WEB:
+                            hasVideo = true;
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                    if (!hasVideo) {
+                        ret.add(createLinkCrawlerRetry(getCurrentLink(), new DecrypterRetryException(RetryReason.PLUGIN_DEFECT, "UNSUPPORTED_STREAMING_TYPE_HLS_SPLIT_AUDIO_VIDEO_" + videoID, "Unsupported streaming type! See: https://board.jdownloader.org/showthread.php?t=92106")));
                     }
                 }
                 if (containers.isEmpty()) {
-                    /* 2022-12-06: Most likely this stream is only available as HLS with split audio/video which we do not yet support. */
-                    throw exceptionForUnsupportedStreamingTypeHLSSplitAudioVideo;
+                    return ret;
                 }
                 /*
                  * Both APIs we use as fallback to find additional information can only be used to display public content - it will not help
