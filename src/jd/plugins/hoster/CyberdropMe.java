@@ -7,6 +7,7 @@ import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CheckableLink;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -14,6 +15,7 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CyberdropMeAlbum;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
@@ -78,12 +80,26 @@ public class CyberdropMe extends DirectHTTP {
 
     @Override
     public PluginForHost assignPlugin(PluginFinder pluginFinder, DownloadLink link) {
-        if (pluginFinder != null && CyberdropMe.class.equals(getClass()) && !getHost().equals(link.getHost())) {
-            if (false && link.getPluginPatternMatcher().matches(CyberdropMeAlbum.TYPE_CDN) || link.getPluginPatternMatcher().matches(CyberdropMeAlbum.TYPE_STREAM)) {
-                return super.assignPlugin(pluginFinder, link);
+        final String pluginHost = getHost();
+        if (pluginFinder != null && CyberdropMe.class.equals(getClass()) && !pluginHost.equals(link.getHost())) {
+            final String url = link.getPluginPatternMatcher();
+            boolean checkHostFlag = false;
+            if ("cyberdrop.me".equals(pluginHost) && url.matches(CyberdropMeAlbum.TYPE_FS)) {
+                checkHostFlag = true;
+            } else if ("bunkr.is".equals(pluginHost) && (url.matches(CyberdropMeAlbum.TYPE_CDN) || url.matches(CyberdropMeAlbum.TYPE_STREAM))) {
+                checkHostFlag = true;
             } else {
                 return null;
             }
+            if (checkHostFlag) {
+                final String host = Browser.getHost(url);
+                for (String siteSupportedName : siteSupportedNames()) {
+                    if (StringUtils.equalsIgnoreCase(siteSupportedName, host)) {
+                        return super.assignPlugin(pluginFinder, link);
+                    }
+                }
+            }
+            return null;
         } else {
             return super.assignPlugin(pluginFinder, link);
         }
