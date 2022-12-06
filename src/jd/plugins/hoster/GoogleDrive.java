@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -467,20 +468,6 @@ public class GoogleDrive extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String filename = null;
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && false) {
-            // a way to get size/dates from public files, Details View in Google Drive
-            final Browser br2 = br.cloneBrowser();
-            br2.getHeaders().put("X-Referer", "https://drive.google.com");
-            br2.getHeaders().put("X-Origin", "https://drive.google.com");
-            final UrlQuery query = new UrlQuery();
-            query.add("fields", URLEncode.encodeURIComponent("alternateLink,copyRequiresWriterPermission,createdDate,description,driveId,fileSize,iconLink,id,labels(starred, trashed),lastViewedByMeDate,modifiedDate,shared,teamDriveId,abuseNoticeReason,videoMediaMetadata(height,width,durationMillis),labelInfo,userPermission(id,name,emailAddress,domain,role,additionalRoles,photoLink,type,withLink),permissions(id,name,emailAddress,domain,role,additionalRoles,photoLink,type,withLink),parents(id),capabilities(canMoveItemWithinDrive,canMoveItemOutOfDrive,canMoveItemOutOfTeamDrive,canAddChildren,canEdit,canDownload,canComment,canMoveChildrenWithinDrive,canRename,canRemoveChildren,canMoveItemIntoTeamDrive),kind"));
-            query.add("supportsTeamDrives", "true");
-            query.add("includeBadgedLabels", "true");
-            query.add("enforceSingleParent", "true");
-            // query.add("key", "TODO");
-            br2.getPage("https://content.googleapis.com/drive/v2beta/files/" + fid + "?" + query.toString());
-            final Map<String, Object> entries = restoreFromString(br2.toString(), TypeRef.MAP);
-        }
         final boolean allowExperimentalLinkcheck = false;
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && allowExperimentalLinkcheck) {
             /* 2020-12-01: Only for testing! */
@@ -541,6 +528,11 @@ public class GoogleDrive extends PluginForHost {
         /* We hope for the file to be direct-downloadable. */
         if (this.looksLikeDownloadableContent(con)) {
             logger.info("Direct download active");
+            if (this.allowCrawlAdditionalInformationFromWebsite(link)) {
+                final Browser brc = br.cloneBrowser();
+                brc.getPage(getFileViewURL(link));
+                crawlAdditionalFileInformationFromWebsite(brc, link);
+            }
             final String fileNameFromHeader = getFileNameFromHeader(con);
             if (!StringUtils.isEmpty(fileNameFromHeader)) {
                 link.setFinalFileName(fileNameFromHeader);
@@ -614,6 +606,7 @@ public class GoogleDrive extends PluginForHost {
         } else {
             br.getPage(getFileViewURL(link));
         }
+        crawlAdditionalFileInformationFromWebsite(br, link);
         /** More errorhandling / offline check */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)<p class=\"error\\-caption\">\\s*Sorry, we are unable to retrieve this document\\.\\s*</p>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -663,6 +656,45 @@ public class GoogleDrive extends PluginForHost {
             link.setVerifiedFileSize(Long.parseLong(filesizeBytes));
         }
         return AvailableStatus.TRUE;
+    }
+
+    private final boolean DEBUG_ALLOW_CRAWL_ADDITIONAL_FILE_INFO_FROM_WEBSITE = false;
+
+    /** A function that parses filename/size/last-modified date from single files via "Details View" of Google Drive website. */
+    private void crawlAdditionalFileInformationFromWebsite(final Browser br, final DownloadLink link) throws PluginException, IOException {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && allowCrawlAdditionalInformationFromWebsite(link) && DEBUG_ALLOW_CRAWL_ADDITIONAL_FILE_INFO_FROM_WEBSITE) {
+            /* TODO: Only crawl this information if it is not already given and user wants it. */
+            // if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+            // }
+            final String key;
+            final String keys[] = br.getRegex("\"([A-Za-z0-9\\-_]{6})([A-Za-z0-9\\-_]+)\"\\s*,\\s*\"\\1[A-Za-z0-9\\-_]+\"\\s*,\\s*null").getRow(0);
+            logger.info("Keys:" + Arrays.asList(keys));
+            if (keys == null || keys.length != 2) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            key = keys[0] + keys[1];
+            logger.info("Using key: " + key);
+            final Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("X-Referer", "https://drive.google.com");
+            br2.getHeaders().put("X-Origin", "https://drive.google.com");
+            final UrlQuery query = new UrlQuery();
+            query.add("fields", URLEncode.encodeURIComponent("alternateLink,copyRequiresWriterPermission,createdDate,description,driveId,fileSize,iconLink,id,labels(starred, trashed),lastViewedByMeDate,modifiedDate,shared,teamDriveId,abuseNoticeReason,videoMediaMetadata(height,width,durationMillis),labelInfo,userPermission(id,name,emailAddress,domain,role,additionalRoles,photoLink,type,withLink),permissions(id,name,emailAddress,domain,role,additionalRoles,photoLink,type,withLink),parents(id),capabilities(canMoveItemWithinDrive,canMoveItemOutOfDrive,canMoveItemOutOfTeamDrive,canAddChildren,canEdit,canDownload,canComment,canMoveChildrenWithinDrive,canRename,canRemoveChildren,canMoveItemIntoTeamDrive),kind"));
+            query.add("supportsTeamDrives", "true");
+            query.add("includeBadgedLabels", "true");
+            query.add("enforceSingleParent", "true");
+            query.add("key", URLEncode.encodeURIComponent(key));
+            br2.getPage("https://content.googleapis.com/drive/v2beta/files/" + this.getFID(link) + "?" + query.toString());
+            final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+        }
+    }
+
+    private boolean allowCrawlAdditionalInformationFromWebsite(final DownloadLink link) {
+        // if (link.getLastModifiedTimestamp() == -1 && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified());
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && link.getLastModifiedTimestamp() == -1 && !this.isGoogleDocument(link) && this.canDownload(link) && DEBUG_ALLOW_CRAWL_ADDITIONAL_FILE_INFO_FROM_WEBSITE) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private String getFileViewURL(final DownloadLink link) {
