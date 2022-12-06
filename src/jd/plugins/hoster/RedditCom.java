@@ -60,6 +60,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.RedditComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RedditCom extends PluginForHost {
@@ -89,6 +90,7 @@ public class RedditCom extends PluginForHost {
     public static final String PROPERTY_TYPE_video                     = "video";
     private final String       PROPERTY_DIRECTURL_LAST_USED            = "directurl_last_used";
     private final String       PROPERTY_LAST_USED_DOWNLOAD_STREAM_TYPE = "last_used_download_stream_type";
+    private final String       PATTERN_TEXT                            = "reddidtext://([a-z0-9]+)";
 
     /** API wiki/docs: https://github.com/reddit-archive/reddit/wiki/API */
     public static final String getApiBaseLogin() {
@@ -118,7 +120,7 @@ public class RedditCom extends PluginForHost {
         return "https://www.redditinc.com/policies/content-policy";
     }
 
-    private static List<String[]> getPluginDomains() {
+    public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "reddit.com" });
@@ -136,7 +138,7 @@ public class RedditCom extends PluginForHost {
 
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
-        ret.add("https?://v\\.redd\\.it/[a-z0-9]+|https?://i\\.redd\\.it/[a-z0-9]+\\.[A-Za-z]{2,5}|reddidtext://[a-z0-9]+");
+        ret.add(RedditComCrawler.PATTERN_SELFHOSTED_VIDEO + "|" + RedditComCrawler.PATTERN_SELFHOSTED_IMAGE + "|reddidtext://[a-z0-9]+");
         return ret.toArray(new String[0]);
     }
 
@@ -158,10 +160,10 @@ public class RedditCom extends PluginForHost {
         if (pluginMatcher == null) {
             return null;
         }
-        if (pluginMatcher.matches(PATTERN_IMAGE)) {
-            return new Regex(pluginMatcher, PATTERN_IMAGE).getMatch(0);
-        } else if (pluginMatcher.matches(PATTERN_VIDEO)) {
-            return new Regex(pluginMatcher, PATTERN_VIDEO).getMatch(0);
+        if (pluginMatcher.matches(RedditComCrawler.PATTERN_SELFHOSTED_IMAGE)) {
+            return new Regex(pluginMatcher, RedditComCrawler.PATTERN_SELFHOSTED_IMAGE).getMatch(0);
+        } else if (pluginMatcher.matches(RedditComCrawler.PATTERN_SELFHOSTED_VIDEO)) {
+            return new Regex(pluginMatcher, RedditComCrawler.PATTERN_SELFHOSTED_VIDEO).getMatch(0);
         } else if (pluginMatcher.matches(PATTERN_TEXT)) {
             return new Regex(pluginMatcher, PATTERN_TEXT).getMatch(0);
         } else {
@@ -173,7 +175,7 @@ public class RedditCom extends PluginForHost {
     @Override
     public String getPluginContentURL(final DownloadLink link) {
         final String pluginMatcher = link != null ? link.getPluginPatternMatcher() : null;
-        if (pluginMatcher != null && pluginMatcher.matches(PATTERN_VIDEO) && PluginJsonConfig.get(RedditConfig.class).isVideoUseDirecturlAsContentURL()) {
+        if (pluginMatcher != null && pluginMatcher.matches(RedditComCrawler.PATTERN_SELFHOSTED_VIDEO) && PluginJsonConfig.get(RedditConfig.class).isVideoUseDirecturlAsContentURL()) {
             final String lastUsedVideoDirecturl = link.getStringProperty(PROPERTY_DIRECTURL_LAST_USED);
             if (lastUsedVideoDirecturl != null) {
                 /* Video has been checked- or fully/partially downloaded before -> Return direct link to stream */
@@ -191,10 +193,6 @@ public class RedditCom extends PluginForHost {
         /* Return pre-set/default contentURL. */
         return super.getPluginContentURL(link);
     }
-
-    private final String PATTERN_IMAGE = "https?://i\\.redd\\.it/([a-z0-9]+)\\.[A-Za-z]{2,5}";
-    private final String PATTERN_VIDEO = "https?://v\\.redd\\.it/([a-z0-9]+)";
-    private final String PATTERN_TEXT  = "reddidtext://([a-z0-9]+)";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
