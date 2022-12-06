@@ -75,6 +75,8 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
+    /* Skip HLS because of unsupported split video/audio. */
+    public static final boolean ALLOW_HLS                       = false;
     private static final String MAINPAGE                        = "https://vimeo.com";
     private String              finalURL;
     public static final String  Q_MOBILE                        = "Q_MOBILE";
@@ -1109,7 +1111,7 @@ public class VimeoCom extends PluginForHost {
                         results.addAll(progressiveStreams);
                     }
                 }
-                if (!Boolean.FALSE.equals(hls) && false) {
+                if (!Boolean.FALSE.equals(hls) && ALLOW_HLS) {
                     // skip HLS because of unsupported split video/audio
                     plugin.getLogger().info("query hls streams");
                     final List<VimeoContainer> hlsStreams = handleHLS(plugin, ibr.cloneBrowser(), filesMap);

@@ -29,6 +29,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -43,6 +56,8 @@ import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -53,18 +68,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VimeoCom;
 import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
 import jd.plugins.hoster.VimeoCom.WrongRefererException;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -334,7 +337,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
         final boolean alwaysLogin = cfg.getBooleanProperty(VimeoCom.ALWAYS_LOGIN, false);
         init(cfg);
@@ -343,11 +346,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         final String orgParameter = parameter;
         if (parameter.matches(type_player_private_external_m3u8)) {
             parameter = parameter.replaceFirst("(p=.*?)($|&)", "");
-            decryptedLinks.add(createExternalOrPlayLink(parameter));
-            return decryptedLinks;
+            ret.add(createExternalOrPlayLink(parameter));
+            return ret;
         } else if (parameter.matches(type_player_private_external_direct) || parameter.matches(type_player_private_play_direct)) {
-            decryptedLinks.add(createExternalOrPlayLink(parameter));
-            return decryptedLinks;
+            ret.add(createExternalOrPlayLink(parameter));
+            return ret;
         } else if (parameter.matches(type_player_private_external)) {
             parameter = parameter.replace("/external/", "/video/");
         } else if (parameter.matches(LINKTYPE_SHORT_REDIRECT)) {
@@ -355,11 +358,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             br.getPage(parameter);
             final String redirect = br.getRedirectLocation();
             if (redirect == null) {
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
+                ret.add(createOfflinelink(parameter));
+                return ret;
             }
-            decryptedLinks.add(this.createDownloadlink(redirect));
-            return decryptedLinks;
+            ret.add(this.createDownloadlink(redirect));
+            return ret;
         }
         // when testing and dropping to frame, components will fail without clean browser.
         br = new Browser();
@@ -377,8 +380,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             /* Decrypt all videos of a user- or group. */
             br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(createOfflinelink(parameter, "Could not find that page"));
-                return decryptedLinks;
+                ret.add(createOfflinelink(parameter, "Could not find that page"));
+                return ret;
             }
             final String urlpart_pagination;
             final String user_or_group_id;
@@ -416,7 +419,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             for (int i = 1; i <= numberofPages; i++) {
                 if (this.isAbort()) {
                     logger.info("Decrypt process aborted by user: " + parameter);
-                    return decryptedLinks;
+                    return ret;
                 }
                 if (i > 1) {
                     sleep(1000, param);
@@ -430,23 +433,23 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
                 for (final String videoID : videoIDs) {
                     if (dups.add(videoID)) {
-                        decryptedLinks.add(createDownloadlink("http://" + this.getHost() + "/" + videoID));
+                        ret.add(createDownloadlink("http://" + this.getHost() + "/" + videoID));
                     } else {
                         logger.info("duplicate video detected:" + videoID);
                     }
                 }
                 logger.info("Decrypted page: " + i + " of " + numberofPages);
                 logger.info("Found " + videoIDs.length + " videolinks on current page");
-                logger.info("Found " + decryptedLinks.size() + " of " + totalVids + " total videolinks");
-                if (decryptedLinks.size() >= totalVids) {
+                logger.info("Found " + ret.size() + " of " + totalVids + " total videolinks");
+                if (ret.size() >= totalVids) {
                     logger.info("Decrypted all videos, stopping");
                     break;
                 }
             }
-            logger.info("Decrypt done! Total amount of decrypted videolinks: " + decryptedLinks.size() + " of " + totalVids);
+            logger.info("Decrypt done! Total amount of decrypted videolinks: " + ret.size() + " of " + totalVids);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName("Videos of vimeo.com user " + userName);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         } else {
             final VIMEO_URL_TYPE urlType = jd.plugins.hoster.VimeoCom.getUrlType(parameter);
             if (VIMEO_URL_TYPE.EXTERNAL.equals(urlType)) {
@@ -539,8 +542,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         if (isPasswordProtected(this.br)) {
                             password = handlePW(param, this.br);
                         } else {
-                            decryptedLinks.add(createOfflinelink(parameter, videoID, null));
-                            return decryptedLinks;
+                            ret.add(createOfflinelink(parameter, videoID, null));
+                            return ret;
                         }
                     } else if (isPasswordProtected(this.br)) {
                         password = handlePW(param, this.br);
@@ -579,7 +582,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                             if (config != null) {
                                 apiMode = false;
                                 final DownloadLink clipEntry = this.createDownloadlink(config + appendReferer);
-                                decryptedLinks.add(clipEntry);
+                                ret.add(clipEntry);
                             }
                         }
                     }
@@ -645,7 +648,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                                                 clipEntry.setProperty(VimeoCom.PROPERTY_PASSWORD_COOKIE_VALUE, passwordCookieValue);
                                             }
                                         }
-                                        decryptedLinks.add(clipEntry);
+                                        ret.add(clipEntry);
                                     }
                                     nextPage = (String) JavaScriptEngineFactory.walkJson(map, "paging/next");
                                     continue;
@@ -654,7 +657,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                             break;
                         }
                     }
-                    return decryptedLinks;
+                    return ret;
                 }
                 /*
                  * We used to simply change the vimeo.com/player/XXX links to normal vimeo.com/XXX links but in some cases, videos can only
@@ -799,12 +802,31 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     logger.log(e);
                 }
-                final List<VimeoContainer> containers = jd.plugins.hoster.VimeoCom.find(this, urlType, br, videoID, unlistedHash, properties, download, web, web, subtitle);
-                if (containers == null) {
+                /* Grab all qualities possible. */
+                final List<VimeoContainer> allContainers = jd.plugins.hoster.VimeoCom.find(this, urlType, br, videoID, unlistedHash, properties, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE);
+                if (allContainers == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (containers.size() == 0) {
-                    return decryptedLinks;
+                final DecrypterRetryException exceptionForUnsupportedStreamingTypeHLSSplitAudioVideo = new DecrypterRetryException(RetryReason.PLUGIN_DEFECT, "UNSUPPORTED_STREAMING_TYPE_HLS_SPLIT_AUDIO_VIDEO_" + videoID, "Unsupported streaming type! See: https://board.jdownloader.org/showthread.php?t=92106");
+                if (allContainers.isEmpty()) {
+                    throw exceptionForUnsupportedStreamingTypeHLSSplitAudioVideo;
+                }
+                /* Now filter based on user settings. */
+                final List<VimeoContainer> containers = new ArrayList<VimeoContainer>();
+                for (final VimeoContainer container : allContainers) {
+                    if (container.getSource() == Source.DOWNLOAD && this.download == false) {
+                        continue;
+                    } else if (container.getSource() == Source.WEB && this.web == false) {
+                        continue;
+                    } else if (container.getSource() == Source.SUBTITLE && this.subtitle == false) {
+                        continue;
+                    } else {
+                        containers.add(container);
+                    }
+                }
+                if (containers.isEmpty()) {
+                    /* 2022-12-06: Most likely this stream is only available as HLS with split audio/video which we do not yet support. */
+                    throw exceptionForUnsupportedStreamingTypeHLSSplitAudioVideo;
                 }
                 /*
                  * Both APIs we use as fallback to find additional information can only be used to display public content - it will not help
@@ -980,11 +1002,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     }
                 }
                 if (dedupeMap.size() > 0 || subtitles.size() > 0) {
-                    decryptedLinks.addAll(subtitles);
+                    ret.addAll(subtitles);
                     if (cfg.getBooleanProperty(jd.plugins.hoster.VimeoCom.Q_BEST, false)) {
-                        decryptedLinks.add(determineBest(dedupeMap));
+                        ret.add(determineBest(dedupeMap));
                     } else {
-                        decryptedLinks.addAll(dedupeMap.values());
+                        ret.addAll(dedupeMap.values());
                     }
                     String formattedDate = null;
                     if (date != null) {
@@ -1012,15 +1034,15 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     /* Generate packagename */
                     final FilePackage fp = FilePackage.getInstance();
                     fp.setName(customPackagename);
-                    fp.addLinks(decryptedLinks);
+                    fp.addLinks(ret);
                 }
             }
         }
-        if ((decryptedLinks == null || decryptedLinks.size() == 0) && skippedLinks == 0) {
+        if ((ret == null || ret.size() == 0) && skippedLinks == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            return decryptedLinks;
+            return ret;
         }
     }
 
