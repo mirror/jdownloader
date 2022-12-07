@@ -53,7 +53,6 @@ import org.jdownloader.gui.toolbar.action.CaptchaToogleDialogAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleEndCaptchaAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleImageTyperzAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleJACAction;
-import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDAutoAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDRemoteAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleTwoCaptchaAction;
 import org.jdownloader.gui.toolbar.action.CollapseExpandAllAction;
@@ -184,7 +183,6 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         ocr.add(CaptchaToogleDialogAction.class);
         ocr.add(CaptchaToogleBrowserSolverAction.class);
         ocr.add(CaptchaToogleJACAction.class);
-        ocr.add(CaptchaToogleMyJDAutoAction.class);
         ocr.add(CaptchaToogleMyJDRemoteAction.class);
         opt.add(setIconKey(new ActionData(GenericDeleteFromTableToolbarAction.class).putSetup(GenericDeleteFromTableToolbarAction.DELETE_ALL, true).putSetup(GenericDeleteFromTableToolbarAction.ONLY_SELECTED_ITEMS, true), IconKey.ICON_DELETE));
         opt.add(createDeleteMenu());

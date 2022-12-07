@@ -463,10 +463,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                         }
                                     }
                                     workingVideoStream = cache;
-                                    // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, cache);
                                     if (estimatedSize != null) {
                                         totalSize += estimatedSize;
                                         ok |= estimatedSize > 0;
+                                        if (estimatedSize > 0) {
+                                            logger.info("update estimatedContentLength! itag=" + workingVideoStream.getItag() + " from=" + workingVideoStream.getEstimatedContentLength() + " to=" + estimatedSize);
+                                            workingVideoStream.setEstimatedContentLength(estimatedSize);
+                                        }
                                     } else {
                                         ok = true;
                                     }
@@ -491,9 +494,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                         workingVideoStream = cache;
                                         // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_VIDEO, cache);
                                         final long contentLenght = lastCon.getCompleteContentLength();
-                                        if (workingVideoStream.getContentLength() != contentLenght) {
-                                            logger.info("update contentLength! itag=" + workingVideoStream.getItag() + " from=" + workingVideoStream.getContentLength() + " to=" + contentLenght);
-                                            workingVideoStream.setContentLength(contentLenght);
+                                        if (contentLenght > 0) {
+                                            totalSize += contentLenght;
+                                            if (workingVideoStream.getContentLength() != contentLenght) {
+                                                logger.info("update contentLength! itag=" + workingVideoStream.getItag() + " from=" + workingVideoStream.getContentLength() + " to=" + contentLenght);
+                                                workingVideoStream.setContentLength(contentLenght);
+                                            }
                                         }
                                         firstException = null;
                                         ok |= true;
@@ -543,14 +549,17 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                                             continue;
                                         }
                                     }
+                                    workingAudioStream = cache;
                                     if (estimatedSize != null) {
                                         totalSize += estimatedSize;
                                         ok |= estimatedSize > 0;
+                                        if (estimatedSize > 0) {
+                                            logger.info("update estimatedContentLength! itag=" + workingAudioStream.getItag() + " from=" + workingAudioStream.getEstimatedContentLength() + " to=" + estimatedSize);
+                                            workingAudioStream.setEstimatedContentLength(estimatedSize);
+                                        }
                                     } else {
                                         ok = true;
                                     }
-                                    workingAudioStream = cache;
-                                    // downloadLink.setProperty(YoutubeHelper.YT_STREAM_DATA_AUDIO, );
                                     firstException = null;
                                     break;
                                 } else {
@@ -1252,17 +1261,16 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
 
             @Override
             public void setLinkStatus(final int finished) {
-                final boolean finishedFlag = LinkStatus.FINISHED == finished;
                 if (isVideoStream) {
-                    data.setDashVideoFinished(finishedFlag);
+                    data.setDashVideoFinished(LinkStatus.FINISHED == finished);
                 } else {
-                    data.setDashAudioFinished(finishedFlag);
+                    data.setDashAudioFinished(LinkStatus.FINISHED == finished);
                 }
             }
 
             @Override
             public void setVerifiedFileSize(long length) {
-                if (streamData.getContentLength() != length) {
+                if (length > 0 && streamData.getContentLength() != length) {
                     logger.info("update contentLength! itag=" + streamData.getItag() + " from=" + streamData.getContentLength() + " to=" + length);
                     streamData.setContentLength(length);
                     downloadLink.setProperty(streamDataID, streamData);

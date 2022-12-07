@@ -714,7 +714,7 @@ public class RapidGatorNet extends antiDDoSForHost {
     private int getMaxChunks(final DownloadLink link, final Account account) {
         if (account != null && AccountType.PREMIUM.equals(account.getType())) {
             final long knownDownloadSize = link.getKnownDownloadSize();
-            if (knownDownloadSize > 0 && knownDownloadSize <= 1024l * 1024l) {
+            if (knownDownloadSize > 0 && knownDownloadSize <= 1024l * 1024l * 2) {
                 // 2022-12-06: small files seem to create issues with multiple connections. Reference:
                 // https://board.jdownloader.org/showthread.php?t=92303
                 return 1;

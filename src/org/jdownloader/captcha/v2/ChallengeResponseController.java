@@ -15,7 +15,6 @@ import org.appwork.timetracker.TimeTracker;
 import org.appwork.timetracker.TimeTrackerController;
 import org.appwork.timetracker.TrackerRule;
 import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
@@ -41,7 +40,6 @@ import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogMultiClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
-import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverMultiClick;
@@ -52,7 +50,6 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class ChallengeResponseController {
     private static final ChallengeResponseController INSTANCE = new ChallengeResponseController();
@@ -121,9 +118,6 @@ public class ChallengeResponseController {
     public void init() {
         if (init.compareAndSet(false, true)) {
             addSolver(JACSolver.getInstance());
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && CFG_GENERAL.CFG.isMyJDownloaderCaptchaSolverEnabled()) {
-                addSolver(CaptchaMyJDSolver.getInstance());
-            }
             addSolver(DeathByCaptchaSolver.getInstance());
             addSolver(ImageTyperzCaptchaSolver.getInstance());
             addSolver(CheapCaptchaSolver.getInstance());

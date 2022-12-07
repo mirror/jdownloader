@@ -1400,7 +1400,7 @@ public class YoutubeHelper {
                 }
             }
             if (StringUtils.isEmpty(vid.user)) {
-                final String match = br.getRegex("temprop=\"url\" href=\"https?://(www\\.)?youtube\\.com/user/([^<>\"]+)\"").getMatch(1);
+                final String match = br.getRegex("temprop=\"url\" href=\"https?://(www\\.)?youtube\\.com/(?:user/|@)([^<>\"\\?]+)\"").getMatch(1);
                 // getVideoInfoWorkaroundUsed
                 final String vidWorkAround = br.getRegex("&author=(.*?)&").getMatch(0);
                 if (StringUtils.isNotEmpty(match)) {

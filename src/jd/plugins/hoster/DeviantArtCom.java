@@ -29,16 +29,6 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -62,6 +52,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/([\\w\\-]+/(art|journal)/[\\w\\-]+-\\d+|([\\w\\-]+/)?status(?:-update)?/\\d+)" })
 public class DeviantArtCom extends PluginForHost {
     private final String       TYPE_DOWNLOADALLOWED_HTML             = "(?i)class=\"text\">HTML download</span>";
@@ -74,6 +75,7 @@ public class DeviantArtCom extends PluginForHost {
     public static final String PROPERTY_TITLE                        = "title";
     public static final String PROPERTY_TYPE                         = "type";
     private final String       PROPERTY_OFFICIAL_DOWNLOADURL         = "official_downloadurl";
+    private final String       PROPERTY_UNLIMITED_JWT_IMAGE_URL      = "image_unlimitedjwt_url";
     private final String       PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL = "image_display_or_preview_url";
     private final String       PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL = "video_display_or_preview_url";
 
@@ -127,6 +129,23 @@ public class DeviantArtCom extends PluginForHost {
         return requestFileInformation(link, account, false);
     }
 
+    /**
+     * github.com/mikf/gallery-dl/blob/master/gallery_dl/extractor/deviantart.py
+     *
+     * All credit goes to @Ironchest337
+     */
+    private String buildUnlimitedJWT(final DownloadLink link, final String url) throws UnsupportedEncodingException {
+        final String path = new Regex(url, "(/f/.+)").getMatch(0);
+        if (path != null) {
+            final String b64Header = "eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0";
+            final String payload = "{\"sub\":\"urn:app:\",\"iss\":\"urn:app:\",\"obj\":[[{\"path\":\"" + PluginJSonUtils.escape(path) + "\"}]],\"aud\":[\"urn:service:file.download\"]}";
+            final String ret = b64Header + "." + Base64.encodeToString(payload.getBytes("UTF-8")).replaceFirst("(=+$)", "") + ".";
+            return ret;
+        } else {
+            return null;
+        }
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
             link.setName(new URL(link.getPluginPatternMatcher()).getPath() + this.getAssumedFileExtension(link));
@@ -146,7 +165,10 @@ public class DeviantArtCom extends PluginForHost {
         }
         String title = null;
         String displayedImageURL = null;
+        String unlimitedImageURL = null;
+        Number unlimitedImageSize = null;
         String displayedVideoURL = null;
+        Number displayedVideoSize = null;
         String officialDownloadurl = null;
         String json = br.getRegex("window\\.__INITIAL_STATE__ = JSON\\.parse\\(\"(.*?)\"\\);").getMatch(0);
         Number officialDownloadsizeBytes = null;
@@ -220,6 +242,17 @@ public class DeviantArtCom extends PluginForHost {
                                     }
                                 }
                                 if (c != null) {
+                                    if (c.isEmpty() || c.matches("(?i).*/v1/.+")) {
+                                        try {
+                                            final String jwt = buildUnlimitedJWT(link, baseUri);
+                                            if (jwt != null) {
+                                                unlimitedImageURL = baseUri + "?token=" + jwt;
+                                                unlimitedImageSize = (Number) bestType.get("f");
+                                            }
+                                        } catch (Exception e) {
+                                            logger.log(e);
+                                        }
+                                    }
                                     c = c.replaceFirst(",q_\\d+(,strp)?", "");
                                     final List<String> tokens = (List<String>) media.get("token");
                                     displayedImageURL = baseUri + c.replaceFirst("<prettyName>", Matcher.quoteReplacement(prettyName));
@@ -229,6 +262,17 @@ public class DeviantArtCom extends PluginForHost {
                                 }
                             } else if (isVideo) {
                                 displayedVideoURL = (String) bestType.get("b");
+                                displayedVideoSize = (Number) bestType.get("f");
+                            }
+                        }
+                        if (isImage && StringUtils.isEmpty(displayedImageURL)) {
+                            try {
+                                final String jwt = buildUnlimitedJWT(link, baseUri);
+                                if (jwt != null) {
+                                    unlimitedImageURL = baseUri + "?token=" + jwt;
+                                }
+                            } catch (Exception e) {
+                                logger.log(e);
                             }
                         }
                     }
@@ -246,21 +290,23 @@ public class DeviantArtCom extends PluginForHost {
                 /* A status typically doesn't have a title so we goota create our own. */
                 title = fid + " by " + username;
             }
-            final Map<String, Object> deviationExtended = (Map<String, Object>) entities.get("deviationExtended");
-            if (deviationExtended != null) {
-                Map<String, Object> deviationExtendedThisArt = (Map<String, Object>) deviationExtended.get(fid);
-                if (deviationExtendedThisArt == null && alternativeDeviationID != null) {
-                    /*
-                     * PATTERN_STATUS might be listed with key <someNumbers>-<fid> also typically deviationExtended will only contain one
-                     * item.
-                     */
-                    deviationExtendedThisArt = (Map<String, Object>) deviationExtended.get(alternativeDeviationID);
-                }
-                if (deviationExtendedThisArt != null) {
-                    final Map<String, Object> download = (Map<String, Object>) deviationExtendedThisArt.get("download");
-                    if (download != null) {
-                        officialDownloadurl = download.get("url").toString();
-                        officialDownloadsizeBytes = (Number) download.get("filesize");
+            if (StringUtils.isEmpty(officialDownloadurl)) {
+                final Map<String, Object> deviationExtended = (Map<String, Object>) entities.get("deviationExtended");
+                if (deviationExtended != null) {
+                    Map<String, Object> deviationExtendedThisArt = (Map<String, Object>) deviationExtended.get(fid);
+                    if (deviationExtendedThisArt == null && alternativeDeviationID != null) {
+                        /*
+                         * PATTERN_STATUS might be listed with key <someNumbers>-<fid> also typically deviationExtended will only contain
+                         * one item.
+                         */
+                        deviationExtendedThisArt = (Map<String, Object>) deviationExtended.get(alternativeDeviationID);
+                    }
+                    if (deviationExtendedThisArt != null) {
+                        final Map<String, Object> download = (Map<String, Object>) deviationExtendedThisArt.get("download");
+                        if (download != null) {
+                            officialDownloadurl = download.get("url").toString();
+                            officialDownloadsizeBytes = (Number) download.get("filesize");
+                        }
                     }
                 }
             }
@@ -289,6 +335,9 @@ public class DeviantArtCom extends PluginForHost {
         final boolean isVideo = isVideo(link);
         final boolean isLiterature = isLiterature(link);
         final boolean isStatus = isStatus(link);
+        if (unlimitedImageURL != null && isImage) {
+            link.setProperty(PROPERTY_UNLIMITED_JWT_IMAGE_URL, unlimitedImageURL);
+        }
         if (displayedImageURL != null && isImage) {
             link.setProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL, displayedImageURL);
         }
@@ -316,8 +365,8 @@ public class DeviantArtCom extends PluginForHost {
             dllink = this.getDirecturl(link, account);
         } catch (final PluginException e) {
             /**
-             * This will happen if the item is not downloadable. </br>
-             * We're ignoring this during linkcheck as by now we know the file is online.
+             * This will happen if the item is not downloadable. </br> We're ignoring this during linkcheck as by now we know the file is
+             * online.
              */
         }
         String extByMimeType = null;
@@ -337,32 +386,39 @@ public class DeviantArtCom extends PluginForHost {
             } else {
                 link.setDownloadSize(SizeFormatter.getSize(officialDownloadFilesizeStr.replace(",", "")));
             }
-        } else if (mode == ImageDownloadMode.OFFICIAL_DOWNLOAD_ELSE_PREVIEW && cfg.isFastLinkcheckForSingleItems() == false && !isDownload && !StringUtils.isEmpty(dllink)) {
-            final Browser br2 = br.cloneBrowser();
-            /* Workaround for old downloadcore bug that can lead to incomplete files */
-            br2.getHeaders().put("Accept-Encoding", "identity");
-            URLConnectionAdapter con = null;
-            try {
-                con = br2.openHeadConnection(dllink);
-                if (!looksLikeDownloadableContent(con)) {
-                    try {
-                        br2.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                final String mimeTypeExtTmp = getExtensionFromMimeType(con.getRequest().getResponseHeader("Content-Type"));
-                if (mimeTypeExtTmp != null) {
-                    extByMimeType = "." + mimeTypeExtTmp;
-                }
-            } finally {
+        } else if (mode == ImageDownloadMode.OFFICIAL_DOWNLOAD_ELSE_PREVIEW) {
+            if (isVideo && displayedVideoSize != null) {
+                link.setVerifiedFileSize(displayedVideoSize.longValue());
+            } else if (isImage && unlimitedImageSize != null && dllink != null && !dllink.matches("(?i).*/v1/.+")) {
+                link.setVerifiedFileSize(unlimitedImageSize.longValue());
+            }
+            if (cfg.isFastLinkcheckForSingleItems() == false && !isDownload && !StringUtils.isEmpty(dllink)) {
+                final Browser br2 = br.cloneBrowser();
+                /* Workaround for old downloadcore bug that can lead to incomplete files */
+                br2.getHeaders().put("Accept-Encoding", "identity");
+                URLConnectionAdapter con = null;
                 try {
-                    con.disconnect();
-                } catch (Throwable e) {
+                    con = br2.openHeadConnection(dllink);
+                    if (!looksLikeDownloadableContent(con)) {
+                        try {
+                            br2.followConnection(true);
+                        } catch (IOException e) {
+                            logger.log(e);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    final String mimeTypeExtTmp = getExtensionFromMimeType(con.getRequest().getResponseHeader("Content-Type"));
+                    if (mimeTypeExtTmp != null) {
+                        extByMimeType = "." + mimeTypeExtTmp;
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
                 }
             }
         }
@@ -510,8 +566,13 @@ public class DeviantArtCom extends PluginForHost {
             } else if (account != null && officialDownloadurl != null) {
                 dllink = officialDownloadurl;
             } else {
-                final String displayedImageURL = link.getStringProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL);
-                dllink = displayedImageURL;
+                final String unlimitedURL = link.getStringProperty(PROPERTY_UNLIMITED_JWT_IMAGE_URL);
+                final String imageURL = link.getStringProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL);
+                String ret = imageURL;
+                if ((imageURL == null || imageURL.matches("(?i).+/v1/.+")) && unlimitedURL != null) {
+                    ret = unlimitedURL;
+                }
+                dllink = ret;
             }
         } else if (isVideo(link)) {
             /* officialDownloadurl can be given while account is not given -> Will lead to error 404 then! */
