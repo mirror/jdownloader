@@ -170,10 +170,6 @@ public class CFG_GENERAL {
     public static final BooleanKeyHandler               DOWNLOAD_SPEED_LIMIT_REMEMBERED_ENABLED                          = SH.getKeyHandler("DownloadSpeedLimitRememberedEnabled", BooleanKeyHandler.class);
     public static final EnumKeyHandler                  CLEANUP_AFTER_DOWNLOAD_ACTION                                    = SH.getKeyHandler("CleanupAfterDownloadAction", EnumKeyHandler.class);
     /**
-     * The Autosolver is still very buggy. Use at your own risk!
-     **/
-    public static final BooleanKeyHandler               MY_JDOWNLOADER_CAPTCHA_SOLVER_ENABLED                            = SH.getKeyHandler("MyJDownloaderCaptchaSolverEnabled", BooleanKeyHandler.class);
-    /**
      * Delay writes to disk of background tasks
      **/
     public static final EnumKeyHandler                  DELAY_WRITE_MODE                                                 = SH.getKeyHandler("DelayWriteMode", EnumKeyHandler.class);

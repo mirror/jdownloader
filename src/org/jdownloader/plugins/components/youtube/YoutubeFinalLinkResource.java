@@ -6,7 +6,7 @@ import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 
 public class YoutubeFinalLinkResource implements Storable {
     public final static TypeRef<YoutubeFinalLinkResource> TYPE_REF = new TypeRef<YoutubeFinalLinkResource>() {
-    };
+                                                                   };
     private YoutubeITAG                                   itag;
     private String                                        videoID;
     private String[]                                      segments;
@@ -64,7 +64,17 @@ public class YoutubeFinalLinkResource implements Storable {
 
     private int    width;
     private String fps;
-    private long   contentLength = -1;
+    private long   estimatedContentLength = -1;
+
+    public void setEstimatedContentLength(long estimatedContentLength) {
+        this.estimatedContentLength = Math.max(-1, estimatedContentLength);
+    }
+
+    public long getEstimatedContentLength() {
+        return estimatedContentLength;
+    }
+
+    private long contentLength = -1;
 
     public long getContentLength() {
         return contentLength;
@@ -86,6 +96,7 @@ public class YoutubeFinalLinkResource implements Storable {
         width = si.getWidth();
         fps = si.getFps();
         setContentLength(si.getContentLength());
+        setEstimatedContentLength(si.getEstimatedContentLength());
     }
 
     public String getFps() {
@@ -102,6 +113,7 @@ public class YoutubeFinalLinkResource implements Storable {
         ret.setWidth(getWidth());
         ret.setSegments(getSegments());
         ret.setContentLength(getContentLength());
+        ret.setEstimatedContentLength(getEstimatedContentLength());
         return ret;
     }
 }

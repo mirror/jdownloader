@@ -15,7 +15,6 @@ import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.gui.DialogCaptchaSolverConfig;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
-import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolverService;
 import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.captcha.v2.solver.twocaptcha.TwoCaptchaSolverService;
 import org.jdownloader.gui.IconKey;
@@ -102,7 +101,6 @@ public class DialogSolverService extends AbstractSolverService {
         // ret.put(CaptchaAPISolver.ID, 0);
         ret.put(JacSolverService.ID, 30000);
         ret.put(NineKwSolverService.ID, 300000);
-        ret.put(CaptchaMyJDSolverService.ID, 60000);
         ret.put(DeathByCaptchaSolverService.ID, 60000);
         ret.put(ImageTyperzSolverService.ID, 60000);
         ret.put(CheapCaptchaSolverService.ID, 60000);

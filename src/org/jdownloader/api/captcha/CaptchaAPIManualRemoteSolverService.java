@@ -20,7 +20,6 @@ import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
-import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
 import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.gui.IconKey;
@@ -50,18 +49,15 @@ public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
     @Override
     public AbstractCaptchaSolverConfigPanel getConfigPanel() {
         AbstractCaptchaSolverConfigPanel ret = new AbstractCaptchaSolverConfigPanel() {
-
             // public Icon getIcon(int i) {
             // return new AbstractIcon(IconKey.ICON_myjdownloader", i);
             // }
-
             {
                 addHeader(getTitle(), new AbstractIcon(IconKey.ICON_LOGO_MYJDOWNLOADER, 32));
                 addDescription(_GUI.T.CaptchaAPIManualRemoteSolverService_getConfigPanel_description());
                 SettingsButton openMyJDownloader = new SettingsButton(new AppAction() {
                     {
                         setName(_GUI.T.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_open_());
-
                     }
 
                     @Override
@@ -69,13 +65,10 @@ public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
                         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
                         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
                         ConfigurationView.getInstance().setSelectedSubPanel(MyJDownloaderSettingsPanel.class);
-
                     }
                 });
                 add(openMyJDownloader, "gapleft 37,spanx,pushx,growx");
-
                 addBlackWhiteList(config);
-
             }
 
             @Override
@@ -100,7 +93,6 @@ public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
             @Override
             public void updateContents() {
             }
-
         };
         return ret;
     }
@@ -132,12 +124,10 @@ public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
         HashMap<String, Integer> ret = new HashMap<String, Integer>();
         ret.put(JacSolverService.ID, 30000);
         ret.put(NineKwSolverService.ID, 300000);
-        ret.put(CaptchaMyJDSolverService.ID, 60000);
         ret.put(DeathByCaptchaSolverService.ID, 60000);
         ret.put(ImageTyperzSolverService.ID, 60000);
         ret.put(CheapCaptchaSolverService.ID, 60000);
         ret.put(EndCaptchaSolverService.ID, 60000);
-
         return ret;
     }
 }

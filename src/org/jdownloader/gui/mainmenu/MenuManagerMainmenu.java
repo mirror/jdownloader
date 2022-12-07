@@ -42,7 +42,6 @@ import org.jdownloader.gui.toolbar.action.CaptchaToogleDialogAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleEndCaptchaAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleImageTyperzAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleJACAction;
-import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDAutoAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDRemoteAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleTwoCaptchaAction;
 import org.jdownloader.gui.translate._GUI;
@@ -110,7 +109,6 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         ocr.add(CaptchaToogleDialogAction.class);
         ocr.add(CaptchaToogleBrowserSolverAction.class);
         ocr.add(CaptchaToogleJACAction.class);
-        ocr.add(CaptchaToogleMyJDAutoAction.class);
         ocr.add(CaptchaToogleMyJDRemoteAction.class);
         // HorizontalBoxItem h = new HorizontalBoxItem();
         // h.setVisible(true);

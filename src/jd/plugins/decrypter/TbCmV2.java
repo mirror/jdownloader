@@ -96,7 +96,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://(?:www\\.)?youtube-nocookie\\.com/embed/.+", "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|shorts/|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[%A-Za-z0-9\\-_]+(.*?index=\\d+)?(.*?page=\\d+)?(.*?list=[%A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[%A-Za-z0-9\\-_]+(\\#variant=\\S+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://(?:www\\.)?youtube-nocookie\\.com/embed/.+", "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|shorts/|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[%A-Za-z0-9\\-_]+(.*?index=\\d+)?(.*?page=\\d+)?(.*?list=[%A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[%A-Za-z0-9\\-_]+(\\#variant=\\S+)?", "https?://([a-z]+\\.)?youtube\\.com/@[^/]+" })
 public class TbCmV2 extends PluginForDecrypt {
     private static final int DDOS_WAIT_MAX        = Application.isJared(null) ? 1000 : 10;
     private static final int DDOS_INCREASE_FACTOR = 15;
@@ -121,14 +121,6 @@ public class TbCmV2 extends PluginForDecrypt {
      * Returns a ListID from provided String.
      */
     private String getListIDByUrls(String originUrl) {
-        // String list = null;
-        // http://www.youtube.com/user/wirypodge#grid/user/41F2A8E7EBF86D7F
-        // list = new Regex(originUrl, "(g/c/|grid/user/)([A-Za-z0-9\\-_]+)").getMatch(1);
-        // /user/
-        // http://www.youtube.com/user/Gronkh
-        // if (list == null) list = new Regex(originUrl, "/user/([A-Za-z0-9\\-_]+)").getMatch(0);
-        // play && course
-        // http://www.youtube.com/playlist?list=PL375B54C39ED612FC
         return new Regex(originUrl, "list=([%A-Za-z0-9\\-_]+)").getMatch(0);
     }
 
@@ -271,6 +263,9 @@ public class TbCmV2 extends PluginForDecrypt {
         }
         String userChannel = new Regex(cleanedurl, "/c/([^/\\?]+)").getMatch(0);
         userID = new Regex(cleanedurl, "/user/([^/\\?]+)").getMatch(0);
+        if (userID == null) {
+            userID = new Regex(cleanedurl, "youtube.com/@([^/\\?]+)").getMatch(0);
+        }
         channelID = new Regex(cleanedurl, "/channel/([^/\\?]+)").getMatch(0);
         if (StringUtils.isEmpty(channelID) && StringUtils.isNotEmpty(userChannel)) {
             helper.getPage(br, "https://www.youtube.com/c/" + userChannel);
@@ -378,7 +373,7 @@ public class TbCmV2 extends PluginForDecrypt {
                  * the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this playlist
                  * instead
                  */
-                helper.getPage(br, "https://www.youtube.com/user/" + userID + "/featured");
+                helper.getPage(br, "https://www.youtube.com/@" + userID + "/featured");
                 helper.parserJson();
                 // channel title isn't user_name. user_name is /user/ reference. check logic in YoutubeHelper.extractData()!
                 globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_TITLE, extractWebsiteTitle(br));
@@ -1251,8 +1246,6 @@ public class TbCmV2 extends PluginForDecrypt {
     }
 
     public ArrayList<YoutubeClipData> parseUsergrid(YoutubeHelper helper, String userID) throws Exception {
-        // http://www.youtube.com/user/Gronkh/videos
-        // channel: http://www.youtube.com/channel/UCYJ61XIK64sp6ZFFS8sctxw
         if (false && userID != null) {
             /** TEST CODE for 1050 playlist max size issue. below comment is incorrect, both grid and channelid return 1050. raztoki **/
             // this format only ever returns 1050 results, its a bug on youtube end. We can resolve this by finding the youtube id and let
@@ -1278,7 +1271,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 String content = null;
                 if (pageUrl == null) {
                     // this returns the html5 player
-                    helper.getPage(br, getBase() + "/user/" + userID + "/videos?view=0");
+                    helper.getPage(br, getBase() + "/@" + userID + "/videos?view=0");
                     checkErrors(br);
                     content = br.toString();
                 } else {

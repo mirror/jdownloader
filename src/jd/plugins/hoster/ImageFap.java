@@ -115,7 +115,11 @@ public class ImageFap extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        String ret = new Regex(link.getPluginPatternMatcher(), "/(?:photo|imagedecrypted)/(\\d+)").getMatch(0);
+        if (ret == null) {
+            ret = new Regex(link.getPluginPatternMatcher(), "/video\\.php\\?\\vid=(\\d+)").getMatch(0);
+        }
+        return ret;
     }
 
     public static Browser prepBR(final Browser br) {
@@ -404,23 +408,22 @@ public class ImageFap extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            String imageLink = br.getRegex("name=\"mainPhoto\"[^>]*src\\s*=\\s*\"(https?://[^<>\"]+)\"").getMatch(0);
-            // if (imagelink == null) {
-            // String ID = new Regex(downloadLink.getDownloadURL(), "(\\d+)").getMatch(0);
-            // imagelink = br.getRegex("href=\"http://img\\.imagefapusercontent\\.com/images/full/\\d+/\\d+/" + ID +
-            // "\\.jpe?g\" original=\"(http://fap.to/images/full/\\d+/\\d+/" + ID + "\\.jpe?g)\"").getMatch(0);
-            // }
+            final String fid = getFID(link);
+            String imageLink = br.getRegex("original\\s*=\\s*\"([^\"]*)\"[^<>]*imageid\\s*=\\s*\"" + Pattern.quote(fid) + "\"").getMatch(0);
             if (imageLink == null) {
-                final String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                if (returnID != null) {
-                    imageLink = decryptLink(returnID);
-                }
+                imageLink = br.getRegex("name=\"mainPhoto\"[^>]*src\\s*=\\s*\"(https?://[^<>\"]+)\"").getMatch(0);
                 if (imageLink == null) {
-                    imageLink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
+                    final String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                    if (returnID != null) {
+                        imageLink = decryptLink(returnID);
+                    }
                     if (imageLink == null) {
-                        imageLink = br.getRegex("href=\"#\" onclick\\s*=\\s*\"javascript:window\\.open\\(\\'(https?://.*?)\\'\\)").getMatch(0);
+                        imageLink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
                         if (imageLink == null) {
-                            imageLink = br.getRegex("\"contentUrl\"\\s*>\\s*(https?://cdn\\.imagefap\\.com/images/full/.*?)\\s*<").getMatch(0);
+                            imageLink = br.getRegex("href=\"#\" onclick\\s*=\\s*\"javascript:window\\.open\\(\\'(https?://.*?)\\'\\)").getMatch(0);
+                            if (imageLink == null) {
+                                imageLink = br.getRegex("\"contentUrl\"\\s*>\\s*(https?://cdn\\.imagefap\\.com/images/full/.*?)\\s*<").getMatch(0);
+                            }
                         }
                     }
                 }
@@ -498,7 +501,7 @@ public class ImageFap extends PluginForHost {
             br.getPage(request);
             if (br.getHttpConnection().getResponseCode() == 429) {
                 /*
-                 * 
+                 *
                  * 100 requests per 1 min 200 requests per 5 min 1000 requests per 1 hour
                  */
                 /* 2020-09-22: Most likely they will allow a retry after one hour. */
