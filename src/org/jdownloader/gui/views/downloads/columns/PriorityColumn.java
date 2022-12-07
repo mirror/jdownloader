@@ -78,6 +78,15 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
     }
 
+    @Override
+    protected String modelItemToString(Priority selectedItem, AbstractNode value) {
+        if (selectedItem != null) {
+            return selectedItem.T();
+        } else {
+            return super.modelItemToString(selectedItem, value);
+        }
+    }
+
     public PriorityColumn() {
         super(_GUI.T.PriorityColumn_PriorityColumn(), new DefaultComboBoxModel<Priority>(Priority.values()));
         imgPriority_3 = NewTheme.I().getIcon(IconKey.ICON_PRIO__3, 16);
