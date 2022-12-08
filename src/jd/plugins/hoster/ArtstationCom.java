@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -79,8 +81,10 @@ public class ArtstationCom extends PluginForHost {
         try {
             br2.getHeaders().put("Accept-Encoding", "identity");
             con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html") && con.isOK()) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    downloadLink.setDownloadSize(con.getCompleteContentLength());
+                }
                 if (filename == null) {
                     filename = getFileNameFromHeader(con);
                     downloadLink.setFinalFileName(filename);
@@ -101,24 +105,30 @@ public class ArtstationCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doDownload(null, downloadLink, dllink);
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception {
+    private void doDownload(final Account account, final DownloadLink downloadLink, final String url) throws Exception {
         this.br.getHeaders().put("Accept-Encoding", "identity");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, free_resume, free_maxchunks);
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (account == null || AccountType.FREE.equals(account.getType())) {
+            downloadLink.setProperty("free_directlink", dllink);
+        } else {
+            downloadLink.setProperty("premium_directlink", dllink);
         }
         dl.startDownload();
     }
@@ -239,23 +249,7 @@ public class ArtstationCom extends PluginForHost {
         requestFileInformation(link);
         login(this.br, account, false);
         br.getPage(link.getDownloadURL());
-        if (account.getType() == AccountType.FREE) {
-            doFree(link);
-        } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty("premium_directlink", dllink);
-            dl.startDownload();
-        }
+        doDownload(account, link, dllink);
     }
 
     @Override

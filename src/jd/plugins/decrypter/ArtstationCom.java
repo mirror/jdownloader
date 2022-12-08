@@ -106,58 +106,67 @@ public class ArtstationCom extends antiDDoSForDecrypt {
             final List<Object> resource_data_list = (List<Object>) json.get("assets");
             final String full_name = (String) JavaScriptEngineFactory.walkJson(json, "user/full_name");
             final String username = (String) JavaScriptEngineFactory.walkJson(json, "user/username");
-            final String projectTitle = (String) json.get("title");
+            final String projectTitle = Encoding.htmlOnlyDecode((String) json.get("title"));
             for (final Object jsono : resource_data_list) {
+                if (isAbort()) {
+                    break;
+                }
                 final Map<String, Object> imageJson = (Map<String, Object>) jsono;
                 String url = (String) imageJson.get("image_url");
                 final long width = JavaScriptEngineFactory.toLong(imageJson.get("width"), -1l);
                 final String fid = Long.toString(JavaScriptEngineFactory.toLong(imageJson.get("id"), -1));
+                final String asset_type = (String) imageJson.get("asset_type");
                 final String imageTitle = (String) imageJson.get("title");
                 final Boolean hasImage = (Boolean) imageJson.get("has_image");
                 final String playerEmbedded = (String) imageJson.get("player_embedded");
+                boolean hasVideo = false;
                 if (StringUtils.isNotEmpty(playerEmbedded)) {
                     final String[] results = HTMLParser.getHttpLinks(playerEmbedded, null);
                     if (results != null) {
                         for (final String result : results) {
                             String assetURL = result;
                             final Browser br2 = br.cloneBrowser();
-                            if (result.endsWith(fid) && StringUtils.containsIgnoreCase(playerEmbedded, "<iframe")) {
-                                getPage(br2, result);
-                                String pageDetail = br2.toString();
-                                if (StringUtils.containsIgnoreCase(url, "/marmosets/") && br2.containsHTML("\"asset_type\":\"marmoset\"") && br2.containsHTML("\"attachment_content_type\":\"application/octet-stream\"")) {
-                                    // Handle Marmoset 3D content
-                                    String assetURLRoot = br2.getRegex("\"(https?://[^\"]+original/)").getMatch(0).toString().replace("/images/", "/attachments/");
-                                    String assetFileName = br2.getRegex("\"attachment_file_name\":\"([^\"]+)\"").getMatch(0).toString();
-                                    String assetFileTimeStamp = br2.getRegex("\"attachment_updated_at\":([0-9]+)").getMatch(0).toString();
-                                    assetURL = assetURLRoot + assetFileName + "?" + assetFileTimeStamp;
-                                } else if (br2.containsHTML("\"asset_type\":\"pano\"")) {
-                                    // Handle 3D panorama images
-                                    assetURL = br2.getRegex("\"[a-z]+_image_url\"\\s*:\\s*\"([^\"]+)\"").getMatch(0);
-                                } else {
-                                    assetURL = br2.getRegex("src\\s*=\\s*[\"']*([^\"']*)[\"']*").getMatch(0);
+                            try {
+                                if (result.endsWith(fid) && StringUtils.containsIgnoreCase(playerEmbedded, "<iframe")) {
+                                    getPage(br2, result);
+                                    String pageDetail = br2.toString();
+                                    if (StringUtils.containsIgnoreCase(url, "/marmosets/") && br2.containsHTML("\"asset_type\":\"marmoset\"") && br2.containsHTML("\"attachment_content_type\":\"application/octet-stream\"")) {
+                                        // Handle Marmoset 3D content
+                                        String assetURLRoot = br2.getRegex("\"(https?://[^\"]+original/)").getMatch(0).toString().replace("/images/", "/attachments/");
+                                        String assetFileName = br2.getRegex("\"attachment_file_name\":\"([^\"]+)\"").getMatch(0).toString();
+                                        String assetFileTimeStamp = br2.getRegex("\"attachment_updated_at\":([0-9]+)").getMatch(0).toString();
+                                        assetURL = assetURLRoot + assetFileName + "?" + assetFileTimeStamp;
+                                    } else if (br2.containsHTML("\"asset_type\":\"pano\"")) {
+                                        // Handle 3D panorama images
+                                        assetURL = br2.getRegex("\"[a-z]+_image_url\"\\s*:\\s*\"([^\"]+)\"").getMatch(0);
+                                    } else {
+                                        assetURL = br2.getRegex("src\\s*=\\s*[\"']*([^\"']*)[\"']*").getMatch(0);
+                                    }
+                                } else if (result.contains("embed.html")) {
+                                    /* 2020-08-25: Embedded video (selfhosted by artstation but requires this extra step to download it) */
+                                    getPage(br2, result);
+                                    assetURL = br2.getRegex("<source[^>]*src=\"(https?://[^<>\"]+)\"[^>]*type=\"video/mp4\"").getMatch(0);
+                                    hasVideo |= StringUtils.isNotEmpty(assetURL);
                                 }
-                            } else if (result.contains("embed.html")) {
-                                /* 2020-08-25: Embedded video (selfhosted by artstation but requires this extra step to download it) */
-                                getPage(br2, result);
-                                assetURL = br2.getRegex("<source[^>]*src=\"(https?://[^<>\"]+)\"[^>]*type=\"video/mp4\"").getMatch(0);
-                            }
-                            if (StringUtils.isNotEmpty(assetURL)) {
-                                final DownloadLink dl2 = this.createDownloadlink(assetURL);
-                                fp.add(dl2);
-                                decryptedLinks.add(dl2);
+                                if (StringUtils.isNotEmpty(assetURL)) {
+                                    final DownloadLink dl2 = this.createDownloadlink(assetURL);
+                                    fp.add(dl2);
+                                    decryptedLinks.add(dl2);
+                                }
+                            } catch (Exception e) {
+                                logger.log(e);
                             }
                         }
                     }
                 }
                 if (fid.equals("-1") || url == null || Boolean.FALSE.equals(hasImage)) {
                     continue;
-                }
-                if (width > 1920 && StringUtils.contains(url, "/large/")) {
+                } else if (hasVideo || "video_clip".equals(asset_type)) {
+                    // skip thumbnai
+                    continue;
+                } else if (width > 1920 && StringUtils.containsIgnoreCase(url, "/large/") && !StringUtils.containsIgnoreCase(url, "/assets/images/")) {
                     logger.info("Auto 4k for '" + url + "' because width>1920=" + width);
                     url = url.replace("/large/", "/4k/");
-                }
-                if (isAbort()) {
-                    break;
                 }
                 String filename = null;
                 if (StringUtils.isNotEmpty(imageTitle)) {
