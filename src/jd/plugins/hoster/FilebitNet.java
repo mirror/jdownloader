@@ -17,9 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 
@@ -70,9 +72,10 @@ public class FilebitNet extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME       = true;
-    private final int     FREE_MAXCHUNKS    = 0;
-    private final int     FREE_MAXDOWNLOADS = -1;
+    private final boolean      FREE_RESUME       = true;
+    private final int          FREE_MAXCHUNKS    = 0;
+    private final int          FREE_MAXDOWNLOADS = -1;
+    public static final String API_BASE          = "https://filebit.net";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -92,6 +95,13 @@ public class FilebitNet extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
     }
 
+    public Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
+        br.getHeaders().put("Content-Type", "application/json");
+        br.getHeaders().put("User-Agent", "JDownloader " + getVersion());
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {
@@ -99,8 +109,7 @@ public class FilebitNet extends PluginForHost {
             link.setName(this.getFID(link));
         }
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("Content-Type", "application/json");
+        prepBR(br);
         br.postPageRaw("https://" + this.getHost() + "/storage/bucket/info.json", "{\"file\":\"" + this.getFID(link) + "\"}");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -118,8 +127,8 @@ public class FilebitNet extends PluginForHost {
                 link.setSha256Hash(hash.get("value").toString());
             }
         }
-        final Number filesize = (Number) entries.get("filesize");
         final String filename = entries.get("filename").toString();
+        final Number filesize = (Number) entries.get("filesize");
         if (filename != null) {
             // TODO: Decrypt filename
             link.setFinalFileName(filename);
@@ -128,6 +137,76 @@ public class FilebitNet extends PluginForHost {
             link.setDownloadSize(filesize.longValue());
         }
         return AvailableStatus.TRUE;
+    }
+
+    /** See https://filebit.net/docs/#/?id=multi-file-informations */
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        try {
+            prepBR(this.br);
+            br.setCookiesExclusive(true);
+            final List<String> fileIDs = new ArrayList<String>();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* 2022-12-08: Tested with 100 items max. */
+                    if (index == urls.length || links.size() == 100) {
+                        break;
+                    } else {
+                        links.add(urls[index]);
+                        index++;
+                    }
+                }
+                fileIDs.clear();
+                for (final DownloadLink link : links) {
+                    fileIDs.add(this.getFID(link));
+                }
+                final Map<String, Object> postData = new HashMap<String, Object>();
+                postData.put("files", fileIDs);
+                br.postPageRaw(API_BASE + "/storage/multiinfo.json", JSonStorage.serializeToJson(postData));
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                for (final DownloadLink link : links) {
+                    final String fid = this.getFID(link);
+                    if (!link.isNameSet()) {
+                        link.setName(fid);
+                    }
+                    final Map<String, Object> info = (Map<String, Object>) entries.get(fid);
+                    if (info == null) {
+                        /* This should never happen! */
+                        link.setAvailable(false);
+                        continue;
+                    }
+                    // TODO: Decrypt filename
+                    final String state = info.get("state").toString();
+                    final String filename = (String) info.get("name");
+                    final Number filesize = (Number) info.get("size");
+                    if (!StringUtils.isEmpty(filename)) {
+                        link.setFinalFileName(filename);
+                    }
+                    if (filesize != null) {
+                        link.setVerifiedFileSize(filesize.longValue());
+                    }
+                    if (state.equalsIgnoreCase("ONLINE")) {
+                        link.setAvailable(true);
+                    } else {
+                        /* E.g. {"state":"ERROR"} */
+                        link.setAvailable(false);
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            logger.log(e);
+            return false;
+        }
+        return true;
     }
 
     @Override
