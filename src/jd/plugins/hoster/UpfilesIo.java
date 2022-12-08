@@ -61,7 +61,7 @@ public class UpfilesIo extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "upfiles.app", "upfiles.io", "upfiles.com" });
+        ret.add(new String[] { "upfiles.app", "upfiles.io", "upfiles.com", "upfiles.download" });
         return ret;
     }
 
@@ -148,12 +148,16 @@ public class UpfilesIo extends PluginForHost {
                 }
             }
         }
+        br.setFollowRedirects(true);
         br.getPage(getContentURL(link));
         checkErrors(br);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String downloadUrl = getDownloadFileUrl(link, MethodName.handleFree);
+        if (StringUtils.isEmpty(downloadUrl)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         URLConnectionAdapter con = null;
         try {
             br.setFollowRedirects(true);
@@ -191,9 +195,9 @@ public class UpfilesIo extends PluginForHost {
         handleFree
     }
 
-    String getDownloadFileUrl(final DownloadLink link, final MethodName methodname) throws Exception {
+    private String getDownloadFileUrl(final DownloadLink link, final MethodName methodname) throws Exception {
         final String csrfToken = br.getRegex("csrf-token\" content=\"([^\"]+)\"").getMatch(0);
-        UrlQuery query = new UrlQuery();
+        final UrlQuery query = new UrlQuery();
         query.add("_token", csrfToken);
         query.add("ccp", "1");
         query.add("action", "continue");
@@ -204,7 +208,6 @@ public class UpfilesIo extends PluginForHost {
         // link.setDownloadSize(SizeFormatter.getSize(fileInfo.getMatch(1)));
         // }
         /* The following part is basically a form of SiteTemplate.MightyScript_AdLinkFly */
-        String view_form_data = br.getRegex("view_form_data\" value=\"([^\"]+)\"").getMatch(0);
         final UrlQuery query2 = new UrlQuery();
         final String captchaType = PluginJSonUtils.getJson(br, "captcha_type");
         if (captchaType != null) {
@@ -225,12 +228,13 @@ public class UpfilesIo extends PluginForHost {
             }
         }
         query2.add("_token", csrfToken);
-        query2.add("view_form_data", view_form_data);
+        // query2.add("view_form_data", view_form_data);
         query2.add("action", "captcha");
         br.postPage(br.getURL(), query2);
-        final UrlQuery query3 = new UrlQuery();
-        query3.add("_token", csrfToken);
-        query3.add("view_form_data", view_form_data);
+        final String view_form_data = br.getRegex("view_form_data\" value=\"([^\"]+)\"").getMatch(0);
+        if (view_form_data == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String waitSecondsStr = br.getRegex("class=\"timer\">\\s*(\\d+)\\s*</span>").getMatch(0);
         final int waitSeconds = Integer.parseInt(waitSecondsStr);
         if (methodname == MethodName.handleFree) {
@@ -238,6 +242,9 @@ public class UpfilesIo extends PluginForHost {
         } else {
             Thread.sleep(waitSeconds * 1001l);
         }
+        final UrlQuery query3 = new UrlQuery();
+        query3.add("_token", csrfToken);
+        query3.add("view_form_data", view_form_data);
         br.postPage("/file/go", query3);
         return PluginJSonUtils.getJsonValue(br, "url");
     }
@@ -248,6 +255,7 @@ public class UpfilesIo extends PluginForHost {
             /* Set fallback-name */
             link.setName(this.getFID(link));
         }
+        br.setFollowRedirects(true);
         final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
         if (storedDirecturl != null) {
             final URLConnectionAdapter con = this.checkDownloadableRequest(link, br, new GetRequest(storedDirecturl), -1, true);
