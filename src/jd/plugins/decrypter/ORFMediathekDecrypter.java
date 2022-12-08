@@ -60,7 +60,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("/index.php/", "/");
         this.br.setAllowedResponseCodes(500);
         this.br.setLoadLimit(this.br.getLoadLimit() * 4);
@@ -78,11 +78,11 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         if (br.containsHTML("(404 \\- Seite nicht gefunden\\.|area_headline error_message\">Keine Sendung vorhanden<)") || !br.containsHTML("jsb_VideoPlaylist") || status == 404 || status == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        decryptedLinks.addAll(getDownloadLinks(param, SubConfiguration.getConfig("orf.at")));
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        ret.addAll(getDownloadLinks(param, SubConfiguration.getConfig("orf.at")));
+        if (ret == null || ret.size() == 0) {
             if (br.containsHTML("DRMTestbetrieb")) {
                 logger.info("DRMTestbetrieb");
-                return decryptedLinks;
+                return ret;
             } else {
                 if (parameter.matches(TYPE_TOPIC)) {
                     logger.warning("MAYBE crawler out of date for link: " + parameter);
@@ -92,7 +92,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     @SuppressWarnings({ "deprecation", "unchecked", "unused", "rawtypes" })
