@@ -37,6 +37,7 @@ import jd.plugins.PluginForHost;
 public class FilebitNet extends PluginForHost {
     public FilebitNet(PluginWrapper wrapper) {
         super(wrapper);
+        // this.enablePremium("https://filebit.net/plans");
     }
 
     @Override
@@ -185,6 +186,7 @@ public class FilebitNet extends PluginForHost {
                 throw new IOException();
             }
         } catch (final Throwable e) {
+            link.removeProperty(directlinkproperty);
             logger.log(e);
             try {
                 dl.getConnection().disconnect();
