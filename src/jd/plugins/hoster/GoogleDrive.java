@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -49,6 +50,7 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.settings.GeneralSettings;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -729,45 +731,40 @@ public class GoogleDrive extends PluginForHost {
 
     /** A function that parses filename/size/last-modified date from single files via "Details View" of Google Drive website. */
     private void crawlAdditionalFileInformationFromWebsite(final Browser br, final DownloadLink link, final Account account, final boolean accessFileViewPageIfNotAlreadyDone, final boolean trustAndSetFileInfo) throws PluginException, IOException {
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && link.getLastModifiedTimestamp() == -1 && DEBUG_ALLOW_CRAWL_ADDITIONAL_FILE_INFO_FROM_WEBSITE) {
-            /* TODO: Only crawl this information if it is not already given and user wants it. */
-            // if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
-            // }
-            final Browser br2 = br.cloneBrowser();
-            if (accessFileViewPageIfNotAlreadyDone && !br2.getURL().matches(PATTERN_FILE) && this.websiteWebapiKey == null) {
-                accessFileViewURLWithPartialErrorhandling(br2, link, account);
-            }
-            if (this.websiteWebapiKey == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (account != null) {
-                logger.info("!Dev! This doesn't work in account mode yet!");
-            }
-            br2.getHeaders().put("X-Referer", "https://drive.google.com");
-            br2.getHeaders().put("X-Origin", "https://drive.google.com");
-            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final UrlQuery query = new UrlQuery();
-            query.add("fields", URLEncode.encodeURIComponent(getSingleFilesFieldsWebsite()));
-            query.add("supportsTeamDrives", "true");
-            // query.add("includeBadgedLabels", "true");
-            query.add("enforceSingleParent", "true");
-            query.add("key", URLEncode.encodeURIComponent(this.websiteWebapiKey));
-            // br2.setAllowedResponseCodes(400);
-            br2.getPage("https://content.googleapis.com/drive/v2beta/files/" + this.getFID(link) + "?" + query.toString());
-            /* For logged in users: */
-            // TODO: This will end up in error response 400 "message": "Authentication token must be issued to a non-anonymous app."
-            // br2.getHeaders().put("Authorization", "SAPISIDHASH TODO");
-            // br2.getHeaders().put("Referer", "https://clients6.google.com/static/proxy.html");
-            // br2.getHeaders().put("x-client-data", "TODO");
-            // br2.getHeaders().put("x-clientdetails",
-            // "appVersion=5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F108.0.0.0%20Safari%2F537.36&platform=Win32&userAgent=Mozilla%2F5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F108.0.0.0%20Safari%2F537.36");
-            // br2.getHeaders().put("x-goog-authuser", "0");
-            // br2.getHeaders().put("x-goog-encode-response-if-executable", "base64");
-            // br2.getHeaders().put("x-javascript-user-agent:", "google-api-javascript-client/1.1.0");
-            // br2.getPage("https://clients6.google.com/drive/v2internal/files/" + this.getFID(link) + "?" + query.toString());
-            final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
-            parseFileInfoAPIAndWebsiteWebAPI(this, JsonSchemeType.WEBSITE, link, trustAndSetFileInfo, trustAndSetFileInfo, trustAndSetFileInfo, entries);
+        final Browser br2 = br.cloneBrowser();
+        if (accessFileViewPageIfNotAlreadyDone && !br2.getURL().matches(PATTERN_FILE) && this.websiteWebapiKey == null) {
+            accessFileViewURLWithPartialErrorhandling(br2, link, account);
         }
+        if (this.websiteWebapiKey == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (account != null) {
+            logger.info("!Dev! This doesn't work in account mode yet!");
+        }
+        br2.getHeaders().put("X-Referer", "https://drive.google.com");
+        br2.getHeaders().put("X-Origin", "https://drive.google.com");
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        final UrlQuery query = new UrlQuery();
+        query.add("fields", URLEncode.encodeURIComponent(getSingleFilesFieldsWebsite()));
+        query.add("supportsTeamDrives", "true");
+        // query.add("includeBadgedLabels", "true");
+        query.add("enforceSingleParent", "true");
+        query.add("key", URLEncode.encodeURIComponent(this.websiteWebapiKey));
+        // br2.setAllowedResponseCodes(400);
+        br2.getPage("https://content.googleapis.com/drive/v2beta/files/" + this.getFID(link) + "?" + query.toString());
+        /* For logged in users: */
+        // TODO: This will end up in error response 400 "message": "Authentication token must be issued to a non-anonymous app."
+        // br2.getHeaders().put("Authorization", "SAPISIDHASH TODO");
+        // br2.getHeaders().put("Referer", "https://clients6.google.com/static/proxy.html");
+        // br2.getHeaders().put("x-client-data", "TODO");
+        // br2.getHeaders().put("x-clientdetails",
+        // "appVersion=5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F108.0.0.0%20Safari%2F537.36&platform=Win32&userAgent=Mozilla%2F5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F108.0.0.0%20Safari%2F537.36");
+        // br2.getHeaders().put("x-goog-authuser", "0");
+        // br2.getHeaders().put("x-goog-encode-response-if-executable", "base64");
+        // br2.getHeaders().put("x-javascript-user-agent:", "google-api-javascript-client/1.1.0");
+        // br2.getPage("https://clients6.google.com/drive/v2internal/files/" + this.getFID(link) + "?" + query.toString());
+        final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+        parseFileInfoAPIAndWebsiteWebAPI(this, JsonSchemeType.WEBSITE, link, trustAndSetFileInfo, trustAndSetFileInfo, trustAndSetFileInfo, entries);
     }
 
     private String findWebsiteWebAPIKey(final Browser br) {
@@ -1228,11 +1225,13 @@ public class GoogleDrive extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
         }
-        try {
-            crawlAdditionalFileInformationFromWebsite(br, link, account, true, false);
-        } catch (final Exception ignore) {
-            logger.log(ignore);
-            logger.info("Failed to crawl additional file information due to Exception");
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified() && link.getLastModifiedTimestamp() == -1 && DEBUG_ALLOW_CRAWL_ADDITIONAL_FILE_INFO_FROM_WEBSITE) {
+            try {
+                crawlAdditionalFileInformationFromWebsite(br, link, account, true, false);
+            } catch (final Exception ignore) {
+                logger.log(ignore);
+                logger.info("Failed to crawl additional file information due to Exception");
+            }
         }
         /* Update quota properties */
         if (account != null && usedAccount) {
