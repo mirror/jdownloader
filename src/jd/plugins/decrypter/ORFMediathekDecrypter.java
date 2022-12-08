@@ -25,11 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -40,12 +36,19 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 // http://tvthek,orf.at/live/... --> HDS
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "https?://(?:www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(?:programs?|topic|profile)/.+" })
@@ -78,12 +81,17 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         if (br.containsHTML("(404 \\- Seite nicht gefunden\\.|area_headline error_message\">Keine Sendung vorhanden<)") || !br.containsHTML("jsb_VideoPlaylist") || status == 404 || status == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        ret.addAll(getDownloadLinks(param, SubConfiguration.getConfig("orf.at")));
+        final AtomicBoolean checkPluginSettingsFlag = new AtomicBoolean(false);
+        final SubConfiguration cfg = SubConfiguration.getConfig("orf.at");
+        ret.addAll(getDownloadLinks(param, cfg, checkPluginSettingsFlag));
         if (ret == null || ret.size() == 0) {
-            if (br.containsHTML("DRMTestbetrieb")) {
+            if (checkPluginSettingsFlag.get()) {
+                throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS);
+            } else if (br.containsHTML("DRMTestbetrieb")) {
                 logger.info("DRMTestbetrieb");
                 return ret;
             } else {
+                logger.info("PluginConfiguration:" + cfg);
                 if (parameter.matches(TYPE_TOPIC)) {
                     logger.warning("MAYBE crawler out of date for link: " + parameter);
                 } else {
@@ -96,7 +104,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings({ "deprecation", "unchecked", "unused", "rawtypes" })
-    private ArrayList<DownloadLink> getDownloadLinks(final CryptedLink param, final SubConfiguration cfg) {
+    private ArrayList<DownloadLink> getDownloadLinks(final CryptedLink param, final SubConfiguration cfg, AtomicBoolean checkPluginSettingsFlag) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String nicehost = new Regex(param.getCryptedUrl(), "https?://(?:www\\.)?([^/]+)").getMatch(0);
         final String decryptedhost = "http://" + nicehost + "decrypted";
@@ -117,7 +125,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
             allow_HLS = true;
             allow_HTTP = true;
         }
-        final boolean BEST = SubConfiguration.getConfig("orf.at").getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_BEST, true);
+        final boolean BEST = cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_BEST, true);
         try {
             String json = this.br.getRegex("class=\"jsb_ jsb_VideoPlaylist\" data\\-jsb=\"([^<>\"]+)\"").getMatch(0);
             if (json != null) {
@@ -153,9 +161,13 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 final boolean allVideos = cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.VIDEO_SEGMENTS, true) == cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.VIDEO_GAPLESS, true);
                 if (allVideos || cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.VIDEO_SEGMENTS, true)) {
                     videos.addAll(videosEntries);
+                } else if (videosEntries.size() > 0) {
+                    checkPluginSettingsFlag.set(true);
                 }
                 if (gapless_videoEntry != null && (allVideos || cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.VIDEO_GAPLESS, true))) {
                     videos.add(gapless_videoEntry);
+                } else if (gapless_videoEntry != null && gapless_videoEntry.size() > 0) {
+                    checkPluginSettingsFlag.set(true);
                 }
                 for (final Map<String, Object> video : videos) {
                     final boolean isGaplessVideo = video == gapless_videoEntry;
@@ -225,18 +237,23 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         }
                         // available protocols: http, rtmp, rtsp, hds, hls
                         if (!"http".equals(protocol)) {
+                            logger.info("skip protocol:" + protocol);
                             continue;
                         } else if ("progressive".equals(delivery) && !allow_HTTP) {
+                            checkPluginSettingsFlag.set(true);
                             logger.info("skip disabled:" + JSonStorage.toString(video));
                             continue;
                         } else if ("hls".equals(delivery) && !allow_HLS) {
+                            checkPluginSettingsFlag.set(true);
                             logger.info("skip disabled:" + JSonStorage.toString(video));
                             continue;
                         } else if ("hds".equals(delivery) && !allow_HDS) {
+                            checkPluginSettingsFlag.set(true);
                             logger.info("skip disabled:" + JSonStorage.toString(video));
                             continue;
                         } else if ("dash".equals(delivery)) {
                             /* 2021-04-06 unsupported */
+                            logger.info("skip delivery:" + delivery);
                             continue;
                         } else if (url_directlink_video == null || isEmpty(fmt)) {
                             continue;

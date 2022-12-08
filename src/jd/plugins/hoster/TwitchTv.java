@@ -273,11 +273,11 @@ public class TwitchTv extends PluginForHost {
             }
 
             @Override
-            protected boolean onSegmentConnectException(URLConnectionAdapter connection, IOException e, final FileBytesMap fileBytesMap, int retry, LogSource logger) throws Exception {
+            protected boolean onSegmentConnectException(URLConnectionAdapter connection, IOException e, final FileBytesMap fileBytesMap, int retry, Map<String, Object> retryMap, LogSource logger) throws Exception {
                 if (isTwitchOptimized && connection != null && connection.getResponseCode() == 400) {
                     config.setProperty("expspeed", false);
                 }
-                return super.onSegmentConnectException(connection, e, fileBytesMap, retry, logger);
+                return super.onSegmentConnectException(connection, e, fileBytesMap, retry, retryMap, logger);
             }
 
             @Override

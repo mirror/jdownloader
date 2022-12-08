@@ -140,6 +140,7 @@ public class HLSDownloader extends DownloadInterface {
     private final HashMap<String, SecretKeySpec>             aes128Keys           = new HashMap<String, SecretKeySpec>();
     private final WeakHashMap<M3U8Segment, M3U8SEGMENTSTATE> m3u8SegmentsStates   = new WeakHashMap<M3U8Playlist.M3U8Segment, M3U8SEGMENTSTATE>();
     private volatile Thread                                  ffmpegThread;
+    private final Map<Integer, Map<String, Object>>          retryMap             = new HashMap<Integer, Map<String, Object>>();
 
     public CONCATSOURCE getConcatSource() {
         return CONCATSOURCE.HTTP;
@@ -1175,6 +1176,7 @@ public class HLSDownloader extends DownloadInterface {
                         final String downloadURL;
                         final M3U8Segment segment;
                         final M3U8Playlist playList;
+                        Map<String, Object> currentRetryMap = null;
                         if (url != null) {
                             // disabled in HLSDownloader! do not allow access to other urls than hls segments
                             segment = null;
@@ -1182,6 +1184,20 @@ public class HLSDownloader extends DownloadInterface {
                             playList = null;
                             return false;
                         } else {
+                            final int playListIndex = getCurrentPlayListIndex();
+                            synchronized (HLSDownloader.this.retryMap) {
+                                currentRetryMap = HLSDownloader.this.retryMap.get(playListIndex);
+                                if (currentRetryMap == null) {
+                                    currentRetryMap = new HashMap<String, Object>();
+                                    HLSDownloader.this.retryMap.put(playListIndex, currentRetryMap);
+                                }
+                            }
+                            synchronized (currentRetryMap) {
+                                if (currentRetryMap.containsKey("block_" + segmentIndex)) {
+                                    response.setResponseCode(ResponseCode.get(404));
+                                    return true;
+                                }
+                            }
                             playList = getCurrentPlayList();
                             try {
                                 final int index = Integer.parseInt(segmentIndex);
@@ -1247,10 +1263,14 @@ public class HLSDownloader extends DownloadInterface {
                                             updateTimestamp = false;
                                         }
                                         requestLogger.log(e);
-                                        if (onSegmentConnectException(connection, e, fileBytesMap, retry, requestLogger)) {
+                                        if (onSegmentConnectException(connection, e, fileBytesMap, retry, currentRetryMap, requestLogger)) {
                                             continue retryLoop;
                                         } else {
-                                            return false;
+                                            synchronized (currentRetryMap) {
+                                                currentRetryMap.put("block_" + segmentIndex, Boolean.TRUE);
+                                            }
+                                            response.setResponseCode(ResponseCode.get(404));
+                                            return true;
                                         }
                                     } finally {
                                         if (closeConnection && connection != null) {
@@ -1513,7 +1533,7 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
-    protected boolean onSegmentConnectException(final URLConnectionAdapter connection, final IOException e, final FileBytesMap fileBytesMap, final int retry, final LogSource logger) throws Exception {
+    protected boolean onSegmentConnectException(final URLConnectionAdapter connection, final IOException e, final FileBytesMap fileBytesMap, final int retry, Map<String, Object> retryMap, final LogSource logger) throws Exception {
         try {
             if (connection != null) {
                 switch (connection.getResponseCode()) {
