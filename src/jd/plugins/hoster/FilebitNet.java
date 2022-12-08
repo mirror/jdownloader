@@ -21,13 +21,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.requests.PostRequest;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -35,11 +39,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.bouncycastle.util.Arrays;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilebitNet extends PluginForHost {
     public FilebitNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("https://filebit.net/plans");
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            this.enablePremium("https://filebit.net/plans");
+        }
     }
 
     @Override
@@ -95,11 +108,101 @@ public class FilebitNet extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
     }
 
-    public Browser prepBR(final Browser br) {
-        br.setFollowRedirects(true);
-        br.getHeaders().put("Content-Type", "application/json");
-        br.getHeaders().put("User-Agent", "JDownloader " + getVersion());
+    public String getAPI() {
+        if (true) {
+            return "https://clientapi.filebit.net";
+        } else {
+            return "https://" + getHost();
+        }
+    }
+
+    private Browser prepBrowser(final Browser br) {
+        br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "jdownloader-" + getVersion());
         return br;
+    }
+
+    public String getKeyType(final Browser br, final String unknownKey) throws Exception {
+        final Browser brc = br.cloneBrowser();
+        prepBrowser(brc);
+        final Map<String, Object> payLoad = new HashMap<String, Object>();
+        payLoad.put("key", unknownKey);
+        final PostRequest request = brc.createJSonPostRequest(getAPI() + "/app/keytype.json", payLoad);
+        final String responseRaw = brc.getPage(request);
+        final Map<String, Object> response = restoreFromString(responseRaw, TypeRef.MAP);
+        final String keytype = response != null ? (String) response.get("keytype") : null;
+        if (keytype == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if ("unknown".equals(keytype)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unknown keytype");
+        } else if ("st".equals(keytype)) {
+            // st = "speedticket"
+            return keytype;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unsupported keytype:" + keytype);
+        }
+    }
+
+    public String addSpeedKey(final Browser br, final String speedKey) throws Exception {
+        final Browser brc = br.cloneBrowser();
+        prepBrowser(brc);
+        final Map<String, Object> payLoad = new HashMap<String, Object>();
+        payLoad.put("key", speedKey);
+        payLoad.put("skc", true);
+        payLoad.put("skc", 1);
+        PostRequest request = brc.createJSonPostRequest(getAPI() + "/app/addspeedkey.json", payLoad);
+        request = brc.createJSonPostRequest(getAPI() + "/app/licence/add.json", payLoad);
+        final String responseRaw = brc.getPage(request);
+        final Map<String, Object> response = restoreFromString(responseRaw, TypeRef.MAP);
+        final String key = response != null ? (String) response.get("key") : null;
+        if (key != null) {
+            return key;
+        }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    Map<String, Object> checkSpeedKey(final Browser br, final String speedKey) throws Exception {
+        final Browser brc = br.cloneBrowser();
+        prepBrowser(br);
+        final Map<String, Object> payLoad = new HashMap<String, Object>();
+        payLoad.put("key", speedKey);
+        payLoad.put("skc", true);
+        final PostRequest request = brc.createJSonPostRequest(getAPI() + "/app/checkspeedkey.json", payLoad);
+        final String responseRaw = brc.getPage(request);
+        final Map<String, Object> response = restoreFromString(responseRaw, TypeRef.MAP);
+        final Map<String, Object> tickets = response != null ? (Map<String, Object>) response.get("tickets") : null;
+        final Map<String, Object> ticket = tickets != null ? (Map<String, Object>) tickets.get(speedKey) : null;
+        if (ticket != null) {
+            return ticket;
+        }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    private final String PROPERTY_KEYTYPE = "PROPERTY_KEYTYPE";
+    private final String PROPERTY_KEY     = "PROPERTY_KEY";
+
+    public void login(Browser br, Account account) throws Exception {
+        synchronized (account) {
+            String keyType = account.getStringProperty(PROPERTY_KEYTYPE);
+            String key = account.getStringProperty(PROPERTY_KEY);
+            if (keyType == null || key == null) {
+                final String userKey = account.getUser();
+                keyType = getKeyType(br, userKey);
+                key = addSpeedKey(br, userKey);
+                account.setProperty(PROPERTY_KEYTYPE, keyType);
+                account.setProperty(PROPERTY_KEY, key);
+            }
+            if ("st".equals(keyType)) {
+                Map<String, Object> ticket = checkSpeedKey(br, key);
+            }
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            login(br, account);
+        }
+        return super.fetchAccountInfo(account);
     }
 
     @Override
@@ -109,7 +212,7 @@ public class FilebitNet extends PluginForHost {
             link.setName(this.getFID(link));
         }
         this.setBrowserExclusive();
-        prepBR(br);
+        prepBrowser(br);
         br.postPageRaw("https://" + this.getHost() + "/storage/bucket/info.json", "{\"file\":\"" + this.getFID(link) + "\"}");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -139,6 +242,53 @@ public class FilebitNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public static void main(String[] args) throws Exception {
+        final String hash = "TEST";
+        final String fileName = "TEST";
+        byte key[][] = unmerge_key_iv(hash);
+        byte[] name = Base64.decodeFast(fileName.replace("-", "+").replace("_", "/"));
+        final SecretKey aesKey = new SecretKeySpec(key[0], "AES");
+        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
+        cipher.init(Cipher.DECRYPT_MODE, aesKey, new IvParameterSpec(key[1]));
+        byte[] test = cipher.doFinal(name);
+        final String m = new String(unpad(test));
+        System.out.println(m);
+    }
+
+    public static byte[] unpad(byte[] data) throws PluginException {
+        if (data == null || data.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (data.length % 16 > 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return Arrays.copyOfRange(data, 0, data.length - data[data.length - 1]);
+        }
+    }
+
+    public static byte[][] unmerge_key_iv(final String filebit_key) throws PluginException {
+        final byte[] mergedKey = Base64.decodeFast(filebit_key.replace("-", "+").replace("_", "/"));
+        if (mergedKey == null || mergedKey.length != 33) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unknown key:" + filebit_key);
+        } else {
+            final byte version = mergedKey[0];
+            if (version != 1) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unknown version:" + version);
+            }
+            final byte key[] = new byte[16];
+            final byte iv[] = new byte[16];
+            for (int i = 0; i < 16; i++) {
+                iv[i] = mergedKey[1 + (2 * i)];
+                key[i] = mergedKey[2 + (2 * i)];
+            }
+            return new byte[][] { key, iv };
+        }
+    }
+
+    public byte[][] getFileKey(final DownloadLink link) {
+        final String mergedKey = new Regex(link.getPluginPatternMatcher(), "#([a-zA-Z0-9\\-_)").getMatch(0);
+        return null;
+    }
+
     /** See https://filebit.net/docs/#/?id=multi-file-informations */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -146,7 +296,7 @@ public class FilebitNet extends PluginForHost {
             return false;
         }
         try {
-            prepBR(this.br);
+            prepBrowser(this.br);
             br.setCookiesExclusive(true);
             final List<String> fileIDs = new ArrayList<String>();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -166,10 +316,11 @@ public class FilebitNet extends PluginForHost {
                 for (final DownloadLink link : links) {
                     fileIDs.add(this.getFID(link));
                 }
-                final Map<String, Object> postData = new HashMap<String, Object>();
-                postData.put("files", fileIDs);
-                br.postPageRaw(API_BASE + "/storage/multiinfo.json", JSonStorage.serializeToJson(postData));
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> payLoad = new HashMap<String, Object>();
+                payLoad.put("files", fileIDs);
+                PostRequest request = br.createJSonPostRequest(getAPI() + "/storage/multiinfo.json", payLoad);
+                br.getPage(request);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 for (final DownloadLink link : links) {
                     final String fid = this.getFID(link);
                     if (!link.isNameSet()) {
