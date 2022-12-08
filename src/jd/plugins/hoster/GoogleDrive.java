@@ -556,6 +556,11 @@ public class GoogleDrive extends PluginForHost {
              */
             URLConnectionAdapter con = br.openGetConnection(getPreferredConstructedDirecturl(link, account));
             if (con.getResponseCode() == 500 && !this.looksLikeDownloadableContent(con) && !this.isGoogleDocument(link)) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
                 /* 2022-12-08: Workaround for single Google Documents added directly without folder-crawler */
                 logger.info("Checking via WebAPI to see if instead of a file this is a Google Document");
                 crawlAdditionalFileInformationFromWebsite(br, link, account, true, true);
@@ -572,6 +577,7 @@ public class GoogleDrive extends PluginForHost {
             }
             /* We hope for the file to be direct-downloadable. */
             if (this.looksLikeDownloadableContent(con)) {
+                con.disconnect();
                 logger.info("Direct download active");
                 final String fileNameFromHeader = getFileNameFromHeader(con);
                 if (!StringUtils.isEmpty(fileNameFromHeader)) {
@@ -586,11 +592,11 @@ public class GoogleDrive extends PluginForHost {
                 if (hashInfo != null) {
                     link.setHashInfo(hashInfo);
                 }
-                con.disconnect();
                 return AvailableStatus.TRUE;
+            } else {
+                logger.info("Direct download not possible -> Continuing linkcheck");
+                br.followConnection();
             }
-            logger.info("Direct download not possible -> Continuing linkcheck");
-            br.followConnection();
             /**
              * 2021-02-02: Interesting behavior of offline content: </br> Returns 403 when accessed via:
              * https://drive.google.com/file/d/<fuid> </br> Returns 404 when accessed via:
@@ -727,8 +733,6 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private final boolean DEBUG_ALLOW_CRAWL_ADDITIONAL_FILE_INFO_FROM_WEBSITE = true;
-
     /** A function that parses filename/size/last-modified date from single files via "Details View" of Google Drive website. */
     private void crawlAdditionalFileInformationFromWebsite(final Browser br, final DownloadLink link, final Account account, final boolean accessFileViewPageIfNotAlreadyDone, final boolean trustAndSetFileInfo) throws PluginException, IOException {
         final Browser br2 = br.cloneBrowser();
@@ -740,6 +744,7 @@ public class GoogleDrive extends PluginForHost {
         }
         if (account != null) {
             logger.info("!Dev! This doesn't work in account mode yet!");
+            return;
         }
         br2.getHeaders().put("X-Referer", "https://drive.google.com");
         br2.getHeaders().put("X-Origin", "https://drive.google.com");
@@ -1204,8 +1209,7 @@ public class GoogleDrive extends PluginForHost {
         this.dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
         if (!this.looksLikeDownloadableContent(this.dl.getConnection())) {
             try {
-                this.dl.getConnection().setAllowedResponseCodes(new int[] { this.dl.getConnection().getResponseCode() });
-                br.followConnection();
+                br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
@@ -1221,7 +1225,7 @@ public class GoogleDrive extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
         }
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified() && link.getLastModifiedTimestamp() == -1 && DEBUG_ALLOW_CRAWL_ADDITIONAL_FILE_INFO_FROM_WEBSITE) {
+        if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified() && link.getLastModifiedTimestamp() == -1) {
             try {
                 crawlAdditionalFileInformationFromWebsite(br, link, account, true, false);
             } catch (final Exception ignore) {
