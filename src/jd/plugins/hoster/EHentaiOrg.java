@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -761,9 +762,16 @@ public class EHentaiOrg extends antiDDoSForHost {
         final String items_maxStr = br.getRegex("towards a limit of <strong>(\\d+)</strong>").getMatch(0);
         if (items_downloadedStr != null && items_maxStr != null) {
             ai.setStatus(String.format("Free Account [Used %s / %s items]", items_downloadedStr, items_maxStr));
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                final long dummyTrafficMax = SizeFormatter.getSize(Long.parseLong(items_maxStr) + "TiB");
+                final long dummyTrafficUsed = SizeFormatter.getSize(Long.parseLong(items_downloadedStr) + "TiB");
+                ai.setTrafficLeft(dummyTrafficMax - dummyTrafficUsed);
+                ai.setTrafficMax(dummyTrafficMax);
+            }
         } else {
             logger.warning("Failed to find items_downloadedStr or items_maxStr:" + items_downloadedStr + "/" + items_maxStr);
             ai.setStatus("Free Account");
+            ai.setUnlimitedTraffic();
         }
         if (!this.hasCreditsLeft()) {
             logger.info("Account does not have any credits left --> Set remaining traffic to 0");

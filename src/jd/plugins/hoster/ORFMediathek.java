@@ -179,6 +179,9 @@ public class ORFMediathek extends PluginForHost {
             checkFFmpeg(link, "Download a HLS Stream");
             br.setFollowRedirects(true);
             br.getPage(dllink);
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+            }
             final HlsContainer best = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br));
             if (best == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
