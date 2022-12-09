@@ -569,7 +569,7 @@ public class EHentaiOrg extends antiDDoSForHost {
             } else {
                 this.handleErrorsLastResort(link, account, this.br);
             }
-        } else if (dl.getConnection().getResponseCode() != 206 && expectedFilesize > 0 && dl.getConnection().getLongContentLength() < expectedFilesize) {
+        } else if (dl.getConnection().getResponseCode() != 206 && expectedFilesize > 0 && dl.getConnection().getCompleteContentLength() < expectedFilesize) {
             /* Don't jump into this for response code 206 Partial Content (when download is resumed). */
             dl.getConnection().disconnect();
             /* Rare error: E.g. "403 picture" is smaller than 1 KB but is still downloaded content (picture). */

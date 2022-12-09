@@ -167,14 +167,15 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private static Object      LOCK                       = new Object();
-    private String             websiteWebapiKey           = null;
-    public static final String API_BASE                   = "https://www.googleapis.com/drive/v3";
-    private final String       PATTERN_GDOC               = "https?://.*/document/d/([a-zA-Z0-9\\-_]+).*";
-    private final String       PATTERN_FILE               = "https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
-    private final String       PATTERN_FILE_OLD           = "https?://[^/]+/(?:leaf|open)\\?([^<>\"/]+)?id=([A-Za-z0-9\\-_]+).*";
-    private final String       PATTERN_FILE_DOWNLOAD_PAGE = "https?://[^/]+/(?:u/\\d+/)?uc(?:\\?|.*?&)id=([A-Za-z0-9\\-_]+).*";
-    private final String       PATTERN_VIDEO_STREAM       = "https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
+    private static Object      LOCK                          = new Object();
+    private String             websiteWebapiKey              = null;
+    public static final String API_BASE                      = "https://www.googleapis.com/drive/v3";
+    private final String       PATTERN_GDOC                  = "https?://.*/document/d/([a-zA-Z0-9\\-_]+).*";
+    private final String       PATTERN_FILE                  = "https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
+    private final String       PATTERN_FILE_OLD              = "https?://[^/]+/(?:leaf|open)\\?([^<>\"/]+)?id=([A-Za-z0-9\\-_]+).*";
+    private final String       PATTERN_FILE_DOWNLOAD_PAGE    = "https?://[^/]+/(?:u/\\d+/)?uc(?:\\?|.*?&)id=([A-Za-z0-9\\-_]+).*";
+    private final String       PATTERN_VIDEO_STREAM          = "https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
+    private final boolean      canHandleGoogleSpecialCaptcha = false;
 
     private String getFID(final DownloadLink link) {
         if (link == null) {
@@ -645,7 +646,7 @@ public class GoogleDrive extends PluginForHost {
             }
             /** In case we were not able to find a final download-URL until now, we'll have to try the more complicated way ... */
             logger.info("Direct download inactive --> Accessing download Overview");
-            if (isDownload) {
+            if (isDownload && canHandleGoogleSpecialCaptcha) {
                 synchronized (LOCK) {
                     accessFileViewURLWithPartialErrorhandling(br, link, account);
                     this.handleErrorsWebsite(this.br, link, account);
@@ -1432,8 +1433,7 @@ public class GoogleDrive extends PluginForHost {
                  * 2020-09-14: TODO: This handling doesn't work so we'll at least display a meaningful errormessage. The captcha should
                  * never occur anyways as upper handling will try to avoid it!
                  */
-                final boolean canSolveCaptcha = false;
-                if (!canSolveCaptcha) {
+                if (!canHandleGoogleSpecialCaptcha) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Google blocked your IP - captcha required but not implemented yet");
                 }
                 final Form captchaForm = br.getForm(0);
