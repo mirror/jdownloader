@@ -164,11 +164,7 @@ public class PluralsightCom extends antiDDoSForHost {
                         logger.info("Attempting cookie login");
                         getRequest(br, this, br.createGetRequest(WEBSITE_BASE_APP + "/web-analytics/api/v1/users/current"));
                         final Request request = br.getRequest();
-                        if (request.getHttpConnection().getResponseCode() == 200 && br.getHostCookie("PsJwt-production", Cookies.NOTDELETEDPATTERN) != null) {
-                            logger.info("Cookie login successful");
-                            account.saveCookies(br.getCookies(this.getHost()), "");
-                            return;
-                        } else {
+                        if (request.getHttpConnection().getResponseCode() != 200 || !StringUtils.containsIgnoreCase(request.getHttpConnection().getContentType(), "json")) {
                             /* Full login required */
                             logger.info("Cookie login failed");
                             br.clearCookies(br.getHost());
@@ -179,6 +175,10 @@ public class PluralsightCom extends antiDDoSForHost {
                                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                                 }
                             }
+                        } else {
+                            logger.info("Cookie login successful");
+                            account.saveCookies(br.getCookies(this.getHost()), "");
+                            return;
                         }
                     }
                 }
