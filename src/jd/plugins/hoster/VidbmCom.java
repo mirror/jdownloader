@@ -108,4 +108,25 @@ public class VidbmCom extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
+
+    @Override
+    protected boolean isVideohosterEmbed() {
+        return true;
+    }
+
+    @Override
+    protected boolean isVideohoster_enforce_video_filename() {
+        /* 2022-12-09 */
+        return true;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_via_embedded_video() {
+        return true;
+    }
 }
