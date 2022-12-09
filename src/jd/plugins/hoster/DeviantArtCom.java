@@ -22,6 +22,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -65,19 +66,19 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/([\\w\\-]+/(art|journal)/[\\w\\-]+-\\d+|([\\w\\-]+/)?status(?:-update)?/\\d+)" })
 public class DeviantArtCom extends PluginForHost {
-    private final String       TYPE_DOWNLOADALLOWED_HTML             = "(?i)class=\"text\">HTML download</span>";
-    private final String       TYPE_DOWNLOADFORBIDDEN_HTML           = "<div class=\"grf\\-indent\"";
-    private boolean            downloadHTML                          = false;
-    private final String       PATTERN_ART                           = "(?i)https?://[^/]+/([\\w\\-]+)/art/([\\w\\-]+)-(\\d+)";
-    private final String       PATTERN_JOURNAL                       = "(?i)https?://[^/]+/([\\w\\-]+)/journal/([\\w\\-]+)-(\\d+)";
-    public static final String PATTERN_STATUS                        = "(?i)https?://[^/]+/([\\w\\-]+)/([\\w\\-]+/)?status(?:-update)?/(\\d+)";
-    public static final String PROPERTY_USERNAME                     = "username";
-    public static final String PROPERTY_TITLE                        = "title";
-    public static final String PROPERTY_TYPE                         = "type";
-    private final String       PROPERTY_OFFICIAL_DOWNLOADURL         = "official_downloadurl";
-    private final String       PROPERTY_UNLIMITED_JWT_IMAGE_URL      = "image_unlimitedjwt_url";
-    private final String       PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL = "image_display_or_preview_url";
-    private final String       PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL = "video_display_or_preview_url";
+    private final String        TYPE_DOWNLOADALLOWED_HTML             = "(?i)class=\"text\">HTML download</span>";
+    private final String        TYPE_DOWNLOADFORBIDDEN_HTML           = "<div class=\"grf\\-indent\"";
+    private boolean             downloadHTML                          = false;
+    private final String        PATTERN_ART                           = "(?i)https?://[^/]+/([\\w\\-]+)/art/([\\w\\-]+)-(\\d+)";
+    private final String        PATTERN_JOURNAL                       = "(?i)https?://[^/]+/([\\w\\-]+)/journal/([\\w\\-]+)-(\\d+)";
+    public static final String  PATTERN_STATUS                        = "(?i)https?://[^/]+/([\\w\\-]+)/([\\w\\-]+/)?status(?:-update)?/(\\d+)";
+    public static final String  PROPERTY_USERNAME                     = "username";
+    public static final String  PROPERTY_TITLE                        = "title";
+    public static final String  PROPERTY_TYPE                         = "type";
+    private static final String PROPERTY_OFFICIAL_DOWNLOADURL         = "official_downloadurl";
+    private static final String PROPERTY_UNLIMITED_JWT_IMAGE_URL      = "image_unlimitedjwt_url";
+    private static final String PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL = "image_display_or_preview_url";
+    private static final String PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL = "video_display_or_preview_url";
 
     /**
      * @author raztoki, pspzockerscene, Jiaz
@@ -134,7 +135,7 @@ public class DeviantArtCom extends PluginForHost {
      *
      * All credit goes to @Ironchest337
      */
-    private String buildUnlimitedJWT(final DownloadLink link, final String url) throws UnsupportedEncodingException {
+    public static String buildUnlimitedJWT(final DownloadLink link, final String url) throws UnsupportedEncodingException {
         final String path = new Regex(url, "(/f/.+)").getMatch(0);
         if (path != null) {
             final String b64Header = "eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0";
@@ -146,9 +147,133 @@ public class DeviantArtCom extends PluginForHost {
         }
     }
 
+    public static Map<String, Object> parseDeviationJSON(final Plugin plugin, final DownloadLink link, Map<String, Object> deviation) {
+        final Map<String, Object> author = (Map<String, Object>) deviation.get("author");
+        if (author != null) {
+            link.setProperty(PROPERTY_USERNAME, author.get("username"));
+        }
+        setTitleProperty(link, (String) deviation.get("title"));
+        link.setProperty(PROPERTY_TYPE, deviation.get("type"));
+        final Map<String, Object> ret = new HashMap<String, Object>();
+        final Map<String, Object> media = (Map<String, Object>) deviation.get("media");
+        if (media != null) {
+            String displayedImageURL = null;
+            String unlimitedImageURL = null;
+            Number unlimitedImageSize = null;
+            String displayedVideoURL = null;
+            Number displayedVideoSize = null;
+            final boolean isImage = isImage(link);
+            final boolean isVideo = isVideo(link);
+            try {
+                final String baseUri = (String) media.get("baseUri");
+                final String prettyName = (String) media.get("prettyName");
+                final List<Map<String, Object>> types = (List<Map<String, Object>>) media.get("types");
+                if (types != null && StringUtils.isAllNotEmpty(baseUri, prettyName)) {
+                    Map<String, Object> bestType = null;
+                    final List<String> bestTypesList;
+                    if (isImage) {
+                        bestTypesList = Arrays.asList(new String[] { "fullview" });
+                    } else if (isVideo) {
+                        bestTypesList = Arrays.asList(new String[] { "video" });
+                    } else {
+                        bestTypesList = new ArrayList<String>(0);
+                    }
+                    typeStringLoop: for (final String typeString : bestTypesList) {
+                        for (final Map<String, Object> type : types) {
+                            if (typeString.equals(type.get("t"))) {
+                                if (isImage) {
+                                    bestType = type;
+                                    break typeStringLoop;
+                                } else if (isVideo) {
+                                    if (bestType == null || ((Number) type.get("h")).intValue() > ((Number) bestType.get("h")).intValue()) {
+                                        bestType = type;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (bestType != null) {
+                        if (isImage) {
+                            String c = (String) bestType.get("c");
+                            if (c == null) {
+                                if ("fullview".equals(bestType.get("t"))) {
+                                    // r=1? o=true??(maybe original)
+                                    c = "";// raw image without any processing?
+                                } else {
+                                    final Number h = (Number) bestType.get("h");
+                                    final Number w = (Number) bestType.get("w");
+                                    if (h != null && w != null) {
+                                        c = "/v1/fit/w_" + w + ",h_" + h + "/";
+                                    }
+                                }
+                            }
+                            if (c != null) {
+                                if (c.isEmpty() || c.matches("(?i).*/v1/.+")) {
+                                    try {
+                                        final String jwt = buildUnlimitedJWT(link, baseUri);
+                                        if (jwt != null) {
+                                            unlimitedImageURL = baseUri + "?token=" + jwt;
+                                            unlimitedImageSize = (Number) bestType.get("f");
+                                        }
+                                    } catch (Exception e) {
+                                        plugin.getLogger().log(e);
+                                    }
+                                }
+                                c = c.replaceFirst(",q_\\d+(,strp)?", "");
+                                final List<String> tokens = (List<String>) media.get("token");
+                                displayedImageURL = baseUri + c.replaceFirst("<prettyName>", Matcher.quoteReplacement(prettyName));
+                                if (tokens != null) {
+                                    displayedImageURL = displayedImageURL + "?token=" + tokens.get(0);
+                                }
+                            }
+                        } else if (isVideo) {
+                            displayedVideoURL = (String) bestType.get("b");
+                            displayedVideoSize = (Number) bestType.get("f");
+                        }
+                    }
+                    if (isImage && StringUtils.isEmpty(displayedImageURL)) {
+                        try {
+                            final String jwt = buildUnlimitedJWT(link, baseUri);
+                            if (jwt != null) {
+                                unlimitedImageURL = baseUri + "?token=" + jwt;
+                            }
+                        } catch (Exception e) {
+                            plugin.getLogger().log(e);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                plugin.getLogger().log(e);
+            }
+            if (unlimitedImageURL != null && isImage) {
+                link.setProperty(PROPERTY_UNLIMITED_JWT_IMAGE_URL, unlimitedImageURL);
+            }
+            if (displayedImageURL != null && isImage) {
+                link.setProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL, displayedImageURL);
+            }
+            if (displayedVideoURL != null && isVideo) {
+                link.setProperty(PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL, displayedVideoURL);
+            }
+            ret.put("displayedImageURL", displayedImageURL);
+            ret.put("unlimitedImageURL", unlimitedImageURL);
+            ret.put("unlimitedImageSize", unlimitedImageSize);
+            ret.put("displayedVideoURL", displayedVideoURL);
+            ret.put("displayedVideoSize", displayedVideoSize);
+        }
+        return ret;
+    }
+
+    private static String setTitleProperty(final DownloadLink link, String title) {
+        if (title != null) {
+            title = title.replaceAll("(?i) on deviantart$", "");
+            link.setProperty(PROPERTY_TITLE, title);
+        }
+        return title;
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
-            link.setName(new URL(link.getPluginPatternMatcher()).getPath() + this.getAssumedFileExtension(link));
+            link.setName(new URL(link.getPluginPatternMatcher()).getPath() + this.getAssumedFileExtension(account, link));
         }
         this.setBrowserExclusive();
         prepBR(this.br);
@@ -165,15 +290,12 @@ public class DeviantArtCom extends PluginForHost {
         }
         String title = null;
         String displayedImageURL = null;
-        String unlimitedImageURL = null;
         Number unlimitedImageSize = null;
-        String displayedVideoURL = null;
         Number displayedVideoSize = null;
         String officialDownloadurl = null;
         String json = br.getRegex("window\\.__INITIAL_STATE__ = JSON\\.parse\\(\"(.*?)\"\\);").getMatch(0);
         Number officialDownloadsizeBytes = null;
         if (json != null) {
-            /* TODO: Make much more use of this json */
             json = PluginJSonUtils.unescape(json);
             final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             final Map<String, Object> entities = (Map<String, Object>) entries.get("@@entities");
@@ -193,97 +315,21 @@ public class DeviantArtCom extends PluginForHost {
                     }
                 }
             }
-            link.setProperty(PROPERTY_TYPE, thisArt.get("type"));
-            final Map<String, Object> media = (Map<String, Object>) thisArt.get("media");
-            if (media != null) {
-                try {
-                    final boolean isImage = isImage(link);
-                    final boolean isVideo = isVideo(link);
-                    final String baseUri = (String) media.get("baseUri");
-                    final String prettyName = (String) media.get("prettyName");
-                    final List<Map<String, Object>> types = (List<Map<String, Object>>) media.get("types");
-                    if (types != null && StringUtils.isAllNotEmpty(baseUri, prettyName)) {
-                        Map<String, Object> bestType = null;
-                        final List<String> bestTypesList;
-                        if (isImage) {
-                            bestTypesList = Arrays.asList(new String[] { "fullview" });
-                        } else if (isVideo) {
-                            bestTypesList = Arrays.asList(new String[] { "video" });
-                        } else {
-                            bestTypesList = new ArrayList<String>(0);
-                        }
-                        typeStringLoop: for (final String typeString : bestTypesList) {
-                            for (final Map<String, Object> type : types) {
-                                if (typeString.equals(type.get("t"))) {
-                                    if (isImage) {
-                                        bestType = type;
-                                        break typeStringLoop;
-                                    } else if (isVideo) {
-                                        if (bestType == null || ((Number) type.get("h")).intValue() > ((Number) bestType.get("h")).intValue()) {
-                                            bestType = type;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if (bestType != null) {
-                            if (isImage) {
-                                String c = (String) bestType.get("c");
-                                if (c == null) {
-                                    if ("fullview".equals(bestType.get("t"))) {
-                                        // r=1? o=true??(maybe original)
-                                        c = "";// raw image without any processing?
-                                    } else {
-                                        final Number h = (Number) bestType.get("h");
-                                        final Number w = (Number) bestType.get("w");
-                                        if (h != null && w != null) {
-                                            c = "/v1/fit/w_" + w + ",h_" + h + "/";
-                                        }
-                                    }
-                                }
-                                if (c != null) {
-                                    if (c.isEmpty() || c.matches("(?i).*/v1/.+")) {
-                                        try {
-                                            final String jwt = buildUnlimitedJWT(link, baseUri);
-                                            if (jwt != null) {
-                                                unlimitedImageURL = baseUri + "?token=" + jwt;
-                                                unlimitedImageSize = (Number) bestType.get("f");
-                                            }
-                                        } catch (Exception e) {
-                                            logger.log(e);
-                                        }
-                                    }
-                                    c = c.replaceFirst(",q_\\d+(,strp)?", "");
-                                    final List<String> tokens = (List<String>) media.get("token");
-                                    displayedImageURL = baseUri + c.replaceFirst("<prettyName>", Matcher.quoteReplacement(prettyName));
-                                    if (tokens != null) {
-                                        displayedImageURL = displayedImageURL + "?token=" + tokens.get(0);
-                                    }
-                                }
-                            } else if (isVideo) {
-                                displayedVideoURL = (String) bestType.get("b");
-                                displayedVideoSize = (Number) bestType.get("f");
-                            }
-                        }
-                        if (isImage && StringUtils.isEmpty(displayedImageURL)) {
-                            try {
-                                final String jwt = buildUnlimitedJWT(link, baseUri);
-                                if (jwt != null) {
-                                    unlimitedImageURL = baseUri + "?token=" + jwt;
-                                }
-                            } catch (Exception e) {
-                                logger.log(e);
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    logger.log(e);
-                }
-            }
+            final Map<String, Object> deviationResult = parseDeviationJSON(this, link, thisArt);
+            displayedImageURL = (String) deviationResult.get("displayedImageURL");
+            unlimitedImageSize = (Number) deviationResult.get("unlimitedImageSize");
+            displayedVideoSize = (Number) deviationResult.get("displayedVideoSize");
             final Map<String, Object> thisUser = (Map<String, Object>) user.get(thisArt.get("author").toString());
-            title = (String) thisArt.get("title");
-            final String username = thisUser.get("username").toString();
-            link.setProperty(PROPERTY_USERNAME, username);
+            title = link.getStringProperty(PROPERTY_TITLE);
+            if (title == null) {
+                title = (String) thisArt.get("title");
+                setTitleProperty(link, title);
+            }
+            String username = link.getStringProperty(PROPERTY_USERNAME);
+            if (username == null) {
+                username = thisUser.get("username").toString();
+                link.setProperty(PROPERTY_USERNAME, username);
+            }
             if (title != null) {
                 title += " by " + username + "_ " + fid;
             } else if (isStatus(link)) {
@@ -314,13 +360,13 @@ public class DeviantArtCom extends PluginForHost {
         /* Fallbacks via website-html */
         if (title == null) {
             title = HTMLSearch.searchMetaTag(br, "og:title");
+            setTitleProperty(link, title);
         }
-        if (title != null) {
-            title = title.replaceAll("(?i) on deviantart$", "");
-        }
-        link.setProperty(PROPERTY_TITLE, title);
-        if (StringUtils.isEmpty(displayedImageURL)) {
+        if (StringUtils.isEmpty(displayedImageURL) && isImage(link)) {
             displayedImageURL = HTMLSearch.searchMetaTag(br, "og:image");
+            if (displayedImageURL != null) {
+                link.setProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL, displayedImageURL);
+            }
         }
         final String officialDownloadFilesizeStr = br.getRegex("(?i)>\\s*Image size\\s*</div><div [^>]*>\\d+x\\d+px\\s*(\\d+[^>]+)</div>").getMatch(0);
         // final boolean accountNeededForOfficialDownload = br.containsHTML("(?i)Log in to download");
@@ -335,15 +381,6 @@ public class DeviantArtCom extends PluginForHost {
         final boolean isVideo = isVideo(link);
         final boolean isLiterature = isLiterature(link);
         final boolean isStatus = isStatus(link);
-        if (unlimitedImageURL != null && isImage) {
-            link.setProperty(PROPERTY_UNLIMITED_JWT_IMAGE_URL, unlimitedImageURL);
-        }
-        if (displayedImageURL != null && isImage) {
-            link.setProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL, displayedImageURL);
-        }
-        if (displayedVideoURL != null && isVideo) {
-            link.setProperty(PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL, displayedVideoURL);
-        }
         final DeviantArtComConfig cfg = PluginJsonConfig.get(DeviantArtComConfig.class);
         final ImageDownloadMode mode = cfg.getImageDownloadMode();
         String forcedExt = null;
@@ -362,7 +399,7 @@ public class DeviantArtCom extends PluginForHost {
         }
         String dllink = null;
         try {
-            dllink = this.getDirecturl(link, account);
+            dllink = this.getDirecturl(br, downloadHTML, link, account);
         } catch (final PluginException e) {
             /**
              * This will happen if the item is not downloadable. </br> We're ignoring this during linkcheck as by now we know the file is
@@ -441,7 +478,7 @@ public class DeviantArtCom extends PluginForHost {
                 title = this.correctOrApplyFileNameExtension(title, ext);
                 link.setFinalFileName(title);
             } else {
-                title = this.correctOrApplyFileNameExtension(title, getAssumedFileExtension(link));
+                title = this.correctOrApplyFileNameExtension(title, getAssumedFileExtension(account, link));
                 link.setName(title);
             }
         } else if (!StringUtils.isEmpty(dllink)) {
@@ -478,7 +515,7 @@ public class DeviantArtCom extends PluginForHost {
      * Returns assumed file extension based on all information we currently have. Use this only for weak filenames e.g. before linkcheck is
      * done.
      */
-    public static String getAssumedFileExtension(final DownloadLink link) {
+    public static String getAssumedFileExtension(final Account account, final DownloadLink link) {
         if (isVideo(link)) {
             return ".mp4";
         } else if (isImage(link)) {
@@ -486,6 +523,14 @@ public class DeviantArtCom extends PluginForHost {
             if (PluginJsonConfig.get(DeviantArtComConfig.class).getImageDownloadMode() == ImageDownloadMode.HTML) {
                 return ".html";
             } else {
+                try {
+                    final String url = getDirecturl(null, false, link, account);
+                    final String ext = getFileNameExtensionFromURL(url);
+                    if (ext != null) {
+                        return ext;
+                    }
+                } catch (Exception e) {
+                }
                 return ".jpg";
             }
         } else if (isLiterature(link) || isStatus(link)) {
@@ -497,7 +542,7 @@ public class DeviantArtCom extends PluginForHost {
         }
     }
 
-    private boolean isAccountRequiredForOfficialDownload(final Browser br) {
+    private static boolean isAccountRequiredForOfficialDownload(final Browser br) {
         if (br.containsHTML("(?i)aria-label=\"Log in to download\"")) {
             return true;
         } else {
@@ -534,7 +579,7 @@ public class DeviantArtCom extends PluginForHost {
         handleDownload(link, null);
     }
 
-    private String getDirecturl(final DownloadLink link, final Account account) throws PluginException {
+    private static String getDirecturl(final Browser br, final boolean downloadHTML, final DownloadLink link, final Account account) throws PluginException {
         final long oldVerifiedFilesize = link.getVerifiedFileSize();
         if (oldVerifiedFilesize != -1) {
             link.setVerifiedFileSize(-1);
@@ -543,7 +588,11 @@ public class DeviantArtCom extends PluginForHost {
         }
         String dllink = null;
         if (downloadHTML) {
-            dllink = br.getURL();
+            if (br == null) {
+                return null;
+            } else {
+                dllink = br.getURL();
+            }
         } else if (isImage(link)) {
             /* officialDownloadurl can be given while account is not given -> Will lead to error 404 then! */
             final String officialDownloadurl = link.getStringProperty(PROPERTY_OFFICIAL_DOWNLOADURL);
@@ -551,7 +600,7 @@ public class DeviantArtCom extends PluginForHost {
             final ImageDownloadMode mode = cfg.getImageDownloadMode();
             if (mode == ImageDownloadMode.OFFICIAL_DOWNLOAD_ONLY) {
                 /* User only wants to download items with official download option available but it is not available in this case. */
-                if (this.isAccountRequiredForOfficialDownload(br)) {
+                if (isAccountRequiredForOfficialDownload(br)) {
                     /* Looks like official download is not available at all for this item */
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Official download not available");
                 } else if (account == null) {
@@ -594,7 +643,7 @@ public class DeviantArtCom extends PluginForHost {
             link.getLinkStatus().setStatus(LinkStatus.FINISHED);
         } else {
             /* Download file */
-            final String dllink = this.getDirecturl(link, account);
+            final String dllink = this.getDirecturl(br, downloadHTML, link, account);
             if (StringUtils.isEmpty(dllink)) {
                 if (this.looksLikeAccountRequired(br)) {
                     throw new AccountRequiredException();

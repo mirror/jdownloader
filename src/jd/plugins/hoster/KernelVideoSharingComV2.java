@@ -35,6 +35,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -742,11 +743,18 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             link.setName(weakFilename);
         }
         final String lifetime = "86400";
-        br.getPage(getProtocol() + this.getHost() + "/api/json/video/" + lifetime + "/" + getAPIParam1(videoID) + "/" + this.getAPICroppedVideoID(videoID) + "/" + videoID + ".json");
+        Request request = br.createGetRequest(getProtocol() + this.getHost() + "/api/json/video/" + lifetime + "/" + getAPIParam1(videoID) + "/" + this.getAPICroppedVideoID(videoID) + "/" + videoID + ".json");
+        br.getPage(request);
         if (br.getHttpConnection().getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // doing the same request again may just work fine
+            sleep(500, link);
+            request = request.cloneRequest();
+            br.getPage(request);
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> video = (Map<String, Object>) entries.get("video");
         final Map<String, Object> channel = (Map<String, Object>) video.get("channel");
         final Map<String, Object> user = (Map<String, Object>) video.get("user");
@@ -806,12 +814,20 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected String getAPIParam1(final String videoID) {
-        final String ret = videoID != null ? videoID.replaceFirst("(.{6})$", "000000") : "0";
+        String ret = videoID != null ? videoID.replaceFirst("(.{6})$", "000000") : "0";
+        if (ret != null) {
+            // remove trailing zero
+            ret = Integer.toString(Integer.parseInt(ret));
+        }
         return ret;
     }
 
     protected String getAPICroppedVideoID(final String videoID) {
-        final String ret = videoID != null ? videoID.replaceFirst("(.{3})$", "000") : "0";
+        String ret = videoID != null ? videoID.replaceFirst("(.{3})$", "000") : "0";
+        if (ret != null) {
+            // remove trailing zero
+            ret = Integer.toString(Integer.parseInt(ret));
+        }
         return ret;
     }
 
@@ -1194,7 +1210,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         * 
+         *
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
         // final String pc3_vars = br.getRegex("pC3\\s*:\\s*'([^<>\"\\']+)'").getMatch(0);
@@ -1469,7 +1485,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (StringUtils.isEmpty(dllink)) {
             final String query = br.getRegex("\"query\"\\s*:\\s*(\\{[^\\{\\}]*?\\})").getMatch(0);
             if (query != null) {
-                final Map<String, Object> queryMap = JSonStorage.restoreFromString(query, TypeRef.HASHMAP);
+                final Map<String, Object> queryMap = restoreFromString(query, TypeRef.MAP);
                 String videoID = (String) queryMap.get("video_id");
                 if (StringUtils.isEmpty(videoID)) {
                     videoID = (String) queryMap.get("videoid");
