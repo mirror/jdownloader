@@ -36,7 +36,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DeviantArtCom;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -72,15 +71,15 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
             plg.login(account, false);
         }
         if (addedurl.matches(PATTERN_USER_FAVORITES)) {
-            return this.crawlProfileFavorites(param);
+            return this.crawlProfileFavorites(account, param);
         } else if (addedurl.matches(PATTERN_GALLERY)) {
-            return this.crawlProfileOrGallery(param);
+            return this.crawlProfileOrGallery(account, param);
         } else {
-            return this.crawlProfileOrGallery(param);
+            return this.crawlProfileOrGallery(account, param);
         }
     }
 
-    private ArrayList<DownloadLink> crawlProfileFavorites(final CryptedLink param) throws IOException, PluginException {
+    private ArrayList<DownloadLink> crawlProfileFavorites(Account account, final CryptedLink param) throws IOException, PluginException {
         final String username = new Regex(param.getCryptedUrl(), PATTERN_USER_FAVORITES).getMatch(0);
         if (username == null) {
             /* Developer mistake */
@@ -96,10 +95,10 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
         final UrlQuery query = new UrlQuery();
         query.add("username", username);
         query.add("all_folder", "true");
-        return this.crawlPagination(fp, "/_napi/da-user-profile/api/collection/contents", query);
+        return this.crawlPagination(account, fp, "/_napi/da-user-profile/api/collection/contents", query);
     }
 
-    private ArrayList<DownloadLink> crawlProfileOrGallery(final CryptedLink param) throws IOException, PluginException {
+    private ArrayList<DownloadLink> crawlProfileOrGallery(Account account, final CryptedLink param) throws IOException, PluginException {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -140,10 +139,10 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
                 query.add("all_folder", "true");
             }
         }
-        return crawlPagination(fp, "/_napi/da-user-profile/api/gallery/contents", query);
+        return crawlPagination(account, fp, "/_napi/da-user-profile/api/gallery/contents", query);
     }
 
-    private ArrayList<DownloadLink> crawlPagination(final FilePackage fp, final String action, final UrlQuery query) throws IOException, PluginException {
+    private ArrayList<DownloadLink> crawlPagination(Account account, final FilePackage fp, final String action, final UrlQuery query) throws IOException, PluginException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String csrftoken = br.getRegex("window\\.__CSRF_TOKEN__\\s*=\\s*'([^<>\"\\']+)';").getMatch(0);
         if (csrftoken == null) {
@@ -159,7 +158,7 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
             query.addAndReplace("offset", Integer.toString(offset));
             page++;
             br.getPage(action + "?" + query.toString());
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Number nextOffset = (Number) entries.get("nextOffset");
             final List<Map<String, Object>> results = (List<Map<String, Object>>) entries.get("results");
             if (results.isEmpty()) {
@@ -175,22 +174,17 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
             for (final Map<String, Object> result : results) {
                 final Map<String, Object> deviation = (Map<String, Object>) result.get("deviation");
                 final Map<String, Object> author = (Map<String, Object>) deviation.get("author");
-                final String username = author.get("username").toString();
-                final String type = deviation.get("type").toString();
                 final String url = deviation.get("url").toString();
-                final String title = deviation.get("title").toString();
                 if (dupes.add(url)) {
                     numberofNewItems++;
-                    final DownloadLink link = this.createDownloadlink(deviation.get("url").toString());
-                    link.setProperty(DeviantArtCom.PROPERTY_TYPE, type);
-                    link.setProperty(DeviantArtCom.PROPERTY_USERNAME, username);
-                    link.setProperty(DeviantArtCom.PROPERTY_TITLE, title);
+                    final DownloadLink link = this.createDownloadlink(url);
+                    final Map<String, Object> deviationRet = DeviantArtCom.parseDeviationJSON(this, link, deviation);
                     /**
                      * This file extension may change later when file is downloaded. </br> 2022-11-11: Items of type "literature" (or simply
                      * != "image") will not get any file extension at all at this moment.
                      */
-                    final String assumedFileExtension = DeviantArtCom.getAssumedFileExtension(link);
-                    link.setName(title + " by " + author.get("username") + "_" + deviation.get("deviationId") + assumedFileExtension);
+                    final String assumedFileExtension = DeviantArtCom.getAssumedFileExtension(account, link);
+                    link.setName(link.getStringProperty(DeviantArtCom.PROPERTY_TITLE) + " by " + link.getStringProperty(DeviantArtCom.PROPERTY_USERNAME) + "_" + deviation.get("deviationId") + assumedFileExtension);
                     link.setAvailable(true);
                     if (fp != null) {
                         link._setFilePackage(fp);

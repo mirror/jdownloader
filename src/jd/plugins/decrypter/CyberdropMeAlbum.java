@@ -60,7 +60,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "cyberdrop.me", "cyberdrop.to", "cyberdrop.cc" });
-        ret.add(new String[] { "bunkr.is" });// same template/system?
+        ret.add(new String[] { "bunkr.ru", "bunkr.is" });// same template/system?
         return ret;
     }
 
