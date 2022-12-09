@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,13 +26,23 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.requests.PostRequest;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
@@ -41,20 +50,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.bouncycastle.util.Arrays;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.requests.PostRequest;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
+import org.jdownloader.plugins.components.FilebitNetAccountFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilebitNet extends PluginForHost {
@@ -89,16 +85,10 @@ public class FilebitNet extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/f/([A-Za-z0-9]+)(\\?i=[^#]+)?#([A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/f/([A-Za-z0-9]{7,})(\\?i=[^#]+)?#([A-Za-z0-9_\\-]{44})");
         }
         return ret.toArray(new String[0]);
     }
-
-    /* Connection stuff */
-    private final boolean      FREE_RESUME       = true;
-    private final int          FREE_MAXCHUNKS    = 0;
-    private final int          FREE_MAXDOWNLOADS = -1;
-    public static final String API_BASE          = "https://filebit.net";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -114,15 +104,11 @@ public class FilebitNet extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private String getKey(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
-    }
-
-    public String getAPI() {
+    private String getAPI() {
         if (true) {
             return "https://clientapi.filebit.net";
         } else {
-            return "https://" + getHost();
+            return "https://filebit.net";
         }
     }
 
@@ -131,19 +117,13 @@ public class FilebitNet extends PluginForHost {
         return br;
     }
 
-    public String getKeyType(final Browser br, final String unknownKey) throws Exception {
-        final Browser brc = br.cloneBrowser();
-        prepBrowser(brc);
-        final Map<String, Object> payLoad = new HashMap<String, Object>();
-        payLoad.put("key", unknownKey);
-        final PostRequest request = brc.createJSonPostRequest(getAPI() + "/app/keytype.json", payLoad);
-        final String responseRaw = brc.getPage(request);
-        final Map<String, Object> response = restoreFromString(responseRaw, TypeRef.MAP);
+    private String getKeyType(final Browser br, final String unknownKey) throws Exception {
+        final Map<String, Object> response = callApi(br, "/app/keytype.json", new Object[][] { { "key", unknownKey } });
         final String keytype = response != null ? (String) response.get("keytype") : null;
         if (keytype == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if ("unknown".equals(keytype)) {
-            throw new AccountInvalidException("Invalid license key");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unknown keytype");
         } else if ("st".equals(keytype)) {
             // st = "speedticket"
             return keytype;
@@ -152,7 +132,7 @@ public class FilebitNet extends PluginForHost {
         }
     }
 
-    public String addSpeedKey(final Browser br, final String speedKey) throws Exception {
+    private String addSpeedKey(final Browser br, final String speedKey) throws Exception {
         final Browser brc = br.cloneBrowser();
         prepBrowser(brc);
         final Map<String, Object> payLoad = new HashMap<String, Object>();
@@ -170,15 +150,36 @@ public class FilebitNet extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    Map<String, Object> checkSpeedKey(final Browser br, final String speedKey) throws Exception {
+    private Map<String, Object> toPayLoad(Object[][] params) {
+        final Map<String, Object> ret = new HashMap<String, Object>();
+        for (final Object[] param : params) {
+            ret.put(StringUtils.valueOfOrNull(param[0]), param[1]);
+        }
+        return ret;
+    }
+
+    private Request doAPIRequest(final Browser br, final String apiRequest, Object[][] params) throws Exception {
+        return doAPIRequest(br, apiRequest, toPayLoad(params));
+    }
+
+    private Request doAPIRequest(final Browser br, final String apiRequest, Map<String, Object> payLoad) throws Exception {
         final Browser brc = br.cloneBrowser();
-        prepBrowser(br);
-        final Map<String, Object> payLoad = new HashMap<String, Object>();
-        payLoad.put("key", speedKey);
-        payLoad.put("skc", true);
-        final PostRequest request = brc.createJSonPostRequest(getAPI() + "/app/checkspeedkey.json", payLoad);
-        final String responseRaw = brc.getPage(request);
-        final Map<String, Object> response = restoreFromString(responseRaw, TypeRef.MAP);
+        prepBrowser(brc);
+        final PostRequest request = brc.createJSonPostRequest(getAPI() + apiRequest, payLoad);
+        br.getPage(request);
+        return request;
+    }
+
+    private Map<String, Object> callApi(final Browser br, final String apiRequest, Map<String, Object> payLoad) throws Exception {
+        return restoreFromString(doAPIRequest(br, apiRequest, payLoad).getHtmlCode(), TypeRef.MAP);
+    }
+
+    private Map<String, Object> callApi(final Browser br, final String apiRequest, final Object[][] params) throws Exception {
+        return callApi(br, apiRequest, toPayLoad(params));
+    }
+
+    private Map<String, Object> checkSpeedKey(final Browser br, final String speedKey) throws Exception {
+        final Map<String, Object> response = callApi(br, "/app/checkspeedkey.json", new Object[][] { { "key", speedKey }, { "skc", true } });
         final Map<String, Object> tickets = response != null ? (Map<String, Object>) response.get("tickets") : null;
         final Map<String, Object> ticket = tickets != null ? (Map<String, Object>) tickets.get(speedKey) : null;
         if (ticket != null) {
@@ -190,127 +191,103 @@ public class FilebitNet extends PluginForHost {
     private final String PROPERTY_KEYTYPE = "PROPERTY_KEYTYPE";
     private final String PROPERTY_KEY     = "PROPERTY_KEY";
 
-    private AccountInfo loginAndGetAccountInfo(final Browser br, final Account account) throws Exception {
+    public void login(final Browser br, final Account account) throws Exception {
         synchronized (account) {
-            int attempt = -1;
-            Map<String, Object> lastTicket = null;
-            do {
-                attempt++;
-                String keyType = account.getStringProperty(PROPERTY_KEYTYPE);
-                String key = account.getStringProperty(PROPERTY_KEY);
-                if (keyType == null || key == null) {
-                    checkLicenseKey(br, account);
-                    keyType = account.getStringProperty(PROPERTY_KEYTYPE);
-                    key = account.getStringProperty(PROPERTY_KEY);
-                }
-                if ("st".equals(keyType)) {
-                    lastTicket = checkSpeedKey(br, key);
-                    final String ticketError = (String) lastTicket.get("error");
-                    // E.g. {"servertime":"2022-12-09 11:38:43","tickets":{"<ticketID>":{"error":"ticket not found
-                    // or
-                    // expired"}}}
-                    if (ticketError != null) {
-                        logger.info("Ticket/Session expired? Error: " + ticketError);
-                        account.removeProperty(PROPERTY_KEYTYPE);
-                        account.removeProperty(PROPERTY_KEY);
-                        continue;
-                    }
-                    final AccountInfo ai = new AccountInfo();
-                    ai.setTrafficLeft(((Number) lastTicket.get("traffic")).longValue());
-                    final String validUntilDate = lastTicket.get("validuntil").toString();
-                    ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntilDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
-                    return ai;
-                }
-                break;
-            } while (attempt <= 0);
-            this.checkErrors(null, account, lastTicket);
+            String keyType = account.getStringProperty(PROPERTY_KEYTYPE);
+            String key = account.getStringProperty(PROPERTY_KEY);
+            if (keyType == null || key == null) {
+                final String userKey = account.getUser();
+                keyType = getKeyType(br, userKey);
+                key = addSpeedKey(br, userKey);
+                account.setProperty(PROPERTY_KEYTYPE, keyType);
+                account.setProperty(PROPERTY_KEY, key);
+            }
+            if ("st".equals(keyType)) {
+                final Map<String, Object> ticket = checkSpeedKey(br, key);
+                // TODO: Add errorhandling e.g. {"servertime":"2022-12-09 11:38:43","tickets":{"<ticketID>":{"error":"ticket not found or
+                // expired"}}}
+                final AccountInfo ai = new AccountInfo();
+                ai.setTrafficLeft(((Number) ticket.get("traffic")).longValue());
+                final String validUntilDate = ticket.get("validuntil").toString();
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntilDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
+                // return ai;
+            }
         }
-        return null;
-    }
-
-    private void checkLicenseKey(final Browser br, final Account account) throws Exception {
-        final String userKey = account.getUser();
-        final String keyType = getKeyType(br, userKey);
-        final String key = addSpeedKey(br, userKey);
-        account.setProperty(PROPERTY_KEYTYPE, keyType);
-        account.setProperty(PROPERTY_KEY, key);
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /*
-             * Check username + password field for entered "license key". This improves usability for myjdownloader/headless users as we
-             * can't display custom login masks for them yet.
-             */
-            final String userCorrected = correctLicenseKey(account.getUser());
-            final String pwCorrected = correctLicenseKey(account.getPass());
-            String licenseKey = null;
-            if (isLicenseKey(userCorrected)) {
-                licenseKey = userCorrected;
-            } else if (isLicenseKey(pwCorrected)) {
-                licenseKey = pwCorrected;
-            }
-            if (licenseKey == null) {
-                throw new AccountInvalidException("Invalid license key format");
-            }
-            account.setUser(licenseKey);
-            return loginAndGetAccountInfo(br, account);
+            login(br, account);
         }
         return super.fetchAccountInfo(account);
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public Map<String, Object> requestFileInformation(final Account account, final DownloadLink link) throws Exception {
+        final String fid = getFID(link);
         if (!link.isNameSet()) {
             /* Fallback */
-            link.setName(this.getFID(link));
+            link.setName(fid);
         }
-        this.setBrowserExclusive();
-        prepBrowser(br);
-        br.postPageRaw("https://" + this.getHost() + "/storage/bucket/info.json", "{\"file\":\"" + this.getFID(link) + "\"}");
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        final Request request = doAPIRequest(br, "/storage/bucket/info.json", new Object[][] { { "file", fid } });
+        if (request.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
-        final String error = (String) entries.get("error");
-        if (error != null) {
-            /* E.g. {"error":"invalid file"} */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Map<String, Object> hash = (Map<String, Object>) entries.get("hash");
+        final Map<String, Object> bucketResponse = restoreFromString(request.getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> hash = (Map<String, Object>) bucketResponse.get("hash");
         if (hash != null) {
             final String hashType = hash.get("type").toString();
             if (hashType.equalsIgnoreCase("sha256")) {
                 link.setSha256Hash(hash.get("value").toString());
             }
         }
-        final String filename = entries.get("filename").toString();
-        final Number filesize = (Number) entries.get("filesize");
+        String filename = bucketResponse.get("filename").toString();
         if (filename != null) {
-            // TODO: Decrypt filename
+            filename = decryptString(link, filename);
             link.setFinalFileName(filename);
         }
+        final Number filesize = (Number) bucketResponse.get("filesize");
         if (filesize != null) {
             link.setDownloadSize(filesize.longValue());
         }
-        return AvailableStatus.TRUE;
+        final String error = (String) bucketResponse.get("error");
+        if (error != null) {
+            /* E.g. {"error":"invalid file"} */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String state = StringUtils.valueOfOrNull(bucketResponse.get("state"));
+        if ("ONLINE".equals(state)) {
+            return bucketResponse;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "state:" + state);
+        }
     }
 
-    public static void main(String[] args) throws Exception {
-        final String hash = "TEST";
-        final String fileName = "TEST";
-        byte key[][] = unmerge_key_iv(hash);
-        byte[] name = Base64.decodeFast(fileName.replace("-", "+").replace("_", "/"));
-        final SecretKey aesKey = new SecretKeySpec(key[0], "AES");
-        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-        cipher.init(Cipher.DECRYPT_MODE, aesKey, new IvParameterSpec(key[1]));
-        byte[] test = cipher.doFinal(name);
-        final String m = new String(unpad(test));
-        System.out.println(m);
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (requestFileInformation(null, link) != null) {
+            return AvailableStatus.TRUE;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
-    public static byte[] unpad(byte[] data) throws PluginException {
+    private byte[] decrypt(byte[][] keyMaterial, byte[] encryptedData) throws Exception {
+        final SecretKey aesKey = new SecretKeySpec(keyMaterial[0], "AES");
+        final Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
+        cipher.init(Cipher.DECRYPT_MODE, aesKey, new IvParameterSpec(keyMaterial[1]));
+        byte[] decryptedData = cipher.doFinal(encryptedData);
+        return unpad(decryptedData);
+    }
+
+    private String decryptString(final DownloadLink link, String encryptedString) throws Exception {
+        final byte[] encryptedBytes = Base64.decodeFast(encryptedString.replace("-", "+").replace("_", "/"));
+        final byte[] decryptedBytes = decrypt(getFileKey(link), encryptedBytes);
+        final String ret = new String(decryptedBytes, "UTF-8");
+        return ret;
+    }
+
+    private byte[] unpad(byte[] data) throws PluginException {
         if (data == null || data.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (data.length % 16 > 0) {
@@ -320,7 +297,7 @@ public class FilebitNet extends PluginForHost {
         }
     }
 
-    public static byte[][] unmerge_key_iv(final String filebit_key) throws PluginException {
+    public byte[][] unmerge_key_iv(final String filebit_key) throws PluginException {
         final byte[] mergedKey = Base64.decodeFast(filebit_key.replace("-", "+").replace("_", "/"));
         if (mergedKey == null || mergedKey.length != 33) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unknown key:" + filebit_key);
@@ -339,9 +316,21 @@ public class FilebitNet extends PluginForHost {
         }
     }
 
-    public byte[][] getFileKey(final DownloadLink link) {
-        final String mergedKey = new Regex(link.getPluginPatternMatcher(), "#([a-zA-Z0-9\\-_)").getMatch(0);
-        return null;
+    private void verifyLink(final DownloadLink link) throws PluginException {
+        if (getFID(link) == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            getFileKey(link);
+        }
+    }
+
+    private byte[][] getFileKey(final DownloadLink link) throws PluginException {
+        final String mergedKey = new Regex(link.getPluginPatternMatcher(), "#([a-zA-Z0-9\\-_]{44})").getMatch(0);
+        if (mergedKey == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return unmerge_key_iv(mergedKey);
+        }
     }
 
     /** See https://filebit.net/docs/#/?id=multi-file-informations */
@@ -351,62 +340,62 @@ public class FilebitNet extends PluginForHost {
             return false;
         }
         try {
-            prepBrowser(this.br);
             br.setCookiesExclusive(true);
-            final List<String> fileIDs = new ArrayList<String>();
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             while (true) {
-                links.clear();
                 while (true) {
                     /* 2022-12-08: Tested with 100 items max. */
                     if (index == urls.length || links.size() == 100) {
                         break;
                     } else {
-                        links.add(urls[index]);
-                        index++;
+                        final DownloadLink link = urls[index++];
+                        try {
+                            verifyLink(link);
+                            links.add(link);
+                        } catch (Exception e) {
+                            logger.log(e);
+                            link.setAvailable(false);
+                        }
                     }
                 }
-                fileIDs.clear();
+                final List<String> fileIDs = new ArrayList<String>();
                 for (final DownloadLink link : links) {
                     fileIDs.add(this.getFID(link));
                 }
-                final Map<String, Object> payLoad = new HashMap<String, Object>();
-                payLoad.put("files", fileIDs);
-                payLoad.put("hash", 1); // Include the files' sha256 hashes in API response.
-                final PostRequest request = br.createJSonPostRequest(getAPI() + "/storage/multiinfo.json", payLoad);
-                br.getPage(request);
-                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+                final Map<String, Object> response = callApi(br, "/storage/multiinfo.json", new Object[][] { { "files", fileIDs }, { "hash", 1 } });
                 for (final DownloadLink link : links) {
                     final String fid = this.getFID(link);
                     if (!link.isNameSet()) {
                         link.setName(fid);
                     }
-                    final Map<String, Object> info = (Map<String, Object>) entries.get(fid);
+                    final Map<String, Object> info = (Map<String, Object>) response.get(fid);
                     if (info == null) {
                         /* This should never happen! */
+                        logger.info("info missing for:" + fid);
                         link.setAvailable(false);
                         continue;
-                    }
-                    // TODO: Decrypt filename
-                    final String state = info.get("state").toString();
-                    final String filename = (String) info.get("name");
-                    final Number filesize = (Number) info.get("size");
-                    final String sha256hash = (String) info.get("sha256");
-                    if (!StringUtils.isEmpty(filename)) {
-                        link.setFinalFileName(filename);
-                    }
-                    if (filesize != null) {
-                        link.setVerifiedFileSize(filesize.longValue());
-                    }
-                    if (sha256hash != null) {
-                        link.setSha256Hash(sha256hash);
-                    }
-                    if (state.equalsIgnoreCase("ONLINE")) {
-                        link.setAvailable(true);
                     } else {
-                        /* E.g. {"state":"ERROR"} */
-                        link.setAvailable(false);
+                        final String sha256 = StringUtils.valueOfOrNull(info.get("sha256"));
+                        if (sha256 != null) {
+                            link.setSha256Hash(sha256);
+                        }
+                        final Number filesize = (Number) info.get("size");
+                        if (filesize != null) {
+                            link.setVerifiedFileSize(filesize.longValue());
+                        }
+                        final String state = StringUtils.valueOfOrNull(info.get("state"));
+                        if ("ONLINE".equals(state)) {
+                            link.setAvailable(true);
+                        } else {
+                            /* E.g. {"state":"ERROR"} */
+                            link.setAvailable(false);
+                        }
+                        String name = (String) info.get("name");
+                        if (!StringUtils.isEmpty(name)) {
+                            name = decryptString(link, name);
+                            link.setFinalFileName(name);
+                        }
                     }
                 }
                 if (index == urls.length) {
@@ -422,7 +411,12 @@ public class FilebitNet extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -456,20 +450,6 @@ public class FilebitNet extends PluginForHost {
         dl.startDownload();
     }
 
-    private void checkErrors(final DownloadLink link, final Account account, final Map<String, Object> map) throws PluginException {
-        /* TODO: Add support for more/specific errormessages */
-        if (map == null) {
-            return;
-        }
-        final String errorMsg = (String) map.get("error");
-        if (link == null) {
-            /* Error during login */
-            throw new AccountInvalidException(errorMsg);
-        } else {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg);
-        }
-    }
-
     @Override
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
@@ -482,7 +462,7 @@ public class FilebitNet extends PluginForHost {
         }
         try {
             final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, FREE_RESUME, FREE_MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, true, 1);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
@@ -500,107 +480,14 @@ public class FilebitNet extends PluginForHost {
         }
     }
 
-    private static String correctLicenseKey(final String key) {
-        if (key == null) {
-            return null;
-        } else {
-            return key.trim().replace(" ", "");
-        }
-    }
-
-    private static boolean isLicenseKey(final String str) {
-        if (str == null) {
-            return false;
-        } else if (str.matches("[A-Za-z0-9]+")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     @Override
     public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
         return new FilebitNetAccountFactory(callback);
     }
 
-    public static class FilebitNetAccountFactory extends MigPanel implements AccountBuilderInterface {
-        /**
-         *
-         */
-        private static final long serialVersionUID = 1L;
-        private final String      APIKEYHELP       = "Enter your Licence key";
-        private final JLabel      apikeyLabel;
-
-        private String getPassword() {
-            if (this.pass == null) {
-                return null;
-            } else {
-                return correctLicenseKey(new String(this.pass.getPassword()));
-            }
-        }
-
-        public boolean updateAccount(Account input, Account output) {
-            if (!StringUtils.equals(input.getUser(), output.getUser())) {
-                output.setUser(input.getUser());
-                return true;
-            } else if (!StringUtils.equals(input.getPass(), output.getPass())) {
-                output.setPass(input.getPass());
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        private final ExtPasswordField pass;
-
-        public FilebitNetAccountFactory(final InputChangedCallbackInterface callback) {
-            super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Enter license key."));
-            add(new JLabel("You can find it in your PDF file."));
-            add(apikeyLabel = new JLabel("Licence key:"));
-            add(this.pass = new ExtPasswordField() {
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(this);
-                }
-            }, "");
-            pass.setHelpText(APIKEYHELP);
-        }
-
-        @Override
-        public JComponent getComponent() {
-            return this;
-        }
-
-        @Override
-        public void setAccount(Account defaultAccount) {
-            if (defaultAccount != null) {
-                // name.setText(defaultAccount.getUser());
-                pass.setText(defaultAccount.getPass());
-            }
-        }
-
-        @Override
-        public boolean validateInputs() {
-            final String pw = getPassword();
-            if (isLicenseKey(pw)) {
-                apikeyLabel.setForeground(Color.BLACK);
-                return true;
-            } else {
-                apikeyLabel.setForeground(Color.RED);
-                return false;
-            }
-        }
-
-        @Override
-        public Account getAccount() {
-            return new Account(null, getPassword());
-        }
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return 0;
     }
 
     @Override
