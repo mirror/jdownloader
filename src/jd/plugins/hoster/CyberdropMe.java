@@ -107,7 +107,7 @@ public class CyberdropMe extends DirectHTTP {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        if ("bunkr.is".equals(getHost()) || "cyberdrop.me".equals(getHost())) {
+        if ("bunkr.ru".equals(getHost()) || "cyberdrop.me".equals(getHost())) {
             return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.ASSIGN_PLUGIN };
         } else {
             return new LazyPlugin.FEATURE[0];
