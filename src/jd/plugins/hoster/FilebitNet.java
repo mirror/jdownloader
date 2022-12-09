@@ -143,7 +143,7 @@ public class FilebitNet extends PluginForHost {
         if (keytype == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if ("unknown".equals(keytype)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unknown keytype");
+            throw new AccountInvalidException("Invalid license key");
         } else if ("st".equals(keytype)) {
             // st = "speedticket"
             return keytype;
@@ -190,28 +190,50 @@ public class FilebitNet extends PluginForHost {
     private final String PROPERTY_KEYTYPE = "PROPERTY_KEYTYPE";
     private final String PROPERTY_KEY     = "PROPERTY_KEY";
 
-    public void login(final Browser br, final Account account) throws Exception {
+    private AccountInfo loginAndGetAccountInfo(final Browser br, final Account account) throws Exception {
         synchronized (account) {
-            String keyType = account.getStringProperty(PROPERTY_KEYTYPE);
-            String key = account.getStringProperty(PROPERTY_KEY);
-            if (keyType == null || key == null) {
-                final String userKey = account.getUser();
-                keyType = getKeyType(br, userKey);
-                key = addSpeedKey(br, userKey);
-                account.setProperty(PROPERTY_KEYTYPE, keyType);
-                account.setProperty(PROPERTY_KEY, key);
-            }
-            if ("st".equals(keyType)) {
-                final Map<String, Object> ticket = checkSpeedKey(br, key);
-                // TODO: Add errorhandling e.g. {"servertime":"2022-12-09 11:38:43","tickets":{"<ticketID>":{"error":"ticket not found or
-                // expired"}}}
-                final AccountInfo ai = new AccountInfo();
-                ai.setTrafficLeft(((Number) ticket.get("traffic")).longValue());
-                final String validUntilDate = ticket.get("validuntil").toString();
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntilDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
-                // return ai;
-            }
+            int attempt = -1;
+            Map<String, Object> lastTicket = null;
+            do {
+                attempt++;
+                String keyType = account.getStringProperty(PROPERTY_KEYTYPE);
+                String key = account.getStringProperty(PROPERTY_KEY);
+                if (keyType == null || key == null) {
+                    checkLicenseKey(br, account);
+                    keyType = account.getStringProperty(PROPERTY_KEYTYPE);
+                    key = account.getStringProperty(PROPERTY_KEY);
+                }
+                if ("st".equals(keyType)) {
+                    lastTicket = checkSpeedKey(br, key);
+                    final String ticketError = (String) lastTicket.get("error");
+                    // E.g. {"servertime":"2022-12-09 11:38:43","tickets":{"<ticketID>":{"error":"ticket not found
+                    // or
+                    // expired"}}}
+                    if (ticketError != null) {
+                        logger.info("Ticket/Session expired? Error: " + ticketError);
+                        account.removeProperty(PROPERTY_KEYTYPE);
+                        account.removeProperty(PROPERTY_KEY);
+                        continue;
+                    }
+                    final AccountInfo ai = new AccountInfo();
+                    ai.setTrafficLeft(((Number) lastTicket.get("traffic")).longValue());
+                    final String validUntilDate = lastTicket.get("validuntil").toString();
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntilDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
+                    return ai;
+                }
+                break;
+            } while (attempt <= 0);
+            this.checkErrors(null, account, lastTicket);
         }
+        return null;
+    }
+
+    private void checkLicenseKey(final Browser br, final Account account) throws Exception {
+        final String userKey = account.getUser();
+        final String keyType = getKeyType(br, userKey);
+        final String key = addSpeedKey(br, userKey);
+        account.setProperty(PROPERTY_KEYTYPE, keyType);
+        account.setProperty(PROPERTY_KEY, key);
     }
 
     @Override
@@ -233,7 +255,7 @@ public class FilebitNet extends PluginForHost {
                 throw new AccountInvalidException("Invalid license key format");
             }
             account.setUser(licenseKey);
-            login(br, account);
+            return loginAndGetAccountInfo(br, account);
         }
         return super.fetchAccountInfo(account);
     }
@@ -351,7 +373,8 @@ public class FilebitNet extends PluginForHost {
                 }
                 final Map<String, Object> payLoad = new HashMap<String, Object>();
                 payLoad.put("files", fileIDs);
-                PostRequest request = br.createJSonPostRequest(getAPI() + "/storage/multiinfo.json", payLoad);
+                payLoad.put("hash", 1); // Include the files' sha256 hashes in API response.
+                final PostRequest request = br.createJSonPostRequest(getAPI() + "/storage/multiinfo.json", payLoad);
                 br.getPage(request);
                 final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 for (final DownloadLink link : links) {
@@ -369,11 +392,15 @@ public class FilebitNet extends PluginForHost {
                     final String state = info.get("state").toString();
                     final String filename = (String) info.get("name");
                     final Number filesize = (Number) info.get("size");
+                    final String sha256hash = (String) info.get("sha256");
                     if (!StringUtils.isEmpty(filename)) {
                         link.setFinalFileName(filename);
                     }
                     if (filesize != null) {
                         link.setVerifiedFileSize(filesize.longValue());
+                    }
+                    if (sha256hash != null) {
+                        link.setSha256Hash(sha256hash);
                     }
                     if (state.equalsIgnoreCase("ONLINE")) {
                         link.setAvailable(true);
@@ -427,6 +454,20 @@ public class FilebitNet extends PluginForHost {
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
         dl.startDownload();
+    }
+
+    private void checkErrors(final DownloadLink link, final Account account, final Map<String, Object> map) throws PluginException {
+        /* TODO: Add support for more/specific errormessages */
+        if (map == null) {
+            return;
+        }
+        final String errorMsg = (String) map.get("error");
+        if (link == null) {
+            /* Error during login */
+            throw new AccountInvalidException(errorMsg);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg);
+        }
     }
 
     @Override
