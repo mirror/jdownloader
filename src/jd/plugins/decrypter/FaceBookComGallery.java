@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -36,6 +37,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -70,8 +72,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     public static String[] getAnnotationUrls() {
-        // return new String[] { "https?://(?:www\\.)?facebook\\.com/.+" };
-        return new String[] { "https?://(?:www\\.)?facebook_plugin_unfinished\\.com/.+" };
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            return new String[] { "https?://(?:www\\.)?facebook\\.com/.+" };
+        } else {
+            return new String[] { "https?://(?:www\\.)?facebook_plugin_unfinished\\.com/.+" };
+        }
     }
 
     private final String COMPONENT_USERNAME              = "(?:[\\%a-zA-Z0-9\\-]+)";
@@ -115,10 +120,34 @@ public class FaceBookComGallery extends PluginForDecrypt {
             final FaceBookComVideos hosterPlugin = (FaceBookComVideos) this.getNewPluginForHostInstance(this.getHost());
             hosterPlugin.login(account, false);
         }
-        br.getPage(param.getCryptedUrl());
+        String url = param.getCryptedUrl();
+        final Regex embeddedVideoRegex = new Regex(url, "https?://[^/]+/video/embed\\?video_id=(\\d+)");
+        if (embeddedVideoRegex.matches()) {
+            /* Small workaround for embedded videourls */
+            url = "https://www.facebook.com/watch/?v=" + embeddedVideoRegex.getMatch(0);
+        }
+        br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        // TODO: Use this as fallback if we only find a single video and fail to find title inside json
+        String possibleTitleOfSingleVideo = HTMLSearch.searchMetaTag(br, "og:title");
+        if (possibleTitleOfSingleVideo != null) {
+            possibleTitleOfSingleVideo = Encoding.htmlDecode(possibleTitleOfSingleVideo);
+            possibleTitleOfSingleVideo = possibleTitleOfSingleVideo.replaceAll("(?i)( \\| By.+)", "");
+            possibleTitleOfSingleVideo = possibleTitleOfSingleVideo.replaceAll("\\.\\.\\.$", "");
+            possibleTitleOfSingleVideo = possibleTitleOfSingleVideo.trim();
+        }
+        String slugOfSingleVideo = null;
+        final String videoIDInsideURL = new Regex(br.getURL(), "(\\d+)/$").getMatch(0);
+        if (videoIDInsideURL != null) {
+            slugOfSingleVideo = br.getRegex("/videos/([^/]+)/" + videoIDInsideURL).getMatch(0);
+        }
+        logger.info("-----------------");
+        logger.info("Fallback info of single video if this is a single video:");
+        logger.info("Title: " + possibleTitleOfSingleVideo);
+        logger.info("slog: " + slugOfSingleVideo);
+        logger.info("-----------------");
         /* Different sources to parse their json. */
         final List<String> jsonRegExes = new ArrayList<String>();
         /* 2021-03-19: E.g. when user is loggedIN */

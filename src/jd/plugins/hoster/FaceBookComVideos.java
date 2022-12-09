@@ -247,10 +247,10 @@ public class FaceBookComVideos extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         prepBR(this.br);
-        final boolean useBetaTestHandlingInIDE = true;
-        if (!link.hasProperty(PROPERTY_TYPE) && DebugMode.TRUE_IN_IDE_ELSE_FALSE && useBetaTestHandlingInIDE) {
+        final boolean allowNewHandlingForLegacyItemsInDebugMode = false;
+        if (!link.hasProperty(PROPERTY_TYPE) && DebugMode.TRUE_IN_IDE_ELSE_FALSE && !allowNewHandlingForLegacyItemsInDebugMode) {
             /* Legacy handling: Convert old items to new ones */
-            // TODO: Remove after 01/2023
+            // TODO: Remove after 05/2023
             final FaceBookComGallery crawler = (FaceBookComGallery) this.getNewPluginForDecryptInstance(this.getHost());
             final ArrayList<DownloadLink> results = crawler.decryptIt(new CryptedLink(link.getPluginPatternMatcher()), null);
             DownloadLink newLink = null;
@@ -274,7 +274,7 @@ public class FaceBookComVideos extends PluginForHost {
         }
         boolean loggedIn = false;
         final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
-        final boolean findAndCheckDownloadurl = !fastLinkcheck || isDownload;
+        final boolean findAndCheckDownloadurl = isDownload || fastLinkcheck == false;
         if (link.getPluginPatternMatcher().matches(PATTERN_GROUP_PERMALINK) || link.getPluginPatternMatcher().matches(PATTERN_POSTS)) {
             br.getPage(link.getPluginPatternMatcher());
             String video = null;
