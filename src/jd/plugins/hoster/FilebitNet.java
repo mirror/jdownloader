@@ -15,16 +15,32 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.bouncycastle.util.Arrays;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,19 +48,13 @@ import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.bouncycastle.util.Arrays;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilebitNet extends PluginForHost {
@@ -180,7 +190,7 @@ public class FilebitNet extends PluginForHost {
     private final String PROPERTY_KEYTYPE = "PROPERTY_KEYTYPE";
     private final String PROPERTY_KEY     = "PROPERTY_KEY";
 
-    public void login(Browser br, Account account) throws Exception {
+    public void login(final Browser br, final Account account) throws Exception {
         synchronized (account) {
             String keyType = account.getStringProperty(PROPERTY_KEYTYPE);
             String key = account.getStringProperty(PROPERTY_KEY);
@@ -192,14 +202,37 @@ public class FilebitNet extends PluginForHost {
                 account.setProperty(PROPERTY_KEY, key);
             }
             if ("st".equals(keyType)) {
-                Map<String, Object> ticket = checkSpeedKey(br, key);
+                final Map<String, Object> ticket = checkSpeedKey(br, key);
+                // TODO: Add errorhandling e.g. {"servertime":"2022-12-09 11:38:43","tickets":{"<ticketID>":{"error":"ticket not found or
+                // expired"}}}
+                final AccountInfo ai = new AccountInfo();
+                ai.setTrafficLeft(((Number) ticket.get("traffic")).longValue());
+                final String validUntilDate = ticket.get("validuntil").toString();
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntilDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
+                // return ai;
             }
         }
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /*
+             * Check username + password field for entered "license key". This improves usability for myjdownloader/headless users as we
+             * can't display custom login masks for them yet.
+             */
+            final String userCorrected = correctLicenseKey(account.getUser());
+            final String pwCorrected = correctLicenseKey(account.getPass());
+            String licenseKey = null;
+            if (isLicenseKey(userCorrected)) {
+                licenseKey = userCorrected;
+            } else if (isLicenseKey(pwCorrected)) {
+                licenseKey = pwCorrected;
+            }
+            if (licenseKey == null) {
+                throw new AccountInvalidException("Invalid license key format");
+            }
+            account.setUser(licenseKey);
             login(br, account);
         }
         return super.fetchAccountInfo(account);
@@ -423,6 +456,104 @@ public class FilebitNet extends PluginForHost {
             } catch (Throwable ignore) {
             }
             return false;
+        }
+    }
+
+    private static String correctLicenseKey(final String key) {
+        if (key == null) {
+            return null;
+        } else {
+            return key.trim().replace(" ", "");
+        }
+    }
+
+    private static boolean isLicenseKey(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("[A-Za-z0-9]+")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+        return new FilebitNetAccountFactory(callback);
+    }
+
+    public static class FilebitNetAccountFactory extends MigPanel implements AccountBuilderInterface {
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
+        private final String      APIKEYHELP       = "Enter your Licence key";
+        private final JLabel      apikeyLabel;
+
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            } else {
+                return correctLicenseKey(new String(this.pass.getPassword()));
+            }
+        }
+
+        public boolean updateAccount(Account input, Account output) {
+            if (!StringUtils.equals(input.getUser(), output.getUser())) {
+                output.setUser(input.getUser());
+                return true;
+            } else if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                output.setPass(input.getPass());
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        private final ExtPasswordField pass;
+
+        public FilebitNetAccountFactory(final InputChangedCallbackInterface callback) {
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            add(new JLabel("Enter license key."));
+            add(new JLabel("You can find it in your PDF file."));
+            add(apikeyLabel = new JLabel("Licence key:"));
+            add(this.pass = new ExtPasswordField() {
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
+                }
+            }, "");
+            pass.setHelpText(APIKEYHELP);
+        }
+
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
+
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                // name.setText(defaultAccount.getUser());
+                pass.setText(defaultAccount.getPass());
+            }
+        }
+
+        @Override
+        public boolean validateInputs() {
+            final String pw = getPassword();
+            if (isLicenseKey(pw)) {
+                apikeyLabel.setForeground(Color.BLACK);
+                return true;
+            } else {
+                apikeyLabel.setForeground(Color.RED);
+                return false;
+            }
+        }
+
+        @Override
+        public Account getAccount() {
+            return new Account(null, getPassword());
         }
     }
 
