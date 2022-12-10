@@ -5,13 +5,13 @@ import java.awt.Color;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.plugins.Account;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+
+import jd.plugins.Account;
 
 public class FilebitNetAccountFactory extends MigPanel implements AccountBuilderInterface {
     /**
@@ -21,15 +21,17 @@ public class FilebitNetAccountFactory extends MigPanel implements AccountBuilder
     private final String      APIKEYHELP       = "Enter your Licence key";
     private final JLabel      apikeyLabel;
 
-    String correctLicenseKey(final String key) {
+    public static String correctLicenseKey(final String key) {
         if (key == null) {
             return null;
         } else {
-            return key.trim();
+            /* Remove spaces because users will typically copy those keys from a PDF resulting in e.g. "m y k e y" instead of "mykey". */
+            // return key.trim().replaceAll("[^A-Za-z0-9]+", "");
+            return key.trim().replace(" ", "");
         }
     }
 
-    boolean isLicenseKey(final String str) {
+    public static boolean isLicenseKey(final String str) {
         if (str == null) {
             return false;
         } else if (str.matches("[A-Za-z0-9]+")) {

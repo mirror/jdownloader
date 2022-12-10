@@ -27,20 +27,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.requests.PostRequest;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
@@ -51,6 +37,21 @@ import org.bouncycastle.util.Arrays;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.FilebitNetAccountFactory;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.requests.PostRequest;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilebitNet extends PluginForHost {
@@ -218,6 +219,22 @@ public class FilebitNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /*
+             * Check username + password field for entered "license key". This improves usability for myjdownloader/headless users as we
+             * can't display custom login masks for them yet.
+             */
+            final String userCorrected = FilebitNetAccountFactory.correctLicenseKey(account.getUser());
+            final String pwCorrected = FilebitNetAccountFactory.correctLicenseKey(account.getPass());
+            String licenseKey = null;
+            if (FilebitNetAccountFactory.isLicenseKey(userCorrected)) {
+                licenseKey = userCorrected;
+            } else if (FilebitNetAccountFactory.isLicenseKey(pwCorrected)) {
+                licenseKey = pwCorrected;
+            }
+            if (licenseKey == null) {
+                throw new AccountInvalidException("Invalid license key format");
+            }
+            account.setUser(licenseKey);
             login(br, account);
         }
         return super.fetchAccountInfo(account);
