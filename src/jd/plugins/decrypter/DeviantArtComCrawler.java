@@ -27,6 +27,7 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -163,6 +164,9 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
             final List<Map<String, Object>> results = (List<Map<String, Object>>) entries.get("results");
             if (results.isEmpty()) {
                 if (ret.isEmpty()) {
+                    if (Boolean.TRUE.equals(entries.get("hasMore")) && account == null) {
+                        throw new AccountRequiredException();
+                    }
                     logger.info("This item doesn't contain any items");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {

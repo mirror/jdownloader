@@ -13,7 +13,6 @@ import javax.swing.JSeparator;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
@@ -28,9 +27,8 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.DownloadFolderChooserDialogDefaultPath;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DownloadFolderChooserDialogSubfolder;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
@@ -63,8 +61,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
             e.printStackTrace();
         }
         setDimensor(new RememberLastDialogDimension(id));
-        final GraphicalUserInterfaceSettings config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
-        DownloadFolderChooserDialogSubfolder subfolderSettings = config.getDownloadFolderChooserDialogSubfolder();
+        DownloadFolderChooserDialogSubfolder subfolderSettings = CFG_GUI.CFG.getDownloadFolderChooserDialogSubfolder();
         if (subfolderSettings == null) {
             subfolderSettings = DownloadFolderChooserDialogSubfolder.AUTO;
         }
@@ -83,10 +80,11 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         case DISABLED:
             this.subfolderFlag = false;
             break;
+        case AUTO:
         default:
             break;
         }
-        setView(config.getFileChooserView());
+        setView(CFG_GUI.CFG.getFileChooserView());
     }
 
     @Override
@@ -108,7 +106,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
     @Override
     protected File[] createReturnValue() {
-        JsonConfig.create(GraphicalUserInterfaceSettings.class).setFileChooserView(getView());
+        CFG_GUI.CFG.setFileChooserView(getView());
         if (isMultiSelection()) {
             File[] files = fc.getSelectedFiles();
             return files;
@@ -152,9 +150,10 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
     @Override
     public JComponent layoutDialogContent() {
-        MigPanel ret = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[][][][grow,fill]");
-        ExtTextField lbl = new ExtTextField();
+        final MigPanel ret;
         if (path != null) {
+            ret = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[][][][grow,fill]");
+            final ExtTextField lbl = new ExtTextField();
             lbl.setText(_GUI.T.OpenDownloadFolderAction_layoutDialogContent_current_(path.getAbsolutePath()));
             lbl.setEditable(false);
             if (CrossSystem.isOpenFileSupported()) {
@@ -173,6 +172,8 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
                 ret.add(lbl, "spanx");
             }
             ret.add(new JSeparator(), "spanx");
+        } else {
+            ret = new MigPanel("ins 0,wrap 2", "[grow,fill][]", "[][grow,fill]");
         }
         ret.add(new JLabel(_GUI.T.OpenDownloadFolderAction_layoutDialogContent_object_()), "spanx");
         ret.add(super.layoutDialogContent(), "spanx");
@@ -198,16 +199,19 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
      */
     public static File open(File path, boolean packager, String title) throws DialogClosedException, DialogCanceledException {
         if (path != null && !CrossSystem.isAbsolutePath(path.getPath())) {
-            path = new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), path.getPath());
+            path = new File(CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), path.getPath());
         }
+        boolean lastUsedPathMode = false;
         switch (CFG_GUI.CFG.getDownloadFolderChooserDefaultPath()) {
         case CURRENT_PATH:
             break;
         case GLOBAL_DOWNLOAD_DIRECTORY:
-            path = new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue());
+            path = new File(CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue());
             break;
         case LAST_USED_PATH:
+            lastUsedPathMode = true;
             path = null;
+            break;
         }
         final File finalPath = path;
         final DownloadFolderChooserDialog d = new DownloadFolderChooserDialog(path, title, _GUI.T.OpenDownloadFolderAction_actionPerformed_save_(), null);
@@ -224,9 +228,9 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
                 }
             });
         }
-        List<String> quick;
-        d.setQuickSelectionList(quick = DownloadPathHistoryManager.getInstance().listPaths(path != null ? path.getAbsolutePath() : null));
-        if (CFG_GUI.CFG.getDownloadFolderChooserDefaultPath() == DownloadFolderChooserDialogDefaultPath.LAST_USED_PATH && quick != null && quick.size() > 0) {
+        final List<String> quick = DownloadPathHistoryManager.getInstance().listPaths(path != null ? path.getAbsolutePath() : null);
+        d.setQuickSelectionList(quick);
+        if (lastUsedPathMode && quick != null && quick.size() > 0) {
             d.setPreSelection(new File(quick.get(0)));
         }
         d.setFileSelectionMode(FileChooserSelectionMode.DIRECTORIES_ONLY);
