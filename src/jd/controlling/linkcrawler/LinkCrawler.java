@@ -2640,11 +2640,11 @@ public class LinkCrawler {
             for (int index = 0; index < ret.length; index++) {
                 String match = ret[index];
                 match = match.trim();
-                while (match.length() > 0 && match.charAt(0) == '"') {
-                    match = match.substring(1);
+                while (match.length() > 2 && match.charAt(0) == '<' && match.charAt(match.length() - 1) == '>') {
+                    match = match.substring(1, match.length() - 1);
                 }
-                while (match.length() > 0 && match.charAt(match.length() - 1) == '"') {
-                    match = match.substring(0, match.length() - 1);
+                while (match.length() > 2 && match.charAt(0) == '\"' && match.charAt(match.length() - 1) == '\"') {
+                    match = match.substring(1, match.length() - 1);
                 }
                 ret[index] = match.trim();
                 if (StringUtils.equals(source.getURL(), ret[index])) {
