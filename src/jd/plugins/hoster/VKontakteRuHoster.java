@@ -61,7 +61,6 @@ import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.Files;
@@ -272,11 +271,11 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (br.containsHTML("(?i)This document is available only to its owner\\.")) {
                     throw new AccountRequiredException("This document is available only to its owner");
                 }
-                final String json = br.getRegex("Docs\\.initDoc\\((\\{.*?\\})\\);").getMatch(0);
+                final String json = br.getRegex("Docs\\.initDoc\\((\\{.*?\\})(\\);|\\)\\}\\)\\.catch)").getMatch(0);
                 if (json == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final Map<String, Object> doc = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                final Map<String, Object> doc = restoreFromString(json, TypeRef.MAP);
                 finalUrl = (String) doc.get("docUrl");
                 if (StringUtils.isEmpty(finalUrl)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

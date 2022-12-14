@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -3591,21 +3592,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             setAccountLimitsByType(account, AccountType.LIFETIME);
         } else {
             /* 2019-07-11: It is not uncommon for XFS websites to display expire-dates even though the account is not premium anymore! */
-            String expireStr = new Regex(getCorrectBR(br), "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-            long expire_milliseconds = 0;
-            long expire_milliseconds_from_expiredate = 0;
-            long expire_milliseconds_precise_to_the_second = 0;
-            if (expireStr != null) {
-                /*
-                 * 2019-12-17: XFS premium accounts usually don't expire just before the next day. They will end to the same time of the day
-                 * when they were bought but website only displays it to the day which is why we set it to just before the next day to
-                 * prevent them from expiring too early in JD. XFS websites with API may provide more precise information on the expiredate
-                 * (down to the second).
-                 */
-                expireStr += " 23:59:59";
-                expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expireStr, "dd MMMM yyyy HH:mm:ss", Locale.ENGLISH);
-            }
-            final String[] supports_precise_expire_date = this.supportsPreciseExpireDate();
+            final AtomicBoolean isPreciseTimestampFlag = new AtomicBoolean(false);
+            final Long expire_milliseconds_from_expiredate = findExpireTimestamp(account, br, isPreciseTimestampFlag);
+            long expire_milliseconds_precise_to_the_second = -1;
+            final String[] supports_precise_expire_date = (isPreciseTimestampFlag.get() && expire_milliseconds_from_expiredate != null) ? null : this.supportsPreciseExpireDate();
             if (supports_precise_expire_date != null && supports_precise_expire_date.length > 0) {
                 /*
                  * A more accurate expire time, down to the second. Usually shown on 'extend premium account' page. Case[0] e.g.
@@ -3613,7 +3603,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                  */
                 final List<String> paymentURLs;
                 final String last_working_payment_url = this.getPluginConfig().getStringProperty("property_last_working_payment_url", null);
-                if (last_working_payment_url != null) {
+                if (StringUtils.isNotEmpty(last_working_payment_url)) {
                     paymentURLs = new ArrayList<String>();
                     logger.info("Found stored last_working_payment_url --> Trying this first in an attempt to save http requests: " + last_working_payment_url);
                     paymentURLs.add(last_working_payment_url);
@@ -3682,16 +3672,21 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                 /* Add current time to parsed value */
                 expire_milliseconds_precise_to_the_second += currentTime;
             }
-            if (expire_milliseconds_precise_to_the_second > 0) {
+            final long expire_milliseconds;
+            if (isPreciseTimestampFlag.get() && expire_milliseconds_from_expiredate != null) {
+                logger.info("Using precise expire-date");
+                expire_milliseconds = expire_milliseconds_from_expiredate.longValue();
+            } else if (expire_milliseconds_precise_to_the_second > 0) {
                 logger.info("Using precise expire-date");
                 expire_milliseconds = expire_milliseconds_precise_to_the_second;
-            } else if (expire_milliseconds_from_expiredate > 0) {
+            } else if (expire_milliseconds_from_expiredate != null) {
                 logger.info("Using expire-date which is up to 24 hours precise");
-                expire_milliseconds = expire_milliseconds_from_expiredate;
+                expire_milliseconds = expire_milliseconds_from_expiredate.longValue();
             } else {
                 logger.info("Failed to find any useful expire-date at all");
+                expire_milliseconds = -1;
             }
-            if ((expire_milliseconds - currentTime) <= 0) {
+            if (expire_milliseconds < 0 || (expire_milliseconds - currentTime) <= 0) {
                 /* If the premium account is expired or we cannot find an expire-date we'll simply accept it as a free account. */
                 if (expire_milliseconds > 0) {
                     logger.info("Premium expired --> Free account");
@@ -3709,6 +3704,34 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         return ai;
     }
 
+    protected Long findExpireTimestamp(final Account account, final Browser br, AtomicBoolean isPreciseTimestampFlag) throws Exception {
+        String expireStr = new Regex(getCorrectBR(br), "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+        if (expireStr != null) {
+            /*
+             * 2019-12-17: XFS premium accounts usually don't expire just before the next day. They will end to the same time of the day
+             * when they were bought but website only displays it to the day which is why we set it to just before the next day to prevent
+             * them from expiring too early in JD. XFS websites with API may provide more precise information on the expiredate (down to the
+             * second).
+             */
+            expireStr += " 23:59:59";
+            return TimeFormatter.getMilliSeconds(expireStr, "dd MMMM yyyy HH:mm:ss", Locale.ENGLISH);
+        }
+        expireStr = new Regex(getCorrectBR(br), ">\\s*Premium\\s*(?:account expire|until):\\s*</span>\\s*[^>]*>([\\d]+-[\\w{2}]+-[\\d]+\\s[\\d:]+)</").getMatch(0);
+        if (expireStr != null) {
+            /**
+             * e.g. kenfiles.com
+             *
+             * <span class="profile-ud-label">Premium account expire:</span> <span class="profile-ud-value">2023-02-07 19:58:15</span>
+             */
+            final long ret = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+            if (ret > 0) {
+                isPreciseTimestampFlag.set(true);
+                return ret;
+            }
+        }
+        return -1l;
+    }
+
     protected String findExpireDate(final Browser br) throws Exception {
         boolean allHTML = false;
         String preciseExpireHTML = new Regex(getCorrectBR(br), "<div[^>]*class=\"[^\"]*accexpire[^\"]*\"[^>]*>.*?</div>").getMatch(-1);
@@ -3718,6 +3741,16 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         }
         // pattern good enough for all html
         String expireSecond = new Regex(preciseExpireHTML, "(?:Premium(-| )Account expires?(?: in)?|Twoje premium wygaśnie za)\\s*:\\s*(?:</span>)?\\s*(?:</span>)?\\s*(?:<span>)?\\s*([a-zA-Z0-9, ]+)\\s*</").getMatch(-1);
+        if (StringUtils.isEmpty(expireSecond)) {
+            /* e.g. kenfiles.com */
+            expireSecond = new Regex(preciseExpireHTML, Pattern.compile(">\\s*Your premium expires?\\s*:\\s*(\\d+ years?, )?(\\d+ days?, )?(\\d+ hours?, )?(\\d+ minutes?, )?\\d+ seconds\\s*<", Pattern.CASE_INSENSITIVE)).getMatch(-1);
+        }
+        if (StringUtils.isEmpty(expireSecond)) {
+            /**
+             * e.g. filejoker.com <div class="col-12">Premium Account expires in 209 days, 11 hours</div>
+             */
+            expireSecond = new Regex(preciseExpireHTML, Pattern.compile(">\\s*Premium Account expires in\\s*(\\d+ years?,?\\s*)?(\\d+ days?,?\\s*)?(\\d+ hours?,?\\s*)?(\\d+ minutes?,?\\s*)?(\\d+ seconds)?\\s*<", Pattern.CASE_INSENSITIVE)).getMatch(-1);
+        }
         if (StringUtils.isEmpty(expireSecond) && !allHTML) {
             /*
              * Last attempt - wider RegEx but we expect the 'second(s)' value to always be present!! Example: file-up.org:
@@ -3902,7 +3935,28 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         if (StringUtils.isEmpty(availabletraffic)) {
             /* filejoker.net */
             final String formGroup = new Regex(src, ">\\s*Traffic available(?:\\s*today)?\\s*:?\\s*</[^>]*>(.*?)<div\\s*class\\s*=\\s*\"form-group").getMatch(0);
-            availabletraffic = new Regex(formGroup, "title\\s*=\\s*\"\\s*([\\-\\s*]*[0-9\\.]+\\s*[TGMB]+\\s*)(?:available)?").getMatch(0);
+            String trafficDetails[] = new Regex(formGroup, "title\\s*=\\s*\"\\s*([0-9\\.]+\\s*[TGMB]+\\s*)/\\s*([0-9\\.]+\\s*[TGMB]+\\s*)\"").getRow(0);
+            if (trafficDetails != null) {
+                /**
+                 * kenfiles.com
+                 *
+                 * >Traffic available today</span><span><a href="https://kenfiles.com/contact" title="671Mb/50000Mb"
+                 * data-toggle="tooltip">49329 Mb</a></span>
+                 */
+                final long used = SizeFormatter.getSize(trafficDetails[0]);
+                final long max = SizeFormatter.getSize(trafficDetails[1]);
+                if (used > 0 && max > 0) {
+                    return (max - used) + "b";
+                }
+            }
+            /**
+             * filejoker.net
+             *
+             * >Traffic Available:</label> <div class="col-12 col-md-8 col-lg"> <div class="progress"> <div
+             * class="progress-bar progress-bar-striped bg-success" role="progressbar" style="width:47.95%" aria-valuenow="47.95"
+             * aria-valuemin="0" aria-valuemax="100" title="47951 MB available">47.95%</div>
+             */
+            availabletraffic = new Regex(formGroup, "title\\s*=\\s*\"\\s*([\\-\\s*]*[0-9\\.]+\\s*[TGMB]+\\s*)(?:available)?\"").getMatch(0);
         }
         if (StringUtils.isNotEmpty(availabletraffic)) {
             return availabletraffic;
