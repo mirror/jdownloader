@@ -100,6 +100,7 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -1032,13 +1033,19 @@ public abstract class Plugin implements ActionListener {
     }
 
     protected <T> T getNewPluginInstance(final LazyPlugin<?> lazyPlugin) throws PluginException {
+        return getNewPluginInstance(lazyPlugin, PluginClassLoader.getThreadPluginClassLoaderChild());
+    }
+
+    protected <T> T getNewPluginInstance(final LazyPlugin<?> lazyPlugin, PluginClassLoaderChild classLoader) throws PluginException {
         if (lazyPlugin != null) {
             try {
-                final Plugin plugin = lazyPlugin.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild(), false);
-                pluginInstances.add(0, plugin);
-                plugin.setLogger(getLogger());
-                plugin.setBrowser(getBrowser());
-                plugin.init();
+                final Plugin plugin = lazyPlugin.newInstance(classLoader, false);
+                if (classLoader != null) {
+                    pluginInstances.add(0, plugin);
+                    plugin.setLogger(getLogger());
+                    plugin.setBrowser(getBrowser());
+                    plugin.init();
+                }
                 return (T) plugin;
             } catch (UpdateRequiredClassNotFoundException e) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to create new instanceof:" + lazyPlugin, e);

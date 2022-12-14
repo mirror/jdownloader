@@ -32,12 +32,16 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnection;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/((?:artist|artwork)/[^/]+|(?!about|marketplace|jobs|contests|blogs|users)[^/]+(/likes)?)" })
@@ -120,6 +124,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                 final Boolean hasImage = (Boolean) imageJson.get("has_image");
                 final String playerEmbedded = (String) imageJson.get("player_embedded");
                 boolean hasVideo = false;
+                PluginForHost pluginArtStationCom = null;
                 if (StringUtils.isNotEmpty(playerEmbedded)) {
                     final String[] results = HTMLParser.getHttpLinks(playerEmbedded, null);
                     if (results != null) {
@@ -150,6 +155,21 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                                 }
                                 if (StringUtils.isNotEmpty(assetURL)) {
                                     final DownloadLink dl2 = this.createDownloadlink(assetURL);
+                                    if (pluginArtStationCom == null) {
+                                        try {
+                                            final LazyHostPlugin plugin = HostPluginController.getInstance().get(getHost());
+                                            if (plugin != null) {
+                                                pluginArtStationCom = getNewPluginInstance(plugin, null);
+                                            }
+                                        } catch (Exception e) {
+                                            logger.log(e);
+                                        }
+                                    }
+                                    if (pluginArtStationCom != null) {
+                                        dl2.setDefaultPlugin(pluginArtStationCom);
+                                    } else {
+                                        dl2.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, getHost());
+                                    }
                                     fp.add(dl2);
                                     decryptedLinks.add(dl2);
                                 }

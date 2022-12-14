@@ -15,23 +15,18 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.util.Locale;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KenfilesCom extends XFileSharingProBasic {
@@ -48,85 +43,6 @@ public class KenfilesCom extends XFileSharingProBasic {
      * other:<br />
      */
     private static String[] domains = new String[] { "kenfiles.com", "kfs.space" };
-
-    protected boolean enableAccountApiOnlyMode() {
-        return false;
-    }
-
-    @Override
-    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        AccountInfo ai = null;
-        loginWebsite(null, account, true);
-        /*
-         * Only access URL if we haven't accessed it before already. Some sites will redirect to their Account-Info page right after
-         * logging-in or our login-function when it is verifying cookies and not performing a full login.
-         */
-        if (br.getURL() == null || !br.getURL().contains(getRelativeAccountInfoURL())) {
-            getPage(this.getMainPage() + getRelativeAccountInfoURL());
-        }
-        {
-            logger.info("AccountInfo via API not possible -> Obtaining all AccountInfo from website");
-            account.removeProperty(PROPERTY_ACCOUNT_apikey);
-            ai = new AccountInfo();
-        }
-        String trafficLeftStr = regExTrafficLeft(br);
-        final boolean userHasUnlimitedTraffic = trafficLeftStr != null && trafficLeftStr.matches(".*?(nlimited|Ilimitado).*?");
-        if (trafficLeftStr != null && !userHasUnlimitedTraffic && !trafficLeftStr.equalsIgnoreCase("Mb")) {
-            trafficLeftStr = Encoding.htmlDecode(trafficLeftStr).trim();
-            /* Need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
-            long trafficLeft = 0;
-            if (trafficLeftStr.startsWith("-")) {
-                /* Negative traffic value = User downloaded more than he is allowed to (rare case) --> No traffic left */
-                trafficLeft = 0;
-            } else {
-                trafficLeft = SizeFormatter.getSize(trafficLeftStr);
-            }
-            /* 2019-02-19: Users can buy additional traffic packages: Example(s): subyshare.com */
-            final String usableBandwidth = br.getRegex("Traffic available today</span>\\s*<span[^>]*><a[^>]*>([0-9\\.]+\\s*[TGMKB|tgmb]+)<").getMatch(0);
-            if (usableBandwidth != null) {
-                trafficLeft = Math.max(trafficLeft, SizeFormatter.getSize(usableBandwidth));
-            }
-            ai.setTrafficLeft(trafficLeft);
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        final String space[] = new Regex(getCorrectBR(br), ">Used space:</span>\\s*<span>([0-9\\.]+)\\s*([KB|Kb|MB|Mb|GB|Gb|TB|Tb]+)?").getRow(0);
-        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
-            /* free users it's provided by default */
-            ai.setUsedSpace(space[0] + " " + space[1]);
-        } else if ((space != null && space.length != 0) && space[0] != null) {
-            /* premium users the Mb value isn't provided for some reason... */
-            ai.setUsedSpace(space[0] + "Mb");
-        }
-        String expireStr = new Regex(getCorrectBR(br), ">Premium\\s*[account expire|until]+:</span>\\s*[^>]*>([\\d]+-[\\w{2}]+-[\\d]+\\s[\\d:]+)</").getMatch(0);
-        long expire_milliseconds = 0;
-        long expire_milliseconds_from_expiredate = 0;
-        if (expireStr != null) {
-            expire_milliseconds_from_expiredate = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-        }
-        final long currentTime = br.getCurrentServerTime(System.currentTimeMillis());
-        if (expire_milliseconds_from_expiredate > 0) {
-            logger.info("Using expire-date which is up to 24 hours precise");
-            expire_milliseconds = expire_milliseconds_from_expiredate;
-        } else {
-            logger.info("Failed to find any useful expire-date at all");
-        }
-        if ((expire_milliseconds - currentTime) <= 0) {
-            /* If the premium account is expired or we cannot find an expire-date we'll simply accept it as a free account. */
-            if (expire_milliseconds > 0) {
-                logger.info("Premium expired --> Free account");
-            } else {
-                logger.info("Account is a FREE account as no expiredate has been found");
-            }
-            setAccountLimitsByType(account, AccountType.FREE);
-        } else {
-            /* Expire date is in the future --> It is a premium account */
-            logger.info("Premium account to " + expireStr);
-            ai.setValidUntil(expire_milliseconds);
-            setAccountLimitsByType(account, AccountType.PREMIUM);
-        }
-        return ai;
-    }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {

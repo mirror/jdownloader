@@ -14,6 +14,8 @@ import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
@@ -34,7 +36,7 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
         // this works for fritz box.
         // old code did NOT work:
         /*
-         * 
+         *
          * final String data = "<?xml version=\"1.0\"?>\n" +
          * "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
          * + " <s:Body>\n  <m:" + command + " xmlns:m=\"" + serviceType + "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try { final
@@ -156,11 +158,14 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
             logger.info("RUN");
             if (StringUtils.isEmpty(getServiceType())) {
                 throw new ReconnectException(T.T.malformedservicetype());
-            }
-            if (Thread.currentThread().isInterrupted()) {
+            } else if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException();
             }
             sendForceTermination(getLogger(), getServiceType(), getControlURL());
+            final int firstWait = JsonConfig.create(UPUPReconnectSettings.class).getFirstReconnectWaitTimeout();
+            if (firstWait > 0) {
+                Thread.sleep(firstWait);
+            }
             Throwable throwable = null;
             for (int requestTry = 0; requestTry < 10; requestTry++) {
                 try {
@@ -181,18 +186,21 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
                             return;
                         }
                     } catch (final Throwable e) {
+                        throwable = e;
                         logger.log(e);
                     }
-                    throw ie;
+                    throw Exceptions.addSuppressed(ie, throwable);
                 }
             }
             if (throwable != null) {
                 throw throwable;
             }
-        } catch (MalformedURLException e) {
-            throw new ReconnectException(T.T.malformedurl());
+        } catch (ReconnectException e) {
+            throw e;
         } catch (InterruptedException e) {
             throw e;
+        } catch (MalformedURLException e) {
+            throw new ReconnectException(T.T.malformedurl(), e);
         } catch (final Throwable e) {
             throw new ReconnectException(e);
         }
