@@ -10,7 +10,9 @@ import org.appwork.utils.os.CrossSystem;
 
 public enum LookAndFeelType {
     FLATLAF_LIGHT("flatlaf-themes", "com.formdev.flatlaf.FlatLightLaf", JVMVersion.JAVA_1_8),
+    FLATLAF_MAC_LIGHT("flatlaf-themes", "com.formdev.flatlaf.themes.FlatMacLightLaf", JVMVersion.JAVA_1_8),
     FLATLAF_DARK("flatlaf-themes", "com.formdev.flatlaf.FlatDarkLaf", JVMVersion.JAVA_1_8),
+    FLATLAF_MAC_DARK("flatlaf-themes", "com.formdev.flatlaf.themes.FlatMacDarkLaf", JVMVersion.JAVA_1_8),
     FLATLAF_INTELLIJ("flatlaf-themes", "com.formdev.flatlaf.FlatIntelliJLaf", JVMVersion.JAVA_1_8),
     FLATLAF_DRACULA("flatlaf-themes", "com.formdev.flatlaf.FlatDarculaLaf", JVMVersion.JAVA_1_8),
     JAVA_METAL(null, "javax.swing.plaf.metal.MetalLookAndFeel"),
