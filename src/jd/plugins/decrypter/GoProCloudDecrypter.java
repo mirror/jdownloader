@@ -56,8 +56,8 @@ import jd.plugins.components.gopro.Variation;
 import jd.plugins.hoster.GoProCloud;
 
 import org.appwork.storage.flexijson.FlexiJSONParser;
-import org.appwork.storage.flexijson.FlexiJSONParser.ParsingError;
 import org.appwork.storage.flexijson.FlexiJSonNode;
+import org.appwork.storage.flexijson.ParsingError;
 import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
 import org.appwork.utils.CompareUtils;
 import org.appwork.utils.ConcatIterator;

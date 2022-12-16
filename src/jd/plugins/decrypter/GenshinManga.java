@@ -23,7 +23,7 @@ import jd.plugins.hoster.DirectHTTP;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.flexijson.FlexiJSONParser;
-import org.appwork.storage.flexijson.FlexiJSONParser.ParsingError;
+import org.appwork.storage.flexijson.ParsingError;
 import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
