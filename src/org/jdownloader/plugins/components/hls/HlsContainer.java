@@ -270,7 +270,10 @@ public class HlsContainer {
         // http://mp4ra.org/#/codecs
         // https://wiki.multimedia.cx/index.php/MPEG-4_Audio#Audio_Object_Types
         // https://developer.apple.com/documentation/http_live_streaming/http_live_streaming_hls_authoring_specification_for_apple_devices/hls_authoring_specification_for_apple_devices_appendixes
+        // https://www.loc.gov/preservation/digital/formats/fdd/fdd000105.shtml
         MP3(CODEC_TYPE.AUDIO, "mp3,", "mp3", "(mp4a\\.40\\.34|mp3)"),
+        // unofficial mpeg-1/mpeg-2 audio layer 2, https://www.loc.gov/preservation/digital/formats/fdd/fdd000338.shtml
+        MP2(CODEC_TYPE.AUDIO, "mp2", "mp2", "mp2"),
         AAC(CODEC_TYPE.AUDIO, "aac", "m4a", "(mp4a\\.40|aac)"),
         AC3(CODEC_TYPE.AUDIO, "ac3", "ac3", "(ac-3|ac3)"), // AC-3 (Dolby Digital), up to 5.1
         EC3(CODEC_TYPE.AUDIO, "ec3", "ec3", "(ec-3|ec3)"), // EC-3 (Dolby Digital Plus) up to 15.1
