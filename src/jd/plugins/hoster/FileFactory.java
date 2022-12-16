@@ -828,10 +828,14 @@ public class FileFactory extends PluginForHost {
                     // NOTE: no premium, pre download password handling yet...
                     br.setFollowRedirects(false);
                     br.getPage(link.getDownloadURL());
-                    // Directlink
                     String finallink = br.getRedirectLocation();
-                    // No directlink
+                    while (finallink != null && canHandle(finallink)) {
+                        // follow http->https redirect
+                        br.getPage(finallink);
+                        finallink = br.getRedirectLocation();
+                    }
                     if (finallink == null) {
+                        // No directlink
                         finallink = br.getRegex("\"(https?://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
                         if (finallink == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
