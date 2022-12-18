@@ -30,6 +30,17 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig;
+import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -52,17 +63,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig;
-import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/([\\w\\-]+/(art|journal)/[\\w\\-]+-\\d+|([\\w\\-]+/)?status(?:-update)?/\\d+)" })
 public class DeviantArtCom extends PluginForHost {
@@ -148,7 +148,8 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     public static Map<String, Object> parseDeviationJSON(final Plugin plugin, final DownloadLink link, Map<String, Object> deviation) {
-        final Map<String, Object> author = (Map<String, Object>) deviation.get("author");
+        // author can also be id(number) of author in users map
+        final Map<String, Object> author = deviation.get("author") instanceof Map ? (Map<String, Object>) deviation.get("author") : null;
         if (author != null) {
             link.setProperty(PROPERTY_USERNAME, author.get("username"));
         }
@@ -402,8 +403,8 @@ public class DeviantArtCom extends PluginForHost {
             dllink = this.getDirecturl(br, downloadHTML, link, account);
         } catch (final PluginException e) {
             /**
-             * This will happen if the item is not downloadable. </br> We're ignoring this during linkcheck as by now we know the file is
-             * online.
+             * This will happen if the item is not downloadable. </br>
+             * We're ignoring this during linkcheck as by now we know the file is online.
              */
         }
         String extByMimeType = null;
