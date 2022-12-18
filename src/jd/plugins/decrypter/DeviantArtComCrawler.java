@@ -21,6 +21,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -37,11 +41,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DeviantArtCom;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/[\\w\\-]+($|/favourites|/gallery/\\d+/[\\w\\-]+|/gallery/(all|scraps))" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!core-membership|search|developers|join|users)[\\w\\-]+($|/favourites|/gallery/\\d+/[\\w\\-]+|/gallery/(all|scraps))" })
 public class DeviantArtComCrawler extends PluginForDecrypt {
     /**
      * @author raztoki, pspzockerscene
@@ -184,8 +184,8 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
                     final DownloadLink link = this.createDownloadlink(url);
                     final Map<String, Object> deviationRet = DeviantArtCom.parseDeviationJSON(this, link, deviation);
                     /**
-                     * This file extension may change later when file is downloaded. </br> 2022-11-11: Items of type "literature" (or simply
-                     * != "image") will not get any file extension at all at this moment.
+                     * This file extension may change later when file is downloaded. </br>
+                     * 2022-11-11: Items of type "literature" (or simply != "image") will not get any file extension at all at this moment.
                      */
                     final String assumedFileExtension = DeviantArtCom.getAssumedFileExtension(account, link);
                     link.setName(link.getStringProperty(DeviantArtCom.PROPERTY_TITLE) + " by " + link.getStringProperty(DeviantArtCom.PROPERTY_USERNAME) + "_" + deviation.get("deviationId") + assumedFileExtension);
