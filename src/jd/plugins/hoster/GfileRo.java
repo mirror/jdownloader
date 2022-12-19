@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -66,18 +68,25 @@ public class GfileRo extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("class=\"errorbox\"")) {
+        }
+        /* Check for other errors like rate-limits/IP-limits */
+        checkErrors(br);
+        if (br.containsHTML("class=\"errorbox\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.containsHTML(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("\\'\\d+\\'\\);\">([^<>\"]*?)</a>").getMatch(0);
-        final String filenameWhenPasswordProtected = br.getRegex("<td align=\"center\"[^>]+>([^<]+)</td>").getMatch(0);
+        final String filename = br.getRegex("\\'\\d+\\'\\);\">([^<>\"]+)</a>").getMatch(0);
+        String filenameWhenPasswordProtected = br.getRegex("<td align=\"center\"[^>]+>([^<]+)</td>").getMatch(0);
         if (filename != null) {
             link.setName(Encoding.htmlDecode(filename).trim());
         }
         if (filenameWhenPasswordProtected != null) {
-            link.setName(Encoding.htmlDecode(filenameWhenPasswordProtected).trim());
+            /* This can consist of only line-breaks and spaces!! */
+            filenameWhenPasswordProtected = Encoding.htmlDecode(filenameWhenPasswordProtected).trim();
+            if (!StringUtils.isEmpty(filenameWhenPasswordProtected)) {
+                link.setName(filenameWhenPasswordProtected);
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -96,9 +105,12 @@ public class GfileRo extends PluginForHost {
                 }
                 pwProtected.put("parola", Encoding.urlEncode(passCode));
                 br.submitForm(pwProtected);
+                checkErrors(br);
                 if (getPasswordProtectedForm(br) != null) {
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                } else {
+                    logger.info("Correct password entered: " + passCode);
                 }
             } else {
                 link.setPasswordProtected(false);
@@ -124,6 +136,13 @@ public class GfileRo extends PluginForHost {
         }
         link.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private void checkErrors(final Browser br) throws PluginException {
+        final String waitMinutesRateLimitStr = br.getRegex("(?i)Te rug&#259;m s&#259; re&#238;ncerci peste <span[^>]*>\\s*(\\d+)\\s*</span>\\s*minute").getMatch(0);
+        if (waitMinutesRateLimitStr != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitMinutesRateLimitStr) * 60 * 1000l);
+        }
     }
 
     private Form getPasswordProtectedForm(final Browser br) {

@@ -80,13 +80,13 @@ public class ZaycevNet extends PluginForHost {
         final String filename = br.getRegex("itemProp=\"availability\"/></span></section><h1[^>]*>([^<>\"]+)</h1>").getMatch(0);
         final String filesizeStr = br.getRegex("Б<meta content=\"(.*?)\" itemprop=\"contentSize\"/>").getMatch(0);
         if (filename != null) {
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim() + ".mp3");
         }
         if (filesizeStr != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         } else {
             /* Try to calculate filesize */
-            final String bitrateStr = br.getRegex("data-qa=\"TrackPage-bitrate\"[^>]*>(\\d+) kbps</div>").getMatch(0);
+            final String bitrateStr = br.getRegex("(?i)data-qa=\"TrackPage-bitrate\"[^>]*>(\\d+)\\s*kbps\\s*</div>").getMatch(0);
             final Regex durationRegex = br.getRegex("itemProp=\"duration\"[^>]*>(\\d+):(\\d+)</time>");
             if (bitrateStr != null && durationRegex.matches()) {
                 final int durationSeconds = Integer.parseInt(durationRegex.getMatch(0)) * 60 + Integer.parseInt(durationRegex.getMatch(1));

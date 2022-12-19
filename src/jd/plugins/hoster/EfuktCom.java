@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -25,9 +28,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "https?://(?:www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+|view\\.gif\\.php\\?id=\\d+)" })
 public class EfuktCom extends antiDDoSForHost {
@@ -123,7 +123,8 @@ public class EfuktCom extends antiDDoSForHost {
             }
         }
         final String etag = con.getRequest().getResponseHeader("etag");
-        if (StringUtils.equalsIgnoreCase(etag, "\"637be5da-11d2b\"")) {
+        // 2022-12-19: Content-Length: 73003
+        if (StringUtils.equalsIgnoreCase(etag, "\"637be5da-11d2b\"") || StringUtils.equalsIgnoreCase(etag, "\"63a05f27-11d2b\"")) {
             con.disconnect();
             /* Dummy video containing text "Video removed" */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
