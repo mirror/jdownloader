@@ -236,6 +236,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
                 }
             }
         }
+        final String username = br.getRegex("<a href=\"/profile/([^/\"]+)\" class=\"ul\"><svg class=\"i_svg i_user\"").getMatch(0);
         if (title == null) {
             title = br._getURL().getPath();
         }
@@ -250,7 +251,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
         if (foundQualities == null || foundQualities.size() == 0 || title == null) {
             throw new DecrypterException("Decrypter broken for link: " + currenturl);
         }
-        title = Encoding.htmlDecode(title.trim());
+        title = Encoding.htmlDecode(title).trim();
         fp.setName(title);
         /* Decrypt qualities, selected by the user */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
@@ -297,18 +298,20 @@ public class SpankBangComCrawler extends PluginForDecrypt {
             }
             final String directlink = foundQualities.get(selectedQualityValue);
             if (directlink != null) {
-                final String finalname = title + "_" + selectedQualityValue + ".mp4";
                 final DownloadLink video = createDownloadlink("http://spankbangdecrypted.com/" + UniqueAlltimeID.create());
-                video.setFinalFileName(finalname);
                 // dl.setContentUrl(br.getURL());
                 if (fastcheck) {
                     video.setAvailable(true);
                 }
                 video.setLinkID("spankbangcom_" + videoID + "_" + selectedQualityValue);
-                video.setProperty("plain_filename", finalname);
-                video.setProperty("plain_directlink", directlink);
-                video.setProperty("mainlink", currenturl);
-                video.setProperty("quality", selectedQualityValue);
+                if (username != null) {
+                    video.setProperty(SpankBangCom.PROPERTY_UPLOADER, username);
+                }
+                video.setProperty(SpankBangCom.PROPERTY_TITLE, title);
+                video.setProperty(SpankBangCom.PROPERTY_DIRECTLINK, directlink);
+                video.setProperty(SpankBangCom.PROPERTY_MAINLINK, currenturl);
+                video.setProperty(SpankBangCom.PROPERTY_QUALITY, selectedQualityValue);
+                SpankBangCom.setFilename(video);
                 fp.add(video);
                 ret.add(video);
                 if (best) {

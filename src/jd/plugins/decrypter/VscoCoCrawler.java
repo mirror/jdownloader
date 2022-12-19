@@ -127,6 +127,10 @@ public class VscoCoCrawler extends PluginForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(username);
             final List<Map<String, Object>> mediasFirstPage = (List<Map<String, Object>>) firstPageMediaInfo.get("medias");
+            if (mediasFirstPage == null) {
+                logger.info("Empty profile");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             /* Add items of first page --> They got slightly different field names (wtf) which is why we're processing them separately. */
             for (final Map<String, Object> mediaWeakInfo : mediasFirstPage) {
                 final String type = mediaWeakInfo.get("type").toString();

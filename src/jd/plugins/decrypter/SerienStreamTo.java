@@ -32,7 +32,6 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -76,7 +75,7 @@ public class SerienStreamTo extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_SINGLE_REDIRECT = "https?://[^/]+/redirect/(\\d+)";
+    private final String TYPE_SINGLE_REDIRECT = "https?://[^/]+/redirect/(\\d+).*";
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {

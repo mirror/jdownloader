@@ -81,16 +81,21 @@ public class SpankBangCom extends antiDDoSForHost {
     }
 
     /** Settings stuff */
-    private final static String FASTLINKCHECK = "FASTLINKCHECK";
-    private final static String ALLOW_BEST    = "ALLOW_BEST";
-    private final static String ALLOW_240p    = "ALLOW_240p";
-    private final static String ALLOW_320p    = "ALLOW_320p";
-    private final static String ALLOW_480p    = "ALLOW_480p";
-    private final static String ALLOW_720p    = "ALLOW_720p";
-    private final static String ALLOW_1080p   = "ALLOW_1080p";
-    private static final String ALLOW_4k      = "ALLOW_4k";
-    private String              dllink        = null;
-    private boolean             server_issues = false;
+    private final static String FASTLINKCHECK       = "FASTLINKCHECK";
+    private final static String ALLOW_BEST          = "ALLOW_BEST";
+    private final static String ALLOW_240p          = "ALLOW_240p";
+    private final static String ALLOW_320p          = "ALLOW_320p";
+    private final static String ALLOW_480p          = "ALLOW_480p";
+    private final static String ALLOW_720p          = "ALLOW_720p";
+    private final static String ALLOW_1080p         = "ALLOW_1080p";
+    private static final String ALLOW_4k            = "ALLOW_4k";
+    private String              dllink              = null;
+    private boolean             server_issues       = false;
+    public static final String  PROPERTY_TITLE      = "title";
+    public static final String  PROPERTY_UPLOADER   = "uploader";
+    public static final String  PROPERTY_QUALITY    = "quality";
+    public static final String  PROPERTY_DIRECTLINK = "plain_directlink";
+    public static final String  PROPERTY_MAINLINK   = "mainlink";
 
     @Override
     protected boolean useRUA() {
@@ -137,17 +142,13 @@ public class SpankBangCom extends antiDDoSForHost {
         server_issues = false;
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-        final String filename = link.getStringProperty("plain_filename", null);
-        dllink = link.getStringProperty("plain_directlink", null);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setFinalFileName(filename);
+        setFilename(link);
+        dllink = link.getStringProperty(PROPERTY_DIRECTLINK);
         if (isValidURL(br, link, dllink)) {
             return AvailableStatus.TRUE;
         } else {
-            final String mainlink = link.getStringProperty("mainlink", null);
-            final String quality = link.getStringProperty("quality", null);
+            final String mainlink = link.getStringProperty(PROPERTY_MAINLINK);
+            final String quality = link.getStringProperty(PROPERTY_QUALITY);
             if (mainlink == null || quality == null) {
                 /* Missing property - this should not happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -157,6 +158,7 @@ public class SpankBangCom extends antiDDoSForHost {
                 /* Main videolink offline --> Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            setFilename(link);
             /* Main videolink online --> Refresh directlink ... */
             final LinkedHashMap<String, String> foundQualities = SpankBangComCrawler.findQualities(this.br, mainlink);
             if (foundQualities != null) {
@@ -164,7 +166,7 @@ public class SpankBangCom extends antiDDoSForHost {
             }
             if (dllink != null) {
                 if (isValidURL(br, link, dllink)) {
-                    link.setProperty("plain_directlink", dllink);
+                    link.setProperty(PROPERTY_DIRECTLINK, dllink);
                     return AvailableStatus.TRUE;
                 } else {
                     /* Link is still online but our directlink does not work for whatever reason ... */
@@ -173,6 +175,25 @@ public class SpankBangCom extends antiDDoSForHost {
             }
         }
         return AvailableStatus.UNCHECKED;
+    }
+
+    public static void setFilename(final DownloadLink link) {
+        String title = link.getStringProperty(PROPERTY_TITLE);
+        if (title == null) {
+            /* Handling for items added in revision 46976 and before */
+            final String legacyStaticFilename = link.getStringProperty("plain_filename");
+            if (legacyStaticFilename != null && legacyStaticFilename.contains(".")) {
+                /* Remove file-extension */
+                title = legacyStaticFilename.substring(0, legacyStaticFilename.lastIndexOf("."));
+            }
+        }
+        final String uploader = link.getStringProperty(PROPERTY_UPLOADER);
+        final String quality = link.getStringProperty(PROPERTY_QUALITY);
+        if (title != null && uploader != null) {
+            link.setFinalFileName(uploader + " - " + title + "_" + quality + ".mp4");
+        } else {
+            link.setFinalFileName(title + "_" + quality + ".mp4");
+        }
     }
 
     private boolean isValidURL(final Browser br, final DownloadLink link, final String url) throws IOException {
