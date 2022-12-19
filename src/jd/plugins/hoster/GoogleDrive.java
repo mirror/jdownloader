@@ -745,7 +745,7 @@ public class GoogleDrive extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (account != null) {
-            // TODO
+            // TODO: https://svn.jdownloader.org/issues/88600
             logger.info("!Dev! This doesn't work in account mode yet!");
             return;
         }
