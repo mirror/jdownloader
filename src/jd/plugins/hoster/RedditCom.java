@@ -256,7 +256,9 @@ public class RedditCom extends PluginForHost {
                 String highestQualityVideoDownloadurl = null;
                 int highestBandwidth = -1;
                 for (final String dashRepresentation : dashRepresentations) {
-                    if (dashRepresentation.contains("\"audio\"")) {
+                    final String framerateStr = new Regex(dashRepresentation, "frameRate=\"(\\d+)\"").getMatch(0);
+                    final String heightStr = new Regex(dashRepresentation, "height=\"(\\d+)\"").getMatch(0);
+                    if (framerateStr == null && heightStr == null) {
                         /* Skip audio-only items */
                         continue;
                     }
