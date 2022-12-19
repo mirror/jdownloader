@@ -60,9 +60,14 @@ public class SunPornoCom extends PluginForHost {
         return -1;
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setPluginPatternMatcher("https://www.sunporno.com/videos/" + getFID(link));
-        link.setLinkID(this.getHost() + "://" + getFID(link));
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
     private String getFID(final DownloadLink link) {
@@ -70,11 +75,14 @@ public class SunPornoCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage("https://www." + this.getHost() + "/videos/" + getFID(link));
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("sunporno.com/404.php") || br.containsHTML("(>The file you have requested was not found on this server|<title>404</title>|This video has been deleted)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -87,16 +95,9 @@ public class SunPornoCom extends PluginForHost {
             /* Fallback */
             filename = this.getFID(link);
         }
-        dllink = br.getRegex("addVariable\\(\\'file\\', \\'(https?://.*?)\\'\\)").getMatch(0);
+        dllink = br.getRegex("flashvars\\.video_url\\s*=\\s*'(https?://[^<>\"\\']+)';").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\\'(https?://\\d+\\.\\d+\\.\\d+\\.\\d+/v/[a-z0-9]+/.*?)\\'").getMatch(0);
-        }
-        if (dllink == null) {
-            dllink = br.getRegex("\"(https?://vstreamcdn\\.com/[^<>\"]*?)\"").getMatch(0);
-        }
-        if (dllink == null) {
-            /* 2019-09-06: New */
-            dllink = br.getRegex("video_url\\s*:\\s*\\'(https[^<>\"\\']+)\\'").getMatch(0);
+            dllink = br.getRegex("flashvars\\.video_alt_url\\s*=\\s*'(https?://[^<>\"\\']+)';").getMatch(0);
         }
         filename = filename.trim();
         link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
@@ -111,7 +112,7 @@ public class SunPornoCom extends PluginForHost {
                     dllink = betterDllink;
                 }
             }
-            Browser br2 = br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
