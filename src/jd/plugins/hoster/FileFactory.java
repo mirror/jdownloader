@@ -849,7 +849,6 @@ public class FileFactory extends PluginForHost {
                             }
                         }
                         logger.finer("Indirect download");
-                        br.setFollowRedirects(true);
                         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, red, true, 0);
                         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                             try {
