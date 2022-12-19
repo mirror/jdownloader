@@ -704,7 +704,7 @@ public class DropboxCom extends PluginForHost {
             return contentURL;
         } else {
             /* Fallback for old URLs or such added via website-crawler. */
-            return contentURL;
+            return fallback;
         }
     }
 

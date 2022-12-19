@@ -45,6 +45,7 @@ import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
@@ -364,7 +365,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         /* Website may return hige amounts of json/html */
         br.setLoadLimit(br.getLoadLimit() * 4);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String correctedURL = correctAddedURL(param.toString());
+        final String correctedURL = correctAddedURL(param.getCryptedUrl());
         if (!correctedURL.equals(param.getCryptedUrl())) {
             logger.info("Changed added URL! Old: " + param.getCryptedUrl() + " | New: " + correctedURL);
             param.setCryptedUrl(correctedURL);
@@ -453,6 +454,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         String passCode = param.getDecrypterPassword();
         String password_cookie = null;
         if (DropboxCom.isPasswordProtectedWebsite(br)) {
+            logger.info("Folder is password protected | Password of previous folder: " + passCode);
             String content_id = new Regex(br.getURL(), "content_id=([^\\&;]+)").getMatch(0);
             if (content_id == null) {
                 content_id = new Regex(br.getRedirectLocation(), "content_id=([^\\&;]+)").getMatch(0);
@@ -464,7 +466,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
             boolean wrongPass = true;
             int counter = 0;
             do {
-                if (passCode == null) {
+                if (passCode == null || counter > 0) {
                     passCode = getUserInput("Password?", param);
                 }
                 br.getHeaders().put("x-requested-with", "XMLHttpRequest");
@@ -478,11 +480,15 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 if (!"error".equalsIgnoreCase(status)) {
                     wrongPass = false;
                     break;
+                } else {
+                    /* Reset just in case we had a given password and that was wrong. Ask the user for the password now! */
+                    passCode = null;
+                    counter++;
                 }
-                /* Reset just in case we had a given password and that was wrong. Ask the user for the password now! */
-                passCode = null;
-                counter++;
             } while (wrongPass && counter <= 2);
+            if (wrongPass) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
             password_cookie = br.getCookie(br.getHost(), "sm_auth");
             br.getPage(param.getCryptedUrl());
         }
@@ -723,6 +729,13 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                         final DownloadLink dl = this.crawlFolderItem(folder);
                         if (dl == null) {
                             continue;
+                        }
+                        /*
+                         * Make sure that for password protected folders, user will not be asked for password again in next round/next
+                         * subfolder-level.
+                         */
+                        if (!StringUtils.isEmpty(passCode)) {
+                            dl.setDownloadPassword(passCode);
                         }
                         final String foldername = (String) folder.get("filename");
                         /* Store next path as property so we can keep track of the full path. */
