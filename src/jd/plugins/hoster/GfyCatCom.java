@@ -347,7 +347,9 @@ public class GfyCatCom extends PluginForHost {
                 link.setName(filename);
             }
             if (size != null) {
-                link.setVerifiedFileSize(size.longValue());
+                /* 2022-12-19: We can't be sure that this is the real filesize. */
+                // link.setVerifiedFileSize(size.longValue());
+                link.setDownloadSize(size.longValue());
             }
             if (link.getComment() == null) {
                 final List<Object> tags = (List<Object>) entries.get("tags");

@@ -17,7 +17,12 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -38,7 +43,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(?:www\\.)?(?:chan|idol)\\.sankakucomplex\\.com/(?:[a-z]{2}/)?post/show/(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(?:www\\.)?(?:beta|chan|idol)\\.sankakucomplex\\.com/(?:[a-z]{2}/)?post/show/(\\d+)" })
 public class SankakucomplexCom extends antiDDoSForHost {
     public SankakucomplexCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,17 +51,17 @@ public class SankakucomplexCom extends antiDDoSForHost {
     }
 
     /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".jpg";
-    private String              dllink            = null;
-    private boolean             accountRequired   = false;
+    private static final String default_Extension  = ".jpg";
+    private String              dllink             = null;
+    private final boolean       useAPI             = true;
+    public static final String  PROPERTY_UPLOADER  = "uploader";
+    public static final String  PROPERTY_DIRECTURL = "directurl";
+    public static final String  IS_PREMIUMONLY     = "is_premiumonly";
+    public static final String  PAGE_NUMBER        = "page_number";
 
     @Override
     public String getAGBLink() {
         return "https://www.sankakucomplex.com/";
-    }
-
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
     @Override
@@ -83,10 +88,18 @@ public class SankakucomplexCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        return requestFileInformation(link, null);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+        if (useAPI) {
+            return requestFileInformationAPI(link, account, false);
+        } else {
+            return requestFileInformationWebsite(link, account, false);
+        }
+    }
+
+    private AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final String fileID = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
         if (!link.isNameSet()) {
             link.setName(fileID);
@@ -98,20 +111,24 @@ public class SankakucomplexCom extends antiDDoSForHost {
         br.setCookie("https://" + host, "auto_page", "1");
         br.setCookie("https://" + host, "hide_resized_notice", "1");
         br.setCookie("https://" + host, "blacklisted_tags", "");
-        getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<title>404: Page Not Found<")) {
+        if (account != null) {
+            this.login(account, false);
+        }
+        getPage("https://chan.sankakucomplex.com/post/show/" + this.getFID(link));
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)<title>\\s*404: Page Not Found\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">\\s*You lack the access rights required to view this content")) {
-            this.accountRequired = true;
+            link.setProperty(IS_PREMIUMONLY, true);
             return AvailableStatus.TRUE;
         }
-        dllink = checkDirectLink(link, "directlink");
+        link.removeProperty(IS_PREMIUMONLY);
+        dllink = checkDirectLink(link, PROPERTY_DIRECTURL);
         if (dllink != null) {
             /* This means we must have checked this one before so filesize/name has already been set -> Done! */
             return AvailableStatus.TRUE;
         }
         if (dllink == null) {
-            dllink = br.getRegex("<li>Original: <a href=\"(//[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("(?i)<li>Original: <a href=\"(//[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("<a href=\"(//[^<>\"]*?)\">Save this file").getMatch(0);
             }
@@ -159,7 +176,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    link.setProperty("directlink", dllink);
+                    link.setProperty(PROPERTY_DIRECTURL, dllink);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -173,13 +190,71 @@ public class SankakucomplexCom extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    private AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        final String fileID = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        if (!link.isNameSet()) {
+            link.setName(fileID);
+        }
+        br.setFollowRedirects(true);
+        dllink = checkDirectLink(link, PROPERTY_DIRECTURL);
+        if (dllink != null) {
+            /* This means we must have checked this one before so filesize/name has already been set -> Done! */
+            return AvailableStatus.TRUE;
+        }
+        if (account != null) {
+            this.login(account, false);
+        }
+        getPage("https://capi-v2.sankakucomplex.com/posts?lang=de&page=1&limit=1&tags=id_range:" + this.getFID(link));
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
+        if (ressourcelist.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> item = (Map<String, Object>) ressourcelist.get(0);
+        parseFileInfoAndSetFilenameAPI(link, item);
+        this.dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+        return AvailableStatus.TRUE;
+    }
+
+    public static void parseFileInfoAndSetFilenameAPI(final DownloadLink link, final Map<String, Object> item) {
+        final Map<String, Object> author = (Map<String, Object>) item.get("author");
+        link.setProperty(PROPERTY_UPLOADER, author.get("name"));
+        final String md5hash = (String) item.get("md5");
+        final String mimeType = item.get("file_type").toString();
+        final String ext = getExtensionFromMimeTypeStatic(mimeType);
+        final Number file_size = (Number) item.get("file_size");
+        if (file_size != null) {
+            link.setVerifiedFileSize(file_size.longValue());
+        }
+        if ((Boolean) item.get("is_premium")) {
+            // throw new AccountRequiredException();
+            link.setProperty(IS_PREMIUMONLY, true);
+        } else {
+            link.removeProperty(IS_PREMIUMONLY);
+        }
+        if (!StringUtils.isEmpty(md5hash)) {
+            link.setMD5Hash(md5hash);
+        }
+        link.setProperty(PROPERTY_DIRECTURL, item.get("file_url"));
+        link.setAvailable(true);
+        link.setFinalFileName(item.get("id") + "." + ext);
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, true);
-        if (this.accountRequired) {
-            throw new AccountRequiredException();
-        } else if (this.dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        handleDownload(link, null);
+    }
+
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformationWebsite(link, account, true);
+        if (this.dllink == null) {
+            if (link.hasProperty(IS_PREMIUMONLY) && account == null) {
+                throw new AccountRequiredException();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         /* Disable chunks as we only download small files */
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
@@ -284,24 +359,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, false);
-        requestFileInformation(link, true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        handleDownload(link, account);
     }
 
     @Override

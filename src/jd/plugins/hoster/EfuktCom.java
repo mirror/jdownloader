@@ -122,9 +122,14 @@ public class EfuktCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        /* 2022-12-19: Looks like etag can vary so we'll double-check for Content-Length header. */
         final String etag = con.getRequest().getResponseHeader("etag");
         // 2022-12-19: Content-Length: 73003
         if (StringUtils.equalsIgnoreCase(etag, "\"637be5da-11d2b\"") || StringUtils.equalsIgnoreCase(etag, "\"63a05f27-11d2b\"")) {
+            con.disconnect();
+            /* Dummy video containing text "Video removed" */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (con.getCompleteContentLength() == 73003) {
             con.disconnect();
             /* Dummy video containing text "Video removed" */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

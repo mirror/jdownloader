@@ -17,9 +17,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -31,17 +32,18 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.SankakucomplexCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class MajorgeeksComCrawler extends PluginForDecrypt {
-    public MajorgeeksComCrawler(PluginWrapper wrapper) {
+public class SankakucomplexComCrawler extends PluginForDecrypt {
+    public SankakucomplexComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "majorgeeks.com" });
+        ret.add(new String[] { "sankakucomplex.com" });
         return ret;
     }
 
@@ -61,60 +63,47 @@ public class MajorgeeksComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/files/details/([^/]+)\\.html");
+            ret.add("https?://(?:(www|beta)\\.)?" + buildHostsPatternPart(domains) + "/[a-z]{2}/books/\\d+");
         }
         return ret.toArray(new String[0]);
     }
 
+    private final String TYPE_BOOK = "https?://[^/]+/([a-z]{2})/books/(\\d+)";
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.containsHTML("report_a_bad_link\\.html") && !br.containsHTML("/SoftwareApplication")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String titleSlug = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        final String filesizeStr = br.getRegex("itemprop=\"fileSize\" content=\"([^<>\"]+)\"").getMatch(0);
-        final Long filesize = filesizeStr != null ? SizeFormatter.getSize(filesizeStr) : null;
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(titleSlug);
-        final String[] links = br.getRegex("(mg/(?:get|getmirror)/[^\",]+,\\d+\\.html)").getColumn(0);
-        if (links == null || links.length == 0) {
+        return crawlBook(param);
+    }
+
+    private ArrayList<DownloadLink> crawlBook(final CryptedLink param) throws Exception {
+        final String bookID = new Regex(param.getCryptedUrl(), TYPE_BOOK).getMatch(1);
+        if (bookID == null) {
+            /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        int numberofMirrors = 0;
-        for (final String singleLink : links) {
-            final String fullURL = br.getURL("/" + singleLink).toString();
-            final String thisSoftwareVariantTitle = br.getRegex("(?i)" + Pattern.quote(singleLink) + "\"><strong>Download([^<]+)</strong>").getMatch(0);
-            if (thisSoftwareVariantTitle == null && singleLink.endsWith(",1.html")) {
-                logger.info("Skipping invalid URL: " + fullURL);
-                continue;
-            }
-            if (singleLink.contains("getmirror")) {
-                numberofMirrors++;
-            }
-            final DownloadLink link = createDownloadlink(fullURL);
-            final String slug = singleLink.substring(singleLink.lastIndexOf("/")).replace("-html", "");
-            if (thisSoftwareVariantTitle != null) {
-                link.setName(slug + "_" + thisSoftwareVariantTitle);
-            } else {
-                link.setName(slug);
-            }
-            if (filesize != null) {
-                link.setDownloadSize(filesize.longValue());
-            }
-            link.setAvailable(true);
-            link._setFilePackage(fp);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
+        br.getPage("https://capi-v2.sankakucomplex.com/pools/" + bookID + "?lang=de&includes[]=series&exceptStatuses[]=deleted");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> author = (Map<String, Object>) entries.get("author");
+        String bookTitle = (String) entries.get("name_en");
+        if (StringUtils.isEmpty(bookTitle)) {
+            bookTitle = (String) entries.get("name_ja");
+        }
+        final List<Map<String, Object>> posts = (List<Map<String, Object>>) entries.get("posts");
+        int page = 0;
+        for (final Map<String, Object> post : posts) {
+            final DownloadLink link = this.createDownloadlink("https://beta.sankakucomplex.com/de/post/show/" + post.get("id") + "?tags=pool%3A" + bookID + "&page=" + page);
+            link.setProperty(SankakucomplexCom.PAGE_NUMBER, page);
+            SankakucomplexCom.parseFileInfoAndSetFilenameAPI(link, post);
             ret.add(link);
+            page++;
         }
-        if (numberofMirrors == ret.size()) {
-            /* Results are only mirrors -> Only add first mirror */
-            final DownloadLink firstMirror = ret.get(0);
-            ret.clear();
-            ret.add(firstMirror);
-        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(author.get("name") + " - " + bookTitle);
+        fp.addLinks(ret);
         return ret;
     }
 }
