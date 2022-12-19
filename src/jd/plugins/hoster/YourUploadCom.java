@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.ConnectException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -29,9 +32,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "https?://((?:www\\.)?(yourupload\\.com|yucache\\.net)/((file|embed(_ext/\\w+)?|watch)/|download\\?file=)[a-z0-9]+|embed\\.(yourupload\\.com|yucache\\.net)/[A-Za-z0-9]+)" })
 public class YourUploadCom extends antiDDoSForHost {
@@ -113,7 +113,7 @@ public class YourUploadCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 final String etagHeader = con.getHeaderField("ETag");
-                if (etagHeader != null && etagHeader.equalsIgnoreCase("W/\"3208b07-17e68b9dcf7\"") || etagHeader.equalsIgnoreCase("W/\"3208b07-17e68b9dcf7\"")) {
+                if (etagHeader != null && etagHeader.equalsIgnoreCase("W/\"3208b07-17e68b9dcf7\"")) {
                     /* 2022-09-24: Big bucks bunny demo video */
                     /* Content-Length: 52464391 */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

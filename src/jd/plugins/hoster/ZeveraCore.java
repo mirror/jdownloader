@@ -421,10 +421,8 @@ abstract public class ZeveraCore extends UseNet {
         final AccountInfo ai = new AccountInfo();
         final Map<String, Object> userinfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         final String customerID = userinfo.get("customer_id").toString();
-        if (customerID != null && customerID.length() > 2) {
-            /* Don't store the complete customer id as a security purpose. */
-            final String shortenedCustomerID = customerID.substring(0, customerID.length() / 2) + "****";
-            account.setUser(shortenedCustomerID);
+        if (customerID != null) {
+            account.setUser(customerID);
         }
         final Object fair_use_usedO = userinfo.get("limit_used");
         final Object space_usedO = userinfo.get("space_used");
