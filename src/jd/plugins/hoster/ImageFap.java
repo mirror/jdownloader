@@ -29,6 +29,8 @@ import java.util.regex.Pattern;
 
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
@@ -44,6 +46,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
@@ -71,8 +74,6 @@ public class ImageFap extends PluginForHost {
     private static final String               FORCE_RECONNECT_ON_RATELIMIT = "FORCE_RECONNECT_ON_RATELIMIT";
     protected static Object                   LOCK                         = new Object();
     protected static HashMap<String, Cookies> sessionCookies               = new HashMap<String, Cookies>();
-    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger              totalMaxSimultanFreeDownload = new AtomicInteger(20);
     private static AtomicInteger              maxFree                      = new AtomicInteger(1);
 
     private void loadSessionCookies(final Browser prepBr, final String host) {
@@ -501,8 +502,8 @@ public class ImageFap extends PluginForHost {
 
     private void controlSlot(final int num) {
         synchronized (CTRLLOCK) {
-            int was = maxFree.get();
-            maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+            final int was = maxFree.get();
+            maxFree.set(was + num);
             logger.info("maxFree was = " + was + " && maxFree now = " + maxFree.get());
         }
     }
@@ -512,11 +513,11 @@ public class ImageFap extends PluginForHost {
         try {
             // Browser.setRequestIntervalLimitGlobal(getHost(), 750, 100, 60000);
             Browser.setRequestIntervalLimitGlobal(getHost(), 750);
-        } catch (final Throwable e) {
+        } catch (final Throwable ignore) {
         }
     }
 
-    public static Request getRequest(Plugin plugin, final Browser br, Request request) throws Exception {
+    public static Request getRequest(final Plugin plugin, final Browser br, Request request) throws Exception {
         synchronized (LOCK) {
             br.getPage(request);
             if (br.getHttpConnection().getResponseCode() == 429) {
@@ -539,33 +540,55 @@ public class ImageFap extends PluginForHost {
                 if (SubConfiguration.getConfig("imagefap.com").getBooleanProperty(FORCE_RECONNECT_ON_RATELIMIT, defaultFORCE_RECONNECT_ON_RATELIMIT)) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate limit reached user prefers reconnect over captcha solving", 5 * 60 * 1000l);
                 }
-                final Form captchaform = br.getForm(0);
+                Form captchaform = null;
+                for (final Form form : br.getForms()) {
+                    if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(form) || !form.hasInputFieldByName("captcha")) {
+                        captchaform = form;
+                        break;
+                    }
+                }
                 final String captchaurl = br.getRegex("(/captcha\\.php|/captcha)").getMatch(0);
-                if (captchaform == null || captchaurl == null || !captchaform.hasInputFieldByName("captcha")) {
+                if (captchaform == null) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate limit reached and failed to handle captcha", 5 * 60 * 1000l);
                 }
-                final String code;
-                try {
+                if (captchaurl != null) {
+                    /* Simple text captcha */
+                    final String code;
+                    try {
+                        if (plugin instanceof PluginForDecrypt) {
+                            final PluginForDecrypt pluginForDecrypt = (PluginForDecrypt) plugin;
+                            code = ReflectionUtils.invoke(plugin.getClass(), "getCaptchaCode", plugin, String.class, captchaurl, pluginForDecrypt.getCurrentLink());
+                        } else {
+                            final PluginForHost pluginForHost = (PluginForHost) plugin;
+                            code = ReflectionUtils.invoke(plugin.getClass(), "getCaptchaCode", plugin, String.class, captchaurl, pluginForHost.getDownloadLink());
+                        }
+                    } catch (final InvocationTargetException e) {
+                        if (e.getTargetException() instanceof Exception) {
+                            throw (Exception) e.getTargetException();
+                        } else {
+                            throw e;
+                        }
+                    }
+                    captchaform.put("captcha", Encoding.urlEncode(code));
+                } else {
+                    /* reCaptchaV2 */
+                    final String recaptchaV2Response;
                     if (plugin instanceof PluginForDecrypt) {
                         final PluginForDecrypt pluginForDecrypt = (PluginForDecrypt) plugin;
-                        code = ReflectionUtils.invoke(plugin.getClass(), "getCaptchaCode", plugin, String.class, captchaurl, pluginForDecrypt.getCurrentLink());
+                        recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(pluginForDecrypt, br).getToken();
                     } else {
                         final PluginForHost pluginForHost = (PluginForHost) plugin;
-                        code = ReflectionUtils.invoke(plugin.getClass(), "getCaptchaCode", plugin, String.class, captchaurl, pluginForHost.getDownloadLink());
+                        recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(pluginForHost, br).getToken();
                     }
-                } catch (InvocationTargetException e) {
-                    if (e.getTargetException() instanceof Exception) {
-                        throw (Exception) e.getTargetException();
-                    } else {
-                        throw e;
-                    }
+                    captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
-                captchaform.put("captcha", Encoding.urlEncode(code));
+                captchaform.setMethod(MethodType.POST);
                 br.submitForm(captchaform);
                 br.followRedirect(true);
                 if (isCaptchaRateLimited(br)) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate limit reached and remained after captcha", 5 * 60 * 1000l);
                 } else {
+                    plugin.getLogger().info("Successfully handled rate-limit");
                     synchronized (sessionCookies) {
                         sessionCookies.put(br.getHost(), br.getCookies(br.getHost()));
                     }
