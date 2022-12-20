@@ -26,7 +26,6 @@ import org.appwork.utils.StringUtils;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
-import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -46,7 +45,7 @@ public class SharezwebCom extends PluginForHost {
         return "https://www.sharezweb.com/terms-of-service";
     }
 
-    private static List<String[]> getPluginDomains() {
+    public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "sharezweb.com" });
@@ -71,10 +70,10 @@ public class SharezwebCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME             = true;
-    private final int     FREE_MAXCHUNKS          = 0;
-    private final int     FREE_MAXDOWNLOADS       = -1;
-    private final String  PROPERTY_FREE_DIRECTURL = "free_directlink";
+    private final boolean      FREE_RESUME             = true;
+    private final int          FREE_MAXCHUNKS          = 0;
+    private final int          FREE_MAXDOWNLOADS       = -1;
+    public static final String PROPERTY_FREE_DIRECTURL = "free_directlink";
     // private final boolean ACCOUNT_FREE_RESUME = true;
     // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private final int ACCOUNT_FREE_MAXDOWNLOADS = -1;
@@ -116,10 +115,15 @@ public class SharezwebCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> itemInfo = (Map<String, Object>) data.get("itemInfo");
-        link.setVerifiedFileSize(((Number) itemInfo.get("size")).longValue());
-        link.setFinalFileName(itemInfo.get("name").toString());
-        link.setProperty(PROPERTY_FREE_DIRECTURL, itemInfo.get("url"));
+        parseFileInfoAndSetFilename(link, itemInfo);
         return AvailableStatus.TRUE;
+    }
+
+    public static void parseFileInfoAndSetFilename(final DownloadLink link, final Map<String, Object> ressource) {
+        link.setVerifiedFileSize(((Number) ressource.get("size")).longValue());
+        link.setFinalFileName(ressource.get("name").toString());
+        link.setProperty(PROPERTY_FREE_DIRECTURL, ressource.get("url"));
+        link.setAvailable(true);
     }
 
     @Override
@@ -142,7 +146,9 @@ public class SharezwebCom extends PluginForHost {
                 } catch (final IOException e) {
                     logger.log(e);
                 }
-                if (dl.getConnection().getResponseCode() == 403) {
+                if (dl.getConnection().getCompleteContentLength() == 0) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Corrupt or empty file");
+                } else if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
@@ -156,16 +162,8 @@ public class SharezwebCom extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        } else if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        } else {
-            /* Premium accounts do not have captchas */
-            return false;
-        }
+        /* 2022-12-20: No captchas needed at all. */
+        return false;
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty) throws Exception {
@@ -183,6 +181,7 @@ public class SharezwebCom extends PluginForHost {
                 throw new IOException();
             }
         } catch (final Throwable e) {
+            link.removeProperty(directlinkproperty);
             logger.log(e);
             try {
                 dl.getConnection().disconnect();
