@@ -124,6 +124,12 @@ public class RomHustler extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("(?i)>\\s*File too big for guests")) {
             throw new AccountRequiredException();
+        } else if (br.containsHTML("class=\"alert alert-danger restricted-button\"")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Sorry, this game is restricted.");
+        }
+        final String otherErrormessage = br.getRegex("<ul class=\"list-unstyled\">\\s*<li>([^<]+)</li>").getMatch(0);
+        if (!StringUtils.isEmpty(otherErrormessage)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, otherErrormessage);
         }
         boolean skipWaittime = true;
         if (!skipWaittime) {
