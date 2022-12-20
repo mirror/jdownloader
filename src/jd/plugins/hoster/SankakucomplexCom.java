@@ -24,6 +24,8 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -51,14 +53,16 @@ public class SankakucomplexCom extends antiDDoSForHost {
     }
 
     /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension        = ".jpg";
-    private String              dllink                   = null;
-    private final boolean       useAPI                   = true;
-    public static final String  PROPERTY_UPLOADER        = "uploader";
-    public static final String  PROPERTY_DIRECTURL       = "directurl";
-    public static final String  PROPERTY_IS_PREMIUMONLY  = "is_premiumonly";
-    public static final String  PROPERTY_PAGE_NUMBER     = "page_number";
-    public static final String  PROPERTY_PAGE_NUMBER_MAX = "page_number_max";
+    private static final String default_Extension             = ".jpg";
+    private String              dllink                        = null;
+    private final boolean       useAPI                        = true;
+    public static final String  PROPERTY_UPLOADER             = "uploader";
+    public static final String  PROPERTY_DIRECTURL            = "directurl";
+    public static final String  PROPERTY_BOOK_TITLE           = "book_title";
+    public static final String  PROPERTY_TAGS_COMMA_SEPARATED = "tags_comma_separated";
+    public static final String  PROPERTY_IS_PREMIUMONLY       = "is_premiumonly";
+    public static final String  PROPERTY_PAGE_NUMBER          = "page_number";
+    public static final String  PROPERTY_PAGE_NUMBER_MAX      = "page_number_max";
 
     @Override
     public String getAGBLink() {
@@ -222,12 +226,13 @@ public class SankakucomplexCom extends antiDDoSForHost {
     public static void parseFileInfoAndSetFilenameAPI(final DownloadLink link, final Map<String, Object> item) {
         final Map<String, Object> author = (Map<String, Object>) item.get("author");
         link.setProperty(PROPERTY_UPLOADER, author.get("name"));
-        final String md5hash = (String) item.get("md5");
         final String mimeType = item.get("file_type").toString();
         final String ext = getExtensionFromMimeTypeStatic(mimeType);
         final Number file_size = (Number) item.get("file_size");
         if (file_size != null) {
-            link.setVerifiedFileSize(file_size.longValue());
+            /* 2022-12-20: We can't trust this filesize e.g. fileID: 28977868 */
+            // link.setVerifiedFileSize(file_size.longValue());
+            link.setDownloadSize(file_size.longValue());
         }
         if ((Boolean) item.get("is_premium")) {
             // throw new AccountRequiredException();
@@ -235,9 +240,31 @@ public class SankakucomplexCom extends antiDDoSForHost {
         } else {
             link.removeProperty(PROPERTY_IS_PREMIUMONLY);
         }
-        if (!StringUtils.isEmpty(md5hash)) {
-            link.setMD5Hash(md5hash);
+        final List<Map<String, Object>> tags = (List<Map<String, Object>>) item.get("tags");
+        if (tags != null) {
+            String tagsCommaSeparated = "";
+            for (final Map<String, Object> tagInfo : tags) {
+                String tag = (String) tagInfo.get("name_en");
+                if (StringUtils.isEmpty(tag)) {
+                    tag = (String) tagInfo.get("name_ja");
+                }
+                if (tagsCommaSeparated.length() > 0) {
+                    tagsCommaSeparated += ",";
+                }
+                tagsCommaSeparated += tag;
+            }
+            if (tagsCommaSeparated.length() > 0) {
+                link.setProperty(PROPERTY_TAGS_COMMA_SEPARATED, tagsCommaSeparated);
+                if (PluginJsonConfig.get(SankakucomplexComConfig.class).isSetCommaSeparatedTagsOfPostsAsComment()) {
+                    link.setComment(tagsCommaSeparated);
+                }
+            }
         }
+        /* 2022-12-20: We can't trust this hash for all items. */
+        // final String md5hash = (String) item.get("md5");
+        // if (!StringUtils.isEmpty(md5hash)) {
+        // link.setMD5Hash(md5hash);
+        // }
         link.setProperty(PROPERTY_DIRECTURL, item.get("file_url"));
         link.setAvailable(true);
         final int pageNumber = link.getIntegerProperty(PROPERTY_PAGE_NUMBER, 0) + 1;
@@ -264,7 +291,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
             }
         }
         /* Disable chunks as we only download small files */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -279,12 +306,14 @@ public class SankakucomplexCom extends antiDDoSForHost {
     private String checkDirectLink(final DownloadLink link, final String property) {
         String dllink = link.getStringProperty(property);
         if (dllink != null) {
+            boolean valid = false;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 URLConnectionAdapter con = br2.openHeadConnection(dllink);
                 try {
                     if (this.looksLikeDownloadableContent(con) && !con.getURL().toString().contains("expired.png")) {
+                        valid = true;
                         return dllink;
                     } else {
                         return null;
@@ -294,7 +323,10 @@ public class SankakucomplexCom extends antiDDoSForHost {
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                link.setProperty(property, Property.NULL);
+            } finally {
+                if (!valid) {
+                    link.setProperty(property, Property.NULL);
+                }
             }
         }
         return null;
@@ -394,5 +426,10 @@ public class SankakucomplexCom extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends SankakucomplexComConfig> getConfigInterface() {
+        return SankakucomplexComConfig.class;
     }
 }
