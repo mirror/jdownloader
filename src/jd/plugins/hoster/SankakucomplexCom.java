@@ -51,13 +51,14 @@ public class SankakucomplexCom extends antiDDoSForHost {
     }
 
     /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension  = ".jpg";
-    private String              dllink             = null;
-    private final boolean       useAPI             = true;
-    public static final String  PROPERTY_UPLOADER  = "uploader";
-    public static final String  PROPERTY_DIRECTURL = "directurl";
-    public static final String  IS_PREMIUMONLY     = "is_premiumonly";
-    public static final String  PAGE_NUMBER        = "page_number";
+    private static final String default_Extension        = ".jpg";
+    private String              dllink                   = null;
+    private final boolean       useAPI                   = true;
+    public static final String  PROPERTY_UPLOADER        = "uploader";
+    public static final String  PROPERTY_DIRECTURL       = "directurl";
+    public static final String  PROPERTY_IS_PREMIUMONLY  = "is_premiumonly";
+    public static final String  PROPERTY_PAGE_NUMBER     = "page_number";
+    public static final String  PROPERTY_PAGE_NUMBER_MAX = "page_number_max";
 
     @Override
     public String getAGBLink() {
@@ -118,10 +119,10 @@ public class SankakucomplexCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)<title>\\s*404: Page Not Found\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">\\s*You lack the access rights required to view this content")) {
-            link.setProperty(IS_PREMIUMONLY, true);
+            link.setProperty(PROPERTY_IS_PREMIUMONLY, true);
             return AvailableStatus.TRUE;
         }
-        link.removeProperty(IS_PREMIUMONLY);
+        link.removeProperty(PROPERTY_IS_PREMIUMONLY);
         dllink = checkDirectLink(link, PROPERTY_DIRECTURL);
         if (dllink != null) {
             /* This means we must have checked this one before so filesize/name has already been set -> Done! */
@@ -230,16 +231,22 @@ public class SankakucomplexCom extends antiDDoSForHost {
         }
         if ((Boolean) item.get("is_premium")) {
             // throw new AccountRequiredException();
-            link.setProperty(IS_PREMIUMONLY, true);
+            link.setProperty(PROPERTY_IS_PREMIUMONLY, true);
         } else {
-            link.removeProperty(IS_PREMIUMONLY);
+            link.removeProperty(PROPERTY_IS_PREMIUMONLY);
         }
         if (!StringUtils.isEmpty(md5hash)) {
             link.setMD5Hash(md5hash);
         }
         link.setProperty(PROPERTY_DIRECTURL, item.get("file_url"));
         link.setAvailable(true);
-        link.setFinalFileName(item.get("id") + "." + ext);
+        final int pageNumber = link.getIntegerProperty(PROPERTY_PAGE_NUMBER, 0) + 1;
+        final int pageNumberMax = link.getIntegerProperty(PROPERTY_PAGE_NUMBER_MAX, 0) + 1;
+        if (pageNumberMax > 1) {
+            link.setFinalFileName(StringUtils.formatByPadLength(StringUtils.getPadLength(pageNumberMax), pageNumber) + "_" + item.get("id") + "." + ext);
+        } else {
+            link.setFinalFileName(item.get("id") + "." + ext);
+        }
     }
 
     @Override
@@ -250,7 +257,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         requestFileInformationWebsite(link, account, true);
         if (this.dllink == null) {
-            if (link.hasProperty(IS_PREMIUMONLY) && account == null) {
+            if (link.hasProperty(PROPERTY_IS_PREMIUMONLY) && account == null) {
                 throw new AccountRequiredException();
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

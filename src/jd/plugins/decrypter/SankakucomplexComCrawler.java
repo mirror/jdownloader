@@ -96,7 +96,8 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
         int page = 0;
         for (final Map<String, Object> post : posts) {
             final DownloadLink link = this.createDownloadlink("https://beta.sankakucomplex.com/de/post/show/" + post.get("id") + "?tags=pool%3A" + bookID + "&page=" + page);
-            link.setProperty(SankakucomplexCom.PAGE_NUMBER, page);
+            link.setProperty(SankakucomplexCom.PROPERTY_PAGE_NUMBER, page);
+            link.setProperty(SankakucomplexCom.PROPERTY_PAGE_NUMBER_MAX, posts.size() - 1);
             SankakucomplexCom.parseFileInfoAndSetFilenameAPI(link, post);
             ret.add(link);
             page++;

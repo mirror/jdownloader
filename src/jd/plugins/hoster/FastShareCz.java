@@ -21,18 +21,19 @@ import java.util.List;
 import java.util.Locale;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -104,12 +105,18 @@ public class FastShareCz extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        br = new Browser();
+        return requestFileInformation(link, null);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "lang", "cs");
         br.setCustomCharset("utf-8");
+        if (account != null) {
+            this.login(account, false);
+        }
         getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("(<title>FastShare\\.cz</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -140,7 +147,11 @@ public class FastShareCz extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
+        handleFreeAndFreeAccountDownload(link, null);
+    }
+
+    public void handleFreeAndFreeAccountDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        requestFileInformation(link, account);
         if (br.containsHTML("(?i)(>100% FREE slotů je plných|>Využijte PROFI nebo zkuste později)")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
         }
@@ -190,22 +201,11 @@ public class FastShareCz extends antiDDoSForHost {
             }
             if (br.containsHTML("No htmlCode read")) {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
-            }
-            logger.info("fastshare.cz: Unknown error -> Retrying");
-            int timesFailed = link.getIntegerProperty("timesfailedfastsharecz_unknown", 0);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty("timesfailedfastsharecz_unknown", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
             } else {
-                link.setProperty("timesfailedfastsharecz_unknown", Property.NULL);
-                logger.info("fastshare.cz: Unknown error -> Plugin is broken");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } else {
-            dl.setFilenameFix(true);
         }
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
@@ -258,80 +258,100 @@ public class FastShareCz extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         login(account, true);
         if (br.getRequest() == null || !br.getURL().contains("/user")) {
             br.getPage("/user");
         }
+        /*
+         * 2022-12-20: Free accounts typically o not have any traffic/credit. Premium accounts typically do but can at the same time have
+         * unlimited traffic.
+         */
         /* 2021-02-12: E.g. <td>3 445.56 GB </td> */
-        String availabletraffic = br.getRegex(">\\s*(?:Kredit|Credit|Kredyty)\\s*:\\s*</td>\\s*<td[^>]*?>([^<>\"&]+)").getMatch(0);
-        final String unlimitedTraffic = br.getRegex("(?:Neomezené stahování)\\s*:\\s*</td>\\s*<td>\\s*<span[^>]*>\\s*(.*?)\\s*<").getMatch(0);
-        if (availabletraffic != null) {
-            availabletraffic = availabletraffic.trim().replace(" ", "");
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+        String trafficLeftStr = br.getRegex(">\\s*(?:Kredit|Credit|Kredyty)\\s*:\\s*</td>\\s*<td[^>]*?>([^<>\"&]+)").getMatch(0);
+        if (trafficLeftStr != null) {
+            trafficLeftStr = trafficLeftStr.trim().replace(" ", "");
         }
-        if (unlimitedTraffic != null) {
-            final String until = new Regex(unlimitedTraffic, "do\\s*(\\d+\\.\\d+\\.\\d+)").getMatch(0);
-            if (until != null) {
-                final long validUntil = TimeFormatter.getMilliSeconds(until, "dd.MM.yyyy", Locale.ENGLISH) + (23 * 60 * 60 * 1000l);
-                if (validUntil > 0) {
-                    ai.setValidUntil(validUntil, this.br);
-                    if (!ai.isExpired()) {
-                        ai.setUnlimitedTraffic();
+        final boolean userHasUnlimitedTraffic = br.containsHTML("(?i)href=\"/user\">\\s*Neomezené stahování\\s*</span>");
+        final String unlimitedTrafficInfo = br.getRegex("(?:Neomezené stahování)\\s*:\\s*</td>\\s*<td>\\s*<span[^>]*>\\s*(.*?)\\s*<").getMatch(0);
+        final boolean isPremiumUnlimitedTrafficUser = (unlimitedTrafficInfo != null && !StringUtils.equalsIgnoreCase(unlimitedTrafficInfo, "Neaktivní")) || userHasUnlimitedTraffic;
+        if (trafficLeftStr == null && !isPremiumUnlimitedTrafficUser) {
+            account.setType(AccountType.FREE);
+        } else {
+            if (isPremiumUnlimitedTrafficUser) {
+                final String until = new Regex(unlimitedTrafficInfo, "do\\s*(\\d+\\.\\d+\\.\\d+)").getMatch(0);
+                if (until != null) {
+                    final long validUntil = TimeFormatter.getMilliSeconds(until, "dd.MM.yyyy", Locale.ENGLISH) + (23 * 60 * 60 * 1000l);
+                    if (validUntil > 0) {
+                        ai.setValidUntil(validUntil, this.br);
+                    }
+                } else {
+                    logger.warning("Failed to find expire date of unlimited traffic");
+                }
+                if (!ai.isExpired()) {
+                    ai.setUnlimitedTraffic();
+                    if (trafficLeftStr != null) {
+                        /* User has unlimited traffic and also still some traffic left on account --> Display that in status text */
+                        ai.setStatus("Unlimited traffic and " + trafficLeftStr);
+                    } else {
+                        ai.setStatus("Unlimited traffic");
                     }
                 }
+            } else if (trafficLeftStr != null) {
+                ai.setTrafficLeft(SizeFormatter.getSize(trafficLeftStr));
             }
+            account.setType(AccountType.PREMIUM);
         }
-        account.setType(AccountType.PREMIUM);
         return ai;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
-        getPage(link.getDownloadURL());
-        if (br.containsHTML("máte dostatečný kredit pro stažení tohoto souboru")) {
-            logger.info("Trafficlimit reached!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        }
-        /* Maybe user has direct downloads active */
-        String dllink = br.getRedirectLocation();
-        if (dllink != null && canHandle(dllink)) {
-            // eg redirect http->https or cut of ref parameter
-            br.getPage(dllink);
-            dllink = br.getRedirectLocation();
-        }
-        if (dllink == null) {
-            /* Direct downloads inactive --> We have to find the final downloadlink */
-            dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fastshare\\.cz/download\\.php[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("class=\"speed\">\\s*<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
-            }
-        }
-        if (dllink == null) {
-            logger.warning("Failed to find final downloadlink");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            if (br.containsHTML("Nemate dostatecny kredit pro stazeni tohoto souboru! Kredit si muzete dobit")) {
-                logger.info("Trafficlimit reached!");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            logger.warning("The final dllink seems not to be a file!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (account.getType() == AccountType.FREE) {
+            this.handleFreeAndFreeAccountDownload(link, account);
         } else {
+            requestFileInformation(link);
+            login(account, false);
+            br.setFollowRedirects(false);
+            getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
+            checkErrors(br, link, account);
+            /* Maybe user has direct downloads active */
+            String dllink = br.getRedirectLocation();
+            if (dllink != null && canHandle(dllink)) {
+                // eg redirect http->https or cut of ref parameter
+                br.getPage(dllink);
+                dllink = br.getRedirectLocation();
+            }
+            if (dllink == null) {
+                /* Direct downloads inactive --> We have to find the final downloadlink */
+                dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fastshare\\.cz/download\\.php[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("class=\"speed\">\\s*<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+                }
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                checkErrors(br, link, account);
+                logger.warning("The final dllink seems not to be a file!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
+            dl.startDownload();
         }
-        dl.startDownload();
+    }
+
+    private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws AccountUnavailableException {
+        if (br.containsHTML("(?i)máte dostatečný kredit pro stažení tohoto souboru")) {
+            throw new AccountUnavailableException("Trafficlimit reached!", 5 * 60 * 1000l);
+        }
     }
 
     @Override
@@ -357,7 +377,7 @@ public class FastShareCz extends antiDDoSForHost {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        } else if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        } else if (AccountType.FREE.equals(acc.getType())) {
             /* free accounts also have captchas */
             return true;
         } else {
