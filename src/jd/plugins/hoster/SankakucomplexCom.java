@@ -54,7 +54,6 @@ public class SankakucomplexCom extends antiDDoSForHost {
 
     /* Extension which will be used if no correct extension is found */
     private static final String default_Extension             = ".jpg";
-    private String              dllink                        = null;
     private final boolean       useAPI                        = true;
     public static final String  PROPERTY_UPLOADER             = "uploader";
     public static final String  PROPERTY_DIRECTURL            = "directurl";
@@ -122,27 +121,29 @@ public class SankakucomplexCom extends antiDDoSForHost {
         getPage("https://chan.sankakucomplex.com/post/show/" + this.getFID(link));
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)<title>\\s*404: Page Not Found\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">\\s*You lack the access rights required to view this content")) {
-            link.setProperty(PROPERTY_IS_PREMIUMONLY, true);
-            return AvailableStatus.TRUE;
         }
-        link.removeProperty(PROPERTY_IS_PREMIUMONLY);
-        dllink = checkDirectLink(link, PROPERTY_DIRECTURL);
-        if (dllink != null) {
+        if (br.containsHTML(">\\s*You lack the access rights required to view this content")) {
+            link.setProperty(PROPERTY_IS_PREMIUMONLY, true);
+        } else {
+            link.removeProperty(PROPERTY_IS_PREMIUMONLY);
+        }
+        final String storedDirecturl = checkDirectLink(link, PROPERTY_DIRECTURL);
+        if (storedDirecturl != null) {
             /* This means we must have checked this one before so filesize/name has already been set -> Done! */
             return AvailableStatus.TRUE;
         }
+        String dllink = br.getRegex("(?i)<li>Original: <a href=\"(//[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("(?i)<li>Original: <a href=\"(//[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("<a href=\"(//[^<>\"]*?)\">Save this file").getMatch(0);
-            }
-            if (dllink == null) {
-                /* 2021-02-23 */
-                dllink = br.getRegex("<meta content=\"(//[^<>\"]+)\" property=og:image>").getMatch(0);
-            }
-            if (dllink != null) {
-                dllink = "https:" + dllink;
+            dllink = br.getRegex("<a href=\"(//[^<>\"]*?)\">Save this file").getMatch(0);
+        }
+        if (dllink == null) {
+            /* 2021-02-23 */
+            dllink = br.getRegex("<meta content=\"(//[^<>\"]+)\" property=og:image>").getMatch(0);
+        }
+        if (dllink != null) {
+            dllink = br.getURL(dllink).toString();
+            if (Encoding.isHtmlEntityCoded(dllink)) {
+                dllink = Encoding.htmlDecode(dllink);
             }
         }
         String filename = fileID;
@@ -161,34 +162,32 @@ public class SankakucomplexCom extends antiDDoSForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
-        if (Encoding.isHtmlEntityCoded(this.dllink)) {
-            dllink = Encoding.htmlDecode(dllink);
-        }
-        final String size = br.getRegex("<li>Original:\\s*<a href.*?title=\"([0-9\\,]+) bytes").getMatch(0);
-        if (size != null) {
+        final String sizeStr = br.getRegex("(?i)<li>\\s*Original\\s*:\\s*<a href.*?title=\"([0-9\\,]+) bytes").getMatch(0);
+        if (sizeStr != null) {
             /* Size is given --> We don't have to check for it! */
-            link.setDownloadSize(Long.parseLong(size.replace(",", "")));
-            return AvailableStatus.TRUE;
+            link.setDownloadSize(Long.parseLong(sizeStr.replace(",", "")));
         }
-        if (dllink != null && !isDownload) {
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    link.setProperty(PROPERTY_DIRECTURL, dllink);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } finally {
+        if (dllink != null) {
+            link.setProperty(PROPERTY_DIRECTURL, dllink);
+            if (sizeStr == null && !isDownload) {
+                final Browser br2 = br.cloneBrowser();
+                // In case the link redirects to the finallink
+                br2.setFollowRedirects(true);
+                URLConnectionAdapter con = null;
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    con = br2.openHeadConnection(dllink);
+                    if (this.looksLikeDownloadableContent(con)) {
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
@@ -201,8 +200,8 @@ public class SankakucomplexCom extends antiDDoSForHost {
             link.setName(fileID);
         }
         br.setFollowRedirects(true);
-        dllink = checkDirectLink(link, PROPERTY_DIRECTURL);
-        if (dllink != null) {
+        final String storedDirecturl = checkDirectLink(link, PROPERTY_DIRECTURL);
+        if (storedDirecturl != null) {
             /* This means we must have checked this one before so filesize/name has already been set -> Done! */
             return AvailableStatus.TRUE;
         }
@@ -219,20 +218,23 @@ public class SankakucomplexCom extends antiDDoSForHost {
         }
         final Map<String, Object> item = (Map<String, Object>) ressourcelist.get(0);
         parseFileInfoAndSetFilenameAPI(link, item);
-        this.dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         return AvailableStatus.TRUE;
     }
 
     public static void parseFileInfoAndSetFilenameAPI(final DownloadLink link, final Map<String, Object> item) {
         final Map<String, Object> author = (Map<String, Object>) item.get("author");
         link.setProperty(PROPERTY_UPLOADER, author.get("name"));
+        /* 2022-12-20: We can't trust filesize of non-active items e.g. fileID: 28977868 -> Status "pending" */
+        final boolean isActive = StringUtils.equalsIgnoreCase(item.get("status").toString(), "active");
         final String mimeType = item.get("file_type").toString();
         final String ext = getExtensionFromMimeTypeStatic(mimeType);
         final Number file_size = (Number) item.get("file_size");
         if (file_size != null) {
-            /* 2022-12-20: We can't trust this filesize e.g. fileID: 28977868 */
-            // link.setVerifiedFileSize(file_size.longValue());
-            link.setDownloadSize(file_size.longValue());
+            if (isActive) {
+                link.setVerifiedFileSize(file_size.longValue());
+            } else {
+                link.setDownloadSize(file_size.longValue());
+            }
         }
         if ((Boolean) item.get("is_premium")) {
             // throw new AccountRequiredException();
@@ -261,10 +263,10 @@ public class SankakucomplexCom extends antiDDoSForHost {
             }
         }
         /* 2022-12-20: We can't trust this hash for all items. */
-        // final String md5hash = (String) item.get("md5");
-        // if (!StringUtils.isEmpty(md5hash)) {
-        // link.setMD5Hash(md5hash);
-        // }
+        final String md5hash = (String) item.get("md5");
+        if (!StringUtils.isEmpty(md5hash) && isActive) {
+            link.setMD5Hash(md5hash);
+        }
         link.setProperty(PROPERTY_DIRECTURL, item.get("file_url"));
         link.setAvailable(true);
         final int pageNumber = link.getIntegerProperty(PROPERTY_PAGE_NUMBER, 0) + 1;
@@ -282,12 +284,16 @@ public class SankakucomplexCom extends antiDDoSForHost {
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformationWebsite(link, account, true);
-        if (this.dllink == null) {
-            if (link.hasProperty(PROPERTY_IS_PREMIUMONLY) && account == null) {
-                throw new AccountRequiredException();
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (dllink == null) {
+            requestFileInformationWebsite(link, account, true);
+            dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+            if (dllink == null) {
+                if (link.hasProperty(PROPERTY_IS_PREMIUMONLY) && account == null) {
+                    throw new AccountRequiredException();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         /* Disable chunks as we only download small files */
@@ -298,7 +304,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
             } catch (IOException e) {
                 logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file or expired directurl", 1 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -388,7 +394,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
-        if (br.containsHTML(">\\s*Subscription Level\\s*:\\s*<a href=\"[^\"]+\">Plus<")) {
+        if (br.containsHTML("(?i)>\\s*Subscription Level\\s*:\\s*<a href=\"[^\"]+\">\\s*Plus\\s*<")) {
             account.setType(AccountType.PREMIUM);
         } else {
             account.setType(AccountType.FREE);
