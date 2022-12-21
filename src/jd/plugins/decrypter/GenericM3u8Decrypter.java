@@ -105,7 +105,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 /* Base64 encoded referer */
                 ref = Encoding.Base64Decode(forcedRefererText);
             } else {
-                /* URL-encoded referer */
+                /* Non encoded/URL-decoded referer */
                 ref = forcedRefererText;
             }
             if (ref != null) {
