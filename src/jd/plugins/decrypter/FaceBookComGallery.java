@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -71,8 +70,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
         return new String[] { "facebook.com" };
     }
 
+    public static final boolean USE_NEW_HANDLING_DEC_2022 = true;
+
     public static String[] getAnnotationUrls() {
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        if (USE_NEW_HANDLING_DEC_2022) {
             return new String[] { "https?://(?:www\\.)?facebook\\.com/.+" };
         } else {
             return new String[] { "https?://(?:www\\.)?facebook_plugin_unfinished\\.com/.+" };
@@ -146,7 +147,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         logger.info("-----------------");
         logger.info("Fallback info of single video if this is a single video:");
         logger.info("Title: " + possibleTitleOfSingleVideo);
-        logger.info("slog: " + slugOfSingleVideo);
+        logger.info("slug: " + slugOfSingleVideo);
         logger.info("-----------------");
         /* Different sources to parse their json. */
         final List<String> jsonRegExes = new ArrayList<String>();
@@ -353,8 +354,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final Object value = entry.getValue();
                 if (key.equals("id") && value instanceof String) {
                     if (map.containsKey("__isMedia") && map.containsKey("image")) {
-                        final DownloadLink link = this.createDownloadlink(JavaScriptEngineFactory.walkJson(map, "image/uri").toString());
+                        final String directurl = JavaScriptEngineFactory.walkJson(map, "image/uri").toString();
+                        final DownloadLink link = this.createDownloadlink(directurl);
                         link.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_PHOTO);
+                        link.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LAST, directurl);
                         link.setAvailable(true);
                         results.add(link);
                         break;
