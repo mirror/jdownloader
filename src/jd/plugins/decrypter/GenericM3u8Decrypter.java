@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
@@ -105,8 +106,8 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
                 /* Base64 encoded referer */
                 ref = Encoding.Base64Decode(forcedRefererText);
             } else {
-                /* Non encoded/URL-decoded referer */
-                ref = forcedRefererText;
+                /* Referer in text form. Can be URI-encoded. */
+                ref = URLEncode.decodeURIComponent(forcedRefererText);
             }
             if (ref != null) {
                 try {
