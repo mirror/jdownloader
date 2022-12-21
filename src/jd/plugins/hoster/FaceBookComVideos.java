@@ -247,8 +247,7 @@ public class FaceBookComVideos extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         prepBR(this.br);
-        final boolean allowNewHandlingForLegacyItemsInDebugMode = false;
-        if (!link.hasProperty(PROPERTY_TYPE) && DebugMode.TRUE_IN_IDE_ELSE_FALSE && !allowNewHandlingForLegacyItemsInDebugMode) {
+        if (!link.hasProperty(PROPERTY_TYPE) && FaceBookComGallery.USE_NEW_HANDLING_DEC_2022) {
             /* Legacy handling: Convert old items to new ones */
             // TODO: Remove after 05/2023
             final FaceBookComGallery crawler = (FaceBookComGallery) this.getNewPluginForDecryptInstance(this.getHost());
