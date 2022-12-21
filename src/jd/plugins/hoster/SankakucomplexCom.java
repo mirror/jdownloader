@@ -301,9 +301,11 @@ public class SankakucomplexCom extends antiDDoSForHost {
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 logger.log(e);
             }
+            /* Force generation of new directurl next time */
+            link.removeProperty(PROPERTY_DIRECTURL);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file or expired directurl", 1 * 60 * 1000l);
         }
         dl.startDownload();
