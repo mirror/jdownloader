@@ -66,15 +66,16 @@ public class SharezwebComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/a/s/([A-Za-z0-9]+)(\\?pid=(\\d+))?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/a/(f|s)/([A-Za-z0-9]+)(\\?pid=(\\d+))?");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
-        final String folderID = urlinfo.getMatch(0);
-        final String subfolderID = urlinfo.getMatch(2);
+        final String type = urlinfo.getMatch(0);
+        final String folderID = urlinfo.getMatch(1);
+        final String subfolderID = urlinfo.getMatch(3);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final int maxItemsPerPage = 50;
@@ -90,7 +91,12 @@ public class SharezwebComCrawler extends PluginForDecrypt {
         } else {
             query.add("pid", "0");
         }
-        query.add("scene", "singleGroup");
+        if (type.equals("f")) {
+            /* Rare type of folder containing a single item. */
+            query.add("scene", "singleItem");
+        } else {
+            query.add("scene", "singleGroup");
+        }
         query.add("name", "");
         final HashSet<String> dupes = new HashSet<String>();
         int page = 1;
@@ -122,7 +128,7 @@ public class SharezwebComCrawler extends PluginForDecrypt {
                         continue;
                     }
                     numberofNewItems++;
-                    link = this.createDownloadlink("https://www." + this.getHost() + "/a/s/" + folderID + "?pid=" + thisSubfolderID);
+                    link = this.createDownloadlink(createFolderURL(folderID, thisSubfolderID));
                     link.setRelativeDownloadFolderPath("/" + ressource.get("name"));
                 } else {
                     /* File */
@@ -131,7 +137,7 @@ public class SharezwebComCrawler extends PluginForDecrypt {
                         continue;
                     }
                     numberofNewItems++;
-                    link = this.createDownloadlink("https://www." + this.getHost() + "/file/" + fileID);
+                    link = this.createDownloadlink(createFileURL(fileID));
                     SharezwebCom.parseFileInfoAndSetFilename(link, ressource);
                     if (!StringUtils.isEmpty(path)) {
                         link.setRelativeDownloadFolderPath(path);
@@ -155,5 +161,17 @@ public class SharezwebComCrawler extends PluginForDecrypt {
             }
         } while (true);
         return ret;
+    }
+
+    public static String createFolderURL(final String folderID, final String subfolderID) {
+        String url = "https://www.sharezweb.com/a/s/" + folderID;
+        if (subfolderID != null) {
+            url += "?pid=" + subfolderID;
+        }
+        return url;
+    }
+
+    public static String createFileURL(final String fileID) {
+        return "https://www.sharezweb.com/file/" + fileID;
     }
 }
