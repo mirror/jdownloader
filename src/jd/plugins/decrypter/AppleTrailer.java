@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -42,11 +44,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
+import jd.plugins.hoster.DirectHTTP;
 
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trailers.apple.com" }, urls = { "https?://[\\w\\.]*?apple\\.com/trailers/(?:disney|dreamworks|entertainmentone|filmdistrict|focus_features|fox|fox_searchlight|independent|ifcfilms|lions_gate|lucasfilm|magnolia|marvel|mgm|oscilloscope|paramount|picturehouse|relativity|roadsideattractions|sony|sony_pictures|summit|(?:universial|universal)|wb|(?:weinstein|weinstien))/([a-zA-Z0-9_\\-]+)/" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trailers.apple.com" }, urls = { "https?://[\\w\\.]*?apple\\.com/(trailers/[A-Za-z0-9\\-]+/([a-zA-Z0-9_\\-]+)/|[a-z0-9\\-]+/movie/[a-z0-9\\-]+/id\\d+.*)" })
 public class AppleTrailer extends PluginForDecrypt {
     public AppleTrailer(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,74 +59,140 @@ public class AppleTrailer extends PluginForDecrypt {
     // public int getMaxConcurrentProcessingInstances() {
     // return 1;
     // }
-    private String                        parameter      = null;
-    private String                        title          = null;
-    private final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-    private final HashSet<String>         dupe           = new HashSet<String>();
+    private String                        parameter = null;
+    private String                        title     = null;
+    private final ArrayList<DownloadLink> ret       = new ArrayList<DownloadLink>();
+    private final HashSet<String>         dupe      = new HashSet<String>();
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         // prevent results from carying over when debugging
-        decryptedLinks.clear();
+        ret.clear();
         dupe.clear();
         // cleanup required
-        parameter = param.toString().replaceAll("://(\\w+\\.)?apple", "://trailers.apple");
-        br = new Browser();
+        parameter = param.getCryptedUrl();
         br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         // make sure they don't have any stupid redirects here
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        final String specialRedirect = br.getRegex("(?i)Click\\s*<a href=\"(https://[^\"]+)\">\\s*here\\s*</a>\\s*to load the page manually").getMatch(0);
+        if (specialRedirect != null) {
+            br.getPage(specialRedirect);
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, this.getSupportedLinks()).getMatch(0), null));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(false);
-        // this is version 4
-        if (isVersion4()) {
-            // 02-2016-2017+ (first in jd)}
-            // http://trailers.apple.com/trailers/independent/valerian-and-the-city-of-a-thousand-planets/
-            processVersion4();
-        } else if (isVersion3()) {
-            // http://trailers.apple.com/trailers/fox/thefantasticfour/
-            // 2015(date made) http://www.imdb.com/title/tt1502712/
-            processVersion3();
-        } else if (isItunes()) {
-            // http://trailers.apple.com/trailers/independent/myoneandonly/
-            // 2009(date made) http://www.imdb.com/title/tt1185431/
-            // 25 September 2009
-            processItunes(br);
-        } else if (isDropdownTrigger()) {
-            // http://trailers.apple.com/trailers/disney/walle/
-            // 2008(date made) http://www.imdb.com/title/tt0910970/
-            // 27 June 2008
-            processDropdownTrigger();
-        } else if (isAreaPoster()) {
-            // https://trailers.apple.com/trailers/paramount/tropicthunder/
-            // 2008(date made) http://www.imdb.com/title/tt0942385/
-            // 15 August 2008
-            processAreaPoster();
-        } else if (isDivPoster()) {
-            // http://trailers.apple.com/trailers/lions_gate/slowburn/
-            // 2005(date made) http://www.imdb.com/title/tt0376196
-            // 13 April 2007
-            processDivPoster();
-        } else if (isPoster()) {
-            // http://trailers.apple.com/trailers/universal/curious_george/
-            // 2006(date made) http://www.imdb.com/title/tt0381971/
-            // 10 February 2006
-            processPoster();
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // http://trailers.apple.com/trailers/fox/avatar/
+        // http://trailers.apple.com/trailers/wb/thehobbit/
+        processTrailers2022();
+        if (ret.isEmpty()) {
+            // this is version 4
+            if (isVersion4()) {
+                // 02-2016-2017+ (first in jd)}
+                // http://trailers.apple.com/trailers/independent/valerian-and-the-city-of-a-thousand-planets/
+                processVersion4();
+            } else if (isVersion3()) {
+                // http://trailers.apple.com/trailers/fox/thefantasticfour/
+                // 2015(date made) http://www.imdb.com/title/tt1502712/
+                processVersion3();
+            } else if (isItunes()) {
+                // http://trailers.apple.com/trailers/independent/myoneandonly/
+                // 2009(date made) http://www.imdb.com/title/tt1185431/
+                // 25 September 2009
+                processItunes(br);
+            } else if (isDropdownTrigger()) {
+                // http://trailers.apple.com/trailers/disney/walle/
+                // 2008(date made) http://www.imdb.com/title/tt0910970/
+                // 27 June 2008
+                processDropdownTrigger();
+            } else if (isAreaPoster()) {
+                // https://trailers.apple.com/trailers/paramount/tropicthunder/
+                // 2008(date made) http://www.imdb.com/title/tt0942385/
+                // 15 August 2008
+                processAreaPoster();
+            } else if (isDivPoster()) {
+                // http://trailers.apple.com/trailers/lions_gate/slowburn/
+                // 2005(date made) http://www.imdb.com/title/tt0376196
+                // 13 April 2007
+                processDivPoster();
+            } else if (isPoster()) {
+                // http://trailers.apple.com/trailers/universal/curious_george/
+                // 2006(date made) http://www.imdb.com/title/tt0381971/
+                // 10 February 2006
+                processPoster();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        if (decryptedLinks.isEmpty()) {
+        if (ret.isEmpty()) {
             System.out.println("debug");
         }
         if (StringUtils.isNotEmpty(title)) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title.trim());
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
+    }
+
+    private void processTrailers2022() throws IOException {
+        // final String json = br.getRegex("\"fastboot/shoebox\" id=\"shoebox-ember-data-store\">(\\{.*?)</script>").getMatch(0);
+        // if (json != null) {
+        // final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+        // final List<Map<String, Object>> items = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "{0}/included");
+        // for (final Map<String, Object> item : items) {
+        // final String type = item.get("type").toString();
+        // if (!type.equalsIgnoreCase("lockup/clip")) {
+        // continue;
+        // }
+        // final List<Map<String, Object>> clipAssets = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(item,
+        // "attributes/clipAssets");
+        // for (final Map<String, Object> clipAsset : clipAssets) {
+        // final DownloadLink video = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(clipAsset.get("url").toString()));
+        // video.setAvailable(true);
+        // ret.add(video);
+        // }
+        // }
+        // }
+        if (ret.isEmpty()) {
+            final Browser brc = br.cloneBrowser();
+            brc.getPage(br.getURL() + "&isWebExpV2=true&dataOnly=true");
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> result0 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "storePlatformData/product-dv/results");
+            Map<String, Object> result = null;
+            for (final Entry<String, Object> entry : result0.entrySet()) {
+                /* Get first item */
+                result = (Map<String, Object>) entry.getValue();
+                break;
+            }
+            final String title = result.get("nameSortValue").toString();
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            final List<Map<String, Object>> movieClips = (List<Map<String, Object>>) result.get("movieClips");
+            for (final Map<String, Object> movieClip : movieClips) {
+                final List<Map<String, Object>> clipAssets = (List<Map<String, Object>>) movieClip.get("clipAssets");
+                for (final Map<String, Object> clipAsset : clipAssets) {
+                    final String videourl = clipAsset.get("url").toString();
+                    final DownloadLink video = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(videourl));
+                    video.setAvailable(true);
+                    ret.add(video);
+                }
+            }
+            fp.addLinks(ret);
+            // final Map<String, Object> lockupResults = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries,
+            // "storePlatformData/lockup/results");
+            // for (final Entry<String, Object> entry : lockupResults.entrySet()) {
+            // final Map<String, Object> item = (Map<String, Object>) entry.getValue();
+            // final List<Map<String, Object>> offers = (List<Map<String, Object>>)item.get("offers");
+            // for(final Map<String, Object>offer:offers) {
+            // final List<Map<String, Object>> assets = (List<Map<String, Object>>)offer.get("assets");
+            // for(final Map<String, Object> asset:assets) {
+            //
+            // }
+            // }
+            // }
+        }
     }
 
     private void processItunes(final Browser br) throws Exception {
@@ -208,7 +277,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     temp.add(dlLink);
                 }
             }
-            decryptedLinks.addAll(analyseUserSettings(temp));
+            ret.addAll(analyseUserSettings(temp));
         }
     }
 
@@ -252,7 +321,7 @@ public class AppleTrailer extends PluginForDecrypt {
             dlLink.setReferrerUrl(br2.getURL());
             temp.add(dlLink);
         }
-        decryptedLinks.addAll(analyseUserSettings(temp));
+        ret.addAll(analyseUserSettings(temp));
     }
 
     private void processDropdownTrigger() throws Exception {
@@ -298,7 +367,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     br2.getPage("hd/");
                     processItunes(br2);
                 }
-                decryptedLinks.addAll(analyseUserSettings(temp));
+                ret.addAll(analyseUserSettings(temp));
             }
         }
     }
@@ -415,7 +484,7 @@ public class AppleTrailer extends PluginForDecrypt {
                 logger.warning("Possible plugin error! Please confirm if videos are present in your browser. If so, please report plugin error to JDownloader Development Team! page : " + br2.getURL() + " parameter : " + parameter);
             }
         }
-        decryptedLinks.addAll(analyseUserSettings(temp));
+        ret.addAll(analyseUserSettings(temp));
     }
 
     private void processPoster() throws Exception {
@@ -487,7 +556,7 @@ public class AppleTrailer extends PluginForDecrypt {
             }
             // for each entry in HashMap we need analyse.
             for (final Entry<String, ArrayList<DownloadLink>> entry : temp.entrySet()) {
-                decryptedLinks.addAll(analyseUserSettings(entry.getValue()));
+                ret.addAll(analyseUserSettings(entry.getValue()));
             }
         }
     }
@@ -666,7 +735,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     }
                 }
             }
-            decryptedLinks.addAll(analyseUserSettings(temp));
+            ret.addAll(analyseUserSettings(temp));
         }
     }
 
@@ -717,7 +786,7 @@ public class AppleTrailer extends PluginForDecrypt {
                         dlLink.setAvailable(true);
                         temp.add(dlLink);
                     }
-                    decryptedLinks.addAll(analyseUserSettings(temp));
+                    ret.addAll(analyseUserSettings(temp));
                 }
             }
         }

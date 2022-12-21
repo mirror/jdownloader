@@ -18,6 +18,10 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
@@ -30,14 +34,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class AtakuAttitudeNet extends PluginForDecrypt {
-    public AtakuAttitudeNet(PluginWrapper wrapper) {
+public class OtakuAttitudeNet extends PluginForDecrypt {
+    public OtakuAttitudeNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -153,6 +154,7 @@ public class AtakuAttitudeNet extends PluginForDecrypt {
                 video.setDownloadSize(SizeFormatter.getSize(filesize.replace("o", "b")));
             }
             video.setAvailable(true);
+            video.setProperty(DirectHTTP.FORCE_NOCHUNKS, true);
             ret.add(video);
         }
         if (fpName != null) {

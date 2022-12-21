@@ -112,9 +112,10 @@ public class AventertainmentsComCrawler extends PluginForDecrypt {
          * 2021-07-21: Removed this screenshot RegEx as it will pickup screenshots of "related" videos:
          * (https?://imgs\\d*\\.aventertainments\\.com/[^/]+/screen_shot/[^<>\"\\']+\\.jpg)
          */
-        final String[] screenshotRegexes = { "(https?://imgs\\d*\\.aventertainments\\.com/(?:[a-z0-9]+)?/?vodimages/screenshot/large/[^<>\"\\']+\\.jpg)" };
-        final String[] galleryRegexes = { "(https?://imgs\\d*\\.aventertainments\\.com/(?:[a-z0-9]+)?/vodimages/gallery/large/[^<>\"\\']+\\.jpg)" };
-        final String[] coverRegexes = { "\"(https?://imgs\\d*\\.aventertainments\\.com/(?:[a-z0-9]+)?/bigcover/[^/]+\\.jpg)\"" };
+        final String allowedImageFileExtensions = "(jpg|webp)";
+        final String[] screenshotRegexes = { "(https?://imgs\\d*\\.aventertainments\\.com/(?:[a-z0-9]+)?/?vodimages/screenshot/large/[^<>\"\\']+\\." + allowedImageFileExtensions + ")" };
+        final String[] galleryRegexes = { "(https?://imgs\\d*\\.aventertainments\\.com/(?:[a-z0-9]+)?/vodimages/gallery/large/[^<>\"\\']+\\." + allowedImageFileExtensions + ")" };
+        final String[] coverRegexes = { "\"(https?://imgs\\d*\\.aventertainments\\.com/(?:[a-z0-9]+)?/bigcover/[^/]+\\." + allowedImageFileExtensions + ")\"" };
         for (final String screenshotRegex : screenshotRegexes) {
             final String[] screenshots = br.getRegex(screenshotRegex).getColumn(0);
             if (screenshots != null && screenshots.length > 0) {
