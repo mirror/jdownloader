@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -53,15 +54,19 @@ public class SankakucomplexCom extends antiDDoSForHost {
     }
 
     /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension             = ".jpg";
-    private final boolean       useAPI                        = true;
-    public static final String  PROPERTY_UPLOADER             = "uploader";
-    public static final String  PROPERTY_DIRECTURL            = "directurl";
-    public static final String  PROPERTY_BOOK_TITLE           = "book_title";
-    public static final String  PROPERTY_TAGS_COMMA_SEPARATED = "tags_comma_separated";
-    public static final String  PROPERTY_IS_PREMIUMONLY       = "is_premiumonly";
-    public static final String  PROPERTY_PAGE_NUMBER          = "page_number";
-    public static final String  PROPERTY_PAGE_NUMBER_MAX      = "page_number_max";
+    private static final String        default_Extension                     = ".jpg";
+    private final boolean              useAPI                                = true;
+    public static final String         PROPERTY_UPLOADER                     = "uploader";
+    public static final String         PROPERTY_DIRECTURL                    = "directurl";
+    public static final String         PROPERTY_BOOK_TITLE                   = "book_title";
+    public static final String         PROPERTY_TAGS_COMMA_SEPARATED         = "tags_comma_separated";
+    public static final String         PROPERTY_IS_PREMIUMONLY               = "is_premiumonly";
+    public static final String         PROPERTY_PAGE_NUMBER                  = "page_number";
+    public static final String         PROPERTY_PAGE_NUMBER_MAX              = "page_number_max";
+    public static final String         PROPERTY_SOURCE                       = "source";
+    private final String               TIMESTAMP_LAST_TIME_FILE_MAYBE_BROKEN = "timestamp_last_time_file_maybe_broken";
+    /* Don't touch the following! */
+    private static final AtomicInteger freeRunning                           = new AtomicInteger(0);
 
     @Override
     public String getAGBLink() {
@@ -222,6 +227,8 @@ public class SankakucomplexCom extends antiDDoSForHost {
     }
 
     public static void parseFileInfoAndSetFilenameAPI(final DownloadLink link, final Map<String, Object> item) {
+        /* TODO: Find out when original file is actually downloadable and only set verifiedFilesize and md5 hash then. */
+        final boolean trustFileInfo = false;
         final Map<String, Object> author = (Map<String, Object>) item.get("author");
         link.setProperty(PROPERTY_UPLOADER, author.get("name"));
         /* 2022-12-20: We can't trust filesize of non-active items e.g. fileID: 28977868 -> Status "pending" */
@@ -230,7 +237,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
         final String ext = getExtensionFromMimeTypeStatic(mimeType);
         final Number file_size = (Number) item.get("file_size");
         if (file_size != null) {
-            if (isActive) {
+            if (isActive && trustFileInfo) {
                 link.setVerifiedFileSize(file_size.longValue());
             } else {
                 link.setDownloadSize(file_size.longValue());
@@ -264,10 +271,11 @@ public class SankakucomplexCom extends antiDDoSForHost {
         }
         /* 2022-12-20: We can't trust this hash for all items. */
         final String md5hash = (String) item.get("md5");
-        if (!StringUtils.isEmpty(md5hash) && isActive) {
+        if (!StringUtils.isEmpty(md5hash) && isActive && trustFileInfo) {
             link.setMD5Hash(md5hash);
         }
         link.setProperty(PROPERTY_DIRECTURL, item.get("file_url"));
+        link.setProperty(PROPERTY_SOURCE, item.get("source"));
         link.setAvailable(true);
         final int pageNumber = link.getIntegerProperty(PROPERTY_PAGE_NUMBER, 0) + 1;
         final int pageNumberMax = link.getIntegerProperty(PROPERTY_PAGE_NUMBER_MAX, 0) + 1;
@@ -306,9 +314,25 @@ public class SankakucomplexCom extends antiDDoSForHost {
             }
             /* Force generation of new directurl next time */
             link.removeProperty(PROPERTY_DIRECTURL);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file or expired directurl", 1 * 60 * 1000l);
+            final long timestampLastTimeFileMaybeBroken = link.getLongProperty(TIMESTAMP_LAST_TIME_FILE_MAYBE_BROKEN, 0);
+            if (System.currentTimeMillis() - timestampLastTimeFileMaybeBroken <= 5 * 60 * 1000l) {
+                /* Wait longer time before retry as we've just recently tried and it failed again. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file", 60 * 60 * 1000l);
+            } else {
+                /* Retry soon */
+                link.setProperty(TIMESTAMP_LAST_TIME_FILE_MAYBE_BROKEN, System.currentTimeMillis());
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file or expired directurl", 30 * 1000l);
+            }
         }
-        dl.startDownload();
+        try {
+            /* Add a download slot */
+            controlMaxFreeDownloads(account, link, +1);
+            /* Start download */
+            dl.startDownload();
+        } finally {
+            /* Remove download slot */
+            controlMaxFreeDownloads(account, link, -1);
+        }
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
@@ -409,9 +433,21 @@ public class SankakucomplexCom extends antiDDoSForHost {
         handleDownload(link, account);
     }
 
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null) {
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
+    }
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        /* 2022-12-22: SLimit to 1 as I was too lazy to add sequential download-start handling for account mode. */
+        return 1;
     }
 
     @Override
@@ -421,7 +457,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return freeRunning.get() + 1;
     }
 
     @Override
