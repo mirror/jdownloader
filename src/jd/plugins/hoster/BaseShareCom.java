@@ -38,6 +38,9 @@ public class BaseShareCom extends antiDDoSForHost {
         super(wrapper);
     }
 
+    private final String PATTERN_EMBED  = "https?://[^/]+/songs/embed/id/(\\d+)";
+    private final String PATTERN_NORMAL = "https?://[^/]+/([^/]+)/songs/([^/]+)/(\\d+)/?";
+
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
@@ -61,7 +64,7 @@ public class BaseShareCom extends antiDDoSForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([\\w\\-]+)/songs/([\\w\\-]+)/(\\d+)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(songs/embed/id/\\d+|[^/]+/songs/[^/]+/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -84,19 +87,38 @@ public class BaseShareCom extends antiDDoSForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        final Regex urlinfoEmbed = new Regex(link.getPluginPatternMatcher(), PATTERN_EMBED);
+        final Regex urlinfoNormal = new Regex(link.getPluginPatternMatcher(), PATTERN_NORMAL);
+        if (urlinfoEmbed.matches()) {
+            return urlinfoEmbed.getMatch(0);
+        } else {
+            return urlinfoNormal.getMatch(2);
+        }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Regex urlinfoEmbed = new Regex(link.getPluginPatternMatcher(), PATTERN_EMBED);
         if (!link.isNameSet()) {
             /* Set fallback-filename */
-            final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
-            link.setName(urlinfo.getMatch(0) + " - " + urlinfo.getMatch(1) + ".mp3");
+            final Regex urlinfoNormal = new Regex(link.getPluginPatternMatcher(), PATTERN_NORMAL);
+            if (urlinfoEmbed.matches()) {
+                link.setName(urlinfoEmbed.getMatch(0) + ".mp3");
+            } else {
+                link.setName(urlinfoNormal.getMatch(0) + " - " + urlinfoNormal.getMatch(1) + ".mp3");
+            }
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
+        if (urlinfoEmbed.matches()) {
+            final String urlNormal = br.getRegex(PATTERN_NORMAL).getMatch(-1);
+            if (urlNormal == null) {
+                /* Embed item does not link to normal item/link -> Must be offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            getPage(urlNormal);
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.canHandle(br.getURL())) {

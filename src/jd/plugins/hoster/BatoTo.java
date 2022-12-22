@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
@@ -35,19 +37,51 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bato.to" }, urls = { "http://bato\\.to/areader\\?id=[a-z0-9]+\\&p=\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BatoTo extends antiDDoSForHost {
     public BatoTo(PluginWrapper wrapper) {
         super(wrapper);
         /* 2021-06-14: Disabled for now (login is broken and maybe not even required anymore) */
         // this.enablePremium("https://id.bato.to/register");
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), 500);
+        setRequestLimits();
         setStartIntervall(250);
+    }
+
+    public static void setRequestLimits() {
+        for (final String[] domains : getPluginDomains()) {
+            for (final String domain : domains) {
+                Browser.setRequestIntervalLimitGlobal(domain, 3000);
+            }
+        }
     }
 
     @Override
     public String getAGBLink() {
         return "https://bato.to/tos";
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "bato.to", "battwo.com", "batotoo.com", "dto.to", "hto.to", "mangatoto.to", "mto.to", "wto.to", "comiko.net" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/areader\\?id=[a-z0-9]+\\&p=\\d+");
+        }
+        return ret.toArray(new String[0]);
     }
 
     /* Connection stuff */
@@ -69,10 +103,7 @@ public class BatoTo extends antiDDoSForHost {
         this.br.setAllowedResponseCodes(503);
         final Account account = AccountController.getInstance().getValidAccount(this);
         if (account != null) {
-            try {
-                login(account, false);
-            } catch (final Throwable e) {
-            }
+            login(account, false);
         }
         getPage(link.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -198,7 +229,6 @@ public class BatoTo extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
