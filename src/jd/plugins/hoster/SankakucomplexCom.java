@@ -45,6 +45,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.decrypter.SankakucomplexComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(?:www\\.)?(?:beta|chan|idol)\\.sankakucomplex\\.com/(?:[a-z]{2}/)?post/show/(\\d+)" })
 public class SankakucomplexCom extends antiDDoSForHost {
@@ -213,7 +214,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
         if (account != null) {
             this.login(account, false);
         }
-        getPage("https://capi-v2.sankakucomplex.com/posts?lang=de&page=1&limit=1&tags=id_range:" + this.getFID(link));
+        getPage(SankakucomplexComCrawler.API_BASE + "/posts?lang=de&page=1&limit=1&tags=id_range:" + this.getFID(link));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
