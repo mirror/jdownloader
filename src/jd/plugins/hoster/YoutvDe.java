@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -194,33 +195,6 @@ public class YoutvDe extends PluginForHost {
         throw new AccountRequiredException();
     }
 
-    private void handleStoredErrors(final DownloadLink link) throws PluginException {
-        final String lastStoredErrormessage = link.getStringProperty(PROPERTY_LAST_FILE_ERROR);
-        if (lastStoredErrormessage == null) {
-            /* No stored errormessage available */
-            return;
-        }
-        final long ageOfStoredErrorMillis = System.currentTimeMillis() - link.getLongProperty(PROPERTY_TIMESTAMP_LAST_FILE_ERROR, 0);
-        if (ageOfStoredErrorMillis < 5 * 60 * 1000l) {
-            /* Do not trust stored errormessage as it was stored too long ago -> Retry to get current data */
-            /* Remove directurl property to prevent infinite loop. */
-            link.removeProperty(getDirecturlProperty(link));
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Retry to confirm error: " + lastStoredErrormessage);
-        }
-        // TODO: Incorporate PROPERTY_TIMESTAMP_LAST_FILE_ERROR here
-        if (lastStoredErrormessage.matches("(?i).*du hast heute auf viele Sendungen zugegriffen.*") || lastStoredErrormessage.matches("(?i).*Du hast das tägliche Limit von.*")) {
-            /*
-             * Wow, du hast heute auf viele Sendungen zugegriffen. Die private Nutzung muss gegeben sein. Du hast das tägliche Limit von 80
-             * Sendungen überschritten. Bei Fragen melde dich unter support@youtv.de
-             */
-            // TODO: Add waittime until next day
-            throw new AccountUnavailableException("Tägliches Downloadlimit erreicht", 5 * 60 * 1000l);
-        } else {
-            /* Unknown error */
-            throw new PluginException(LinkStatus.ERROR_FATAL, lastStoredErrormessage);
-        }
-    }
-
     private String getDirecturl(final DownloadLink link) {
         return link.getStringProperty(getDirecturlProperty(link));
     }
@@ -232,7 +206,7 @@ public class YoutvDe extends PluginForHost {
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account != null) {
-            /* Account is always needed. */
+            /* Account is always needed to download items of this host. */
             return true;
         } else {
             return false;
@@ -345,6 +319,39 @@ public class YoutvDe extends PluginForHost {
              * happens!
              */
             throw new AccountUnavailableException("IP gesperrt", 5 * 60 * 1000l);
+        }
+    }
+
+    private void handleStoredErrors(final DownloadLink link) throws PluginException {
+        final String lastStoredErrormessage = link.getStringProperty(PROPERTY_LAST_FILE_ERROR);
+        if (lastStoredErrormessage == null) {
+            /* No stored errormessage available */
+            return;
+        }
+        final long ageOfStoredErrorMillis = System.currentTimeMillis() - link.getLongProperty(PROPERTY_TIMESTAMP_LAST_FILE_ERROR, 0);
+        if (ageOfStoredErrorMillis < 5 * 60 * 1000l) {
+            /*
+             * Do not trust stored errormessage as it was stored too long ago -> Retry to get current data. Download will either work or
+             * fail and in the latter case we can then trust the stored errormessage.
+             */
+            /* Remove directurl property to prevent infinite loop. */
+            link.removeProperty(getDirecturlProperty(link));
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Retry to confirm error: " + lastStoredErrormessage);
+        }
+        if (lastStoredErrormessage.matches("(?i).*du hast heute auf viele Sendungen zugegriffen.*") || lastStoredErrormessage.matches("(?i).*Du hast das tägliche Limit von.*")) {
+            /*
+             * Wow, du hast heute auf viele Sendungen zugegriffen. Die private Nutzung muss gegeben sein. Du hast das tägliche Limit von 80
+             * Sendungen überschritten. Bei Fragen melde dich unter support@youtv.de
+             */
+            final Date dateJustBeforeNextDay = new Date(System.currentTimeMillis());
+            dateJustBeforeNextDay.setHours(23);
+            dateJustBeforeNextDay.setMinutes(59);
+            dateJustBeforeNextDay.setSeconds(29);
+            final long timeUntilNextDayMillis = dateJustBeforeNextDay.getTime() - System.currentTimeMillis();
+            throw new AccountUnavailableException("Tägliches Downloadlimit erreicht", timeUntilNextDayMillis + 30000);
+        } else {
+            /* Unknown error */
+            throw new PluginException(LinkStatus.ERROR_FATAL, lastStoredErrormessage);
         }
     }
 
