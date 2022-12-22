@@ -295,17 +295,23 @@ public class YoutvDe extends PluginForHost {
             packageName = "Unbekanntes Paket";
         }
         boolean automaticSubscription = false;
-        final String expire = br.getRegex("(?i)<b>Nächste Zahlung am\\s*:\\s*</b>\\s*(\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
-        if (expire == null) {
+        String expireDateStr = br.getRegex("(?i)<b>\\s*Nächste Zahlung am\\s*:\\s*</b>\\s*(\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
+        if (expireDateStr == null) {
+            /* Expire-date when auto payment is not active. Newly created free accounts will also have this expire-date! */
+            expireDateStr = br.getRegex("(?i)<b>\\s*Abo Laufzeit bis\\s*:\\s*</b>\\s*(\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
+        }
+        if (StringUtils.containsIgnoreCase(packageName, "free")) {
             account.setType(AccountType.FREE);
             /* TODO: Check if free users can download anything. */
             ai.setTrafficLeft(0);
         } else {
             account.setType(AccountType.PREMIUM);
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", Locale.GERMANY));
             ai.setTrafficLeft(0);
             automaticSubscription = br.containsHTML("(?i)Automatische Verlängerung:</b>\\s*Ja,\\s*automatisch abgebucht");
             ai.setUnlimitedTraffic();
+        }
+        if (expireDateStr != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDateStr, "dd.MM.yyyy", Locale.GERMANY));
         }
         ai.setStatus(packageName + " | Auto Verlängerung: " + (automaticSubscription ? "Ja" : "Nein"));
         return ai;
