@@ -47,9 +47,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biqle.ru", "daxab.com", "divxcim.com", "daft.sex", "artsporn.com", "ukdevilz.com", "noodlemagazine.com", "novids.com" }, urls = { "https?://(?:www\\.)?biqle\\.(com|ru|org)/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?(daxab\\.com|dxb\\.to)/embed/(?:\\-)?\\d+_\\d+", "https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+", "https?://(?:www\\.)?daft\\.sex/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?artsporn\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?(?:18\\.)?ukdevilz\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?(?:adult\\.)?noodlemagazine\\.com/watch/(?:-)?\\d+_\\d+", "https?://(?:www\\.)?novids\\.com/video/(?:-)?\\d+_\\d+" })
-public class BiqleRu extends PluginForDecrypt {
-    public BiqleRu(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class BiqleRuCrawler extends PluginForDecrypt {
+    public BiqleRuCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -58,10 +58,44 @@ public class BiqleRu extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "biqle.ru", "biqle.com", "biqle.org" });
+        ret.add(new String[] { "daft.sex" });
+        ret.add(new String[] { "ukdevilz.com" });
+        ret.add(new String[] { "noodlemagazine.com" });
+        ret.add(new String[] { "novids.com" });
+        /* 2022-12-22 */
+        ret.add(new String[] { "dsex.to" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:watch|video)/(?:-)?\\d+_\\d+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     /* Converts embedded crap to vk.com video-urls. */
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if ("biqle.ru".equals(getHost()) || "daftsex.com".equals(getHost()) || "artsporn.com".equals(getHost())) {
+        if ("biqle.ru".equals(getHost()) || "dsex.to".equals(getHost())) {
             final Regex urlinfo = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_(\\d+)");
             final String oid = urlinfo.getMatch(0);
             final String id = urlinfo.getMatch(1);
@@ -272,14 +306,9 @@ public class BiqleRu extends PluginForDecrypt {
             /* E.g. novids.com */
             final String oid;
             final String id;
-            if (param.getCryptedUrl().matches("https?://(?:www\\.)?divxcim\\.com/video_ext\\.php\\?oid=(?:\\-)?\\d+\\&id=\\d+")) {
-                oid = new Regex(param.getCryptedUrl(), "oid=((?:\\-)?\\d+)").getMatch(0);
-                id = new Regex(param.getCryptedUrl(), "id=(\\d+)").getMatch(0);
-            } else {
-                final Regex urlinfo = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_(\\d+)");
-                oid = urlinfo.getMatch(0);
-                id = urlinfo.getMatch(1);
-            }
+            final Regex urlinfo = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_(\\d+)");
+            oid = urlinfo.getMatch(0);
+            id = urlinfo.getMatch(1);
             ret.add(createDownloadlink(VKontakteRu.generateContentURLVideo(oid, id)));
         }
         return ret;

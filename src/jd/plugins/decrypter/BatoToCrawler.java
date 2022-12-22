@@ -36,7 +36,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -46,23 +45,23 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.BatoTo;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { BatoTo.class })
 public class BatoToCrawler extends PluginForDecrypt {
     public BatoToCrawler(PluginWrapper wrapper) {
         super(wrapper);
         /* Prevent server response 503! */
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), 3000);
+        BatoTo.setRequestLimits();
     }
 
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "bato.to", "batotoo.com", "comiko.net" });
-        return ret;
+        return BatoTo.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
