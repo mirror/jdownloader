@@ -268,9 +268,11 @@ public class FaceBookComVideos extends PluginForHost {
         }
         downloadURL = getAndCheckDownloadURL(link);
         if (downloadURL != null) {
+            // New handling dec 2022
             logger.info("Availablecheck only via directurl done:" + downloadURL);
             return AvailableStatus.TRUE;
         }
+        /* Old handling before dec 2022 TODO: Remove this */
         boolean loggedIn = false;
         final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
         final boolean findAndCheckDownloadurl = isDownload || fastLinkcheck == false;
@@ -412,6 +414,7 @@ public class FaceBookComVideos extends PluginForHost {
         link.setFinalFileName(filename);
     }
 
+    @Deprecated
     private Object findSchemaJsonVideoObject() throws Exception {
         final String[] jsons = br.getRegex("<script[^>]*?type=\"application/ld\\+json\"[^>]*>(.*?)</script>").getColumn(0);
         for (final String json : jsons) {
@@ -422,6 +425,7 @@ public class FaceBookComVideos extends PluginForHost {
         return null;
     }
 
+    @Deprecated
     private Object websiteFindAndParseJson() {
         final String json = br.getRegex(Pattern.quote("<script>requireLazy([\"TimeSliceImpl\",\"ServerJS\"],function(TimeSlice,ServerJS){var s=(new ServerJS());s.handle(") + "(\\{.*?\\})\\);requireLazy\\(").getMatch(0);
         return JSonStorage.restoreFromString(json, TypeRef.OBJECT);
@@ -432,6 +436,7 @@ public class FaceBookComVideos extends PluginForHost {
      *
      * @throws PluginException
      */
+    @Deprecated
     private void websitehandleVideoJson(final DownloadLink link, final Object jsonO) throws PluginException {
         final Object videoO = this.websiteFindVideoMap1(jsonO, getFID(link));
         final Object htmlO = pluginEmbedFindHTMLInJson(jsonO, getFID(link));
@@ -491,6 +496,7 @@ public class FaceBookComVideos extends PluginForHost {
      *
      * @throws PluginException
      */
+    @Deprecated
     private AvailableStatus requestFileInformationVideoWebsite(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         br.getPage(link.getPluginPatternMatcher());
         this.checkErrors(link);
@@ -703,6 +709,7 @@ public class FaceBookComVideos extends PluginForHost {
         }
     }
 
+    @Deprecated
     private Object websiteFindVideoMap1(final Object o, final String videoid) {
         if (o instanceof Map) {
             final Map<String, Object> entrymap = (Map<String, Object>) o;
@@ -740,6 +747,7 @@ public class FaceBookComVideos extends PluginForHost {
         }
     }
 
+    @Deprecated
     private Object websiteFindVideoMap2(final Object o, final String videoid) {
         if (o instanceof Map) {
             final Map<String, Object> entrymap = (Map<String, Object>) o;
@@ -781,6 +789,7 @@ public class FaceBookComVideos extends PluginForHost {
      * 2021-11-22: This result will only contain DASH streams --> Only use it to grab video title information, not for downloading as we
      * cannot handle split video/audio for now.
      */
+    @Deprecated
     private Object websiteFindVideoMap3(final Object o, final String videoid) {
         if (o instanceof Map) {
             final Map<String, Object> entrymap = (Map<String, Object>) o;
@@ -821,6 +830,7 @@ public class FaceBookComVideos extends PluginForHost {
      * Linkcheck via embed URL. </br>
      * Not all videos are embeddable!
      */
+    @Deprecated
     public AvailableStatus requestFileInformationEmbed(final DownloadLink link, final boolean isDownload) throws Exception {
         br.getPage("https://www." + this.getHost() + "/video/embed?video_id=" + this.getFID(link));
         /*
@@ -865,6 +875,7 @@ public class FaceBookComVideos extends PluginForHost {
         return null;
     }
 
+    @Deprecated
     private Object pluginEmbedFindHTMLInJson(final Object o, final String videoid) {
         if (o instanceof Map) {
             final Map<String, Object> entrymap = (Map<String, Object>) o;
@@ -935,6 +946,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /** Recursive function to find photoMap inside json. */
+    @Deprecated
     private Object findPhotoMap(final Object o, final String photoid) {
         if (o instanceof Map) {
             final Map<String, Object> entrymap = (Map<String, Object>) o;

@@ -168,7 +168,7 @@ public class YoutvDe extends PluginForHost {
         if (originalFilename != null) {
             link.setFinalFileName(originalFilename);
         }
-        link.setProperty(PROPERTY_DIRECTURL, directurl);
+        link.setProperty(PROPERTY_DIRECTURL + "_" + chosenQuality.get("quality"), directurl);
         final List<String> file_errors = (List<String>) recording.get("file_errors");
         if (file_errors != null && file_errors.size() > 0) {
             /* Typically daily downloadlimit reached */
@@ -181,64 +181,52 @@ public class YoutvDe extends PluginForHost {
     }
 
     private String getPreferredQualityStr(final DownloadLink link) {
-        final String lastUsedQuality = link.getStringProperty(PROPERTY_LAST_USED_QUALITY);
-        if (lastUsedQuality != null) {
-            return lastUsedQuality.toLowerCase(Locale.ENGLISH);
-        } else {
-            return PluginJsonConfig.get(YoutvDeConfig.class).getPreferredQuality().name().toLowerCase(Locale.ENGLISH);
+        /* Prefer last used quality if existent. */
+        String qualityStr = link.getStringProperty(PROPERTY_LAST_USED_QUALITY);
+        if (qualityStr == null) {
+            qualityStr = PluginJsonConfig.get(YoutvDeConfig.class).getPreferredQuality().name();
         }
+        return qualityStr.toLowerCase(Locale.ENGLISH);
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, null);
+        throw new AccountRequiredException();
     }
 
-    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
-        if (account == null) {
-            throw new AccountRequiredException();
+    private void handleStoredErrors(final DownloadLink link) throws PluginException {
+        final String lastStoredErrormessage = link.getStringProperty(PROPERTY_LAST_FILE_ERROR);
+        if (lastStoredErrormessage == null) {
+            /* No stored errormessage available */
+            return;
         }
-        String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
-        if (StringUtils.isEmpty(dllink)) {
-            requestFileInformation(link, account);
-            dllink = link.getStringProperty(PROPERTY_DIRECTURL);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        final long ageOfStoredErrorMillis = System.currentTimeMillis() - link.getLongProperty(PROPERTY_TIMESTAMP_LAST_FILE_ERROR, 0);
+        if (ageOfStoredErrorMillis < 5 * 60 * 1000l) {
+            /* Do not trust stored errormessage as it was stored too long ago -> Retry to get current data */
+            /* Remove directurl property to prevent infinite loop. */
+            link.removeProperty(getDirecturlProperty(link));
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Retry to confirm error: " + lastStoredErrormessage);
+        }
+        // TODO: Incorporate PROPERTY_TIMESTAMP_LAST_FILE_ERROR here
+        if (lastStoredErrormessage.matches("(?i).*du hast heute auf viele Sendungen zugegriffen.*") || lastStoredErrormessage.matches("(?i).*Du hast das tägliche Limit von.*")) {
+            /*
+             * Wow, du hast heute auf viele Sendungen zugegriffen. Die private Nutzung muss gegeben sein. Du hast das tägliche Limit von 80
+             * Sendungen überschritten. Bei Fragen melde dich unter support@youtv.de
+             */
+            // TODO: Add waittime until next day
+            throw new AccountUnavailableException("Tägliches Downloadlimit erreicht", 5 * 60 * 1000l);
         } else {
-            this.login(account, false);
+            /* Unknown error */
+            throw new PluginException(LinkStatus.ERROR_FATAL, lastStoredErrormessage);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            checkErrors(br, link, account);
-            // TODO: Incorporate PROPERTY_TIMESTAMP_LAST_FILE_ERROR here
-            final String lastStoredErrormessage = link.getStringProperty(PROPERTY_LAST_FILE_ERROR);
-            if (lastStoredErrormessage != null && (lastStoredErrormessage.matches("(?i).*du hast heute auf viele Sendungen zugegriffen.*") || lastStoredErrormessage.matches("(?i).*Du hast das tägliche Limit von.*"))) {
-                /*
-                 * Wow, du hast heute auf viele Sendungen zugegriffen. Die private Nutzung muss gegeben sein. Du hast das tägliche Limit von
-                 * 80 Sendungen überschritten. Bei Fragen melde dich unter support@youtv.de
-                 */
-                // TODO: Add waittime until next day
-                throw new AccountUnavailableException("Tägliches Downloadlimit erreicht", 5 * 60 * 1000l);
-            }
-            /* Force generation of new directurl next time */
-            link.removeProperty(PROPERTY_DIRECTURL);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?", 1 * 60 * 1000l);
-            }
-        }
-        /* Save last selected/used quality so we will try to resume that same one next time unless user resets this item in between. */
-        link.setProperty(PROPERTY_DIRECTURL, PluginJsonConfig.get(YoutvDeConfig.class).getPreferredQuality().name());
-        dl.startDownload();
+    }
+
+    private String getDirecturl(final DownloadLink link) {
+        return link.getStringProperty(getDirecturlProperty(link));
+    }
+
+    private String getDirecturlProperty(final DownloadLink link) {
+        return PROPERTY_DIRECTURL + "_" + getPreferredQualityStr(link);
     }
 
     @Override
@@ -333,8 +321,8 @@ public class YoutvDe extends PluginForHost {
             packageName = "Unbekanntes Paket";
         }
         boolean automaticSubscription = false;
-        final String expire = br.getRegex("(?i)<b>Nächste Zahlung am\\s*:\\s*</b\\s*(\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
-        if (expire != null) {
+        final String expire = br.getRegex("(?i)<b>Nächste Zahlung am\\s*:\\s*</b>\\s*(\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
+        if (expire == null) {
             account.setType(AccountType.FREE);
             /* TODO: Check if free users can download anything. */
             ai.setTrafficLeft(0);
@@ -349,15 +337,52 @@ public class YoutvDe extends PluginForHost {
         return ai;
     }
 
+    /** Checks for generic errors that can happen after any http request. */
     private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws AccountUnavailableException {
         if (br.containsHTML("(?i)(Du siehst diese Seite, da YouTV\\.de deinen Aufruf blockierte|Die erwähnte Sicherheits-Blockade ist maximal|Zugriff verweigert\\s*<)")) {
+            /*
+             * This solely is an IP block. Changing the IP will fix this. Current/previous session cookies remain valid even if this
+             * happens!
+             */
             throw new AccountUnavailableException("IP gesperrt", 5 * 60 * 1000l);
         }
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        this.handleDownload(link, account);
+        String dllink = getDirecturl(link);
+        if (StringUtils.isEmpty(dllink)) {
+            requestFileInformation(link, account);
+            // handleStoredErrors(link);
+            dllink = getDirecturl(link);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
+            this.login(account, false);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            checkErrors(br, link, account);
+            handleStoredErrors(link);
+            /* Force generation of new directurl next time */
+            link.removeProperty(getDirecturlProperty(link));
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?", 1 * 60 * 1000l);
+            }
+        }
+        /* Save last selected/used quality so we will try to resume that same one next time unless user resets this item in between. */
+        link.setProperty(PROPERTY_DIRECTURL, PluginJsonConfig.get(YoutvDeConfig.class).getPreferredQuality().name());
+        dl.startDownload();
     }
 
     @Override
@@ -384,6 +409,7 @@ public class YoutvDe extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
         if (link != null) {
             link.removeProperty(PROPERTY_LAST_USED_QUALITY);
+            link.removeProperty(PROPERTY_TIMESTAMP_LAST_FILE_ERROR);
         }
     }
 }
