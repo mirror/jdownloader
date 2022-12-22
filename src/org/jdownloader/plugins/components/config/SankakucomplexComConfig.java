@@ -14,6 +14,7 @@ import org.jdownloader.plugins.config.Type;
 public interface SankakucomplexComConfig extends PluginConfigInterface {
     final String                    text_SetCommaSeparatedTagsOfPostsAsComment = "Set comma separated tags of posts as comment?";
     final String                    text_BookTagCrawlerMaxPageLimit            = "Book tag crawler: Max page limit (-1 = no limit, 0 = disabled)";
+    final String                    text_PostTagCrawlerMaxPageLimit            = "Post tag crawler: Max page limit (-1 = no limit, 0 = disabled)";
     public static final TRANSLATION TRANSLATION                                = new TRANSLATION();
 
     public static class TRANSLATION {
@@ -23,6 +24,10 @@ public interface SankakucomplexComConfig extends PluginConfigInterface {
 
         public String getBookTagCrawlerMaxPageLimit_label() {
             return text_BookTagCrawlerMaxPageLimit;
+        }
+
+        public String getPostTagCrawlerMaxPageLimit_label() {
+            return text_PostTagCrawlerMaxPageLimit;
         }
     }
 
@@ -42,4 +47,13 @@ public interface SankakucomplexComConfig extends PluginConfigInterface {
     int getBookTagCrawlerMaxPageLimit();
 
     void setBookTagCrawlerMaxPageLimit(int pages);
+
+    @AboutConfig
+    @SpinnerValidator(min = -1, max = 10000, step = 1)
+    @DefaultIntValue(1)
+    @DescriptionForConfigEntry(text_BookTagCrawlerMaxPageLimit)
+    @Order(110)
+    int getPostTagCrawlerMaxPageLimit();
+
+    void setPostTagCrawlerMaxPageLimit(int pages);
 }
