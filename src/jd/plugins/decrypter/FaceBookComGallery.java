@@ -47,6 +47,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.FaceBookComVideos;
 
 @SuppressWarnings("deprecation")
@@ -114,12 +115,14 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
     }
 
+    PluginForHost hosterplugin = null;
+
     private ArrayList<DownloadLink> crawl(final CryptedLink param) throws Exception {
         br.setFollowRedirects(true);
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        hosterplugin = this.getNewPluginForHostInstance(this.getHost());
         if (account != null) {
-            final FaceBookComVideos hosterPlugin = (FaceBookComVideos) this.getNewPluginForHostInstance(this.getHost());
-            hosterPlugin.login(account, false);
+            ((FaceBookComVideos) hosterplugin).login(account, false);
         }
         String url = param.getCryptedUrl();
         final Regex embeddedVideoRegex = new Regex(url, "https?://[^/]+/video/embed\\?video_id=(\\d+)");
@@ -222,21 +225,21 @@ public class FaceBookComGallery extends PluginForDecrypt {
             for (final Map.Entry<String, Object> entry : map.entrySet()) {
                 final String key = entry.getKey();
                 final Object value = entry.getValue();
-                final String valueStr = value instanceof String ? value.toString() : null;
+                final String ifThisisAVideoThisIsTheVideoID = value instanceof String ? value.toString() : null;
                 if (key.equals("id") && map.containsKey("is_live_streaming") && map.containsKey("dash_manifest")) {
                     final boolean isLivestream = ((Boolean) map.get("is_live_streaming")).booleanValue();
-                    final String videoID = valueStr;
                     if (isLivestream) {
                         /* Livestreams are not supported */
-                        logger.info("Skipping livestream: " + videoID);
+                        logger.info("Skipping livestream: " + ifThisisAVideoThisIsTheVideoID);
                         skippedLivestreams++;
                         continue;
                     }
-                    final String url = (String) map.get("permalink_url");
-                    final String thumbnailURL = JavaScriptEngineFactory.walkJson(map, "preferred_thumbnail/image/uri").toString();
-                    final DownloadLink thumbnail = this.createDownloadlink(thumbnailURL);
+                    final String videoContentURL = (String) map.get("permalink_url");
+                    final String thumbnailDirectURL = JavaScriptEngineFactory.walkJson(map, "preferred_thumbnail/image/uri").toString();
+                    final DownloadLink thumbnail = new DownloadLink(this.hosterplugin, this.getHost(), thumbnailDirectURL, true);
                     thumbnail.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_THUMBNAIL);
-                    final DownloadLink video = this.createDownloadlink(url);
+                    thumbnail.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LAST, thumbnailDirectURL);
+                    final DownloadLink video = new DownloadLink(this.hosterplugin, this.getHost(), videoContentURL, true);
                     final Object playable_duration_in_ms = map.get("playable_duration_in_ms");
                     if (playable_duration_in_ms instanceof Number) {
                         /* Set this as a possible Packagizer property. */
@@ -252,7 +255,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                         publishDateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(date);
                     }
                     final String description = (String) JavaScriptEngineFactory.walkJson(map, "savable_description/text");
-                    final String uploaderURL = FaceBookComVideos.getUploaderNameFromVideoURL(url);
+                    final String uploaderURL = FaceBookComVideos.getUploaderNameFromVideoURL(videoContentURL);
                     final String urlLow = (String) map.get("playable_url");
                     final String urlHigh = (String) map.get("playable_url_quality_hd");
                     if (!StringUtils.isEmpty(urlHigh)) {
@@ -265,9 +268,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     final FilePackage fp = FilePackage.getInstance();
                     final String uploaderNameForPackage = FaceBookComVideos.getUploaderNameAny(video);
                     if (uploaderNameForPackage != null) {
-                        fp.setName(uploaderNameForPackage + " - " + videoID);
+                        fp.setName(uploaderNameForPackage + " - " + ifThisisAVideoThisIsTheVideoID);
                     } else {
-                        fp.setName(videoID);
+                        fp.setName(ifThisisAVideoThisIsTheVideoID);
                     }
                     if (!StringUtils.isEmpty(description)) {
                         fp.setComment(description);
@@ -276,7 +279,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     thisResults.add(video);
                     thisResults.add(thumbnail);
                     for (final DownloadLink thisResult : thisResults) {
-                        thisResult.setProperty(FaceBookComVideos.PROPERTY_CONTENT_ID, videoID);
+                        thisResult.setProperty(FaceBookComVideos.PROPERTY_CONTENT_ID, ifThisisAVideoThisIsTheVideoID);
                         if (uploaderURL != null) {
                             thisResult.setProperty(FaceBookComVideos.PROPERTY_UPLOADER_URL, uploaderURL);
                         }
@@ -293,7 +296,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                         thisResult.setAvailable(true);
                     }
                     FaceBookComVideos.setFilename(video);
-                    final String thumbnailFileExtension = Plugin.getFileNameExtensionFromURL(thumbnailURL);
+                    final String thumbnailFileExtension = Plugin.getFileNameExtensionFromURL(thumbnailDirectURL);
                     if (thumbnailFileExtension != null) {
                         final String videoFilename = video.getFinalFileName();
                         thumbnail.setFinalFileName(this.correctOrApplyFileNameExtension(videoFilename, thumbnailFileExtension));
