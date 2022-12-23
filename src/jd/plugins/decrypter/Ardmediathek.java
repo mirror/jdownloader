@@ -27,6 +27,26 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.MediathekHelper;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.ARDMediathek;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
@@ -50,26 +70,6 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DecrypterRetryException;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.MediathekHelper;
-import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.ARDMediathek;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de", "tagesschau.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/.*?\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html",
         "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?tagesschau\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
@@ -79,6 +79,7 @@ public class Ardmediathek extends PluginForDecrypt {
     private final List<String>   all_known_qualities                    = new ArrayList<String>();
     private final List<String>   selectedQualities                      = new ArrayList<String>();
     private boolean              grabHLS                                = false;
+    private boolean              checkPluginSettingsFlag                = false;
     private ArdConfigInterface   cfg                                    = null;
     private static final boolean FILESIZE_NEEDED_FOR_QUALITY_COMPARISON = false;
 
@@ -204,27 +205,34 @@ public class Ardmediathek extends PluginForDecrypt {
          * mind when changing things!
          */
         final String host = this.getHost();
+        final ArrayList<DownloadLink> ret;
         if (param.getCryptedUrl().matches(type_embedded)) {
-            return this.crawlWdrMediathekEmbedded(param, param.getCryptedUrl());
+            ret = this.crawlWdrMediathekEmbedded(param, param.getCryptedUrl());
         } else if (host.equalsIgnoreCase("wdr.de") || host.equalsIgnoreCase("wdrmaus.de")) {
-            return this.crawlWdrMediathek(param);
+            ret = this.crawlWdrMediathek(param);
         } else if (host.equalsIgnoreCase("sportschau.de")) {
-            return this.crawlSportschauDe(param);
+            ret = this.crawlSportschauDe(param);
         } else if (host.equalsIgnoreCase("ndr.de") || host.equalsIgnoreCase("eurovision.de")) {
-            return this.crawlNdrMediathek(param);
+            ret = this.crawlNdrMediathek(param);
         } else if (host.equalsIgnoreCase("sandmann.de")) {
-            return this.crawlSandmannDe(param);
+            ret = this.crawlSandmannDe(param);
         } else if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("kika.de") || host.equalsIgnoreCase("sputnik.de") || host.equalsIgnoreCase("mdr.de")) {
-            return crawlDasersteVideo(param);
+            ret = crawlDasersteVideo(param);
         } else if (host.equalsIgnoreCase("tagesschau.de")) {
-            return this.crawlTagesschauVideos(param);
+            ret = this.crawlTagesschauVideos(param);
         } else if (host.equalsIgnoreCase("ardmediathek.de")) {
             /* 2020-05-26: Separate handling required */
-            return this.crawlArdmediathekDeNew(param);
+            ret = this.crawlArdmediathekDeNew(param);
         } else {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (ret.size() == 0) {
+            if (checkPluginSettingsFlag) {
+                throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS);
+            }
+        }
+        return ret;
     }
 
     private void errorGEOBlocked(final CryptedLink param) throws DecrypterRetryException {
@@ -591,8 +599,8 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         metadata.setChannel(trackerData.get("trackerClipCategory").toString());
         /**
-         * 2022-03-10: Do not use trackerClipId as unique ID as there can be different IDs for the same streams. </br>
-         * Let the handling go into fallback and use the final downloadurls as unique trait!
+         * 2022-03-10: Do not use trackerClipId as unique ID as there can be different IDs for the same streams. </br> Let the handling go
+         * into fallback and use the final downloadurls as unique trait!
          */
         // metadata.setContentID(trackerData.get("trackerClipId").toString());
         metadata.setRequiresContentIDToBeSet(false);
@@ -843,8 +851,7 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     /**
-     * Handling for older ARD websites. </br>
-     * INFORMATION: network = akamai or limelight == RTMP </br>
+     * Handling for older ARD websites. </br> INFORMATION: network = akamai or limelight == RTMP </br>
      */
     private ArrayList<DownloadLink> crawlDasersteVideo(final CryptedLink param) throws Exception {
         br.getPage(param.getCryptedUrl());
@@ -1023,10 +1030,15 @@ public class Ardmediathek extends PluginForDecrypt {
                 hls_master = getXML(stream, "adaptiveHttpStreamingRedirectorUrl");
             }
             /* HLS master url may exist in every XML item --> We only have to add all HLS qualities once! */
-            if (!StringUtils.isEmpty(hls_master) && !hls_master_dupelist.contains(hls_master) && this.grabHLS) {
+            if (!StringUtils.isEmpty(hls_master)) {
                 /* HLS */
-                addHLS(param, metadata, foundQualitiesMap, this.br, hls_master, isAudioDescription);
-                hls_master_dupelist.add(hls_master);
+                if (this.grabHLS) {
+                    if (hls_master_dupelist.add(hls_master)) {
+                        addHLS(param, metadata, foundQualitiesMap, this.br, hls_master, isAudioDescription);
+                    }
+                } else {
+                    checkPluginSettingsFlag = true;
+                }
             }
             if (!StringUtils.isEmpty(http_url)) {
                 /* http */
@@ -1186,6 +1198,7 @@ public class Ardmediathek extends PluginForDecrypt {
 
     private void addHLS(final CryptedLink param, final ArdMetadata metadata, final HashMap<String, DownloadLink> foundQualities, final Browser br, final String hlsMaster, final boolean isAudioDescription) throws Exception {
         if (!this.grabHLS) {
+            checkPluginSettingsFlag = true;
             /* Avoid this http request if user hasn't selected any hls qualities */
             logger.info("HLS available but not selected - skipping HLS: " + hlsMaster);
             return;
@@ -1408,6 +1421,7 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         }
         if (finalSelectedQualityMap.isEmpty()) {
+            checkPluginSettingsFlag = true;
             logger.info("Failed to find any selected quality --> Adding all instead");
             finalSelectedQualityMap = foundQualitiesMap;
         }
@@ -1584,7 +1598,6 @@ public class Ardmediathek extends PluginForDecrypt {
         P_270(480, 270),
         P_180(320, 180),
         P_144(256, 144);
-
         private int height;
         private int width;
 

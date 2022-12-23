@@ -21,31 +21,17 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.KVSConfig;
-import org.jdownloader.plugins.components.config.KVSConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.components.kvs.Script;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -72,6 +58,22 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.KVSConfig;
+import org.jdownloader.plugins.components.config.KVSConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.components.kvs.Script;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     public KernelVideoSharingComV2(PluginWrapper wrapper) {
@@ -89,23 +91,20 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     // other: URL to a live demo: http://www.kvs-demo.com/
     /***
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPattern(List)} AND
-     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} (excluding "embed" URLs). </br>
-     * Examples: example.com/videos/1234/title/ </br>
-     * example.com/videos/1234-title.html </br>
-     * example.com/videos/
+     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(List)} (excluding "embed" URLs). </br> Examples:
+     * example.com/videos/1234/title/ </br> example.com/videos/1234-title.html </br> example.com/videos/
      */
     private static final String   type_normal               = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/)?(\\d+)(?:/|-)([^/\\?#]+)(?:/?|\\.html)$";
     /**
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} (excluding
-     * "embed" URLs). </br>
-     * You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return true when using such a pattern! </br>
+     * "embed" URLs). </br> You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return true when using such a pattern! </br>
      * TODO: Consider removing support for this from this main class.
      */
     private static final String   type_normal_fuid_at_end   = "^https?://[^/]+/videos?/([^/\\?#]+)-(\\d+)(?:/?|\\.html)$";
     /***
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileID(List)} and
-     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(List)} (excluding "embed" URLs). </br>
-     * You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return false when using such a pattern!
+     * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(List)} (excluding "embed" URLs). </br> You need to
+     * override {@link #hasFUIDInsideURLAtTheEnd(String)} to return false when using such a pattern!
      */
     private static final String   type_normal_without_fuid  = "^https?://[^/]+/(?:videos?/)?([^/\\?#]*?)(?:/?|\\.html)$";
     private static final String   type_mobile               = "^https?://m\\.([^/]+/(videos?/)?\\d+/[^/\\?#]+/$)";
@@ -128,13 +127,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     protected static final String PROPERTY_DIRECTURL        = "directurl";
 
     /**
-     * Use this e.g. for: </br>
-     * example.com/(de/)?videos/1234/title-inside-url OR: </br>
-     * example.com/embed/1234 OR </br>
-     * OR(rare/older case):</br>
-     * m.example.com/videos/1234/title-inside-url | m.example.com/embed/1234 </br>
-     * Example: <a href="https://kvs-demo.com/">kvs-demo.com</a> More example hosts in generic class:
-     * {@link #KernelVideoSharingComV2HostsDefault}
+     * Use this e.g. for: </br> example.com/(de/)?videos/1234/title-inside-url OR: </br> example.com/embed/1234 OR </br> OR(rare/older
+     * case):</br> m.example.com/videos/1234/title-inside-url | m.example.com/embed/1234 </br> Example: <a
+     * href="https://kvs-demo.com/">kvs-demo.com</a> More example hosts in generic class: {@link #KernelVideoSharingComV2HostsDefault}
      */
     public static String[] buildAnnotationUrlsDefaultVideosPattern(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -152,13 +147,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Use this e.g. for: </br>
-     * example.com/1234/title-inside-url</br>
-     * OR: </br>
-     * example.com/embed/1234 </br>
-     * OR </br>
-     * Example: <a href="https://alotporn.com/">alotporn.com</a> </br>
-     * More example hosts in generic class: {@link #KernelVideoSharingComV2HostsDefault2}
+     * Use this e.g. for: </br> example.com/1234/title-inside-url</br> OR: </br> example.com/embed/1234 </br> OR </br> Example: <a
+     * href="https://alotporn.com/">alotporn.com</a> </br> More example hosts in generic class:
+     * {@link #KernelVideoSharingComV2HostsDefault2}
      */
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutSlashVideos(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -176,13 +167,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Use this e.g. for:</br>
-     * example.com/title-inside-url</br>
-     * OR:</br>
-     * example.com/embed/1234 </br>
-     * Example: <a href="https://alphaporno.com/">alphaporno.com</a> </br>
-     * Special: You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return false when using this pattern! </br>
-     * More example hosts in generic class: {@link #KernelVideoSharingComV2HostsDefault3}
+     * Use this e.g. for:</br> example.com/title-inside-url</br> OR:</br> example.com/embed/1234 </br> Example: <a
+     * href="https://alphaporno.com/">alphaporno.com</a> </br> Special: You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to
+     * return false when using this pattern! </br> More example hosts in generic class: {@link #KernelVideoSharingComV2HostsDefault3}
      */
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithoutFileID(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -200,11 +187,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Use this e.g. for:</br>
-     * example.com/videos/title-inside-url-1234 OR:</br>
-     * example.com/embed/1234 </br>
-     * Example: <a href="https://uiporn.com/">uiporn.com</a> </br>
-     * Example classses: {@link #UipornCom}, {@link #PorngemCom}
+     * Use this e.g. for:</br> example.com/videos/title-inside-url-1234 OR:</br> example.com/embed/1234 </br> Example: <a
+     * href="https://uiporn.com/">uiporn.com</a> </br> Example classses: {@link #UipornCom}, {@link #PorngemCom}
      */
     public static String[] buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -222,12 +206,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Use this e.g. for:</br>
-     * example.com/title-inside-url OR:</br>
-     * example.com/embed/1234 </br>
-     * Example: <a href="https://yogaporn.net/">yogaporn.net</a> </br>
-     * Example classses: {@link #YogapornNet} </br>
-     * Very rarely used pattern!
+     * Use this e.g. for:</br> example.com/title-inside-url OR:</br> example.com/embed/1234 </br> Example: <a
+     * href="https://yogaporn.net/">yogaporn.net</a> </br> Example classses: {@link #YogapornNet} </br> Very rarely used pattern!
      */
     public static String[] buildAnnotationUrlsDefaultNoVideosNoFUID(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -261,12 +241,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Use this e.g. for:</br>
-     * example.com/1234</br>
-     * OR:</br>
-     * example.com/embed/1234 </br>
-     * Example: <a href="https://anyporn.com/">anyporn.com</a> </br>
-     * Example class: {@link #AnypornCom}
+     * Use this e.g. for:</br> example.com/1234</br> OR:</br> example.com/embed/1234 </br> Example: <a
+     * href="https://anyporn.com/">anyporn.com</a> </br> Example class: {@link #AnypornCom}
      */
     public static String[] buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -284,19 +260,18 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Override this if URLs can end with digits but these are not your FUID! </br>
-     * E.g. override this when adding host plugins with patterns that match {@link #type_normal_fuid_at_end} . </br>
-     * Example: example.com/url-title.html</br>
-     * Override {@link #type_normal_without_fuid} if the expected URLs do not contain any FUID at all (well, other than e.g. embed URLs - in
-     * this case, FUID will always get detected).
+     * Override this if URLs can end with digits but these are not your FUID! </br> E.g. override this when adding host plugins with
+     * patterns that match {@link #type_normal_fuid_at_end} . </br> Example: example.com/url-title.html</br> Override
+     * {@link #type_normal_without_fuid} if the expected URLs do not contain any FUID at all (well, other than e.g. embed URLs - in this
+     * case, FUID will always get detected).
      */
     protected boolean hasFUIDInsideURLAtTheEnd(final String url) {
         return false;
     }
 
     /**
-     * Set this to false if URLs do not contain a FUID at all! </br>
-     * Especially important for e.g.: example.com/1random-title/ or example.com/random-title-version10/ ('1' != FUID!)
+     * Set this to false if URLs do not contain a FUID at all! </br> Especially important for e.g.: example.com/1random-title/ or
+     * example.com/random-title-version10/ ('1' != FUID!)
      */
     protected boolean hasFUIDInsideURL(final String url) {
         return true;
@@ -366,17 +341,17 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * By default, title inside URL will be used whenever found. </br>
-     * Let this return true to prefer title returned by {@link #regexNormalTitleWebsite(Browser) } even if title from inside URL is given.
+     * By default, title inside URL will be used whenever found. </br> Let this return true to prefer title returned by
+     * {@link #regexNormalTitleWebsite(Browser) } even if title from inside URL is given.
      */
     protected boolean preferTitleHTML() {
         return false;
     }
 
     /**
-     * Enable this for websites which have embed URLs but they're broken e.g. motherporno.com. </br>
-     * EWmbed URLs will be changed to "fake" normal content URLs which should then redirect to the correct contentURL. </br>
-     * Warning: Enabling this without testing can break embed support of host plugins!!
+     * Enable this for websites which have embed URLs but they're broken e.g. motherporno.com. </br> EWmbed URLs will be changed to "fake"
+     * normal content URLs which should then redirect to the correct contentURL. </br> Warning: Enabling this without testing can break
+     * embed support of host plugins!!
      */
     protected boolean useEmbedWorkaround() {
         return false;
@@ -475,8 +450,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Alternative way to linkcheck (works only for some hosts and only if FUID is given): privat-zapisi.biz/feed/12345.xml </br>
-     * Also working for: webcamsbabe.com
+     * Alternative way to linkcheck (works only for some hosts and only if FUID is given): privat-zapisi.biz/feed/12345.xml </br> Also
+     * working for: webcamsbabe.com
      */
     protected AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
@@ -580,8 +555,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 if (br.containsHTML(">\\s*You are not allowed to watch this video")) {
                     /**
                      * Some websites have embedding videos disabled but nevertheless it is possible to generate- and add such URLs. It may
-                     * also happen that a website owner disabled embedding after first allowing it. </br>
-                     * The content should be online but we'll never be able to download it --> Treat as offline
+                     * also happen that a website owner disabled embedding after first allowing it. </br> The content should be online but
+                     * we'll never be able to download it --> Treat as offline
                      */
                     if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                         /*
@@ -921,9 +896,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * Contains logic to determine best file title. </br>
-     * Override the following functions if you want to modify filenames: {@link #regexNormalTitleWebsite()},
-     * {@link #regexEmbedTitleWebsite()}, {@link #preferTitleHTML()}
+     * Contains logic to determine best file title. </br> Override the following functions if you want to modify filenames:
+     * {@link #regexNormalTitleWebsite()}, {@link #regexEmbedTitleWebsite()}, {@link #preferTitleHTML()}
      */
     private String getFileTitle(final DownloadLink link) {
         final String titleUrl = getTitleURL(br, link);
@@ -1239,7 +1213,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
          * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         *
+         * 
          * E.g. wankoz.com, pervclips.com, pornicom.com
          */
         // final String pc3_vars = br.getRegex("pC3\\s*:\\s*'([^<>\"\\']+)'").getMatch(0);
@@ -1354,23 +1328,54 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
              * required): fapality.com, xcum.com, camwhoresbay.com
              */
             /* Example relative URLs: shooshtime.com */
+            final Set<String> dups = new HashSet<String>();
             final String[] dlURLs = br.getRegex("((?:https?://[A-Za-z0-9\\.\\-/]+)?/get_file/[^<>\"\\']*?)(?:'|\")").getColumn(0);
             int foundQualities = 0;
             for (final String dllinkTmp : dlURLs) {
                 if (!isValidDirectURL(dllinkTmp)) {
                     logger.info("Skipping invalid video URL: " + dllinkTmp);
                     continue;
-                }
-                /* TODO: Maybe skip URLs that do not contain current FUID (if FUID exists). E.g. failure: privat-zapisi.biz */
-                // if (!dllinkTmp.contains(this.getFUID(this.getDownloadLink()))) {
-                // logger.info("Skipping URL because it doesn't contain FUID: " + dllinkTmp);
-                // continue;
-                // }
-                if (!addQualityURL(this.getDownloadLink(), qualityMap, dllinkTmp)) {
-                    uncryptedUrlWithoutQualityIndicator = dllinkTmp;
-                    continue;
-                } else {
-                    foundQualities++;
+                } else if (dups.add(dllinkTmp)) {
+                    if (!this.isHLS(dllinkTmp)) {
+                        URLConnectionAdapter con = null;
+                        try {
+                            final Browser brc = this.br.cloneBrowser();
+                            brc.setFollowRedirects(true);
+                            brc.setAllowedResponseCodes(new int[] { 405 });
+                            con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllinkTmp));
+                            final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
+                            if (workaroundURL != null) {
+                                con.disconnect();
+                                con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
+                            }
+                            if (!this.looksLikeDownloadableContent(con)) {
+                                brc.followConnection(true);
+                                continue;
+                            } else {
+                                con.disconnect();
+                            }
+                        } catch (Exception e) {
+                            logger.log(e);
+                            continue;
+                        } finally {
+                            if (con != null) {
+                                con.disconnect();
+                            }
+                        }
+                    }
+                    /* TODO: Maybe skip URLs that do not contain current FUID (if FUID exists). E.g. failure: privat-zapisi.biz */
+                    // if (!dllinkTmp.contains(this.getFUID(this.getDownloadLink()))) {
+                    // logger.info("Skipping URL because it doesn't contain FUID: " + dllinkTmp);
+                    // continue;
+                    // }
+                    if (!addQualityURL(this.getDownloadLink(), qualityMap, dllinkTmp)) {
+                        if (uncryptedUrlWithoutQualityIndicator == null) {
+                            uncryptedUrlWithoutQualityIndicator = dllinkTmp;
+                        }
+                        continue;
+                    } else {
+                        foundQualities++;
+                    }
                 }
             }
             logger.info("Found " + foundQualities + " qualities in stage 1");
@@ -1640,7 +1645,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     private boolean addQualityURL(final DownloadLink link, final HashMap<Integer, String> qualityMap, final String url) {
-        String qualityTmpStr = new Regex(url, "(\\d+)p\\.mp4").getMatch(0);
+        String qualityTmpStr = new Regex(url, "(\\d+)(p|m)\\.mp4").getMatch(0);
         if (qualityTmpStr == null) {
             /* Wider approach */
             qualityTmpStr = new Regex(url, "(\\d+)\\.mp4").getMatch(0);
@@ -1892,8 +1897,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /**
-     * This is supposed to return a numeric ID. Rather return null than anything else here! </br>
-     * Override {@link #hasFUIDInsideURL(String)} to return false if you know that your URLs do not contain a FUID for sure.
+     * This is supposed to return a numeric ID. Rather return null than anything else here! </br> Override {@link #hasFUIDInsideURL(String)}
+     * to return false if you know that your URLs do not contain a FUID for sure.
      */
     protected String getFUID(final DownloadLink link) {
         /* Prefer stored unique ID over ID inside URL because sometimes none is given inside URL. */

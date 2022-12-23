@@ -74,61 +74,61 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     // boolean isAddUnknownQualitiesEnabled();
     //
     // void setAddUnknownQualitiesEnabled(boolean b);
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @Order(25)
     boolean isGrabHLS144pVideoEnabled();
 
     void setGrabHLS144pVideoEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @Order(30)
     boolean isGrabHLS180pVideoEnabled();
 
     void setGrabHLS180pVideoEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @Order(40)
     boolean isGrabHLS270pVideoEnabled();
 
     void setGrabHLS270pVideoEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @Order(42)
     boolean isGrabHLS280pVideoEnabled();
 
     void setGrabHLS280pVideoEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @Order(43)
     boolean isGrabHLS288pVideoEnabled();
 
     void setGrabHLS288pVideoEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @Order(50)
     boolean isGrabHLS360pVideoEnabled();
 
     void setGrabHLS360pVideoEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @Order(60)
     boolean isGrabHLS480pVideoEnabled();
 
     void setGrabHLS480pVideoEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @Order(70)
     boolean isGrabHLS540pVideoEnabled();
 
     void setGrabHLS540pVideoEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @Order(80)
     boolean isGrabHLS720pVideoEnabled();
 
     void setGrabHLS720pVideoEnabled(boolean b);
 
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @Order(81)
     boolean isGrabHLS1080pVideoEnabled();
 

@@ -46,7 +46,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
     public void setColor(Color c) {
         textColor = c;
-        back = ColorUtils.getAlphaInstance(c, 50);
+        back = c != null ? ColorUtils.getAlphaInstance(c, 50) : null;
     }
 
     @Override
@@ -59,7 +59,12 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
             @Override
             protected Color getDefaultForeground() {
-                return textColor;
+                final Color ret = textColor;
+                if (ret != null) {
+                    return ret;
+                } else {
+                    return super.getDefaultForeground();
+                }
             }
 
             @Override
@@ -123,7 +128,12 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
             @Override
             protected Color getDefaultForeground() {
-                return textColor;
+                final Color ret = textColor;
+                if (ret != null) {
+                    return ret;
+                } else {
+                    return super.getDefaultForeground();
+                }
             }
 
             @Override
@@ -180,7 +190,9 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             {
                 determinatedRenderer = new CircledProgressBar();
                 renderer = determinatedRenderer;
-                determinatedRenderer.setForeground(textColor);
+                if (textColor != null) {
+                    determinatedRenderer.setForeground(textColor);
+                }
                 determinatedRenderer.setValueClipPainter(new IconPainter() {
                     public void paint(final CircledProgressBar bar, final Graphics2D g2, final Shape shape, final int diameter, final double progress) {
                         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -204,7 +216,9 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 determinatedRenderer.setNonvalueClipPainter(new IconPainter() {
                     public void paint(final CircledProgressBar bar, final Graphics2D g2, final Shape shape, final int diameter, final double progress) {
                         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                        g2.setColor(back);
+                        if (back != null) {
+                            g2.setColor(back);
+                        }
                         final Area a = new Area(shape);
                         a.intersect(new Area(new Ellipse2D.Float(-(diameter) / 2, -(diameter) / 2, diameter, diameter)));
                         g2.fill(a);
@@ -234,7 +248,12 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
             @Override
             protected Color getDefaultForeground() {
-                return textColor;
+                final Color ret = textColor;
+                if (ret != null) {
+                    return ret;
+                } else {
+                    return super.getDefaultForeground();
+                }
             }
 
             @Override
@@ -252,7 +271,9 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             @Override
             public void resetRenderer() {
                 super.resetRenderer();
-                determinatedRenderer.setForeground(textColor);
+                if (textColor != null) {
+                    determinatedRenderer.setForeground(textColor);
+                }
                 this.determinatedRenderer.setBorder(BorderFactory.createEmptyBorder(1, 5, 1, 1));
             }
 

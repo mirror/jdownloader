@@ -375,7 +375,10 @@ public class FavIcons {
         LOGGER.info("Create Favicon: " + host);
         try {
             if (!Application.isHeadless()) {
-                bg = LAFOptions.getInstance().getColorForPanelHeaderBackground();
+                final Color c = LAFOptions.getInstance().getColorForPanelHeaderBackground();
+                if (c != null) {
+                    bg = c;
+                }
             }
         } catch (final Throwable e) {
             LogController.CL().log(e);

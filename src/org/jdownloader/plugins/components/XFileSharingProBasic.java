@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -3897,6 +3898,20 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                 }
             }
         }
+        if (loginform != null) {
+            final InputField redirect = loginform.getInputFieldByName("redirect");
+            if (redirect != null && StringUtils.isNotEmpty(redirect.getValue())) {
+                try {
+                    final String value = URLDecoder.decode(redirect.getValue(), "UTF-8");
+                    if (value != null && canHandle(value)) {
+                        logger.info("clear login redirect to download:" + value);
+                        redirect.setValue("");
+                    }
+                } catch (Exception e) {
+                    logger.log(e);
+                }
+            }
+        }
         return loginform;
     }
 
@@ -4398,6 +4413,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                  * Perform linkcheck without logging in. TODO: Remove this and check for offline later as this would save one http request.
                  */
                 requestFileInformationWebsite(link, account, true);
+                br.setFollowRedirects(false);
                 final boolean verifiedLogin = loginWebsite(link, account, false);
                 /* Access main Content-URL */
                 this.getPage(link.getPluginPatternMatcher());
@@ -4405,7 +4421,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                     loginWebsite(link, account, true);
                     getPage(link.getPluginPatternMatcher());
                 }
-                doFree(link, account);
+                if (!AccountType.FREE.equals(account.getType())) {
+                    // account is no longer free, retry handlePremium handling
+                    setBrowser(createNewBrowserInstance());
+                    handlePremium(link, account);
+                } else {
+                    doFree(link, account);
+                }
+                return;
             } else {
                 /* First API --> This will also do linkcheck but only require one http request */
                 String dllink = null;

@@ -117,11 +117,9 @@ public class CopyCaseCom extends PluginForHost {
 
     private int getMaxChunks(final Account account) {
         if (account == null || AccountType.FREE.equals(account.getType())) {
-            // free, max 4 connections/IP, maxDownloads=1, leave 1 free for linkcheck
-            return -3;
+            return -4;
         } else {
-            // premium, max 8 connections/IP, maxDownloads=2, leave 1 free for linkcheck, 1 unused
-            return -3;
+            return -4;
         }
     }
 
@@ -140,14 +138,12 @@ public class CopyCaseCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // only the limit of connections per file for connections 4 per IP for guest/free, we prefer 3 chunks * 1 concurrent download
-        return 1;
+        return 4;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        // only the limit of connections per file for connections 8 per IP for premium, we prefer 3 chunks * 2 concurrent download
-        return 2;
+        return 4;
     }
 
     @Override

@@ -2,13 +2,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -23,6 +16,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.SxyprnCom;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy", "sxyprn.com" }, urls = { "https?://(?:www\\.)?yourporn\\.sexy/.+", "https?://(?:www\\.)?sxyprn\\.(?:com|net)/.+" })
 public class SxyprnComCrawler extends antiDDoSForDecrypt {
@@ -50,7 +50,7 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
         }
         if (plg.canHandle(param.getCryptedUrl())) {
             /* Single post */
-            final String packageName = SxyprnCom.regexTitle(br);
+            final String packageName = SxyprnCom.cleanupTitle(this, br, SxyprnCom.regexTitle(br));
             if (packageName != null) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(packageName);
@@ -81,10 +81,11 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
                 String postText = new Regex(postHTML, "data-title='([^\\']+)' ").getMatch(0);
                 if (postURL != null && postText != null) {
                     final DownloadLink link = createDownloadlink(br.getURL(postURL).toString());
-                    postText = Encoding.htmlDecode(postText).trim();
-                    link.setName(postText + ".mp4");
+                    final String title = SxyprnCom.cleanupTitle(this, br, postText);
+                    link.setName(title + ".mp4");
                     link.setAvailable(true);
                     ret.add(link);
+                    postText = Encoding.htmlDecode(postText).trim();
                     ret.addAll(crawlURLsGeneric(postText));
                 }
             }
@@ -106,7 +107,8 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
                 for (final String[] hit : hits) {
                     final DownloadLink link = createDownloadlink(br.getURL(hit[0]).toString());
                     final String postText = Encoding.htmlDecode(hit[1]).trim();
-                    link.setName(postText + ".mp4");
+                    final String title = SxyprnCom.cleanupTitle(this, br, postText);
+                    link.setName(title + ".mp4");
                     link.setAvailable(true);
                     ret.add(link);
                     ret.addAll(crawlURLsGeneric(postText));
