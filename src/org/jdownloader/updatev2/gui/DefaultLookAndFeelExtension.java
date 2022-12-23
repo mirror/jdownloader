@@ -30,8 +30,10 @@ public class DefaultLookAndFeelExtension extends LookAndFeelExtension {
     public static final String PIGEON_POST_APPROX                                = "ffABC7D8";
     public static final String RED                                               = "FFFF0000";
     public static final String TROPICAL_BLUE_APPROX                              = "ffCAE8FA";
+    private final String       laf;
 
-    public DefaultLookAndFeelExtension() {
+    public DefaultLookAndFeelExtension(final String laf) {
+        this.laf = laf;
     }
 
     @Override

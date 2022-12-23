@@ -12,6 +12,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 
 public class LAFOptions {
@@ -71,7 +72,18 @@ public class LAFOptions {
             }
         }
         if (ext == null) {
-            ext = new DefaultLookAndFeelExtension();
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                if (laf != null && laf.startsWith("de.javasoft.plaf.synthetica")) {
+                    ext = new DefaultLookAndFeelExtension(laf);
+                } else if (laf != null && laf.startsWith("com.formdev.flatlaf")) {
+                    ext = new DefaultFlatLAFExtension(laf);
+                } else {
+                    ext = new DefaultEmptyLookAndFeelExtension(laf);
+                }
+            } else {
+                // old default
+                ext = new DefaultLookAndFeelExtension(laf);
+            }
         }
         LAFEXTENSION = ext;
         cfg = JsonConfig.create(Application.getResource(path), LAFSettings.class);
@@ -145,32 +157,34 @@ public class LAFOptions {
     }
 
     public void applyConfigDescriptionTextColor(JLabel lbl) {
-        Color c = createColor(cfg.getColorForConfigPanelDescriptionText());
+        final Color c = createColor(cfg.getColorForConfigPanelDescriptionText());
         if (c != null) {
             lbl.setForeground(c);
         }
     }
 
     public boolean applyConfigLabelEnabledTextColor(JLabel lbl) {
-        Color c = createColor(cfg.getConfigLabelEnabledTextColor());
+        final Color c = createColor(cfg.getConfigLabelEnabledTextColor());
         if (c != null) {
             lbl.setForeground(c);
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public boolean applyConfigLabelDisabledTextColor(JLabel lbl) {
-        Color c = createColor(cfg.getConfigLabelDisabledTextColor());
+        final Color c = createColor(cfg.getConfigLabelDisabledTextColor());
         if (c != null) {
             lbl.setForeground(c);
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public void applyConfigHeaderTextColor(JLabel lbl) {
-        Color c = createColor(cfg.getColorForConfigHeaderTextColor());
+        final Color c = createColor(cfg.getColorForConfigHeaderTextColor());
         if (c != null) {
             lbl.setForeground(c);
         }

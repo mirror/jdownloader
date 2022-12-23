@@ -22,11 +22,13 @@ import org.jdownloader.updatev2.gui.DefaultLookAndFeelExtension;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class PlainLookAndFeelExtension extends DefaultLookAndFeelExtension {
+    public PlainLookAndFeelExtension(String laf) {
+        super(laf);
+    }
 
     @Override
     public void customizeHeaderScrollPane(JComponent headerScrollPane) {
         headerScrollPane.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, LAFOptions.getInstance().getColorForPanelBorders()));
-
     }
 
     @Override
@@ -47,16 +49,13 @@ public class PlainLookAndFeelExtension extends DefaultLookAndFeelExtension {
 
     @Override
     public void customizeMenuBar(JMenuBar menubar) {
-
         menubar.add(new JMenu(_GUI.T.MenuBar_loading()));
     }
 
     @Override
     public void customizeToolbar(JToolBar toolbar) {
-
         toolbar.setMinimumSize(new Dimension(36, 36));
         toolbar.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 0, 0, new Color(220, 220, 220)), BorderFactory.createEmptyBorder(2, 0, 2, 0)));
-
     }
 
     public void customizePaintHeaderScrollPaneBorder(JComponent pane, Graphics g) {
@@ -75,11 +74,9 @@ public class PlainLookAndFeelExtension extends DefaultLookAndFeelExtension {
         wrapper.setOpaque(false);
         wrapper.setBackground(null);
         wrapper.add(pane);
-
         if (pane instanceof org.jdownloader.gui.components.OverviewHeaderScrollPane) {
             Component view = pane.getViewport().getView();
             if (!"wrapper".equals(view.getName())) {
-
                 MigPanel viewWrapper = new MigPanel("ins 2", "[grow,fill]", "[grow,fill]");
                 viewWrapper.setName("wrapper");
                 viewWrapper.setOpaque(false);
@@ -152,5 +149,4 @@ public class PlainLookAndFeelExtension extends DefaultLookAndFeelExtension {
     public String getIconSetID() {
         return "flat";
     }
-
 }

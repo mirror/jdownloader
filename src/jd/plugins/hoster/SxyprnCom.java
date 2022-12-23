@@ -2,11 +2,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -22,8 +17,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy", "sxyprn.com" }, urls = { "https?://(?:www\\.)?yourporn\\.sexy/post/([a-fA-F0-9]{13})(?:\\.html)?", "https?://(?:www\\.)?sxyprn\\.(?:com|net)/post/([a-fA-F0-9]{13})(?:\\.html)?" })
 public class SxyprnCom extends antiDDoSForHost {
@@ -59,12 +60,24 @@ public class SxyprnCom extends antiDDoSForHost {
     private String  json         = null;
     private String  dllink       = null;
     private boolean server_issue = false;
-    // private String authorid = null;
 
+    // private String authorid = null;
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         return requestFileInformation(link, account);
+    }
+
+    public static String cleanupTitle(Plugin plugin, Browser br, final String title) {
+        if (title == null) {
+            return null;
+        }
+        String ret = Encoding.htmlDecode(title);
+        ret = ret.replaceAll("(https?://.*?)(\\s+|$)", "");// remove URLs
+        ret = ret.replaceAll("(?s)(.+#\\w+)\\s*(.+)", "$1");// remove everything after tags
+        ret = ret.replaceAll("(?s)(WATCH FULL VIDEO.+)", "");// remove WATCH FULL VIDEO section
+        ret = ret.trim();
+        return ret;
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
@@ -83,9 +96,10 @@ public class SxyprnCom extends antiDDoSForHost {
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String title = br.getRegex("name\" content=\"(.*?)\"").getMatch(0);
+        String title = br.getRegex("name\" content=\"(.*?)\"").getMatch(0);
         if (link.getFinalFileName() == null && title != null) {
-            link.setFinalFileName(Encoding.htmlDecode(title).trim() + ".mp4");
+            title = cleanupTitle(this, br, title);
+            link.setFinalFileName(title + ".mp4");
         }
         // authorid = br.getRegex("data-authorid='([^']+)'").getMatch(0);
         json = br.getRegex("data-vnfo=\\'([^\\']+)\\'").getMatch(0);
