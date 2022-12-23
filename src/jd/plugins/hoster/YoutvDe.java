@@ -211,6 +211,9 @@ public class YoutvDe extends PluginForHost {
         /* Prefer last used quality if existent. */
         String qualityStr = link.getStringProperty(PROPERTY_LAST_USED_QUALITY);
         if (qualityStr == null) {
+            /*
+             * Last quality which was force set during linkcheck -> This means that the user preferred quality was not available last time.
+             */
             qualityStr = link.getStringProperty(PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK);
         }
         if (qualityStr == null) {
