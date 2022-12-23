@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.Map;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
 import org.jdownloader.plugins.components.config.YoutvDeConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -54,10 +56,12 @@ public class YoutvDe extends PluginForHost {
         this.enablePremium("https://www.youtv.de/produkte");
     }
 
-    private final String PROPERTY_DIRECTURL                 = "directurl";
-    private final String PROPERTY_LAST_FILE_ERROR           = "last_file_error";
-    private final String PROPERTY_TIMESTAMP_LAST_FILE_ERROR = "timestamp_last_file_error";
-    private final String PROPERTY_LAST_USED_QUALITY         = "last_used_quality";
+    private final String PROPERTY_DIRECTURL                              = "directurl";
+    private final String PROPERTY_FILESIZE                               = "filesize";
+    private final String PROPERTY_LAST_FILE_ERROR                        = "last_file_error";
+    private final String PROPERTY_TIMESTAMP_LAST_FILE_ERROR              = "timestamp_last_file_error";
+    private final String PROPERTY_LAST_USED_QUALITY                      = "last_used_quality";
+    private final String PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK = "last_force_chosen_quality_in_linkcheck";
 
     @Override
     public String getAGBLink() {
@@ -124,7 +128,7 @@ public class YoutvDe extends PluginForHost {
         final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
         final String fid = urlinfo.getMatch(0);
         if (!link.isNameSet()) {
-            final String slug = urlinfo.getMatch(0);
+            final String slug = urlinfo.getMatch(1);
             if (slug != null) {
                 link.setName(fid + "_" + slug.replace("-", " ").trim() + ".mp4");
             } else {
@@ -155,21 +159,25 @@ public class YoutvDe extends PluginForHost {
                 break;
             }
         }
+        boolean qualityWasAutoChosen = false;
         if (chosenQuality == null) {
             logger.info("Failed to find preferred quality -> Fallback to first/best");
             chosenQuality = files.get(0);
+            qualityWasAutoChosen = true;
         }
+        final String chosenQualityStr = chosenQuality.get("quality").toString();
         final String description = (String) recording.get("long_text");
         if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
             link.setComment(description);
         }
-        link.setVerifiedFileSize(((Number) chosenQuality.get("size")).longValue());
-        final String directurl = chosenQuality.get("file").toString();
-        final String originalFilename = new Regex(directurl, "/([^/]+\\.mp4)$").getMatch(0);
-        if (originalFilename != null) {
-            link.setFinalFileName(originalFilename);
+        link.setProperty(PROPERTY_DIRECTURL + "_" + chosenQualityStr, chosenQuality.get("file"));
+        link.setProperty(PROPERTY_FILESIZE + "_" + chosenQualityStr, chosenQuality.get("size"));
+        if (qualityWasAutoChosen) {
+            link.setProperty(PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK, chosenQualityStr);
+        } else {
+            link.removeProperty(PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK);
         }
-        link.setProperty(PROPERTY_DIRECTURL + "_" + chosenQuality.get("quality"), directurl);
+        setFilenameAndSize(link);
         final List<String> file_errors = (List<String>) recording.get("file_errors");
         if (file_errors != null && file_errors.size() > 0) {
             /* Typically daily downloadlimit reached */
@@ -181,9 +189,30 @@ public class YoutvDe extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private void setFilenameAndSize(final DownloadLink link) {
+        final String qualityStr = getPreferredQualityStr(link);
+        final String directurl = getDirecturl(link);
+        if (directurl != null) {
+            try {
+                final String urlWithoutParams = URLHelper.getUrlWithoutParams(directurl);
+                final String originalFilename = new Regex(urlWithoutParams, "/([^/]+)$").getMatch(0);
+                if (originalFilename != null) {
+                    link.setFinalFileName(originalFilename);
+                }
+            } catch (final MalformedURLException ignore) {
+                /* This should never happen */
+                logger.warning("Bad final downloadurl");
+            }
+        }
+        link.setVerifiedFileSize(link.getLongProperty(PROPERTY_FILESIZE + "_" + qualityStr, -1));
+    }
+
     private String getPreferredQualityStr(final DownloadLink link) {
         /* Prefer last used quality if existent. */
         String qualityStr = link.getStringProperty(PROPERTY_LAST_USED_QUALITY);
+        if (qualityStr == null) {
+            qualityStr = link.getStringProperty(PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK);
+        }
         if (qualityStr == null) {
             qualityStr = PluginJsonConfig.get(YoutvDeConfig.class).getPreferredQuality().name();
         }
@@ -302,14 +331,16 @@ public class YoutvDe extends PluginForHost {
         }
         if (StringUtils.containsIgnoreCase(packageName, "free")) {
             account.setType(AccountType.FREE);
-            /* TODO: Check if free users can download anything. */
-            ai.setTrafficLeft(0);
         } else {
             account.setType(AccountType.PREMIUM);
             ai.setTrafficLeft(0);
             automaticSubscription = br.containsHTML("(?i)Automatische Verlängerung:</b>\\s*Ja,\\s*automatisch abgebucht");
-            ai.setUnlimitedTraffic();
         }
+        /*
+         * 2022-12-23: All accounts, even free accounts can download without any sort of traffic limit (except this "fair use" limit of 80
+         * downloads per day).
+         */
+        ai.setUnlimitedTraffic();
         if (expireDateStr != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDateStr, "dd.MM.yyyy", Locale.GERMANY));
         }
@@ -363,6 +394,7 @@ public class YoutvDe extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        setFilenameAndSize(link);
         String dllink = getDirecturl(link);
         if (StringUtils.isEmpty(dllink)) {
             requestFileInformation(link, account);

@@ -21,6 +21,12 @@ public interface YoutvDeConfig extends PluginConfigInterface {
     }
 
     public static enum PreferredQuality implements LabelInterface {
+        HD {
+            @Override
+            public String getLabel() {
+                return "HD - High Definition";
+            }
+        },
         HQ {
             @Override
             public String getLabel() {
@@ -32,11 +38,17 @@ public interface YoutvDeConfig extends PluginConfigInterface {
             public String getLabel() {
                 return "NQ - Normal Quality";
             }
+        },
+        AD {
+            @Override
+            public String getLabel() {
+                return "AD - Hörfilmspur";
+            }
         };
     }
 
     @AboutConfig
-    @DefaultEnumValue("HQ")
+    @DefaultEnumValue("HD")
     @DescriptionForConfigEntry(text_PreferredQuality)
     @Order(10)
     PreferredQuality getPreferredQuality();
