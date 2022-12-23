@@ -68,12 +68,12 @@ public class CouchTuner extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String fpName = HTMLSearch.searchMetaTag(br, "og:title");
         if (StringUtils.isEmpty(fpName)) {
             fpName = br.getRegex("(?:og:)?(?:title|description)\\\"[^>]*content=[\\\"'](?:\\s*Watch\\s*Couchtuner\\s*)?([^\\\"\\']+)\\s+(?:online\\s+for\\s+free|\\|)").getMatch(0);
@@ -103,6 +103,9 @@ public class CouchTuner extends antiDDoSForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName).trim());
             fp.addLinks(ret);
+        }
+        if (ret.isEmpty()) {
+            logger.info("Found no results at all");
         }
         return ret;
     }

@@ -27,26 +27,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DecrypterRetryException;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.MediathekHelper;
-import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.ARDMediathek;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
@@ -69,6 +49,26 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.MediathekHelper;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.ARDMediathek;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de", "tagesschau.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/.*?\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html",
         "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?tagesschau\\.de/[^<>\"]+\\.html" })
@@ -229,6 +229,7 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (ret.size() == 0) {
             if (checkPluginSettingsFlag) {
+                /* Let user know about possible bad settings for this plugin which prevents it from returning results. */
                 throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS);
             }
         }
@@ -599,8 +600,8 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         metadata.setChannel(trackerData.get("trackerClipCategory").toString());
         /**
-         * 2022-03-10: Do not use trackerClipId as unique ID as there can be different IDs for the same streams. </br> Let the handling go
-         * into fallback and use the final downloadurls as unique trait!
+         * 2022-03-10: Do not use trackerClipId as unique ID as there can be different IDs for the same streams. </br>
+         * Let the handling go into fallback and use the final downloadurls as unique trait!
          */
         // metadata.setContentID(trackerData.get("trackerClipId").toString());
         metadata.setRequiresContentIDToBeSet(false);
@@ -851,7 +852,8 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     /**
-     * Handling for older ARD websites. </br> INFORMATION: network = akamai or limelight == RTMP </br>
+     * Handling for older ARD websites. </br>
+     * INFORMATION: network = akamai or limelight == RTMP </br>
      */
     private ArrayList<DownloadLink> crawlDasersteVideo(final CryptedLink param) throws Exception {
         br.getPage(param.getCryptedUrl());
@@ -1598,6 +1600,7 @@ public class Ardmediathek extends PluginForDecrypt {
         P_270(480, 270),
         P_180(320, 180),
         P_144(256, 144);
+
         private int height;
         private int width;
 
