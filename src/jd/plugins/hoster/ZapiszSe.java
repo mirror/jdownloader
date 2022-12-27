@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,11 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zapisz.se" }, urls = { "https?://zapisz.se/files/\\d+/([^/]+)?" })
 public class ZapiszSe extends PluginForHost {
@@ -129,7 +129,20 @@ public class ZapiszSe extends PluginForHost {
         if (dllink == null) {
             this.loginWebsite(account, false);
             br.getPage(WEBSITE_BASE + "/addfiles.html");
-            br.postPage(br.getURL(), "addfiles_hash=&list=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            final Form linklistform = br.getFormbyKey("list");
+            if (linklistform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // Only https URLs are downloaded from zapisz.se, http URLs are forwarded to the normal hoster
+            linklistform.put("list", Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this).replace("http://", "https://")));
+            // k2s.cc Captcha fields do not need to be filled in
+            linklistform.put("k2s", "");
+            linklistform.put("k2skey", "");
+            linklistform.put("addfiles_hash", "");
+            // An invisible ReCaptcha is now required for the form
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            linklistform.put("recaptcha_response", Encoding.urlEncode(recaptchaV2Response));
+            br.submitForm(linklistform);
             br.getPage("/update.php?ie=0." + System.currentTimeMillis() + "&u=1&lastupdate=0");
             final String[] urls = HTMLParser.getHttpLinks(br.toString(), br.getURL());
             for (final String url : urls) {
