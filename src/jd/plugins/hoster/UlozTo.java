@@ -22,10 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -48,6 +44,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UlozTo extends PluginForHost {
     private boolean              passwordProtected            = false;
@@ -60,8 +60,7 @@ public class UlozTo extends PluginForHost {
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     /* don't touch the following! */
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static Object        CTRLLOCK                     = new Object();
+    private static AtomicInteger freeRunning                  = new AtomicInteger(0);
 
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -118,11 +117,6 @@ public class UlozTo extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return maxFree.get();
-    }
-
-    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
@@ -143,7 +137,7 @@ public class UlozTo extends PluginForHost {
      */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        synchronized (CTRLLOCK) {
+        synchronized (freeRunning) {
             return requestFileInformation(link, false);
         }
     }
@@ -467,9 +461,9 @@ public class UlozTo extends PluginForHost {
                     final String redirectToSecondCaptcha = PluginJSonUtils.getJson(br, "redirectDialogContent");
                     if (redirectToSecondCaptcha != null) {
                         /**
-                         * 2021-02-11: Usually: /download-dialog/free/limit-exceeded?fileSlug=<FUID>&repeated=0&nocaptcha=0 </br>
-                         * This can happen after downloading some files. The user is allowed to download more but has to solve two captchas
-                         * in a row to do so!
+                         * 2021-02-11: Usually: /download-dialog/free/limit-exceeded?fileSlug=<FUID>&repeated=0&nocaptcha=0 </br> This can
+                         * happen after downloading some files. The user is allowed to download more but has to solve two captchas in a row
+                         * to do so!
                          */
                         br.getPage(redirectToSecondCaptcha);
                         final Form f = br.getFormbyActionRegex(".*limit-exceeded.*");
@@ -574,8 +568,10 @@ public class UlozTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                 // 503 with nginx means no more connections allow, it doesn't mean server error!
-                synchronized (CTRLLOCK) {
-                    totalMaxSimultanFreeDownload.set(Math.min(Math.max(1, maxFree.get() - 1), totalMaxSimultanFreeDownload.get()));
+                synchronized (freeRunning) {
+                    final int maxFreeBefore = totalMaxSimultanFreeDownload.get();
+                    totalMaxSimultanFreeDownload.set(Math.min(Math.max(1, freeRunning.get()), maxFreeBefore));
+                    logger.info("maxFreeRunning(" + link.getName() + ")|running:" + freeRunning.get() + "|before:" + maxFreeBefore + "|after:" + totalMaxSimultanFreeDownload.get());
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             } else {
@@ -586,12 +582,12 @@ public class UlozTo extends PluginForHost {
         link.setProperty("directlink_free", dl.getConnection().getURL().toString());
         try {
             /* add a download slot */
-            controlFree(+1);
+            controlMaxFreeDownloads(account, link, +1);
             /* start the dl */
             dl.startDownload();
         } finally {
             /* remove download slot */
-            controlFree(-1);
+            controlMaxFreeDownloads(account, link, -1);
         }
     }
 
@@ -897,24 +893,27 @@ public class UlozTo extends PluginForHost {
         return ai;
     }
 
-    /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
-     *
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
-     * @param controlFree
-     *            (+1|-1)
-     */
-    private void controlFree(final int num) {
-        synchronized (CTRLLOCK) {
-            logger.info("maxFree was = " + maxFree.get());
-            maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
-            logger.info("maxFree now = " + maxFree.get());
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        final int max = totalMaxSimultanFreeDownload.get();
+        if (max == -1) {
+            return -1;
+        } else {
+            // do not sync here! it's read only!
+            final int running = freeRunning.get();
+            final int ret = Math.min(running + 1, max);
+            return ret;
+        }
+    }
+
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null || AccountType.FREE.equals(account.getType())) {
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
         }
     }
 

@@ -25,18 +25,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.GfycatConfig;
-import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -51,6 +39,18 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.GfycatConfig;
+import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(?:www\\.)?(?:gfycat\\.com(?:/ifr)?|gifdeliverynetwork\\.com(?:/ifr)?|redgifs\\.com/(?:watch|ifr))/([A-Za-z0-9]+)" })
 public class GfyCatCom extends PluginForHost {
@@ -245,6 +245,10 @@ public class GfyCatCom extends PluginForHost {
             }
             final Browser brapi = br.cloneBrowser();
             brapi.setAllowedResponseCodes(410);
+            /*
+             * 2022-12-27 - this api no longer returns sound or higher quality! This API is going away, please upgrade your app:
+             * https://github.com/Redgifs/api/wiki
+             */
             GetRequest request = brapi.createGetRequest("https://api.redgifs.com/v1/gfycats/" + this.getFID(link));
             request.getHeaders().put("Origin", "https://redgifs.com/");
             if (token != null) {
@@ -263,6 +267,7 @@ public class GfyCatCom extends PluginForHost {
             String url = null;
             String ext = null;
             Number size = null;
+            boolean trustSize = false;
             Map<String, Object> selectedSource = null;
             switch (getPreferredFormat(link)) {
             case GIF:
@@ -291,9 +296,25 @@ public class GfyCatCom extends PluginForHost {
                 }
                 // fallthrough to next best quality
             case MP4: // MP4 == default
-            default:
-                selectedSource = (Map<String, Object>) sources.get("mp4");
+            default: {
+                String selectedSourceID = null;
+                for (final String sourceID : new String[] { "mp4", "mobile", "silent" }) {
+                    final Map<String, Object> currentSource = (Map<String, Object>) sources.get("mp4");
+                    if (currentSource != null) {
+                        final String sourceURL = (String) currentSource.get("url");
+                        if (sourceURL != null) {
+                            if (selectedSourceID == null || sourceURL.equals(selectedSource.get("url"))) {
+                                if (selectedSource != null) {
+                                    logger.info(selectedSourceID + " and " + sourceID + " source share the same url -> use " + sourceID + " source!");
+                                }
+                                selectedSourceID = sourceID;
+                                selectedSource = currentSource;
+                            }
+                        }
+                    }
+                }
                 if (selectedSource != null) {
+                    trustSize = selectedSource != null;
                     url = (String) selectedSource.get("url");
                     size = (Number) selectedSource.get("size");
                 }
@@ -307,6 +328,7 @@ public class GfyCatCom extends PluginForHost {
                     ext = ".mp4";
                     break;
                 }
+            }
             }
             if (selectedSource == null) {
                 /* 2022-02-15: New: Maybe single image (not animated) */
@@ -347,9 +369,11 @@ public class GfyCatCom extends PluginForHost {
                 link.setName(filename);
             }
             if (size != null) {
-                /* 2022-12-19: We can't be sure that this is the real filesize. */
-                // link.setVerifiedFileSize(size.longValue());
-                link.setDownloadSize(size.longValue());
+                if (trustSize && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    link.setVerifiedFileSize(size.longValue());
+                } else {
+                    link.setDownloadSize(size.longValue());
+                }
             }
             if (link.getComment() == null) {
                 final List<Object> tags = (List<Object>) entries.get("tags");
