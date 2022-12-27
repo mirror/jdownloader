@@ -21,18 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.BiqleRuConfig;
-import org.jdownloader.plugins.components.config.BiqleRuConfig.Quality;
-import org.jdownloader.plugins.components.config.BiqleRuConfig.QualitySelectionMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -46,6 +34,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.BiqleRuConfig;
+import org.jdownloader.plugins.components.config.BiqleRuConfig.Quality;
+import org.jdownloader.plugins.components.config.BiqleRuConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BiqleRuCrawler extends PluginForDecrypt {
@@ -64,10 +65,12 @@ public class BiqleRuCrawler extends PluginForDecrypt {
         ret.add(new String[] { "biqle.ru", "biqle.com", "biqle.org" });
         ret.add(new String[] { "daft.sex" });
         ret.add(new String[] { "ukdevilz.com" });
-        ret.add(new String[] { "noodlemagazine.com" });
         ret.add(new String[] { "novids.com" });
         /* 2022-12-22 */
         ret.add(new String[] { "dsex.to" });
+        /* 2022-12-27 */
+        ret.add(new String[] { "mat6tube.com" });
+        ret.add(new String[] { "noodlemagazine.com" });
         return ret;
     }
 
@@ -92,10 +95,16 @@ public class BiqleRuCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
+    private boolean isNoodleMagazin(final String host) {
+        return "mat6tube.com".equals(host) || "noodlemagazine.com".equals(host);
+    }
+
+    private final String decryptedhost = "biqledecrypted://";
+
     /* Converts embedded crap to vk.com video-urls. */
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if ("biqle.ru".equals(getHost()) || "dsex.to".equals(getHost())) {
+        if ("biqle.ru".equals(getHost()) || "dsex.to".equals(getHost()) || isNoodleMagazin(getHost())) {
             final Regex urlinfo = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_(\\d+)");
             final String oid = urlinfo.getMatch(0);
             final String id = urlinfo.getMatch(1);
@@ -128,6 +137,9 @@ public class BiqleRuCrawler extends PluginForDecrypt {
                 /* This should never happen */
                 logger.info("missing vk.com decrypter plugin?!");
             }
+            if (isNoodleMagazin(getHost())) {
+                return handleNoodleMagazin(param);
+            }
             br.getPage(param.getCryptedUrl());
             br.followRedirect();
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -155,10 +167,8 @@ public class BiqleRuCrawler extends PluginForDecrypt {
             if (daxabEmbedURL == null) {
                 daxabEmbedURL = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/player/[a-zA-Z0-9_\\-]+)").getMatch(0);
             }
-            final String decryptedhost = "biqledecrypted://";
             if (daxabEmbedURL != null) {
                 /* TODO: Apply quality setting also for other types of videos e.g. externally hosted/vk */
-                final String userPreferredQuality = getUserPreferredqualityStr();
                 final Map<String, DownloadLink> qualityMap = new HashMap<String, DownloadLink>();
                 DownloadLink best = null;
                 int highestQualityHeight = -1;
@@ -169,7 +179,7 @@ public class BiqleRuCrawler extends PluginForDecrypt {
                 if (cdn_filesString != null) {
                     final String server = Base64.decodeToString(new StringBuilder(brc.getRegex("server\\s*:\\s*\"(.*?)\"").getMatch(0)).reverse().toString());
                     final String cdn_id = brc.getRegex("cdn_id\\s*:\\s*\"(-?\\d+_\\d+)\"").getMatch(0);
-                    final Map<String, Object> cdn_files = JSonStorage.restoreFromString(cdn_filesString, TypeRef.HASHMAP);
+                    final Map<String, Object> cdn_files = restoreFromString(cdn_filesString, TypeRef.MAP);
                     for (Entry<String, Object> cdn_file : cdn_files.entrySet()) {
                         if (cdn_file.getKey().startsWith("mp4")) {
                             String heightStr = new Regex(cdn_file, "mp4_(\\d+)").getMatch(0);
@@ -207,7 +217,7 @@ public class BiqleRuCrawler extends PluginForDecrypt {
                     final String cKey = brc.getRegex("c_key\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String partialSig = brc.getRegex("\"sig\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String partialQualityString = brc.getRegex("\"quality\"\\s*:\\s*(\\{.*?\\})").getMatch(0);
-                    final Map<String, Object> partialQuality = JSonStorage.restoreFromString(partialQualityString, TypeRef.HASHMAP);
+                    final Map<String, Object> partialQuality = restoreFromString(partialQualityString, TypeRef.MAP);
                     final UrlQuery query = new UrlQuery();
                     query.add("token", accessToken);
                     query.add("videos", videoId);
@@ -232,7 +242,7 @@ public class BiqleRuCrawler extends PluginForDecrypt {
                         titleName = title;
                     }
                     final String jsonFilesString = brc.getRegex("\"files\"\\s*:\\s*(\\{.*?\\})").getMatch(0);
-                    final Map<String, Object> jsonFiles = JSonStorage.restoreFromString(jsonFilesString, TypeRef.HASHMAP);
+                    final Map<String, Object> jsonFiles = restoreFromString(jsonFilesString, TypeRef.MAP);
                     for (Entry<String, Object> jsonFile : jsonFiles.entrySet()) {
                         if (jsonFile.getKey().startsWith("mp4")) {
                             String resolution = new Regex(jsonFile, "mp4_(\\d+)").getMatch(0);
@@ -258,28 +268,7 @@ public class BiqleRuCrawler extends PluginForDecrypt {
                         }
                     }
                 }
-                if (qualityMap.isEmpty() && best == null) {
-                    /* This should never happen */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    final QualitySelectionMode mode = PluginJsonConfig.get(BiqleRuConfig.class).getQualitySelectionMode();
-                    if (mode == QualitySelectionMode.BEST) {
-                        ret.add(best);
-                    } else if (mode == QualitySelectionMode.SELECTED_ONLY) {
-                        if (qualityMap.containsKey(userPreferredQuality)) {
-                            logger.info("Adding user preferred quality: " + userPreferredQuality);
-                            ret.add(qualityMap.get(userPreferredQuality));
-                        } else {
-                            logger.info("Adding best quality because user selected was not found");
-                            ret.add(best);
-                        }
-                    } else {
-                        /* Add ALL existant qualities */
-                        for (final Entry<String, DownloadLink> entry : qualityMap.entrySet()) {
-                            ret.add(entry.getValue());
-                        }
-                    }
-                }
+                handleQualitySelection(ret, qualityMap, best);
             } else {
                 // vk mode | Old way(?)
                 final String daxabExt = br.getRegex("((?:https?:)?//(?:daxab\\.com|dxb\\.to)/ext\\.php\\?oid=[0-9\\-]+&id=\\d+&hash=[a-zA-Z0-9]+)\"").getMatch(0);
@@ -310,6 +299,92 @@ public class BiqleRuCrawler extends PluginForDecrypt {
             oid = urlinfo.getMatch(0);
             id = urlinfo.getMatch(1);
             ret.add(createDownloadlink(VKontakteRu.generateContentURLVideo(oid, id)));
+        }
+        return ret;
+    }
+
+    private void handleQualitySelection(List<DownloadLink> ret, Map<String, DownloadLink> qualityMap, DownloadLink best) throws PluginException {
+        if (qualityMap.isEmpty() && best == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            final String userPreferredQuality = getUserPreferredqualityStr();
+            final QualitySelectionMode mode = PluginJsonConfig.get(BiqleRuConfig.class).getQualitySelectionMode();
+            if (mode == QualitySelectionMode.BEST) {
+                ret.add(best);
+            } else if (mode == QualitySelectionMode.SELECTED_ONLY) {
+                if (qualityMap.containsKey(userPreferredQuality)) {
+                    logger.info("Adding user preferred quality: " + userPreferredQuality);
+                    ret.add(qualityMap.get(userPreferredQuality));
+                } else {
+                    logger.info("Adding best quality because user selected was not found");
+                    ret.add(best);
+                }
+            } else {
+                /* Add ALL existant qualities */
+                for (final Entry<String, DownloadLink> entry : qualityMap.entrySet()) {
+                    ret.add(entry.getValue());
+                }
+            }
+        }
+    }
+
+    private ArrayList<DownloadLink> handleNoodleMagazin(CryptedLink param) throws Exception {
+        br.getPage(param.getCryptedUrl());
+        br.followRedirect();
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*An error has occurred")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String title = Encoding.htmlOnlyDecode(br.getRegex("<title>\\s*(.*?)\\s*(—\\s*BIQLE.*?)?</title>").getMatch(0));
+        FilePackage fp = null;
+        if (title != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(title);
+            fp.setAllowInheritance(true);
+        }
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_(\\d+)");
+        final String oid = urlinfo.getMatch(0);
+        final String id = urlinfo.getMatch(1);
+        final String oid_and_id = oid + "_" + id;
+        String url = br.getRegex("((?:https?:)?//[^/]+/(?:player|playlist|download)/[a-zA-Z0-9_\\-]+\\?m=[a-f0-9]+)").getMatch(0);
+        url = url.replaceFirst("(player|playlist|download)/", "playlist/");
+        final String userPreferredQuality = getUserPreferredqualityStr();
+        final Map<String, DownloadLink> qualityMap = new HashMap<String, DownloadLink>();
+        DownloadLink best = null;
+        int highestQualityHeight = -1;
+        final Map<String, Object> response = restoreFromString(br.getPage(url), TypeRef.MAP);
+        for (Map<String, Object> source : (List<Map<String, Object>>) response.get("sources")) {
+            if ("mp4".equals(source.get("type"))) {
+                final String file = (String) source.get("file");
+                String resolution = new Regex(file, "(\\d+)p\\.mp4").getMatch(0);
+                if (resolution == null) {
+                    resolution = new Regex((String) source.get("label"), "(\\d+)").getMatch(0);
+                }
+                resolution = StringUtils.valueOrEmpty(resolution);
+                final DownloadLink dl = createDownloadlink(file.replaceFirst("^https?://", decryptedhost));
+                dl.setFinalFileName(title + "_" + resolution + ".mp4");
+                dl.setContainerUrl(param.getCryptedUrl());
+                if (!resolution.isEmpty()) {
+                    final int height = Integer.parseInt(resolution);
+                    if (height > highestQualityHeight) {
+                        highestQualityHeight = height;
+                        best = dl;
+                    }
+                    qualityMap.put(resolution + "p", dl);
+                } else if (best == null) {
+                    /* Assume video without quality modifier is BEST. */
+                    best = dl;
+                }
+            } else {
+                logger.info("unsupported type:" + JSonStorage.serializeToJson(source));
+            }
+        }
+        handleQualitySelection(ret, qualityMap, best);
+        if (fp != null) {
+            fp.addLinks(ret);
         }
         return ret;
     }

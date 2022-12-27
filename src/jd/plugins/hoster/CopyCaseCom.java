@@ -1,5 +1,7 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -90,7 +92,7 @@ public class CopyCaseCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             } else {
                 brc.followConnection(true);
-                handleError(brc, con);
+                handleError(brc, link, con);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } finally {
@@ -98,11 +100,16 @@ public class CopyCaseCom extends PluginForHost {
         }
     }
 
-    private void handleError(final Browser br, final URLConnectionAdapter con) throws Exception {
+    private void handleError(final Browser br, DownloadLink link, final URLConnectionAdapter con) throws Exception {
         switch (con.getResponseCode()) {
         case 404:
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         case 429:
+            // HTTP/1.1 429 Too Many Requests
+            final DispositionHeader fileName = parseDispositionHeader(con);
+            if (fileName != null && StringUtils.isNotEmpty(fileName.getFilename())) {
+                link.setFinalFileName(fileName.getFilename());
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
         default:
             break;
@@ -129,8 +136,12 @@ public class CopyCaseCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, getMaxChunks(account));
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection();
-            handleError(br, dl.getConnection());
+            try {
+                br.followConnection(true);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+            handleError(br, link, dl.getConnection());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

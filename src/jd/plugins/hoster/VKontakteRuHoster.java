@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.MalformedURLException;
@@ -32,6 +33,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
+import jd.controlling.faviconcontroller.FavIcons;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -73,6 +75,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
@@ -345,7 +348,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         /*
@@ -1691,6 +1694,29 @@ public class VKontakteRuHoster extends PluginForHost {
     @Override
     public String getDescription() {
         return "JDownloader's Vk Plugin helps downloading all sorts of media from vk.com.";
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.FAVICON };
+    }
+
+    @Override
+    public Object getFavIcon(String host) throws IOException {
+        if (getHost().equals(host)) {
+            final Browser br = new Browser();
+            prepBrowser(br);
+            br.getPage("https://" + getHost());
+            try {
+                handleTooManyRequests(this, br);
+            } catch (Exception e) {
+                throw new IOException(e);
+            }
+            BufferedImage ret = FavIcons.download_FavIconTag(br, getHost(), getLogger());
+            return ret;
+        } else {
+            return null;
+        }
     }
 
     public static final String   SLEEP_PAGINATION_GENERAL                                                            = "SLEEP_PAGINATION_GENERAL";
