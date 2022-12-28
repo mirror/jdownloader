@@ -35,7 +35,7 @@ import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /** 2020-06-08: Current main domain is: isrbx.net */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "isrbx.net" }, urls = { "https?://[\\w\\.]*(?:isra?bo?x(?:-music)?\\.(?:[a-zA-Z]+)|isbox\\.net)/[0-9]+-.*?\\.html|https?://(?:www\\.)?(?:biq\\.to|(?:isra?bo?x(?:-music)?\\.(?:[a-zA-Z]+)|isbox\\.net))/go/[a-f0-9]{100,}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "isrbx.me" }, urls = { "https?://[\\w\\.]*(?:isra?bo?x(?:-music)?\\.(?:[a-zA-Z]+)|isbox\\.net|isrbx\\.me)/[0-9]+-.*?\\.html|https?://(?:www\\.)?(?:biq\\.to|(?:isra?bo?x(?:-music)?\\.(?:[a-zA-Z]+)|isbox\\.net|isrbx\\.me))/go/[a-f0-9]{100,}" })
 public class SrBox extends antiDDoSForDecrypt {
     public SrBox(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,10 +45,10 @@ public class SrBox extends antiDDoSForDecrypt {
     public void init() {
         super.init();
         /** Without limit rate-limit may kick in after about 800 items. */
-        Browser.setRequestIntervalLimitGlobal("isrbx.net", 1000);
+        Browser.setRequestIntervalLimitGlobal("isrbx.me", 1000);
     }
 
-    private final String        base                 = "(?i)https?://[\\w\\.]*(?:isra?bo?x(?:-music)?\\.(?:[a-zA-Z]+)|isbox\\.net)/";
+    private final String        base                 = "(?i)https?://[\\w\\.]*(?:isra?bo?x(?:-music)?\\.(?:[a-zA-Z]+)|isbox\\.net|isrbx\\.me)/";
     private static final String TYPE_SINGLE_REDIRECT = "https?://[^/]+/go/[a-f0-9]{100,}";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
