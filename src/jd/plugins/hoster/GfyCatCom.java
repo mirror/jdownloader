@@ -95,7 +95,7 @@ public class GfyCatCom extends PluginForHost {
         }
     }
 
-    private String getFID(final DownloadLink link) {
+    protected String getFID(final DownloadLink link) {
         final String ret = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         if (ret != null) {
             // ID must be lower case!
@@ -115,7 +115,7 @@ public class GfyCatCom extends PluginForHost {
         }
     }
 
-    private String dllink = null;
+    protected String dllink = null;
 
     /*
      * Using API: http://gfycat.com/api 2020-06-18: Not using the API - wtf does this comment mean?? Maybe website uses the same json as API
@@ -487,7 +487,7 @@ public class GfyCatCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private boolean verifyDownloadURL(final DownloadLink link, final String downloadURL) throws IOException {
+    protected boolean verifyDownloadURL(final DownloadLink link, final String downloadURL) throws IOException {
         if (StringUtils.isEmpty(downloadURL)) {
             return false;
         }

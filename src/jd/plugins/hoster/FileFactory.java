@@ -263,6 +263,8 @@ public class FileFactory extends PluginForHost {
         }
     }
 
+    private String invalidAuthKey = "Invalid authorization key";
+
     /** Handles errors according to: https://api.filefactory.com/#appendix-error-matrix */
     private void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account, final String apiKey) throws PluginException {
         if ("error".equalsIgnoreCase(PluginJSonUtils.getJsonValue(br, "type"))) {
@@ -288,7 +290,7 @@ public class FileFactory extends PluginForHost {
                 // ERR_API_INTERNAL_ERROR
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
             case 702:
-                if ("Invalid authorization key".equals(errormessage)) {
+                if (invalidAuthKey.equals(errormessage)) {
                     useAPI.set(false);
                 }
                 /* This should never happen */
@@ -541,12 +543,22 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
         if (!isMail(account.getUser())) {
             throw new AccountInvalidException("Please enter your E-Mail address as username!");
-        } else if (useAPI(account)) {
-            ai = fetchAccountInfo_API(account, ai);
         } else {
+            AccountInfo ai = new AccountInfo();
+            if (useAPI(account)) {
+                try {
+                    return fetchAccountInfo_API(account, ai);
+                } catch (PluginException e) {
+                    if (!useAPI(account) || invalidAuthKey.equals(e.getMessage())) {
+                        // auto retry without api
+                        logger.log(e);
+                    } else {
+                        throw e;
+                    }
+                }
+            }
             loginWebsite(account, true, br);
             if (br.getURL() == null || !br.getURL().endsWith("/account/")) {
                 br.getPage("https://www." + this.getHost() + "/account/");
@@ -593,8 +605,8 @@ public class FileFactory extends PluginForHost {
                     }
                 }
             }
+            return ai;
         }
-        return ai;
     }
 
     private boolean isMail(final String parameter) {
@@ -810,39 +822,71 @@ public class FileFactory extends PluginForHost {
         // reset setter
         link.setProperty(dlRedirects, Property.NULL);
         if (useAPI(account)) {
-            handleDownload_API(link, account);
-        } else {
-            requestFileInformationWebsite(account, link);
-            if (br.getURL().contains(TRAFFICSHARELINK) || br.containsHTML(TRAFFICSHARETEXT)) {
-                handleTrafficShare(link, account);
-            } else {
-                loginWebsite(account, false, br);
-                if (AccountType.FREE == account.getType()) {
-                    br.setFollowRedirects(true);
-                    br.getPage(link.getDownloadURL());
-                    if (checkShowFreeDialog(getHost())) {
-                        showFreeDialog(getHost());
-                    }
-                    doFree(link, account);
+            try {
+                handleDownload_API(link, account);
+                return;
+            } catch (PluginException e) {
+                if (!useAPI(account) || invalidAuthKey.equals(e.getMessage())) {
+                    // auto retry without api
+                    logger.log(e);
                 } else {
-                    // NOTE: no premium, pre download password handling yet...
-                    br.setFollowRedirects(false);
-                    br.getPage(link.getDownloadURL());
-                    String finallink = br.getRedirectLocation();
-                    while (finallink != null && canHandle(finallink)) {
-                        // follow http->https redirect
-                        br.getPage(finallink);
-                        finallink = br.getRedirectLocation();
-                    }
+                    throw e;
+                }
+            }
+        }
+        requestFileInformationWebsite(account, link);
+        if (br.getURL().contains(TRAFFICSHARELINK) || br.containsHTML(TRAFFICSHARETEXT)) {
+            handleTrafficShare(link, account);
+        } else {
+            loginWebsite(account, false, br);
+            if (AccountType.FREE == account.getType()) {
+                br.setFollowRedirects(true);
+                br.getPage(link.getDownloadURL());
+                if (checkShowFreeDialog(getHost())) {
+                    showFreeDialog(getHost());
+                }
+                doFree(link, account);
+            } else {
+                // NOTE: no premium, pre download password handling yet...
+                br.setFollowRedirects(false);
+                br.getPage(link.getDownloadURL());
+                String finallink = br.getRedirectLocation();
+                while (finallink != null && canHandle(finallink)) {
+                    // follow http->https redirect
+                    br.getPage(finallink);
+                    finallink = br.getRedirectLocation();
+                }
+                if (finallink == null) {
+                    // No directlink
+                    finallink = br.getRegex("\"(https?://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
                     if (finallink == null) {
-                        // No directlink
-                        finallink = br.getRegex("\"(https?://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
-                        if (finallink == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                br.setFollowRedirects(true);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finallink, true, 0);
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    try {
+                        br.followConnection(true);
+                    } catch (final IOException ignore) {
+                        logger.log(ignore);
+                    }
+                    checkErrorsWebsite(false, true);
+                    String red = br.getRegex("\"(https?://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
+                    if (red == null) {
+                        red = br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
+                    }
+                    if (red == null) {
+                        red = br.getRegex("subPremium.*?ready.*?<a href=\"(.*?)\"").getMatch(0);
+                        if (red == null) {
+                            red = br.getRegex("downloadLink.*?href\\s*=\\s*\"(.*?)\"").getMatch(0);
+                            if (red == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
                         }
                     }
-                    br.setFollowRedirects(true);
-                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finallink, true, 0);
+                    logger.finer("Indirect download");
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, red, true, 0);
                     if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                         try {
                             br.followConnection(true);
@@ -850,41 +894,18 @@ public class FileFactory extends PluginForHost {
                             logger.log(ignore);
                         }
                         checkErrorsWebsite(false, true);
-                        String red = br.getRegex("\"(https?://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
-                        if (red == null) {
-                            red = br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
-                        }
-                        if (red == null) {
-                            red = br.getRegex("subPremium.*?ready.*?<a href=\"(.*?)\"").getMatch(0);
-                            if (red == null) {
-                                red = br.getRegex("downloadLink.*?href\\s*=\\s*\"(.*?)\"").getMatch(0);
-                                if (red == null) {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
-                            }
-                        }
-                        logger.finer("Indirect download");
-                        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, red, true, 0);
-                        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                            try {
-                                br.followConnection(true);
-                            } catch (final IOException ignore) {
-                                logger.log(ignore);
-                            }
-                            checkErrorsWebsite(false, true);
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                    } else {
-                        logger.finer("DIRECT download");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    // add download slot
-                    controlSlot(+1, account);
-                    try {
-                        dl.startDownload();
-                    } finally {
-                        // remove download slot
-                        controlSlot(-1, account);
-                    }
+                } else {
+                    logger.finer("DIRECT download");
+                }
+                // add download slot
+                controlSlot(+1, account);
+                try {
+                    dl.startDownload();
+                } finally {
+                    // remove download slot
+                    controlSlot(-1, account);
                 }
             }
         }
