@@ -31,6 +31,8 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
@@ -362,15 +364,16 @@ public class AboutDialog extends AbstractDialog<Integer> {
         } catch (Throwable t) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(t);
         }
+        final int year = getCopyrightYear();
         contentpane.add(lbl = new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_mopdules()), "gaptop 5, spanx");
         stats = new MigPanel("ins 0 10 0 0,wrap 2", "[][grow,align right]", "[]");
         contentpane.add(stats, "pushx,growx,spanx");
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_core()), "");
-        stats.add(createLink("Copyright \u00A9 2009-2022 AppWork GmbH"));
+        stats.add(createLink("Copyright \u00A9 2009-" + year + " AppWork GmbH"));
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_plugins()), "");
-        stats.add(createLink("Copyright \u00A9 2009-2022 JDownloader Community"));
+        stats.add(createLink("Copyright \u00A9 2009-" + year + " JDownloader Community"));
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_translations()), "");
-        stats.add(createLink("Copyright \u00A9 2009-2022 JDownloader Community"));
+        stats.add(createLink("Copyright \u00A9 2009-" + year + " JDownloader Community"));
         try {
             if (JNA_VERSION_STRING == null) {
                 final Class<?> clazz = Class.forName("com.sun.jna.Native");
@@ -454,6 +457,13 @@ public class AboutDialog extends AbstractDialog<Integer> {
         } else {
             return contentpane;
         }
+    }
+
+    private int getCopyrightYear() {
+        final GregorianCalendar calendar = new GregorianCalendar();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        final int year = calendar.get(Calendar.YEAR);
+        return Math.max(2022, year);
     }
 
     private String get7ZipJBindingDetails() {

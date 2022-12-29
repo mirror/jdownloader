@@ -15,20 +15,161 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import jd.PluginWrapper;
-import jd.plugins.HostPlugin;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.ProxySelectorInterface;
+import jd.http.Request;
+import jd.http.requests.GetRequest;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redgifs.com" }, urls = { "https?://(?:www\\.)?redgifs\\.com/(?:watch|ifr)/([A-Za-z0-9]+)" })
 public class RedGifsCom extends GfyCatCom {
     /**
-     * 2022-12-27: different site/api, first work for later separation, add support for new api https://github.com/Redgifs/api/wiki
-     * 
+     * 2022-12-27: different site/api
+     *
      * @param wrapper
      */
     public RedGifsCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private static Map<ProxySelectorInterface, Object> TEMPORARYTOKENS             = new WeakHashMap<ProxySelectorInterface, Object>();
+    private static AtomicBoolean                       failSafeTemporaryTokenIssue = new AtomicBoolean(false);
+
+    // https://github.com/Redgifs/api/wiki/Temporary-tokens
+    // tokens are bound to IP/UA
+    // tokens seem to expire after 24 hours, see 'exp' field in token
+    private String getTemporaryToken(final Browser br, final String renewIfToken) throws Exception {
+        synchronized (TEMPORARYTOKENS) {
+            Object tokenDetails[] = (Object[]) TEMPORARYTOKENS.get(br.getProxy());
+            if (tokenDetails == null) {
+                tokenDetails = new Object[] { null, -1l };
+                TEMPORARYTOKENS.put(br.getProxy(), tokenDetails);
+            }
+            if (failSafeTemporaryTokenIssue.get()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String token = (String) tokenDetails[0];
+            if (StringUtils.equals(renewIfToken, token) || StringUtils.isEmpty(token) || ((Number) tokenDetails[1]).longValue() < Time.systemIndependentCurrentJVMTimeMillis()) {
+                if (tokenDetails[0] == null) {
+                    logger.info("fetch temporary token for the first time");
+                } else {
+                    logger.info("refresh temporary token because the old one might be expired");
+                }
+                final Browser brc = br.cloneBrowser();
+                final GetRequest request = brc.createGetRequest("https://api.redgifs.com/v2/auth/temporary");
+                request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://www.redgifs.com");
+                request.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, "https://www.redgifs.com/");
+                brc.getPage(request);
+                final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
+                token = (String) entries.get("token");
+                if (StringUtils.isEmpty(token)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    tokenDetails[0] = token;
+                    tokenDetails[1] = Time.systemIndependentCurrentJVMTimeMillis() + TimeUnit.HOURS.toMillis(23);
+                }
+            }
+            return token;
+        }
+    }
+
+    private Request getView(final Browser br, final String token, String fid) throws Exception {
+        final GetRequest request = br.createGetRequest("https://api.redgifs.com/v2/gifs/" + fid + "?views=yes");
+        request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://www.redgifs.com");
+        request.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, "https://www.redgifs.com/");
+        request.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + token);
+        br.getPage(request);
+        return request;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link, boolean isDownload) throws Exception {
+        final String fid = getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(fid);
+        }
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        this.br.getHeaders().put("User-Agent", "JDownloader");
+        br.setAllowedResponseCodes(new int[] { 500 });
+        final String firstToken = getTemporaryToken(br, null);
+        Request view = getView(br, firstToken, fid);
+        if (view.getHttpConnection().getResponseCode() == 401) {
+            final String nextToken = getTemporaryToken(br, firstToken);
+            if (!StringUtils.equals(firstToken, nextToken)) {
+                view = getView(br, nextToken, fid);
+            }
+        }
+        if (view.getHttpConnection().getResponseCode() == 401) {
+            failSafeTemporaryTokenIssue.set(true);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Map<String, Object> response = restoreFromString(view.getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> gif = (Map<String, Object>) response.get("gif");
+        final Map<String, Object> user = (Map<String, Object>) response.get("user");// must be requested via &users=yes in /gifs/ request
+        final Map<String, Object> urls = (Map<String, Object>) gif.get("urls");
+        String url = (String) urls.get("hd");
+        if (url == null) {
+            url = (String) urls.get("sd");
+        }
+        String ext = getFileNameExtensionFromURL(url, ".mp4");
+        final String gfyName = (String) gif.get("id");
+        final String username = (String) gif.get("userName");
+        String filename = username;
+        final Number createDate = (Number) gif.get("createDate");
+        if (createDate != null) {
+            final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            filename = sdf.format(new Date(createDate.longValue() * 1000)) + "_" + filename;
+        }
+        /* fid is used as fallback-title so in this case we don't want to have it twice in our filename! */
+        if (gfyName != null) {
+            if (!StringUtils.equalsIgnoreCase(gfyName, fid)) {
+                filename += " - " + fid;
+            }
+            filename += " - " + gfyName + ext;
+        }
+        if (url != null) {
+            if (link.getFinalFileName() == null || (link.getFinalFileName() != null && !StringUtils.endsWithCaseInsensitive(link.getFinalFileName(), ext))) {
+                filename = filename + ext;
+                filename = filename.replaceFirst("(?i)((\\.(webm|mp4|gif|jpe?g)))?" + Pattern.quote(ext) + "$", ext);
+                link.setFinalFileName(filename);
+            }
+        } else {
+            link.setName(filename);
+        }
+        if (link.getComment() == null) {
+            final List<Object> tags = (List<Object>) gif.get("tags");
+            if (tags != null) {
+                final String description = StringUtils.join(tags.toArray(new Object[0]), " ") + " Porn GIF by " + username;
+                link.setComment(description);
+            }
+        }
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            this.dllink = url;
+            return AvailableStatus.TRUE;
+        }
     }
 
     @Override
@@ -39,6 +180,12 @@ public class RedGifsCom extends GfyCatCom {
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "redgifs.com" };
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink downloadLink) {
+        super.resetDownloadlink(downloadLink);
+        failSafeTemporaryTokenIssue.set(false);
     }
 
     @Override

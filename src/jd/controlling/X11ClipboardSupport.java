@@ -9,6 +9,7 @@ import com.sun.jna.platform.unix.X11.AtomByReference;
 import com.sun.jna.platform.unix.X11.Display;
 import com.sun.jna.platform.unix.X11.Window;
 import com.sun.jna.platform.unix.X11.WindowByReference;
+import com.sun.jna.platform.unix.X11.XTextProperty;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.NativeLongByReference;
 import com.sun.jna.ptr.PointerByReference;
@@ -28,6 +29,7 @@ public class X11ClipboardSupport {
             return;
         }
         try {
+            Thread.sleep(5000);
             X11.Atom atom_selection = x11.XInternAtom(disp, "CLIPBOARD", false);
             X11.Atom atom_net_wm_name = x11.XInternAtom(disp, "_NET_WM_NAME", false);
             X11.Atom atom_wm_name = x11.XInternAtom(disp, "WM_NAME", false);
@@ -62,16 +64,41 @@ public class X11ClipboardSupport {
                     }
                 }
             }
-            System.out.println(get_window_pid(disp, window));
+            Window active = get_active_window(disp);
+            System.out.println("pid(clipboard):" + get_window_pid(disp, window));
+            System.out.println("pid(active):" + get_window_pid(disp, active));
+            XTextProperty name = new X11.XTextProperty();
+            x11.XGetWMName(disp, active, name);
+            System.out.println("active:" + name.value);
             // readlink /proc/10452/exe
             // /proc/dsadada/cmdline
             System.out.println(get_property_as_utf8_string(disp, window, x11.XInternAtom(disp, "UTF8_STRING", false), "_NET_WM_NAME"));
             System.out.println(get_property_as_utf8_string(disp, window, Atom.None, "_NET_WM_NAME"));
             System.out.println(get_property_as_string(disp, window, X11.XA_STRING, "WM_NAME"));
             System.out.println(get_property_as_string(disp, window, Atom.None, "WM_NAME"));
+            System.out.println(get_property_as_string(disp, window, X11.XA_STRING, "WM_CLIENT_MACHINE"));
+            System.out.println(get_property_as_utf8_string(disp, active, x11.XInternAtom(disp, "UTF8_STRING", false), "_NET_WM_NAME"));
+            System.out.println(get_property_as_utf8_string(disp, active, Atom.None, "_NET_WM_NAME"));
+            System.out.println(get_property_as_string(disp, active, X11.XA_STRING, "WM_NAME"));
+            System.out.println(get_property_as_string(disp, active, Atom.None, "WM_NAME"));
+            System.out.println(get_property_as_string(disp, active, X11.XA_STRING, "WM_CLIENT_MACHINE"));
         } finally {
             x11.XCloseDisplay(disp);
         }
+    }
+
+    private static Window get_property_as_window(final Display disp, final Window win, final Atom xa_prop_type, final String prop_name) {
+        Window ret = null;
+        final Pointer prop = get_property(disp, win, xa_prop_type, prop_name, null);
+        if (prop != null) {
+            ret = new Window(prop.getLong(0));
+            g_free(prop);
+        }
+        return ret;
+    }
+
+    public static Window get_active_window(final Display disp) {
+        return get_property_as_window(disp, x11.XDefaultRootWindow(disp), X11.XA_WINDOW, "_NET_ACTIVE_WINDOW");
     }
 
     public static Window getParent(final Display disp, final Window win) throws Exception {
