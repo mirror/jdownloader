@@ -129,32 +129,38 @@ public class ZapiszSe extends PluginForHost {
         if (dllink == null) {
             this.loginWebsite(account, false);
             br.getPage(WEBSITE_BASE + "/addfiles.html");
-            final Form linklistform = br.getFormbyKey("list");
-            if (linklistform == null) {
+            final Form dlform = br.getFormbyKey("list");
+            if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // Only https URLs are downloaded from zapisz.se, http URLs are forwarded to the normal hoster
-            linklistform.put("list", Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this).replace("http://", "https://")));
+            dlform.put("list", Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this).replace("http://", "https://")));
             // k2s.cc Captcha fields do not need to be filled in
-            linklistform.put("k2s", "");
-            linklistform.put("k2skey", "");
-            linklistform.put("addfiles_hash", "");
+            dlform.put("k2s", "");
+            dlform.put("k2skey", "");
             // An invisible ReCaptcha is now required for the form
+            // Because the next part is blocking, it could happen that the captcha becomes invalid, since it has a one minute timeout
+            // However, this way several captchas can be solved at once.
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            linklistform.put("recaptcha_response", Encoding.urlEncode(recaptchaV2Response));
-            br.submitForm(linklistform);
-            br.getPage("/update.php?ie=0." + System.currentTimeMillis() + "&u=1&lastupdate=0");
-            final String[] urls = HTMLParser.getHttpLinks(br.toString(), br.getURL());
-            for (final String url : urls) {
-                if (Encoding.htmlDecode(url).contains(link.getName())) {
-                    logger.info("Found possible downloadurl: " + url);
-                    dllink = url;
-                    break;
+            dlform.put("recaptcha_response", Encoding.urlEncode(recaptchaV2Response));
+            synchronized (account) {
+                br.submitForm(dlform);
+                // Check if success message can be found: "1 link has been processed. To download files, go to the Your Files tab."
+                final Boolean successNoteFound = br.getRegex("<div class=\"note-info note-success\">([^<]+)</div>").count() >= 1;
+                if (!successNoteFound) {
+                    // For unknown reasons zapisz.se sometimes does not add links to the queue
+                    // For Rapidgator links, zapisz.se has unknown but noticeable rate limitations
+                    // For Nitroflare and k2s.cc this may mean that an additional captcha has to be solved
+                    mhm.handleErrorGeneric(account, link, "Failed to generate downloadurl", 10, 5 * 60 * 1000l);
                 }
+                br.getPage("/update.php?ie=0." + System.currentTimeMillis() + "&u=1&lastupdate=0");
             }
-            if (dllink == null) {
-                mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
+            final String[] urls = HTMLParser.getHttpLinks(br.toString(), br.getURL());
+            if (urls == null || urls.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dllink = urls[0];
+            logger.info("Using first found downloadurl: " + dllink);
         }
         handleDLMultihoster(account, link, dllink);
     }
