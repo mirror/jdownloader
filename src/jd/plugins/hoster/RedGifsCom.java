@@ -110,7 +110,7 @@ public class RedGifsCom extends GfyCatCom {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        this.br.getHeaders().put("User-Agent", "JDownloader");
+        this.br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "JDownloader");
         br.setAllowedResponseCodes(new int[] { 500 });
         final String firstToken = getTemporaryToken(br, null);
         Request view = getView(br, firstToken, fid);
