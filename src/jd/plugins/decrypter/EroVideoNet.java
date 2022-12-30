@@ -18,11 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -33,7 +28,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.GenericM3u8;
+
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ero-video.net" }, urls = { "https?://(?:[a-z0-9]+\\.)?ero\\-video\\.net/movie/\\?mcd=[A-Za-z0-9]+" })
 public class EroVideoNet extends PornEmbedParser {
@@ -102,6 +103,7 @@ public class EroVideoNet extends PornEmbedParser {
                         } else {
                             for (final String movieURL[] : movieURLs) {
                                 final DownloadLink link = createDownloadlink("directhttp://" + movieURL[2]);
+                                link.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, getHost());
                                 link.setFinalFileName(title + "_" + movieURL[0] + Plugin.getFileNameExtensionFromURL(movieURL[2]));
                                 link.setContentUrl(param.getCryptedUrl());
                                 decryptedLinks.add(link);
@@ -116,6 +118,7 @@ public class EroVideoNet extends PornEmbedParser {
                 br.getPage(hlsURL);
                 final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
                 final DownloadLink link = this.createDownloadlink(GenericM3u8.createURLForThisPlugin(hlsbest.getDownloadurl()));
+                link.setProperty(GenericM3u8.PROPERTY_CUSTOM_HOST, getHost());
                 if (title != null) {
                     link.setFinalFileName(title + ".mp4");
                 }

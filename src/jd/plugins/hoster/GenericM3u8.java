@@ -31,6 +31,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -53,6 +54,7 @@ public class GenericM3u8 extends PluginForHost {
     public static final String PROPERTY_FFMPEG_CODECS             = "ffmpeg_codecs";
     public static final String PROPERTY_M3U8_NAME                 = "m3u8_name";
     public static final String PROPERTY_DURATION_ESTIMATED_MILLIS = "duration_estimated_millis";
+    public static final String PROPERTY_CUSTOM_HOST               = "PROPERTY_CUSTOM_HOST";
 
     public GenericM3u8(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,7 +63,12 @@ public class GenericM3u8 extends PluginForHost {
     @Override
     public String getHost(final DownloadLink link, final Account account, boolean includeSubdomain) {
         if (link != null) {
-            return Browser.getHost(link.getPluginPatternMatcher(), includeSubdomain);
+            final String customHost = link.getStringProperty(PROPERTY_CUSTOM_HOST, null);
+            if (StringUtils.isNotEmpty(customHost)) {
+                return customHost;
+            } else {
+                return Browser.getHost(link.getPluginPatternMatcher(), includeSubdomain);
+            }
         } else {
             return super.getHost(link, account, includeSubdomain);
         }

@@ -2,9 +2,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.requests.PostRequest;
@@ -16,6 +13,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emulatorgames.net" }, urls = { "https?://(?:www\\.)?emulatorgames\\.net/(?:(?:roms|download)/).+" })
 public class EmulatorgamesNet extends antiDDoSForDecrypt {
@@ -32,6 +32,10 @@ public class EmulatorgamesNet extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Form dlform = br.getFormbyActionRegex(".*/download.*");
+        if (dlform == null && parameter.matches("(?i).*\\.net/roms/[^/]*/?$")) {
+            // ignore index site
+            return ret;
+        }
         String fpName = null;
         fpName = br.getRegex("([^<>]+)\\s+ROM\\s+-\\s+[^<]+\\s+-\\s+Emulator Games").getMatch(0);
         final String romID = br.getRegex("data-id=\"(\\d+)\"").getMatch(0);

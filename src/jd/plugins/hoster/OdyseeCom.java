@@ -129,6 +129,10 @@ public class OdyseeCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         String urlpart = this.getFID(link);
         if (!link.isNameSet()) {
             link.setName(urlpart);
@@ -187,11 +191,28 @@ public class OdyseeCom extends PluginForHost {
                 final PreferredStreamQuality quality = getPreferredQuality(link);
                 final int userPreferredQualityHeight = this.getPreferredQualityHeight(link, quality);
                 if (userPreferredQualityHeight == -1 || directDownload) {
+                    String url = dllink;
+                    if (isDownload) {
+                        try {
+                            String downloadURL = dllink + "?download=true";
+                            final Browser brc = br.cloneBrowser();
+                            final URLConnectionAdapter con = checkDownloadableRequest(link, brc, brc.createGetRequest(downloadURL), 0, true);
+                            if (con != null) {
+                                url = downloadURL;
+                            } else if (brc.containsHTML("downloads are currently disabled")) {
+                                throw new IOException("downloads are currently disabled: use stream!");
+                            } else {
+                                throw new IOException("unknown error");
+                            }
+                        } catch (IOException e) {
+                            logger.log(e);
+                        }
+                    }
                     final long filesize = JavaScriptEngineFactory.toLong(downloadInfo.get("size"), -1);
                     if (filesize > 0) {
-                        link.setVerifiedFileSize(filesize);
+                        link.setDownloadSize(filesize);
                     }
-                    link.setProperty(PROPERTY_DIRECTURL, dllink + "?download=true");
+                    link.setProperty(PROPERTY_DIRECTURL, url);
                     link.setProperty(PROPERTY_QUALITY, PreferredStreamQuality.BEST.name());
                 } else {
                     link.setProperty(PROPERTY_DIRECTURL, dllink);
@@ -220,7 +241,7 @@ public class OdyseeCom extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
-            requestFileInformation(link);
+            requestFileInformation(link, true);
             String dllink = link.getStringProperty(directlinkproperty);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream unavailable");

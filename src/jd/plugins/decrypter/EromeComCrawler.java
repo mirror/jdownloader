@@ -68,6 +68,13 @@ public class EromeComCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
+    @Override
+    protected DownloadLink createDownloadlink(String link) {
+        final DownloadLink ret = super.createDownloadlink(link);
+        ret.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, getHost());
+        return ret;
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final String albumID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         if (albumID == null) {
