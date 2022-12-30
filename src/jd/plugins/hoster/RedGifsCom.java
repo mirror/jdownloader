@@ -37,8 +37,10 @@ import jd.plugins.PluginException;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
+import org.appwork.utils.encoding.Base64;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redgifs.com" }, urls = { "https?://(?:www\\.)?redgifs\\.com/(?:watch|ifr)/([A-Za-z0-9]+)" })
@@ -69,7 +71,8 @@ public class RedGifsCom extends GfyCatCom {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String token = (String) tokenDetails[0];
-            if (StringUtils.equals(renewIfToken, token) || StringUtils.isEmpty(token) || ((Number) tokenDetails[1]).longValue() < Time.systemIndependentCurrentJVMTimeMillis()) {
+            final long now = Time.systemIndependentCurrentJVMTimeMillis();
+            if (StringUtils.equals(renewIfToken, token) || StringUtils.isEmpty(token) || ((Number) tokenDetails[1]).longValue() < now) {
                 if (tokenDetails[0] == null) {
                     logger.info("fetch temporary token for the first time");
                 } else {
@@ -86,7 +89,21 @@ public class RedGifsCom extends GfyCatCom {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
                     tokenDetails[0] = token;
-                    tokenDetails[1] = Time.systemIndependentCurrentJVMTimeMillis() + TimeUnit.HOURS.toMillis(23);
+                    tokenDetails[1] = now + TimeUnit.HOURS.toMillis(23);
+                    try {
+                        final String payload = new Regex(token, "^.*?\\.([^\\.]+)").getMatch(0);
+                        final String jsonString = new String(Base64.decodeFast(payload.replace("-", "+").replace("_", "/")), "UTF-8");
+                        final Map<String, Object> json = restoreFromString(jsonString, TypeRef.MAP);
+                        final Number iat = (Number) json.get("iat");
+                        final Number exp = (Number) json.get("exp");
+                        if (iat != null && exp != null) {
+                            // minimum 1 hour
+                            final long expireIn = Math.max(60 * 60, exp.longValue() - iat.longValue());
+                            tokenDetails[1] = now + expireIn * 1000l;
+                        }
+                    } catch (Exception e) {
+                        logger.log(e);
+                    }
                 }
             }
             return token;
