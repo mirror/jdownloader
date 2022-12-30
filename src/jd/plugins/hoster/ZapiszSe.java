@@ -141,9 +141,22 @@ public class ZapiszSe extends PluginForHost {
             // An invisible ReCaptcha is now required for the form
             // Because the next part is blocking, it could happen that the captcha becomes invalid, since it has a one minute timeout
             // However, this way several captchas can be solved at once.
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+            final int reCaptchaV2Timeout = rc2.getSolutionTimeout();
+            final long timestampBeforeCaptchaSolving = System.currentTimeMillis();
+            final String recaptchaV2Response = rc2.getToken();
+            if (recaptchaV2Response == null || recaptchaV2Response.equals("") || recaptchaV2Response.matches("\\s+")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             dlform.put("recaptcha_response", Encoding.urlEncode(recaptchaV2Response));
             synchronized (account) {
+                if (isAbort()) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                final long passedTime = System.currentTimeMillis() - timestampBeforeCaptchaSolving;
+                if (passedTime >= reCaptchaV2Timeout) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 br.submitForm(dlform);
                 // Check if success message can be found: "1 link has been processed. To download files, go to the Your Files tab."
                 final Boolean successNoteFound = br.getRegex("<div class=\"note-info note-success\">([^<]+)</div>").count() >= 1;
