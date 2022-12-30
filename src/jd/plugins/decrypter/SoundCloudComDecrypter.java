@@ -25,11 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -50,6 +45,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.SoundcloudCom;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((?:www\\.|m\\.)?(soundcloud\\.com/[^<>\"\\']+(?:\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z0-9]+)|api\\.soundcloud\\.com/tracks/\\d+(?:\\?secret_token=[A-Za-z0-9\\-_]+)?|api\\.soundcloud\\.com/playlists/\\d+(?:\\?|.*?\\&)secret_token=[A-Za-z0-9\\-_]+)" })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
@@ -158,10 +158,14 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     }
 
     private void correctInputLinks(final CryptedLink param) throws Exception {
-        if (param.getCryptedUrl().contains("#")) {
-            param.setCryptedUrl(param.getCryptedUrl().substring(0, param.getCryptedUrl().indexOf("#")));
+        String url = param.getCryptedUrl();
+        url = url.replaceFirst("#.+", "");// remove anchor
+        url = url.replaceFirst("/$", "");// remove trailing /
+        url = url.replaceFirst("(?i)http://", "https://");
+        if (!StringUtils.equals(url, param.getCryptedUrl())) {
+            param.setCryptedUrl(url);
         }
-        final String url = param.getCryptedUrl().replace("http://", "https://").replaceAll("(/download|\\\\)", "").replaceFirst("://(www|m)\\.", "://");
+        url = url.replaceAll("(/download|\\\\)", "").replaceFirst("://(www|m)\\.", "://");
         if (url.matches(TYPE_INVALID)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -609,8 +613,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             packagename = getFormattedPackagename(user.get("permalink").toString(), user.get("username").toString(), playlistname, user.get("created_at").toString());
         }
         /**
-         * seems to be a limit of the API (12.02.14), </br>
-         * still valid far as I can see raztoki20160208
+         * seems to be a limit of the API (12.02.14), </br> still valid far as I can see raztoki20160208
          */
         final int maxItemsPerCall = 200;
         FilePackage fp = null;
