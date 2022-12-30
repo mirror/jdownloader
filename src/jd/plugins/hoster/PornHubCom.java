@@ -1237,9 +1237,13 @@ public class PornHubCom extends PluginForHost {
                 }
                 /* Check if we're really logged in and set account type. */
                 if (!checkLoginSetAccountTypeAndSaveCookies(br, account, false)) {
-                    /* This should never happen */
-                    logger.warning("Invalid logins although full login seemed to be successful");
-                    throw new AccountInvalidException();
+                    if (isAccountAgeVerificationRequired(br, account)) {
+                        throw new AccountInvalidException("Please verify your age to access Pornhub Premium");
+                    } else {
+                        /* This should never happen */
+                        logger.warning("Invalid logins although full login seemed to be successful");
+                        throw new AccountInvalidException();
+                    }
                 }
                 return true;
             } catch (final PluginException e) {
@@ -1250,6 +1254,16 @@ public class PornHubCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private boolean isAccountAgeVerificationRequired(final Browser br, final Account account) {
+        final String[] errorMessages = new String[] { "Please verify your age to access Pornhub Premium", "Bitte überprüfen Sie Ihr Alter, um auf Pornhub Premium zugreifen zu können", "Veuillez vérifier votre âge pour accéder à Pornhub Premium" };
+        for (final String errorMessage : errorMessages) {
+            if (br.containsHTML("title\\s*:\\s*'" + Pattern.quote(errorMessage) + "'")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
