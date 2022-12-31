@@ -84,7 +84,7 @@ public class LAFOptions {
                     ext = new DefaultEmptyLookAndFeelExtension(laf);
                 }
             } else {
-                // old default
+                // old default extension
                 ext = new DefaultLookAndFeelExtension(laf);
             }
         }
