@@ -1,6 +1,7 @@
 package org.jdownloader.updatev2.gui;
 
 import java.awt.Color;
+import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -65,7 +66,9 @@ public class LAFOptions {
         LookAndFeelExtension ext = null;
         if (!"org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel".equals(laf)) {
             try {
-                ext = (LookAndFeelExtension) Class.forName(laf + "Extension").newInstance();
+                final Class<?> clz = Class.forName(laf + "Extension");
+                final Constructor<?> con = clz.getDeclaredConstructor(String.class);
+                ext = (LookAndFeelExtension) con.newInstance(laf);
             } catch (ClassNotFoundException ignore) {
             } catch (Throwable e) {
                 LoggerFactory.getDefaultLogger().log(e);

@@ -18,10 +18,8 @@ import javax.swing.JToolBar;
 import org.jdownloader.gui.translate._GUI;
 
 public class DefaultEmptyLookAndFeelExtension extends LookAndFeelExtension {
-    private final String laf;
-
     public DefaultEmptyLookAndFeelExtension(final String laf) {
-        this.laf = laf;
+        super(laf);
     }
 
     @Override

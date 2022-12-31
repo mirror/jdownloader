@@ -16,10 +16,15 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.handler.StorageHandler;
 
 public abstract class LookAndFeelExtension implements LAFSettings {
-
     public abstract void customizeHeaderScrollPane(JComponent headerScrollPane);
 
     public abstract void customizeLinksTable(JComponent table, JScrollPane tableScrollPane);
+
+    protected final String laf;
+
+    public LookAndFeelExtension(String laf) {
+        this.laf = laf;
+    }
 
     @Override
     public void setSpeedmeterAntiAliasingEnabled(boolean b) {
@@ -345,5 +350,4 @@ public abstract class LookAndFeelExtension implements LAFSettings {
     public abstract String customizeLinkPropertiesPanelLayout();
 
     public abstract void customizeLinkPropertiesPanel(JPanel downloadPropertiesBasePanel);
-
 }
