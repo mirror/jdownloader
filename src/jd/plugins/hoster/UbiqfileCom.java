@@ -129,6 +129,12 @@ public class UbiqfileCom extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean internal_supports_availablecheck_alt() {
+        /* 2023-01-01, no longer supported without captcha and different url */
+        return false;
+    }
+
+    @Override
     public String[] scanInfo(final String[] fileInfo) {
         /* 2019-06-27: Special */
         super.scanInfo(fileInfo);
@@ -140,6 +146,13 @@ public class UbiqfileCom extends XFileSharingProBasic {
             }
         }
         return fileInfo;
+    }
+
+    @Override
+    protected String scanGenericFileSize(final String html) {
+        String cleanHtml = html.replaceAll("(?s)(Upgrade to premium\\s*</h.*</ul>)", "");
+        cleanHtml = cleanHtml.replaceAll("(?s)(Slow download\\s*</h.*</ul>)", "");
+        return super.scanGenericFileSize(cleanHtml);
     }
 
     @Override

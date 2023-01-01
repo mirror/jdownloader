@@ -1246,7 +1246,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             }
         }
         if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = new Regex(html, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
+            fileInfo[0] = new Regex(html, "class=\"dfilename\">\\s*(?:<div>)?\\s*([^<>\"]*?)</").getMatch(0);
         }
         if (internal_isVideohosterEmbed(this.br) && (StringUtils.isEmpty(fileInfo[0]) || StringUtils.equalsIgnoreCase("No title", fileInfo[0]))) {
             /* 2019-10-15: E.g. vidoza.net */
