@@ -22,6 +22,17 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.OdyseeComConfig;
+import org.jdownloader.plugins.components.config.OdyseeComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
@@ -34,17 +45,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.OdyseeComConfig;
-import org.jdownloader.plugins.components.config.OdyseeComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OdyseeCom extends PluginForHost {
@@ -210,6 +210,9 @@ public class OdyseeCom extends PluginForHost {
                     }
                     final long filesize = JavaScriptEngineFactory.toLong(downloadInfo.get("size"), -1);
                     if (filesize > 0) {
+                        /*
+                         * Do not set verifiedFilesize as we cannot be 100% sure that the file we will download will have exactly that size.
+                         */
                         link.setDownloadSize(filesize);
                     }
                     link.setProperty(PROPERTY_DIRECTURL, url);
