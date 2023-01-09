@@ -358,7 +358,7 @@ public class PinterestCom extends PluginForHost {
     }
 
     private boolean isLoggedINHTML(final Browser br) {
-        if (br.containsHTML("\"isAuth\":true")) {
+        if (br.containsHTML("\"isAuthenticated\":true")) {
             return true;
         } else {
             return false;
@@ -373,7 +373,6 @@ public class PinterestCom extends PluginForHost {
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(false);
-        ai.setStatus("Free Account");
         return ai;
     }
 
