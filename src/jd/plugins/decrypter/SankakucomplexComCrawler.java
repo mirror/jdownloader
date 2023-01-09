@@ -88,7 +88,7 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         if (param.getCryptedUrl().matches(TYPE_TAGS_BOOKS)) {
             return crawlTagsBooks(param);
-        } else if (param.getCryptedUrl().matches(TYPE_TAGS_BOOKS)) {
+        } else if (param.getCryptedUrl().matches(TYPE_BOOK)) {
             return crawlBook(param);
         } else {
             return crawlTagsPosts(param);

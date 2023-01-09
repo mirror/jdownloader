@@ -1657,7 +1657,7 @@ public class RapidGatorNet extends antiDDoSForHost {
              * 2020-03-11: Do not throw ERROR_IP_BLOCKED error here as this error will usually only show up for 30-60 seconds between
              * downloads or upon instant retry of an e.g. interrupted free download --> Reconnect is not required
              */
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can't download more than one file within a certain time period in free mode", 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can't download more than one file within a certain time period in free mode", PluginJsonConfig.get(RapidGatorConfig.class).getWaitSecondsOnErrorYouCantDownloadMoreThanOneFile() * 1000l);
         } else if (isBuyFile(br, link, account)) {
             /* 2022-11-07: Files that need to be purchased separately in order to be able to download them. */
             if (account == null) {
