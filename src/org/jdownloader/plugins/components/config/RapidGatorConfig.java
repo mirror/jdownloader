@@ -13,10 +13,49 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "rapidgator.net", type = Type.HOSTER)
 public interface RapidGatorConfig extends PluginConfigInterface {
+    final String                    text_ActivateExperimentalWaittimeHandling             = "Activate experimental waittime handling to prevent 24-hours IP ban from rapidgator?";
+    final String                    text_EnableAPIPremium                                 = "Enable API for premium downloads [recommended] (disabled = use website for premium downloads)?";
+    final String                    text_EnableResumeFree                                 = "Attempt to resume stopped downloads in free (& free-account) mode? Rapidgator sometimes allows resume in free mode for some files and sometimes doesn't.";
+    final String                    text_ExperimentalEnforceSSL                           = "Activate experimental forced SSL for downloads?";
+    final String                    text_Referer                                          = "Define custom referer";
+    final String                    text_ReadTimeout                                      = "Define custom browser read-timeout (seconds)";
+    final String                    text_WaitSecondsOnErrorYouCantDownloadMoreThanOneFile = "Wait time on error 'You can't download more than one file at the same time' (seconds)";
+    public static final TRANSLATION TRANSLATION                                           = new TRANSLATION();
+
+    public static class TRANSLATION {
+        public String getActivateExperimentalWaittimeHandling_label() {
+            return text_ActivateExperimentalWaittimeHandling;
+        }
+
+        public String getEnableAPIPremium_label() {
+            return text_EnableAPIPremium;
+        }
+
+        public String getEnableResumeFree_label() {
+            return text_EnableResumeFree;
+        }
+
+        public String getExperimentalEnforceSSL_label() {
+            return text_ExperimentalEnforceSSL;
+        }
+
+        public String getReferer_label() {
+            return text_Referer;
+        }
+
+        public String getReadTimeout_label() {
+            return text_ReadTimeout;
+        }
+
+        public String getWaitSecondsOnErrorYouCantDownloadMoreThanOneFile_label() {
+            return text_WaitSecondsOnErrorYouCantDownloadMoreThanOneFile;
+        }
+    }
+
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("EXPERIMENTALHANDLING")
-    @DescriptionForConfigEntry("Activate experimental waittime handling to prevent 24-hours IP ban from rapidgator?")
+    @DescriptionForConfigEntry(text_ActivateExperimentalWaittimeHandling)
     @Order(10)
     boolean isActivateExperimentalWaittimeHandling();
 
@@ -25,7 +64,7 @@ public interface RapidGatorConfig extends PluginConfigInterface {
     /* Some users always get server error 500 via API thus website might work better for them. */
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Enable API for premium downloads [recommended] (disabled = use website for premium downloads)?")
+    @DescriptionForConfigEntry(text_EnableAPIPremium)
     @Order(20)
     boolean isEnableAPIPremium();
 
@@ -37,7 +76,7 @@ public interface RapidGatorConfig extends PluginConfigInterface {
      */
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Attempt to resume stopped downloads in free (& free-account) mode? Rapidgator sometimes allows resume in free mode for some files and sometimes doesn't.")
+    @DescriptionForConfigEntry(text_EnableResumeFree)
     @Order(21)
     boolean isEnableResumeFree();
 
@@ -46,7 +85,7 @@ public interface RapidGatorConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("EXPERIMENTAL_ENFORCE_SSL")
-    @DescriptionForConfigEntry("Activate experimental forced SSL for downloads?")
+    @DescriptionForConfigEntry(text_ExperimentalEnforceSSL)
     @Order(30)
     boolean isExperimentalEnforceSSL();
 
@@ -54,7 +93,7 @@ public interface RapidGatorConfig extends PluginConfigInterface {
 
     @AboutConfig
     @TakeValueFromSubconfig("CUSTOM_REFERER")
-    @DescriptionForConfigEntry("Define custom referer")
+    @DescriptionForConfigEntry(text_Referer)
     @Order(40)
     String getReferer();
 
@@ -64,8 +103,17 @@ public interface RapidGatorConfig extends PluginConfigInterface {
     @DefaultIntValue(120)
     @SpinnerValidator(min = 1, max = 300, step = 1)
     @Order(50)
-    @DescriptionForConfigEntry("Define custom browser read-timeout (seconds)")
+    @DescriptionForConfigEntry(text_ReadTimeout)
     int getReadTimeout();
 
     void setReadTimeout(int i);
+
+    @AboutConfig
+    @DefaultIntValue(300)
+    @SpinnerValidator(min = 15, max = 900, step = 1)
+    @Order(60)
+    @DescriptionForConfigEntry(text_WaitSecondsOnErrorYouCantDownloadMoreThanOneFile)
+    int getWaitSecondsOnErrorYouCantDownloadMoreThanOneFile();
+
+    void setWaitSecondsOnErrorYouCantDownloadMoreThanOneFile(int i);
 }
