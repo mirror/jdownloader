@@ -134,7 +134,7 @@ public class ZapiszSe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // Only https URLs are downloaded from zapisz.se, http URLs are forwarded to the normal hoster
-            dlform.put("list", Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this).replace("http://", "https://")));
+            dlform.put("list", Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this).replaceFirst("http://", "https://")));
             // k2s.cc Captcha fields do not need to be filled in
             dlform.put("k2s", "");
             dlform.put("k2skey", "");
@@ -146,6 +146,8 @@ public class ZapiszSe extends PluginForHost {
             final long timestampBeforeCaptchaSolving = System.currentTimeMillis();
             final String recaptchaV2Response = rc2.getToken();
             if (recaptchaV2Response == null || recaptchaV2Response.equals("") || recaptchaV2Response.matches("\\s+")) {
+                /* Rare case?! */
+                logger.info("Invalid reCaptcha response");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             dlform.put("recaptcha_response", Encoding.urlEncode(recaptchaV2Response));
@@ -155,6 +157,7 @@ public class ZapiszSe extends PluginForHost {
                 }
                 final long passedTime = System.currentTimeMillis() - timestampBeforeCaptchaSolving;
                 if (passedTime >= reCaptchaV2Timeout) {
+                    /* 2023-01-09: @c0d3d3v this should never happen as the obtained token is used immediately here... */
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 br.submitForm(dlform);
