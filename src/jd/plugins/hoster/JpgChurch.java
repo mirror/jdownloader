@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -32,7 +33,9 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLSearch;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -40,6 +43,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.decrypter.JpgChurchCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class JpgChurch extends PluginForHost {
@@ -53,11 +57,13 @@ public class JpgChurch extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private final String         PROPERTY_USER     = "user";
+    private static final boolean       free_resume        = true;
+    private static final int           free_maxchunks     = 1;
+    private String                     dllink             = null;
+    private final String               PROPERTY_USER      = "user";
+    public static final String         PROPERTY_PHPSESSID = "phpsessid";
+    /* Don't touch the following! */
+    private static final AtomicInteger freeRunning        = new AtomicInteger(0);
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -114,21 +120,46 @@ public class JpgChurch extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
             link.setName(this.correctOrApplyFileNameExtension(this.getFID(link).replaceAll("-+", " "), ".jpg"));
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final boolean useOembedAPI = true;
         String title = null;
         String filesizeStr = null;
-        if (useOembedAPI) {
+        /*
+         * Re-use old sessionID for password protected items. This can avoid the need of additional steps such as having to enter the
+         * password and/or having to enter a captcha.
+         */
+        final String passwordSessionPhpsessid = link.getStringProperty(PROPERTY_PHPSESSID);
+        if (passwordSessionPhpsessid != null) {
+            br.setCookie(this.getHost(), "PHPSESSID", passwordSessionPhpsessid);
+        }
+        boolean useWebsite = false;
+        if (link.isPasswordProtected()) {
+            useWebsite = true;
+        } else {
             final UrlQuery query = new UrlQuery();
             query.add("url", URLEncode.encodeURIComponent(link.getPluginPatternMatcher()));
             query.add("format", "json");
             br.getPage("https://" + this.getHost() + "/oembed/?" + query.toString());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* Check if item is password protected */
+            if (br.getHttpConnection().getResponseCode() == 401) {
+                logger.info("This item is password protected");
+                link.setPasswordProtected(true);
+                /* Website needed to handle password stuff. */
+                useWebsite = true;
+                if (!isDownload) {
+                    /* Do not ask for password during availablecheck. */
+                    return AvailableStatus.TRUE;
+                }
             }
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             if (entries == null) {
@@ -146,10 +177,50 @@ public class JpgChurch extends PluginForHost {
                 link.setProperty(PROPERTY_USER, author);
             }
             br.setCurrentURL(link.getPluginPatternMatcher());
-        } else {
+        }
+        if (useWebsite) {
             br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            Form pwform = JpgChurchCrawler.getPasswordForm(br);
+            if (pwform != null) {
+                logger.info("This item is password protected");
+                link.setPasswordProtected(true);
+                if (!isDownload) {
+                    /* Do not ask for password during availablecheck. */
+                    return AvailableStatus.TRUE;
+                }
+                String passCode = link.getDownloadPassword();
+                int counter = 0;
+                boolean success = false;
+                do {
+                    if (passCode == null || counter > 0) {
+                        passCode = getUserInput("Password?", link);
+                    }
+                    pwform.put("content-password", Encoding.urlEncode(passCode));
+                    br.submitForm(pwform);
+                    // if (!this.canHandle(br.getURL())) {
+                    // br.getPage(contentURLCleaned);
+                    // }
+                    pwform = JpgChurchCrawler.getPasswordForm(br);
+                    if (pwform == null) {
+                        logger.info("User entered valid password: " + passCode);
+                        success = true;
+                        break;
+                    } else {
+                        logger.info("User entered invalid password: " + passCode);
+                        counter++;
+                    }
+                } while (counter <= 2);
+                if (!success) {
+                    /* Invalidate potentially previously saved password */
+                    link.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                link.setDownloadPassword(passCode);
+                /* Save session cookie to speed-up next attempt. */
+                link.setProperty(PROPERTY_PHPSESSID, br.getCookie(br.getHost(), "PHPSESSID"));
             }
             title = HTMLSearch.searchMetaTag("og:title", br.getRequest().getHtmlCode());
             /* Filesize in html code is available when file has an official download button. */
@@ -197,7 +268,7 @@ public class JpgChurch extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -216,12 +287,35 @@ public class JpgChurch extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl.startDownload();
+        try {
+            /* Add a download slot */
+            controlMaxFreeDownloads(null, link, +1);
+            /* Start download */
+            dl.startDownload();
+        } finally {
+            /* Remove download slot */
+            controlMaxFreeDownloads(null, link, -1);
+        }
+    }
+
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null) {
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        // final int max = 100;
+        final int running = freeRunning.get();
+        // final int ret = Math.min(running + 1, max);
+        // return ret;
+        return running + 1;
     }
 
     @Override

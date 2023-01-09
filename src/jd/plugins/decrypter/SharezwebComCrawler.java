@@ -66,7 +66,7 @@ public class SharezwebComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/a/(f|s)/([A-Za-z0-9]+)(\\?pid=(\\d+))?");
+            ret.add("https?://(?:(?:www|[a-z]{2})\\.)?" + buildHostsPatternPart(domains) + "/a/(f|s)/([A-Za-z0-9]+)(\\?pid=(\\d+))?");
         }
         return ret.toArray(new String[0]);
     }

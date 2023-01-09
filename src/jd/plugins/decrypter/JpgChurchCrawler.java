@@ -27,10 +27,13 @@ import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLSearch;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
@@ -87,9 +90,42 @@ public class JpgChurchCrawler extends PluginForDecrypt {
         }
         firstQuery.remove("peek");
         firstQuery.remove("seek");
-        br.getPage(URLHelper.getUrlWithoutParams(param.getCryptedUrl()) + "?" + firstQuery.toString());
+        final String contentURLCleaned;
+        if (firstQuery.toString().length() > 0) {
+            contentURLCleaned = URLHelper.getUrlWithoutParams(param.getCryptedUrl()) + "?" + firstQuery.toString();
+        } else {
+            contentURLCleaned = URLHelper.getUrlWithoutParams(param.getCryptedUrl());
+        }
+        br.getPage(contentURLCleaned);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String passCode = null;
+        Form pwform = getPasswordForm(br);
+        if (pwform != null) {
+            logger.info("This album is password protected");
+            int counter = 0;
+            boolean success = false;
+            do {
+                passCode = getUserInput("Password?", param);
+                pwform.put("content-password", Encoding.urlEncode(passCode));
+                br.submitForm(pwform);
+                // if (!this.canHandle(br.getURL())) {
+                // br.getPage(contentURLCleaned);
+                // }
+                pwform = getPasswordForm(br);
+                if (pwform == null) {
+                    logger.info("User entered valid password: " + passCode);
+                    success = true;
+                    break;
+                } else {
+                    logger.info("User entered invalid password: " + passCode);
+                    counter++;
+                }
+            } while (counter <= 2);
+            if (!success) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
         }
         String seek = br.getRegex("data-action=\"load-more\" data-seek=\"([^\"]+)\"").getMatch(0);
         if (seek != null) {
@@ -168,6 +204,11 @@ public class JpgChurchCrawler extends PluginForDecrypt {
                 if (fp != null) {
                     link._setFilePackage(fp);
                 }
+                if (passCode != null) {
+                    link.setPasswordProtected(true);
+                    link.setDownloadPassword(passCode);
+                    link.setProperty(JpgChurch.PROPERTY_PHPSESSID, br.getCookie(br.getHost(), "PHPSESSID"));
+                }
                 distribute(link);
                 ret.add(link);
             }
@@ -205,5 +246,14 @@ public class JpgChurchCrawler extends PluginForDecrypt {
             }
         }
         return ret;
+    }
+
+    public static Form getPasswordForm(final Browser br) {
+        Form pwform = br.getFormbyKey("content-password");
+        if (pwform != null) {
+            /* Correct bad default action */
+            pwform.setAction("");
+        }
+        return pwform;
     }
 }
