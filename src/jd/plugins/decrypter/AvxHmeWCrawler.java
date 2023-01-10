@@ -119,6 +119,7 @@ public class AvxHmeWCrawler extends PluginForDecrypt {
             // br.getHeaders().put("Sec-Fetch-Dest", "document");
             // br.getHeaders().put("Accept-Language", "de-DE,de;q=0.9,en;q=0.8,en-US;q=0.7");
             synchronized (LAST_DIRECT) {
+                /* Wait 10 seconds between crawling single "direct" URLs to try to avoid captchas. */
                 final long last = LAST_DIRECT.get();
                 final long wait = 10000 - (Time.systemIndependentCurrentJVMTimeMillis() - last);
                 if (wait > 0) {

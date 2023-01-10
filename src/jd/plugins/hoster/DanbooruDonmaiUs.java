@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -26,6 +27,8 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.components.config.DanbooruDonmaiUsConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -89,6 +92,15 @@ public class DanbooruDonmaiUs extends PluginForHost {
 
     private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public void setBrowser(final Browser br) {
+        super.setBrowser(br);
+        final String userAgent = PluginJsonConfig.get(DanbooruDonmaiUsConfig.class).getUserAgent();
+        if (!StringUtils.isEmpty(userAgent) && !userAgent.equalsIgnoreCase("JDDEFAULT")) {
+            this.br.setHeader(HTTPConstants.HEADER_REQUEST_USER_AGENT, userAgent);
+        }
     }
 
     @Override
@@ -527,5 +539,10 @@ public class DanbooruDonmaiUs extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends DanbooruDonmaiUsConfig> getConfigInterface() {
+        return DanbooruDonmaiUsConfig.class;
     }
 }
