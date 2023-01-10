@@ -67,10 +67,11 @@ public class BiqleRuCrawler extends PluginForDecrypt {
         ret.add(new String[] { "ukdevilz.com" });
         ret.add(new String[] { "novids.com" });
         /* 2022-12-22 */
-        ret.add(new String[] { "dsex.to", "exporntoons.net" });
+        ret.add(new String[] { "dsex.to" });
         /* 2022-12-27 */
         ret.add(new String[] { "mat6tube.com" });
         ret.add(new String[] { "noodlemagazine.com" });
+        ret.add(new String[] { "exporntoons.net" });
         return ret;
     }
 
@@ -96,7 +97,7 @@ public class BiqleRuCrawler extends PluginForDecrypt {
     }
 
     private boolean isNoodleMagazin(final String host) {
-        return "mat6tube.com".equals(host) || "noodlemagazine.com".equals(host);
+        return "mat6tube.com".equals(host) || "noodlemagazine.com".equals(host) || "exporntoons.net".equals(host);
     }
 
     private final String decryptedhost = "biqledecrypted://";

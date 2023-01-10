@@ -29,10 +29,16 @@ import org.jdownloader.plugins.components.antiDDoSForHost;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLSearch;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -44,6 +50,7 @@ import jd.plugins.PluginException;
 public class NewgroundsCom extends antiDDoSForHost {
     public NewgroundsCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://www.newgrounds.com/passport/signup/new");
         setConfigElements();
     }
 
@@ -57,13 +64,13 @@ public class NewgroundsCom extends antiDDoSForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static final boolean free_resume    = true;
+    private static final int     free_maxchunks = 0;
     /* 2017-02-02: Only 1 official (audio) download possible every 60 seconds. Else we will get error 429 */
-    private static final int     free_maxdownloads = 1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
-    private boolean              accountneeded     = false;
+    private static final int     maxdownloads   = 1;
+    private String               dllink         = null;
+    private boolean              server_issues  = false;
+    private boolean              accountneeded  = false;
 
     @Override
     public String getAGBLink() {
@@ -87,14 +94,21 @@ public class NewgroundsCom extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    @SuppressWarnings("deprecation")
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         if (!link.isNameSet()) {
             link.setName(this.getFID(link));
         }
         dllink = null;
         this.setBrowserExclusive();
+        if (account != null) {
+            this.login(account, false);
+        }
         br.setFollowRedirects(true);
         getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 429) {
@@ -242,7 +256,11 @@ public class NewgroundsCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        handleDownload(link, null);
+    }
+
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, account);
         if (accountneeded) {
             throw new AccountRequiredException();
         } else if (dllink == null) {
@@ -298,9 +316,85 @@ public class NewgroundsCom extends antiDDoSForHost {
         dl.startDownload();
     }
 
+    public void login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            try {
+                br.setFollowRedirects(true);
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    logger.info("Attempting cookie login");
+                    this.br.setCookies(this.getHost(), cookies);
+                    if (!force) {
+                        /* Don't validate cookies */
+                        return;
+                    }
+                    br.getPage("https://www." + this.getHost() + "/social");
+                    if (this.isLoggedin(br)) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                    }
+                }
+                logger.info("Performing full login");
+                br.getPage("https://www." + this.getHost() + "/passport");
+                final Form loginform = br.getFormbyActionRegex(".*passport/.*");
+                if (loginform == null) {
+                    logger.warning("Failed to find loginform");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                loginform.put("remember", "1");
+                br.submitForm(loginform);
+                if (!isLoggedin(br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    account.clearCookies("");
+                }
+                throw e;
+            }
+        }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        return br.containsHTML("/logout");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        /* 2021-01-10: Accounts are mainly needed to download adult content. */
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.handleDownload(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return maxdownloads;
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
+        return false;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return maxdownloads;
     }
 
     @Override

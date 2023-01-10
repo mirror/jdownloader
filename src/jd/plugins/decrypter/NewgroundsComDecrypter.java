@@ -25,10 +25,13 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
@@ -38,6 +41,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.NewgroundsCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(?:\\w+\\.)?newgrounds\\.com/(?:art|audio|movies|games)(/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)?/?$" })
 public class NewgroundsComDecrypter extends PluginForDecrypt {
@@ -64,11 +68,19 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            /* Login whenever possible */
+            final NewgroundsCom hosterPlugin = (NewgroundsCom) this.getNewPluginForHostInstance(this.getHost());
+            hosterPlugin.login(account, false);
+        }
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* Invalid item/user-profile */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*You must be logged in, and at least 18 years")) {
+            throw new AccountRequiredException();
         }
         final Regex singleItem = new Regex(param.getCryptedUrl(), "/view/(.+)");
         if (singleItem.matches()) {

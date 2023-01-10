@@ -19,6 +19,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -31,22 +40,15 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.ArtstationCom;
 import jd.plugins.hoster.DirectHTTP;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/((?:artist|artwork)/[^/]+|(?!about|marketplace|jobs|contests|blogs|users)[^/]+(/likes)?)" })
-public class ArtstationCom extends antiDDoSForDecrypt {
-    public ArtstationCom(PluginWrapper wrapper) {
+public class ArtstationComCrawler extends antiDDoSForDecrypt {
+    public ArtstationComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -71,9 +73,9 @@ public class ArtstationCom extends antiDDoSForDecrypt {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("http:", "https:");
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl().replaceFirst("http:", "https:");
         final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa != null) {
             /* Login whenever possible - this may unlock some otherwise hidden user content. */
@@ -94,15 +96,14 @@ public class ArtstationCom extends antiDDoSForDecrypt {
             br.setCurrentURL(parameter);
         }
         if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setAllowInheritance(true);
         if (parameter.matches(TYPE_ALBUM)) {
             final String project_id = new Regex(parameter, TYPE_ALBUM).getMatch(0);
             if (inValidate(project_id)) {
-                return decryptedLinks;
+                return ret;
             }
             jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
             getPage("https://www.artstation.com/projects/" + project_id + ".json");
@@ -171,7 +172,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                                         dl2.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, getHost());
                                     }
                                     fp.add(dl2);
-                                    decryptedLinks.add(dl2);
+                                    ret.add(dl2);
                                 }
                             } catch (Exception e) {
                                 logger.log(e);
@@ -186,7 +187,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                     continue;
                 } else if (width > 1920 && StringUtils.containsIgnoreCase(url, "/large/") && !StringUtils.containsIgnoreCase(url, "/assets/images/")) {
                     logger.info("Auto 4k for '" + url + "' because width>1920=" + width);
-                    url = url.replace("/large/", "/4k/");
+                    url = ArtstationCom.largeTo4k(url);
                 }
                 String filename = null;
                 if (StringUtils.isNotEmpty(imageTitle)) {
@@ -220,7 +221,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                     dl.setProperty("username", username);
                 }
                 fp.add(dl);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
             String packageName = "";
             if (StringUtils.isNotEmpty(full_name)) {
@@ -228,7 +229,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
             } else {
                 packageName = project_id;
             }
-            if (decryptedLinks.size() > 1) {
+            if (ret.size() > 1) {
                 if (StringUtils.isNotEmpty(projectTitle)) {
                     packageName = packageName + "-" + projectTitle;
                 }
@@ -239,7 +240,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
             jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
             getPage("https://www.artstation.com/users/" + username + ".json");
             if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
-                return decryptedLinks;
+                return ret;
             }
             final Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final String full_name_of_username_in_url = (String) json.get("full_name");
@@ -257,7 +258,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                 logger.info("Crawling page " + page + " | Offset " + offset);
                 getPage("/users/" + username + "/" + type + ".json?randomize=false&page=" + page);
                 final Map<String, Object> pageJson = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                if (decryptedLinks.size() == 0) {
+                if (ret.size() == 0) {
                     /* We're crawling the first page */
                     entries_total = (int) JavaScriptEngineFactory.toLong(pageJson.get("total_count"), 0);
                 }
@@ -297,7 +298,7 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                     dl.setProperty("full_name", full_name_of_uploader);
                     // dl.setAvailable(true);
                     fp.add(dl);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                     offset++;
                 }
@@ -307,18 +308,18 @@ public class ArtstationCom extends antiDDoSForDecrypt {
                     break;
                 }
                 page++;
-            } while (!this.isAbort() && decryptedLinks.size() < entries_total);
+            } while (!this.isAbort() && ret.size() < entries_total);
             String packageName = "";
             if (StringUtils.isNotEmpty(full_name_of_username_in_url)) {
                 packageName = full_name_of_username_in_url;
             }
-            if (decryptedLinks.size() > 1) {
+            if (ret.size() > 1) {
                 if (StringUtils.isNotEmpty(projectTitle)) {
                     packageName = packageName + " " + projectTitle;
                 }
             }
             fp.setName(packageName);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

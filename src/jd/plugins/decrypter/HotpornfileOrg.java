@@ -16,9 +16,17 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Map;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -29,10 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotpornfile.org" }, urls = { "https?://(?:www\\.)?hotpornfile\\.org/(?!page)([^/]+)/(\\d+)" })
 public class HotpornfileOrg extends PluginForDecrypt {
@@ -45,42 +49,54 @@ public class HotpornfileOrg extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    private final String PROPERTY_recaptcha_response = "recaptcha_response";
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         br.getPage(parameter);
         String fpName = br.getRegex("<title>\\s*(.*?)\\s*(\\s*-\\s*Hotpornfile\\s*)?</title>").getMatch(0);
         if (fpName == null) {
             fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         }
-        final String fid = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+        final String postID = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* 2019-07-18: Stream URLs may expire which is why we don't grab them for now. */
         // br.postPage("https://www." + this.getHost() + "/wp-admin/admin-ajax.php", "action=get_stream&postId=" + fid);
         /* 2019-07-18: reCaptchaKey hardcoded */
-        String recaptchaV2Response = this.getPluginConfig().getStringProperty("recaptcha_response", null);
+        String recaptchaV2Response = this.getPluginConfig().getStringProperty(PROPERTY_recaptcha_response);
         String json_type = null;
+        boolean accessMainLinkAgain = false;
         if (recaptchaV2Response != null) {
-            br.postPage("https://www." + this.getHost() + "/wp-admin/admin-ajax.php", "action=bypass_captcha&postId=" + fid + "&challenge=" + Encoding.urlEncode(recaptchaV2Response));
-            json_type = PluginJSonUtils.getJson(br, "type");
+            logger.info("Re-using last recaptchaV2Response: " + recaptchaV2Response);
+            try {
+                br.postPage("/wp-admin/admin-ajax.php", "action=bypass_captcha&postId=" + postID + "&challenge=" + Encoding.urlEncode(recaptchaV2Response));
+                json_type = PluginJSonUtils.getJson(br, "type");
+                accessMainLinkAgain = true;
+            } catch (final BrowserException ignore) {
+            }
         }
         if (recaptchaV2Response == null || !StringUtils.equalsIgnoreCase(json_type, "success")) {
             logger.info("Failed to re-use previous recaptchaV2Response");
-            br.getPage(parameter);
+            if (accessMainLinkAgain) {
+                br.getPage(parameter);
+            }
             recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Lf1jhYUAAAAAN8kNxOBBEUu3qBPcy4UNu4roO5K").getToken();
-            br.postPage("https://www." + this.getHost() + "/wp-admin/admin-ajax.php", "action=get_protected_links&postId=" + fid + "&response=" + Encoding.urlEncode(recaptchaV2Response));
+            final UrlQuery query = new UrlQuery();
+            query.add("action", "get_links");
+            query.add("postId", postID);
+            query.add("challenge", Encoding.urlEncode(recaptchaV2Response));
+            query.add("cid", "null");
+            br.postPage("/wp-admin/admin-ajax.php", query);
             json_type = PluginJSonUtils.getJson(br, "type");
         } else {
             logger.info("Successfully re-used previous recaptchaV2Response");
         }
-        if (!StringUtils.equalsIgnoreCase(json_type, "success")) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        String src = PluginJSonUtils.getJson(br, "msg");
-        if (src == null) {
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        String src = (String) entries.get("links");
+        if (StringUtils.isEmpty(src)) {
             /* Fallback */
             src = br.toString();
         }
@@ -89,17 +105,17 @@ public class HotpornfileOrg extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
-            decryptedLinks.add(createDownloadlink(singleLink));
+            ret.add(createDownloadlink(singleLink));
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        if (decryptedLinks.size() > 0) {
+        if (ret.size() > 0) {
             /* Save reCaptchaV2 response as we might be able to use it multiple times! */
-            this.getPluginConfig().setProperty("recaptcha_response", recaptchaV2Response);
+            this.getPluginConfig().setProperty(PROPERTY_recaptcha_response, recaptchaV2Response);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
