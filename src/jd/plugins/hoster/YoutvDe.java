@@ -56,19 +56,20 @@ public class YoutvDe extends PluginForHost {
         this.enablePremium("https://www.youtv.de/produkte");
     }
 
-    private final String PROPERTY_DIRECTURL                              = "directurl";
-    private final String PROPERTY_FILESIZE                               = "filesize";
-    private final String PROPERTY_LAST_FILE_ERROR                        = "last_file_error";
-    private final String PROPERTY_TIMESTAMP_LAST_FILE_ERROR              = "timestamp_last_file_error";
-    private final String PROPERTY_LAST_USED_QUALITY                      = "last_used_quality";
-    private final String PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK = "last_force_chosen_quality_in_linkcheck";
+    private final String       PROPERTY_DIRECTURL                              = "directurl";
+    private final String       PROPERTY_FILESIZE                               = "filesize";
+    private final String       PROPERTY_LAST_FILE_ERROR                        = "last_file_error";
+    private final String       PROPERTY_TIMESTAMP_LAST_FILE_ERROR              = "timestamp_last_file_error";
+    private final String       PROPERTY_LAST_USED_QUALITY                      = "last_used_quality";
+    private final String       PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK = "last_force_chosen_quality_in_linkcheck";
+    public static final String WEBAPI_BASE                                     = "https://www.youtv.de/api/v2";
 
     @Override
     public String getAGBLink() {
         return "https://help.youtv.de/hc/de/articles/360029117431-AGB";
     }
 
-    private static List<String[]> getPluginDomains() {
+    public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "youtv.de" });
@@ -92,6 +93,10 @@ public class YoutvDe extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -99,6 +104,15 @@ public class YoutvDe extends PluginForHost {
             return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
+        }
+    }
+
+    @Override
+    public String getMirrorID(final DownloadLink link) {
+        if (link != null && StringUtils.equals(getHost(), link.getHost())) {
+            return getHost() + "://" + getFID(link);
+        } else {
+            return super.getMirrorID(link);
         }
     }
 
@@ -112,10 +126,6 @@ public class YoutvDe extends PluginForHost {
     public void setBrowser(Browser br) {
         prepBR(br);
         super.setBrowser(br);
-    }
-
-    private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -142,7 +152,7 @@ public class YoutvDe extends PluginForHost {
         this.setBrowserExclusive();
         this.login(account, false);
         br.setFollowRedirects(true);
-        br.getPage("https://www." + this.getHost() + "/api/v2/recordings/" + fid + ".json");
+        br.getPage(WEBAPI_BASE + "/recordings/" + fid + ".json");
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -250,7 +260,7 @@ public class YoutvDe extends PluginForHost {
         return -1;
     }
 
-    private boolean login(final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
@@ -261,7 +271,7 @@ public class YoutvDe extends PluginForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     if (!force) {
                         /* Don't validate cookies */
-                        return false;
+                        return;
                     }
                     br.getPage("https://www." + this.getHost() + "/abo-shop");
                     checkErrors(br, null, account);
@@ -269,7 +279,7 @@ public class YoutvDe extends PluginForHost {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return true;
+                        return;
                     } else {
                         logger.info("Cookie login failed");
                     }
@@ -294,7 +304,6 @@ public class YoutvDe extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
-                return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
