@@ -44,7 +44,8 @@ public class TurboBitNet extends TurbobitCore {
     }
 
     /* Keep this up2date! */
-    public static String[] domains = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc", "turbobit.pw", "turbo.to", "turb.to", "turbo-bit.pw", "turbobit.cloud", "turbobit.online", "turbobit.live", "wayupload.com", "turb.cc", "turbobit5.net", "turbobith.net", "turbobi.pw", "turbobbit.com", "turbobyt.com", "trubobit.com", "turb.pw", "turboget.net", "turbobiyt.net" };
+    public static String[] domains      = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc", "turbobit.pw", "turbo.to", "turb.to", "turbo-bit.pw", "turbobit.cloud", "turbobit.online", "turbobit.live", "wayupload.com", "turb.cc", "turbobit5.net", "turbobith.net", "turbobi.pw", "turbobbit.com", "turbobyt.com", "trubobit.com", "turb.pw", "turboget.net", "turbobiyt.net" };
+    public static String[] domains_dead = new String[] { "turbobbit.com", "ifolder.com.ua" };
 
     /* Setting domains */
     // protected final String[] user_domains = new String[] { "turbo.to", "turb.to", "turbobit.net", "turbobit.pw" };
@@ -55,8 +56,12 @@ public class TurboBitNet extends TurbobitCore {
          * 2021-02-03: They're adding new domains quite often so in order to provide a more permanent solution for the user, I've added a
          * setting to let the user define a custom preferred domain.
          */
-        final String customDefinedPreferredDomain = PluginJsonConfig.get(TurbobitCoreConfigTurbobitNet.class).getCustomDomain();
-        if (!StringUtils.isEmpty(customDefinedPreferredDomain)) {
+        final TurbobitCoreConfigTurbobitNet cfg = PluginJsonConfig.get(TurbobitCoreConfigTurbobitNet.class);
+        final String customDefinedPreferredDomain = cfg.getCustomDomain();
+        final List<String> deadDomains = Arrays.asList(domains_dead);
+        if (customDefinedPreferredDomain != null && deadDomains.contains(customDefinedPreferredDomain)) {
+            logger.info("Ignoring custom domain " + customDefinedPreferredDomain + " because that one is in the list of dead domains");
+        } else if (!StringUtils.isEmpty(customDefinedPreferredDomain)) {
             try {
                 final URL url;
                 if (customDefinedPreferredDomain.matches("(?i)https?://.+")) {
