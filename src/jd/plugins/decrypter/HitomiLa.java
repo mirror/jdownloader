@@ -31,6 +31,9 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.components.config.HitomiLaConfig;
+import org.jdownloader.plugins.components.config.HitomiLaConfig.PreferredImageFormat;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.mozilla.javascript.Context;
@@ -68,11 +71,11 @@ public class HitomiLa extends antiDDoSForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.XXX };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             engine = null;
         }
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         String gallery_id = new Regex(parameter, "/(?:galleries|reader)/(\\d+)").getMatch(0);
         if (gallery_id == null) {
@@ -91,8 +94,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
         if (use_Thumbnails) {
             this.getPage(parameter);
             if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String[] thumbnails = br.getRegex("<img src=\"//tn\\.hitomi\\.la/bigtn/(./\\d+/[a-f0-9]+)\\.jpg\">").getColumn(0);
             numberOfPages = thumbnails.length;
@@ -104,14 +106,13 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 dl.setAvailable(true);
                 dl.setFinalFileName(df.format(i) + ".webp");
                 dl.setProperty(DirectHTTP.PROPERTY_RATE_LIMIT, 500);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         } else {
             getPage("https://hitomi.la/galleries/" + gallery_id + ".html");
             // this.getPage(parameter);
             if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String extra_redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+;url=(http[^\"]+)\">").getMatch(0);
             if (extra_redirect != null) {
@@ -125,8 +126,7 @@ public class HitomiLa extends antiDDoSForDecrypt {
             }
             if (js == null) {
                 logger.info("Seems like this is no downloadable/supported content");
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Browser brc = br.cloneBrowser();
             getPage(brc, js);
@@ -153,15 +153,15 @@ public class HitomiLa extends antiDDoSForDecrypt {
                 ++i;
                 final Map<String, String> picInfo = (Map<String, String>) picO;
                 final DownloadLink dl = getImage(df, dupCheck, gallery_id, picInfo, i);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     protected DownloadLink getImage(DecimalFormat df, Map<String, Integer> dupCheck, final String gallery_id, Map<String, String> picInfo, int i) throws Exception {
@@ -169,7 +169,8 @@ public class HitomiLa extends antiDDoSForDecrypt {
         final String url;
         final long haswebp = JavaScriptEngineFactory.toLong(picInfo.get("haswebp"), 0);
         final long hasavif = JavaScriptEngineFactory.toLong(picInfo.get("hasavif"), 0);
-        if (haswebp == 1) {
+        final PreferredImageFormat preferredFormat = PluginJsonConfig.get(HitomiLaConfig.class).getPreferredImageFormat();
+        if (haswebp == 1 && (preferredFormat == PreferredImageFormat.WEBP || hasavif == 0)) {
             url = url_from_url_from_hash(gallery_id, picInfo, "webp", null, "a");
         } else if (hasavif == 1) {
             url = url_from_url_from_hash(gallery_id, picInfo, "avif", null, "a");
@@ -349,5 +350,10 @@ public class HitomiLa extends antiDDoSForDecrypt {
 
     boolean isNotBlank(String str) {
         return str != null && !str.isEmpty();
+    }
+
+    @Override
+    public Class<? extends HitomiLaConfig> getConfigInterface() {
+        return HitomiLaConfig.class;
     }
 }

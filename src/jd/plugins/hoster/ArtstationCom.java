@@ -17,6 +17,12 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
+import org.jdownloader.plugins.components.config.ArtstationComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -32,10 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://[a-z0-9\\-\\.]+\\.artstation\\.com/p/assets/.+" })
 public class ArtstationCom extends PluginForHost {
@@ -62,17 +64,19 @@ public class ArtstationCom extends PluginForHost {
         return "http://artstation.com/";
     }
 
-    @SuppressWarnings({ "deprecation" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         // filename NOT coming from decrypter wont have filename set!!! this is not a plugin defect! -raztoki20160202
-        String filename = downloadLink.getStringProperty("decrypterfilename", null);
-        dllink = downloadLink.getDownloadURL();
+        String filename = link.getStringProperty("decrypterfilename");
+        dllink = link.getPluginPatternMatcher();
+        if (dllink.contains("/large/") && PluginJsonConfig.get(ArtstationComConfig.class).isForce4kWorkaroundForImages()) {
+            dllink = largeTo4k(dllink);
+        }
         if (filename != null) {
-            downloadLink.setFinalFileName(filename);
+            link.setFinalFileName(filename);
         }
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -83,13 +87,13 @@ public class ArtstationCom extends PluginForHost {
             con = br2.openHeadConnection(dllink);
             if (looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
-                    downloadLink.setDownloadSize(con.getCompleteContentLength());
+                    link.setDownloadSize(con.getCompleteContentLength());
                 }
                 if (filename == null) {
                     filename = getFileNameFromHeader(con);
-                    downloadLink.setFinalFileName(filename);
+                    link.setFinalFileName(filename);
                 }
-                downloadLink.setProperty("directlink", dllink);
+                link.setProperty("directlink", dllink);
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -102,15 +106,19 @@ public class ArtstationCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        doDownload(null, downloadLink, dllink);
+    public static String largeTo4k(final String url) {
+        return url.replaceFirst("/large/", "/4k/");
     }
 
-    private void doDownload(final Account account, final DownloadLink downloadLink, final String url) throws Exception {
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        doDownload(null, link, dllink);
+    }
+
+    private void doDownload(final Account account, final DownloadLink link, final String url) throws Exception {
         this.br.getHeaders().put("Accept-Encoding", "identity");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, free_resume, free_maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -126,9 +134,9 @@ public class ArtstationCom extends PluginForHost {
             }
         }
         if (account == null || AccountType.FREE.equals(account.getType())) {
-            downloadLink.setProperty("free_directlink", dllink);
+            link.setProperty("free_directlink", dllink);
         } else {
-            downloadLink.setProperty("premium_directlink", dllink);
+            link.setProperty("premium_directlink", dllink);
         }
         dl.startDownload();
     }
@@ -151,22 +159,6 @@ public class ArtstationCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    public static boolean inValidate(final String s) {
-        if (s == null || s.matches("\\s+") || s.equals("")) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override
@@ -239,7 +231,6 @@ public class ArtstationCom extends PluginForHost {
         /* free accounts can still have captcha */
         account.setMaxSimultanDownloads(free_maxdownloads);
         account.setConcurrentUsePossible(false);
-        ai.setStatus("Registered (free) user");
         account.setValid(true);
         return ai;
     }
@@ -267,5 +258,10 @@ public class ArtstationCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends ArtstationComConfig> getConfigInterface() {
+        return ArtstationComConfig.class;
     }
 }

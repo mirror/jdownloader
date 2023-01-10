@@ -31,7 +31,7 @@ public interface Keep2shareConfig extends PluginConfigInterface {
         }
 
         public String getMaxSimultaneousFreeDownloads_label() {
-            return "Set max. number of simultaneous downloads in free mode";
+            return "Max. number of simultaneous downloads in free mode";
         }
     }
 
