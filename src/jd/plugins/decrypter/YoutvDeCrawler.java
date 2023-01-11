@@ -87,19 +87,28 @@ public class YoutvDeCrawler extends PluginForDecrypt {
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Object errorsO = entries.get("errors");
         if (errorsO != null) {
+            /* Most likely a login failure. This should never happen! */
             logger.warning("WTF: " + errorsO);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName("Meine Aufnahmen");
-        int numberofNewItems = 0;
+        // int numberofAddedItems = 0;
+        int numberofQueuedItems = 0;
         final List<Map<String, Object>> recordings = (List<Map<String, Object>>) entries.get("recordings");
+        if (recordings.size() == 0) {
+            logger.info("User has no recordings at all");
+            return ret;
+        }
         for (final Map<String, Object> recording : recordings) {
             final String id = recording.get("id").toString();
             final String status = recording.get("status").toString();
-            if (status.equals("queued") && !cfg.isRecordingsCrawlerAddQueuedRecordings()) {
-                logger.info("Skipping ID " + id + " because of status: " + status);
-                continue;
+            if (status.equals("queued")) {
+                numberofQueuedItems++;
+                if (!cfg.isRecordingsCrawlerAddQueuedRecordings()) {
+                    logger.info("Skipping ID " + id + " because of status: " + status);
+                    continue;
+                }
             }
             final DownloadLink link = this.createDownloadlink("https://www." + this.getHost() + "/tv-sendungen/" + id + "-" + toSlug(recording.get("title").toString()));
             hosterplugin.parseFileInformation(link, recording);
@@ -107,16 +116,10 @@ public class YoutvDeCrawler extends PluginForDecrypt {
             link.setAvailable(true);
             ret.add(link);
             distribute(link);
-            numberofNewItems++;
+            // numberofAddedItems++;
         }
-        if (numberofNewItems == 0) {
-            if (ret.isEmpty()) {
-                logger.info("User has no recordings at all");
-            }
-            return ret;
-        }
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (ret.isEmpty()) {
+            logger.info("User has only " + numberofQueuedItems + " queued recordings but disabled adding those via plugin settings");
         }
         return ret;
     }
