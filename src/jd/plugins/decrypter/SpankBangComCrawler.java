@@ -253,12 +253,12 @@ public class SpankBangComCrawler extends PluginForDecrypt {
         }
         /* Decrypt qualities, selected by the user */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
-        boolean q240p = cfg.getBooleanProperty(SpankBangCom.ALLOW_240p, true);
-        boolean q320p = cfg.getBooleanProperty(SpankBangCom.ALLOW_320p, true);
-        boolean q480p = cfg.getBooleanProperty(SpankBangCom.ALLOW_480p, true);
-        boolean q720p = cfg.getBooleanProperty(SpankBangCom.ALLOW_720p, true);
-        boolean q1080p = cfg.getBooleanProperty(SpankBangCom.ALLOW_1080p, true);
-        boolean q4k = cfg.getBooleanProperty(SpankBangCom.ALLOW_4k, true);
+        boolean q240p = cfg.getBooleanProperty(SpankBangCom.ALLOW_240p, SpankBangCom.default_ALLOW_240p);
+        boolean q320p = cfg.getBooleanProperty(SpankBangCom.ALLOW_320p, SpankBangCom.default_ALLOW_320p);
+        boolean q480p = cfg.getBooleanProperty(SpankBangCom.ALLOW_480p, SpankBangCom.default_ALLOW_480p);
+        boolean q720p = cfg.getBooleanProperty(SpankBangCom.ALLOW_720p, SpankBangCom.default_ALLOW_720p);
+        boolean q1080p = cfg.getBooleanProperty(SpankBangCom.ALLOW_1080p, SpankBangCom.default_ALLOW_1080p);
+        boolean q4k = cfg.getBooleanProperty(SpankBangCom.ALLOW_4k, SpankBangCom.default_ALLOW_4k);
         if (!q240p && !q320p && !q480p && !q720p && !q1080p) {
             // user has made error and disabled them all, so we will treat as all enabled.
             q240p = true;

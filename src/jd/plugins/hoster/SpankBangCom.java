@@ -91,6 +91,12 @@ public class SpankBangCom extends antiDDoSForHost {
     public static final String  ALLOW_THUMBNAIL         = "ALLOW_thumbnail";
     public static final boolean default_FASTLINKCHECK   = true;
     public static final boolean default_ALLOW_BEST      = true;
+    public static final boolean default_ALLOW_240p      = true;
+    public static final boolean default_ALLOW_320p      = true;
+    public static final boolean default_ALLOW_480p      = true;
+    public static final boolean default_ALLOW_720p      = true;
+    public static final boolean default_ALLOW_1080p     = true;
+    public static final boolean default_ALLOW_4k        = true;
     public static final boolean default_ALLOW_THUMBNAIL = true;
     private String              dllink                  = null;
     private boolean             server_issues           = false;
