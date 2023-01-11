@@ -26,6 +26,8 @@ import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.AvxHmeWConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -121,9 +123,11 @@ public class AvxHmeWCrawler extends PluginForDecrypt {
             synchronized (LAST_DIRECT) {
                 /* Wait 10 seconds between crawling single "direct" URLs to try to avoid captchas. */
                 final long last = LAST_DIRECT.get();
-                final long wait = 10000 - (Time.systemIndependentCurrentJVMTimeMillis() - last);
-                if (wait > 0) {
-                    sleep(wait, param);
+                final int userDefinedWaitSecondsBetweenDirectlinkCrawlProcesses = PluginJsonConfig.get(AvxHmeWConfig.class).getDirectLinkCrawlerWaitSecondsBetweenLinks();
+                final long waitMillis = (userDefinedWaitSecondsBetweenDirectlinkCrawlProcesses * 1000) - (Time.systemIndependentCurrentJVMTimeMillis() - last);
+                if (waitMillis > 0) {
+                    logger.info("Sleep millis until next 'direct' url will be processed: " + waitMillis);
+                    sleep(waitMillis, param);
                 }
                 br.getPage(param.getCryptedUrl());
                 followInternalRedirects();

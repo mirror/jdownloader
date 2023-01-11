@@ -43,7 +43,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.plugins.decrypter.SpankBangComCrawler;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { SpankBangComCrawler.class })
@@ -81,21 +80,25 @@ public class SpankBangCom extends antiDDoSForHost {
     }
 
     /** Settings stuff */
-    private final static String FASTLINKCHECK       = "FASTLINKCHECK";
-    private final static String ALLOW_BEST          = "ALLOW_BEST";
-    private final static String ALLOW_240p          = "ALLOW_240p";
-    private final static String ALLOW_320p          = "ALLOW_320p";
-    private final static String ALLOW_480p          = "ALLOW_480p";
-    private final static String ALLOW_720p          = "ALLOW_720p";
-    private final static String ALLOW_1080p         = "ALLOW_1080p";
-    private static final String ALLOW_4k            = "ALLOW_4k";
-    private String              dllink              = null;
-    private boolean             server_issues       = false;
-    public static final String  PROPERTY_TITLE      = "title";
-    public static final String  PROPERTY_UPLOADER   = "uploader";
-    public static final String  PROPERTY_QUALITY    = "quality";
-    public static final String  PROPERTY_DIRECTLINK = "plain_directlink";
-    public static final String  PROPERTY_MAINLINK   = "mainlink";
+    public final static String  FASTLINKCHECK           = "FASTLINKCHECK";
+    public final static String  ALLOW_BEST              = "ALLOW_BEST";
+    public final static String  ALLOW_240p              = "ALLOW_240p";
+    public final static String  ALLOW_320p              = "ALLOW_320p";
+    public final static String  ALLOW_480p              = "ALLOW_480p";
+    public final static String  ALLOW_720p              = "ALLOW_720p";
+    public final static String  ALLOW_1080p             = "ALLOW_1080p";
+    public static final String  ALLOW_4k                = "ALLOW_4k";
+    public static final String  ALLOW_THUMBNAIL         = "ALLOW_thumbnail";
+    public static final boolean default_FASTLINKCHECK   = true;
+    public static final boolean default_ALLOW_BEST      = true;
+    public static final boolean default_ALLOW_THUMBNAIL = true;
+    private String              dllink                  = null;
+    private boolean             server_issues           = false;
+    public static final String  PROPERTY_TITLE          = "title";
+    public static final String  PROPERTY_UPLOADER       = "uploader";
+    public static final String  PROPERTY_QUALITY        = "quality";
+    public static final String  PROPERTY_DIRECTLINK     = "plain_directlink";
+    public static final String  PROPERTY_MAINLINK       = "mainlink";
 
     @Override
     protected boolean useRUA() {
@@ -337,16 +340,17 @@ public class SpankBangCom extends antiDDoSForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, "Fast linkcheck (filesize won't be shown in linkgrabber)?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, "Fast linkcheck (filesize won't be shown in linkgrabber)?").setDefaultValue(default_FASTLINKCHECK));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, "Always only grab best available resolution?").setDefaultValue(true);
+        final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, "Always only grab best available resolution?").setDefaultValue(default_ALLOW_BEST);
         getConfig().addEntry(cfg);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_240p", "Grab 240p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_320p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_320p", "Grab 320p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_480p", "Grab 480p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_720p", "Grab 720p?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080p, JDL.L("plugins.hoster.SpankBangCom.ALLOW_1080p", "Grab 1080p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240p, "Grab 240p?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_320p, "Grab 320p?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480p, "Grab 480p?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720p, "Grab 720p?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080p, "Grab 1080p?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_4k, "Grab 4k?").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_THUMBNAIL, "Grab thumbnail?").setDefaultValue(default_ALLOW_THUMBNAIL));
     }
 
     @Override

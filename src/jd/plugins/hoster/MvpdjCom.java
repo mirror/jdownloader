@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -25,6 +27,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -61,17 +64,17 @@ public class MvpdjCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         serverissues = false;
-        fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         br = new Browser();
         /* 2017-08-03: Website randomly returns 500 with regular html content --> Allow response 500 */
         br.setAllowedResponseCodes(new int[] { 500 });
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         /* Very old links --> Offline */
-        if (downloadLink.getDownloadURL().matches("https?://(?:www\\.)?(?:sosodo|mvpdj)\\.com/home/music/track/\\d+/\\d+")) {
+        if (link.getDownloadURL().matches("https?://(?:www\\.)?(?:sosodo|mvpdj)\\.com/home/music/track/\\d+/\\d+")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         boolean loggedIN = false;
@@ -103,7 +106,7 @@ public class MvpdjCom extends PluginForHost {
             } else {
                 logger.info("Trying stream download");
             }
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(link.getDownloadURL());
             if (!br.containsHTML("<title>") || this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -116,9 +119,9 @@ public class MvpdjCom extends PluginForHost {
             filename = filename.trim();
             final String ext = getFileNameExtensionFromString(dllink, ".mp3");
             if (!filename.endsWith(ext)) {
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+                link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
             } else {
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+                link.setFinalFileName(Encoding.htmlDecode(filename));
             }
         }
         final Browser br2 = br.cloneBrowser();
@@ -127,18 +130,19 @@ public class MvpdjCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
+            if (this.looksLikeDownloadableContent(con)) {
                 if (filename == null) {
                     /* Especially for official account-downloads, server-filenames might be crippled! */
                     final String filename_server = getFileNameFromHeader(con);
-                    if (filename_server != null && filename_html != null && filename_html.length() > filename_server.length()) {
-                        filename = Encoding.htmlDecode(filename_html) + ".mp3";
-                    } else {
-                        filename = filename_server;
+                    if (filename_server != null) {
+                        if (filename_server != null && filename_html != null && filename_html.length() > filename_server.length()) {
+                            link.setFinalFileName(Encoding.htmlDecode(filename_html).trim() + ".mp3");
+                        } else {
+                            link.setFinalFileName(filename_server);
+                        }
                     }
-                    downloadLink.setFinalFileName(filename);
                 }
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             } else {
                 serverissues = true;
             }
@@ -157,32 +161,28 @@ public class MvpdjCom extends PluginForHost {
         doFree(downloadLink);
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception {
+    public void doFree(final DownloadLink link) throws Exception {
         if (serverissues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        ai.setStatus("Registered (free) user");
-        account.setValid(true);
         return ai;
     }
 
@@ -193,11 +193,9 @@ public class MvpdjCom extends PluginForHost {
         doFree(link);
     }
 
-    private static Object LOCK = new Object();
-
     @SuppressWarnings("deprecation")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
@@ -205,11 +203,15 @@ public class MvpdjCom extends PluginForHost {
                     this.br.setCookies(this.getHost(), cookies);
                     br.getPage("https://www." + this.getHost() + "/user/useraccount");
                     if (!this.br.toString().equals("0")) {
+                        logger.info("Cookie login successful");
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(null);
                     }
-                    this.br = new Browser();
                 }
+                logger.info("Performing full login");
                 br.setFollowRedirects(false);
                 br.getPage("https://www." + this.getHost() + "/");
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
@@ -223,11 +225,7 @@ public class MvpdjCom extends PluginForHost {
                 this.br.postPage("/user/login", postData);
                 final String statuscode = PluginJSonUtils.getJsonValue(br, "code");
                 if (!"200".equals(statuscode)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {

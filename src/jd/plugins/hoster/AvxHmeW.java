@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.config.AvxHmeWConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -27,6 +29,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -114,6 +117,7 @@ public class AvxHmeW extends PluginForHost {
                         return true;
                     } else {
                         logger.info("Cookie login failed");
+                        br.clearCookies(null);
                     }
                 }
                 logger.info("Performing full login");
@@ -136,10 +140,10 @@ public class AvxHmeW extends PluginForHost {
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(loginform);
                 if (!isLoggedin()) {
-                    if (this.br.containsHTML(">\\s*Your accound is blocked")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is blocked", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (this.br.containsHTML("(?i)>\\s*Your accound is blocked")) {
+                        throw new AccountInvalidException("Your account is blocked");
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException();
                     }
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -186,5 +190,10 @@ public class AvxHmeW extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends AvxHmeWConfig> getConfigInterface() {
+        return AvxHmeWConfig.class;
     }
 }
