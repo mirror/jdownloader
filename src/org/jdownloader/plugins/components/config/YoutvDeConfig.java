@@ -12,9 +12,10 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "youtv.de", type = Type.HOSTER)
 public interface YoutvDeConfig extends PluginConfigInterface {
-    final String                    text_PreferredQuality        = "Select preferred quality";
-    final String                    text_EnableRecordingsCrawler = "Crawl all recordings when adding link youtv.de/videorekorder";
-    public static final TRANSLATION TRANSLATION                  = new TRANSLATION();
+    final String                    text_PreferredQuality                     = "Select preferred quality";
+    final String                    text_EnableRecordingsCrawler              = "Crawl all recordings when adding link youtv.de/videorekorder";
+    final String                    text_RecordingsCrawlerAddQueuedRecordings = "Recordings crawler: Also add queued recordings?";
+    public static final TRANSLATION TRANSLATION                               = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getPreferredQuality_label() {
@@ -23,6 +24,10 @@ public interface YoutvDeConfig extends PluginConfigInterface {
 
         public String getEnableRecordingsCrawler_label() {
             return text_EnableRecordingsCrawler;
+        }
+
+        public String getRecordingsCrawlerAddQueuedRecordings_label() {
+            return text_RecordingsCrawlerAddQueuedRecordings;
         }
     }
 
@@ -68,4 +73,12 @@ public interface YoutvDeConfig extends PluginConfigInterface {
     boolean isEnableRecordingsCrawler();
 
     void setEnableRecordingsCrawler(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_RecordingsCrawlerAddQueuedRecordings)
+    @Order(30)
+    boolean isRecordingsCrawlerAddQueuedRecordings();
+
+    void setRecordingsCrawlerAddQueuedRecordings(boolean b);
 }

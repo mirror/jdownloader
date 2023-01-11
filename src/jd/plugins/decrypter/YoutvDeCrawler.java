@@ -97,21 +97,12 @@ public class YoutvDeCrawler extends PluginForDecrypt {
         for (final Map<String, Object> recording : recordings) {
             final String id = recording.get("id").toString();
             final String status = recording.get("status").toString();
-            if (status.equals("queued")) {
+            if (status.equals("queued") && !cfg.isRecordingsCrawlerAddQueuedRecordings()) {
                 logger.info("Skipping ID " + id + " because of status: " + status);
                 continue;
             }
-            // final List<String> recorded_qualities = (List<String>) recording.get("recorded_qualities");
-            final String title = recording.get("title").toString();
-            final String subtitle = (String) recording.get("subtitle");
-            String filename = title;
-            if (subtitle != null) {
-                filename += "_" + subtitle;
-            }
-            filename += ".mp4";
-            final DownloadLink link = this.createDownloadlink("https://www." + this.getHost() + "/tv-sendungen/" + id + "-" + toSlug(title));
-            /* TODO: Add better temporary filenames -> Mimic the original/default filenames of youtv.de. */
-            link.setName(filename);
+            final DownloadLink link = this.createDownloadlink("https://www." + this.getHost() + "/tv-sendungen/" + id + "-" + toSlug(recording.get("title").toString()));
+            hosterplugin.parseFileInformation(link, recording);
             link._setFilePackage(fp);
             link.setAvailable(true);
             ret.add(link);

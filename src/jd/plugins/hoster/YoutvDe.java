@@ -56,12 +56,14 @@ public class YoutvDe extends PluginForHost {
         this.enablePremium("https://www.youtv.de/produkte");
     }
 
-    private final String       PROPERTY_DIRECTURL                              = "directurl";
-    private final String       PROPERTY_FILESIZE                               = "filesize";
-    private final String       PROPERTY_LAST_FILE_ERROR                        = "last_file_error";
-    private final String       PROPERTY_TIMESTAMP_LAST_FILE_ERROR              = "timestamp_last_file_error";
-    private final String       PROPERTY_LAST_USED_QUALITY                      = "last_used_quality";
-    private final String       PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK = "last_force_chosen_quality_in_linkcheck";
+    public static final String PROPERTY_DIRECTURL                              = "directurl";
+    public static final String PROPERTY_FILESIZE                               = "filesize";
+    public static final String PROPERTY_RECORDED_STATUS                        = "recorded_status";
+    public static final String PROPERTY_STARTS_AT                              = "starts_at";
+    public static final String PROPERTY_LAST_FILE_ERROR                        = "last_file_error";
+    public static final String PROPERTY_TIMESTAMP_LAST_FILE_ERROR              = "timestamp_last_file_error";
+    public static final String PROPERTY_LAST_USED_QUALITY                      = "last_used_quality";
+    public static final String PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK = "last_force_chosen_quality_in_linkcheck";
     public static final String WEBAPI_BASE                                     = "https://www.youtv.de/api/v2";
 
     @Override
@@ -159,35 +161,77 @@ public class YoutvDe extends PluginForHost {
         checkErrors(br, link, account);
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> recording = (Map<String, Object>) entries.get("recording");
-        final List<Map<String, Object>> files = (List<Map<String, Object>>) recording.get("files");
+        parseFileInformation(link, recording);
+        return AvailableStatus.TRUE;
+    }
+
+    public void parseFileInformation(final DownloadLink link, final Map<String, Object> recording) throws Exception {
         final String preferredQualityStr = getPreferredQualityStr(link);
-        Map<String, Object> chosenQuality = null;
-        for (final Map<String, Object> quality : files) {
-            final String qualityStr = quality.get("quality").toString();
-            if (qualityStr.equals(preferredQualityStr)) {
-                chosenQuality = quality;
-                break;
+        final List<Map<String, Object>> files = (List<Map<String, Object>>) recording.get("files");
+        if (files != null && files.size() > 0) {
+            Map<String, Object> chosenQuality = null;
+            for (final Map<String, Object> quality : files) {
+                final String qualityStr = quality.get("quality").toString();
+                if (qualityStr.equals(preferredQualityStr)) {
+                    chosenQuality = quality;
+                    break;
+                }
+            }
+            boolean qualityWasAutoChosen = false;
+            if (chosenQuality == null) {
+                logger.info("Failed to find preferred quality -> Fallback to first/best");
+                chosenQuality = files.get(0);
+                qualityWasAutoChosen = true;
+            }
+            final String chosenQualityStr = chosenQuality.get("quality").toString();
+            final String description = (String) recording.get("long_text");
+            if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+                link.setComment(description);
+            }
+            link.setProperty(PROPERTY_DIRECTURL + "_" + chosenQualityStr, chosenQuality.get("file"));
+            link.setProperty(PROPERTY_FILESIZE + "_" + chosenQualityStr, chosenQuality.get("size"));
+            if (qualityWasAutoChosen) {
+                link.setProperty(PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK, chosenQualityStr);
+            } else {
+                link.removeProperty(PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK);
             }
         }
-        boolean qualityWasAutoChosen = false;
-        if (chosenQuality == null) {
-            logger.info("Failed to find preferred quality -> Fallback to first/best");
-            chosenQuality = files.get(0);
-            qualityWasAutoChosen = true;
-        }
-        final String chosenQualityStr = chosenQuality.get("quality").toString();
-        final String description = (String) recording.get("long_text");
-        if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
-            link.setComment(description);
-        }
-        link.setProperty(PROPERTY_DIRECTURL + "_" + chosenQualityStr, chosenQuality.get("file"));
-        link.setProperty(PROPERTY_FILESIZE + "_" + chosenQualityStr, chosenQuality.get("size"));
-        if (qualityWasAutoChosen) {
-            link.setProperty(PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK, chosenQualityStr);
-        } else {
-            link.removeProperty(PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK);
-        }
+        link.setProperty(PROPERTY_RECORDED_STATUS, recording.get("recorded"));
+        link.setProperty(PROPERTY_STARTS_AT, recording.get("starts_at"));
         setFilenameAndSize(link);
+        if (link.getFinalFileName() == null) {
+            /* No downloadurl given yet -> Build filename here */
+            final List<String> recorded_qualities = (List<String>) recording.get("recorded_qualities");
+            String qualityStringForWeakFilenames = null;
+            if (recorded_qualities != null && recorded_qualities.size() > 0) {
+                for (final String qualityStr : recorded_qualities) {
+                    if (qualityStr.equals(preferredQualityStr)) {
+                        qualityStringForWeakFilenames = qualityStr;
+                        break;
+                    }
+                }
+            }
+            if (qualityStringForWeakFilenames == null) {
+                /* Fallback */
+                qualityStringForWeakFilenames = preferredQualityStr;
+            }
+            final Number season_number = (Number) recording.get("series_season");
+            final Number episode_number = (Number) recording.get("series_number");
+            final String title = recording.get("title").toString();
+            final String subtitle = (String) recording.get("subtitle");
+            String filename = title;
+            if (season_number != null && episode_number != null) {
+                filename += "_S" + season_number + "E" + episode_number;
+            } else if (episode_number != null) {
+                filename += "_E" + episode_number;
+            }
+            if (!StringUtils.isEmpty(subtitle)) {
+                filename += "_" + subtitle;
+            }
+            filename += "_" + qualityStringForWeakFilenames;
+            filename += ".mp4";
+            link.setName(filename);
+        }
         final List<String> file_errors = (List<String>) recording.get("file_errors");
         if (file_errors != null && file_errors.size() > 0) {
             /* Typically daily downloadlimit reached */
@@ -196,10 +240,9 @@ public class YoutvDe extends PluginForHost {
         } else {
             link.removeProperty(PROPERTY_LAST_FILE_ERROR);
         }
-        return AvailableStatus.TRUE;
     }
 
-    private void setFilenameAndSize(final DownloadLink link) {
+    public void setFilenameAndSize(final DownloadLink link) {
         final String qualityStr = getPreferredQualityStr(link);
         final String directurl = getDirecturl(link);
         if (directurl != null) {
@@ -217,7 +260,7 @@ public class YoutvDe extends PluginForHost {
         link.setVerifiedFileSize(link.getLongProperty(PROPERTY_FILESIZE + "_" + qualityStr, -1));
     }
 
-    private String getPreferredQualityStr(final DownloadLink link) {
+    public static String getPreferredQualityStr(final DownloadLink link) {
         /* Prefer last used quality if existent. */
         String qualityStr = link.getStringProperty(PROPERTY_LAST_USED_QUALITY);
         if (qualityStr == null) {
@@ -237,11 +280,11 @@ public class YoutvDe extends PluginForHost {
         throw new AccountRequiredException();
     }
 
-    private String getDirecturl(final DownloadLink link) {
+    public static String getDirecturl(final DownloadLink link) {
         return link.getStringProperty(getDirecturlProperty(link));
     }
 
-    private String getDirecturlProperty(final DownloadLink link) {
+    public static String getDirecturlProperty(final DownloadLink link) {
         return PROPERTY_DIRECTURL + "_" + getPreferredQualityStr(link);
     }
 
@@ -413,7 +456,23 @@ public class YoutvDe extends PluginForHost {
             // handleStoredErrors(link);
             dllink = getDirecturl(link);
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (link.getBooleanProperty(PROPERTY_RECORDED_STATUS, true) == false) {
+                    /* Rare case */
+                    long wait = 30 * 60 * 1000l;
+                    final String starts_at = link.getStringProperty(PROPERTY_STARTS_AT);
+                    if (starts_at != null) {
+                        // 2023-01-10T18:40:00.000+01:00
+                        /* TODO: Fix this */
+                        final long startsAtTimestamp = TimeFormatter.getMilliSeconds(starts_at, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
+                        final long timeUntilRecordingStart = startsAtTimestamp - System.currentTimeMillis();
+                        if (timeUntilRecordingStart > 10000) {
+                            wait = timeUntilRecordingStart;
+                        }
+                    }
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Diese Sendung wurde noch nicht aufgenommen", wait);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         } else {
             this.login(account, false);
@@ -440,6 +499,22 @@ public class YoutvDe extends PluginForHost {
         /* Save last selected/used quality so we will try to resume that same one next time unless user resets this item in between. */
         link.setProperty(PROPERTY_DIRECTURL, PluginJsonConfig.get(YoutvDeConfig.class).getPreferredQuality().name());
         dl.startDownload();
+    }
+
+    private String toSlug2(final String str) {
+        final String preparedSlug = str.toLowerCase(Locale.ENGLISH).replace("ü", "u").replace("ä", "a").replace("ö", "o");
+        String slug = preparedSlug.replaceAll("[^a-z0-9]", "_");
+        /* Remove double-minus */
+        slug = slug.replaceAll("_{2,}", "_");
+        /* Do not begin with minus */
+        if (slug.startsWith("_")) {
+            slug = slug.substring(1);
+        }
+        /* Do not end with minus */
+        if (slug.endsWith("_")) {
+            slug = slug.substring(0, slug.length() - 1);
+        }
+        return slug;
     }
 
     @Override
