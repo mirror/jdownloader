@@ -61,7 +61,7 @@ public class StreamsbNet extends XFileSharingProBasic {
          * streamsb.com is basically only a dummy entry here as no downloadlinks exist that can be used via this domain.
          */
         ret.add(new String[] { "streamsb.com" });
-        ret.add(new String[] { "sblanh.com", "streamsb.net", "embedsb.com", "sbembed.com", "sbembed1.com", "sbembed2.com", "sbcloud1.com", "tubesb.com", "sbvideo.net", "playersb.com", "sbplay2.com", "sbplay2.xyz", "sbembed4.com", "javside.com", "watchsb.com", "sbfast.com", "sbfull.com", "javplaya.com", "streamsss.net" });
+        ret.add(new String[] { "sblanh.com", "streamsb.net", "embedsb.com", "sbembed.com", "sbembed1.com", "sbembed2.com", "sbcloud1.com", "tubesb.com", "sbvideo.net", "playersb.com", "sbplay2.com", "sbplay2.xyz", "sbembed4.com", "javside.com", "watchsb.com", "sbfast.com", "sbfull.com", "javplaya.com", "streamsss.net", "kbjrecord.com" });
         return ret;
     }
 
@@ -79,12 +79,14 @@ public class StreamsbNet extends XFileSharingProBasic {
         AvailableStatus result = null;
         String oldPluginPatternMatcher = link.getPluginPatternMatcher();
         result = super.requestFileInformationWebsite(link, account, isDownload);
+        String specialFilenameResult = null;
         if (link.getPluginPatternMatcher().matches("https?://[^/]+/c/[a-z0-9]{12}.*") && link.hasProperty(IS_OFFICIALLY_DOWNLOADABLE) && !link.getBooleanProperty(IS_OFFICIALLY_DOWNLOADABLE)) {
             return result;
         } else {
             try {
                 link.setPluginPatternMatcher("https://" + this.getHost() + "/d/" + this.getFUIDFromURL(link));
                 result = super.requestFileInformationWebsite(link, account, isDownload);
+                specialFilenameResult = br.getRegex("(?i)<h3>\\s*Download ([^<]+)</h3>").getMatch(0); // 2023-01-11
                 final String officialDownloadFilesize = this.getDllinkViaOfficialVideoDownload(br, link, account, true);
                 if (officialDownloadFilesize != null) {
                     /* Do not change pluginpatternmatcher back */
@@ -99,7 +101,7 @@ public class StreamsbNet extends XFileSharingProBasic {
                 link.setPluginPatternMatcher(oldPluginPatternMatcher);
             }
         }
-        if (br.getURL().matches("https?://[^/]+/d/[a-z0-9]{12}.*") && !link.hasProperty(EXTENDED_FILENAME_RESULT)) {
+        if (br.getURL().matches("https?://[^/]+/d/[a-z0-9]{12}.*") && !link.hasProperty(EXTENDED_FILENAME_RESULT) && StringUtils.isEmpty(specialFilenameResult)) {
             /*
              * 2021-11-18: Workaround e.g. for items for which uploader has disabled download button because upper handling will fail to
              * find a nice filename.
@@ -107,13 +109,12 @@ public class StreamsbNet extends XFileSharingProBasic {
             final Browser brc = br.cloneBrowser();
             this.getPage(brc, "https://" + this.getHost() + "/" + this.getFUIDFromURL(link));
             final String[] fileInfo = super.scanInfo(brc.toString(), super.internal_getFileInfoArray());
-            if (!StringUtils.isEmpty(fileInfo[0])) {
-                logger.info("Found nice file-title: " + fileInfo[0]);
-                link.setProperty(EXTENDED_FILENAME_RESULT, fileInfo[0]);
-            }
+            specialFilenameResult = fileInfo[0];
         }
-        if (link.hasProperty(EXTENDED_FILENAME_RESULT)) {
-            setFilename(link.getStringProperty(EXTENDED_FILENAME_RESULT), link);
+        if (!StringUtils.isEmpty(specialFilenameResult)) {
+            logger.info("Found nice file-title: " + specialFilenameResult);
+            link.setProperty(EXTENDED_FILENAME_RESULT, specialFilenameResult);
+            setFilename(specialFilenameResult, link);
         }
         return result;
     }
