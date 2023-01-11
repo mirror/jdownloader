@@ -167,13 +167,16 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         CaptchaType captchaType = getCaptchaType();
         Form lastSubmitForm = null;
         if (evalulateCaptcha(captchaType, param.getCryptedUrl())) {
-            logger.info("Captcha required");
+            logger.info("Looks like captcha might be required");
             boolean requiresCaptchaWhichCanFail = false;
             boolean captchaFailed = false;
             for (int i = 0; i <= 2; i++) {
                 final Form form = getCaptchaForm(br, param);
                 if (form == null) {
                     if (getLinksGoForm(param, br) != null) {
+                        if (i == 0) {
+                            logger.info("Captcha was not required");
+                        }
                         captchaFailed = false;
                         break;
                     } else {
@@ -313,29 +316,29 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     logger.warning("csrftoken fielld exists but no value present");
                 }
             }
-            String waitStr = br.getRegex("\"counter_value\"\\s*:\\s*\"(\\d+)\"").getMatch(0);
-            if (waitStr == null) {
-                waitStr = br.getRegex(">\\s*Please Wait\\s*(\\d+)s\\s*<").getMatch(0);
-                if (waitStr == null) {
+            String waitSecondsStr = br.getRegex("\"counter_value\"\\s*:\\s*\"?(\\d+)").getMatch(0);
+            if (waitSecondsStr == null) {
+                waitSecondsStr = br.getRegex("(?i)>\\s*Please Wait\\s*(\\d+)s\\s*<").getMatch(0);
+                if (waitSecondsStr == null) {
                     /* 2018-12-12: E.g. rawabbet.com[RIP 2019-02-21] */
-                    waitStr = br.getRegex("class=\"timer\">\\s*?(\\d+)\\s*?<").getMatch(0);
+                    waitSecondsStr = br.getRegex("class=\"timer\">\\s*?(\\d+)\\s*?<").getMatch(0);
                 }
-                if (waitStr == null) {
+                if (waitSecondsStr == null) {
                     /* 2021-01-12: E.g. bestcash2020.com */
-                    waitStr = br.getRegex("id=\"timer\"[^>]+>\\s*?(\\d+)\\s*?<").getMatch(0);
+                    waitSecondsStr = br.getRegex("id=\"timer\"[^>]+>\\s*?(\\d+)\\s*?<").getMatch(0);
                 }
             }
             if (!skipWait) {
-                if (waitStr != null) {
-                    logger.info("Found waittime in html, waiting seconds: " + waitStr);
-                    final int wait = Integer.parseInt(waitStr) * +1;
-                    this.sleep(wait * 1000, param);
+                if (waitSecondsStr != null) {
+                    final int waitSeconds = Integer.parseInt(waitSecondsStr) + 1;
+                    logger.info("Found waittime seconds in html: " + waitSecondsStr + " | Actually waiting seconds: " + waitSeconds);
+                    this.sleep(waitSeconds * 1000, param);
                 } else {
                     logger.info("Failed to find waittime in html");
                 }
             } else {
-                if (waitStr != null) {
-                    logger.info("Skipping waittime (seconds): " + waitStr);
+                if (waitSecondsStr != null) {
+                    logger.info("Skipping waittime (seconds): " + waitSecondsStr);
                 } else {
                     logger.info("Skipping waittime");
                 }

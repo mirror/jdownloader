@@ -17,10 +17,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -38,7 +34,7 @@ public class ClicksflyCom extends MightyScriptAdLinkFly {
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "clicksfly.com", "clkfly.pw", "clk.asia" });
+        ret.add(new String[] { "clicksfly.com", "clkfly.pw", "clk.asia", "enit.in" });
         return ret;
     }
 
@@ -59,28 +55,27 @@ public class ClicksflyCom extends MightyScriptAdLinkFly {
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        return super.decryptIt(param, progress);
+    }
+
+    @Override
+    protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final boolean followRedirectsOld = br.isFollowingRedirects();
+        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
+        br.setFollowRedirects(followRedirectsOld);
         Form form = br.getForm(0);
         form.setAction(Encoding.urlDecode(form.getInputField("url").getValue(), true));
         submitForm(form);
-        Thread.sleep(30000);
-        form = br.getForm(0);
-        br.setHeader("x-requested-with", "XMLHttpRequest");
-        submitForm(form);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
-        String finallink = (String) entries.get("url");
-        if (finallink != null) {
-            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            decryptedLinks.add(createDownloadlink(finallink));
-            return decryptedLinks;
-        }
-        return super.decryptIt(param, progress);
+        return ret;
     }
 
     @Override
     protected String getSpecialReferer() {
         /* Pre-set Referer to skip multiple ad pages e.g. clk.asia -> set referer -> clk.asia */
-        return "https://skincarie.com";
+        /* Possible other fake blog domains: skincarie.com, howifx.com */
+        return "https://vavada5com.com/";
     }
 }
