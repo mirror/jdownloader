@@ -298,9 +298,6 @@ public class SpankBangComCrawler extends PluginForDecrypt {
             if (directlink != null) {
                 final DownloadLink video = createDownloadlink("http://spankbangdecrypted.com/" + UniqueAlltimeID.create());
                 // dl.setContentUrl(br.getURL());
-                if (fastcheck) {
-                    video.setAvailable(true);
-                }
                 video.setLinkID("spankbangcom_" + videoID + "_" + selectedQualityValue);
                 if (username != null) {
                     video.setProperty(SpankBangCom.PROPERTY_UPLOADER, username);
@@ -315,6 +312,9 @@ public class SpankBangComCrawler extends PluginForDecrypt {
                     break;
                 }
             }
+        }
+        if (ret.isEmpty()) {
+            logger.info("None (of the selected) video qualities were found");
         }
         if (cfg.getBooleanProperty(SpankBangCom.ALLOW_THUMBNAIL, SpankBangCom.default_ALLOW_THUMBNAIL)) {
             final String thumbnailURL = br.getRegex("\"thumbnailUrl\"\\s*:\\s*\"(https://[^\"]+)").getMatch(0);
@@ -335,16 +335,15 @@ public class SpankBangComCrawler extends PluginForDecrypt {
                         }
                     }
                 }
-                if (fastcheck) {
-                    thumbnail.setAvailable(true);
-                }
                 ret.add(thumbnail);
             } else {
                 logger.warning("Failed to find thumbnail URL");
             }
         }
-        if (ret.isEmpty()) {
-            logger.info("None of the selected qualities were found");
+        for (final DownloadLink result : ret) {
+            if (fastcheck) {
+                result.setAvailable(true);
+            }
         }
         fp.addLinks(ret);
         return ret;
