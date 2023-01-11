@@ -40,6 +40,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -344,7 +345,7 @@ public class YoutvDe extends PluginForHost {
                     br.getPage("/");
                 }
                 if (!isLoggedin(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
@@ -368,7 +369,7 @@ public class YoutvDe extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        if (!br.getURL().contains("/abo-shop")) {
+        if (!br.getURL().endsWith("/abo-shop")) {
             br.getPage("/abo-shop");
         }
         ai.setUnlimitedTraffic();
@@ -378,7 +379,7 @@ public class YoutvDe extends PluginForHost {
         } else {
             packageName = "Unbekanntes Paket";
         }
-        boolean automaticSubscription = false;
+        boolean autoSubscription = false;
         String expireDateStr = br.getRegex("(?i)<b>\\s*Nächste Zahlung am\\s*:\\s*</b>\\s*(\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
         if (expireDateStr == null) {
             /* Expire-date when auto payment is not active. Newly created free accounts will also have this expire-date! */
@@ -389,7 +390,7 @@ public class YoutvDe extends PluginForHost {
         } else {
             account.setType(AccountType.PREMIUM);
             ai.setTrafficLeft(0);
-            automaticSubscription = br.containsHTML("(?i)Automatische Verlängerung:</b>\\s*Ja,\\s*automatisch abgebucht");
+            autoSubscription = br.containsHTML("(?i)Automatische Verlängerung:</b>\\s*Ja,\\s*automatisch abgebucht");
         }
         /*
          * 2022-12-23: All accounts, even free accounts can download without any sort of traffic limit (except this "fair use" limit of 80
@@ -399,16 +400,16 @@ public class YoutvDe extends PluginForHost {
         if (expireDateStr != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDateStr, "dd.MM.yyyy", Locale.GERMANY));
         }
-        ai.setStatus(packageName + " | Auto Verlängerung: " + (automaticSubscription ? "Ja" : "Nein"));
+        ai.setStatus(packageName + " | Auto Verlängerung: " + (autoSubscription ? "Ja" : "Nein"));
         return ai;
     }
 
     /** Checks for generic errors that can happen after any http request. */
     private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws AccountUnavailableException {
         if (br.containsHTML("(?i)(Du siehst diese Seite, da YouTV\\.de deinen Aufruf blockierte|Die erwähnte Sicherheits-Blockade ist maximal|Zugriff verweigert\\s*<)")) {
-            /*
-             * This solely is an IP block. Changing the IP will fix this. Current/previous session cookies remain valid even if this
-             * happens!
+            /**
+             * This solely is an IP block. Changing the IP will fix this. </br>
+             * Current/previous session cookies remain valid even if this happens!
              */
             throw new AccountUnavailableException("IP gesperrt", 5 * 60 * 1000l);
         }
@@ -457,8 +458,8 @@ public class YoutvDe extends PluginForHost {
             dllink = getDirecturl(link);
             if (dllink == null) {
                 if (link.getBooleanProperty(PROPERTY_RECORDED_STATUS, true) == false) {
-                    /* Rare case */
-                    long wait = 30 * 60 * 1000l;
+                    /* Rare case: Broadcast hasn't aired yet -> Wait until it airs to be able to download it. */
+                    long wait = 10 * 60 * 1000l;
                     final String starts_at = link.getStringProperty(PROPERTY_STARTS_AT);
                     if (starts_at != null) {
                         // 2023-01-10T18:40:00.000+01:00
@@ -486,35 +487,19 @@ public class YoutvDe extends PluginForHost {
             }
             checkErrors(br, link, account);
             handleStoredErrors(link);
-            /* Force generation of new directurl next time */
+            /* Force generation of new directurl on next try. */
             link.removeProperty(getDirecturlProperty(link));
             if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 30 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?", 1 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken media?", 1 * 60 * 1000l);
             }
         }
         /* Save last selected/used quality so we will try to resume that same one next time unless user resets this item in between. */
         link.setProperty(PROPERTY_DIRECTURL, PluginJsonConfig.get(YoutvDeConfig.class).getPreferredQuality().name());
         dl.startDownload();
-    }
-
-    private String toSlug2(final String str) {
-        final String preparedSlug = str.toLowerCase(Locale.ENGLISH).replace("ü", "u").replace("ä", "a").replace("ö", "o");
-        String slug = preparedSlug.replaceAll("[^a-z0-9]", "_");
-        /* Remove double-minus */
-        slug = slug.replaceAll("_{2,}", "_");
-        /* Do not begin with minus */
-        if (slug.startsWith("_")) {
-            slug = slug.substring(1);
-        }
-        /* Do not end with minus */
-        if (slug.endsWith("_")) {
-            slug = slug.substring(0, slug.length() - 1);
-        }
-        return slug;
     }
 
     @Override
