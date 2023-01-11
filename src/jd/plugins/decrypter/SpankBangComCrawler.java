@@ -45,9 +45,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.SpankBangCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -91,18 +93,8 @@ public class SpankBangComCrawler extends PluginForDecrypt {
         Browser.setRequestIntervalLimitGlobal(getHost(), 3000);
     }
 
-    private static final String DOMAIN           = "spankbang.com";
-    /** Settings stuff */
-    private static final String FASTLINKCHECK    = "FASTLINKCHECK";
-    private static final String ALLOW_BEST       = "ALLOW_BEST";
-    private static final String ALLOW_240p       = "ALLOW_240p";
-    private static final String ALLOW_320p       = "ALLOW_320p";
-    private static final String ALLOW_480p       = "ALLOW_480p";
-    private static final String ALLOW_720p       = "ALLOW_720p";
-    private static final String ALLOW_1080p      = "ALLOW_1080p";
-    private static final String ALLOW_4k         = "ALLOW_4k";
-    private SpankBangCom        plugin           = null;
-    private final String        PATTERN_PLAYLIST = "https?://[^/]+/([a-z0-9]+)(-[a-z0-9]+)?/playlist/(\\w+)";
+    private SpankBangCom plugin           = null;
+    private final String PATTERN_PLAYLIST = "https?://[^/]+/([a-z0-9]+)(-[a-z0-9]+)?/playlist/(\\w+)";
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -214,8 +206,8 @@ public class SpankBangComCrawler extends PluginForDecrypt {
     private ArrayList<DownloadLink> parseCrawlSingleVideo(final Browser br) throws Exception {
         checkErrors(br);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
-        final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, true);
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
+        final boolean fastcheck = cfg.getBooleanProperty(SpankBangCom.FASTLINKCHECK, SpankBangCom.default_FASTLINKCHECK);
         final String currenturl = br.getURL();
         if (isPrivate(this.br)) {
             throw new AccountRequiredException();
@@ -223,7 +215,6 @@ public class SpankBangComCrawler extends PluginForDecrypt {
             logger.info("Server error 503: Cannot crawl new URLs at the moment");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final FilePackage fp = FilePackage.getInstance();
         /* Decrypt qualities START */
         /* 2020-05-11: Prefer filenames from inside URL as they are always 'good'. */
         String title = br.getRegex("\"name\"\\s*:\\s*\"(.*?)\"").getMatch(0);
@@ -236,7 +227,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
                 }
             }
         }
-        final String username = br.getRegex("<a href=\"/profile/([^/\"]+)\" class=\"ul\"><svg class=\"i_svg i_user\"").getMatch(0);
+        String username = br.getRegex("<a href=\"/profile/([^/\"]+)\" class=\"ul\"><svg class=\"i_svg i_user\"").getMatch(0);
         if (title == null) {
             title = br._getURL().getPath();
         }
@@ -252,15 +243,22 @@ public class SpankBangComCrawler extends PluginForDecrypt {
             throw new DecrypterException("Decrypter broken for link: " + currenturl);
         }
         title = Encoding.htmlDecode(title).trim();
-        fp.setName(title);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setCleanupPackageName(false);
+        if (username != null) {
+            username = Encoding.htmlDecode(username).trim();
+            fp.setName(username + " - " + title);
+        } else {
+            fp.setName(title);
+        }
         /* Decrypt qualities, selected by the user */
         final ArrayList<String> selectedQualities = new ArrayList<String>();
-        boolean q240p = cfg.getBooleanProperty(ALLOW_240p, true);
-        boolean q320p = cfg.getBooleanProperty(ALLOW_320p, true);
-        boolean q480p = cfg.getBooleanProperty(ALLOW_480p, true);
-        boolean q720p = cfg.getBooleanProperty(ALLOW_720p, true);
-        boolean q1080p = cfg.getBooleanProperty(ALLOW_1080p, true);
-        boolean q4k = cfg.getBooleanProperty(ALLOW_4k, true);
+        boolean q240p = cfg.getBooleanProperty(SpankBangCom.ALLOW_240p, true);
+        boolean q320p = cfg.getBooleanProperty(SpankBangCom.ALLOW_320p, true);
+        boolean q480p = cfg.getBooleanProperty(SpankBangCom.ALLOW_480p, true);
+        boolean q720p = cfg.getBooleanProperty(SpankBangCom.ALLOW_720p, true);
+        boolean q1080p = cfg.getBooleanProperty(SpankBangCom.ALLOW_1080p, true);
+        boolean q4k = cfg.getBooleanProperty(SpankBangCom.ALLOW_4k, true);
         if (!q240p && !q320p && !q480p && !q720p && !q1080p) {
             // user has made error and disabled them all, so we will treat as all enabled.
             q240p = true;
@@ -270,7 +268,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
             q1080p = true;
             q4k = true;
         }
-        final boolean best = cfg.getBooleanProperty(ALLOW_BEST, true);
+        final boolean best = cfg.getBooleanProperty(SpankBangCom.ALLOW_BEST, SpankBangCom.default_ALLOW_BEST);
         // needs to be in reverse order
         if (q4k) {
             selectedQualities.add("4k");
@@ -312,16 +310,43 @@ public class SpankBangComCrawler extends PluginForDecrypt {
                 video.setProperty(SpankBangCom.PROPERTY_MAINLINK, currenturl);
                 video.setProperty(SpankBangCom.PROPERTY_QUALITY, selectedQualityValue);
                 SpankBangCom.setFilename(video);
-                fp.add(video);
                 ret.add(video);
                 if (best) {
                     break;
                 }
             }
         }
-        if (ret.size() == 0) {
-            logger.info(DOMAIN + ": None of the selected qualities were found");
+        if (cfg.getBooleanProperty(SpankBangCom.ALLOW_THUMBNAIL, SpankBangCom.default_ALLOW_THUMBNAIL)) {
+            final String thumbnailURL = br.getRegex("\"thumbnailUrl\"\\s*:\\s*\"(https://[^\"]+)").getMatch(0);
+            if (thumbnailURL != null) {
+                final DownloadLink thumbnail = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(thumbnailURL));
+                final String thumbnailExt = Plugin.getFileNameExtensionFromURL(thumbnailURL);
+                if (thumbnailExt != null) {
+                    if (ret.size() == 1) {
+                        /* Only one video resolution was crawled -> Set similar thumbnail filename */
+                        final String videoFilename = ret.get(0).getFinalFileName();
+                        thumbnail.setFinalFileName(videoFilename.subSequence(0, videoFilename.lastIndexOf(".")) + thumbnailExt);
+                    } else {
+                        /* Multiple video resolutions have been crawled -> Set independent thumbnail filename */
+                        if (username != null) {
+                            thumbnail.setFinalFileName(username + " - " + title + thumbnailExt);
+                        } else {
+                            thumbnail.setFinalFileName(title + thumbnailExt);
+                        }
+                    }
+                }
+                if (fastcheck) {
+                    thumbnail.setAvailable(true);
+                }
+                ret.add(thumbnail);
+            } else {
+                logger.warning("Failed to find thumbnail URL");
+            }
         }
+        if (ret.isEmpty()) {
+            logger.info("None of the selected qualities were found");
+        }
+        fp.addLinks(ret);
         return ret;
     }
 
