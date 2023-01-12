@@ -2,6 +2,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -9,8 +11,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "soundgasm.net" }, urls = { "https?://(?:www\\.)?soundgasm\\.net/u/[^/]+/[^/]+" })
 public class SoundGasmNet extends PluginForHost {
@@ -26,10 +26,10 @@ public class SoundGasmNet extends PluginForHost {
     private String url = null;
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
-        br.getPage(parameter.getPluginPatternMatcher());
-        if (br.containsHTML("Page Not Found")) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)Page Not Found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String title = br.getRegex("\"title\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
@@ -39,9 +39,9 @@ public class SoundGasmNet extends PluginForHost {
         }
         url = br.getRegex("(https?://media\\.soundgasm\\.net/sounds/[a-f0-9]+\\.(ogg|m4a|mp3))").getMatch(0);
         final String fileTitle = title + " by " + user;
-        parameter.setName(fileTitle);
-        if (StringUtils.isNotEmpty(url) && parameter.getFinalFileName() == null) {
-            parameter.setFinalFileName(fileTitle + getFileNameExtensionFromURL(url));
+        link.setName(fileTitle);
+        if (StringUtils.isNotEmpty(url) && link.getFinalFileName() == null) {
+            link.setFinalFileName(fileTitle + getFileNameExtensionFromURL(url));
         }
         return AvailableStatus.TRUE;
     }
@@ -52,7 +52,7 @@ public class SoundGasmNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         if (StringUtils.isEmpty(url)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
