@@ -25,6 +25,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.GofileIo;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:#download#|\\?c=|d/)([A-Za-z0-9\\-]+)$" })
 public class GoFileIoCrawler extends PluginForDecrypt {
@@ -36,9 +37,7 @@ public class GoFileIoCrawler extends PluginForDecrypt {
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final UrlQuery query = new UrlQuery();
         query.add("contentId", folderID);
-        // query.add("websiteToken", jd.plugins.hoster.GofileIo.getWebsiteToken(this, br));
-        // 2023-01-12: This works but doesn't look like a real fix
-        query.add("websiteToken", "12345");
+        query.add("websiteToken", GofileIo.getWebsiteToken(this, br));
         query.add("token", Encoding.urlEncode(token));
         query.add("cache", "true");
         String passCode = param.getDecrypterPassword();
@@ -103,7 +102,7 @@ public class GoFileIoCrawler extends PluginForDecrypt {
             if (type.equals("file")) {
                 final String fileID = item.getKey();
                 final DownloadLink file = createDownloadlink("https://" + this.getHost() + "/?c=" + folderID + "#file=" + fileID);
-                jd.plugins.hoster.GofileIo.parseFileInfo(file, entry);
+                GofileIo.parseFileInfo(file, entry);
                 file.setAvailable(true);
                 if (passCode != null) {
                     file.setDownloadPassword(passCode);
