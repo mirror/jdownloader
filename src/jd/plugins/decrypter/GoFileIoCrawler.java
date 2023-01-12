@@ -4,6 +4,14 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
@@ -17,23 +25,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:#download#|\\?c=|d/)([A-Za-z0-9\\-]+)$" })
-public class GoFileIo extends PluginForDecrypt {
+public class GoFileIoCrawler extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String folderID = new Regex(parameter.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final UrlQuery query = new UrlQuery();
         query.add("contentId", folderID);
-        query.add("websiteToken", jd.plugins.hoster.GofileIo.getWebsiteToken(this, br));
+        // query.add("websiteToken", jd.plugins.hoster.GofileIo.getWebsiteToken(this, br));
+        // 2023-01-12: This works but doesn't look like a real fix
+        query.add("websiteToken", "12345");
         query.add("cache", "true");
         String passCode = parameter.getDecrypterPassword();
         boolean passwordCorrect = true;
