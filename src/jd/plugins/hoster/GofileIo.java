@@ -20,25 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.nutils.JDHash;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.UserAgents;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
@@ -48,6 +32,24 @@ import org.appwork.utils.Time;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.nutils.JDHash;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:\\?c=|d/)[A-Za-z0-9]+(?:#file=[a-f0-9]+)?" })
 public class GofileIo extends PluginForHost {
@@ -70,14 +72,15 @@ public class GofileIo extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                                                  = true;
-    private static final int     FREE_MAXCHUNKS                                               = -2;
-    private static final int     FREE_MAXDOWNLOADS                                            = -1;
-    private static final String  PROPERTY_DANGEROUS_FILE                                      = "dangerous_file";
-    private static final String  PROPERTY_DIRECTURL                                           = "directurl";
-    private static final String  PROPERTY_INTERNAL_FILEID                                     = "internal_fileid";
-    private static final String  SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS         = "allow_download_of_files_flagged_as_malicious";
-    private static final boolean default_SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS = false;
+    private static final boolean       FREE_RESUME                                                  = true;
+    private static final int           FREE_MAXCHUNKS                                               = -2;
+    private static final String        PROPERTY_DANGEROUS_FILE                                      = "dangerous_file";
+    private static final String        PROPERTY_DIRECTURL                                           = "directurl";
+    private static final String        PROPERTY_INTERNAL_FILEID                                     = "internal_fileid";
+    private static final String        SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS         = "allow_download_of_files_flagged_as_malicious";
+    private static final boolean       default_SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS = false;
+    /* Don't touch the following! */
+    private static final AtomicInteger freeRunning                                                  = new AtomicInteger(0);
 
     /** TODO: Implement official API once available: https://gofile.io/?t=api . The "API" used here is only their website. */
     @Override
@@ -88,24 +91,32 @@ public class GofileIo extends PluginForHost {
     protected static AtomicReference<String> TOKEN                   = new AtomicReference<String>();
     protected static AtomicLong              TOKEN_TIMESTAMP         = new AtomicLong(-1);
     protected final static long              TOKEN_EXPIRE            = 30 * 60 * 1000l;
+    @Deprecated
     protected static AtomicReference<String> WEBSITE_TOKEN           = new AtomicReference<String>();
+    @Deprecated
     protected static AtomicLong              WEBSITE_TOKEN_TIMESTAMP = new AtomicLong(-1);
 
     public static String getWebsiteToken(final Plugin plugin, final Browser br) throws IOException, PluginException {
         synchronized (WEBSITE_TOKEN) {
-            String token = WEBSITE_TOKEN.get();
-            if (!StringUtils.isEmpty(token) && Time.systemIndependentCurrentJVMTimeMillis() - WEBSITE_TOKEN_TIMESTAMP.get() < TOKEN_EXPIRE) {
-                return token;
+            final boolean useStaticValue = true;
+            if (useStaticValue) {
+                /* 2021-01-12: Website is using same value */
+                return "12345";
             } else {
-                final Browser brc = br.cloneBrowser();
-                brc.getPage("https://gofile.io/contents/files.html");
-                token = brc.getRegex("websiteToken\\s*:\\s*\"(.*?)\"").getMatch(0);
-                if (StringUtils.isEmpty(token)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    WEBSITE_TOKEN.set(token);
-                    WEBSITE_TOKEN_TIMESTAMP.set(Time.systemIndependentCurrentJVMTimeMillis());
+                String token = WEBSITE_TOKEN.get();
+                if (!StringUtils.isEmpty(token) && Time.systemIndependentCurrentJVMTimeMillis() - WEBSITE_TOKEN_TIMESTAMP.get() < TOKEN_EXPIRE) {
                     return token;
+                } else {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage("https://" + plugin.getHost() + "/contents/files.html");
+                    token = brc.getRegex("websiteToken\\s*:\\s*\"(.*?)\"").getMatch(0);
+                    if (StringUtils.isEmpty(token)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
+                        WEBSITE_TOKEN.set(token);
+                        WEBSITE_TOKEN_TIMESTAMP.set(Time.systemIndependentCurrentJVMTimeMillis());
+                        return token;
+                    }
                 }
             }
         }
@@ -113,29 +124,31 @@ public class GofileIo extends PluginForHost {
 
     public static String getToken(final Plugin plugin, final Browser br) throws IOException, PluginException {
         synchronized (TOKEN) {
-            String token = TOKEN.get();
-            if (!StringUtils.isEmpty(token) && Time.systemIndependentCurrentJVMTimeMillis() - TOKEN_TIMESTAMP.get() < TOKEN_EXPIRE) {
-                return token;
+            final String existingToken = TOKEN.get();
+            String token = null;
+            if (!StringUtils.isEmpty(existingToken) && Time.systemIndependentCurrentJVMTimeMillis() - TOKEN_TIMESTAMP.get() < TOKEN_EXPIRE) {
+                /* Re-use existing token */
+                token = existingToken;
             } else {
                 final Browser brc = br.cloneBrowser();
                 final GetRequest req = brc.createGetRequest("https://api." + plugin.getHost() + "/createAccount");
-                req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
-                req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://gofile.io"));
+                req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + plugin.getHost()));
+                req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + plugin.getHost()));
                 brc.getPage(req);
                 final HashMap<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
-                if ("ok".equals(response.get("status"))) {
-                    token = (String) JavaScriptEngineFactory.walkJson(response, "data/token");
-                    if (StringUtils.isEmpty(token)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        TOKEN.set(token);
-                        TOKEN_TIMESTAMP.set(Time.systemIndependentCurrentJVMTimeMillis());
-                        return token;
-                    }
-                } else {
+                if (!"ok".equalsIgnoreCase(response.get("status").toString())) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                token = (String) JavaScriptEngineFactory.walkJson(response, "data/token");
+                if (StringUtils.isEmpty(token)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    TOKEN.set(token);
+                    TOKEN_TIMESTAMP.set(Time.systemIndependentCurrentJVMTimeMillis());
+                }
             }
+            br.setCookie(plugin.getHost(), "accountToken", token);
+            return token;
         }
     }
 
@@ -144,7 +157,6 @@ public class GofileIo extends PluginForHost {
         br.setFollowRedirects(true);
         /* 2021-11-30: Token cookie is even needed to check directURLs! */
         final String token = getToken(this, this.br);
-        br.setCookie(this.getHost(), "accountToken", token);
         final boolean allowDirecturlLinkcheck = true;
         if (allowDirecturlLinkcheck && this.checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
             logger.info("Availablecheck via directurl complete");
@@ -155,13 +167,10 @@ public class GofileIo extends PluginForHost {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* 2020-08-20: Avoid blocks by user-agent - this is just a test based on a weak assumption, it is not necessarily! */
-        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
-        /* 2020-08-20: Slow servers, timeouts will often occur --> Try a higher readtimeout */
-        br.setReadTimeout(2 * 60 * 1000);
         final UrlQuery query = new UrlQuery();
         query.add("contentId", folderID);
         query.add("websiteToken", getWebsiteToken(this, br));
+        query.add("token", Encoding.urlEncode(token));
         query.add("cache", "true");
         String passCode = null;
         boolean passwordCorrect = true;
@@ -177,9 +186,9 @@ public class GofileIo extends PluginForHost {
                 /* E.g. first try and password is available from when user added folder via crawler. */
                 query.addAndReplace("password", JDHash.getSHA256(link.getDownloadPassword()));
             }
-            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getContent?" + query.toString() + "&token=" + token);
-            req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
-            req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://gofile.io"));
+            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getContent?" + query.toString());
+            req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + this.getHost()));
+            req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + this.getHost()));
             brc.getPage(req);
             response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
             if ("error-passwordRequired".equals(response.get("status")) || "error-passwordWrong".equals(response.get("status"))) {
@@ -194,6 +203,7 @@ public class GofileIo extends PluginForHost {
                 passwordCorrect = false;
                 attempt += 1;
                 if (attempt >= 3) {
+                    logger.info("Password retry attempt exhausted");
                     break;
                 } else {
                     continue;
@@ -204,6 +214,7 @@ public class GofileIo extends PluginForHost {
             }
         } while (!this.isAbort());
         if (passwordRequired && !passwordCorrect) {
+            link.setDownloadPassword(null);
             throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
         }
         /* Save for the next time. */
@@ -327,12 +338,32 @@ public class GofileIo extends PluginForHost {
                 logger.log(e);
             }
             if (br.getURL().matches("(?i)https?://[^/]+/d/[a-f0-9\\-]+")) {
+                /* Redirect to main/folder URL -> Most likely directurl expired */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: Directurl expired?", 3 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl.startDownload();
+        try {
+            /* Add a download slot */
+            controlMaxFreeDownloads(null, link, +1);
+            /* Start download */
+            dl.startDownload();
+        } finally {
+            /* Remove download slot */
+            controlMaxFreeDownloads(null, link, -1);
+        }
+    }
+
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null) {
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
     }
 
     @Override
@@ -352,7 +383,7 @@ public class GofileIo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return freeRunning.get() + 1;
     }
 
     @Override
@@ -360,6 +391,6 @@ public class GofileIo extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 }

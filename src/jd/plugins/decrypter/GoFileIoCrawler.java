@@ -16,6 +16,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
 import jd.nutils.JDHash;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -28,34 +29,34 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:#download#|\\?c=|d/)([A-Za-z0-9\\-]+)$" })
 public class GoFileIoCrawler extends PluginForDecrypt {
     @Override
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String folderID = new Regex(parameter.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final Browser brc = br.cloneBrowser();
+        final String token = jd.plugins.hoster.GofileIo.getToken(this, brc);
+        final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final UrlQuery query = new UrlQuery();
         query.add("contentId", folderID);
         // query.add("websiteToken", jd.plugins.hoster.GofileIo.getWebsiteToken(this, br));
         // 2023-01-12: This works but doesn't look like a real fix
         query.add("websiteToken", "12345");
+        query.add("token", Encoding.urlEncode(token));
         query.add("cache", "true");
-        String passCode = parameter.getDecrypterPassword();
+        String passCode = param.getDecrypterPassword();
         boolean passwordCorrect = true;
         boolean passwordRequired = false;
         int attempt = 0;
         Map<String, Object> response = null;
-        final Browser brc = br.cloneBrowser();
-        final String token = jd.plugins.hoster.GofileIo.getToken(this, brc);
-        String path = this.getAdoptedCloudFolderStructure();
         do {
             if (passwordRequired || passCode != null) {
                 /* Pre-given password was wrong -> Ask user for password */
                 if (attempt > 0) {
-                    passCode = getUserInput("Password?", parameter);
+                    passCode = getUserInput("Password?", param);
                 }
                 query.addAndReplace("password", JDHash.getSHA256(passCode));
             }
-            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getContent?" + query.toString() + "&token=" + token);
-            req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://gofile.io"));
-            req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://gofile.io"));
+            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getContent?" + query.toString());
+            req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + this.getHost()));
+            req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + this.getHost()));
             brc.getPage(req);
             response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
             if ("error-passwordRequired".equals(response.get("status")) || "error-passwordWrong".equals(response.get("status"))) {
@@ -85,6 +86,7 @@ public class GoFileIoCrawler extends PluginForDecrypt {
         }
         final Map<String, Object> data = (Map<String, Object>) response.get("data");
         final String currentFolderName = (String) data.get("name");
+        String path = this.getAdoptedCloudFolderStructure();
         FilePackage fp = null;
         if (path == null && !StringUtils.isEmpty(currentFolderName) && !currentFolderName.matches("^quickUpload_.+") && !currentFolderName.equals(folderID)) {
             /* No path given yet --> Use current folder name as root */
@@ -100,7 +102,7 @@ public class GoFileIoCrawler extends PluginForDecrypt {
             final String type = (String) entry.get("type");
             if (type.equals("file")) {
                 final String fileID = item.getKey();
-                final DownloadLink file = createDownloadlink("https://gofile.io/?c=" + folderID + "#file=" + fileID);
+                final DownloadLink file = createDownloadlink("https://" + this.getHost() + "/?c=" + folderID + "#file=" + fileID);
                 jd.plugins.hoster.GofileIo.parseFileInfo(file, entry);
                 file.setAvailable(true);
                 if (passCode != null) {
@@ -122,6 +124,7 @@ public class GoFileIoCrawler extends PluginForDecrypt {
                 }
                 ret.add(folder);
             } else {
+                /* This should never happen */
                 logger.warning("Unsupported type: " + type);
                 continue;
             }
