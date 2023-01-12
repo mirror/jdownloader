@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -66,19 +67,22 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/([\\w\\-]+/(art|journal)/[\\w\\-]+-\\d+|([\\w\\-]+/)?status(?:-update)?/\\d+)" })
 public class DeviantArtCom extends PluginForHost {
-    private final String        TYPE_DOWNLOADALLOWED_HTML             = "(?i)class=\"text\">HTML download</span>";
-    private final String        TYPE_DOWNLOADFORBIDDEN_HTML           = "<div class=\"grf\\-indent\"";
-    private boolean             downloadHTML                          = false;
-    private final String        PATTERN_ART                           = "(?i)https?://[^/]+/([\\w\\-]+)/art/([\\w\\-]+)-(\\d+)";
-    private final String        PATTERN_JOURNAL                       = "(?i)https?://[^/]+/([\\w\\-]+)/journal/([\\w\\-]+)-(\\d+)";
-    public static final String  PATTERN_STATUS                        = "(?i)https?://[^/]+/([\\w\\-]+)/([\\w\\-]+/)?status(?:-update)?/(\\d+)";
-    public static final String  PROPERTY_USERNAME                     = "username";
-    public static final String  PROPERTY_TITLE                        = "title";
-    public static final String  PROPERTY_TYPE                         = "type";
-    private static final String PROPERTY_OFFICIAL_DOWNLOADURL         = "official_downloadurl";
-    private static final String PROPERTY_UNLIMITED_JWT_IMAGE_URL      = "image_unlimitedjwt_url";
-    private static final String PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL = "image_display_or_preview_url";
-    private static final String PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL = "video_display_or_preview_url";
+    private final String               TYPE_DOWNLOADALLOWED_HTML             = "(?i)class=\"text\">HTML download</span>";
+    private final String               TYPE_DOWNLOADFORBIDDEN_HTML           = "<div class=\"grf\\-indent\"";
+    private boolean                    downloadHTML                          = false;
+    private final String               PATTERN_ART                           = "(?i)https?://[^/]+/([\\w\\-]+)/art/([\\w\\-]+)-(\\d+)";
+    private final String               PATTERN_JOURNAL                       = "(?i)https?://[^/]+/([\\w\\-]+)/journal/([\\w\\-]+)-(\\d+)";
+    public static final String         PATTERN_STATUS                        = "(?i)https?://[^/]+/([\\w\\-]+)/([\\w\\-]+/)?status(?:-update)?/(\\d+)";
+    public static final String         PROPERTY_USERNAME                     = "username";
+    public static final String         PROPERTY_TITLE                        = "title";
+    public static final String         PROPERTY_TYPE                         = "type";
+    private static final String        PROPERTY_OFFICIAL_DOWNLOADURL         = "official_downloadurl";
+    private static final String        PROPERTY_UNLIMITED_JWT_IMAGE_URL      = "image_unlimitedjwt_url";
+    private static final String        PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL = "image_display_or_preview_url";
+    private static final String        PROPERTY_VIDEO_DISPLAY_OR_PREVIEW_URL = "video_display_or_preview_url";
+    /* Don't touch the following! */
+    private static final AtomicInteger freeDownloadsRunning                  = new AtomicInteger(0);
+    private static final AtomicInteger accountDownloadsRunning               = new AtomicInteger(0);
 
     /**
      * @author raztoki, pspzockerscene, Jiaz
@@ -666,7 +670,33 @@ public class DeviantArtCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl.startDownload();
+            try {
+                /* Add a download slot */
+                controlMaxFreeDownloads(account, link, +1);
+                /* Start download */
+                dl.startDownload();
+            } finally {
+                /* Remove download slot */
+                controlMaxFreeDownloads(account, link, -1);
+            }
+        }
+    }
+
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account != null) {
+            synchronized (accountDownloadsRunning) {
+                final int before = accountDownloadsRunning.get();
+                final int after = before + num;
+                accountDownloadsRunning.set(after);
+                logger.info("accountDownloadsRunning(" + link.getName() + ")|max:" + getMaxSimultanPremiumDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        } else {
+            synchronized (freeDownloadsRunning) {
+                final int before = freeDownloadsRunning.get();
+                final int after = before + num;
+                freeDownloadsRunning.set(after);
+                logger.info("freeDownloadsRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
         }
     }
 
@@ -683,7 +713,20 @@ public class DeviantArtCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        // final int max = 100;
+        final int running = freeDownloadsRunning.get();
+        // final int ret = Math.min(running + 1, max);
+        // return ret;
+        return running + 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        // final int max = 100;
+        final int running = accountDownloadsRunning.get();
+        // final int ret = Math.min(running + 1, max);
+        // return ret;
+        return running + 1;
     }
 
     @Override
@@ -698,11 +741,6 @@ public class DeviantArtCom extends PluginForHost {
         } else if (con.getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 1 * 60 * 1000l);
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
     }
 
     @Override

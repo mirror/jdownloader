@@ -30,6 +30,17 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.loggingv3.NullLogger;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -55,17 +66,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
-
-import org.appwork.loggingv3.NullLogger;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FileFactory extends PluginForHost {
@@ -263,7 +263,7 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    private String invalidAuthKey = "Invalid authorization key";
+    private final String invalidAuthKey = "Invalid authorization key";
 
     /** Handles errors according to: https://api.filefactory.com/#appendix-error-matrix */
     private void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account, final String apiKey) throws PluginException {
@@ -545,68 +545,101 @@ public class FileFactory extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         if (!isMail(account.getUser())) {
             throw new AccountInvalidException("Please enter your E-Mail address as username!");
-        } else {
-            AccountInfo ai = new AccountInfo();
-            if (useAPI(account)) {
-                try {
-                    return fetchAccountInfo_API(account, ai);
-                } catch (PluginException e) {
-                    if (!useAPI(account) || invalidAuthKey.equals(e.getMessage())) {
-                        // auto retry without api
-                        logger.log(e);
-                    } else {
-                        throw e;
-                    }
-                }
-            }
-            loginWebsite(account, true, br);
-            if (br.getURL() == null || !br.getURL().endsWith("/account/")) {
-                br.getPage("https://www." + this.getHost() + "/account/");
-            }
-            // <li class="tooltipster" title="Premium valid until: <strong>30th Jan, 2014</strong>">
-            if (!br.containsHTML("title=\"(Premium valid until|Lifetime Member)") && !br.containsHTML("<strong>Lifetime</strong>")) {
-                ai.setUnlimitedTraffic();
-                account.setType(AccountType.FREE);
-            } else {
-                account.setType(AccountType.PREMIUM);
-                if (br.containsHTML(">Lifetime Member<") || br.containsHTML("<strong>Lifetime</strong>")) {
-                    ai.setValidUntil(-1);
-                    ai.setStatus("Lifetime User");
-                } else {
-                    final String expire = br.getRegex("Premium valid until: <strong>(.*?)</strong>").getMatch(0);
-                    if (expire == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    // remove st/nd/rd/th
-                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replaceFirst("(st|nd|rd|th)", ""), "dd MMM, yyyy", Locale.UK));
-                    final String space = br.getRegex("<strong>([0-9\\.]+ ?(KB|MB|GB|TB))</strong>[\r\n\t ]+Free Space").getMatch(0);
-                    if (space != null) {
-                        ai.setUsedSpace(space);
-                    }
-                    final String traffic = br.getRegex("donoyet(.*?)xyz").getMatch(0);
-                    if (traffic != null) {
-                        // OLD SHIT
-                        String loaded = br.getRegex("You have used (.*?) out").getMatch(0);
-                        String max = br.getRegex("limit of (.*?)\\. ").getMatch(0);
-                        if (max != null && loaded != null) {
-                            // you don't need to strip characters or reorder its structure. The source is fine!
-                            ai.setTrafficMax(SizeFormatter.getSize(max));
-                            ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(loaded));
-                        } else {
-                            max = br.getRegex("You can now download up to (.*?) in").getMatch(0);
-                            if (max != null) {
-                                ai.setTrafficLeft(SizeFormatter.getSize(max));
-                            } else {
-                                ai.setUnlimitedTraffic();
-                            }
-                        }
-                    } else {
-                        ai.setUnlimitedTraffic();
-                    }
-                }
-            }
-            return ai;
         }
+        final AccountInfo ai = new AccountInfo();
+        if (useAPI(account)) {
+            try {
+                return fetchAccountInfo_API(account, ai);
+            } catch (final PluginException e) {
+                if (!useAPI(account) || invalidAuthKey.equals(e.getMessage())) {
+                    // auto retry without api
+                    logger.log(e);
+                    logger.info("API login failed -> Auto try in website mode");
+                } else {
+                    throw e;
+                }
+            }
+        }
+        loginWebsite(account, true, br);
+        if (br.getURL() == null || !br.getURL().endsWith("/account/")) {
+            br.getPage("https://www." + this.getHost() + "/account/");
+        }
+        // <li class="tooltipster" title="Premium valid until: <strong>30th Jan, 2014</strong>">
+        boolean isPremiumLifetime = false;
+        boolean isPremium = false;
+        final String accountTypeStr = br.getRegex("member_type\\s*:\\s*\"([^\"]+)").getMatch(0);
+        if (accountTypeStr != null) {
+            if (accountTypeStr.equalsIgnoreCase("lifetime")) {
+                isPremiumLifetime = true;
+            } else if (accountTypeStr.equalsIgnoreCase("premium")) {
+                // TODO: 2021-01-12: Not sure about this as I didn't have the html code for checking yet!
+                isPremium = true;
+            }
+            /**
+             * Other possible values: </br>
+             * "expired" -> Free Account
+             */
+        }
+        if (!isPremium && !isPremiumLifetime) {
+            /* Fallback/Old handling */
+            isPremiumLifetime = br.containsHTML("(?i)<strong>\\s*Lifetime\\s*</strong>") || br.containsHTML("(?i)>\\s*Lifetime Member\\s*<");
+            isPremium = br.containsHTML("(?i)>\\s*Premium valid until\\s*<");
+        }
+        long expireTimestamp = 0;
+        final String expireTimestampStr = br.getRegex("premium_ends\\s*:\\s*\"?(\\d+)").getMatch(0);
+        if (expireTimestampStr != null) {
+            expireTimestamp = Long.parseLong(expireTimestampStr) * 1000;
+        } else {
+            /* Fallback/Old handling */
+            final String expireDateStr = br.getRegex("(?i)Premium valid until\\s*:\\s*<strong>(.*?)</strong>").getMatch(0);
+            if (expireDateStr != null) {
+                expireTimestamp = TimeFormatter.getMilliSeconds(expireDateStr.replaceFirst("(st|nd|rd|th)", ""), "dd MMM, yyyy", Locale.UK);
+            }
+        }
+        if (isPremium || isPremiumLifetime || expireTimestamp > System.currentTimeMillis()) {
+            account.setType(AccountType.PREMIUM);
+            if (isPremiumLifetime) {
+                account.setType(AccountType.LIFETIME);
+                ai.setValidUntil(-1);
+            } else {
+                if (expireTimestamp > System.currentTimeMillis()) {
+                    ai.setValidUntil(expireTimestamp);
+                }
+                // TODO: 2023-01-12: Check RegExes for used space and traffic left
+                final String space = br.getRegex("<strong>([0-9\\.]+ ?(KB|MB|GB|TB))</strong>[\r\n\t ]+Free Space").getMatch(0);
+                if (space != null) {
+                    ai.setUsedSpace(space);
+                }
+                final String traffic = br.getRegex("donoyet(.*?)xyz").getMatch(0);
+                if (traffic != null) {
+                    // OLD SHIT
+                    String loaded = br.getRegex("(?i)You have used (.*?) out").getMatch(0);
+                    String max = br.getRegex("limit of (.*?)\\. ").getMatch(0);
+                    if (max != null && loaded != null) {
+                        // you don't need to strip characters or reorder its structure. The source is fine!
+                        ai.setTrafficMax(SizeFormatter.getSize(max));
+                        ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(loaded));
+                    } else {
+                        max = br.getRegex("(?i)You can now download up to (.*?) in").getMatch(0);
+                        if (max != null) {
+                            ai.setTrafficLeft(SizeFormatter.getSize(max));
+                        } else {
+                            ai.setUnlimitedTraffic();
+                        }
+                    }
+                } else {
+                    ai.setUnlimitedTraffic();
+                }
+            }
+        } else {
+            ai.setUnlimitedTraffic();
+            account.setType(AccountType.FREE);
+        }
+        final String createTimestampStr = br.getRegex("created_at\\s*:\\s*\"?(\\d+)").getMatch(0);
+        if (createTimestampStr != null) {
+            ai.setCreateTime(Long.parseLong(createTimestampStr) * 1000);
+        }
+        return ai;
     }
 
     private boolean isMail(final String parameter) {
@@ -693,10 +726,10 @@ public class FileFactory extends PluginForHost {
         final String directlinkproperty;
         if (account == null) {
             directlinkproperty = "directurl_free";
-        } else if (account.getType() == AccountType.PREMIUM) {
-            directlinkproperty = "directurl_account_premium";
-        } else {
+        } else if (account.getType() == AccountType.FREE) {
             directlinkproperty = "directurl_account_free";
+        } else {
+            directlinkproperty = "directurl_account_premium";
         }
         if (StringUtils.isEmpty(dlUrl)) {
             dlUrl = this.checkDirectLink(link, directlinkproperty);
@@ -1323,10 +1356,10 @@ public class FileFactory extends PluginForHost {
         final String directlinkproperty;
         if (account == null) {
             directlinkproperty = "directurl_free";
-        } else if (account.getType() == AccountType.PREMIUM) {
-            directlinkproperty = "directurl_account_premium";
-        } else {
+        } else if (account.getType() == AccountType.FREE) {
             directlinkproperty = "directurl_account_free";
+        } else {
+            directlinkproperty = "directurl_account_premium";
         }
         br.setFollowRedirects(true);
         this.dllink = this.checkDirectLink(link, directlinkproperty);
@@ -1628,7 +1661,6 @@ public class FileFactory extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             account.setProperty("totalMaxSim", 20);
             account.setMaxSimultanDownloads(20);
-            ai.setStatus("Premium Account");
             if (expire != null) {
                 ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire), br);
             }
@@ -1636,7 +1668,6 @@ public class FileFactory extends PluginForHost {
             account.setType(AccountType.FREE);
             account.setProperty("totalMaxSim", 20);
             account.setMaxSimultanDownloads(20);
-            ai.setStatus("Free Account");
             ai.setUnlimitedTraffic();
         }
         account.setProperty("last_checked_timestamp", System.currentTimeMillis());
