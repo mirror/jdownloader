@@ -40,6 +40,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.PixeldrainConfig;
+import org.jdownloader.plugins.components.config.PixeldrainConfig.ActionOnSpeedLimitReached;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
@@ -338,12 +339,12 @@ public class PixeldrainCom extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link, account);
-        if (isTransferLimitReached(link, account) && PluginJsonConfig.get(getConfigInterface()).isReconnectOnSpeedLimit()) {
+        if (isTransferLimitReached(link, account) && PluginJsonConfig.get(getConfigInterface()).getActionOnSpeedLimitReached() == ActionOnSpeedLimitReached.TRIGGER_RECONNECT_TO_CHANGE_IP) {
             /**
              * User prefers to perform reconnect to be able to download without speedlimit again. </br>
              * 2022-07-19: Speedlimit sits only on IP, not on account but our upper system will of not do reconnects for accounts atm.
              */
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You are speed limited", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, String.format("You are speed limited. Change your IP, try again later or allow speed limited downloads in %s plugin settings.", this.getHost()), 30 * 60 * 1000l);
         }
         String dllink = API_BASE + "/file/" + this.getFID(link);
         final UrlQuery query = new UrlQuery();
@@ -460,6 +461,7 @@ public class PixeldrainCom extends PluginForHost {
                  * First try to migrate old accounts which still used website login. </br>
                  * Website cookies contain the API key too -> Extract and set this. Then delete cookies as we don't need them anymore.
                  */
+                /* TODO: Remove this legacy handling after 2023-05 */
                 logger.info("Trying to convert old website cookies to first time API key login");
                 final List<Cookie> allCookies = cookies.getCookies();
                 Cookie apikeyCookie = null;
@@ -480,6 +482,8 @@ public class PixeldrainCom extends PluginForHost {
                 /* Remove cookies as this is a one-try event. */
                 account.clearCookies("");
             }
+            /* Correct user input */
+            account.setPass(correctPassword(account.getPass()));
             final String apikey = account.getPass();
             if (!isAPIKEY(apikey)) {
                 showApiLoginInformation(account);
@@ -567,10 +571,18 @@ public class PixeldrainCom extends PluginForHost {
     protected static boolean isAPIKEY(final String str) {
         if (str == null) {
             return false;
-        } else if (str.replace("-", "").matches("[a-f0-9]{32}")) {
+        } else if (str.matches("[a-f0-9]{32}")) {
             return true;
         } else {
             return false;
+        }
+    }
+
+    private static String correctPassword(final String pw) {
+        if (pw == null) {
+            return null;
+        } else {
+            return pw.replace("-", "").trim();
         }
     }
 
@@ -671,10 +683,10 @@ public class PixeldrainCom extends PluginForHost {
         private String getPassword() {
             if (this.pass == null) {
                 return null;
-            } else if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+            } else if (StringUtils.isEmpty(new String(this.pass.getPassword()))) {
                 return null;
             } else {
-                return new String(this.pass.getPassword());
+                return correctPassword(new String(this.pass.getPassword()));
             }
         }
 
@@ -692,12 +704,11 @@ public class PixeldrainCom extends PluginForHost {
         }
 
         private final ExtPasswordField pass;
-        private static String          EMPTYPW = "                 ";
         private final JLabel           apikeyLabel;
 
         public PixeldrainAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Click here to generate an API Key for JD:"));
+            add(new JLabel("You can find your API Key here:"));
             add(new JLink(PIXELDRAIN_JD_API_HELP_PAGE));
             add(apikeyLabel = new JLabel("API Key: [a-f]{32}"));
             add(this.pass = new ExtPasswordField() {

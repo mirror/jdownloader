@@ -98,7 +98,7 @@ public class WrzucajplikiPl extends XFileSharingProBasic {
     @Override
     protected String findExpireDate(Browser br) throws Exception {
         final String ret = super.findExpireDate(br);
-        if (ret == null && br.containsHTML(">\\s*Please enter your e-mail\\s*<")) {
+        if (ret == null && br.containsHTML("(?i)>\\s*Please enter your e-mail\\s*<")) {
             // <div class="alert alert-success">Please enter your e-mail</div>
             throw new AccountUnavailableException("Please visit website and enter your e-mail in account settings!", 30 * 60 * 1000l);
         }
