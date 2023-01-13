@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -321,11 +320,10 @@ public class FilebitNet extends PluginForHost {
     public Map<String, Object> requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         final String fid = getFID(link);
         if (!link.isNameSet()) {
-            /* Fallback */
+            /* Fallback (weak filename) */
             link.setName(fid);
         }
-        // final Object [][] postdata = new Object[][];
-        String speedTicket = "";
+        String speedTicket = ""; // do not set this to null!
         if (account != null) {
             speedTicket = account.getStringProperty(PROPERTY_KEY);
         }
@@ -576,74 +574,16 @@ public class FilebitNet extends PluginForHost {
             final long crc32 = ((Number) chunk.get(4)).longValue();
             final String downloadid = chunk.get(5).toString();
             final String chunkURL = getAPIBase() + "/download/" + downloadid + "?slot=" + ticketID;
-            System.out.println("chunk[" + index + "]");
-            // Each object contains the following information: chunk_id, offset0, <not_needed>, length, crc32, downloadid
-            System.out.println(chunk + "");
+            System.out.println("chunk[" + index + "] | " + chunk);
             System.out.println(chunkURL);
             index++;
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (true) {
-            /* 2022-10-05: This plugin is unfinished */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!attemptStoredDownloadurlDownload(link, directlinkproperty)) {
-            requestFileInformation(link);
-            String dllink = br.getRegex("").getMatch(0);
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        }
-        dl.startDownload();
-    }
-
     @Override
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
-    }
-
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty) throws Exception {
-        final String url = link.getStringProperty(directlinkproperty);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, true, 1);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                return true;
-            } else {
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            link.removeProperty(directlinkproperty);
-            logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
-            return false;
-        }
     }
 
     @Override
