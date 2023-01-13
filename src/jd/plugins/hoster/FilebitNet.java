@@ -40,6 +40,7 @@ import org.jdownloader.plugins.components.FilebitNetAccountFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.requests.PostRequest;
 import jd.parser.Regex;
@@ -192,6 +193,36 @@ public class FilebitNet extends PluginForHost {
     private final String PROPERTY_KEYTYPE = "PROPERTY_KEYTYPE";
     private final String PROPERTY_KEY     = "PROPERTY_KEY";
 
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /*
+             * Check username and password field for entered "license key". This improves usability for myjdownloader/headless users as we
+             * can't display custom login masks for them yet.
+             */
+            final String userCorrected = FilebitNetAccountFactory.correctLicenseKey(account.getUser());
+            final String pwCorrected = FilebitNetAccountFactory.correctLicenseKey(account.getPass());
+            String licenseKey = null;
+            if (FilebitNetAccountFactory.isLicenseKey(userCorrected)) {
+                licenseKey = userCorrected;
+            } else if (FilebitNetAccountFactory.isLicenseKey(pwCorrected)) {
+                licenseKey = pwCorrected;
+            }
+            if (licenseKey == null) {
+                throw new AccountInvalidException("Invalid license key format");
+            }
+            account.setUser(licenseKey);
+            final boolean useNewHandling = true;
+            if (useNewHandling) {
+                return loginAndGetAccountInfo(br, account);
+            } else {
+                login(br, account);
+            }
+        }
+        return super.fetchAccountInfo(account);
+    }
+
+    @Deprecated
     public void login(final Browser br, final Account account) throws Exception {
         synchronized (account) {
             String keyType = account.getStringProperty(PROPERTY_KEYTYPE);
@@ -216,28 +247,69 @@ public class FilebitNet extends PluginForHost {
         }
     }
 
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /*
-             * Check username + password field for entered "license key". This improves usability for myjdownloader/headless users as we
-             * can't display custom login masks for them yet.
-             */
-            final String userCorrected = FilebitNetAccountFactory.correctLicenseKey(account.getUser());
-            final String pwCorrected = FilebitNetAccountFactory.correctLicenseKey(account.getPass());
-            String licenseKey = null;
-            if (FilebitNetAccountFactory.isLicenseKey(userCorrected)) {
-                licenseKey = userCorrected;
-            } else if (FilebitNetAccountFactory.isLicenseKey(pwCorrected)) {
-                licenseKey = pwCorrected;
-            }
-            if (licenseKey == null) {
-                throw new AccountInvalidException("Invalid license key format");
-            }
-            account.setUser(licenseKey);
-            login(br, account);
+    private AccountInfo loginAndGetAccountInfo(final Browser br, final Account account) throws Exception {
+        synchronized (account) {
+            int attempt = 0;
+            Map<String, Object> lastTicket = null;
+            do {
+                attempt++;
+                String keyType = account.getStringProperty(PROPERTY_KEYTYPE);
+                String key = account.getStringProperty(PROPERTY_KEY);
+                /* Key of most important cookie: "y_bid" */
+                final Cookies cookies = account.loadCookies("");
+                if (keyType == null || key == null || cookies == null) {
+                    checkLicenseKey(br, account);
+                    keyType = account.getStringProperty(PROPERTY_KEYTYPE);
+                    key = account.getStringProperty(PROPERTY_KEY);
+                }
+                if ("st".equals(keyType)) {
+                    br.setCookies(cookies);
+                    lastTicket = checkSpeedKey(br, key);
+                    final String ticketError = (String) lastTicket.get("error");
+                    // E.g. {"servertime":"2022-12-09 11:38:43","tickets":{"<ticketID>":{"error":"ticket not found
+                    // or
+                    // expired"}}}
+                    if (ticketError != null) {
+                        logger.info("Ticket/Session expired? Error: " + ticketError);
+                        account.removeProperty(PROPERTY_KEYTYPE);
+                        account.removeProperty(PROPERTY_KEY);
+                        account.clearCookies("");
+                        continue;
+                    }
+                    final AccountInfo ai = new AccountInfo();
+                    ai.setTrafficLeft(((Number) lastTicket.get("traffic")).longValue());
+                    final String validUntilDate = lastTicket.get("validuntil").toString();
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntilDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return ai;
+                }
+                break;
+            } while (attempt <= 1);
+            this.checkErrors(null, account, lastTicket);
         }
-        return super.fetchAccountInfo(account);
+        return null;
+    }
+
+    private void checkLicenseKey(final Browser br, final Account account) throws Exception {
+        final String userKey = account.getUser();
+        final String keyType = getKeyType(br, userKey);
+        final String key = addSpeedKey(br, userKey);
+        account.setProperty(PROPERTY_KEYTYPE, keyType);
+        account.setProperty(PROPERTY_KEY, key);
+    }
+
+    private void checkErrors(final DownloadLink link, final Account account, final Map<String, Object> map) throws PluginException {
+        /* TODO: Add support for more/specific errormessages */
+        if (map == null) {
+            return;
+        }
+        final String errorMsg = (String) map.get("error");
+        if (link == null) {
+            /* Error during login */
+            throw new AccountInvalidException(errorMsg);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg);
+        }
     }
 
     public Map<String, Object> requestFileInformation(final Account account, final DownloadLink link) throws Exception {

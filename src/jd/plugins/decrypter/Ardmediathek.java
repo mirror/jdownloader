@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -32,6 +33,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.ArdConfigInterface;
 import org.jdownloader.plugins.components.config.DasersteConfig;
 import org.jdownloader.plugins.components.config.EurovisionConfig;
@@ -473,11 +475,27 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         final String description = br.getRegex("name=\"twitter:description\" content=\"([^\"]+)").getMatch(0);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String[] jsons = br.getRegex("class=\"mediaplayer v-instance mediaplayer--\\d+x\\d+\"\\s*data-v=\"([^\"]+)").getColumn(0);
+        final List<String> jsonsAll = new ArrayList<String>();
+        final String[] jsons1 = br.getRegex("class=\"mediaplayer v-instance mediaplayer--\\d+x\\d+\"\\s*data-v=\"([^\"]+)").getColumn(0);
+        jsonsAll.addAll(Arrays.asList(jsons1));
+        if (jsons1 == null || jsons1.length == 0) {
+            /* Fallback/Unsafe attempt */
+            final String[] jsons2 = br.getRegex("class=\"v-instance\" data-v=\"([^\"]+)").getColumn(0);
+            if (jsons2 != null && jsons2.length > 0) {
+                /* Only add first item */
+                jsonsAll.add(jsons2[0]);
+            }
+        }
         String title = br.getRegex("name=\"twitter:title\" content=\"([^\"]+)\"").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("name=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
+        }
         if (title == null) {
             /* Fallback */
             title = br._getURL().getPath();
+        }
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
         }
         final ArdMetadata metadata = new ArdMetadata(title);
         // metadata.setSubtitle(_info.get("seriesTitle").toString());
@@ -491,28 +509,73 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         /* Fallback as they do not provide contentIDs... */
         metadata.setContentID(br.getURL());
-        for (String json : jsons) {
-            final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
-            json = Encoding.htmlDecode(json);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-            final List<Map<String, Object>> qualities = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "mc/streams/{0}/media");
-            if (qualities == null) {
-                continue;
-            }
-            for (final Map<String, Object> quality : qualities) {
-                final String mimeType = quality.get("mimeType").toString();
-                if (!mimeType.equalsIgnoreCase("video/mp4")) {
-                    /* Skip all except http streams */
+        try {
+            for (String json : jsonsAll) {
+                final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
+                json = Encoding.htmlDecode(json);
+                final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                final List<Map<String, Object>> qualities = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "mc/streams/{0}/media");
+                if (qualities == null) {
                     continue;
                 }
-                final VideoResolution res = VideoResolution.getByWidth(((Number) quality.get("maxHResolutionPx")).intValue());
-                if (res != null) {
-                    this.addQualityHTTP(param, metadata, foundQualitiesMap, quality.get("url").toString(), null, res, false);
+                for (final Map<String, Object> quality : qualities) {
+                    final String mimeType = quality.get("mimeType").toString();
+                    if (!mimeType.equalsIgnoreCase("video/mp4")) {
+                        /* Skip all except http streams */
+                        continue;
+                    }
+                    final VideoResolution res = VideoResolution.getByWidth(((Number) quality.get("maxHResolutionPx")).intValue());
+                    if (res != null) {
+                        this.addQualityHTTP(param, metadata, foundQualitiesMap, quality.get("url").toString(), null, res, false);
+                    }
                 }
+                ret.addAll(this.handleUserQualitySelection(metadata, foundQualitiesMap));
+                /* 2022-07-07: So far only one video is supported because we'd set the same metadata on all which would be wrong! */
+                break;
             }
-            ret.addAll(this.handleUserQualitySelection(metadata, foundQualitiesMap));
-            /* 2022-07-07: So far only one video is supported because we'd set the same metadata on all which would be wrong! */
-            break;
+        } catch (final Exception ignore) {
+            /* Allow jump into final fallback below */
+            logger.log(ignore);
+            logger.warning("Exception happened in json handling");
+        }
+        if (ret.isEmpty() && title != null) {
+            /* Final workaround attempt: Look for the same content on ardmediathek.de */
+            return crawlARDMediathekSearchResultsVOD(title, 1);
+        } else {
+            return ret;
+        }
+    }
+
+    /**
+     * Searches for videos in ardmediathek that match the given search term. </br>
+     * This is mostly used as a workaround to find stuff that is hosted on their other website on ardmediathek instead as ardmediathek is
+     * providing a fairly stable API while other websites hosting the same content such as sportschau.de can be complicated to parse. </br>
+     * This does not (yet) support pagination!
+     */
+    private ArrayList<DownloadLink> crawlARDMediathekSearchResultsVOD(final String searchTerm, final int maxResults) throws Exception {
+        if (StringUtils.isEmpty(searchTerm)) {
+            /* Developer mistake */
+            return null;
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final int pageNumber = 0;
+        final UrlQuery query = new UrlQuery();
+        query.add("query", Encoding.urlEncode(searchTerm));
+        query.add("pageNumber", Integer.toString(pageNumber));
+        query.add("pageSize", "24");
+        logger.info("Searching ardmediathek videos for term: " + searchTerm);
+        br.getPage("https://api.ardmediathek.de/search-system/mediathek/ard/search/vods?query=" + query.toString());
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        /* 2023-01-13: Pagination is not needed and not supported atm. */
+        // final Map<String, Object> pagination = (Map<String, Object>) entries.get("pagination");
+        final List<Map<String, Object>> videoTeasers = (List<Map<String, Object>>) entries.get("teasers");
+        logger.info("Found " + videoTeasers.size() + " search results on page " + (pageNumber + 1));
+        for (final Map<String, Object> videoTeaser : videoTeasers) {
+            final String id = videoTeaser.get("id").toString();
+            ret.add(this.createDownloadlink("https://www.ardmediathek.de/video/" + id));
+            if (ret.size() >= maxResults) {
+                break;
+            }
         }
         return ret;
     }

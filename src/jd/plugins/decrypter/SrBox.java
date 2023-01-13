@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,9 +33,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 /** 2020-06-08: Current main domain is: isrbx.net */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "isrbx.me" }, urls = { "https?://[\\w\\.]*(?:isra?bo?x(?:-music)?\\.(?:[a-zA-Z]+)|isbox\\.net|isrbx\\.me)/[0-9]+-.*?\\.html|https?://(?:www\\.)?(?:biq\\.to|(?:isra?bo?x(?:-music)?\\.(?:[a-zA-Z]+)|isbox\\.net|isrbx\\.me))/go/[a-f0-9]{100,}" })
@@ -51,9 +53,9 @@ public class SrBox extends antiDDoSForDecrypt {
     private final String        base                 = "(?i)https?://[\\w\\.]*(?:isra?bo?x(?:-music)?\\.(?:[a-zA-Z]+)|isbox\\.net|isrbx\\.me)/";
     private static final String TYPE_SINGLE_REDIRECT = "https?://[^/]+/go/[a-f0-9]{100,}";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(false);
         if (parameter.matches(TYPE_SINGLE_REDIRECT)) {
             /* Crawl single redirect-URL. */
@@ -64,9 +66,9 @@ public class SrBox extends antiDDoSForDecrypt {
             final String redirect = br.getRedirectLocation();
             /* Redirect on mainpage = also offline */
             if (redirect == null || redirect.contains(initialHost)) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                decryptedLinks.add(this.createDownloadlink(redirect));
+                ret.add(this.createDownloadlink(redirect));
             }
         } else {
             /* Crawl multiple URLs */
@@ -74,9 +76,9 @@ public class SrBox extends antiDDoSForDecrypt {
             Browser.setRequestIntervalLimitGlobal(br.getHost(), 1000);
             final String redirect = br.getRedirectLocation();
             if (br.containsHTML("(An error has occurred|The article cannot be found)") || (redirect != null && redirect.matches(base))) {
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
-            } else if (redirect != null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (redirect != null) {
                 br.setFollowRedirects(true);
                 getPage(redirect);
             }
@@ -111,7 +113,7 @@ public class SrBox extends antiDDoSForDecrypt {
                 }
                 final DownloadLink dl = createDownloadlink(redirectlink);
                 if (dl != null) {
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
             }
             // Some link can be crypted in this site, see if it is the case
@@ -123,7 +125,7 @@ public class SrBox extends antiDDoSForDecrypt {
             for (String redirectlink : linksCrypted) {
                 final String base64 = new Regex(redirectlink, "url=((?:aHR0c|ZnRwOi).+?)(\\?|$)").getMatch(0);
                 if (base64 != null) {
-                    decryptedLinks.add(createDownloadlink(base64));
+                    ret.add(createDownloadlink(base64));
                 } else {
                     // final Browser br2 = br.cloneBrowser();
                     // getPage(br2, redirectlink);
@@ -132,7 +134,7 @@ public class SrBox extends antiDDoSForDecrypt {
                     // decryptedLinks.add(createDownloadlink(finallink));
                     // }
                     /* 2020-10-23: There can be a lot of URLs and this can take quite some time --> URLs go into crawler again */
-                    decryptedLinks.add(createDownloadlink(redirectlink));
+                    ret.add(createDownloadlink(redirectlink));
                 }
                 // if (this.isAbort()) {
                 // break;
@@ -222,7 +224,7 @@ public class SrBox extends antiDDoSForDecrypt {
                                 DLLink.setFinalFileName(strName + strExtension);
                             }
                         }
-                        decryptedLinks.add(DLLink);
+                        ret.add(DLLink);
                     }
                 }
             }
@@ -230,10 +232,10 @@ public class SrBox extends antiDDoSForDecrypt {
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.trim());
-                fp.addLinks(decryptedLinks);
+                fp.addLinks(ret);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     @Override
