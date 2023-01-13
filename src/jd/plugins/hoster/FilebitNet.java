@@ -323,9 +323,10 @@ public class FilebitNet extends PluginForHost {
             /* Fallback (weak filename) */
             link.setName(fid);
         }
-        String speedTicket = ""; // do not set this to null!
+        /* Do not set this to null, API doesn't like that! */
+        String speedTicket = "";
         if (account != null) {
-            speedTicket = account.getStringProperty(PROPERTY_KEY);
+            speedTicket = account.getStringProperty(PROPERTY_KEY, "");
         }
         final Request request = doAPIRequest(br, "/storage/bucket/info.json", new Object[][] { { "file", fid }, { "st", speedTicket } });
         if (request.getHttpConnection().getResponseCode() == 404) {
