@@ -124,12 +124,13 @@ public class FilebitNet extends PluginForHost {
         if (keytype == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if ("unknown".equals(keytype)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unknown keytype");
+            /* Invalid key */
+            throw new AccountInvalidException();
         } else if ("st".equals(keytype)) {
             // st = "speedticket"
             return keytype;
         } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unsupported keytype:" + keytype);
+            throw new AccountInvalidException("unsupported keytype:" + keytype);
         }
     }
 
@@ -213,7 +214,7 @@ public class FilebitNet extends PluginForHost {
             account.setUser(licenseKey);
             final boolean useNewHandling = true;
             if (useNewHandling) {
-                return loginAndGetAccountInfo(br, account);
+                return loginAndGetAccountInfo(br, account, true);
             } else {
                 login(br, account);
             }
@@ -247,7 +248,7 @@ public class FilebitNet extends PluginForHost {
         }
     }
 
-    private AccountInfo loginAndGetAccountInfo(final Browser br, final Account account) throws Exception {
+    private AccountInfo loginAndGetAccountInfo(final Browser br, final Account account, final boolean verifyTicket) throws Exception {
         synchronized (account) {
             int attempt = 0;
             Map<String, Object> lastTicket = null;
@@ -256,16 +257,18 @@ public class FilebitNet extends PluginForHost {
                 String keyType = account.getStringProperty(PROPERTY_KEYTYPE);
                 String key = account.getStringProperty(PROPERTY_KEY);
                 /* Key of most important cookie: "y_bid" */
-                Cookies storedCookies = account.loadCookies("");
+                final Cookies storedCookies = account.loadCookies("");
                 if (keyType == null || key == null || storedCookies == null) {
                     checkLicenseKey(br, account);
                     keyType = account.getStringProperty(PROPERTY_KEYTYPE);
                     key = account.getStringProperty(PROPERTY_KEY);
-                    storedCookies = null;
+                } else if (storedCookies != null) {
+                    br.setCookies(storedCookies);
                 }
                 if ("st".equals(keyType)) {
-                    if (storedCookies != null) {
-                        br.setCookies(storedCookies);
+                    if (!verifyTicket) {
+                        /* Trust login token/cookies */
+                        return null;
                     }
                     lastTicket = checkSpeedKey(br, key);
                     final String ticketError = (String) lastTicket.get("error");
@@ -277,6 +280,7 @@ public class FilebitNet extends PluginForHost {
                         account.removeProperty(PROPERTY_KEYTYPE);
                         account.removeProperty(PROPERTY_KEY);
                         account.clearCookies("");
+                        br.clearCookies(null);
                         continue;
                     }
                     final AccountInfo ai = new AccountInfo();
@@ -285,6 +289,8 @@ public class FilebitNet extends PluginForHost {
                     ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntilDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
                     account.saveCookies(br.getCookies(br.getHost()), "");
                     return ai;
+                } else {
+                    logger.info("Unsupported keyType: " + keyType);
                 }
                 break;
             } while (attempt <= 1);
@@ -296,9 +302,9 @@ public class FilebitNet extends PluginForHost {
     private void checkLicenseKey(final Browser br, final Account account) throws Exception {
         final String userKey = account.getUser();
         final String keyType = getKeyType(br, userKey);
-        final String key = addSpeedKey(br, userKey);
+        final String speedKey = addSpeedKey(br, userKey);
         account.setProperty(PROPERTY_KEYTYPE, keyType);
-        account.setProperty(PROPERTY_KEY, key);
+        account.setProperty(PROPERTY_KEY, speedKey);
     }
 
     private void checkErrors(final DownloadLink link, final Account account, final Map<String, Object> map) throws PluginException {
@@ -326,6 +332,7 @@ public class FilebitNet extends PluginForHost {
         /* Do not set this to null, API doesn't like that! */
         String speedTicket = "";
         if (account != null) {
+            this.loginAndGetAccountInfo(br, account, false);
             speedTicket = account.getStringProperty(PROPERTY_KEY, "");
         }
         final Request request = doAPIRequest(br, "/storage/bucket/info.json", new Object[][] { { "file", fid }, { "st", speedTicket } });

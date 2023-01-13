@@ -66,7 +66,7 @@ public class FilebitNetAccountFactory extends MigPanel implements AccountBuilder
     public FilebitNetAccountFactory(final InputChangedCallbackInterface callback) {
         super("ins 0, wrap 2", "[][grow,fill]", "");
         add(new JLabel("Enter license key."));
-        add(new JLabel("You can find it in your PDF file."));
+        add(new JLabel("You can find it in the PDF file you've received from filebit."));
         add(apikeyLabel = new JLabel("Licence key:"));
         add(this.pass = new ExtPasswordField() {
             @Override
