@@ -106,7 +106,7 @@ public class FilebitNet extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private String getAPI() {
+    private String getAPIBase() {
         if (true) {
             return "https://clientapi.filebit.net";
         } else {
@@ -141,8 +141,8 @@ public class FilebitNet extends PluginForHost {
         payLoad.put("key", speedKey);
         payLoad.put("skc", true);
         payLoad.put("skc", 1);
-        PostRequest request = brc.createJSonPostRequest(getAPI() + "/app/addspeedkey.json", payLoad);
-        request = brc.createJSonPostRequest(getAPI() + "/app/licence/add.json", payLoad);
+        PostRequest request = brc.createJSonPostRequest(getAPIBase() + "/app/addspeedkey.json", payLoad);
+        request = brc.createJSonPostRequest(getAPIBase() + "/app/licence/add.json", payLoad);
         final String responseRaw = brc.getPage(request);
         final Map<String, Object> response = restoreFromString(responseRaw, TypeRef.MAP);
         final String key = response != null ? (String) response.get("key") : null;
@@ -167,7 +167,7 @@ public class FilebitNet extends PluginForHost {
     private Request doAPIRequest(final Browser br, final String apiRequest, Map<String, Object> payLoad) throws Exception {
         final Browser brc = br.cloneBrowser();
         prepBrowser(brc);
-        final PostRequest request = brc.createJSonPostRequest(getAPI() + apiRequest, payLoad);
+        final PostRequest request = brc.createJSonPostRequest(getAPIBase() + apiRequest, payLoad);
         br.getPage(request);
         return request;
     }
@@ -236,7 +236,8 @@ public class FilebitNet extends PluginForHost {
             }
             if ("st".equals(keyType)) {
                 final Map<String, Object> ticket = checkSpeedKey(br, key);
-                // TODO: Add errorhandling e.g. {"servertime":"2022-12-09 11:38:43","tickets":{"<ticketID>":{"error":"ticket not found or
+                // This is missing errorhandling e.g. {"servertime":"2022-12-09 11:38:43","tickets":{"<ticketID>":{"error":"ticket not found
+                // or
                 // expired"}}}
                 final AccountInfo ai = new AccountInfo();
                 ai.setTrafficLeft(((Number) ticket.get("traffic")).longValue());
@@ -256,14 +257,17 @@ public class FilebitNet extends PluginForHost {
                 String keyType = account.getStringProperty(PROPERTY_KEYTYPE);
                 String key = account.getStringProperty(PROPERTY_KEY);
                 /* Key of most important cookie: "y_bid" */
-                final Cookies cookies = account.loadCookies("");
-                if (keyType == null || key == null || cookies == null) {
+                Cookies storedCookies = account.loadCookies("");
+                if (keyType == null || key == null || storedCookies == null) {
                     checkLicenseKey(br, account);
                     keyType = account.getStringProperty(PROPERTY_KEYTYPE);
                     key = account.getStringProperty(PROPERTY_KEY);
+                    storedCookies = null;
                 }
                 if ("st".equals(keyType)) {
-                    br.setCookies(cookies);
+                    if (storedCookies != null) {
+                        br.setCookies(storedCookies);
+                    }
                     lastTicket = checkSpeedKey(br, key);
                     final String ticketError = (String) lastTicket.get("error");
                     // E.g. {"servertime":"2022-12-09 11:38:43","tickets":{"<ticketID>":{"error":"ticket not found
@@ -304,21 +308,28 @@ public class FilebitNet extends PluginForHost {
             return;
         }
         final String errorMsg = (String) map.get("error");
-        if (link == null) {
-            /* Error during login */
-            throw new AccountInvalidException(errorMsg);
-        } else {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg);
+        if (errorMsg != null) {
+            if (link == null) {
+                /* Error during login */
+                throw new AccountInvalidException(errorMsg);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg);
+            }
         }
     }
 
-    public Map<String, Object> requestFileInformation(final Account account, final DownloadLink link) throws Exception {
+    public Map<String, Object> requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         final String fid = getFID(link);
         if (!link.isNameSet()) {
             /* Fallback */
             link.setName(fid);
         }
-        final Request request = doAPIRequest(br, "/storage/bucket/info.json", new Object[][] { { "file", fid } });
+        // final Object [][] postdata = new Object[][];
+        String speedTicket = "";
+        if (account != null) {
+            speedTicket = account.getStringProperty(PROPERTY_KEY);
+        }
+        final Request request = doAPIRequest(br, "/storage/bucket/info.json", new Object[][] { { "file", fid }, { "st", speedTicket } });
         if (request.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -354,7 +365,7 @@ public class FilebitNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        if (requestFileInformation(null, link) != null) {
+        if (requestFileInformation(link, null) != null) {
             return AvailableStatus.TRUE;
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -500,11 +511,77 @@ public class FilebitNet extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        handleDownload(link, null);
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        handleDownload(link, account);
+    }
+
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Map<String, Object> entries = this.requestFileInformation(link, account);
+        this.checkErrors(link, account, entries);
+        final Map<String, Object> slot = (Map<String, Object>) entries.get("slot");
+        /*
+         * TODO: Update/improve errorhandling for this as such errors may result in free download although premium is expected to be used:
+         * "st":{"ticket":"","enabled":false,"state":"invalid","message":"your entered ticket is invalid or expired","trafficAvailable":0,
+         * "directDownload":null}
+         */
+        final Map<String, Object> st = (Map<String, Object>) entries.get("st");
+        final boolean speedTicketEnabled = ((Boolean) st.get("enabled")).booleanValue();
+        if (account != null && !speedTicketEnabled) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Speedticket given but not usable, API error: " + st.get("message"));
+        }
+        if (account != null) {
+            /* TODO: Refresh trafficleft value of account each time a download is attempted. */
+            final Number trafficAvailable = (Number) st.get("trafficAvailable");
+            // TODO: What is this?
+            // final Object directDownload = st.get("directDownload");
+        }
+        final int waitSeconds = ((Number) slot.get("wait")).intValue();
+        final String ticketID = slot.get("ticket").toString();
+        if (waitSeconds > 0) {
+            /* Usually only needed for downloads without account */
+            this.sleep(waitSeconds * 1000l, link);
+        }
+        doAPIRequest(br, "/file/slot.json", new Object[][] { { "slot", ticketID } });
+        /*
+         * Example response:
+         * {"success":true,"slot":"CENSORED","config":{"mode":"PRO","parallel":9999,"chunks":9999,"fast":{"available":false,"bytes":0}}}
+         */
+        final Map<String, Object> slotData = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        this.checkErrors(link, account, slotData);
+        if (!(slotData.get("success").equals(Boolean.TRUE))) {
+            /* This should never happen(?) */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Slot has not been confirmed");
+        }
+        final Map<String, Object> config = (Map<String, Object>) slotData.get("config");
+        final Map<String, Object> fast = (Map<String, Object>) config.get("fast");
+        doAPIRequest(br, "/storage/bucket/contents.json", new Object[][] { { "id", this.getFID(link) } });
+        final Map<String, Object> chunk_info = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        this.checkErrors(link, account, chunk_info);
+        /* TODO: Add download functionality */
+        final List<List<Object>> chunks = (List<List<Object>>) chunk_info.get("chunks");
+        int index = 0;
+        // TODO: See https://github.com/filebitnet/filebit-python/blob/72cd530dba4dfb9d6d1dbad642879e4b464bafdb/filebit/download.py#L162
+        for (final List<Object> chunk : chunks) {
+            final int chunk_id = ((Number) chunk.get(0)).intValue();
+            final long offset0 = ((Number) chunk.get(1)).longValue();
+            // final long undefined = ((Number) chunk.get(2)).longValue();
+            final long length = ((Number) chunk.get(3)).longValue();
+            final long crc32 = ((Number) chunk.get(4)).longValue();
+            final String downloadid = chunk.get(5).toString();
+            final String chunkURL = getAPIBase() + "/download/" + downloadid + "?slot=" + ticketID;
+            System.out.println("chunk[" + index + "]");
+            // Each object contains the following information: chunk_id, offset0, <not_needed>, length, crc32, downloadid
+            System.out.println(chunk + "");
+            System.out.println(chunkURL);
+            index++;
+        }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
@@ -576,7 +653,12 @@ public class FilebitNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 0;
+        return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
