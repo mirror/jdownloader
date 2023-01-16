@@ -197,7 +197,11 @@ public class BibeltvDe extends PluginForHost {
         if (description != null && link.getComment() == null) {
             link.setComment(description);
         }
-        final String jsURL = br.getRegex("(/mediathek/_next/static/chunks/pages/videos/[^<>\"\\']+\\.js)").getMatch(0);
+        String jsURL = br.getRegex("<script src=\"(/mediathek/_next/static/chunks/[a-f0-9\\-]+\\.js)\" defer=\"\"></script><script src=\"/mediathek/_next/static/chunks/pages/videos/").getMatch(0);
+        if (jsURL == null) {
+            /* Fallback / old RegEx */
+            jsURL = br.getRegex("(/mediathek/_next/static/chunks/pages/videos/[^<>\"\\']+\\.js)").getMatch(0);
+        }
         String key = null;
         synchronized (apiKey) {
             if (apiKey.get() == null) {

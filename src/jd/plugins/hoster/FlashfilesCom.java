@@ -124,8 +124,16 @@ public class FlashfilesCom extends PluginForHost {
             /* 2020-06-02: Not a file e.g.: https://flash-files.com/faq */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("(?i)>\\s*FileName\\s*:\\s*(?:\\&nbsp)?([^<>\"]+)<").getMatch(0);
-        final String filesize = br.getRegex("(?i)>\\s*FileSize\\s*:([^<>\"]+)<").getMatch(0);
+        String filename = br.getRegex("(?i)>\\s*Filename\\s*:[^<]*<span[^>]*>([^<]+)</span>").getMatch(0);
+        if (filename == null) {
+            /* Old website */
+            filename = br.getRegex("(?i)>\\s*FileName\\s*:\\s*(?:\\&nbsp)?([^<>\"]+)<").getMatch(0);
+        }
+        String filesize = br.getRegex("(?i)>\\s*FileSize\\s*:[^<]*<span[^>]*>([^<]+)</span>").getMatch(0);
+        if (filesize == null) {
+            /* Old website */
+            filesize = br.getRegex("(?i)>\\s*FileSize\\s*:([^<>\"]+)<").getMatch(0);
+        }
         if (!StringUtils.isEmpty(filename)) {
             // Content-Disposition header not always correct filename
             filename = Encoding.htmlDecode(filename).trim();

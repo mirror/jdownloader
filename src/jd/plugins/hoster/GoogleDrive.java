@@ -170,11 +170,11 @@ public class GoogleDrive extends PluginForHost {
     private static Object      LOCK                          = new Object();
     private String             websiteWebapiKey              = null;
     public static final String API_BASE                      = "https://www.googleapis.com/drive/v3";
-    private final String       PATTERN_GDOC                  = "https?://.*/document/d/([a-zA-Z0-9\\-_]+).*";
-    private final String       PATTERN_FILE                  = "https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
-    private final String       PATTERN_FILE_OLD              = "https?://[^/]+/(?:leaf|open)\\?([^<>\"/]+)?id=([A-Za-z0-9\\-_]+).*";
-    private final String       PATTERN_FILE_DOWNLOAD_PAGE    = "https?://[^/]+/(?:u/\\d+/)?uc(?:\\?|.*?&)id=([A-Za-z0-9\\-_]+).*";
-    private final String       PATTERN_VIDEO_STREAM          = "https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
+    private final String       PATTERN_GDOC                  = "(?i)https?://.*/document/d/([a-zA-Z0-9\\-_]+).*";
+    private final String       PATTERN_FILE                  = "(?i)https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
+    private final String       PATTERN_FILE_OLD              = "(?i)https?://[^/]+/(?:leaf|open)\\?([^<>\"/]+)?id=([A-Za-z0-9\\-_]+).*";
+    private final String       PATTERN_FILE_DOWNLOAD_PAGE    = "(?i)https?://[^/]+/(?:u/\\d+/)?uc(?:\\?|.*?&)id=([A-Za-z0-9\\-_]+).*";
+    private final String       PATTERN_VIDEO_STREAM          = "(?i)https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
     private final boolean      canHandleGoogleSpecialCaptcha = false;
 
     private String getFID(final DownloadLink link) {

@@ -54,7 +54,7 @@ public class SerienStreamTo extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "s.to", "serienstream.sx", "serienstream.to", "serien.sx", "serien.domains", "serien.cam", "190.115.18.20" });
+        ret.add(new String[] { "s.to", "serienstream.sx", "serienstream.to", "serienstream.ch", "serien.sx", "serien.domains", "serien.cam", "190.115.18.20" });
         ret.add(new String[] { "aniworld.to" });
         return ret;
     }

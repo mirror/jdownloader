@@ -54,7 +54,7 @@ public class BsTo extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         /* Full list of their current domains see: https://burningseries.domains/ */
-        ret.add(new String[] { "bs.to", "burningseries.co", "burningseries.ac", "burningseries.sx", "burningseries.vc", "burningseries.cx", "burningseries.nz", "burningseries.se" });
+        ret.add(new String[] { "bs.to", "burningseries.co", "burningseries.ac", "burningseries.sx", "burningseries.vc", "burningseries.cx", "burningseries.nz", "burningseries.se", "burning-series.io" });
         return ret;
     }
 
