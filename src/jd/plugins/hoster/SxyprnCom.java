@@ -2,6 +2,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -20,11 +25,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy", "sxyprn.com" }, urls = { "https?://(?:www\\.)?yourporn\\.sexy/post/([a-fA-F0-9]{13})(?:\\.html)?", "https?://(?:www\\.)?sxyprn\\.(?:com|net)/post/([a-fA-F0-9]{13})(?:\\.html)?" })
 public class SxyprnCom extends antiDDoSForHost {
@@ -207,6 +207,12 @@ public class SxyprnCom extends antiDDoSForHost {
                  * up a lot of connections to this host!
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 503) {
+                /*
+                 * 2019-09-24: E.g. serverside broken content, videos will not even play via browser. This may also happen when a user opens
+                 * up a lot of connections to this host!
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 too many connections", 30 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

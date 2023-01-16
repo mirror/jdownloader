@@ -43,6 +43,11 @@ public class StreamsbNet extends XFileSharingProBasic {
         this.enablePremium(super.getPurchasePremiumURL());
     }
 
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        // Do nothing (important)!
+    }
+
     private static final String TYPE_SPECIAL = "https://[^/]+/(?:d|e|c)/([a-z0-9]{12})";
 
     /**
@@ -353,12 +358,6 @@ public class StreamsbNet extends XFileSharingProBasic {
             logger.info("Successfully found dllink via official video download");
         }
         return dllink;
-    }
-
-    @Override
-    protected URL_TYPE getURLType(final DownloadLink link) {
-        /* 2022-08-01: Return null so that correctDownloadlink does nothing. */
-        return null;
     }
 
     @Override
