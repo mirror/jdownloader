@@ -27,6 +27,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
@@ -77,7 +78,7 @@ public class FikperCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)/([^/]+)\\.html");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)/([^/]+)(\\.html)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -197,12 +198,21 @@ public class FikperCom extends PluginForHost {
             final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
             final int waitBeforeDownloadMillis = ((Number) entries.get("delayTime")).intValue();
             final boolean skipPreDownloadWaittime = true; // 2022-11-14: Waittime is skippable
-            final String recaptchaV2Response = getRecaptchaHelper(br).getToken();
-            final long passedTimeDuringCaptcha = Time.systemIndependentCurrentJVMTimeMillis() - timeBefore;
+            final boolean useHcaptcha = true;
             final Map<String, Object> postdata = new HashMap<String, Object>();
+            if (useHcaptcha) {
+                /* 2023-01-16 */
+                final CaptchaHelperHostPluginHCaptcha hCaptcha = getHcaptchaHelper(br);
+                final String hCaptchaResponse = hCaptcha.getToken();
+                postdata.put("recaptcha", hCaptchaResponse);
+            } else {
+                /* Old handling */
+                final String recaptchaV2Response = getRecaptchaHelper(br).getToken();
+                postdata.put("recaptcha", recaptchaV2Response);
+            }
+            final long passedTimeDuringCaptcha = Time.systemIndependentCurrentJVMTimeMillis() - timeBefore;
             postdata.put("fileHashName", this.getFID(link));
             postdata.put("downloadToken", entries.get("downloadToken").toString());
-            postdata.put("recaptcha", recaptchaV2Response);
             final long waitBeforeDownloadMillisLeft = waitBeforeDownloadMillis - passedTimeDuringCaptcha;
             if (waitBeforeDownloadMillisLeft > 0 && !skipPreDownloadWaittime) {
                 this.sleep(waitBeforeDownloadMillisLeft, link);
@@ -212,6 +222,17 @@ public class FikperCom extends PluginForHost {
             final String dllink = dlresponse.get("directLink").toString();
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Object filesizeO = dlresponse.get("size");
+            if (filesizeO != null) {
+                if (filesizeO instanceof Number) {
+                    link.setVerifiedFileSize(((Number) filesizeO).longValue());
+                } else if (filesizeO instanceof String) {
+                    final String filesizeStr = filesizeO.toString();
+                    if (filesizeStr.matches("\\d+")) {
+                        link.setVerifiedFileSize(Long.parseLong(filesizeStr));
+                    }
+                }
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), getMaxChunks(account));
             /* Save directurl even if it is "invalid" -> E.g. if error 429 happens we might be able to use the same URL later. */
@@ -251,6 +272,17 @@ public class FikperCom extends PluginForHost {
         };
     }
 
+    private CaptchaHelperHostPluginHCaptcha getHcaptchaHelper(final Browser br) {
+        final String host = br.getHost(false);
+        return new CaptchaHelperHostPluginHCaptcha(this, br, "ddd70c6f-e4cb-45e2-9374-171fbc0d4137") {
+            @Override
+            protected String getSiteUrl() {
+                /* We are on subdomain.fikper.com but captcha needs to be solved on fikper.com. */
+                return br._getURL().getProtocol() + "://" + host;
+            }
+        };
+    }
+
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
         final String property = getDirectlinkproperty(account);
         final String url = link.getStringProperty(property);
@@ -274,7 +306,6 @@ public class FikperCom extends PluginForHost {
                 valid = true;
                 return true;
             } else {
-                link.removeProperty(property);
                 brc.followConnection(true);
                 throw new IOException();
             }
@@ -287,6 +318,7 @@ public class FikperCom extends PluginForHost {
             }
         } finally {
             if (!valid) {
+                link.removeProperty(property);
                 try {
                     dl.getConnection().disconnect();
                 } catch (Throwable ignore) {
