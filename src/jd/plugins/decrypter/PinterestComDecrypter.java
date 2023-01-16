@@ -163,7 +163,12 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         final String description = (String) data.get("description");
         final String ext;
         if (!StringUtils.isEmpty(directlink)) {
-            ext = getFileNameExtensionFromString(directlink, ".jpg");
+            if (directlink.contains(".m3u8")) {
+                /* HLS stream */
+                ext = ".mp4";
+            } else {
+                ext = getFileNameExtensionFromString(directlink, ".jpg");
+            }
         } else {
             ext = ".jpg";
         }
@@ -178,7 +183,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             filename += ext;
         }
         if (directlink != null) {
-            dl.setProperty("free_directlink", directlink);
+            dl.setProperty(PinterestCom.PROPERTY_DIRECTURL, directlink);
         }
         dl.setFinalFileName(filename);
         dl.setLinkID(PinterestCom.getLinkidForInternalDuplicateCheck(dl.getPluginPatternMatcher(), directlink));
@@ -191,16 +196,15 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         if (pinID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        Map<String, Object> pinMap = null;
         List<Object> resource_data_cache = null;
         final String pin_json_url = "https://www.pinterest.com/resource/PinResource/get/?source_url=%2Fpin%2F" + pinID + "%2F&data=%7B%22options%22%3A%7B%22field_set_key%22%3A%22detailed%22%2C%22ptrf%22%3Anull%2C%22fetch_visual_search_objects%22%3Atrue%2C%22id%22%3A%22" + pinID + "%22%7D%2C%22context%22%3A%7B%7D%7D&module_path=Pin(show_pinner%3Dtrue%2C+show_board%3Dtrue%2C+is_original_pin_in_related_pins_grid%3Dtrue)&_=" + System.currentTimeMillis();
         br.getPage(pin_json_url);
-        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-        if (entries.containsKey("resource_data_cache")) {
-            resource_data_cache = (List) entries.get("resource_data_cache");
+        final Map<String, Object> root = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        if (root.containsKey("resource_data_cache")) {
+            resource_data_cache = (List) root.get("resource_data_cache");
         } else {
             /* 2020-02-17 */
-            final Object pinO = entries.get("resource_response");
+            final Object pinO = root.get("resource_response");
             if (pinO != null) {
                 resource_data_cache = new ArrayList<Object>();
                 resource_data_cache.add(pinO);
@@ -210,15 +214,14 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             return null;
         }
         for (final Object resource_object : resource_data_cache) {
-            entries = (Map<String, Object>) resource_object;
-            final String this_pin_id = (String) JavaScriptEngineFactory.walkJson(entries, "data/id");
+            final Map<String, Object> map = (Map<String, Object>) resource_object;
+            final String this_pin_id = (String) JavaScriptEngineFactory.walkJson(map, "data/id");
             if (StringUtils.equals(this_pin_id, pinID) || resource_data_cache.size() == 1) {
                 /* We've reached our goal */
-                pinMap = entries;
-                break;
+                return map;
             }
         }
-        return pinMap;
+        return null;
     }
 
     /** 2020-11-16 */
@@ -237,6 +240,15 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         if (pinMap == null) {
             return null;
         }
+        /* First check if we have a video */
+        final Map<String, Object> video_list = (Map<String, Object>) (JavaScriptEngineFactory.walkJson(pinMap, "videos/video_list"));
+        if (video_list != null) {
+            final Map<String, Object> p720 = (Map<String, Object>) video_list.get("V_720P");
+            if (p720 != null) {
+                return p720.get("url").toString();
+            }
+        }
+        /* No video --> Look for photo link */
         final Map<String, Object> imagesO = (Map<String, Object>) pinMap.get("images");
         Map<String, Object> single_pinterest_images_original = null;
         if (imagesO != null) {
@@ -715,7 +727,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             dl.setContentUrl(content_url);
             dl.setLinkID(jd.plugins.hoster.PinterestCom.getLinkidForInternalDuplicateCheck(content_url, directlink));
             if (directlink != null) {
-                dl.setProperty("free_directlink", directlink);
+                dl.setProperty(PinterestCom.PROPERTY_DIRECTURL, directlink);
             }
             if (description != null) {
                 dl.setComment(description);

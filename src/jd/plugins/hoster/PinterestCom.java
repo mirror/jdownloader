@@ -91,12 +91,12 @@ public class PinterestCom extends PluginForHost {
         return new Regex(pin_url, "pin/([^/]+)/?$").getMatch(0);
     }
 
-    public static final long    trust_cookie_age   = 300000l;
+    public static final long   trust_cookie_age   = 300000l;
     /* Site constants */
-    public static final String  x_app_version      = "6cedd5c";
+    public static final String x_app_version      = "6cedd5c";
     /* don't touch the following! */
-    private String              dllink             = null;
-    private static final String PROPERTY_DIRECTURL = "free_directlink";
+    private String             dllink             = null;
+    public static final String PROPERTY_DIRECTURL = "free_directlink";
 
     @SuppressWarnings({ "deprecation" })
     @Override
