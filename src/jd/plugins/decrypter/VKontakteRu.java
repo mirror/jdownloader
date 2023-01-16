@@ -1172,15 +1172,19 @@ public class VKontakteRu extends PluginForDecrypt {
         } else {
             internalSectionName = "all";
         }
-        String albumsJson = br.getRegex("extend\\(cur, (\\{\"albumsPreload\".*?\\})\\);\\s+").getMatch(0);
-        if (albumsJson == null) {
-            /* Wider RegEx */
-            albumsJson = br.getRegex("extend\\(cur, (\\{\".*?\\})\\);\\s+").getMatch(0);
+        String videoAlbumsJson = br.getRegex("let newCur\\s*=\\s*(\\{.*?\\});\\s+").getMatch(0);
+        if (videoAlbumsJson == null) {
+            /* Old regexes/fallback */
+            videoAlbumsJson = br.getRegex("extend\\(cur, (\\{\"albumsPreload\".*?\\})\\);\\s+").getMatch(0);
+            if (videoAlbumsJson == null) {
+                /* Wider RegEx */
+                videoAlbumsJson = br.getRegex("extend\\(cur, (\\{\".*?\\})\\);\\s+").getMatch(0);
+            }
         }
-        if (albumsJson == null) {
+        if (videoAlbumsJson == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(albumsJson, TypeRef.HASHMAP);
+        Map<String, Object> entries = JSonStorage.restoreFromString(videoAlbumsJson, TypeRef.HASHMAP);
         final String oid = Integer.toString(((Number) entries.get("oid")).intValue());
         final int maxItemsPerPage = ((Number) entries.get("VIDEO_SILENT_VIDEOS_CHUNK_SIZE")).intValue();
         Map<String, Object> videoInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "pageVideosList/" + oid + "/" + internalSectionName);
@@ -1798,21 +1802,36 @@ public class VKontakteRu extends PluginForDecrypt {
             return ret;
         }
         br.followConnection();
-        String ownerID = new Regex(param.getCryptedUrl(), "vk\\.com/wall((\\-)?\\d+)").getMatch(0);
         int counter_wall_start_from = 0;
         final int offset_increase = 10;
-        String postvalue_fixed = "";
-        long total_numberof_entries = -1;
+        String postvalue_fixed = null;
+        int total_numberof_entries = -1;
         int currentOffset = 0;
+        String json_source = null;
         /* 2020-02-07: This is most likely not given but we have other fail safes in place to stop once we're done. */
-        String json_source = this.br.getRegex("var opts\\s*?=\\s*?(\\{.*?\\});\\s+").getMatch(0);
-        if (json_source != null) {
-            total_numberof_entries = Long.parseLong(PluginJSonUtils.getJsonValue(json_source, "count"));
+        // final String total_numberof_entriesStr = br.getRegex("id=\"page_wall_count_all\" value=\"(\\d+)\"").getMatch(0);
+        final String total_numberof_entriesStr = br.getRegex("id=\"page_wall_count_own\" value=\"(\\d+)\"").getMatch(0);
+        if (total_numberof_entriesStr != null) {
+            total_numberof_entries = Integer.parseInt(total_numberof_entriesStr);
+        } else {
+            /* Old handling */
+            json_source = this.br.getRegex("var opts\\s*?=\\s*?(\\{.*?\\});\\s+").getMatch(0);
+            if (json_source != null) {
+                total_numberof_entries = Integer.parseInt(PluginJSonUtils.getJsonValue(json_source, "count"));
+            }
+        }
+        if (total_numberof_entries == -1) {
             logger.info("PATTERN_WALL_LINK has a max offset of " + total_numberof_entries + " and a current offset of " + currentOffset);
         } else {
             logger.info("PATTERN_WALL_LINK has a max offset of UNKNOWN and a current offset of " + currentOffset);
         }
+        /* Find owner_id */
+        /* First try to obtain ownerID from URL */
+        String ownerID = new Regex(param.getCryptedUrl(), "https?://[^/]+/(?:id|wall)(-?\\d+)").getMatch(0);
+        /* Next from HTML */
+        ownerID = br.getRegex("class=\"_wall_tab_own\">\\s*<a href=\"/wall(-?\\d+)\\?own=1\"").getMatch(0);
         if (ownerID == null) {
+            /* Old handling/Fallback */
             /* We need to find the owner_id - without it we would only be able to find all entries from the first page. */
             json_source = br.getRegex("window\\[\\'public\\'\\]\\.init\\((\\{.*?)</script>").getMatch(0);
             if (json_source == null) {
@@ -1836,15 +1855,17 @@ public class VKontakteRu extends PluginForDecrypt {
                     ownerID = ownerID.split("\\.")[0];
                 }
             }
-            if (StringUtils.isEmpty(ownerID) || ownerID.equals("null")) {
-                logger.warning("Failed to find owner_id --> Can only crawl first page");
-            } else {
+            if (ownerID != null && !ownerID.equals("null")) {
                 /* Correct crawled values */
                 ownerID = "-" + ownerID;
             }
-            if (postvalue_fixed == null) {
-                postvalue_fixed = "";
-            }
+        }
+        if (StringUtils.isEmpty(ownerID) || ownerID.equals("null")) {
+            logger.warning("Failed to find owner_id --> Can only crawl first page");
+            ownerID = null;
+        }
+        if (postvalue_fixed == null) {
+            postvalue_fixed = "";
         }
         FilePackage fp = null;
         if (ownerID != null) {
@@ -1859,8 +1880,8 @@ public class VKontakteRu extends PluginForDecrypt {
         do {
             logger.info("Crawling offset " + currentOffset);
             if (currentOffset > 0) {
-                if (StringUtils.isEmpty(ownerID) || ownerID.equals("null")) {
-                    logger.warning("Stopping after first loop because owner_id is not given");
+                if (StringUtils.isEmpty(ownerID)) {
+                    logger.warning("Stopping because: Stopping after first loop because owner_id is not given");
                     break;
                 }
                 sleep(getPaginationSleepMillis(), param);
@@ -1928,6 +1949,7 @@ public class VKontakteRu extends PluginForDecrypt {
         if (url_source == null) {
             throw new DecrypterException("Decrypter broken");
         }
+        final String url_source_without_params = URLHelper.getUrlWithoutParams(url_source);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         boolean grabAlbums = false;
         String wall_post_owner_id = null;
@@ -2002,6 +2024,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 String photo_htmlNEW = new Regex(html, "<div [^>]*data-photo-id=\"" + photoContentStr + "\".*?</div>\\s+</div>").getMatch(-1);
                 String single_photo_content_url = null;
                 if (photo_htmlOLD != null) {
+                    /* Old/deprecated! Remove in 2023-05 if still not needed anymore then! */
                     photo_htmlOLD = photo_htmlOLD.replace("'", "");
                     final String[] photoInfoArray = photo_htmlOLD.split(", ");
                     final String photo_list_id_tmp = photoInfoArray[1];
@@ -2067,8 +2090,8 @@ public class VKontakteRu extends PluginForDecrypt {
                             }
                         } else {
                             /* Link post containing the photo */
-                            single_photo_content_url = getProtocol() + this.getHost() + "/wall" + url_source + "?z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + url_source;
-                            photo_list_id = url_source;
+                            single_photo_content_url = url_source_without_params + "?z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2F" + photo_list_id_tmp;
+                            photo_list_id = photo_list_id_tmp;
                         }
                     } else if (photo_list_id_tmp.matches("tag-?\\d+")) {
                         /* Different type of wall photos which again need different IDs and have different contentURLs. */
