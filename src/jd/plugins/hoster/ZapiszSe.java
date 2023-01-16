@@ -145,11 +145,6 @@ public class ZapiszSe extends PluginForHost {
             final int reCaptchaV2Timeout = rc2.getSolutionTimeout();
             final long timestampBeforeCaptchaSolving = System.currentTimeMillis();
             final String recaptchaV2Response = rc2.getToken();
-            if (recaptchaV2Response == null || recaptchaV2Response.equals("") || recaptchaV2Response.matches("\\s+")) {
-                /* Rare case?! */
-                logger.info("Invalid reCaptcha response");
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
             dlform.put("recaptcha_response", Encoding.urlEncode(recaptchaV2Response));
             synchronized (account) {
                 if (isAbort()) {
