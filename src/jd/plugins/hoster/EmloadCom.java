@@ -46,8 +46,8 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class WduploadCom extends antiDDoSForHost {
-    public WduploadCom(PluginWrapper wrapper) {
+public class EmloadCom extends antiDDoSForHost {
+    public EmloadCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.emload.com/premium");
     }
@@ -228,7 +228,7 @@ public class WduploadCom extends antiDDoSForHost {
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
@@ -237,12 +237,10 @@ public class WduploadCom extends antiDDoSForHost {
                 if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
                 } else {
-                    link.setProperty(property, Property.NULL);
-                    dllink = null;
+                    throw new IOException();
                 }
             } catch (final Exception e) {
                 link.setProperty(property, Property.NULL);
-                dllink = null;
             } finally {
                 try {
                     con.disconnect();
@@ -268,7 +266,7 @@ public class WduploadCom extends antiDDoSForHost {
                     String token = account.getStringProperty("logintoken", null);
                     final Cookies cookies = account.loadCookies("");
                     if (cookies != null && token != null) {
-                        brlogin.setCookies(account.getHoster(), cookies);
+                        brlogin.setCookies(this.getHost(), cookies);
                         brlogin.getHeaders().put("Authorization", "Bearer " + token);
                         brlogin.getHeaders().put("Content-Type", "application/json");
                         this.getPage("http://wduphp." + this.getHost() + "/api/users/login-history?page_no=1&limit=10");
@@ -295,11 +293,11 @@ public class WduploadCom extends antiDDoSForHost {
                     final Cookies cookies = account.loadCookies("");
                     if (cookies != null) {
                         logger.info("Attempting cookie login");
-                        brlogin.setCookies(account.getHoster(), cookies);
+                        brlogin.setCookies(this.getHost(), cookies);
                         getPage(brlogin, "https://www." + getHost() + "/me");
                         if (brlogin.getCookie(brlogin.getHost(), "userdata", Cookies.NOTDELETEDPATTERN) != null) {
                             logger.info("Login via stored cookies successful");
-                            account.saveCookies(brlogin.getCookies(account.getHoster()), "");
+                            account.saveCookies(brlogin.getCookies(this.getHost()), "");
                             return;
                         }
                         logger.info("Login via stored cookies failed");
@@ -314,7 +312,7 @@ public class WduploadCom extends antiDDoSForHost {
                         /* 2018-10-19 */
                         access_token = hardcoded_access_token;
                     } else {
-                        getPage(brlogin, "https://www." + account.getHoster() + "/java/mycloud.js");
+                        getPage(brlogin, "https://www." + this.getHost() + "/java/mycloud.js");
                         access_token = brlogin.getRegex("app:\\s*?\\'([^<>\"\\']+)\\'").getMatch(0);
                     }
                     if (StringUtils.isEmpty(access_token)) {
@@ -334,7 +332,7 @@ public class WduploadCom extends antiDDoSForHost {
                             if (dlinkbefore != null) {
                                 dl_dummy = dlinkbefore;
                             } else {
-                                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + this.getHost(), true);
                                 this.setDownloadLink(dl_dummy);
                             }
                             /* 2020-01-27: New and sometimes required */
@@ -354,13 +352,13 @@ public class WduploadCom extends antiDDoSForHost {
                     } else {
                         logger.info("Login captcha NOT required");
                     }
-                    brlogin.getHeaders().put("Origin", "https://www." + account.getHoster());
+                    brlogin.getHeaders().put("Origin", "https://www." + this.getHost());
                     brlogin.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     String postData = "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&keep=1";
                     if (recaptchaV2Response != null) {
                         postData += "&captcha=" + Encoding.urlEncode(recaptchaV2Response);
                     }
-                    postPage(brlogin, "https://www." + account.getHoster() + "/api/0/signmein?useraccess=&access_token=" + access_token, postData);
+                    postPage(brlogin, "https://www." + this.getHost() + "/api/0/signmein?useraccess=&access_token=" + access_token, postData);
                     final String result = PluginJSonUtils.getJson(brlogin, "result");
                     String userdata = PluginJSonUtils.getJson(brlogin, "doz");
                     if (!"ok".equals(result) || StringUtils.isEmpty(userdata)) {
@@ -369,7 +367,7 @@ public class WduploadCom extends antiDDoSForHost {
                     userdata = URLEncode.encodeURIComponent(userdata);
                     brlogin.setCookie(brlogin.getHost(), "userdata", userdata);
                 }
-                account.saveCookies(brlogin.getCookies(account.getHoster()), "");
+                account.saveCookies(brlogin.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
