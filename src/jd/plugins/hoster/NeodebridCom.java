@@ -56,10 +56,10 @@ public class NeodebridCom extends PluginForHost {
     private static MultiHosterManagement mhm                        = new MultiHosterManagement("neodebrid.com");
     private static final int             defaultMAXDOWNLOADS        = -1;
     /** 2019-08-26: In my tests, neither chunkload nor resume were possible (premium account!) */
-    private static final boolean         account_premium_resume     = false;
+    private static final boolean         account_premium_resume     = true;
     private static final int             account_premium_maxchunks  = 1;
     /** 2019-08-26: TODO: Check/update these Free Account limits */
-    private static final boolean         account_FREE_resume        = false;
+    private static final boolean         account_FREE_resume        = true;
     private static final int             account_FREE_maxchunks     = 1;
 
     @SuppressWarnings("deprecation")
@@ -134,7 +134,7 @@ public class NeodebridCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(this.getHost() + "directlink", dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, this.getMaxChunks(link, account_FREE_maxchunks));
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_premium_resume, this.getMaxChunks(link, account_FREE_maxchunks));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
