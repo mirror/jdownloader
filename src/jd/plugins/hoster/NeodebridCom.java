@@ -20,6 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,6 +36,8 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -36,19 +45,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "neodebrid.com" }, urls = { "https?://(?:www\\.)?neodebrid\\.com/dl/([A-Z0-9]+)" })
 public class NeodebridCom extends PluginForHost {
     /** Tags: cocoleech.com */
     private static final String          API_BASE                   = "https://neodebrid.com/api/v2";
+    private final String                 PROPERTY_MAXCHUNKS         = "neodebridcom_maxchunks";
+    private final String                 PROPERTY_ACCOUNT_api_token = "api_token";
     private static final boolean         api_supports_free_accounts = false;
     private static MultiHosterManagement mhm                        = new MultiHosterManagement("neodebrid.com");
     private static final int             defaultMAXDOWNLOADS        = -1;
@@ -56,8 +59,8 @@ public class NeodebridCom extends PluginForHost {
     private static final boolean         account_premium_resume     = false;
     private static final int             account_premium_maxchunks  = 1;
     /** 2019-08-26: TODO: Check/update these Free Account limits */
-    private static final boolean         account_FREE_resume        = true;
-    private static final int             account_FREE_maxchunks     = 0;
+    private static final boolean         account_FREE_resume        = false;
+    private static final int             account_FREE_maxchunks     = 1;
 
     @SuppressWarnings("deprecation")
     public NeodebridCom(PluginWrapper wrapper) {
@@ -70,8 +73,7 @@ public class NeodebridCom extends PluginForHost {
         return "https://neodebrid.com/tos";
     }
 
-    private Browser newBrowserAPI() {
-        br = new Browser();
+    private Browser prepBRAPI(final Browser br) {
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         return br;
@@ -81,8 +83,7 @@ public class NeodebridCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private Browser newBrowserWebsite() {
-        br = new Browser();
+    private Browser prepBrWebsite(final Browser br) {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         return br;
@@ -90,23 +91,21 @@ public class NeodebridCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(getFID(link));
+        }
         this.setBrowserExclusive();
-        newBrowserWebsite();
+        prepBrWebsite(br);
         br.getPage(link.getPluginPatternMatcher());
         if (this.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<b>Filename\\s*:\\s*</b>([^<>\"]+)<").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = getFID(link);
+        String filename = br.getRegex("(?i)<b>\\s*Filename\\s*:\\s*</b>([^<>\"]+)<").getMatch(0);
+        String filesize = br.getRegex("(?i)<b>\\s*Filesize\\s*:\\s*</b>([^<>\"]+)<").getMatch(0);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setName(filename);
         }
-        String filesize = br.getRegex("<b>Filesize\\s*:\\s*</b>([^<>\"]+)<").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -135,7 +134,7 @@ public class NeodebridCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(this.getHost() + "directlink", dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, account_FREE_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, this.getMaxChunks(link, account_FREE_maxchunks));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
@@ -158,12 +157,12 @@ public class NeodebridCom extends PluginForHost {
         link.setProperty(this.getHost() + "directlink", dllink);
         final boolean resume;
         final int maxchunks;
-        if (account.getType() == AccountType.FREE) {
+        if (account.getType() == AccountType.PREMIUM) {
             resume = account_premium_resume;
-            maxchunks = account_premium_maxchunks;
+            maxchunks = this.getMaxChunks(link, account_premium_maxchunks);
         } else {
             resume = account_FREE_resume;
-            maxchunks = account_FREE_maxchunks;
+            maxchunks = this.getMaxChunks(link, account_FREE_maxchunks);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -175,10 +174,12 @@ public class NeodebridCom extends PluginForHost {
             /* 402 - Payment required */
             if (dl.getConnection().getResponseCode() == 402) {
                 /* 2019-05-03: E.g. free account[or expired premium], only 1 download per day (?) possible */
-                account.getAccountInfo().setTrafficLeft(0);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "No traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException("No traffic left", 3 * 60 * 1000l);
             }
-            handleErrorsAPI(this.br, account, link);
+            /* Only check for json based errors if response looks to be json. */
+            if (br.getRequest().getHtmlCode().startsWith("{")) {
+                handleErrorsAPI(account, link, restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP));
+            }
             mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
         }
         this.dl.startDownload();
@@ -191,13 +192,13 @@ public class NeodebridCom extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = newBrowserAPI();
+        this.prepBRAPI(br);
         mhm.runCheck(account, link);
         String dllink = checkDirectLink(link, this.getHost() + "directlink");
         br.setFollowRedirects(true);
         if (dllink == null) {
             if (account.getType() == AccountType.FREE && !api_supports_free_accounts) {
-                /* first try to get saved directurl */
+                /* First try to get saved directurl */
                 dllink = this.checkDirectLink(link, this.getHost() + "directurl_selfhosted");
                 if (dllink == null) {
                     dllink = generateDllinkWebsiteFreeMode(account, link);
@@ -209,17 +210,39 @@ public class NeodebridCom extends PluginForHost {
         handleDLMultihoster(account, link, dllink);
     }
 
-    /** Generated downloadlinks via API. */
-    private String getDllinkAPI(final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
+    private Map<String, Object> callAPI(final Account account, final DownloadLink link, final Browser br, final String relativeURL) throws Exception {
+        return callAPI(account, link, br, relativeURL, true);
+    }
+
+    /** Calls API and handles errors if needed. */
+    private Map<String, Object> callAPI(final Account account, final DownloadLink link, final Browser br, final String relativeURL, final boolean handleErrors) throws Exception {
+        br.getPage(API_BASE + relativeURL);
+        try {
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            this.handleErrorsAPI(account, link, entries);
+            return entries;
+        } catch (final JSonMapperException e) {
+            logger.log(e);
+            throw new AccountUnavailableException("Invalid API response", 3 * 60 * 1000);
+        }
+    }
+
+    /**
+     * Generated downloadlinks via API.
+     *
+     * @throws Exception
+     */
+    private String getDllinkAPI(final Account account, final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
-        this.loginAPI(account);
-        getAPISafe(API_BASE + "/download?token=" + this.getApiToken(account) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)), account, link);
-        return PluginJSonUtils.getJsonValue(br, "download");
+        this.loginAPI(account, true);
+        final Map<String, Object> response = this.callAPI(account, link, br, "/download?token=" + this.getApiToken(account) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+        link.setProperty(PROPERTY_MAXCHUNKS, response.get("chunks"));
+        return response.get("download").toString();
     }
 
     /** Generates downloadlinks via website. */
     private String generateDllinkWebsiteFreeMode(final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
-        newBrowserWebsite();
+        prepBrWebsite(br);
         /* 2019-08-24: Not required */
         // this.loginAPI(account);
         /* Try to re-use previously generated URLs so we're not wasting traffic! */
@@ -305,37 +328,57 @@ public class NeodebridCom extends PluginForHost {
         return null;
     }
 
+    private int getMaxChunks(final DownloadLink link, final int fallback) {
+        final int maxChunksStored = link.getIntegerProperty(PROPERTY_MAXCHUNKS, fallback);
+        if (maxChunksStored > 1) {
+            /* Minus maxChunksStored -> Up to X chunks */
+            return -maxChunksStored;
+        } else {
+            return maxChunksStored;
+        }
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.br = newBrowserAPI();
+        this.prepBRAPI(br);
         final AccountInfo ai = new AccountInfo();
-        loginAPI(account);
+        Map<String, Object> user = loginAPI(account, true);
         if (br.getURL() == null || !br.getURL().contains("/info?token")) {
+            user = this.callAPI(account, null, br, "/info?token=" + this.getApiToken(account));
             br.getPage(API_BASE + "/info?token=" + this.getApiToken(account));
         }
-        final String expireTimestampStr = PluginJSonUtils.getJson(br, "timestamp");
-        /* 2019-07-05: Will usually return 'Unlimited' for premium accounts and 'XX GB' for free accounts */
-        String traffic_leftStr = PluginJSonUtils.getJson(br, "traffic_left");
-        long validuntil = 0;
-        int filesPerDayLeft = 0;
-        if (expireTimestampStr != null && expireTimestampStr.matches("\\d+")) {
-            validuntil = Long.parseLong(expireTimestampStr) * 1000l;
+        Number validuntil = (Number) user.get("timestamp");
+        if (validuntil != null) {
+            validuntil = validuntil.longValue() * 1000;
         }
+        /* 2019-07-05: Will usually return 'Unlimited' for premium accounts and 'XX GB' for free accounts */
+        String traffic_leftStr = (String) user.get("traffic_left");
+        int filesPerDayLeft = 0;
         /**
          * 2021-01-03: Free (-Account) limits: 5 links per day (per IP and or account). 10 Minute waittime between generating direct-URLs.
          */
-        if (validuntil < System.currentTimeMillis()) {
-            /* 2019-08-26: API will always return static value '1 GB' trafficleft for free accounts which is wrong! */
-            /*
+        if (validuntil != null && validuntil.longValue() > System.currentTimeMillis()) {
+            /* Premium account */
+            /* Premium accounts have unlimited files per day */
+            filesPerDayLeft = -1;
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
+            ai.setValidUntil(validuntil.longValue(), this.br);
+        } else {
+            /**
+             * 2019-08-26: API will always return static value '1 GB' trafficleft for free accounts which is wrong! </br>
+             *
              * 2019-08-26: FREE (account) Limits are based on IP which means it makes no difference whether we download without account or
-             * with a free account!
+             * with a free account! </br>
+             *
+             * 2023-01-17: Looks like free accounts aren't allowed to download anything anymore.
              */
-            final boolean enable_free_account_traffic_workaround = true;
+            final boolean enable_free_account_traffic_workaround = false;
             String accountStatus = "Free account";
             if (enable_free_account_traffic_workaround) {
                 /* Try to find correct 'trafficleft' value via website. */
                 /* 2021-01-03: Workaround for small serverside bug (returns broken website on first request after first API login) */
-                br.clearCookies(br.getHost());
+                br.clearCookies(null);
                 br.getPage(API_BASE + "/info?token=" + this.getApiToken(account));
                 this.br.getPage("https://" + this.getHost() + "/home");
                 final Regex filesLeftRegex = br.getRegex(">\\s*Files per day\\s*:\\s*</b>\\s*(\\d+)\\s*/\\s*(\\d+)\\s*<br>");
@@ -349,28 +392,23 @@ public class NeodebridCom extends PluginForHost {
                 } else {
                     filesPerDayLeft = 0;
                 }
-                if (trafficLeftStrTmp != null && trafficMaxStrTmp != null) {
-                    traffic_leftStr = trafficLeftStrTmp;
-                    ai.setTrafficMax(trafficMaxStrTmp);
-                }
                 accountStatus += " [" + filesPerDayLeft + " files per day left today]";
+            } else {
+                ai.setTrafficLeft(0);
+                ai.setExpired(true);
             }
             account.setType(AccountType.FREE);
-            ai.setStatus(accountStatus);
+            if (accountStatus != null) {
+                ai.setStatus(accountStatus);
+            }
             /* 2021-01-03: Usually 10 minutes waittime after every download */
             account.setMaxSimultanDownloads(1);
-        } else {
-            /* Premium */
-            /* Premium has unlimited files per day */
-            filesPerDayLeft = -1;
-            account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium account");
-            account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
-            ai.setValidUntil(validuntil, this.br);
         }
         if ("Unlimited".equalsIgnoreCase(traffic_leftStr)) {
+            /* 2023-01-17: Typically premium accounts got "unlimited" traffic. */
             ai.setUnlimitedTraffic();
         } else {
+            /* Check for daily limit of downloadable files. */
             if (filesPerDayLeft == 0) {
                 logger.info("Setting ZERO trafficleft because filesPerDayLeft is 0");
                 ai.setTrafficLeft(0);
@@ -378,23 +416,23 @@ public class NeodebridCom extends PluginForHost {
                 logger.info("filesPerDayLeft > 0 so we should be able to download");
                 ai.setUnlimitedTraffic();
             } else {
+                /* Parse given traffic value. */
                 ai.setTrafficLeft(SizeFormatter.getSize(traffic_leftStr));
             }
         }
-        /*
-         * Get list of supported hosts. Sadly they do not display free/premium hosts but always return all supported hosts. On their website
-         * there are two lists: https://neodebrid.com/status
+        /**
+         * Same list on website: https://neodebrid.com/status
          */
-        br.getPage(API_BASE + "/status");
+        final Map<String, Object> entries = this.callAPI(account, null, br, "/status");
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
-        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final List<Object> hosters = (List<Object>) entries.get("result");
-        for (final Object hostero : hosters) {
-            entries = (Map<String, Object>) hostero;
-            String host = (String) entries.get("host");
-            final String status = (String) entries.get("status");
+        final List<Map<String, Object>> hosters = (List<Map<String, Object>>) entries.get("result");
+        for (final Map<String, Object> hosterinfo : hosters) {
+            final String host = (String) hosterinfo.get("host");
+            final String status = (String) hosterinfo.get("status");
             if (host != null && "online".equalsIgnoreCase(status)) {
                 supportedhostslist.add(host);
+            } else {
+                logger.info("Skipping serverside disabled host: " + host + " | Status: " + status);
             }
         }
         ai.setMultiHostSupport(this, supportedhostslist);
@@ -402,74 +440,77 @@ public class NeodebridCom extends PluginForHost {
         return ai;
     }
 
-    private void loginAPI(final Account account) throws IOException, PluginException {
+    private Map<String, Object> loginAPI(final Account account, final boolean validateToken) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 String api_token = getApiToken(account);
-                String status = null;
+                Map<String, Object> entries = null;
                 if (api_token != null) {
+                    if (!validateToken) {
+                        return null;
+                    }
+                    logger.info("Checking existing token...");
                     br.getPage(API_BASE + "/info?token=" + this.getApiToken(account));
-                    status = PluginJSonUtils.getJson(br, "status");
-                    if ("success".equalsIgnoreCase(status)) {
+                    entries = this.callAPI(account, null, br, "/info?token=" + this.getApiToken(account), false);
+                    if ("success".equalsIgnoreCase(entries.get("status").toString())) {
                         logger.info("Stored token was valid");
-                        return;
+                        return entries;
                     } else {
+                        /* E.g. {"status":"error","reason":"Session expired. Please log-in again."} */
                         logger.info("Stored token was INVALID, performing full login");
+                        br.clearCookies(null);
                     }
                 }
-                br.getPage(API_BASE + "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                /** 2019-07-05: No idea how long this token is valid! */
-                api_token = PluginJSonUtils.getJson(br, "api_token");
-                status = PluginJSonUtils.getJson(br, "status");
-                if (!"success".equalsIgnoreCase(status) || StringUtils.isEmpty(api_token)) {
-                    /* E.g. {"error":"bad username OR bad password"} */
-                    final String fail_reason = PluginJSonUtils.getJson(br, "reason");
-                    if (!StringUtils.isEmpty(fail_reason)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, fail_reason, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                entries = this.callAPI(account, null, br, "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()), false);
+                api_token = (String) entries.get("api_token");
+                if (StringUtils.isEmpty(api_token)) {
+                    /* This should never happen! */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                account.setProperty("api_token", api_token);
+                account.setProperty(PROPERTY_ACCOUNT_api_token, api_token);
+                return entries;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.removeProperty("api_token");
+                    account.removeProperty(PROPERTY_ACCOUNT_api_token);
                 }
                 throw e;
             }
         }
     }
 
+    /** Returns stored API token (login session token) */
     private String getApiToken(final Account account) {
-        return account.getStringProperty("api_token", null);
+        return account.getStringProperty(PROPERTY_ACCOUNT_api_token);
     }
 
-    /** getPage with errorhandling */
-    private void getAPISafe(final String accesslink, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
-        this.br.getPage(accesslink);
-        handleErrorsAPI(this.br, account, link);
-    }
-
-    private void handleErrorsAPI(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
-        final String status = PluginJSonUtils.getJson(br, "status");
-        final String errorStr = PluginJSonUtils.getJson(br, "reason");
-        if (!"success".equalsIgnoreCase(status)) {
-            if (errorStr != null) {
-                if (errorStr.equalsIgnoreCase("Filehost not supported.")) {
-                    mhm.putError(account, link, 5 * 60 * 1000l, errorStr);
-                } else if (errorStr.equalsIgnoreCase("Token not found.")) {
-                    logger.info("api_token has expired --> Deleting it - and trying again");
-                    account.removeProperty("api_token");
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else if (errorStr.equalsIgnoreCase("User not premium.")) {
-                    logger.info("User has a free account and plugin tried to download from premium-only host");
-                    account.removeProperty("api_token");
-                    mhm.putError(account, link, 5 * 60 * 1000l, "This host is not supported via free account");
+    private void handleErrorsAPI(final Account account, final DownloadLink link, final Map<String, Object> entries) throws PluginException, InterruptedException {
+        final String status = (String) entries.get("status");
+        final String errorStr = (String) entries.get("reason");
+        if (!"success".equalsIgnoreCase(status) && !StringUtils.isEmpty(errorStr)) {
+            /* First check for all errors which mean that account is invalid/permanently not available (e.g. wrong login credentials). */
+            if (errorStr.matches("(?i)Wrong credentials.*")) {
+                throw new AccountInvalidException(errorStr);
+            } else if (errorStr.matches("(?i)IP Blocked.*")) {
+                throw new AccountUnavailableException(errorStr, 5 * 60 * 1000l);
+            } else if (errorStr.matches("(?i)Filehost not supported.*")) {
+                mhm.putError(account, link, 5 * 60 * 1000l, errorStr);
+            } else if (errorStr.matches("(?i)Token not found.*")) {
+                logger.info("api_token has expired --> Deleting it - and trying again");
+                account.removeProperty(PROPERTY_ACCOUNT_api_token);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (errorStr.matches("(?i)User not premium.*")) {
+                logger.info("User has a free account and plugin tried to download from premium-only host");
+                mhm.putError(account, link, 5 * 60 * 1000l, "This host is not supported via free account");
+            } else {
+                logger.info("Unknown API error happened");
+                if (link == null) {
+                    /* Must be account related error */
+                    throw new AccountUnavailableException(errorStr, 3 * 60 * 1000l);
+                } else {
+                    mhm.handleErrorGeneric(account, link, errorStr, 50, 5 * 60 * 1000l);
                 }
             }
-            logger.info("Unknown API error happened");
-            mhm.handleErrorGeneric(account, link, "generic_api_error", 50, 5 * 60 * 1000l);
         }
     }
 
