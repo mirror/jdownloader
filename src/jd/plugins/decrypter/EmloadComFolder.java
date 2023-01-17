@@ -30,22 +30,21 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.WduploadCom;
+import jd.plugins.hoster.EmloadCom;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class WduploadComFolder extends antiDDoSForDecrypt {
-    public WduploadComFolder(PluginWrapper wrapper) {
+@PluginDependencies(dependencies = { EmloadCom.class })
+public class EmloadComFolder extends antiDDoSForDecrypt {
+    public EmloadComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "emload.com", "wdupload.com" });
-        return ret;
+        return EmloadCom.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -65,9 +64,9 @@ public class WduploadComFolder extends antiDDoSForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
         if (aa != null) {
             logger.info("Account available, logging in ...");
@@ -75,7 +74,7 @@ public class WduploadComFolder extends antiDDoSForDecrypt {
             if (plugin != null) {
                 plugin.setBrowser(br);
                 plugin.setLogger(getLogger());
-                ((WduploadCom) plugin).login(br, null, false);
+                ((EmloadCom) plugin).login(br, null, false);
             }
         }
         getPage(parameter);
@@ -83,11 +82,11 @@ public class WduploadComFolder extends antiDDoSForDecrypt {
         if (br.containsHTML(">This link only for premium")) {
             final DownloadLink link = createOfflinelink(parameter);
             link.setName("PremiumOnly:" + link.getName());
-            decryptedLinks.add(link);
-            return decryptedLinks;
+            ret.add(link);
+            return ret;
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("file-remove-|is empty...<")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            ret.add(createOfflinelink(parameter));
+            return ret;
         }
         final String fpName = br.getRegex("<h2>Folder :([^<>\"]+): \\d+ Files </h2>").getMatch(0);
         final String[] links = br.getRegex("(https?://(?:www\\.)?wdupload\\.com/(?:v2/)?file/[^<>\"]+)\"").getColumn(0);
@@ -95,13 +94,13 @@ public class WduploadComFolder extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
-            decryptedLinks.add(createDownloadlink(singleLink));
+            ret.add(createDownloadlink(singleLink));
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

@@ -30,6 +30,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -141,10 +142,14 @@ public class KsharedCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        return requestFileInformation(link, null);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account);
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException {
+        // if (true) {
+        // return AvailableStatus.UNCHECKABLE;
+        // }
         if (!link.isNameSet()) {
             link.setName(getFallbackFilename(link));
         }
@@ -163,6 +168,8 @@ public class KsharedCom extends PluginForHost {
         br.postPageRaw("https://www." + this.getHost() + "/v1/drive/get_download", JSonStorage.serializeToJson(data));
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.isCloudflareBlocked()) {
+            return AvailableStatus.UNCHECKABLE;
         }
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         if (entries == null) {
@@ -201,7 +208,7 @@ public class KsharedCom extends PluginForHost {
     }
 
     private String findAndSetBearerToken(final Browser br) {
-        final String hash = br.getRegex("hash\\s*:\\s*\"([^\"]+)\"").getMatch(0);
+        final String hash = br.getRegex("(?i)hash\\s*:\\s*\"([^\"]+)\"").getMatch(0);
         if (hash != null) {
             br.getHeaders().put("Authorization", "Bearer " + hash);
         }
@@ -270,7 +277,7 @@ public class KsharedCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (userCookies != null) {
                     logger.info("Attempting user cookie login");
-                    this.br.setCookies(this.getHost(), userCookies);
+                    br.setCookies(this.getHost(), userCookies);
                     ud = br.getCookie(this.getHost(), "__ud");
                     ut = br.getCookie(this.getHost(), "__ut");
                     if (ud == null || ut == null) {
@@ -455,12 +462,17 @@ public class KsharedCom extends PluginForHost {
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         if (!this.attemptStoredDownloadurlDownload(link, account)) {
             requestFileInformation(link, account);
-            if (isPremiumonly(link)) {
+            if (br.isCloudflareBlocked()) {
+                /* TODO: Move this to a better, more centralized place */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Blocked by Cloudflare");
+            } else if (isPremiumonly(link)) {
                 throw new AccountRequiredException();
             }
             final Map<String, Object> data = new HashMap<String, Object>();
-            data.put("ud", this.accountGetUD(account));
-            data.put("ut", this.accountGetUT(account));
+            if (account != null) {
+                data.put("ud", this.accountGetUD(account));
+                data.put("ut", this.accountGetUT(account));
+            }
             data.put("passw", link.getDownloadPassword());
             data.put("fileid", this.getFID(link));
             if (account == null || account.getType() != AccountType.PREMIUM) {

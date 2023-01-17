@@ -34,7 +34,7 @@ public class MambahuyambaCom extends KernelVideoSharingComV2 {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "sx.mambahuyamba.com", "deep.mambahuyamba.com", "most.mambahuyamba.com", "huyamba.info", "pornogovno.me" });
+        ret.add(new String[] { "web.mambahuyamba.com", "sx.mambahuyamba.com", "deep.mambahuyamba.com", "most.mambahuyamba.com", "huyamba.info", "pornogovno.me" });
         return ret;
     }
 
@@ -68,6 +68,8 @@ public class MambahuyambaCom extends KernelVideoSharingComV2 {
         deadDomains.add("most.mambahuyamba.com");
         /* 2022-12-19 */
         deadDomains.add("deep.mambahuyamba.com");
+        /* 2023-01-17 */
+        deadDomains.add("sx.mambahuyamba.com");
         return deadDomains;
     }
 
