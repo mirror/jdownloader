@@ -1054,7 +1054,7 @@ public class ProLeechLink extends antiDDoSForHost {
         return (String) entries.get("link");
     }
 
-    public int getMaxChunks(final DownloadLink link) {
+    private int getMaxChunks(final DownloadLink link) {
         final int maxChunksStored = link.getIntegerProperty(PROPERTY_MAXCHUNKS, 1);
         if (maxChunksStored > 1) {
             /* Minus maxChunksStored -> Up to X chunks */
