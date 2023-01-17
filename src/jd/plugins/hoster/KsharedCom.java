@@ -147,9 +147,6 @@ public class KsharedCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException {
-        // if (true) {
-        // return AvailableStatus.UNCHECKABLE;
-        // }
         if (!link.isNameSet()) {
             link.setName(getFallbackFilename(link));
         }
