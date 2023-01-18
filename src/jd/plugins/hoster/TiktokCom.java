@@ -29,6 +29,21 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -49,21 +64,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.TiktokComCrawler;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/((@[^/]+)/video/|embed/)(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
 public class TiktokCom extends PluginForHost {
@@ -143,39 +143,40 @@ public class TiktokCom extends PluginForHost {
     }
 
     // private String dllink = null;
-    public static final String PROPERTY_DIRECTURL_WEBSITE                     = "directurl";
-    public static final String PROPERTY_DIRECTURL_API                         = "directurl_api";
-    public static final String PROPERTY_USERNAME                              = "username";
-    public static final String PROPERTY_USER_ID                               = "user_id";
-    public static final String PROPERTY_VIDEO_ID                              = "videoid";
-    public static final String PROPERTY_DATE                                  = "date";
-    public static final String PROPERTY_ATTEMPTED_TO_OBTAIN_DATE_FROM_WEBSITE = "attempted_to_obtain_date_from_website";
-    public static final String PROPERTY_DATE_FROM_WEBSITE                     = "date_from_website";
-    public static final String PROPERTY_DATE_LAST_MODIFIED_HEADER             = "date_last_modified_header";
-    public static final String PROPERTY_DESCRIPTION                           = "description";
-    public static final String PROPERTY_HASHTAGS                              = "hashtags";
-    public static final String PROPERTY_LIKE_COUNT                            = "like_count";
-    public static final String PROPERTY_PLAY_COUNT                            = "play_count";
-    public static final String PROPERTY_SHARE_COUNT                           = "share_count";
-    public static final String PROPERTY_COMMENT_COUNT                         = "comment_count";
-    public static final String PROPERTY_HAS_WATERMARK                         = "has_watermark";
-    public static final String PROPERTY_FORCE_API                             = "force_api";
-    public static final String PROPERTY_LAST_USED_DOWNLOAD_MODE               = "last_used_download_mode";
-    public static final String PROPERTY_ALLOW_HEAD_REQUEST                    = "allow_head_request";
-    public static final String PROPERTY_TYPE                                  = "type";
-    public static final String PROPERTY_INDEX                                 = "index";
-    public static final String PROPERTY_INDEX_MAX                             = "index_max";
-    public static final String TYPE_AUDIO                                     = "audio";
-    public static final String TYPE_VIDEO                                     = "video";
-    public static final String TYPE_PICTURE                                   = "picture";
-    public static final String PATTERN_VIDEO                                  = "https?://[^/]+/@([^/]+)/video/(\\d+).*";
+    public static final String  PROPERTY_DIRECTURL_WEBSITE                     = "directurl";
+    public static final String  PROPERTY_DIRECTURL_API                         = "directurl_api";
+    public static final String  PROPERTY_USERNAME                              = "username";
+    public static final String  PROPERTY_USER_ID                               = "user_id";
+    public static final String  PROPERTY_VIDEO_ID                              = "videoid";
+    public static final String  PROPERTY_DATE                                  = "date";
+    public static final String  PROPERTY_ATTEMPTED_TO_OBTAIN_DATE_FROM_WEBSITE = "attempted_to_obtain_date_from_website";
+    public static final String  PROPERTY_DATE_FROM_WEBSITE                     = "date_from_website";
+    public static final String  PROPERTY_DATE_LAST_MODIFIED_HEADER             = "date_last_modified_header";
+    public static final String  PROPERTY_DESCRIPTION                           = "description";
+    public static final String  PROPERTY_HASHTAGS                              = "hashtags";
+    public static final String  PROPERTY_LIKE_COUNT                            = "like_count";
+    public static final String  PROPERTY_PLAY_COUNT                            = "play_count";
+    public static final String  PROPERTY_SHARE_COUNT                           = "share_count";
+    public static final String  PROPERTY_COMMENT_COUNT                         = "comment_count";
+    public static final String  PROPERTY_HAS_WATERMARK                         = "has_watermark";
+    public static final String  PROPERTY_FORCE_API                             = "force_api";
+    public static final String  PROPERTY_LAST_USED_DOWNLOAD_MODE               = "last_used_download_mode";
+    public static final String  PROPERTY_ALLOW_HEAD_REQUEST                    = "allow_head_request";
+    public static final String  PROPERTY_TYPE                                  = "type";
+    public static final String  PROPERTY_INDEX                                 = "index";
+    public static final String  PROPERTY_INDEX_MAX                             = "index_max";
+    public static final String  TYPE_AUDIO                                     = "audio";
+    public static final String  TYPE_VIDEO                                     = "video";
+    public static final String  TYPE_PICTURE                                   = "picture";
+    public static final String  PATTERN_VIDEO                                  = "https?://[^/]+/@([^/]+)/video/(\\d+).*";
     /* API related stuff */
-    public static final String API_CLIENT                                     = "trill";
-    public static final String API_AID                                        = "1180";
-    public static final String API_BASE                                       = "https://api16-normal-c-useast1a.tiktokv.com/aweme/v1";
-    public static final String API_VERSION_NAME                               = "25.6.2";
-    public static final String API_VERSION_CODE                               = "250602";
-    private final String       PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT  = "has_shown_download_mode_hint";
+    public static final String  API_CLIENT                                     = "trill";
+    public static final String  API_AID                                        = "1180";
+    public static final String  API_BASE                                       = "https://api16-normal-c-useast1a.tiktokv.com/aweme/v1";
+    public static final String  API_VERSION_NAME                               = "25.6.2";
+    public static final String  API_VERSION_CODE                               = "250602";
+    private final String        PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT  = "has_shown_download_mode_hint";
+    public static final boolean USE_NEW_HANDLING_IN_DEV_MODE                   = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -208,46 +209,48 @@ public class TiktokCom extends PluginForHost {
             /* Fallback-filename */
             link.setName(fid + ".mp4");
         }
-        final boolean useNewHandling = false;
-        if (!link.hasProperty(PROPERTY_TYPE) && DebugMode.TRUE_IN_IDE_ELSE_FALSE && useNewHandling) {
+        String dllink = null;
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && USE_NEW_HANDLING_IN_DEV_MODE) {
+            /* 2021-01: New (unfinished!) handling */
             /* TODO: Update old --> New URLs via new crawler */
-            final TiktokComCrawler crawler = (TiktokComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
-            final ArrayList<DownloadLink> results = crawler.crawlSingleMedia(new CryptedLink(link.getPluginPatternMatcher()), account);
-            DownloadLink result = null;
-            for (final DownloadLink thisresult : results) {
-                if (this.getLinkID(thisresult).equals(this.getLinkID(link))) {
-                    result = thisresult;
-                    break;
+            dllink = getStoredDirecturl(link);
+            if (dllink == null) {
+                final TiktokComCrawler crawler = (TiktokComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
+                final ArrayList<DownloadLink> results = crawler.crawlSingleMedia(new CryptedLink(link.getPluginPatternMatcher()), account);
+                DownloadLink result = null;
+                for (final DownloadLink thisresult : results) {
+                    if (this.getLinkID(thisresult).equals(this.getLinkID(link))) {
+                        result = thisresult;
+                        break;
+                    }
                 }
+                if (result == null) {
+                    /* This should never happen */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                dllink = getStoredDirecturl(link);
             }
-            if (result == null) {
-                /* This should never happen */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        }
-        boolean webMode = false;
-        if (useAPI(link)) {
-            br.setFollowRedirects(true);
-            br.getPage("https://m.tiktok.com/v/" + fid + ".html");
-            webMode = false;
-            this.checkAvailablestatusAPI(link, account, isDownload);
         } else {
-            /* Try website first and auto-fallback to API. */
-            try {
-                this.checkAvailablestatusWebsite(link, account, isDownload);
-                webMode = true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"(?:status_msg|message)\"\\s*:\\s*\"Something went wrong\"")) {
-                    webMode = false;
-                    this.checkAvailablestatusAPI(link, account, isDownload);
-                    link.setProperty(PROPERTY_FORCE_API, Boolean.TRUE);
-                    logger.info("Auto fallback to API worked fine");
-                } else {
-                    throw e;
+            if (useAPI(link)) {
+                br.setFollowRedirects(true);
+                br.getPage("https://m.tiktok.com/v/" + fid + ".html");
+                this.checkAvailablestatusAPI(link, account, isDownload);
+            } else {
+                /* Try website first and auto-fallback to API. */
+                try {
+                    this.checkAvailablestatusWebsite(link, account, isDownload);
+                } catch (final PluginException e) {
+                    if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"(?:status_msg|message)\"\\s*:\\s*\"Something went wrong\"")) {
+                        this.checkAvailablestatusAPI(link, account, isDownload);
+                        link.setProperty(PROPERTY_FORCE_API, Boolean.TRUE);
+                        logger.info("Auto fallback to API worked fine");
+                    } else {
+                        throw e;
+                    }
                 }
             }
+            dllink = getStoredDirecturl(link);
         }
-        final String dllink = getStoredDirecturl(link);
         if (!StringUtils.isEmpty(dllink) && !link.isSizeSet() && !isDownload) {
             URLConnectionAdapter con = null;
             try {
@@ -264,7 +267,7 @@ public class TiktokCom extends PluginForHost {
                     } catch (final IOException e) {
                         logger.log(e);
                     }
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?", 10 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken media file?", 10 * 60 * 1000l);
                 }
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -290,7 +293,7 @@ public class TiktokCom extends PluginForHost {
             try {
                 final Browser br3 = br.cloneBrowser();
                 br3.getPage(link.getPluginPatternMatcher());
-                if (getAndSetDateFromWebsite(br3, link)) {
+                if (getAndSetDateFromWebsite(this, br3, link) != null) {
                     /*
                      * Filename has already been set before but date was not available --> Set filename again as date information is given
                      * now.
@@ -376,7 +379,7 @@ public class TiktokCom extends PluginForHost {
     public static DownloadMode getDownloadMode() {
         final DownloadMode mode = PluginJsonConfig.get(TiktokConfig.class).getDownloadMode();
         if (false) {
-            // see 90292
+            // see https://svn.jdownloader.org/issues/90292
             return DownloadMode.WEBSITE;
         } else {
             return mode;
@@ -470,8 +473,8 @@ public class TiktokCom extends PluginForHost {
             String description = null;
             final boolean useWebsiteEmbed = true;
             /**
-             * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br> When using an account and
-             * potentially downloading private videos however, we can't use the embed way.
+             * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br>
+             * When using an account and potentially downloading private videos however, we can't use the embed way.
              */
             String dllink = null;
             if (account != null) {
@@ -522,7 +525,7 @@ public class TiktokCom extends PluginForHost {
                 if (commentCountO != null) {
                     setCommentCount(link, (Number) commentCountO);
                 }
-                getAndSetDateFromWebsite(br, link);
+                getAndSetDateFromWebsite(this, br, link);
                 if (dllink == null) {
                     /* Fallback */
                     if (!isDownload) {
@@ -644,7 +647,7 @@ public class TiktokCom extends PluginForHost {
         setFilename(link);
     }
 
-    private boolean getAndSetDateFromWebsite(final Browser br, final DownloadLink link) {
+    public static String getAndSetDateFromWebsite(final Plugin plg, final Browser br, final DownloadLink link) {
         link.setProperty(PROPERTY_ATTEMPTED_TO_OBTAIN_DATE_FROM_WEBSITE, true);
         final String createDateStr[] = br.getRegex("(?i)</span><span style=\"margin:0 4px\">[^<]*</span><span>\\s*(\\d{4}-)?(\\d{1,2})-(\\d{1,2})\\s*</span></span></a>").getRow(0);
         if (createDateStr != null) {
@@ -658,12 +661,12 @@ public class TiktokCom extends PluginForHost {
             }
             date += "-" + StringUtils.fillPre(createDateStr[1], "0", 2);
             date += "-" + StringUtils.fillPre(createDateStr[2], "0", 2);
-            logger.info("Successfully found video create date in website html: " + date);
+            plg.getLogger().info("Successfully found video create date in website html: " + date);
             link.setProperty(PROPERTY_DATE_FROM_WEBSITE, date);
-            return true;
+            return date;
         } else {
-            logger.warning("Failed to find date via date workaround");
-            return false;
+            plg.getLogger().warning("Failed to find date via date workaround");
+            return null;
         }
     }
 
@@ -735,9 +738,9 @@ public class TiktokCom extends PluginForHost {
              * https://github.com/yt-dlp/yt-dlp/issues/4138#issuecomment-1217380819
              */
             /**
-             * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br> This is also possible using modified URLs in
-             * e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any "uri_list" which contains the "video_id"
-             * parameter which also typically matches play_addr/uri
+             * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br>
+             * This is also possible using modified URLs in e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any
+             * "uri_list" which contains the "video_id" parameter which also typically matches play_addr/uri
              */
             link.setProperty(PROPERTY_DIRECTURL_API, String.format("https://api.tiktokv.com/aweme/v1/play/?video_id=%s&line=0&watermark=0&source=AWEME_DETAIL&is_play_url=1&ratio=default&improve_bitrate=1", play_addr.get("uri").toString()));
             /*
@@ -761,8 +764,8 @@ public class TiktokCom extends PluginForHost {
                 link.setProperty(PROPERTY_DIRECTURL_API, directurl);
                 if (data_size != null) {
                     /**
-                     * Set filesize of download-version because streaming- and download-version are nearly identical. </br> If a video is
-                     * watermarked and downloads are prohibited both versions should be identical.
+                     * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
+                     * If a video is watermarked and downloads are prohibited both versions should be identical.
                      */
                     link.setDownloadSize(data_size.longValue());
                 }
