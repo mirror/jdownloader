@@ -24,6 +24,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.ProxySelectorInterface;
@@ -34,14 +42,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redgifs.com" }, urls = { "https?://(?:www\\.)?redgifs\\.com/(?:watch|ifr)/([A-Za-z0-9]+)" })
 public class RedGifsCom extends GfyCatCom {
@@ -128,7 +128,7 @@ public class RedGifsCom extends GfyCatCom {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "JDownloader");
-        br.setAllowedResponseCodes(new int[] { 500 });
+        br.setAllowedResponseCodes(new int[] { 410, 500 });
         final String firstToken = getTemporaryToken(br, null);
         Request view = getView(br, firstToken, fid);
         if (view.getHttpConnection().getResponseCode() == 401) {
@@ -140,6 +140,8 @@ public class RedGifsCom extends GfyCatCom {
         if (view.getHttpConnection().getResponseCode() == 401) {
             failSafeTemporaryTokenIssue.set(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (view.getHttpConnection().getResponseCode() == 404 || view.getHttpConnection().getResponseCode() == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> response = restoreFromString(view.getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> gif = (Map<String, Object>) response.get("gif");

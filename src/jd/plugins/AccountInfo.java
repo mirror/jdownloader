@@ -570,7 +570,7 @@ public class AccountInfo extends Property implements AccountTrafficView {
             }
             if (unassignedMultiHostSupport.size() > 0 && multiHostPlugin != null) {
                 for (final String host : unassignedMultiHostSupport) {
-                    logger.info("Could not assign any host for:" + host);
+                    logger.info("Could not assign any host for: " + host);
                 }
             }
             if (assignedMultiHostPlugins.size() > 0) {
