@@ -282,6 +282,8 @@ public class FilebitNet extends PluginForHost {
                         account.clearCookies("");
                         br.clearCookies(null);
                         continue;
+                    } else {
+                        logger.info("Existing session is still valid");
                     }
                     final AccountInfo ai = new AccountInfo();
                     ai.setTrafficLeft(((Number) lastTicket.get("traffic")).longValue());
@@ -323,19 +325,20 @@ public class FilebitNet extends PluginForHost {
         }
     }
 
-    public Map<String, Object> requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+    public Map<String, Object> requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final String fid = getFID(link);
         if (!link.isNameSet()) {
             /* Fallback (weak filename) */
             link.setName(fid);
         }
-        /* Do not set this to null, API doesn't like that! */
-        String speedTicket = "";
-        if (account != null) {
+        final Object[][] postdata;
+        if (account != null && isDownload) {
             this.loginAndGetAccountInfo(br, account, false);
-            speedTicket = account.getStringProperty(PROPERTY_KEY, "");
+            postdata = new Object[][] { { "file", fid }, { "st", account.getStringProperty(PROPERTY_KEY) } };
+        } else {
+            postdata = new Object[][] { { "file", fid } };
         }
-        final Request request = doAPIRequest(br, "/storage/bucket/info.json", new Object[][] { { "file", fid }, { "st", speedTicket } });
+        final Request request = doAPIRequest(br, "/storage/bucket/info.json", postdata);
         if (request.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -371,7 +374,7 @@ public class FilebitNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        if (requestFileInformation(link, null) != null) {
+        if (requestFileInformation(link, null, false) != null) {
             return AvailableStatus.TRUE;
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -459,8 +462,8 @@ public class FilebitNet extends PluginForHost {
                         try {
                             verifyLink(link);
                             links.add(link);
-                        } catch (Exception e) {
-                            logger.log(e);
+                        } catch (final Exception ignore) {
+                            logger.log(ignore);
                             link.setAvailable(false);
                         }
                     }
@@ -477,7 +480,7 @@ public class FilebitNet extends PluginForHost {
                     }
                     final Map<String, Object> info = (Map<String, Object>) response.get(fid);
                     if (info == null) {
-                        /* This should never happen! */
+                        /* This should never happen! Treat such items as offline. */
                         logger.info("info missing for:" + fid);
                         link.setAvailable(false);
                         continue;
@@ -509,6 +512,7 @@ public class FilebitNet extends PluginForHost {
                 }
             }
         } catch (final Exception e) {
+            logger.warning("Exception happened during mass linkchecking");
             logger.log(e);
             return false;
         }
@@ -529,22 +533,26 @@ public class FilebitNet extends PluginForHost {
         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final Map<String, Object> entries = this.requestFileInformation(link, account);
+        final Map<String, Object> entries = this.requestFileInformation(link, account, true);
         this.checkErrors(link, account, entries);
         final Map<String, Object> slot = (Map<String, Object>) entries.get("slot");
-        /*
-         * TODO: Update/improve errorhandling for this as such errors may result in free download although premium is expected to be used:
-         * "st":{"ticket":"","enabled":false,"state":"invalid","message":"your entered ticket is invalid or expired","trafficAvailable":0,
-         * "directDownload":null}
-         */
         final Map<String, Object> st = (Map<String, Object>) entries.get("st");
         final boolean speedTicketEnabled = ((Boolean) st.get("enabled")).booleanValue();
         if (account != null && !speedTicketEnabled) {
+            /**
+             * TODO: This should never happen. Check if this does happen during testing! </br>
+             *
+             * @Developer: If it happens: Check if you forgot to set cookies!
+             */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Speedticket given but not usable, API error: " + st.get("message"));
         }
         if (account != null) {
-            /* TODO: Refresh trafficleft value of account each time a download is attempted. */
+            /* Refresh trafficleft value of account each time a download is attempted. */
             final Number trafficAvailable = (Number) st.get("trafficAvailable");
+            final AccountInfo ai = account.getAccountInfo();
+            if (trafficAvailable != null && ai != null) {
+                ai.setTrafficLeft(trafficAvailable.longValue());
+            }
             // TODO: What is this?
             // final Object directDownload = st.get("directDownload");
         }
@@ -562,7 +570,7 @@ public class FilebitNet extends PluginForHost {
         final Map<String, Object> slotData = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         this.checkErrors(link, account, slotData);
         if (!(slotData.get("success").equals(Boolean.TRUE))) {
-            /* This should never happen(?) */
+            /* TODO: This should never happen(?) */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Slot has not been confirmed");
         }
         final Map<String, Object> config = (Map<String, Object>) slotData.get("config");
@@ -577,7 +585,7 @@ public class FilebitNet extends PluginForHost {
         for (final List<Object> chunk : chunks) {
             final int chunk_id = ((Number) chunk.get(0)).intValue();
             final long offset0 = ((Number) chunk.get(1)).longValue();
-            // final long undefined = ((Number) chunk.get(2)).longValue();
+            // final Object undefinedObject = chunk.get(2);
             final long length = ((Number) chunk.get(3)).longValue();
             final long crc32 = ((Number) chunk.get(4)).longValue();
             final String downloadid = chunk.get(5).toString();
@@ -601,7 +609,7 @@ public class FilebitNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override

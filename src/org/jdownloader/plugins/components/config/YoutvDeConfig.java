@@ -13,7 +13,7 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "youtv.de", type = Type.HOSTER)
 public interface YoutvDeConfig extends PluginConfigInterface {
     final String                    text_PreferredQuality                     = "Select preferred quality";
-    final String                    text_EnableRecordingsCrawler              = "Crawl all recordings when adding link youtv.de/videorekorder";
+    final String                    text_EnableRecordingsCrawler              = "Crawl all recordings when adding link 'youtv.de/videorekorder'?";
     final String                    text_RecordingsCrawlerAddQueuedRecordings = "Recordings crawler: Also add queued recordings?";
     public static final TRANSLATION TRANSLATION                               = new TRANSLATION();
 
