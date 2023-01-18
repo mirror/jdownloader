@@ -357,6 +357,7 @@ public class BiqleRuCrawler extends PluginForDecrypt {
         DownloadLink best = null;
         int highestQualityHeight = -1;
         final Map<String, Object> response = restoreFromString(br.getPage(url), TypeRef.MAP);
+        int numberofSkippedUnsupportedStreamTypes = 0;
         for (Map<String, Object> source : (List<Map<String, Object>>) response.get("sources")) {
             if ("mp4".equals(source.get("type"))) {
                 final String file = (String) source.get("file");
@@ -381,7 +382,17 @@ public class BiqleRuCrawler extends PluginForDecrypt {
                 }
             } else {
                 logger.info("unsupported type:" + JSonStorage.serializeToJson(source));
+                numberofSkippedUnsupportedStreamTypes++;
             }
+        }
+        if (qualityMap == null || qualityMap.isEmpty()) {
+            /**
+             * 2023-01-18: Assume that content is offline. </br>
+             * Alternatively we could run through vk.com handling as their content is usually hosted on vk.com. </br>
+             * Offline items may only contain hls streams but those will be offline/broken too!
+             */
+            logger.info("Looks like content is offline | Skipped unsupported stream types: " + numberofSkippedUnsupportedStreamTypes);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         handleQualitySelection(ret, qualityMap, best);
         if (fp != null) {
