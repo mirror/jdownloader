@@ -140,7 +140,7 @@ public class DebridLinkFr2 extends PluginForHost {
                 ac.setValidUntil(System.currentTimeMillis() + (premiumLeft * 1000l));
             }
             if (premiumLeft < 0 || ac.isExpired()) {
-                ac.setStatus("(Expired)Premium Account");
+                ac.setStatus("Premium Account (Expired)");
                 account.setType(AccountType.FREE);
                 ac.setValidUntil(-1);
                 isFree = true;
@@ -151,8 +151,8 @@ public class DebridLinkFr2 extends PluginForHost {
             }
             break;
         case 2:
-            ac.setStatus("Life Account");
-            account.setType(AccountType.PREMIUM);
+            ac.setStatus("Lifetime Account");
+            account.setType(AccountType.LIFETIME);
             ac.setValidUntil(-1);
             isFree = false;
             break;
@@ -302,26 +302,6 @@ public class DebridLinkFr2 extends PluginForHost {
     private void login(final Account account, final boolean verifyLogin) throws Exception {
         synchronized (account) {
             prepBR(this.br);
-            if (account.getLastValidTimestamp() != -1 && this.accountGetAccessToken(account) == null && this.accountGetRefreshToken(account) == null && !account.getBooleanProperty(PROPERTY_ACCOUNT_NEW_LOGIN_MESSAGE_DISPLAYED, false)) {
-                /** TODO: Remove this some time after 2021-05 */
-                final Thread thread = showNewLoginMethodInformation();
-                try {
-                    int counter = 0;
-                    do {
-                        Thread.sleep(1000);
-                        counter += 1;
-                    } while (thread.isAlive() && counter < 120);
-                } finally {
-                    /* We only want to display this message once */
-                    account.setProperty(PROPERTY_ACCOUNT_NEW_LOGIN_MESSAGE_DISPLAYED, true);
-                    thread.interrupt();
-                }
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Aktualisiere diesen Account, um dich neu einzuloggen", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Refresh this account to re-login", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            }
             long expiresIn = 0;
             if (this.accountGetAccessToken(account) != null && !accountAccessTokenExpired(account) && !accountAccessTokenNeedsRefresh(account)) {
                 /* Check existing token */
@@ -422,41 +402,6 @@ public class DebridLinkFr2 extends PluginForHost {
      */
     private void accountSetTokenValidity(final Account account, final long expiresIn) {
         account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_VALID_UNTIL, System.currentTimeMillis() + expiresIn * 1000l);
-    }
-
-    private Thread showNewLoginMethodInformation() {
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = "Debrid-link.fr - Änderung der Loginmethode";
-                        message += "Hallo liebe(r) debrid-link NutzerIn\r\n";
-                        message += "Wir haben die Loginmethode dieses Anbieters aktualisiert.\r\n";
-                        message += "Du wirst einmalig automatisch ausgeloggt und musst sich erneut einloggen.\r\n";
-                        message += "Gehe dazu in den Account Manager -> Rechtsklick auf diesen debrid-link Account -> Aktualisieren\r\n";
-                        message += "Entschuldige bitte die Umstände!";
-                    } else {
-                        title = "Debrid-link.fr - Login process has been updated";
-                        message += "Hello dear debrid-link user\r\n";
-                        message += "We've updated the login process for this multihoster.\r\n";
-                        message += "Because of this you'll automatically get logged out once and have to re-login manually.\r\n";
-                        message += "To do so enter the account manager -> Rightclick on this debrid-link account -> Refresh\r\n";
-                        message += "Sorry for the trouble!";
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(2 * 60 * 1000);
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                    ret.throwCloseExceptions();
-                } catch (final Throwable e) {
-                    getLogger().log(e);
-                }
-            };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
     }
 
     private Thread showPINLoginInformation(final String pin_url, final String user_code) {
@@ -641,19 +586,13 @@ public class DebridLinkFr2 extends PluginForHost {
             this.errHandling(account, link);
             Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             entries = (Map<String, Object>) entries.get("value");
-            int maxChunks = 0;
-            final Object chunkO = entries.get("chunk");
-            if (chunkO != null && chunkO instanceof Number) {
-                maxChunks = -((Number) chunkO).intValue();
-                link.setProperty(PROPERTY_MAXCHUNKS, maxChunks);
-                logger.info("APIMaxChunks:" + maxChunks);
-            }
+            link.setProperty(PROPERTY_MAXCHUNKS, entries.get("chunk"));
             final String dllink = (String) entries.get("downloadUrl");
             if (dllink == null) {
                 logger.warning("Failed to find dllink");
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, maxChunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, LIMIT_resume, getMaxChunks(link));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
@@ -691,15 +630,24 @@ public class DebridLinkFr2 extends PluginForHost {
         dl.startDownload();
     }
 
+    private int getMaxChunks(final DownloadLink link) {
+        final int maxChunksStored = link.getIntegerProperty(PROPERTY_MAXCHUNKS, LIMIT_chunks);
+        if (maxChunksStored > 1) {
+            /* Minus maxChunksStored -> Up to X chunks */
+            return -maxChunksStored;
+        } else {
+            return maxChunksStored;
+        }
+    }
+
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
         final String url = link.getStringProperty(PROPERTY_DIRECTURL);
         if (StringUtils.isEmpty(url)) {
             return false;
         }
-        final int maxChunks = (int) link.getLongProperty(PROPERTY_MAXCHUNKS, LIMIT_chunks);
         try {
             final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, LIMIT_resume, maxChunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, LIMIT_resume, this.getMaxChunks(link));
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
