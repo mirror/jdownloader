@@ -22,7 +22,7 @@ public interface TiktokConfig extends PluginConfigInterface {
     final String                                 text_AddDummyURLProfileCrawlerWebsiteModeMissingPagination = "Profile crawler website mode: Add dummy URL when user profile is crawled and crawler fails to find all items due to missing pagination support?";
     final String                                 text_ProfileCrawlerMaxItemsLimit                           = "Profile crawler: Define max number of items to be fetched: 0 = disable profile crawler, -1 = fetch all items";
     final String                                 text_TagCrawlerMaxItemsLimit                               = "Tag crawler: Define max number of items to be fetched: 0 = disable tag crawler, -1 = fetch all items";
-    final String                                 text_VideoCrawlerCrawlAudioSeparately                      = "[Not yet possible] Video crawler: Crawl audio separately?";
+    final String                                 text_VideoCrawlerCrawlAudioSeparately                      = "[Not yet possible] Video crawler: Crawl soundtrack separately?";
     final String                                 text_ImageCrawlerCrawlImagesWithoutWatermark               = "[Not yet possible] Image crawler: Crawl images without watermark?";
     final String                                 text_PreferredImageFormat                                  = "[Not yet possible] Image crawler: Choose preferred image format";
 
@@ -159,7 +159,7 @@ public interface TiktokConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry(text_EnableFastLinkcheck)
+    @DescriptionForConfigEntry(text_VideoCrawlerCrawlAudioSeparately)
     @Order(80)
     boolean isVideoCrawlerCrawlAudioSeparately();
 

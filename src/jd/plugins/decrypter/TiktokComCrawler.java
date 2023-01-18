@@ -22,6 +22,19 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.CrawlMode;
+import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
+import org.jdownloader.plugins.components.config.TiktokConfig.ImageFormat;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -42,18 +55,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.TiktokCom;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.CrawlMode;
-import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
-import org.jdownloader.plugins.components.config.TiktokConfig.ImageFormat;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { TiktokCom.class })
@@ -149,13 +150,29 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> crawlSingleMedia(final CryptedLink param, final Account account) throws Exception {
-        final boolean useNewHandlingInDevMode = false;
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && useNewHandlingInDevMode) {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && TiktokCom.USE_NEW_HANDLING_IN_DEV_MODE) {
             /* 2022-08-25: New handling: Under development */
-            if (TiktokCom.getDownloadMode() == DownloadMode.WEBSITE) {
-                return crawlSingleMediaWebsite(param.getCryptedUrl(), null);
-            } else {
+            final DownloadLink link = param.getDownloadLink();
+            final boolean forceAPI = link != null ? link.getBooleanProperty(TiktokCom.PROPERTY_FORCE_API, false) : false;
+            if (TiktokCom.getDownloadMode() == DownloadMode.API || forceAPI) {
                 return this.crawlSingleMediaAPI(param.getCryptedUrl(), null);
+            } else {
+                try {
+                    return crawlSingleMediaWebsite(param.getCryptedUrl(), null);
+                } catch (final PluginException e) {
+                    if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"(?:status_msg|message)\"\\s*:\\s*\"Something went wrong\"")) {
+                        final ArrayList<DownloadLink> results = this.crawlSingleMediaAPI(param.getCryptedUrl(), null);
+                        logger.info("Auto fallback to API worked fine");
+                        if (results != null) {
+                            for (final DownloadLink result : results) {
+                                result.setProperty(TiktokCom.PROPERTY_FORCE_API, true);
+                            }
+                        }
+                        return results;
+                    } else {
+                        throw e;
+                    }
+                }
             }
         } else {
             /* Single video URL --> Is handled by host plugin */
@@ -165,8 +182,10 @@ public class TiktokComCrawler extends PluginForDecrypt {
         }
     }
 
-    /** This can crawl single videos from website. */
-    @Deprecated
+    /**
+     * This can crawl single videos from website. </br>
+     * If this tiktok item also contains images or contains only images, this handling will fail!
+     */
     public ArrayList<DownloadLink> crawlSingleMediaWebsite(final String url, final Account account) throws Exception {
         final TiktokCom hostPlg = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
         if (account != null) {
@@ -190,8 +209,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
         String dateFormatted = null;
         final boolean useWebsiteEmbed = true;
         /**
-         * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br> When using an account and
-         * potentially downloading private videos however, we can't use the embed way.
+         * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br>
+         * When using an account and potentially downloading private videos however, we can't use the embed way.
          */
         String videoDllink = null;
         if (account != null) {
@@ -338,6 +357,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         video.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_VIDEO);
         ret.add(video);
         /* Add additional properties */
+        final String dateFromHtml = TiktokCom.getAndSetDateFromWebsite(this, br, ret.get(0));
         for (final DownloadLink result : ret) {
             result.setAvailable(true);
             TiktokCom.setFilename(result);
@@ -360,6 +380,10 @@ public class TiktokComCrawler extends PluginForDecrypt {
             if (dateFormatted != null) {
                 result.setProperty(TiktokCom.PROPERTY_DATE, dateFormatted);
             }
+            result.setProperty(TiktokCom.PROPERTY_ATTEMPTED_TO_OBTAIN_DATE_FROM_WEBSITE, true);
+            if (dateFromHtml != null) {
+                result.setProperty(TiktokCom.PROPERTY_DATE_FROM_WEBSITE, dateFromHtml);
+            }
         }
         return ret;
     }
@@ -370,8 +394,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
             hostPlg.login(account, false);
         }
         /* In website mode we neither know whether or not a video is watermarked nor can we download it without watermark. */
-        final String fid = TiktokCom.getContentID(url);
-        if (fid == null) {
+        final String contentID = TiktokCom.getContentID(url);
+        if (contentID == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -379,12 +403,32 @@ public class TiktokComCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         prepBRAPI(br);
         final UrlQuery query = TiktokCom.getAPIQuery();
-        query.add("aweme_id", fid);
+        query.add("aweme_id", contentID);
         /* Alternative check for videos not available without feed-context: same request with path == '/feed' */
         // accessAPI(br, "/feed", query);
         TiktokCom.accessAPI(br, "/aweme/detail", query);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final Map<String, Object> aweme_detail = (Map<String, Object>) entries.get("aweme_detail");
+        Map<String, Object> entries = null;
+        Map<String, Object> aweme_detail = null;
+        try {
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
+            aweme_detail = (Map<String, Object>) entries.get("aweme_detail");
+        } catch (final JSonMapperException jse) {
+            /* Fallback */
+            logger.info("Trying API /feed fallback");
+            /* Alternative check for videos not available without feed-context: same request with path == '/feed' */
+            prepBRAPI(br);
+            /* Make sure that the next request will not contain a Referer header otherwise we'll get a blank page! */
+            br.setCurrentURL("");
+            TiktokCom.accessAPI(br, "/feed", query);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
+            final List<Map<String, Object>> aweme_list = (List<Map<String, Object>>) entries.get("aweme_list");
+            for (final Map<String, Object> aweme_detailTmp : aweme_list) {
+                if (StringUtils.equals(aweme_detailTmp.get("aweme_id").toString(), contentID)) {
+                    aweme_detail = aweme_detailTmp;
+                    break;
+                }
+            }
+        }
         if (aweme_detail == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -464,9 +508,9 @@ public class TiktokComCrawler extends PluginForDecrypt {
                  * https://github.com/yt-dlp/yt-dlp/issues/4138#issuecomment-1217380819
                  */
                 /**
-                 * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br> This is also possible using modified URLs
-                 * in e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any "uri_list" which contains the "video_id"
-                 * parameter which also typically matches play_addr/uri
+                 * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br>
+                 * This is also possible using modified URLs in e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any
+                 * "uri_list" which contains the "video_id" parameter which also typically matches play_addr/uri
                  */
                 video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, String.format("https://api.tiktokv.com/aweme/v1/play/?video_id=%s&line=0&watermark=0&source=AWEME_DETAIL&is_play_url=1&ratio=default&improve_bitrate=1", play_addr.get("uri").toString()));
                 /*
@@ -491,8 +535,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
                     video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, directurl);
                     if (data_size != null) {
                         /**
-                         * Set filesize of download-version because streaming- and download-version are nearly identical. </br> If a video
-                         * is watermarked and downloads are prohibited both versions should be identical.
+                         * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
+                         * If a video is watermarked and downloads are prohibited both versions should be identical.
                          */
                         video0.setDownloadSize(data_size.longValue());
                     }
@@ -565,8 +609,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Use website to crawl all videos of a user. </br> Pagination hasn't been implemented so this will only find the first batch of items -
-     * usually around 30 items!
+     * Use website to crawl all videos of a user. </br>
+     * Pagination hasn't been implemented so this will only find the first batch of items - usually around 30 items!
      */
     public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param) throws Exception {
         prepBRWebsite(br);
