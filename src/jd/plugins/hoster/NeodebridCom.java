@@ -347,9 +347,10 @@ public class NeodebridCom extends PluginForHost {
             user = this.callAPI(account, null, br, "/info?token=" + this.getApiToken(account));
             br.getPage(API_BASE + "/info?token=" + this.getApiToken(account));
         }
-        Number validuntil = (Number) user.get("timestamp");
-        if (validuntil != null) {
-            validuntil = validuntil.longValue() * 1000;
+        final Number validuntilO = (Number) user.get("timestamp");
+        long validuntil = -1;
+        if (validuntilO != null) {
+            validuntil = validuntilO.longValue() * 1000;
         }
         /* 2019-07-05: Will usually return 'Unlimited' for premium accounts and 'XX GB' for free accounts */
         String traffic_leftStr = (String) user.get("traffic_left");
@@ -357,13 +358,13 @@ public class NeodebridCom extends PluginForHost {
         /**
          * 2021-01-03: Free (-Account) limits: 5 links per day (per IP and or account). 10 Minute waittime between generating direct-URLs.
          */
-        if (validuntil != null && validuntil.longValue() > System.currentTimeMillis()) {
+        if (validuntil > System.currentTimeMillis()) {
             /* Premium account */
             /* Premium accounts have unlimited files per day */
             filesPerDayLeft = -1;
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
-            ai.setValidUntil(validuntil.longValue(), this.br);
+            ai.setValidUntil(validuntil, this.br);
         } else {
             /**
              * 2019-08-26: API will always return static value '1 GB' trafficleft for free accounts which is wrong! </br>
@@ -451,13 +452,15 @@ public class NeodebridCom extends PluginForHost {
                         return null;
                     }
                     logger.info("Checking existing token...");
-                    br.getPage(API_BASE + "/info?token=" + this.getApiToken(account));
-                    entries = this.callAPI(account, null, br, "/info?token=" + this.getApiToken(account), false);
-                    if ("success".equalsIgnoreCase(entries.get("status").toString())) {
+                    try {
+                        entries = this.callAPI(account, null, br, "/info?token=" + this.getApiToken(account), false);
                         logger.info("Stored token was valid");
                         return entries;
-                    } else {
-                        /* E.g. {"status":"error","reason":"Session expired. Please log-in again."} */
+                    } catch (final PluginException ignore) {
+                        /**
+                         * E.g. {"status":"error","reason":"Session expired. Please log-in again."} or </br>
+                         * {"status":"error","reason":"Token not found."}
+                         */
                         logger.info("Stored token was INVALID, performing full login");
                         br.clearCookies(null);
                     }

@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -26,6 +27,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -69,9 +71,11 @@ public class ModsfireCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final boolean       FREE_RESUME       = true;
+    private static final int           FREE_MAXCHUNKS    = 1;
+    private static final int           FREE_MAXDOWNLOADS = 20;
+    /* Don't touch the following! */
+    private static final AtomicInteger freeRunning       = new AtomicInteger(0);
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -147,7 +151,26 @@ public class ModsfireCom extends PluginForHost {
             }
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
-        dl.startDownload();
+        try {
+            /* Add a download slot */
+            controlMaxFreeDownloads(null, link, +1);
+            /* Start download */
+            dl.startDownload();
+        } finally {
+            /* Remove download slot */
+            controlMaxFreeDownloads(null, link, -1);
+        }
+    }
+
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null) {
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
     }
 
     @Override
@@ -181,7 +204,9 @@ public class ModsfireCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        /* 2023-01-17: Allow max 5 simultaneous downloads and let them start sequentially to try to avoid running into Cloudflare. */
+        final int ret = Math.min(freeRunning.get() + 1, 5);
+        return ret;
     }
 
     @Override
