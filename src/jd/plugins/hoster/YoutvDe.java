@@ -389,7 +389,6 @@ public class YoutvDe extends PluginForHost {
             account.setType(AccountType.FREE);
         } else {
             account.setType(AccountType.PREMIUM);
-            ai.setTrafficLeft(0);
             autoSubscription = br.containsHTML("(?i)Automatische Verlängerung:</b>\\s*Ja,\\s*automatisch abgebucht");
         }
         /*
@@ -423,10 +422,7 @@ public class YoutvDe extends PluginForHost {
         }
         final long ageOfStoredErrorMillis = System.currentTimeMillis() - link.getLongProperty(PROPERTY_TIMESTAMP_LAST_FILE_ERROR, 0);
         if (ageOfStoredErrorMillis < 5 * 60 * 1000l) {
-            /*
-             * Do not trust stored errormessage as it was stored too long ago -> Retry to get current data. Download will either work or
-             * fail and in the latter case we can then trust the stored errormessage.
-             */
+            logger.info("Stored errormessage is too old -> Trigger retry and throw exception with the following error-text if this is still the case: " + lastStoredErrormessage);
             /* Remove directurl property to prevent infinite loop. */
             link.removeProperty(getDirecturlProperty(link));
             throw new PluginException(LinkStatus.ERROR_RETRY, "Retry to confirm error: " + lastStoredErrormessage);
@@ -462,15 +458,15 @@ public class YoutvDe extends PluginForHost {
                     long wait = 10 * 60 * 1000l;
                     final String starts_at = link.getStringProperty(PROPERTY_STARTS_AT);
                     if (starts_at != null) {
-                        // 2023-01-10T18:40:00.000+01:00
-                        /* TODO: Fix this */
-                        final long startsAtTimestamp = TimeFormatter.getMilliSeconds(starts_at, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
+                        final long startsAtTimestamp = TimeFormatter.getMilliSeconds(starts_at, "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.GERMANY);
                         final long timeUntilRecordingStart = startsAtTimestamp - System.currentTimeMillis();
                         if (timeUntilRecordingStart > 10000) {
                             wait = timeUntilRecordingStart;
+                        } else {
+                            // Item must have been recorded but is not yet downloadable -> Wait default waittime until retry
                         }
                     }
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Diese Sendung wurde noch nicht aufgenommen", wait);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Warte auf Aufnahme dieser Sendung", wait);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

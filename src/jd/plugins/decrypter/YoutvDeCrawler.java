@@ -88,12 +88,11 @@ public class YoutvDeCrawler extends PluginForDecrypt {
         final Object errorsO = entries.get("errors");
         if (errorsO != null) {
             /* Most likely a login failure. This should never happen! */
-            logger.warning("WTF: " + errorsO);
+            logger.warning("WTF API returned error: " + errorsO);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName("Meine Aufnahmen");
-        // int numberofAddedItems = 0;
         int numberofQueuedItems = 0;
         final List<Map<String, Object>> recordings = (List<Map<String, Object>>) entries.get("recordings");
         if (recordings.size() == 0) {
@@ -103,6 +102,10 @@ public class YoutvDeCrawler extends PluginForDecrypt {
         for (final Map<String, Object> recording : recordings) {
             final String id = recording.get("id").toString();
             final String status = recording.get("status").toString();
+            // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !status.equals("queued")) {
+            // // testing
+            // continue;
+            // }
             if (status.equals("queued")) {
                 numberofQueuedItems++;
                 if (!cfg.isRecordingsCrawlerAddQueuedRecordings()) {
@@ -116,7 +119,6 @@ public class YoutvDeCrawler extends PluginForDecrypt {
             link.setAvailable(true);
             ret.add(link);
             distribute(link);
-            // numberofAddedItems++;
         }
         if (ret.isEmpty()) {
             logger.info("User has only " + numberofQueuedItems + " queued recordings but disabled adding those via plugin settings");
