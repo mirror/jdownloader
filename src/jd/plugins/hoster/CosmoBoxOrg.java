@@ -18,17 +18,18 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CosmoBoxOrg extends XFileSharingProBasic {
@@ -109,6 +110,18 @@ public class CosmoBoxOrg extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = super.fetchAccountInfo(account);
+        /**
+         * 2023-01-19: Preventive measure as this website seems to "recharge" traffic step by step once it is empty and default accountcheck
+         * would only happen every 30 minutes. </br>
+         * See: https://board.jdownloader.org/showthread.php?t=92604
+         */
+        account.setRefreshTimeout(5 * 60 * 1000);
+        return ai;
     }
 
     @Override

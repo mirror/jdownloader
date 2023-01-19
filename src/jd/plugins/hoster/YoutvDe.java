@@ -455,18 +455,14 @@ public class YoutvDe extends PluginForHost {
             if (dllink == null) {
                 if (link.getBooleanProperty(PROPERTY_RECORDED_STATUS, true) == false) {
                     /* Rare case: Broadcast hasn't aired yet -> Wait until it airs to be able to download it. */
-                    long wait = 10 * 60 * 1000l;
+                    final long minimumWaittime = 10 * 60 * 1000l;
+                    long timeUntilRecordingStart = 0;
                     final String starts_at = link.getStringProperty(PROPERTY_STARTS_AT);
                     if (starts_at != null) {
                         final long startsAtTimestamp = TimeFormatter.getMilliSeconds(starts_at, "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.GERMANY);
-                        final long timeUntilRecordingStart = startsAtTimestamp - System.currentTimeMillis();
-                        if (timeUntilRecordingStart > 10000) {
-                            wait = timeUntilRecordingStart;
-                        } else {
-                            // Item must have been recorded but is not yet downloadable -> Wait default waittime until retry
-                        }
+                        timeUntilRecordingStart = startsAtTimestamp - System.currentTimeMillis();
                     }
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Warte auf Aufnahme dieser Sendung", wait);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Warte auf Aufnahme dieser Sendung", Math.max(timeUntilRecordingStart, minimumWaittime));
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
