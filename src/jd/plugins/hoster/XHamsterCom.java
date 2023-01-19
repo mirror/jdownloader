@@ -137,7 +137,6 @@ public class XHamsterCom extends PluginForHost {
     /* Porn_plugin */
     private static final String   SETTING_ALLOW_MULTIHOST_USAGE          = "ALLOW_MULTIHOST_USAGE";
     private final boolean         default_allow_multihoster_usage        = false;
-    private static final String   HTML_PAID_VIDEO                        = "class=\"buy_tips\"|<tipt>This video is paid</tipt>";
     private final String          SETTING_SELECTED_VIDEO_FORMAT          = "SELECTED_VIDEO_FORMAT";
     /* The list of qualities/formats displayed to the user */
     private static final String[] FORMATS                                = new String[] { "Best available", "240p", "480p", "720p", "960p", "1080p", "1440p", "2160p" };
@@ -370,7 +369,7 @@ public class XHamsterCom extends PluginForHost {
             }
             final int responsecode = br.getRequest().getHttpConnection().getResponseCode();
             if (responsecode == 423) {
-                if (videoOnlyForFriends(br)) {
+                if (isVideoOnlyForFriends(br)) {
                     return AvailableStatus.TRUE;
                 } else if (br.containsHTML("(?i)<title>\\s*Page was deleted\\s*</title>")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -441,14 +440,14 @@ public class XHamsterCom extends PluginForHost {
                 if (br.containsHTML("(?i)(403 Forbidden|>\\s*This video was deleted\\s*<)")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final String onlyforFriendsWithThisName = videoOnlyForFriendsOf(br);
+                final String onlyforFriendsWithThisName = isVideoOnlyForFriendsOf(br);
                 if (onlyforFriendsWithThisName != null) {
                     link.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyforFriendsWithThisName);
                     return AvailableStatus.TRUE;
                 } else if (isPasswordProtected(br)) {
                     return AvailableStatus.TRUE;
                 }
-                dllink = this.getDllink();
+                dllink = this.getDllink(br);
                 final String fid = getFID(link);
                 title = br.getRegex("\"videoEntity\"\\s*:\\s*\\{[^\\}\\{]*\"title\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
                 if (title == null) {
@@ -490,7 +489,7 @@ public class XHamsterCom extends PluginForHost {
                     title += ext;
                     link.setFinalFileName(title);
                 }
-                if (dllink == null && br.containsHTML(HTML_PAID_VIDEO)) {
+                if (dllink == null && isPaidContent(br)) {
                     link.getLinkStatus().setStatusText("To download, you have to buy this video");
                     return AvailableStatus.TRUE;
                 }
@@ -523,7 +522,7 @@ public class XHamsterCom extends PluginForHost {
     /**
      * @returns: Not null = video is only available for friends of user XXX
      */
-    private String videoOnlyForFriendsOf(final Browser br) {
+    private String isVideoOnlyForFriendsOf(final Browser br) {
         String friendsname = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
         if (StringUtils.isEmpty(friendsname)) {
             /* 2019-06-05 */
@@ -536,7 +535,7 @@ public class XHamsterCom extends PluginForHost {
         }
     }
 
-    private boolean videoOnlyForFriends(final Browser br) {
+    private boolean isVideoOnlyForFriends(final Browser br) {
         if (br.getHttpConnection().getResponseCode() == 423 && br.containsHTML(">\\s*This (gallery|video) is visible (for|to) <")) {
             return true;
         } else {
@@ -546,6 +545,14 @@ public class XHamsterCom extends PluginForHost {
 
     private boolean isPasswordProtected(final Browser br) {
         return br.containsHTML("class=\"video\\-password\\-block\"");
+    }
+
+    private boolean isPaidContent(final Browser br) {
+        if (br.containsHTML("(?i)class=\"buy_tips\"|<tipt>\\s*This video is paid\\s*</tipt>")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -590,7 +597,7 @@ public class XHamsterCom extends PluginForHost {
      * NOTE: They also have .mp4 version of the videos in the html code -> For mobile devices Those are a bit smaller in size
      */
     @SuppressWarnings("deprecation")
-    public String getDllink() throws IOException, PluginException {
+    public String getDllink(final Browser br) throws IOException, PluginException {
         final SubConfiguration cfg = getPluginConfig();
         final int selected_format = cfg.getIntegerProperty(SETTING_SELECTED_VIDEO_FORMAT, 0);
         final List<String> qualities = new ArrayList<String>();
@@ -648,10 +655,10 @@ public class XHamsterCom extends PluginForHost {
         } catch (final JSonMapperException e) {
             logger.log(e);
         }
-        logger.info("did not find any matching quality:" + qualities);
+        logger.info("Did not find any matching quality:" + qualities);
         if (hlsMaster != null) {
             /* 2021-02-01 */
-            logger.info("Fallback to HLS download -> " + hlsMaster);
+            logger.info("Try fallback to HLS download -> " + hlsMaster);
             return (String) hlsMaster.get("url");
         }
         final String newPlayer = Encoding.htmlDecode(br.getRegex("videoUrls\":\"(\\{.*?\\]\\})").getMatch(0));
@@ -823,15 +830,9 @@ public class XHamsterCom extends PluginForHost {
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
         if (!link.getPluginPatternMatcher().matches(TYPE_PREMIUM) && StringUtils.isEmpty(dllink)) {
-            if (this.videoOnlyForFriends(br)) {
-                throw new AccountRequiredException("You need to be friends with uploader");
-            }
             // Access the page again to get a new direct link because by checking the availability the first linkisn't valid anymore
             String passCode = link.getDownloadPassword();
-            br.getPage(link.getPluginPatternMatcher());
-            if (videoOnlyForFriendsOf(br) != null) {
-                throw new AccountRequiredException();
-            } else if (isPasswordProtected(br)) {
+            if (isPasswordProtected(br)) {
                 final boolean passwordHandlingBroken = true;
                 if (passwordHandlingBroken) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Password-protected handling broken svn.jdownloader.org/issues/88690");
@@ -858,6 +859,7 @@ public class XHamsterCom extends PluginForHost {
                      * "$id":"c280e6b4-d696-479c-bb7d-eb0627d36fb1"}}]
                      */
                     if (br.containsHTML("\"password\"")) {
+                        link.setDownloadPassword(null);
                         throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                     }
                     link.setDownloadPassword(passCode);
@@ -875,13 +877,20 @@ public class XHamsterCom extends PluginForHost {
                     }
                     link.setDownloadPassword(passCode);
                 }
-            } else if (br.containsHTML(HTML_PAID_VIDEO)) {
-                throw new AccountRequiredException();
+            } else {
+                dllink = getDllink(br);
             }
-            dllink = getDllink();
         }
         if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (this.isVideoOnlyForFriends(br)) {
+                throw new AccountRequiredException("You need to be friends with uploader");
+            } else if (isVideoOnlyForFriendsOf(br) != null) {
+                throw new AccountRequiredException();
+            } else if (isPaidContent(br)) {
+                throw new AccountRequiredException("Paid content");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
             /* 2021-02-01: HLS download */
@@ -934,7 +943,6 @@ public class XHamsterCom extends PluginForHost {
                  */
                 final Cookies cookies = account.loadCookies("");
                 Cookies premiumCookies = account.loadCookies("premium");
-                boolean isloggedinPremium = false;
                 if (cookies != null) {
                     logger.info("Trying cookie login");
                     String freeDomain = account.getStringProperty(PROPERTY_ACCOUNT_LAST_USED_FREE_DOMAIN);
@@ -948,27 +956,26 @@ public class XHamsterCom extends PluginForHost {
                         freeDomain = br.getHost();
                     }
                     br.setCookies(freeDomain, cookies, true);
+                    if (premiumCookies != null) {
+                        br.setCookies(domain_premium, premiumCookies);
+                    }
                     if (!force) {
-                        /* We trust these cookies --> Do not check them */
-                        if (premiumCookies != null) {
-                            logger.info("Found stored premium cookies");
-                            br.setCookies(domain_premium, premiumCookies);
-                        }
-                        logger.info("Trust cookies without login");
+                        /* Do not check cookies */
                         return;
                     } else {
                         /* Try to avoid login captcha whenever possible! */
                         br.getPage("https://" + freeDomain + "/");
                         if (isLoggedInHTML(br)) {
+                            logger.info("Cookie login successful (free)");
                             /* Save new cookie timestamp */
                             account.saveCookies(br.getCookies(br.getHost()), "");
                             account.setProperty(PROPERTY_ACCOUNT_LAST_USED_FREE_DOMAIN, br.getHost());
-                            logger.info("Free cookie login successful -> Checking premium cookies");
+                            logger.info("Free cookie login successful");
                             if (premiumCookies != null) {
                                 /* Cookies have already been set in lines above */
                                 logger.info("Checking premium cookies");
                                 br.setCookies(domain_premium, premiumCookies);
-                                if (this.checkPremiumLogin()) {
+                                if (this.checkPremiumLogin(br)) {
                                     /* Save new premium cookies if they were valid */
                                     account.saveCookies(br.getCookies(br.getHost()), "premium");
                                 }
@@ -985,6 +992,7 @@ public class XHamsterCom extends PluginForHost {
                 if (br.getHost() == null) {
                     br.getPage("https://" + this.getHost() + "/");
                 }
+                boolean isloggedinPremium = false;
                 if (usePremiumLoginONLY) {
                     isloggedinPremium = this.loginPremium(account, true);
                     premiumCookies = br.getCookies(br.getURL());
@@ -1043,12 +1051,13 @@ public class XHamsterCom extends PluginForHost {
                     premiumCookies = br.getCookies(br.getURL());
                 }
                 if (isloggedinPremium) {
-                    /* Only save cookies if login was successful */
+                    /* Only save cookies if premium login was successful */
                     account.saveCookies(premiumCookies, "premium");
                 }
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
+                    account.clearCookies("premium");
                 }
                 throw e;
             } finally {
@@ -1058,14 +1067,20 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private boolean isLoggedinFree(final Browser br) {
-        if (br.getCookie(br.getHost(), "UID", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getHost(), "_id", Cookies.NOTDELETEDPATTERN) != null) {
+        final boolean loggedinCookies = br.getCookie(br.getHost(), "UID", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(br.getHost(), "_id", Cookies.NOTDELETEDPATTERN) != null;
+        final boolean loggedinHTML = isLoggedInHTML(br);
+        if (loggedinCookies || loggedinHTML) {
             return true;
         } else {
             return false;
         }
     }
 
-    private boolean checkPremiumLogin() throws IOException {
+    private boolean isLoggedInHTML(final Browser br) {
+        return br.containsHTML("class=\"profile-link-info-name\"");
+    }
+
+    private boolean checkPremiumLogin(final Browser br) throws IOException {
         br.getPage(api_base_premium + "/subscription/get");
         if (br.getHttpConnection().getContentType().contains("json")) {
             logger.info("Premium cookies seem to be VALID");
@@ -1136,14 +1151,6 @@ public class XHamsterCom extends PluginForHost {
             }
         }
         return result.toString();
-    }
-
-    private boolean htmlIsOldDesign(final Browser br) {
-        return br.containsHTML("class=\"design\\-switcher\"");
-    }
-
-    private boolean isLoggedInHTML(final Browser br) {
-        return br.containsHTML("\"myProfile\"");
     }
 
     @Override
