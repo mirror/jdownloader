@@ -974,7 +974,6 @@ public class XHamsterCom extends PluginForHost {
                             if (premiumCookies != null) {
                                 /* Cookies have already been set in lines above */
                                 logger.info("Checking premium cookies");
-                                br.setCookies(domain_premium, premiumCookies);
                                 if (this.checkPremiumLogin(br)) {
                                     /* Save new premium cookies if they were valid */
                                     account.saveCookies(br.getCookies(br.getHost()), "premium");
