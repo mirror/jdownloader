@@ -310,7 +310,7 @@ public class FilebitNet extends PluginForHost {
     }
 
     private void checkErrors(final DownloadLink link, final Account account, final Map<String, Object> map) throws PluginException {
-        /* TODO: Add support for more/specific errormessages */
+        /* TODO: Improve errorhandling: Add support for more/specific errormessages */
         if (map == null) {
             return;
         }
