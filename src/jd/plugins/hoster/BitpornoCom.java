@@ -16,8 +16,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -35,18 +43,44 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitporno.com" }, urls = { "https?://(?:www\\.)?bitporno\\.(?:sx|com)/(?:\\?v=|v/|embed/)([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BitpornoCom extends PluginForHost {
     public BitpornoCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        ret.add(new String[] { "bitporno.to", "bitporno.sx", "bitporno.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:\\?v=|v/|embed/)([A-Za-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2022-07-18: Main domain changed from upfiles.io to upfiles.com (upfiles.app) */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override
@@ -82,17 +116,7 @@ public class BitpornoCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.bitporno.sx/?c=tos";
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        if ("bitporno.sx".equals(getHost())) {
-            if (host == null || "bitporno.sx".equals(host)) {
-                return "bitporno.com";
-            }
-        }
-        return super.rewriteHost(host);
+        return "http://www.bitporno.to/?c=tos";
     }
 
     private boolean handleConfirm(Browser br) throws IOException {
