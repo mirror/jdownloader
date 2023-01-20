@@ -19,9 +19,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -61,7 +64,7 @@ public class UpfilesIo extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "upfiles.app", "upfiles.io", "upfiles.com", "upfiles.download" });
+        ret.add(new String[] { "upfiles.app", "upfiles.io", "upfiles.com", "upfiles.download", "upfilesurls.com" });
         return ret;
     }
 
@@ -246,7 +249,8 @@ public class UpfilesIo extends PluginForHost {
         query3.add("_token", csrfToken);
         query3.add("view_form_data", view_form_data);
         br.postPage("/file/go", query3);
-        return PluginJSonUtils.getJsonValue(br, "url");
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        return entries.get("url").toString();
     }
 
     @Override
@@ -270,6 +274,10 @@ public class UpfilesIo extends PluginForHost {
         final String filename = br.getRegex("class=\"file-title[^\"]+\"[^>]*>([^<]+)</div>").getMatch(0);
         if (filename != null) {
             link.setName(Encoding.htmlDecode(filename).trim());
+        }
+        final String filesize = br.getRegex("(?i)<h3>\\s*Download\\s*: [^<]* \\(([0-9\\.]+ [A-Za-z]{1,5})\\)</h3>").getMatch(0);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         final String directurl = getDownloadFileUrl(link, MethodName.requestFileInformation);
         if (!StringUtils.isEmpty(directurl)) {

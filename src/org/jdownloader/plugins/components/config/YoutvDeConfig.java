@@ -15,6 +15,7 @@ public interface YoutvDeConfig extends PluginConfigInterface {
     final String                    text_PreferredQuality                     = "Select preferred quality";
     final String                    text_EnableRecordingsCrawler              = "Crawl all recordings when adding link 'youtv.de/videorekorder'?";
     final String                    text_RecordingsCrawlerAddQueuedRecordings = "Recordings crawler: Also add queued recordings?";
+    final String                    text_DeleteRecordingsAfterDownload        = "Delete recordings after download?";
     public static final TRANSLATION TRANSLATION                               = new TRANSLATION();
 
     public static class TRANSLATION {
@@ -28,6 +29,10 @@ public interface YoutvDeConfig extends PluginConfigInterface {
 
         public String getRecordingsCrawlerAddQueuedRecordings_label() {
             return text_RecordingsCrawlerAddQueuedRecordings;
+        }
+
+        public String getDeleteRecordingsAfterDownload_label() {
+            return text_DeleteRecordingsAfterDownload;
         }
     }
 
@@ -81,4 +86,12 @@ public interface YoutvDeConfig extends PluginConfigInterface {
     boolean isRecordingsCrawlerAddQueuedRecordings();
 
     void setRecordingsCrawlerAddQueuedRecordings(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_DeleteRecordingsAfterDownload)
+    @Order(40)
+    boolean isDeleteRecordingsAfterDownload();
+
+    void setDeleteRecordingsAfterDownload(boolean b);
 }

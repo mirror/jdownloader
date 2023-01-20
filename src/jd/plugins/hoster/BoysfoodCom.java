@@ -31,6 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.BoysfoodComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BoysfoodCom extends PluginForHost {
@@ -102,12 +103,11 @@ public class BoysfoodCom extends PluginForHost {
             return new Regex(link.getPluginPatternMatcher(), TYPE_NORMAL).getMatch(0);
         }
     }
+    // private String getURLTitle(final DownloadLink link) {
+    // return getURLTitleCleaned(link.getPluginPatternMatcher());
+    // }
 
-    private String getURLTitle(final DownloadLink link) {
-        return getURLTitleCleaned(link.getPluginPatternMatcher());
-    }
-
-    private String getURLTitleCleaned(final String url) {
+    public static String getURLTitleCleaned(final String url) {
         String title = new Regex(url, TYPE_NORMAL).getMatch(1);
         if (title != null) {
             return title.replace("-", " ").trim();
@@ -133,7 +133,7 @@ public class BoysfoodCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (BoysfoodComCrawler.isOfflineStatic(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.getURL().matches(TYPE_EMBED)) {

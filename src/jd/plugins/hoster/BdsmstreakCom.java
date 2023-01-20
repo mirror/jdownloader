@@ -87,7 +87,7 @@ public class BdsmstreakCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)\"Video not found")) {
+        } else if (br.containsHTML("(?i)\"Video not found|>\\s*This video doesn't exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_filename = new Regex(this.br.getURL(), "([a-z0-9\\-]+)/?$").getMatch(0);

@@ -34,6 +34,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.requests.DeleteRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -240,6 +241,7 @@ public class YoutvDe extends PluginForHost {
             link.setProperty(PROPERTY_TIMESTAMP_LAST_FILE_ERROR, System.currentTimeMillis());
         } else {
             link.removeProperty(PROPERTY_LAST_FILE_ERROR);
+            link.removeProperty(PROPERTY_TIMESTAMP_LAST_FILE_ERROR);
         }
     }
 
@@ -490,8 +492,24 @@ public class YoutvDe extends PluginForHost {
             }
         }
         /* Save last selected/used quality so we will try to resume that same one next time unless user resets this item in between. */
-        link.setProperty(PROPERTY_DIRECTURL, PluginJsonConfig.get(YoutvDeConfig.class).getPreferredQuality().name());
-        dl.startDownload();
+        final YoutvDeConfig cfg = PluginJsonConfig.get(YoutvDeConfig.class);
+        link.setProperty(PROPERTY_DIRECTURL, cfg.getPreferredQuality().name());
+        if (dl.startDownload() && cfg.isDeleteRecordingsAfterDownload()) {
+            logger.info("Trying to delete recording after download...");
+            try {
+                final DeleteRequest req = new DeleteRequest(WEBAPI_BASE + "/recordings/" + this.getFID(link) + ".json");
+                final Browser brc = br.cloneBrowser();
+                brc.getPage(req);
+                if (brc.getHttpConnection().getResponseCode() == 200) {
+                    logger.info("Successfully deleted recording after download");
+                } else {
+                    logger.warning("Failed to delete recording after download");
+                }
+            } catch (final Throwable ignore) {
+                logger.log(ignore);
+                logger.warning("Failed to delete recording after download");
+            }
+        }
     }
 
     @Override
@@ -518,6 +536,8 @@ public class YoutvDe extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
         if (link != null) {
             link.removeProperty(PROPERTY_LAST_USED_QUALITY);
+            link.removeProperty(PROPERTY_LAST_FORCE_CHOSEN_QUALITY_IN_LINKCHECK);
+            link.removeProperty(PROPERTY_LAST_FILE_ERROR);
             link.removeProperty(PROPERTY_TIMESTAMP_LAST_FILE_ERROR);
         }
     }
