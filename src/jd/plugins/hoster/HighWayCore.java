@@ -69,24 +69,28 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = {}, urls = {})
 public abstract class HighWayCore extends UseNet {
-    protected static MultiHosterManagement                 mhm                                 = new MultiHosterManagement();
-    private static final String                            TYPE_TV                             = "https?://[^/]+/onlinetv\\.php\\?id=.+";
-    private static final String                            TYPE_DIRECT                         = "https?://[^/]+/dl(?:u|t)/(([a-z0-9]+)(?:/$|/.+))";
-    private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
+    protected static MultiHosterManagement                 mhm                                    = new MultiHosterManagement();
+    private static final String                            TYPE_TV                                = "https?://[^/]+/onlinetv\\.php\\?id=.+";
+    private static final String                            TYPE_DIRECT                            = "https?://[^/]+/dl(?:u|t)/(([a-z0-9]+)(?:/$|/.+))";
+    private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG    = 13;
     /* Contains <host><Boolean resume possible|impossible> */
-    private static Map<String, Map<String, Boolean>>       hostResumeMap                       = new HashMap<String, Map<String, Boolean>>();
+    private static Map<String, Map<String, Boolean>>       hostResumeMap                          = new HashMap<String, Map<String, Boolean>>();
     /* Contains <host><number of max possible chunks per download> */
-    private static Map<String, Map<String, Integer>>       hostMaxchunksMap                    = new HashMap<String, Map<String, Integer>>();
+    private static Map<String, Map<String, Integer>>       hostMaxchunksMap                       = new HashMap<String, Map<String, Integer>>();
     /* Contains <host><number of max possible simultan downloads> */
-    private static Map<String, Map<String, Integer>>       hostMaxdlsMap                       = new HashMap<String, Map<String, Integer>>();
+    private static Map<String, Map<String, Integer>>       hostMaxdlsMap                          = new HashMap<String, Map<String, Integer>>();
     /* Contains <host><number of currently running simultan downloads> */
-    private static Map<String, Map<String, AtomicInteger>> hostRunningDlsNumMap                = new HashMap<String, Map<String, AtomicInteger>>();
-    private static Map<String, Map<String, Integer>>       hostTrafficCalculationMap           = new HashMap<String, Map<String, Integer>>();
-    private static Map<String, Object>                     mapLockMap                          = new HashMap<String, Object>();
-    private static final int                               defaultMAXCHUNKS                    = -4;
-    private static final boolean                           defaultRESUME                       = false;
-    protected static final String                          PROPERTY_ACCOUNT_MAXCHUNKS          = "maxchunks";
-    protected static final String                          PROPERTY_ACCOUNT_RESUME             = "resume";
+    private static Map<String, Map<String, AtomicInteger>> hostRunningDlsNumMap                   = new HashMap<String, Map<String, AtomicInteger>>();
+    private static Map<String, Map<String, Integer>>       hostTrafficCalculationMap              = new HashMap<String, Map<String, Integer>>();
+    private static Map<String, Object>                     mapLockMap                             = new HashMap<String, Object>();
+    private final int                                      defaultMAXCHUNKS                       = -4;
+    private final boolean                                  defaultRESUME                          = false;
+    private final String                                   PROPERTY_ACCOUNT_MAXCHUNKS             = "maxchunks";
+    private final String                                   PROPERTY_ACCOUNT_RESUME                = "resume";
+    private final String                                   PROPERTY_ACCOUNT_MAX_DOWNLOADS_ACCOUNT = "max_downloads_account";
+    private final String                                   PROPERTY_ACCOUNT_MAX_DOWNLOADS_USENET  = "max_downloads_usenet";
+    private final String                                   PROPERTY_ACCOUNT_USENET_USERNAME       = "usenetU";
+    private final String                                   PROPERTY_ACCOUNT_USENET_PASSWORD       = "usenetP";
 
     public static interface HighWayMeConfigInterface extends UsenetAccountConfigInterface {
     };
@@ -318,7 +322,7 @@ public abstract class HighWayCore extends UseNet {
             super.handleMultiHost(link, account);
             return;
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, defaultMAXCHUNKS);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, this.getMaxChunks(link));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 try {
@@ -369,7 +373,8 @@ public abstract class HighWayCore extends UseNet {
         } else {
             mhm.runCheck(account, link);
             boolean resume = account.getBooleanProperty(PROPERTY_ACCOUNT_RESUME, defaultRESUME);
-            int maxChunks = account.getIntegerProperty(PROPERTY_ACCOUNT_MAXCHUNKS, defaultMAXCHUNKS);
+            int maxChunks = this.getMaxChunks(link);
+            /* Look for host specific max chunks limit */
             final String thishost = link.getHost();
             synchronized (getMapLock()) {
                 final Map<String, Integer> hostMaxchunksMap = getMap(HighWayCore.hostMaxchunksMap);
@@ -657,8 +662,8 @@ public abstract class HighWayCore extends UseNet {
         }
         account.setConcurrentUsePossible(true);
         /* Set supported hosts, host specific limits and account limits. */
-        account.setProperty(PROPERTY_ACCOUNT_MAXCHUNKS, this.correctChunks(((Number) accountInfo.get("max_chunks")).intValue()));
-        account.setMaxSimultanDownloads(correctMaxdls(((Number) accountInfo.get("max_connection")).intValue()));
+        account.setProperty(PROPERTY_ACCOUNT_MAXCHUNKS, accountInfo.get("max_chunks"));
+        account.setProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_ACCOUNT, accountInfo.get("max_connection"));
         if (accountResume == 1) {
             account.setProperty(PROPERTY_ACCOUNT_RESUME, true);
         } else {
@@ -677,11 +682,7 @@ public abstract class HighWayCore extends UseNet {
             final List<Object> array_hoster = (List) entries.get("hoster");
             for (final Object hoster : array_hoster) {
                 final Map<String, Object> hoster_map = (Map<String, Object>) hoster;
-                final String domain = (String) hoster_map.get("name");
-                final int active = ((Number) hoster_map.get("active")).intValue();
-                final int resume = ((Number) hoster_map.get("resume")).intValue();
-                final int maxchunks = ((Number) hoster_map.get("chunks")).intValue();
-                final int maxdls = ((Number) hoster_map.get("downloads")).intValue();
+                final String domain = hoster_map.get("name").toString();
                 /* Workaround to find the real domain which we need to assign the properties to later on! */
                 final ArrayList<String> supportedHostsTmp = new ArrayList<String>();
                 supportedHostsTmp.add(domain);
@@ -689,16 +690,17 @@ public abstract class HighWayCore extends UseNet {
                 final List<String> realDomainList = ai.getMultiHostSupport();
                 if (realDomainList == null || realDomainList.isEmpty()) {
                     /* Skip unsupported hosts or host plugins which don't allow multihost usage. */
+                    logger.info("Skipping host not supported by JD: " + domain);
                     continue;
                 }
                 final String realDomain = realDomainList.get(0);
                 // final String unlimited = (String) hoster_map.get("unlimited");
-                if (active == 1) {
+                if (((Number) hoster_map.get("active")).intValue() == 1) {
                     supportedHosts.add(realDomain);
                     hostTrafficCalculationMap.put(realDomain, ((Number) hoster_map.get("berechnung")).intValue());
-                    hostMaxchunksMap.put(realDomain, correctChunks(maxchunks));
-                    hostMaxdlsMap.put(realDomain, correctMaxdls(maxdls));
-                    if (resume == 1) {
+                    hostMaxchunksMap.put(realDomain, correctChunks(((Number) hoster_map.get("chunks")).intValue()));
+                    hostMaxdlsMap.put(realDomain, ((Number) hoster_map.get("downloads")).intValue());
+                    if (((Number) hoster_map.get("resume")).intValue() == 1) {
                         hostResumeMap.put(realDomain, true);
                     } else {
                         hostResumeMap.put(realDomain, false);
@@ -708,11 +710,15 @@ public abstract class HighWayCore extends UseNet {
         }
         /* Get- and store usenet logindata. These can differ from the logindata the user has added but may as well be equal to those. */
         if (usenetLogins != null) {
-            ai.setProperty("usenetU", usenetLogins.get("username"));
-            ai.setProperty("usenetP", usenetLogins.get("pass"));
+            ai.setProperty(PROPERTY_ACCOUNT_USENET_USERNAME, usenetLogins.get("username"));
+            ai.setProperty(PROPERTY_ACCOUNT_USENET_PASSWORD, usenetLogins.get("pass"));
+            account.setProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_USENET, accountInfo.get("usenet_connection"));
         } else {
             supportedHosts.remove("usenet");
             supportedHosts.remove("Usenet");
+            ai.removeProperty(PROPERTY_ACCOUNT_USENET_USERNAME);
+            ai.removeProperty(PROPERTY_ACCOUNT_USENET_PASSWORD);
+            account.removeProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_USENET);
         }
         ai.setMultiHostSupport(this, supportedHosts);
         return ai;
@@ -722,7 +728,7 @@ public abstract class HighWayCore extends UseNet {
     protected String getUseNetUsername(final Account account) {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
-            return ai.getStringProperty("usenetU", null);
+            return ai.getStringProperty(PROPERTY_ACCOUNT_USENET_USERNAME);
         } else {
             return null;
         }
@@ -732,7 +738,7 @@ public abstract class HighWayCore extends UseNet {
     protected String getUseNetPassword(final Account account) {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
-            return ai.getStringProperty("usenetP", null);
+            return ai.getStringProperty(PROPERTY_ACCOUNT_USENET_PASSWORD);
         } else {
             return null;
         }
@@ -809,28 +815,19 @@ public abstract class HighWayCore extends UseNet {
 
     protected abstract void exceptionAccountInvalid(final Account account) throws PluginException;
 
-    /** Corrects input so that it fits what we use in our plugins. */
-    private int correctChunks(int maxchunks) {
-        if (maxchunks < 1) {
-            maxchunks = 1;
-        } else if (maxchunks > 20) {
-            maxchunks = 20;
-        } else if (maxchunks > 1) {
-            maxchunks = -maxchunks;
-        }
-        /* Else maxchunks = 1 */
-        return maxchunks;
+    private int getMaxChunks(final DownloadLink link) {
+        final int maxChunksStored = link.getIntegerProperty(PROPERTY_ACCOUNT_MAXCHUNKS, defaultMAXCHUNKS);
+        return correctChunks(maxChunksStored);
     }
 
     /** Corrects input so that it fits what we use in our plugins. */
-    private int correctMaxdls(int maxdls) {
-        if (maxdls < 1) {
-            maxdls = 1;
-        } else if (maxdls > 20) {
-            maxdls = 20;
+    private int correctChunks(final int maxchunks) {
+        if (maxchunks > 1) {
+            /* Minus maxChunksStored -> Up to X chunks */
+            return -maxchunks;
+        } else {
+            return maxchunks;
         }
-        /* Else we should have a valid value! */
-        return maxdls;
     }
 
     /**
@@ -961,27 +958,28 @@ public abstract class HighWayCore extends UseNet {
     }
 
     @Override
-    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        if (account != null) {
+    protected int getMaxSimultanDownload(final DownloadLink link, final Account account) {
+        if (account != null && link != null) {
             if (isUsenetLink(link)) {
+                return account.getIntegerProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_USENET, 10);
+            } else if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
                 return 5;
             } else {
-                if (link == null) {
-                    return account.getMaxSimultanDownloads();
-                } else if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
-                    return 5;
-                } else {
-                    synchronized (getMapLock()) {
-                        final Map<String, Integer> hostMaxdlsMap = getMap(HighWayCore.hostMaxdlsMap);
-                        if (hostMaxdlsMap.containsKey(link.getHost())) {
-                            return hostMaxdlsMap.get(link.getHost());
-                        }
+                /* Look for host specific limit */
+                synchronized (getMapLock()) {
+                    final Map<String, Integer> hostMaxdlsMap = getMap(HighWayCore.hostMaxdlsMap);
+                    if (hostMaxdlsMap.containsKey(link.getHost())) {
+                        return hostMaxdlsMap.get(link.getHost());
                     }
                 }
             }
         } else if (link != null && link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
             /* Last checked: 2021-05-17 */
             return 5;
+        } else if (account != null) {
+            /* Return max simultan downloads per account. */
+            // return account.getMaxSimultanDownloads();
+            return account.getIntegerProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_ACCOUNT, 10);
         }
         return 1;
     }
