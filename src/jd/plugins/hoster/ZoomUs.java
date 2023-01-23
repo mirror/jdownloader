@@ -137,6 +137,8 @@ public class ZoomUs extends antiDDoSForHost {
                             link.setName(topic + ext);
                         }
                     }
+                } else {
+                    logger.warning("Filename handling for password protected files failed");
                 }
                 return AvailableStatus.TRUE;
             }

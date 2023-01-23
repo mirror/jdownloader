@@ -187,7 +187,8 @@ public class OdyseeCom extends PluginForHost {
         if (downloadInfo != null) {
             final String sdhash = (String) downloadInfo.get("sd_hash");
             if (!StringUtils.isEmpty(claimID) && !StringUtils.isEmpty(sdhash)) {
-                final String dllink = "https://cdn.lbryplayer.xyz/api/v4/streams/free/" + slug + "/" + claimID + "/" + sdhash.substring(0, 6);
+                // Old host: https://cdn.lbryplayer.xyz/
+                final String dllink = "https://player.odycdn.com/api/v4/streams/free/" + slug + "/" + claimID + "/" + sdhash.substring(0, 6);
                 final PreferredStreamQuality quality = getPreferredQuality(link);
                 final int userPreferredQualityHeight = this.getPreferredQualityHeight(link, quality);
                 if (userPreferredQualityHeight == -1 || directDownload) {
@@ -206,6 +207,7 @@ public class OdyseeCom extends PluginForHost {
                             }
                         } catch (IOException e) {
                             logger.log(e);
+                            logger.info("Official download is not possible -> Fallback to stream download");
                         }
                     }
                     final long filesize = JavaScriptEngineFactory.toLong(downloadInfo.get("size"), -1);

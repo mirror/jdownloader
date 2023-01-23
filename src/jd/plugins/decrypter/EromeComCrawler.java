@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.config.EromeComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,9 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.jdownloader.plugins.components.config.EromeComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EromeComCrawler extends PluginForDecrypt {
@@ -97,6 +97,7 @@ public class EromeComCrawler extends PluginForDecrypt {
         if (mediagrouphtmls == null || mediagrouphtmls.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final EromeComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         for (final String mediagrouphtml : mediagrouphtmls) {
             final String directurlImage = new Regex(mediagrouphtml, "class=\"img\" data-src=\"(https?://[^\"]+)\"").getMatch(0);
@@ -109,7 +110,7 @@ public class EromeComCrawler extends PluginForDecrypt {
                 ret.add(this.createDownloadlink(directurlVideo));
                 final String videoThumbnail = new Regex(mediagrouphtml, "poster=\"(https?://[^\"]+)\"").getMatch(0);
                 /* Add video thumbnail if user wants that. */
-                if (PluginJsonConfig.get(this.getConfigInterface()).isAddThumbnail() && videoThumbnail != null) {
+                if (cfg.isAddThumbnail() && videoThumbnail != null) {
                     ret.add(this.createDownloadlink(videoThumbnail));
                 } else if (videoThumbnail == null) {
                     logger.warning("Failed to find video thumbnail for video: " + directurlVideo);
@@ -142,7 +143,7 @@ public class EromeComCrawler extends PluginForDecrypt {
             result.setReferrerUrl(br.getURL());
             /* Disable chunkload to prevent issues as we don't have fine tuning for connections per file and simultaneous downloads. */
             result.setProperty(DirectHTTP.NOCHUNKS, true);
-            result.setProperty(DirectHTTP.PROPERTY_MAX_CONCURRENT, 5);
+            result.setProperty(DirectHTTP.PROPERTY_MAX_CONCURRENT, cfg.getMaxSimultaneousDownloads());
             result.setAvailable(true);
             result._setFilePackage(fp);
         }
