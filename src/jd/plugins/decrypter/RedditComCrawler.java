@@ -246,7 +246,7 @@ public class RedditComCrawler extends PluginForDecrypt {
         }
         /* Login */
         final PluginForHost plugin = this.getNewPluginForHostInstance(this.getHost());
-        ((jd.plugins.hoster.RedditCom) plugin).login(acc, false);
+        ((jd.plugins.hoster.RedditCom) plugin).loginAPI(acc, false);
         final ArrayList<String> lastItemDupes = new ArrayList<String>();
         /* Prepare crawl process */
         final FilePackage fp = FilePackage.getInstance();

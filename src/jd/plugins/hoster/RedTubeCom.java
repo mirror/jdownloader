@@ -11,7 +11,6 @@ import org.jdownloader.plugins.components.config.RedtubeConfig;
 import org.jdownloader.plugins.components.config.RedtubeConfig.PreferredStreamQuality;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -45,6 +44,7 @@ public class RedTubeCom extends PluginForHost {
     }
 
     private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
+    private final String         PROPERTY_USERNAME               = "username";
     private static final boolean default_allow_multihoster_usage = false;
     private String               dllink                          = null;
     private boolean              server_issues                   = false;
@@ -101,13 +101,16 @@ public class RedTubeCom extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         dllink = null;
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("https://www.redtube.com", "language", "en");
+        br.setCookie(this.getHost(), "language", "en");
         br.getPage(link.getPluginPatternMatcher().toLowerCase());
         // Offline link
         if (br.containsHTML("is no longer available") || br.containsHTML(">\\s*404 Not Found<") || br.getHttpConnection().getResponseCode() == 404) {
@@ -120,6 +123,11 @@ public class RedTubeCom extends PluginForHost {
         // Invalid link
         if (br.containsHTML(">Error Page Not Found|<title>Kostenlose Porno Sexvideos")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String channelname = br.getRegex("class=\"video-infobox-link\" href=\"/channels/([^\"]+)\"").getMatch(0);
+        if (channelname != null) {
+            /* Packagizer property */
+            link.setProperty(PROPERTY_USERNAME, Encoding.htmlDecode(channelname).trim());
         }
         private_video = this.br.containsHTML("class=\"private_video_text\"");
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
@@ -214,8 +222,8 @@ public class RedTubeCom extends PluginForHost {
                                 }
                                 try {
                                     con = br.openHeadConnection(dllink);
-                                    if (!con.getContentType().contains("html")) {
-                                        link.setDownloadSize(br.getHttpConnection().getLongContentLength());
+                                    if (this.looksLikeDownloadableContent(con)) {
+                                        link.setDownloadSize(con.getCompleteContentLength());
                                         break;
                                     } else if (quality == "240") {
                                         server_issues = true;
@@ -236,15 +244,14 @@ public class RedTubeCom extends PluginForHost {
             /* 2017-03-11 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (filename == null) {
-            filename = this.getFID(link);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            String ext = new Regex(dllink, "(\\.flv|\\.mp4).+$").getMatch(0);
+            if (ext == null) {
+                ext = ".mp4";
+            }
+            link.setFinalFileName(filename + ext);
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        String ext = new Regex(dllink, "(\\.flv|\\.mp4).+$").getMatch(0);
-        if (ext == null) {
-            ext = ".mp4";
-        }
-        link.setFinalFileName(filename + ext);
         return AvailableStatus.TRUE;
     }
 
