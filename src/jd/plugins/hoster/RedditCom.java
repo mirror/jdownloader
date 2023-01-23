@@ -434,7 +434,7 @@ public class RedditCom extends PluginForHost {
         return false;
     }
 
-    public void login(final Account account, final boolean validateToken) throws Exception {
+    public void loginAPI(final Account account, final boolean validateToken) throws Exception {
         synchronized (account) {
             if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 showUnderDevelopmentDialog();
@@ -688,7 +688,7 @@ public class RedditCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        loginAPI(account, true);
         /*
          * 2020-07-23: We're trying to request minimal API permissions (via oauth2 scopes) so we don't get access to the users' profile -->
          * Just display all accounts as free accounts! To get information about the users' profile, we'd have to additionally request the
