@@ -261,11 +261,11 @@ public class RedditComCrawler extends PluginForDecrypt {
             page++;
             logger.info("Crawling page: " + page);
             br.getPage(getApiBaseOauth() + "/user/" + Encoding.urlEncode(acc.getUser()) + "/saved?" + query.toString());
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             crawledLinks.addAll(this.crawlListing(entries, fp));
-            entries = (Map<String, Object>) entries.get("data");
-            final String fullnameAfter = (String) entries.get("after");
-            final long numberofItems = JavaScriptEngineFactory.toLong(entries.get("dist"), 0);
+            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            final String fullnameAfter = (String) data.get("after");
+            final long numberofItems = JavaScriptEngineFactory.toLong(data.get("dist"), 0);
             /* Multiple fail safes to prevent an infinite loop. */
             if (StringUtils.isEmpty(fullnameAfter)) {
                 logger.info("Seems like we've crawled everything");
