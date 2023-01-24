@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +34,11 @@ import jd.plugins.PluginForHost;
 public class HdPussyXxx extends PluginForHost {
     public HdPussyXxx(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     private String dllink = null;
@@ -92,7 +99,7 @@ public class HdPussyXxx extends PluginForHost {
                  * 2021-08-09: E.g. external redirect to advertising website. </br>
                  * This may sometimes happen randomly but not more than two times in a row so retry if this happens.
                  */
-                if (counter >= 4) {
+                if (counter < 4) {
                     logger.info("MAYBE Offline because of redirect to external website: " + this.br.getURL() + " | Attempt: " + counter);
                     continue;
                 } else {
@@ -110,7 +117,6 @@ public class HdPussyXxx extends PluginForHost {
         dllink = br.getRegex("file\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
         String ext = null;
         if (dllink != null) {
-            dllink = Encoding.htmlDecode(dllink);
             if (!dllink.startsWith("http")) {
                 /* E.g. missing videosource, player will show error 'No playable sources found' --> Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -136,6 +142,11 @@ public class HdPussyXxx extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             final long responsecode = dl.getConnection().getResponseCode();
             if (responsecode == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);

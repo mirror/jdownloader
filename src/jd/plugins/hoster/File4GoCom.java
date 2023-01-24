@@ -16,19 +16,21 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.Locale;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -36,7 +38,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file4go.net" }, urls = { "https?://(?:www\\.)?file4go\\.(?:net|com)/(?:.*)/([a-zA-Z0-9_=]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "file4go.net" }, urls = { "https?://(?:www\\.)?file4go\\.(?:net|com)/[^/]+/([a-zA-Z0-9_=]+)" })
 public class File4GoCom extends antiDDoSForHost {
     public File4GoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,29 +50,33 @@ public class File4GoCom extends antiDDoSForHost {
         return MAINPAGE;
     }
 
-    private static final String MAINPAGE = "http://www.file4go.net";
-    private static Object       LOCK     = new Object();
-
     @Override
-    public String rewriteHost(String host) {
-        if (host == null || "file4go.com".equals(host) || "file4go.net".equals(host)) {
-            return "file4go.net";
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
         }
-        return super.rewriteHost(host);
     }
 
-    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    private static final String MAINPAGE = "http://www.file4go.net";
+
+    /** 2023-01-24: They're GEO-blocking all except brazil IPs via Cloudflare! */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        correctDownloadLink(link);
         br.setCookie(MAINPAGE, "animesonline", "1");
         br.setCookie(MAINPAGE, "musicasab", "1");
         br.setCookie(MAINPAGE, "poup", "1");
         br.setCookie(MAINPAGE, "noadvtday", "0");
         br.setCookie(MAINPAGE, "hellpopab", "1");
         // do not follow redirects, as they can lead to 404 which is faked based on country of origin ?
-        getPage(link.getDownloadURL());
+        getPage(getContentURL(link));
         redirectControl(br);
         if (br.containsHTML(">404 ARQUIVO N�O ENCOTRADO<|Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE|O arquivo Não foi encotrado em nossos servidores")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -78,22 +84,27 @@ public class File4GoCom extends antiDDoSForHost {
         String filename = br.getRegex(">Nome:</b>\\s*(.*?)\\s*(?:</p>)?</span>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<div id=\"titulo_a\">\\s*(.*?)\\s*</div>").getMatch(0);
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
         }
-        String filesize = br.getRegex(">Tamanho:</b>\\s*(.*?)\\s*</span>").getMatch(0);
+        String filesize = br.getRegex("(?i)>\\s*Tamanho\\s*:\\s*</b>\\s*(.*?)\\s*</span>").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("<b>File size:</b>\\s*([^<>\"]+)\\s*</").getMatch(0);
+            filesize = br.getRegex("(?i)<b>File size\\s*:\\s*</b>\\s*([^<>\"]+)\\s*</").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if ("".equals(filename) && "0 Bytes".equals(filesize)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        link.setName(filename.trim());
+        link.setName(Encoding.htmlDecode(filename).trim());
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getContentURL(final DownloadLink link) {
+        final String hostFromAddedURL = Browser.getHost(link.getPluginPatternMatcher());
+        return link.getPluginPatternMatcher().replaceFirst(hostFromAddedURL, this.getHost());
     }
 
     @Override
@@ -101,13 +112,19 @@ public class File4GoCom extends antiDDoSForHost {
         requestFileInformation(link);
         String directLink = checkDirectLink(link, "directlink");
         if (directLink == null) {
-            final Form form = br.getFormByRegex("<input type=\"hidden\" name=\"id\" value=\"(.*?)\">");
+            Form form = br.getFormByRegex(".*CRIAR DOWNLOAD.*");
+            if (form == null) {
+                form = br.getFormbyActionRegex(".*/getdownload.*");
+            }
             if (form == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.submitForm(form);
             submitForm(form);
-            directLink = getDllink();
+            if (br.containsHTML("(?i)REMOVED DMCA\\!")) {
+                /* 2023-01-24 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            directLink = getDllink(br);
             if (directLink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -115,7 +132,11 @@ public class File4GoCom extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, directLink, true, -2);
         /* resume no longer supported */
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             if (br.containsHTML("BAIXE SIMULTANEAMENTE COM VELOCIDADE MÁXIMA")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
             }
@@ -154,31 +175,27 @@ public class File4GoCom extends antiDDoSForHost {
         return null;
     }
 
-    @SuppressWarnings({ "unchecked" })
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
-                    final Map<String, String> cookies = (Map<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            if ("FREE".equalsIgnoreCase(key)) {
-                                continue;
-                            }
-                            this.br.setCookie(MAINPAGE, key, value);
-                        }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(cookies);
+                    if (!force) {
+                        /* Do not verify cookies */
                         return;
                     }
+                    if (isLoggedIN(br)) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(null);
+                    }
                 }
-                // once again you can't follow redirects!
+                logger.info("Performing full login");
                 getPage(MAINPAGE);
                 redirectControl(br);
                 postPage("/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
@@ -191,20 +208,26 @@ public class File4GoCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIServer error 404 - login not possible at the moment!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (br.getCookie(MAINPAGE, "FILE4GO") == null) {
+                if (isLoggedIN(br)) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", fetchCookies(MAINPAGE));
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
+        }
+    }
+
+    private boolean isLoggedIN(final Browser br) {
+        if (br.getCookie(MAINPAGE, "FILE4GO", Cookies.NOTDELETEDPATTERN) != null) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -217,19 +240,19 @@ public class File4GoCom extends antiDDoSForHost {
      */
     private void redirectControl(Browser br) throws Exception {
         String redirect = null;
-        while ((redirect = br.getRedirectLocation()) != null && !redirect.endsWith("/error.php")) {
+        int redirectNum = 0;
+        while ((redirect = br.getRedirectLocation()) != null && !redirect.endsWith("/error.php") && redirectNum < 10) {
             getPage(redirect);
+            redirectNum++;
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex(">Premium Stop: (\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}) </b>").getMatch(0);
-        account.setValid(true);
+        final String expire = br.getRegex("(?i)>\\s*Premium Stop: (\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}) </b>").getMatch(0);
         if (expire == null) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
@@ -238,38 +261,39 @@ public class File4GoCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd hh:mm:ss", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd hh:mm:ss", Locale.ENGLISH));
         }
-        ai.setStatus("Premium Account");
+        account.setType(AccountType.PREMIUM);
         return ai;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        br = new Browser();
         requestFileInformation(link);
-        br = new Browser();
         login(account, false);
-        br.getPage(link.getDownloadURL());
-        final String dllink = getDllink();
+        getPage(getContentURL(link));
+        final String dllink = getDllink(br);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    private String getDllink() {
-        String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.(?:file4go\\.com|sizedrive\\.com)(?::\\d+)?/(?:[^<>\"]+/dll/[^\"]+|beta(?:free)?/[^\"]+))\"").getMatch(0);
+    private String getDllink(final Browser br) {
+        String dllink = br.getRegex("(?i)href=\"(https?://[^\"]+)\">\\s*Download").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("class\\s*=\\s*\"novobotao download\"\\s*(:?.*?)\\s*href\\s*=\\s*\"(.*?)\">").getMatch(0);
+            dllink = br.getRegex("(?i)class\\s*=\\s*\"novobotao download\"[^>]*href\\s*=\\s*\"([^\"]+)\">").getMatch(0);
         }
         return dllink;
     }
