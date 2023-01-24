@@ -100,10 +100,10 @@ public class RedditComCrawler extends PluginForDecrypt {
     public static final String  PATTERN_SELFHOSTED_IMAGE   = "https?://i\\.redd\\.it/([a-z0-9]+)\\.[A-Za-z]{2,5}";
     public static final String  PATTERN_SELFHOSTED_VIDEO   = "https?://v\\.redd\\.it/([a-z0-9]+)";
     private static final String PATTERN_SUBREDDIT          = "(?:https?://[^/]+)?/r/([^/]+)$";
-    private static final String PATTERN_SUBREDDIT_COMMENTS = "(?:https?://[^/]+)?/r/([^/]+)/comments/([a-z0-9]+)(/([^/\\?]+)/?)?";
+    private static final String PATTERN_POST               = "(?:https?://[^/]+)?/(r|user|u)/([^/]+)/comments/([a-z0-9]+)(/([^/\\?]+)/?)?";
     private static final String PATTERN_GALLERY            = "(?:https?://[^/]+)?/gallery/([a-z0-9]+)";
-    private static final String PATTERN_USER               = "(?:https?://[^/]+)?/user/([^/]+)";
-    private static final String PATTERN_USER_SAVED_OBJECTS = "(?:https?://[^/]+)?/user/([^/]+)/saved";
+    private static final String PATTERN_USER               = "(?:https?://[^/]+)?/(?:user|u)/([^/]+)$";
+    private static final String PATTERN_USER_SAVED_OBJECTS = "(?:https?://[^/]+)?/(?:user|u)/([^/]+)/saved";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         RedditCom.prepBRAPI(this.br);
@@ -113,7 +113,7 @@ public class RedditComCrawler extends PluginForDecrypt {
             return crawlUserSavedObjects(param);
         } else if (param.getCryptedUrl().matches(PATTERN_USER)) {
             return crawlUser(param);
-        } else if (param.getCryptedUrl().matches(PATTERN_SUBREDDIT_COMMENTS)) {
+        } else if (param.getCryptedUrl().matches(PATTERN_POST)) {
             return crawlCommentURL(param);
         } else if (param.getCryptedUrl().matches(PATTERN_GALLERY)) {
             return this.crawlGalleryURL(param);
@@ -135,7 +135,7 @@ public class RedditComCrawler extends PluginForDecrypt {
         if (redirect == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String commentID = new Regex(redirect, PATTERN_SUBREDDIT_COMMENTS).getMatch(1);
+        final String commentID = new Regex(redirect, PATTERN_POST).getMatch(2);
         if (commentID == null) {
             /* Redirect to unsupported/unexpected URL. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -214,7 +214,7 @@ public class RedditComCrawler extends PluginForDecrypt {
             final int numberofItemsOnCurrentPage = ((Number) data.get("dist")).intValue();
             numberofItemsCrawled += numberofItemsOnCurrentPage;
             crawledLinks.addAll(this.crawlListing(root, fp));
-            logger.info("Crawled page " + page + " | Crawled items so far: " + numberofItemsCrawled);
+            logger.info("Crawled page " + page + " | Walked through items so far (theoretical value): " + numberofItemsCrawled);
             final String nextPageToken = (String) data.get("after");
             /* Multiple fail safes to prevent an infinite loop. */
             if (StringUtils.isEmpty(nextPageToken)) {
@@ -292,7 +292,7 @@ public class RedditComCrawler extends PluginForDecrypt {
 
     /** According to: https://www.reddit.com/r/redditdev/comments/b8yd3r/reddit_api_possible_to_get_posts_by_id/ */
     private ArrayList<DownloadLink> crawlCommentURL(final CryptedLink param) throws Exception {
-        final String commentID = new Regex(param.getCryptedUrl(), PATTERN_SUBREDDIT_COMMENTS).getMatch(1);
+        final String commentID = new Regex(param.getCryptedUrl(), PATTERN_POST).getMatch(2);
         return crawlComments(commentID);
     }
 
@@ -343,7 +343,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             boolean postContainsRealMedia = true;
-            final String urlSlug = new Regex(permalink, PATTERN_SUBREDDIT_COMMENTS).getMatch(3);
+            final String urlSlug = new Regex(permalink, PATTERN_POST).getMatch(4);
             if (urlSlug == null) {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -503,7 +503,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                     }
                 }
                 /* Look for selfhosted photo content, Only add image if nothing else is found */
-                if (thisCrawledLinks.size() == 0) {
+                if (thisCrawledLinks.isEmpty()) {
                     postContainsRealMedia = false;
                     final List<Map<String, Object>> images = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(data, "preview/images");
                     if (images != null) {

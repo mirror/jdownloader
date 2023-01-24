@@ -21,8 +21,8 @@ public interface RedditConfig extends PluginConfigInterface {
     final String                                 text_PreferredFilenameScheme            = "Select preferred filename scheme";
     final String                                 text_CrawlerTextDownloadMode            = "Crawler: Select text download mode";
     final String                                 text_CrawlUrlsInsidePostText            = "Crawl URLs inside post-text?";
-    final String                                 text_ProfileCrawlerMaxPages             = "[Unfinished feature] User crawler: Crawl mas X last pages (-1 = unlimited, 0 = disable user crawler)";
-    final String                                 text_SubredditCrawlerMaxPages           = "[Unfinished feature] Subreddit crawler: Crawl mas X last pages (-1 = unlimited, 0 = disable subreddit crawler)";
+    final String                                 text_ProfileCrawlerMaxPages             = "[Unfinished feature] User crawler: Crawl max X last pages (-1 = unlimited, 0 = disable user crawler)";
+    final String                                 text_SubredditCrawlerMaxPages           = "[Unfinished feature] Subreddit crawler: Crawl max X last pages (-1 = unlimited, 0 = disable subreddit crawler)";
     final String                                 text_VideoDownloadStreamType            = "Preferred video download stream type";
     final String                                 text_VideoUseDirecturlAsContentURL      = "Videos: Use direct URL as content URL (URL you get when doing CTRL + C)?";
 

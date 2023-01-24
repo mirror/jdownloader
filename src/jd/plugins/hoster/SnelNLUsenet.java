@@ -5,6 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -15,11 +20,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "snelnl.com" }, urls = { "" })
 public class SnelNLUsenet extends UseNet {
@@ -34,8 +34,8 @@ public class SnelNLUsenet extends UseNet {
     }
 
     @Override
-    protected String getUseNetUsername(Account account) {
-        return account.getStringProperty(USENET_USERNAME, account.getUser());
+    protected String getUseNetUsername(final Account account) {
+        return account.getStringProperty(PROPERTY_ACCOUNT_USENET_USERNAME, account.getUser());
     }
 
     public static interface SnelNLUsenetConfigInterface extends UsenetAccountConfigInterface {
@@ -50,10 +50,10 @@ public class SnelNLUsenet extends UseNet {
         return false;
     }
 
-    private final String USENET_USERNAME = "USENET_USERNAME";
+    private final String PROPERTY_ACCOUNT_USENET_USERNAME = "USENET_USERNAME";
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setBrowserExclusive();
         final AccountInfo ai = new AccountInfo();
         final Cookies cookies = account.loadCookies("");
@@ -61,20 +61,25 @@ public class SnelNLUsenet extends UseNet {
         try {
             Form login = null;
             if (cookies != null) {
+                logger.info("Checking login cookies");
                 br.setCookies(getHost(), cookies);
                 br.getPage("https://www.snelnl.com/en/user/login");
                 login = br.getFormbyActionRegex("/en/user/login\\?.*");
                 if (login != null && login.containsHTML("name") && login.containsHTML("pass")) {
+                    logger.info("Cookie login failed");
                     br.getCookies(getHost()).clear();
                 } else if (!containsSessionCookie(br.getCookies(getHost()))) {
+                    logger.info("Cookie login failed");
                     br.getCookies(getHost()).clear();
                 } else {
+                    logger.info("Cookie login successful");
                     if (!StringUtils.endsWithCaseInsensitive(br.getURL(), "en/user")) {
                         br.getPage("https://www.snelnl.com/en/user");
                     }
                 }
             }
             if (!containsSessionCookie(br.getCookies(getHost()))) {
+                logger.info("Performing full login");
                 account.clearCookies("");
                 final String username = account.getUser();
                 if (username == null || !username.matches("^.+?@.+?\\.[^\\.]+")) {
@@ -95,30 +100,28 @@ public class SnelNLUsenet extends UseNet {
                 }
             }
             account.saveCookies(br.getCookies(getHost()), "");
-            final String userName = br.getRegex("item-title\">Username:</div>.*?item-text\">(.*?)<").getMatch(0);
-            if (StringUtils.isNotEmpty(userName)) {
-                account.setProperty(USENET_USERNAME, userName);
-            } else {
+            final String userName = br.getRegex("(?i)item-title\">\\s*Username\\s*:\\s*</div>.*?item-text\">(.*?)<").getMatch(0);
+            if (StringUtils.isEmpty(userName)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String packageType = br.getRegex("item-title\">Account type:</div>.*?item-text\">(.*?)<").getMatch(0);
-            if (packageType != null) {
-                ai.setStatus(packageType);
-                ai.setUnlimitedTraffic();
-                final String endDate = br.getRegex("End date:</div>.*?item-text\">(.*?)<").getMatch(0);
-                if (endDate == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(endDate, "MMM dd yyyy' - 'HH:mm", Locale.ENGLISH));
-                if (StringUtils.containsIgnoreCase(packageType, "slow")) {
-                    account.setMaxSimultanDownloads(4);
-                } else if (StringUtils.containsIgnoreCase(packageType, "basic")) {
-                    account.setMaxSimultanDownloads(8);
-                } else if (StringUtils.containsIgnoreCase(packageType, "fast")) {
-                    account.setMaxSimultanDownloads(12);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please contact JDownloader support");
-                }
+            account.setProperty(PROPERTY_ACCOUNT_USENET_USERNAME, userName);
+            final String packageType = br.getRegex("(?i)item-title\">\\s*Account type\\s*:\\s*</div>.*?item-text\">(.*?)<").getMatch(0);
+            if (packageType == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please contact JDownloader support");
+            }
+            ai.setStatus(packageType);
+            ai.setUnlimitedTraffic();
+            final String endDate = br.getRegex("End date:</div>.*?item-text\">(.*?)<").getMatch(0);
+            if (endDate == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(endDate, "MMM dd yyyy' - 'HH:mm", Locale.ENGLISH));
+            if (StringUtils.containsIgnoreCase(packageType, "slow")) {
+                account.setMaxSimultanDownloads(4);
+            } else if (StringUtils.containsIgnoreCase(packageType, "basic")) {
+                account.setMaxSimultanDownloads(8);
+            } else if (StringUtils.containsIgnoreCase(packageType, "fast")) {
+                account.setMaxSimultanDownloads(12);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please contact JDownloader support");
             }
