@@ -159,10 +159,11 @@ public class SubyShareCom extends XFileSharingProBasic {
         super.checkErrors(br, correctedBR, link, account, checkAll);
         /* 2019-07-08: Special */
         if (new Regex(correctedBR, "(?i)Sorry\\s*,\\s*we do not support downloading from Dedicated servers|Please download from your PC without using any above services|If this is our mistake\\s*,\\s*please contact").matches()) {
+            final String errormsg = "VPN download prohibited by this filehost";
             if (account != null) {
-                throw new AccountUnavailableException("VPN download prohibited by this filehost", 15 * 60 * 1000l);
+                throw new AccountUnavailableException(errormsg, 15 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "VPN download prohibited by this filehost");
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errormsg);
             }
         } else if (new Regex(correctedBR, "(?i)>\\s*The owner of this file blocked you to download it").matches()) {
             /*
@@ -170,6 +171,9 @@ public class SubyShareCom extends XFileSharingProBasic {
              * to download the file (WTF?!)
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The owner of this file blocked you to download it");
+        } else if (new Regex(correctedBR, "(?i)>\\s*You do no have enough traffic to download this file").matches()) {
+            /* 2023-01-25 */
+            throw new AccountUnavailableException("Traffic limit reached", 5 * 60 * 1000);
         }
     }
 
@@ -420,7 +424,7 @@ public class SubyShareCom extends XFileSharingProBasic {
     @Override
     protected void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
         getPage(br, page);
-        handleAntiDdosChallenge(br);
+        handleAntiDdosChallenge(br, page);
         if (correctBr) {
             correctBR(br);
         }
@@ -429,7 +433,7 @@ public class SubyShareCom extends XFileSharingProBasic {
     @Override
     protected void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
         postPage(br, page, postdata);
-        handleAntiDdosChallenge(br);
+        handleAntiDdosChallenge(br, null);
         if (correctBr) {
             correctBR(br);
         }
@@ -438,16 +442,19 @@ public class SubyShareCom extends XFileSharingProBasic {
     @Override
     protected void submitForm(final Browser br, final Form form, final boolean correctBr) throws Exception {
         submitForm(br, form);
-        handleAntiDdosChallenge(br);
+        handleAntiDdosChallenge(br, null);
         if (correctBr) {
             correctBR(br);
         }
     }
 
-    private void handleAntiDdosChallenge(final Browser br) throws PluginException, IOException {
+    private void handleAntiDdosChallenge(final Browser br, String targetPage) throws PluginException, IOException {
         final String checkddosPage = "/checkddos.php";
         if (br.getURL().contains(checkddosPage)) {
             /* 2021-03-08 */
+            if (targetPage != null) {
+                targetPage = br.getURL(targetPage).toString();
+            }
             // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Antiddos check triggered", 2 * 60 * 1000l);
             final Form form = br.getFormbyProperty("id", "checkDDOS");
             if (form == null) {
@@ -475,6 +482,13 @@ public class SubyShareCom extends XFileSharingProBasic {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 logger.info("Checkddos challenge solved successfully");
+                if (br.getURL().matches("^https?://[^/]+/?$")) {
+                    logger.info("Redirect to mainpage happened");
+                    if (targetPage != null && !targetPage.equalsIgnoreCase(br.getURL())) {
+                        logger.info("Trying to correct bad redirect to mainpage to: " + targetPage);
+                        br.getPage(targetPage);
+                    }
+                }
             }
         }
     }
