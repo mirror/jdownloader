@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -72,8 +73,19 @@ public class YoutvDeCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final YoutvDeConfig cfg = PluginJsonConfig.get(YoutvDeConfig.class);
-        if (!cfg.isEnableRecordingsCrawler()) {
-            logger.info("Doing nothing because user has disabled recordings crawler");
+        final List<String> allKnownRecordTypes = Arrays.asList(new String[] { "recorded", "archived", "queued" });
+        final List<String> userDesiredRecordTypes = new ArrayList<String>();
+        if (cfg.isRecordingsCrawlerCrawlItemsRecorded()) {
+            userDesiredRecordTypes.add(allKnownRecordTypes.get(0));
+        }
+        if (cfg.isRecordingsCrawlerCrawlItemsArchived()) {
+            userDesiredRecordTypes.add(allKnownRecordTypes.get(1));
+        }
+        if (cfg.isRecordingsCrawlerCrawlItemsProgrammed()) {
+            userDesiredRecordTypes.add(allKnownRecordTypes.get(2));
+        }
+        if (userDesiredRecordTypes.isEmpty()) {
+            logger.info("Doing nothing because user has disabled all recording types to crawl --> User has effectively disabled recordings crawler");
             return ret;
         }
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
@@ -93,35 +105,32 @@ public class YoutvDeCrawler extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName("Meine Aufnahmen");
-        int numberofQueuedItems = 0;
         final List<Map<String, Object>> recordings = (List<Map<String, Object>>) entries.get("recordings");
-        if (recordings.size() == 0) {
+        if (recordings.isEmpty()) {
             logger.info("User has no recordings at all");
             return ret;
         }
+        int numberofSkippedItems = 0;
         for (final Map<String, Object> recording : recordings) {
             final String id = recording.get("id").toString();
             final String status = recording.get("status").toString();
-            // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !status.equals("queued")) {
-            // // testing
-            // continue;
-            // }
-            if (status.equals("queued")) {
-                numberofQueuedItems++;
-                if (!cfg.isRecordingsCrawlerAddQueuedRecordings()) {
-                    logger.info("Skipping ID " + id + " because of status: " + status);
-                    continue;
-                }
+            if (allKnownRecordTypes.contains(status) && !userDesiredRecordTypes.contains(status)) {
+                logger.info("Skipping ID " + id + " because used has deselected status: " + status);
+                numberofSkippedItems++;
+                continue;
             }
             final DownloadLink link = this.createDownloadlink("https://www." + this.getHost() + "/tv-sendungen/" + id + "-" + toSlug(recording.get("title").toString()));
             hosterplugin.parseFileInformation(link, recording);
             link._setFilePackage(fp);
             link.setAvailable(true);
             ret.add(link);
-            distribute(link);
+        }
+        logger.info(String.format("Returning %d/%d items | Skipped items: %d", ret.size(), recordings.size(), numberofSkippedItems));
+        if (numberofSkippedItems > 0) {
+            logger.info("Number of skipped items due to user settings: " + numberofSkippedItems);
         }
         if (ret.isEmpty()) {
-            logger.info("User has only " + numberofQueuedItems + " queued recordings but disabled adding those via plugin settings");
+            logger.info("Adding nothing as user has deselected all recording types of all current recordings");
         }
         return ret;
     }
