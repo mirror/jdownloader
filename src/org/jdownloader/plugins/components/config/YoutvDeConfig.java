@@ -93,7 +93,7 @@ public interface YoutvDeConfig extends PluginConfigInterface {
     void setRecordingsCrawlerCrawlItemsArchived(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry(text_RecordingsCrawlerCrawlItemsProgrammed)
     @Order(22)
     boolean isRecordingsCrawlerCrawlItemsProgrammed();
