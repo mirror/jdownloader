@@ -12,23 +12,28 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "youtv.de", type = Type.HOSTER)
 public interface YoutvDeConfig extends PluginConfigInterface {
-    final String                    text_PreferredQuality                     = "Select preferred quality";
-    final String                    text_EnableRecordingsCrawler              = "Crawl all recordings when adding link 'youtv.de/videorekorder'?";
-    final String                    text_RecordingsCrawlerAddQueuedRecordings = "Recordings crawler: Also add queued recordings?";
-    final String                    text_DeleteRecordingsAfterDownload        = "Delete recordings after download?";
-    public static final TRANSLATION TRANSLATION                               = new TRANSLATION();
+    final String                    text_PreferredQuality                      = "Select preferred quality";
+    final String                    text_RecordingsCrawlerCrawlItemsRecorded   = "Recordings crawler: Crawl recorded items?";
+    final String                    text_RecordingsCrawlerCrawlItemsArchived   = "Recordings crawler: Crawl archived items?";
+    final String                    text_RecordingsCrawlerCrawlItemsProgrammed = "Recordings crawler: Also add queued items?";
+    final String                    text_DeleteRecordingsAfterDownload         = "Delete recordings after download?";
+    public static final TRANSLATION TRANSLATION                                = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getPreferredQuality_label() {
             return text_PreferredQuality;
         }
 
-        public String getEnableRecordingsCrawler_label() {
-            return text_EnableRecordingsCrawler;
+        public String getRecordingsCrawlerCrawlItemsRecorded_label() {
+            return text_RecordingsCrawlerCrawlItemsRecorded;
         }
 
-        public String getRecordingsCrawlerAddQueuedRecordings_label() {
-            return text_RecordingsCrawlerAddQueuedRecordings;
+        public String getRecordingsCrawlerCrawlItemsArchived_label() {
+            return text_RecordingsCrawlerCrawlItemsArchived;
+        }
+
+        public String getRecordingsCrawlerCrawlItemsProgrammed_label() {
+            return text_RecordingsCrawlerCrawlItemsProgrammed;
         }
 
         public String getDeleteRecordingsAfterDownload_label() {
@@ -73,19 +78,27 @@ public interface YoutvDeConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry(text_EnableRecordingsCrawler)
+    @DescriptionForConfigEntry(text_RecordingsCrawlerCrawlItemsRecorded)
     @Order(20)
-    boolean isEnableRecordingsCrawler();
+    boolean isRecordingsCrawlerCrawlItemsRecorded();
 
-    void setEnableRecordingsCrawler(boolean b);
+    void setRecordingsCrawlerCrawlItemsRecorded(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry(text_RecordingsCrawlerAddQueuedRecordings)
-    @Order(30)
-    boolean isRecordingsCrawlerAddQueuedRecordings();
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_RecordingsCrawlerCrawlItemsArchived)
+    @Order(21)
+    boolean isRecordingsCrawlerCrawlItemsArchived();
 
-    void setRecordingsCrawlerAddQueuedRecordings(boolean b);
+    void setRecordingsCrawlerCrawlItemsArchived(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_RecordingsCrawlerCrawlItemsProgrammed)
+    @Order(22)
+    boolean isRecordingsCrawlerCrawlItemsProgrammed();
+
+    void setRecordingsCrawlerCrawlItemsProgrammed(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(false)
