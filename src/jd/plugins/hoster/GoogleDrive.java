@@ -32,6 +32,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
+import org.appwork.utils.KeyValueStringEntry;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -62,6 +63,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.HTMLSearch;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -222,29 +224,30 @@ public class GoogleDrive extends PluginForHost {
      * Contains the quality modifier of the last chosen quality. This property gets reset on reset DownloadLink to ensure that a user cannot
      * change the quality and then resume the started download with another URL.
      */
-    private final String        PROPERTY_USED_QUALITY                          = "USED_QUALITY";
-    private static final String PROPERTY_GOOGLE_DOCUMENT                       = "IS_GOOGLE_DOCUMENT";
-    private static final String PROPERTY_FORCED_FINAL_DOWNLOADURL              = "FORCED_FINAL_DOWNLOADURL";
-    private static final String PROPERTY_CAN_DOWNLOAD                          = "CAN_DOWNLOAD";
-    private final String        PROPERTY_CAN_STREAM                            = "CAN_STREAM";
-    private final String        PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP        = "LAST_IS_PRIVATE_FILE_TIMESTAMP";
-    private final String        PROPERTY_IS_QUOTA_REACHED_ANONYMOUS            = "IS_QUOTA_REACHED_ANONYMOUS";
-    private final String        PROPERTY_IS_QUOTA_REACHED_ACCOUNT              = "IS_QUOTA_REACHED_ACCOUNT";
-    private final String        PROPERTY_IS_STREAM_QUOTA_REACHED_ANONYMOUS     = "IS_STREAM_QUOTA_REACHED_ANONYMOUS";
-    private final String        PROPERTY_IS_STREAM_QUOTA_REACHED_ACCOUNT       = "IS_STREAM_QUOTA_REACHED_ACCOUNT";
+    private final String        PROPERTY_USED_QUALITY                           = "USED_QUALITY";
+    private static final String PROPERTY_GOOGLE_DOCUMENT                        = "IS_GOOGLE_DOCUMENT";
+    private static final String PROPERTY_FORCED_FINAL_DOWNLOADURL               = "FORCED_FINAL_DOWNLOADURL";
+    private static final String PROPERTY_CAN_DOWNLOAD                           = "CAN_DOWNLOAD";
+    private final String        PROPERTY_CAN_STREAM                             = "CAN_STREAM";
+    private final String        PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP         = "LAST_IS_PRIVATE_FILE_TIMESTAMP";
+    private final String        PROPERTY_IS_QUOTA_REACHED_ANONYMOUS             = "IS_QUOTA_REACHED_ANONYMOUS";
+    private final String        PROPERTY_IS_QUOTA_REACHED_ACCOUNT               = "IS_QUOTA_REACHED_ACCOUNT";
+    private final String        PROPERTY_IS_STREAM_QUOTA_REACHED_ANONYMOUS      = "IS_STREAM_QUOTA_REACHED_ANONYMOUS";
+    private final String        PROPERTY_IS_STREAM_QUOTA_REACHED_ACCOUNT        = "IS_STREAM_QUOTA_REACHED_ACCOUNT";
     /**
      * 2022-02-20: We store this property but we're not using it at this moment. It is required to access some folders though so it's good
      * to have it set on each DownloadLink if it exists.
      */
-    public static final String  PROPERTY_TEAM_DRIVE_ID                         = "TEAM_DRIVE_ID";
+    public static final String  PROPERTY_TEAM_DRIVE_ID                          = "TEAM_DRIVE_ID";
     /* Packagizer property */
-    public static final String  PROPERTY_ROOT_DIR                              = "root_dir";
+    public static final String  PROPERTY_ROOT_DIR                               = "root_dir";
     /* Account properties */
-    private final String        PROPERTY_ACCOUNT_ACCESS_TOKEN                  = "ACCESS_TOKEN";
-    private final String        PROPERTY_ACCOUNT_REFRESH_TOKEN                 = "REFRESH_TOKEN";
-    private final String        PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
-    private String              dllink                                         = null;
-    private boolean             quotaReachedForceStreamDownloadAsWorkaround    = false;
+    private final String        PROPERTY_ACCOUNT_ACCESS_TOKEN                   = "ACCESS_TOKEN";
+    private final String        PROPERTY_ACCOUNT_REFRESH_TOKEN                  = "REFRESH_TOKEN";
+    private final String        PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP  = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
+    private String              dllink                                          = null;
+    private boolean             quotaReachedForceStreamDownloadAsWorkaround     = false;
+    private boolean             isForSurePublicFileOrAtLeastDownloadableForSure = false;
 
     public Browser prepBrowser(final Browser pbr) {
         pbr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
@@ -558,6 +561,7 @@ public class GoogleDrive extends PluginForHost {
              */
             URLConnectionAdapter con = br.openGetConnection(getPreferredConstructedDirecturl(link, account));
             if (con.getResponseCode() == 500 && !this.looksLikeDownloadableContent(con) && !this.isGoogleDocument(link)) {
+                isForSurePublicFileOrAtLeastDownloadableForSure = true;
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {
@@ -579,6 +583,7 @@ public class GoogleDrive extends PluginForHost {
             }
             /* We hope for the file to be direct-downloadable. */
             if (this.looksLikeDownloadableContent(con)) {
+                isForSurePublicFileOrAtLeastDownloadableForSure = true;
                 con.disconnect();
                 logger.info("Direct download active");
                 final String fileNameFromHeader = getFileNameFromHeader(con);
@@ -641,7 +646,26 @@ public class GoogleDrive extends PluginForHost {
             /* E.g. "This file is too big for Google to virus-scan it - download anyway?" */
             dllink = regexConfirmDownloadurl(br);
             if (dllink != null) {
+                isForSurePublicFileOrAtLeastDownloadableForSure = true;
                 logger.info("File is too big for Google v_rus scan but should be downloadable");
+                final boolean doDevTest = false;
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && doDevTest) {
+                    /* 2023-01-25: Hunting bad "Insufficient permissions" bug */
+                    final Form dlform = br.getFormbyProperty("id", "download-form");
+                    if (dlform != null) {
+                        /* This is a test as in browser a POST request is used while we're using a GET request in JD. */
+                        final UrlQuery query = UrlQuery.parse(dlform.getAction());
+                        for (final KeyValueStringEntry entry : query.list()) {
+                            dlform.addInputField(new InputField(entry.getKey(), entry.getValue()));
+                        }
+                        this.dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dlform, true, 0);
+                        if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                            logger.info("DevTest Pass");
+                        } else {
+                            logger.warning("DevTest Fail");
+                        }
+                    }
+                }
                 return AvailableStatus.TRUE;
             }
             /** In case we were not able to find a final download-URL until now, we'll have to try the more complicated way ... */
@@ -1118,6 +1142,7 @@ public class GoogleDrive extends PluginForHost {
                 errorCannotDownload(link);
             }
         }
+        /* Account is not always used even if it is available. */
         boolean usedAccount = false;
         if (useAPIForDownloading(link, account)) {
             /* API download */
@@ -1163,6 +1188,7 @@ public class GoogleDrive extends PluginForHost {
             /* Check availablestatus again via website as we're downloading via website. */
             requestFileInformationWebsite(link, account, true);
             if (account != null) {
+                /* Website mode will always use account if available. */
                 usedAccount = true;
             }
             if (StringUtils.isEmpty(this.dllink) && this.isGoogleDocument(link)) {
@@ -1321,17 +1347,22 @@ public class GoogleDrive extends PluginForHost {
                  * Typically Google will redirect us to accounts.google.com for private files but this can also happen when login session is
                  * expired -> Extra check is needed
                  */
-                logger.info("Checking if we got a private file or a login session failure");
-                final Browser brc = br.cloneBrowser();
-                final GoogleHelper helper = new GoogleHelper(brc, this.getLogger());
-                if (helper.validateCookies(account)) {
-                    /* Login session looks to be valid -> Looks like what we have is a private file */
-                    /* Store as a property as this information might come in handy in the future. */
-                    link.setProperty(PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP, System.currentTimeMillis());
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Insufficient permissions: Private file");
+                if (account != null && isForSurePublicFileOrAtLeastDownloadableForSure) {
+                    /* 2023-01-25: Temporary errorhandling for "Insufficient permissions" error happening for public files. */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Try again later or delete your google account and re-add it");
                 } else {
-                    /* Login session is invalid -> We got an account problem and not a private file */
-                    GoogleHelper.errorAccountInvalid(account);
+                    logger.info("Checking if we got a private file or a login session failure");
+                    final Browser brc = br.cloneBrowser();
+                    final GoogleHelper helper = new GoogleHelper(brc, this.getLogger());
+                    if (helper.validateCookies(account)) {
+                        /* Login session looks to be valid -> Looks like what we have is a private file */
+                        /* Store as a property as this information might come in handy in the future. */
+                        link.setProperty(PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP, System.currentTimeMillis());
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Insufficient permissions: Private file");
+                    } else {
+                        /* Login session is invalid -> We got an account problem and not a private file */
+                        GoogleHelper.errorAccountInvalid(account);
+                    }
                 }
             }
         }
