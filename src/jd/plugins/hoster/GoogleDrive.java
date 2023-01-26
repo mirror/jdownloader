@@ -56,6 +56,8 @@ import org.jdownloader.settings.GeneralSettings;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -648,6 +650,20 @@ public class GoogleDrive extends PluginForHost {
             if (dllink != null) {
                 isForSurePublicFileOrAtLeastDownloadableForSure = true;
                 logger.info("File is too big for Google v_rus scan but should be downloadable");
+                final boolean printCookies = false;
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && printCookies) {
+                    /* 2023-01-25: Hunting bad "Insufficient permissions" bug as it must be related to account cookies */
+                    System.out.println("****************************************");
+                    final Iterator<Entry<String, Cookies>> iterator = br.getCookies().entrySet().iterator();
+                    while (iterator.hasNext()) {
+                        final Entry<String, Cookies> entry = iterator.next();
+                        System.out.println("Domain: " + entry.getKey());
+                        for (final Cookie cookie : entry.getValue().getCookies()) {
+                            System.out.println(cookie.getKey() + ": " + cookie.getValue());
+                        }
+                    }
+                    System.out.println("****************************************");
+                }
                 final boolean doDevTest = false;
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && doDevTest) {
                     /* 2023-01-25: Hunting bad "Insufficient permissions" bug */

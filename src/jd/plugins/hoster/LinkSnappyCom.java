@@ -47,6 +47,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -95,13 +96,14 @@ public class LinkSnappyCom extends antiDDoSForHost {
             if (br.getURL() == null || !br.getURL().contains("/api/USERDETAILS")) {
                 getPage("https://" + this.getHost() + "/api/USERDETAILS");
             }
-            Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
-            entries = (Map<String, Object>) entries.get("return");
-            final Object expireO = entries.get("expire");
+            final Map<String, Object> userResponse = restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> userMap = (Map<String, Object>) userResponse.get("return");
+            // final String accountTypeStr = (String) userMap.get("accountType");
+            final Object expireO = userMap.get("expire");
             logger.info("expire:" + expireO);
             // final String accountType = (String) entries.get("accountType"); // "free" for free accounts and "elite" for premium accounts
             if ("lifetime".equalsIgnoreCase(expireO.toString())) {
-                account.setType(AccountType.PREMIUM);
+                account.setType(AccountType.LIFETIME);
             } else if ("expired".equalsIgnoreCase(expireO.toString())) {
                 /* Free account which has never been premium = also "expired" */
                 account.setType(AccountType.FREE);
@@ -129,7 +131,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 }
             }
             /* Find traffic left */
-            final Object trafficleftO = entries.get("trafficleft");
+            final Object trafficleftO = userMap.get("trafficleft");
             logger.info("trafficLeft:" + trafficleftO);
             // final Object maxtrafficO = entries.get("maxtraffic");
             if (trafficleftO instanceof String) {
@@ -149,8 +151,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 } else {
                     ac.setTrafficLeft(trafficleft);
                 }
-                if (entries.get("maxtraffic") instanceof Number) {
-                    ac.setTrafficMax(((Number) entries.get("maxtraffic")).longValue());
+                if (userMap.get("maxtraffic") instanceof Number) {
+                    ac.setTrafficMax(((Number) userMap.get("maxtraffic")).longValue());
                 }
             }
             getPage("https://" + this.getHost() + "/api/FILEHOSTS");
@@ -160,15 +162,15 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     dailyLimitReached(null, account);
                 } else {
                     /* Permanently disable account --> Should not happen often. */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + error, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException(error);
                 }
             }
             final ArrayList<String> supportedHosts = new ArrayList<String>();
             /* connection info map */
             final HashMap<String, HashMap<String, Object>> con = new HashMap<String, HashMap<String, Object>>();
-            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            entries = (Map<String, Object>) entries.get("return");
-            final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
+            final Map<String, Object> hosterMapResponse = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> hosterMap = (Map<String, Object>) hosterMapResponse.get("return");
+            final Iterator<Entry<String, Object>> it = hosterMap.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, Object> entry = it.next();
                 final Map<String, Object> hosterInformation = (Map<String, Object>) entry.getValue();
@@ -248,13 +250,15 @@ public class LinkSnappyCom extends antiDDoSForHost {
                      * extend">an Elite account</a> in order to start download." OR
                      * ">Activation code has been blocked due to violation of our terms of service. Buy Elite membership in order to Download."
                      */
-                    final Regex remainingURLS = br.getRegex("id\\s*=\\s*\"linkleft\">\\s*(\\d+)\\s*</span>\\s*out of (\\d+) premium link");
+                    final Regex remainingURLS = br.getRegex("(?i)id\\s*=\\s*\"linkleft\">\\s*(\\d+)\\s*</span>\\s*out of (\\d+) premium link");
                     final String remainingDailyURLsStr = remainingURLS.getMatch(0);
                     final String maxDailyURLsStr = remainingURLS.getMatch(1);
                     final int remainingURLs = Integer.parseInt(remainingDailyURLsStr);
                     if (remainingURLs == 0) {
                         /* 0 links left for today --> ZERO trafficleft */
                         ac.setTrafficLeft(0);
+                    } else {
+                        ac.setUnlimitedTraffic();
                     }
                     ac.setStatus(String.format("Free Account [%s of %s daily links left]", remainingDailyURLsStr, maxDailyURLsStr));
                 } catch (final Throwable e) {
@@ -440,7 +444,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
             if (!enteredCorrectPassword) {
                 /* Allow next candidate to try */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wrong password entered");
-            } else if (passCode != null) {
+            }
+            if (passCode != null) {
                 link.setDownloadPassword(passCode);
             }
             handleErrors(link, account);
@@ -468,12 +473,12 @@ public class LinkSnappyCom extends antiDDoSForHost {
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                this.handleDownloadErrors(link, account);
                 try {
                     br.followConnection(true);
                 } catch (final IOException e) {
                     logger.log(e);
                 }
+                this.handleDownloadErrors(link, account);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
             }
             link.setProperty(PROPERTY_DIRECTURL, dllink);
@@ -698,12 +703,6 @@ public class LinkSnappyCom extends antiDDoSForHost {
         }
     }
 
-    /**
-     * @param validateCookies
-     *            true = Check whether stored cookies are still valid, if not, perform full login <br/>
-     *            false = Set stored cookies and trust them if they're not older than 300000l
-     *
-     */
     private boolean loginAPI(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             br.setCookiesExclusive(true);
@@ -711,8 +710,8 @@ public class LinkSnappyCom extends antiDDoSForHost {
             if (cookies != null) {
                 logger.info("Attempting cookie login");
                 br.setCookies(this.getHost(), cookies);
-                if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l && !validateCookies) {
-                    logger.info("Trust cookies as they're not that old");
+                if (!validateCookies) {
+                    /* Do not validate cookies. */
                     return false;
                 }
                 logger.info("Validating cookies");
@@ -727,7 +726,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     return true;
                 } else {
                     logger.info("Cached login failed:" + error);
-                    br.clearCookies(br.getHost());
+                    br.clearCookies(null);
                 }
             }
             /* Full login is required */
@@ -746,7 +745,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
                     final String fullURL = br.getURL(redirect).toString();
                     throw new AccountUnavailableException("\r\n" + error + "\r\n" + fullURL, 5 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + error, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException(error);
                 }
             }
             account.saveCookies(br.getCookies(this.getHost()), "");
