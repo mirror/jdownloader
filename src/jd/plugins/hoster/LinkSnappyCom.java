@@ -28,6 +28,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
@@ -94,47 +95,45 @@ public class LinkSnappyCom extends antiDDoSForHost {
             final AccountInfo ac = new AccountInfo();
             loginAPI(account, force);
             if (br.getURL() == null || !br.getURL().contains("/api/USERDETAILS")) {
-                getPage("https://" + this.getHost() + "/api/USERDETAILS");
+                getPage("/api/USERDETAILS");
             }
             final Map<String, Object> userResponse = restoreFromString(br.toString(), TypeRef.HASHMAP);
-            final Map<String, Object> userMap = (Map<String, Object>) userResponse.get("return");
-            // final String accountTypeStr = (String) userMap.get("accountType");
-            final Object expireO = userMap.get("expire");
-            logger.info("expire:" + expireO);
-            // final String accountType = (String) entries.get("accountType"); // "free" for free accounts and "elite" for premium accounts
-            if ("lifetime".equalsIgnoreCase(expireO.toString())) {
+            final Map<String, Object> usermap = (Map<String, Object>) userResponse.get("return");
+            final Object expireTimestampO = usermap.get("expire");
+            // final String accountType = (String) entries.get("accountType"); // "free" for free accounts and "elite" for premium and
+            // lifetime accounts
+            if ("lifetime".equalsIgnoreCase(expireTimestampO.toString()) || "2177388000".equals(expireTimestampO.toString())) {
+                /* 2177388000 -> Valid until 2038 -> Lifetime account */
                 account.setType(AccountType.LIFETIME);
-            } else if ("expired".equalsIgnoreCase(expireO.toString())) {
-                /* Free account which has never been premium = also "expired" */
-                account.setType(AccountType.FREE);
             } else {
-                Long validUntil = null;
-                if (expireO instanceof Number) {
-                    validUntil = ((Number) expireO).longValue() * 1000;
-                } else if (expireO instanceof String) {
-                    try {
-                        validUntil = Long.parseLong(expireO.toString()) * 1000;
-                    } catch (final NumberFormatException e) {
-                        logger.exception("expire:" + expireO, e);
+                long validUntil = -1;
+                if (expireTimestampO instanceof Number) {
+                    validUntil = ((Number) expireTimestampO).longValue() * 1000;
+                } else if (expireTimestampO instanceof String) {
+                    final String expireStr = expireTimestampO.toString();
+                    if (expireStr.matches("\\d+")) {
+                        validUntil = Long.parseLong(expireTimestampO.toString()) * 1000;
                     }
                 }
-                if (validUntil != null) {
-                    ac.setValidUntil(validUntil, this.br);
-                    if (!ac.isExpired()) {
-                        account.setType(AccountType.PREMIUM);
-                    } else {
-                        ac.setValidUntil(-1);
-                        account.setType(AccountType.FREE);
-                    }
+                if (validUntil > System.currentTimeMillis()) {
+                    ac.setValidUntil(validUntil);
+                    account.setType(AccountType.PREMIUM);
                 } else {
                     account.setType(AccountType.FREE);
                 }
             }
-            /* Find traffic left */
-            final Object trafficleftO = userMap.get("trafficleft");
-            logger.info("trafficLeft:" + trafficleftO);
-            // final Object maxtrafficO = entries.get("maxtraffic");
-            if (trafficleftO instanceof String) {
+            final Number usedSpace = (Number) usermap.get("usedspace");
+            if (usedSpace != null) {
+                ac.setUsedSpace(usedSpace.longValue());
+            }
+            final Number trafficUsedTodayBytes = (Number) usermap.get("trafficused");
+            final Object trafficleftGlobalO = usermap.get("trafficleft"); // mostly "unlimited"
+            String trafficMaxDailyHumanReadable = "N/A";
+            final Number maxtrafficDailyBytesO = (Number) usermap.get("maxtraffic");
+            if (maxtrafficDailyBytesO != null) {
+                trafficMaxDailyHumanReadable = SizeFormatter.formatBytes(maxtrafficDailyBytesO.longValue());
+            }
+            if (trafficleftGlobalO instanceof String) {
                 /* E.g. value is "unlimited" */
                 // if (maxtrafficO instanceof Number && ((Long) maxtrafficO).longValue() > 0) {
                 // ac.setTrafficLeft(((Long) maxtrafficO).longValue());
@@ -143,23 +142,27 @@ public class LinkSnappyCom extends antiDDoSForHost {
                 // ac.setUnlimitedTraffic();
                 // }
                 ac.setUnlimitedTraffic();
-            } else if (trafficleftO instanceof Number) {
+            } else if (trafficleftGlobalO instanceof Number) {
                 /* Also check for negative traffic */
-                final long trafficleft = ((Number) trafficleftO).longValue();
+                final long trafficleft = ((Number) trafficleftGlobalO).longValue();
                 if (trafficleft <= 0) {
                     ac.setTrafficLeft(0);
                 } else {
                     ac.setTrafficLeft(trafficleft);
                 }
-                if (userMap.get("maxtraffic") instanceof Number) {
-                    ac.setTrafficMax(((Number) userMap.get("maxtraffic")).longValue());
+                if (maxtrafficDailyBytesO != null) {
+                    ac.setTrafficMax(maxtrafficDailyBytesO.longValue());
                 }
             }
-            getPage("https://" + this.getHost() + "/api/FILEHOSTS");
+            if (trafficUsedTodayBytes != null) {
+                ac.setStatus(account.getType().getLabel() + " | Today's daily usage: ");
+                ac.setStatus(String.format("%s | Today's daily usage: %s/%s", account.getType().getLabel(), SizeFormatter.formatBytes(trafficUsedTodayBytes.longValue()), trafficMaxDailyHumanReadable));
+            }
+            getPage("/api/FILEHOSTS");
             final String error = getError(br);
             if (error != null) {
                 if (StringUtils.containsIgnoreCase(error, "Account has exceeded the daily quota")) {
-                    dailyLimitReached(null, account);
+                    errorDailyLimitReached(null, account);
                 } else {
                     /* Permanently disable account --> Should not happen often. */
                     throw new AccountInvalidException(error);
@@ -277,7 +280,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
-    private void dailyLimitReached(final DownloadLink link, final Account account) throws PluginException {
+    private void errorDailyLimitReached(final DownloadLink link, final Account account) throws PluginException {
         if (link != null) {
             /* Daily specific host downloadlimit reached --> Disable host for some time */
             mhm.putError(account, this.getDownloadLink(), 10 * 60 * 1000l, "Reached daily limit for this host");
@@ -559,7 +562,7 @@ public class LinkSnappyCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Moving to new server", 5 * 60 * 1000l);
         } else if (dlResponseCode == 509) {
             /* out of traffic should not retry! throw exception on first response! */
-            dailyLimitReached(link, account);
+            errorDailyLimitReached(link, account);
         } else if (dlResponseCode == 429) {
             // what does ' max connection limit' error mean??, for user to that given hoster??, or user to that linksnappy finallink
             // server?? or linksnappy global (across all finallink servers) connections

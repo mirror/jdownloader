@@ -119,10 +119,6 @@ public class IndiShareMe extends XFileSharingProBasic {
     private boolean workaround1Done = false;
     private boolean workaround2Done = false;
 
-    // @Override
-    // protected void getPage(final Browser ibr, final String page) throws Exception {
-    // super.getPage(ibr, page);
-    // }
     @Override
     protected void runPostRequestTask(final Browser br) throws Exception {
         super.runPostRequestTask(br);
