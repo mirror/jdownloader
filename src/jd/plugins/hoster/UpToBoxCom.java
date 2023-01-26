@@ -60,7 +60,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends antiDDoSForHost {
@@ -202,9 +201,12 @@ public class UpToBoxCom extends antiDDoSForHost {
     }
 
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            link.setName(getWeakFilename(link));
+        }
         this.setBrowserExclusive();
         prepBrowser(this.br, this.getHost());
-        getPage(link.getPluginPatternMatcher());
+        getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
         /* 2020-04-07: Website returns proper 404 error for offline which is enough for us to check */
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -213,10 +215,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         final String filename = finfo.getMatch(0);
         String filesize = finfo.getMatch(1);
         if (!StringUtils.isEmpty(filename)) {
-            link.setName(Encoding.htmlDecode(filename.trim()));
-        } else {
-            /* Fallback */
-            link.setName(getWeakFilename(link));
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -265,8 +264,8 @@ public class UpToBoxCom extends antiDDoSForHost {
                     }
                 }
                 this.getPage(checkbr, API_BASE + "/link/info?fileCodes=" + sb.toString());
-                Map<String, Object> entries = JSonStorage.restoreFromString(checkbr.toString(), TypeRef.HASHMAP);
-                List<Object> linkcheckResults = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/list");
+                final Map<String, Object> entries = JSonStorage.restoreFromString(checkbr.toString(), TypeRef.HASHMAP);
+                final List<Object> linkcheckResults = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/list");
                 /* Number of results should be == number of file-ids we wanted to check! */
                 if (linkcheckResults.size() != index) {
                     /* Fail-safe: This should never happen */
@@ -279,19 +278,19 @@ public class UpToBoxCom extends antiDDoSForHost {
                     if (!dl.isNameSet()) {
                         dl.setName(getWeakFilename(dl));
                     }
-                    entries = (Map<String, Object>) linkcheckResults.get(index2);
+                    final Map<String, Object> linkinfo = (Map<String, Object>) linkcheckResults.get(index2);
                     final String fuid = this.getFUID(dl);
-                    final String fuid_of_json_response = (String) entries.get("file_code");
+                    final String fuid_of_json_response = (String) linkinfo.get("file_code");
                     if (!fuid.equals(fuid_of_json_response)) {
                         /* Fail-safe: This should never happen */
                         logger.warning("fuid mismatch");
                         return false;
                     }
                     boolean isOffline = false;
-                    final Object errorO = entries.get("error");
+                    final Object errorO = linkinfo.get("error");
                     if (errorO != null) {
                         final Map<String, Object> errormap = (Map<String, Object>) errorO;
-                        final long errorCode = JavaScriptEngineFactory.toLong(errormap.get("code"), -1);
+                        final int errorCode = ((Number) errormap.get("code")).intValue();
                         dl.setProperty(PROPERTY_preset_api_errorcode, errorCode);
                         if (errorCode == api_errorcode_file_offline) {
                             isOffline = true;
@@ -303,30 +302,22 @@ public class UpToBoxCom extends antiDDoSForHost {
                         dl.setPasswordProtected(false);
                         dl.removeProperty(PROPERTY_preset_api_errorcode);
                     }
-                    String file_name = null;
-                    if (isOffline) {
-                        dl.setAvailable(false);
-                    } else {
-                        file_name = (String) entries.get("file_name");
-                        final long file_size = JavaScriptEngineFactory.toLong(entries.get("file_size"), 0);
-                        /* This key is not always given e.g. not for password protected content. */
-                        boolean available_on_uptostream = false;
-                        if (entries.containsKey("available_uts")) {
-                            available_on_uptostream = ((Boolean) entries.get("available_uts")).booleanValue();
-                            dl.setProperty(PROPERTY_available_on_uptostream, available_on_uptostream);
-                        }
-                        try {
-                            dl.setProperty(PROPERTY_needs_premium, ((Boolean) entries.get("need_premium")).booleanValue());
-                        } catch (final Throwable e) {
-                        }
-                        if (file_size > 0) {
-                            dl.setVerifiedFileSize(file_size);
-                        }
-                        dl.setAvailable(true);
+                    final String file_name = (String) linkinfo.get("file_name");
+                    final Number file_size = (Number) linkinfo.get("file_size");
+                    /* This key is not always given e.g. not for password protected content. */
+                    dl.setProperty(PROPERTY_available_on_uptostream, linkinfo.get("available_uts"));
+                    dl.setProperty(PROPERTY_needs_premium, linkinfo.get("need_premium"));
+                    if (file_size != null) {
+                        dl.setVerifiedFileSize(file_size.longValue());
                     }
                     if (!StringUtils.isEmpty(file_name)) {
                         /* Filename should always be available! */
                         dl.setFinalFileName(file_name);
+                    }
+                    if (isOffline) {
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setAvailable(true);
                     }
                     index2++;
                 }
@@ -354,32 +345,28 @@ public class UpToBoxCom extends antiDDoSForHost {
             /* Now access website - check availablestatus again here! */
             requestFileInformationWebsite(link);
             checkErrorsWebsite(link, null);
-            dllink = this.getDllinkWebsite();
+            dllink = this.getDllinkWebsite(br);
             if (dllink == null) {
                 String passCode = null;
                 Form dlform = null;
-                int counter = 0;
-                final int countermax = 4;
-                do {
-                    logger.info(String.format("dlform loop %d of %d", counter + 1, countermax + 1));
-                    for (Form form : br.getForms()) {
-                        if (form.containsHTML("waitingToken")) {
-                            dlform = form;
-                            break;
-                        }
-                    }
-                    if (dlform == null) {
-                        logger.warning("Failed to find dlform");
+                for (Form form : br.getForms()) {
+                    if (form.containsHTML("waitingToken")) {
+                        dlform = form;
                         break;
                     }
+                }
+                if (dlform != null) {
                     if (dlform.hasInputFieldByName("file-password")) {
+                        link.setPasswordProtected(true);
                         passCode = link.getDownloadPassword();
                         if (passCode == null) {
                             passCode = getUserInput("Password?", link);
                         }
                         dlform.put("file-password", Encoding.urlEncode(passCode));
+                    } else {
+                        link.setPasswordProtected(false);
                     }
-                    final int waittime = getPreDownloadWaittimeWebsite();
+                    final int waittime = getPreDownloadWaittimeWebsite(br);
                     if (waittime > 0) {
                         logger.info("Found pre-download-waittime: " + waittime);
                         this.sleep(waittime * 1001l, link);
@@ -388,20 +375,15 @@ public class UpToBoxCom extends antiDDoSForHost {
                     }
                     this.submitForm(dlform);
                     checkErrorsWebsite(link, null);
+                    dllink = getDllinkWebsite(br);
+                    /* Save correctly entered password. */
                     if (passCode != null) {
-                        /* Save correctly entered password. */
                         link.setDownloadPassword(passCode);
-                    } else {
-                        link.setDownloadPassword(null);
                     }
-                    dllink = getDllinkWebsite();
-                    counter++;
-                } while (counter <= countermax && dllink == null);
-                if (dllink == null) {
+                }
+                if (StringUtils.isEmpty(dllink)) {
                     logger.warning("Failed to find final downloadurl");
-                    if (counter >= countermax) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Free download currently not possible (?)", 10 * 60 * 1000l);
-                    } else if (br.containsHTML("id='ban'")) {
+                    if (br.containsHTML("id='ban'")) {
                         /*
                          * 2020-06-12: E.g. "<h1>This page is not allowed in the US</h1>",
                          * "We're sorry but it appears your IP comes from the US so you're not allowed to download or stream.",
@@ -430,7 +412,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private String getDllinkWebsite() {
+    private String getDllinkWebsite(final Browser br) {
         return br.getRegex("\"(https?://[^\"]+/dl/[^\"]+)\"").getMatch(0);
     }
 
@@ -439,15 +421,16 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (requires_premium) {
             throw new AccountRequiredException();
         } else if (br.containsHTML(">\\s*Wrong password")) {
+            link.setPasswordProtected(true);
             link.setDownloadPassword(null);
             throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
         }
-        final int waittimeSeconds = getPreDownloadWaittimeWebsite();
+        final int waittimeSeconds = getPreDownloadWaittimeWebsite(br);
         if (waittimeSeconds > WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittimeSeconds * 1001l);
         }
         /* Basically the same what waittimeSecondsStr does --> More complicated fallback */
-        final String preciseWaittime = br.getRegex("or you can wait ([^<>\"]+)<").getMatch(0);
+        final String preciseWaittime = br.getRegex("(?i)or you can wait ([^<>\"]+)<").getMatch(0);
         if (preciseWaittime != null) {
             /* Reconnect waittime with given (exact) waittime usually either up to the minute or up to the second. */
             final String tmphrs = new Regex(preciseWaittime, "\\s*(\\d+)\\s*hours?").getMatch(0);
@@ -503,7 +486,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable, please retry later", 5 * 60 * 1000);
     }
 
-    private int getPreDownloadWaittimeWebsite() {
+    private int getPreDownloadWaittimeWebsite(final Browser br) {
         final String waittimeSecondsStr = br.getRegex("data-remaining-time='(\\d+)'").getMatch(0);
         if (waittimeSecondsStr != null) {
             return Integer.parseInt(waittimeSecondsStr);
@@ -562,41 +545,52 @@ public class UpToBoxCom extends antiDDoSForHost {
             dllink = checkDirectLink(link, directlinkproperty);
         }
         if (StringUtils.isEmpty(dllink)) {
+            Map<String, Object> entries = null;
+            int statusCode = 0;
             final UrlQuery queryDownload = queryBasic;
-            queryDownload.append("password", link.getDownloadPassword(), true);
-            int maxtries = 1;
-            int tries = 0;
             String passCode = link.getDownloadPassword();
             /*
-             * 2020-04-12: Do not preset this because if e.g. the owner of a password protected file wants to download it he will not have
-             * to enter the password!
+             * 2020-04-12: Do not ask for password on first attempt even if we know that the file is password protected: Uploaders can
+             * download their own uploaded files without password even if they're password protected.
              */
-            boolean passwordRequiredOrEnteredWrong = false;
-            // boolean passwordRequiredOrEnteredWrong = link.getBooleanProperty(PROPERTY_is_password_protected, false);
+            boolean hasAskedUserForPassword = false;
             do {
-                if (tries > 0 || passwordRequiredOrEnteredWrong) {
-                    passCode = getUserInput("Enter download password", link);
-                    queryDownload.append("password", passCode, true);
+                if (passCode != null) {
+                    queryDownload.addAndReplace("password", Encoding.urlEncode(passCode));
                 }
                 this.getPage(API_BASE + "/link?" + queryDownload.toString());
-                tries++;
-                passwordRequiredOrEnteredWrong = getErrorcode() == api_errorcode_password_required_or_wrong;
-            } while (passwordRequiredOrEnteredWrong && tries <= maxtries);
-            if (passwordRequiredOrEnteredWrong) {
-                logger.info("User entered INCORRECT password");
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                statusCode = ((Number) entries.get("statusCode")).intValue();
+                if (hasAskedUserForPassword) {
+                    /* Ask user max one time */
+                    break;
+                } else if (statusCode == api_errorcode_password_required_or_wrong) {
+                    if (passCode == null) {
+                        logger.info("Link is password protected and initially given password is wrong: " + passCode);
+                    } else {
+                        logger.info("Link is password protected");
+                    }
+                    link.setPasswordProtected(true);
+                    passCode = getUserInput("Enter download password", link);
+                    hasAskedUserForPassword = true;
+                    continue;
+                } else {
+                    break;
+                }
+            } while (hasAskedUserForPassword == false);
+            if (statusCode == api_errorcode_password_required_or_wrong) {
+                logger.info("User entered incorrect password: " + passCode);
                 link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
             } else if (passCode != null) {
                 /* User entered correct password --> Save it */
-                logger.info("User entered correct password");
+                logger.info("User entered correct download password: " + passCode);
                 link.setDownloadPassword(passCode);
             }
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             /**
              * 2021-02-18: E.g. for high waittimes, token is not given {"statusCode":16,"message":"Waiting
              * needed","data":{"waiting":125,"waitingToken":null}}
              */
-            final int statusCode = ((Number) entries.get("statusCode")).intValue();
             if (statusCode != 16) {
                 /* Unexpected statuscode -> Check for errors */
                 this.checkErrorsAPI(link, account);
@@ -604,13 +598,13 @@ public class UpToBoxCom extends antiDDoSForHost {
             entries = (Map<String, Object>) entries.get("data");
             final String waitingToken = (String) entries.get("waitingToken");
             if (!StringUtils.isEmpty(waitingToken)) {
-                /* Waittime is usually only present in free -account mode, not in premium. */
+                /* Pre download waittime is usually only present in free -account mode, not in premium. */
                 final int waitSeconds = ((Number) entries.get("waiting")).intValue();
                 /* Waittime too high? Temp. disable account until nex downloads is possible. */
                 if (waitSeconds > WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT) {
                     throw new AccountUnavailableException("Download limit reached", waitSeconds * 1001l);
                 }
-                /* 2020-04-16: Add 2 extra wait seconds otherwise download may fail */
+                /* 2020-04-16: Add 2 extra wait seconds otherwise download may fail as we're too fast. */
                 this.sleep((waitSeconds + 2) * 1000, link);
                 final UrlQuery queryDL = queryBasic;
                 queryDL.append("waitingToken", waitingToken, true);
@@ -620,6 +614,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             }
             dllink = (String) entries.get("dlLink");
             if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
+                /* This should never happen! */
                 this.checkErrorsAPI(link, account);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
             }
@@ -641,7 +636,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             link.setVerifiedFileSize(-1);
             link.setProperty(PROPERTY_last_downloaded_quality, preferredQuality);
         } else {
-            link.setProperty(PROPERTY_last_downloaded_quality, null);
+            link.removeProperty(PROPERTY_last_downloaded_quality);
         }
         dllink = correctProtocolOfFinalDownloadURL(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
@@ -657,16 +652,14 @@ public class UpToBoxCom extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private String correctProtocolOfFinalDownloadURL(String finalDownloadurl) {
-        final String ret;
+    private String correctProtocolOfFinalDownloadURL(final String finalDownloadurl) {
         if (PluginJsonConfig.get(UpToBoxComConfig.class).isUseHTTPSForDownloads()) {
             logger.info("User prefers https");
-            ret = finalDownloadurl.replaceFirst("http://", "https://");
+            return finalDownloadurl.replaceFirst("http://", "https://");
         } else {
             logger.info("User prefers http");
-            ret = finalDownloadurl.replaceFirst("https?://", "http://");
+            return finalDownloadurl.replaceFirst("https?://", "http://");
         }
-        return ret;
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
@@ -683,6 +676,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                     throw new IOException();
                 }
             } catch (final Exception e) {
+                link.removeProperty(property);
                 logger.log(e);
                 return null;
             } finally {
@@ -699,26 +693,23 @@ public class UpToBoxCom extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private void loginAPI(final Account account, boolean verifySession) throws Exception {
+    private Map<String, Object> loginAPI(final Account account, final boolean verifySession) throws Exception {
         synchronized (account) {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             prepBrowser(this.br, this.getHost());
             final String apikey = account.getPass();
-            if (!verifySession) {
-                /* Force verify session/apikey everx X minutes */
-                verifySession = System.currentTimeMillis() - account.getLongProperty(PROPERTY_timestamp_lastcheck, 0) > 15 * 60 * 1000;
-            }
             if (StringUtils.isEmpty(apikey)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (!verifySession) {
                 logger.info("Trust apikey without verification");
-                return;
+                return null;
             } else {
                 logger.info("Performing full login");
                 this.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(apikey));
-                this.checkErrorsAPI(this.getDownloadLink(), account);
+                this.checkErrorsAPI(null, account);
                 account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
+                return restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             }
         }
     }
@@ -726,35 +717,30 @@ public class UpToBoxCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        loginAPI(account, true);
-        if (br.getURL() == null || !br.getURL().contains("/user/me")) {
-            this.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(account.getPass()));
-            checkErrorsAPI(this.getDownloadLink(), account);
-            /* Session verified */
-            account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
-        }
-        final String premium = PluginJSonUtils.getJson(br, "premium");
-        String points = PluginJSonUtils.getJson(br, "point");
+        final Map<String, Object> entries = loginAPI(account, true);
+        final Map<String, Object> userdata = (Map<String, Object>) entries.get("data");
+        final Number premium = (Number) userdata.get("premium");
+        String points = (String) userdata.get("point");
         if (StringUtils.isEmpty(points)) {
             points = "Unknown";
         }
         String accountStatus;
-        if (premium == null || (!premium.equals("1") && !premium.equalsIgnoreCase("true"))) {
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-            accountStatus = "Free Account";
-        } else {
+        if (premium != null && premium.intValue() == 1) {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             accountStatus = "Premium Account";
             /* 2020-04-06: All premium accounts should have an expiredate given but let's just assume lifetime accounts can exist. */
-            final String expire = PluginJSonUtils.getJson(br, "premium_expire");
-            if (!StringUtils.isEmpty(expire)) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
+            final String expireDate = (String) userdata.get("premium_expire");
+            if (!StringUtils.isEmpty(expireDate)) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
             }
+        } else {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            accountStatus = "Free Account";
         }
-        accountStatus += String.format(" [%s points]", points);
-        final String user = PluginJSonUtils.getJson(br, "login");
+        accountStatus += String.format(" | %s points", points);
+        final String user = (String) userdata.get("login");
         if (!StringUtils.isEmpty(user)) {
             account.setUser(user);
         }
@@ -812,12 +798,20 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
     }
 
-    private int getErrorcode() {
-        final String errorCodeStr = PluginJSonUtils.getJson(br, "statusCode");
-        if (errorCodeStr != null && errorCodeStr.matches("\\d+")) {
-            return Integer.parseInt(errorCodeStr);
+    private void checkErrorsAPI(final DownloadLink link, final Account account) throws PluginException {
+        try {
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            checkErrorsAPI(link, account, entries);
+        } catch (final JSonMapperException jse) {
+            /* Assume we got html code and check for errors in html code */
+            try {
+                this.checkErrorsWebsite(link, account);
+            } catch (final PluginException e) {
+                throw Exceptions.addSuppressed(e, jse);
+            }
+            logger.log(jse);
+            throw new AccountUnavailableException("Unvalid API response", 1 * 60 * 1000l);
         }
-        return 0;
     }
 
     /**
@@ -825,14 +819,13 @@ public class UpToBoxCom extends antiDDoSForHost {
      *
      * @throws PluginException
      */
-    private void checkErrorsAPI(final DownloadLink link, final Account account) throws PluginException {
+    private void checkErrorsAPI(final DownloadLink link, final Account account, final Map<String, Object> entries) throws PluginException {
         try {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             String errorMsg = (String) entries.get("message");
             if (StringUtils.isEmpty(errorMsg)) {
                 errorMsg = "Unknown error";
             }
-            final int errorCode = getErrorcode();
+            final int errorCode = ((Number) entries.get("statusCode")).intValue();
             switch (errorCode) {
             case 0:
                 /* Success --> No error */
@@ -869,6 +862,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 }
                 throw new AccountUnavailableException(errorMsg, waitSeconds * 1000l);
             case api_errorcode_password_required_or_wrong:
+                link.setPasswordProtected(true);
                 link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
             case api_errorcode_file_offline:
@@ -933,7 +927,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         if ("fr".equalsIgnoreCase(System.getProperty("user.language"))) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nToken invalide. / Vous pouvez trouver votre token ici : uptobox.com/my_account.\r\nSi vous utilisez JDownloader à distance/myjdownloader/headless, entrez le token dans les champs de nom d'utilisateur de de mot de passe.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid token/apikey!\r\nYou can find your token here: uptobox.com/my_account\r\nIf you are running JDownloader headless or using myjdownloader, just put your token into the username and password field.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid token!\r\nYou can find your token here: uptobox.com/my_account\r\nIf you are running JDownloader headless or using myjdownloader, just put your token into the username and password field.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -944,7 +938,7 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     public static class UptoboxAccountFactory extends MigPanel implements AccountBuilderInterface {
         private static final long serialVersionUID = 1L;
-        private final String      PINHELP          = "Enter your Token/apikey";
+        private final String      PINHELP          = "Enter your token";
 
         private String getPassword() {
             if (this.pass == null) {
@@ -974,9 +968,9 @@ public class UpToBoxCom extends antiDDoSForHost {
 
         public UptoboxAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Click here to find your Token / apikey:"));
+            add(new JLabel("Click here to find your token:"));
             add(new JLink("https://uptobox.com/my_account"));
-            add(new JLabel("Token / apikey:"));
+            add(new JLabel("Token:"));
             add(this.pass = new ExtPasswordField() {
                 @Override
                 public void onChanged() {

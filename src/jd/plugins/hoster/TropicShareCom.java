@@ -26,7 +26,9 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -78,17 +80,18 @@ public class TropicShareCom extends PluginForHost {
         prepBR(br);
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.containsHTML(">File size: </span>")) {
+        if (br.containsHTML("(?i)>\\s*File size: </span>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex fInfo = br.getRegex("<h2>([^<>\"]*?)<span style=\"float: right;font\\-size: 12px;\">File size: ([^<>\"]*?)</span>");
+        final Regex fInfo = br.getRegex("(?i)<h2>([^<>\"]*?)<span style=\"float: right;font\\-size: 12px;\">File size: ([^<>\"]*?)</span>");
         final String filename = fInfo.getMatch(0);
         final String filesize = fInfo.getMatch(1);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -106,7 +109,7 @@ public class TropicShareCom extends PluginForHost {
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("/files/time/", "id=" + fid);
-        if (br.containsHTML("\"status\":\"Please wait, while downloading\"")) {
+        if (br.containsHTML("(?i)\"status\":\"Please wait, while downloading\"")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
         final String uid = PluginJSonUtils.getJsonValue(br, "uid");
@@ -122,21 +125,21 @@ public class TropicShareCom extends PluginForHost {
             } catch (final IOException e) {
                 logger.log(e);
             }
-            if (br.containsHTML("Error, you not have premium acount")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } else if (br.containsHTML("Waiting time: ")) {
+            if (br.containsHTML("(?i)Error, you not have premium acount")) {
+                throw new AccountRequiredException();
+            } else if (br.containsHTML("(?i)Waiting time: ")) {
                 final String minutes = br.getRegex("<span id=\"min\">(\\d+)</span>").getMatch(0);
                 final String seconds = br.getRegex("<span id=\"sec\">(\\d+)</span>").getMatch(0);
                 if (minutes != null && seconds != null) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(minutes) * 60 * 1001 + Integer.parseInt(seconds) * 1001l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
                 }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-            } else if (br.containsHTML("For parallel downloads please select one of Premium packages")) {
+            } else if (br.containsHTML("(?i)For parallel downloads please select one of Premium packages")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
-            } else if (br.containsHTML("No htmlCode read")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error #1");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error: Got html code instead of file");
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error #2");
         }
         dl.startDownload();
     }
@@ -155,7 +158,7 @@ public class TropicShareCom extends PluginForHost {
                         return;
                     } else {
                         br.getPage("http://" + this.getHost() + "/");
-                        if (this.isLoggedin()) {
+                        if (this.isLoggedin(br)) {
                             logger.info("Cookie login successful");
                             /* Refresh cookie timestamp */
                             account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -180,7 +183,7 @@ public class TropicShareCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedin() {
+    private boolean isLoggedin(final Browser br) {
         return br.containsHTML("class=\"settings-panel\"");
     }
 
@@ -207,13 +210,15 @@ public class TropicShareCom extends PluginForHost {
         final long daysSeconds = Integer.parseInt(days) * 24 * 60 * 60;
         final long expireMilliseconds = (monthsSeconds + daysSeconds) * 1001;
         ai.setValidUntil(System.currentTimeMillis() + expireMilliseconds);
+        account.setType(AccountType.PREMIUM);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        /* 2023-01-25: Check login before every download as their cookies sometimes randomly expire(?) */
+        login(account, true);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, -4);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {

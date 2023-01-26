@@ -93,17 +93,17 @@ public class RedditComCrawler extends PluginForDecrypt {
 
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
-        ret.add("https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[^/]+(?:/comments/[a-z0-9]+(/[A-Za-z0-9\\-_]+/?)?)?|gallery/[a-z0-9]+|user/[^/]+(?:/saved)?)" + "|" + PATTERN_SELFHOSTED_VIDEO);
+        ret.add("https?://(?:(?:www|old)\\.)?reddit\\.com/(?:r/[\\w\\-]+(?:/comments/[a-z0-9]+(/[A-Za-z0-9\\-_]+/?)?)?|gallery/[a-z0-9]+|user/[\\w\\-]+(?:/saved)?)" + "|" + PATTERN_SELFHOSTED_VIDEO);
         return ret.toArray(new String[0]);
     }
 
     public static final String  PATTERN_SELFHOSTED_IMAGE   = "https?://i\\.redd\\.it/([a-z0-9]+)\\.[A-Za-z]{2,5}";
     public static final String  PATTERN_SELFHOSTED_VIDEO   = "https?://v\\.redd\\.it/([a-z0-9]+)";
     private static final String PATTERN_SUBREDDIT          = "(?:https?://[^/]+)?/r/([^/]+)$";
-    private static final String PATTERN_POST               = "(?:https?://[^/]+)?/(r|user|u)/([^/]+)/comments/([a-z0-9]+)(/([^/\\?]+)/?)?";
+    private static final String PATTERN_POST               = "(?:https?://[^/]+)?/(r|user|u)/([\\w\\-]+)/comments/([a-z0-9]+)(/([^/\\?]+)/?)?";
     private static final String PATTERN_GALLERY            = "(?:https?://[^/]+)?/gallery/([a-z0-9]+)";
-    private static final String PATTERN_USER               = "(?:https?://[^/]+)?/(?:user|u)/([^/]+)$";
-    private static final String PATTERN_USER_SAVED_OBJECTS = "(?:https?://[^/]+)?/(?:user|u)/([^/]+)/saved";
+    private static final String PATTERN_USER               = "(?:https?://[^/]+)?/(?:user|u)/([\\w\\-]+)$";
+    private static final String PATTERN_USER_SAVED_OBJECTS = "(?:https?://[^/]+)?/(?:user|u)/([\\w\\-]+)/saved";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         RedditCom.prepBRAPI(this.br);
@@ -214,24 +214,26 @@ public class RedditComCrawler extends PluginForDecrypt {
             final int numberofItemsOnCurrentPage = ((Number) data.get("dist")).intValue();
             numberofItemsCrawled += numberofItemsOnCurrentPage;
             crawledLinks.addAll(this.crawlListing(root, fp));
-            logger.info("Crawled page " + page + " | Walked through items so far (theoretical value): " + numberofItemsCrawled);
             final String nextPageToken = (String) data.get("after");
+            logger.info("Crawled page " + page + " | " + "Found items so far: " + crawledLinks.size() + " | Walked through items so far: " + numberofItemsCrawled + " | next nextPageToken: " + nextPageToken);
             /* Multiple fail safes to prevent an infinite loop. */
             if (StringUtils.isEmpty(nextPageToken)) {
-                logger.info("Stopping because: nextPageToken is not given");
+                logger.info("Stopping because: nextPageToken is not given -> Looks like we've reached the last page: " + page);
                 break;
             } else if (!lastItemDupes.add(nextPageToken)) {
+                /* Additional fail-safe. This should not be needed. */
                 logger.info("Stopping because: We already know this nextPageToken");
                 break;
             } else if (numberofItemsOnCurrentPage < maxItemsPerCall) {
                 logger.info("Stopping because: Found only " + numberofItemsOnCurrentPage + "/" + maxItemsPerCall + " items this round");
                 break;
-            } else if (maxPage > -1 && page >= maxPage) {
+            } else if (page == maxPage) {
                 logger.info("Stopping because: Reached desired max page: " + maxPage);
                 break;
+            } else {
+                query.addAndReplace("after", nextPageToken);
+                page++;
             }
-            query.addAndReplace("after", nextPageToken);
-            page++;
         } while (!this.isAbort());
         return crawledLinks;
     }
@@ -379,38 +381,48 @@ public class RedditComCrawler extends PluginForDecrypt {
                 /* Look for single URLs e.g. single pictures (e.g. often imgur.com URLs, can also be selfhosted content) */
                 boolean addedRedditSelfhostedVideo = false;
                 String maybeExternalURL = (String) data.get("url");
-                if (Encoding.isHtmlEntityCoded(maybeExternalURL)) {
-                    maybeExternalURL = Encoding.htmlDecode(maybeExternalURL);
-                }
-                /* The following if statement is not needed is is only here because that field rarely contains a relative URL. */
-                if (maybeExternalURL.startsWith("/")) {
-                    maybeExternalURL = br.getURL(maybeExternalURL).toString();
-                }
-                if (!StringUtils.isEmpty(maybeExternalURL) && (maybeExternalURL.matches(PATTERN_SELFHOSTED_VIDEO) || maybeExternalURL.matches(PATTERN_SELFHOSTED_IMAGE) || !this.canHandle(maybeExternalURL))) {
-                    final String serverFilename = Plugin.getFileNameFromURL(new URL(maybeExternalURL));
-                    final String serverFilenameWithoutExt;
-                    if (serverFilename.contains(".")) {
-                        serverFilenameWithoutExt = serverFilename.substring(0, serverFilename.lastIndexOf("."));
-                    } else {
-                        serverFilenameWithoutExt = serverFilename;
+                if (!StringUtils.isEmpty(maybeExternalURL)) {
+                    if (Encoding.isHtmlEntityCoded(maybeExternalURL)) {
+                        maybeExternalURL = Encoding.htmlDecode(maybeExternalURL);
                     }
-                    final DownloadLink dl = this.createDownloadlink(maybeExternalURL);
-                    if (maybeExternalURL.matches(PATTERN_SELFHOSTED_VIDEO)) {
-                        dl.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, serverFilenameWithoutExt);
-                        dl.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_video);
-                        addedRedditSelfhostedVideo = true;
-                        /* Skip availablecheck as we know that this content is online and is a directurl. */
-                        dl.setAvailable(true);
-                        thisCrawledLinks.add(dl);
-                    } else if (maybeExternalURL.matches(PATTERN_SELFHOSTED_IMAGE)) {
-                        dl.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, serverFilenameWithoutExt);
-                        dl.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_image);
-                        /* Skip availablecheck as we know that this content is online and is a directurl. */
-                        dl.setAvailable(true);
-                        thisCrawledLinks.add(dl);
-                    } else {
+                    /* The following if statement is not needed is is only here because that field rarely contains a relative URL. */
+                    if (maybeExternalURL.startsWith("/")) {
+                        maybeExternalURL = br.getURL(maybeExternalURL).toString();
+                    }
+                    if (maybeExternalURL.matches(PATTERN_SELFHOSTED_VIDEO) || maybeExternalURL.matches(PATTERN_SELFHOSTED_IMAGE)) {
+                        final String serverFilename = Plugin.getFileNameFromURL(new URL(maybeExternalURL));
+                        final String serverFilenameWithoutExt;
+                        if (serverFilename.contains(".")) {
+                            serverFilenameWithoutExt = serverFilename.substring(0, serverFilename.lastIndexOf("."));
+                        } else {
+                            serverFilenameWithoutExt = serverFilename;
+                        }
+                        final DownloadLink dl = this.createDownloadlink(maybeExternalURL);
+                        if (maybeExternalURL.matches(PATTERN_SELFHOSTED_VIDEO)) {
+                            dl.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, serverFilenameWithoutExt);
+                            dl.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_video);
+                            addedRedditSelfhostedVideo = true;
+                            /* Skip availablecheck as we know that this content is online and is a directurl. */
+                            dl.setAvailable(true);
+                            thisCrawledLinks.add(dl);
+                        } else {
+                            /* PATTERN_SELFHOSTED_IMAGE */
+                            dl.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, serverFilenameWithoutExt);
+                            dl.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_image);
+                            /* Skip availablecheck as we know that this content is online and is a directurl. */
+                            dl.setAvailable(true);
+                            thisCrawledLinks.add(dl);
+                        }
+                    } else if (!this.canHandle(maybeExternalURL)) {
                         logger.info("Found external URL in 'url' field: " + maybeExternalURL);
-                        thisCrawledExternalLinks.add(dl);
+                        thisCrawledExternalLinks.add(this.createDownloadlink(maybeExternalURL));
+                    } else {
+                        /*
+                         * Mostly https://www.reddit.com/gallery/... links --> Returning them would mean that we would have to crawl them
+                         * one by one but usually if we got a gallery e can crawl the images right away without the need to do additional
+                         * http requests see down below.
+                         */
+                        logger.info("Ignoring URL found in 'url' field: " + maybeExternalURL);
                     }
                 }
                 /* 2022-03-10: When a gallery is removed, 'is_gallery' can be true while 'gallery_data' does not exist. */
@@ -447,95 +459,95 @@ public class RedditComCrawler extends PluginForDecrypt {
                         thisCrawledLinks.add(image);
                         imageNumber++;
                     }
-                    break;
-                }
-                /* Look for embedded content from external sources - the object is always given but can be empty */
-                final Object embeddedMediaO = data.get("media_embed");
-                if (embeddedMediaO != null) {
-                    final Map<String, Object> embeddedMediaInfo = (Map<String, Object>) embeddedMediaO;
-                    if (!embeddedMediaInfo.isEmpty()) {
-                        logger.info("Found media_embed");
-                        String mediaEmbedStr = (String) embeddedMediaInfo.get("content");
-                        final String[] urls = HTMLParser.getHttpLinks(mediaEmbedStr, this.br.getURL());
-                        for (final String url : urls) {
-                            final DownloadLink dl = this.createDownloadlink(url);
-                            thisCrawledExternalLinks.add(dl);
+                } else {
+                    /* Look for embedded content from external sources - the object is always given but can be empty */
+                    final Object embeddedMediaO = data.get("media_embed");
+                    if (embeddedMediaO != null) {
+                        final Map<String, Object> embeddedMediaInfo = (Map<String, Object>) embeddedMediaO;
+                        if (!embeddedMediaInfo.isEmpty()) {
+                            logger.info("Found media_embed");
+                            String mediaEmbedStr = (String) embeddedMediaInfo.get("content");
+                            final String[] urls = HTMLParser.getHttpLinks(mediaEmbedStr, this.br.getURL());
+                            for (final String url : urls) {
+                                final DownloadLink dl = this.createDownloadlink(url);
+                                thisCrawledExternalLinks.add(dl);
+                            }
                         }
                     }
-                }
-                /* Look for selfhosted video content. Prefer content without https */
-                if (!addedRedditSelfhostedVideo) {
-                    final String[] mediaTypes = new String[] { "media", "secure_media" };
-                    for (final String mediaType : mediaTypes) {
-                        final Object mediaO = data.get(mediaType);
-                        if (mediaO != null) {
-                            final Map<String, Object> mediaInfo = (Map<String, Object>) mediaO;
-                            if (!mediaInfo.isEmpty()) {
-                                logger.info("Found mediaType '" + mediaType + "'");
-                                /* This is not always given */
-                                final Object redditVideoO = mediaInfo.get("reddit_video");
-                                if (redditVideoO != null) {
-                                    final Map<String, Object> redditVideo = (Map<String, Object>) redditVideoO;
-                                    /* TODO: 2022-01-12: Check filenames for such URLs (apply user preferred FilenameScheme) */
-                                    String hls_url = (String) redditVideo.get("hls_url");
-                                    if (!StringUtils.isEmpty(hls_url)) {
-                                        if (Encoding.isHtmlEntityCoded(hls_url)) {
-                                            hls_url = Encoding.htmlDecode(hls_url);
-                                        }
-                                        final String videoID = new Regex(hls_url, PATTERN_SELFHOSTED_VIDEO).getMatch(0);
-                                        if (videoID != null) {
-                                            final DownloadLink video = this.createDownloadlink("https://v.redd.it/" + videoID);
-                                            video.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_video);
-                                            video.setAvailable(true);
-                                            thisCrawledLinks.add(video);
-                                            addedRedditSelfhostedVideo = true;
-                                        } else {
-                                            /* Most likely directurl */
-                                            final DownloadLink dl = this.createDownloadlink(hls_url);
-                                            thisCrawledLinks.add(dl);
+                    /* Look for selfhosted video content. Prefer content without https */
+                    if (!addedRedditSelfhostedVideo) {
+                        final String[] mediaTypes = new String[] { "media", "secure_media" };
+                        for (final String mediaType : mediaTypes) {
+                            final Object mediaO = data.get(mediaType);
+                            if (mediaO != null) {
+                                final Map<String, Object> mediaInfo = (Map<String, Object>) mediaO;
+                                if (!mediaInfo.isEmpty()) {
+                                    logger.info("Found mediaType '" + mediaType + "'");
+                                    /* This is not always given */
+                                    final Object redditVideoO = mediaInfo.get("reddit_video");
+                                    if (redditVideoO != null) {
+                                        final Map<String, Object> redditVideo = (Map<String, Object>) redditVideoO;
+                                        /* TODO: 2022-01-12: Check filenames for such URLs (apply user preferred FilenameScheme) */
+                                        String hls_url = (String) redditVideo.get("hls_url");
+                                        if (!StringUtils.isEmpty(hls_url)) {
+                                            if (Encoding.isHtmlEntityCoded(hls_url)) {
+                                                hls_url = Encoding.htmlDecode(hls_url);
+                                            }
+                                            final String videoID = new Regex(hls_url, PATTERN_SELFHOSTED_VIDEO).getMatch(0);
+                                            if (videoID != null) {
+                                                final DownloadLink video = this.createDownloadlink("https://v.redd.it/" + videoID);
+                                                video.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_video);
+                                                video.setAvailable(true);
+                                                thisCrawledLinks.add(video);
+                                                addedRedditSelfhostedVideo = true;
+                                            } else {
+                                                /* Most likely directurl */
+                                                final DownloadLink dl = this.createDownloadlink(hls_url);
+                                                thisCrawledLinks.add(dl);
+                                            }
                                         }
                                     }
                                 }
                             }
+                            /* Stop once one media type has been found as the rest are usually mirrors. */
+                            break;
                         }
-                        /* Stop once one media type has been found as the rest are usually mirrors. */
-                        break;
                     }
-                }
-                /* Look for selfhosted photo content, Only add image if nothing else is found */
-                if (thisCrawledLinks.isEmpty()) {
-                    postContainsRealMedia = false;
-                    final List<Map<String, Object>> images = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(data, "preview/images");
-                    if (images != null) {
-                        /* Images slash selfhosted preview images */
-                        logger.info(String.format("Found %d selfhosted images", images.size()));
-                        int imageNumber = 1;
-                        for (final Map<String, Object> imageInfo : images) {
-                            String bestImageURL = (String) JavaScriptEngineFactory.walkJson(imageInfo, "source/url");
-                            if (StringUtils.isEmpty(bestImageURL)) {
-                                /* Skip invalid items */
-                                continue;
+                    /* Look for selfhosted photo content, Only add image if nothing else is found */
+                    if (thisCrawledLinks.isEmpty()) {
+                        postContainsRealMedia = false;
+                        final List<Map<String, Object>> images = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(data, "preview/images");
+                        if (images != null) {
+                            /* Images slash selfhosted preview images */
+                            logger.info(String.format("Found %d selfhosted images", images.size()));
+                            int imageNumber = 1;
+                            for (final Map<String, Object> imageInfo : images) {
+                                String bestImageURL = (String) JavaScriptEngineFactory.walkJson(imageInfo, "source/url");
+                                if (StringUtils.isEmpty(bestImageURL)) {
+                                    /* Skip invalid items */
+                                    continue;
+                                }
+                                /* Fix encoding */
+                                bestImageURL = bestImageURL.replace("&amp;", "&");
+                                final String serverFilename = Plugin.getFileNameFromURL(new URL(bestImageURL));
+                                final String serverFilenameWithoutExt;
+                                if (serverFilename.contains(".")) {
+                                    serverFilenameWithoutExt = serverFilename.substring(0, serverFilename.lastIndexOf("."));
+                                } else {
+                                    serverFilenameWithoutExt = serverFilename;
+                                }
+                                final DownloadLink image = this.createDownloadlink("directhttp://" + bestImageURL);
+                                image.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_image);
+                                image.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, serverFilenameWithoutExt);
+                                image.setProperty(RedditCom.PROPERTY_INDEX, imageNumber);
+                                image.setProperty(RedditCom.PROPERTY_INDEX_MAX, images.size());
+                                image.setAvailable(true);
+                                thisCrawledLinks.add(image);
+                                imageNumber++;
                             }
-                            /* Fix encoding */
-                            bestImageURL = bestImageURL.replace("&amp;", "&");
-                            final String serverFilename = Plugin.getFileNameFromURL(new URL(bestImageURL));
-                            final String serverFilenameWithoutExt;
-                            if (serverFilename.contains(".")) {
-                                serverFilenameWithoutExt = serverFilename.substring(0, serverFilename.lastIndexOf("."));
-                            } else {
-                                serverFilenameWithoutExt = serverFilename;
-                            }
-                            final DownloadLink image = this.createDownloadlink("directhttp://" + bestImageURL);
-                            image.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_image);
-                            image.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, serverFilenameWithoutExt);
-                            image.setProperty(RedditCom.PROPERTY_INDEX, imageNumber);
-                            image.setProperty(RedditCom.PROPERTY_INDEX_MAX, images.size());
-                            image.setAvailable(true);
-                            thisCrawledLinks.add(image);
-                            imageNumber++;
+                        } else {
+                            logger.info("Failed to find selfhosted image(s)");
                         }
-                    } else {
-                        logger.info("Failed to find selfhosted image(s)");
                     }
                 }
                 /* If this != null the post was removed. Still we might be able to find an external image URL sometimes (field "url"). */
@@ -556,6 +568,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                             }
                         }
                     } else {
+                        /* All possible URLs have been skipped */
                         skippedItems += urls.length;
                     }
                     final TextCrawlerMode mode = cfg.getCrawlerTextDownloadMode();
