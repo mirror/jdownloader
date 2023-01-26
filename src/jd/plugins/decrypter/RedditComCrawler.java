@@ -145,8 +145,8 @@ public class RedditComCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlSubreddit(final CryptedLink param) throws Exception {
         /* Prepare crawl process */
-        final String subredditTitle = new Regex(param.getCryptedUrl(), PATTERN_SUBREDDIT).getMatch(0);
-        if (subredditTitle == null) {
+        final String subredditSlug = new Regex(param.getCryptedUrl(), PATTERN_SUBREDDIT).getMatch(0);
+        if (subredditSlug == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -157,8 +157,8 @@ public class RedditComCrawler extends PluginForDecrypt {
         } else {
             /* Crawl until we've reached the end. */
             final FilePackage fp = FilePackage.getInstance();
-            final String url = "https://www." + this.getHost() + "/r/" + subredditTitle + "/.json";
-            fp.setName("/r/" + subredditTitle);
+            final String url = "https://www." + this.getHost() + "/r/" + subredditSlug + "/.json";
+            fp.setName("/r/" + subredditSlug);
             return this.crawlPagination(url, fp, maxPagesToCrawl);
         }
     }
@@ -200,7 +200,7 @@ public class RedditComCrawler extends PluginForDecrypt {
         // query.add("type", "links");
         query.add("limit", Integer.toString(maxItemsPerCall));
         int page = 1;
-        int numberofItemsCrawled = 0;
+        int numberofItemsWalkedThrough = 0;
         fp.setAllowMerge(true);
         fp.setAllowInheritance(true);
         fp.setCleanupPackageName(false);
@@ -212,20 +212,17 @@ public class RedditComCrawler extends PluginForDecrypt {
             final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final Map<String, Object> data = (Map<String, Object>) root.get("data");
             final int numberofItemsOnCurrentPage = ((Number) data.get("dist")).intValue();
-            numberofItemsCrawled += numberofItemsOnCurrentPage;
+            numberofItemsWalkedThrough += numberofItemsOnCurrentPage;
             crawledLinks.addAll(this.crawlListing(root, fp));
             final String nextPageToken = (String) data.get("after");
-            logger.info("Crawled page " + page + " | " + "Found items so far: " + crawledLinks.size() + " | Walked through items so far: " + numberofItemsCrawled + " | next nextPageToken: " + nextPageToken);
-            /* Multiple fail safes to prevent an infinite loop. */
+            logger.info("Crawled page " + page + " | " + "Found items so far: " + crawledLinks.size() + " | Walked through items so far: " + numberofItemsWalkedThrough + " | next nextPageToken: " + nextPageToken);
+            /* Multiple fail safes to prevent infinite loop. */
             if (StringUtils.isEmpty(nextPageToken)) {
                 logger.info("Stopping because: nextPageToken is not given -> Looks like we've reached the last page: " + page);
                 break;
             } else if (!lastItemDupes.add(nextPageToken)) {
                 /* Additional fail-safe. This should not be needed. */
                 logger.info("Stopping because: We already know this nextPageToken");
-                break;
-            } else if (numberofItemsOnCurrentPage < maxItemsPerCall) {
-                logger.info("Stopping because: Found only " + numberofItemsOnCurrentPage + "/" + maxItemsPerCall + " items this round");
                 break;
             } else if (page == maxPage) {
                 logger.info("Stopping because: Reached desired max page: " + maxPage);
@@ -238,7 +235,7 @@ public class RedditComCrawler extends PluginForDecrypt {
         return crawledLinks;
     }
 
-    /** TODO: Try to crawlPagination instead! */
+    /** TODO: Try to use crawlPagination instead! */
     private ArrayList<DownloadLink> crawlUserSavedObjects(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
         /* Login required */

@@ -22,12 +22,15 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -60,7 +63,7 @@ public class IndiShareMe extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "indishare.org", "indishare.cc", "indi-share.com", "indishare.co", "indishare.com", "indishare.me" });
+        ret.add(new String[] { "indishare.org", "indishare.cc", "indi-share.com", "indishare.co", "indishare.com", "indishare.me", "india-share.com", "news4town.com" });
         return ret;
     }
 
@@ -116,19 +119,50 @@ public class IndiShareMe extends XFileSharingProBasic {
     private boolean workaround1Done = false;
     private boolean workaround2Done = false;
 
+    // @Override
+    // protected void getPage(final Browser ibr, final String page) throws Exception {
+    // super.getPage(ibr, page);
+    // }
     @Override
-    protected void getPage(final Browser ibr, final String page) throws Exception {
-        super.getPage(ibr, page);
-        if (!workaround1Done) {
-            /* Usually to "https://dl.indishare.cc/..." */
-            final String newURL = br.getRegex(">\\s*Site Moved to New Address\\s*<a href=\"(https?://[^/]+/[a-z0-9]{12})\"").getMatch(0);
-            if (newURL != null) {
-                final boolean oldFollowRedirects = br.isFollowingRedirects();
-                br.setFollowRedirects(true);
-                br.getPage(newURL);
-                workaround1Done = true;
-                br.setFollowRedirects(oldFollowRedirects);
+    protected void runPostRequestTask(final Browser br) throws Exception {
+        super.runPostRequestTask(br);
+        /* Usually to "https://dl.indishare.cc/..." */
+        final String newURL = br.getRegex(">\\s*Site Moved to New Address\\s*<a href=\"(https?://[^/]+/[a-z0-9]{12})\"").getMatch(0);
+        if (!workaround1Done && newURL != null) {
+            /* Cat mouse games */
+            final boolean oldFollowRedirects = br.isFollowingRedirects();
+            br.setFollowRedirects(true);
+            br.getPage(newURL);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                /* 2023-01-26: Typically "news4town.com" */
+                final String fakeBlogBaseURL = br.getRegex("var sora_base_url = \"(https?://[^\"]+)\";").getMatch(0);
+                if (fakeBlogBaseURL == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String[] adURLs = br.getRegex("href=\"(https?://[^\"]+)\" rel=\"nofollow noopener noreferrer\"").getColumn(0);
+                if (adURLs == null || adURLs.length == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String adURL = adURLs[adURLs.length - 1];
+                final String adURLb64 = Encoding.Base64Encode(adURL);
+                br.getPage(fakeBlogBaseURL + "?r=" + Encoding.urlEncode(adURLb64));
+                final Form landingform = br.getFormbyProperty("id", "landing");
+                if (landingform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final InputField post_locationField = landingform.getInputFieldByName("post_location");
+                if (post_locationField == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String post_location = post_locationField.getValue();
+                if (post_location == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                landingform.setAction(Encoding.htmlDecode(post_location));
+                br.submitForm(landingform);
             }
+            workaround1Done = true;
+            br.setFollowRedirects(oldFollowRedirects);
         }
     }
 
@@ -153,8 +187,10 @@ public class IndiShareMe extends XFileSharingProBasic {
         }
     }
 
+    @Deprecated
     private boolean containsFakeError(final Browser br) {
-        if (br.getHttpConnection().getResponseCode() == 404 && br.getHost(true).equals("indi-share.com")) {
+        final String host = br.getHost();
+        if (br.getHttpConnection().getResponseCode() == 404 && (host.equals("indi-share.com") || host.equals("india-share.com"))) {
             return true;
         } else {
             return false;

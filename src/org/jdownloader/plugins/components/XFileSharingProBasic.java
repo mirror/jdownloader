@@ -857,6 +857,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                 final long completeContentLength = con.getCompleteContentLength();
                 if (completeContentLength >= 0 && completeContentLength < 100) {
                     br.followConnection();
+                    runPostRequestTask(br);
                     correctBR(br);
                     return false;
                 }
@@ -877,6 +878,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                 return true;
             } else {
                 br.followConnection();
+                runPostRequestTask(br);
                 correctBR(br);
                 return false;
             }
@@ -4499,7 +4501,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                             checkErrorsLastResort(br, account);
                         }
                         handlePassword(dlForm, link);
-                        final URLConnectionAdapter formCon = br.openFormConnection(dlForm);
+                        final URLConnectionAdapter formCon = openAntiDDoSRequestConnection(br, br.createFormRequest(dlForm));
                         if (looksLikeDownloadableContent(formCon)) {
                             /* Very rare case - e.g. tiny-files.com */
                             handleDownload(link, account, null, dllink, formCon.getRequest());
@@ -4510,6 +4512,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                             } catch (IOException e) {
                                 logger.log(e);
                             }
+                            runPostRequestTask(br);
                             this.correctBR(br);
                         }
                         checkErrors(br, getCorrectBR(br), link, account, true);
@@ -5345,7 +5348,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
      * pseudo redirect control!
      */
     @Override
-    protected void runPostRequestTask(Browser ibr) throws Exception {
+    protected void runPostRequestTask(final Browser ibr) throws Exception {
         final String redirect;
         if (!ibr.isFollowingRedirects() && (redirect = ibr.getRedirectLocation()) != null) {
             if (!this.isImagehoster()) {
