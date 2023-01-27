@@ -59,7 +59,6 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "mylust.com" });
         ret.add(new String[] { "yourporngod.com" });
         ret.add(new String[] { "everydayporn.co" });
-        ret.add(new String[] { "datoporn.com", "dato.porn" });
         ret.add(new String[] { "camhub.cc", "camhub.world" });
         ret.add(new String[] { "upornia.com" });
         ret.add(new String[] { "finevids.xxx" });
@@ -100,8 +99,6 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "tktube.com" });
         /* 2022-01-17 */
         ret.add(new String[] { "fpo.xxx" });
-        /* 2022-01-19 */
-        ret.add(new String[] { "ebalka.fun" });
         /* 2022-02-23 */
         ret.add(new String[] { "watchporn.to" });
         /* 2022-03-24 */

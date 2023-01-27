@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -59,10 +60,12 @@ public class AppleTrailer extends PluginForDecrypt {
     // public int getMaxConcurrentProcessingInstances() {
     // return 1;
     // }
-    private String                        parameter = null;
-    private String                        title     = null;
-    private final ArrayList<DownloadLink> ret       = new ArrayList<DownloadLink>();
-    private final HashSet<String>         dupe      = new HashSet<String>();
+    private String                        parameter       = null;
+    private String                        title           = null;
+    private final ArrayList<DownloadLink> ret             = new ArrayList<DownloadLink>();
+    private final HashSet<String>         dupe            = new HashSet<String>();
+    private final String                  PROPERTY_WIDTH  = "pWidth";
+    private final String                  PROPERTY_HEIGHT = "pSize";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -157,41 +160,96 @@ public class AppleTrailer extends PluginForDecrypt {
         // }
         if (ret.isEmpty()) {
             final Browser brc = br.cloneBrowser();
-            brc.getPage(br.getURL() + "&isWebExpV2=true&dataOnly=true");
-            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
-            final Map<String, Object> result0 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "storePlatformData/product-dv/results");
-            Map<String, Object> result = null;
-            for (final Entry<String, Object> entry : result0.entrySet()) {
-                /* Get first item */
-                result = (Map<String, Object>) entry.getValue();
-                break;
-            }
-            final String title = result.get("nameSortValue").toString();
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(title);
-            final List<Map<String, Object>> movieClips = (List<Map<String, Object>>) result.get("movieClips");
-            for (final Map<String, Object> movieClip : movieClips) {
-                final List<Map<String, Object>> clipAssets = (List<Map<String, Object>>) movieClip.get("clipAssets");
-                for (final Map<String, Object> clipAsset : clipAssets) {
-                    final String videourl = clipAsset.get("url").toString();
-                    final DownloadLink video = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(videourl));
-                    video.setAvailable(true);
-                    ret.add(video);
+            final String filmID = br.getRegex("var FilmId\\s*=\\s*'?(\\d+)'?;").getMatch(0);
+            if (filmID != null) {
+                /* 2023-01-27 */
+                /* Example: https://trailers.apple.com/trailers/newline/shazam-fury-of-the-gods/ */
+                brc.getPage("/trailers/feeds/data/" + filmID + ".json");
+                final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                /* One movie can have multiple trailers. */
+                final List<Map<String, Object>> clips = (List<Map<String, Object>>) entries.get("clips");
+                for (final Map<String, Object> clip : clips) {
+                    final String title = clip.get("title").toString();
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(title);
+                    final ArrayList<DownloadLink> tmplist = new ArrayList<DownloadLink>();
+                    final Map<String, Object> sizes = (Map<String, Object>) JavaScriptEngineFactory.walkJson(clip, "versions/enus/sizes");
+                    final Iterator<Entry<String, Object>> iterator = sizes.entrySet().iterator();
+                    while (iterator.hasNext()) {
+                        final Entry<String, Object> entry = iterator.next();
+                        // final String sizeName = entry.getKey();
+                        final Map<String, Object> sizemap = (Map<String, Object>) entry.getValue();
+                        final List<String> directlinks = new ArrayList<String>();
+                        final String src = sizemap.get("src").toString();
+                        directlinks.add(src);
+                        final String srcAlt = (String) sizemap.get("srcAlt");
+                        if (!StringUtils.isEmpty(srcAlt)) {
+                            directlinks.add(srcAlt);
+                        }
+                        final Object heightO = sizemap.get("height");
+                        for (final String directlink : directlinks) {
+                            final DownloadLink video = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(directlink));
+                            video.setProperty(PROPERTY_WIDTH, sizemap.get("width"));
+                            if (heightO != null) {
+                                if (heightO instanceof String) {
+                                    video.setProperty(PROPERTY_HEIGHT, heightO);
+                                } else {
+                                    video.setProperty(PROPERTY_HEIGHT, heightO);
+                                }
+                            }
+                            video.setAvailable(true);
+                            video._setFilePackage(fp);
+                            tmplist.add(video);
+                        }
+                    }
+                    ret.addAll(this.analyseUserSettings(tmplist));
                 }
+            } else {
+                /* Example: http://trailers.apple.com/trailers/fox/avatar/ */
+                brc.getPage(br.getURL() + "&isWebExpV2=true&dataOnly=true");
+                final ArrayList<DownloadLink> tmplist = new ArrayList<DownloadLink>();
+                final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> result0 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "storePlatformData/product-dv/results");
+                Map<String, Object> result = null;
+                for (final Entry<String, Object> entry : result0.entrySet()) {
+                    /* Get first item */
+                    result = (Map<String, Object>) entry.getValue();
+                    break;
+                }
+                final String title = result.get("nameSortValue").toString();
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(title);
+                final List<Map<String, Object>> movieClips = (List<Map<String, Object>>) result.get("movieClips");
+                for (final Map<String, Object> movieClip : movieClips) {
+                    final List<Map<String, Object>> clipAssets = (List<Map<String, Object>>) movieClip.get("clipAssets");
+                    for (final Map<String, Object> clipAsset : clipAssets) {
+                        final String videourl = clipAsset.get("url").toString();
+                        final DownloadLink video = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(videourl));
+                        /* Video resolution is not given as a field -> Look for these values inside URL */
+                        final Regex videoResolutionRegex = new Regex(videourl, "(\\d{3,})x(\\d{3,})");
+                        if (videoResolutionRegex.matches()) {
+                            video.setProperty(PROPERTY_WIDTH, videoResolutionRegex.getMatch(0));
+                            video.setProperty(PROPERTY_HEIGHT, videoResolutionRegex.getMatch(1));
+                        }
+                        video.setAvailable(true);
+                        video._setFilePackage(fp);
+                        tmplist.add(video);
+                    }
+                }
+                // final Map<String, Object> lockupResults = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries,
+                // "storePlatformData/lockup/results");
+                // for (final Entry<String, Object> entry : lockupResults.entrySet()) {
+                // final Map<String, Object> item = (Map<String, Object>) entry.getValue();
+                // final List<Map<String, Object>> offers = (List<Map<String, Object>>)item.get("offers");
+                // for(final Map<String, Object>offer:offers) {
+                // final List<Map<String, Object>> assets = (List<Map<String, Object>>)offer.get("assets");
+                // for(final Map<String, Object> asset:assets) {
+                //
+                // }
+                // }
+                // }
+                ret.addAll(this.analyseUserSettings(tmplist));
             }
-            fp.addLinks(ret);
-            // final Map<String, Object> lockupResults = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries,
-            // "storePlatformData/lockup/results");
-            // for (final Entry<String, Object> entry : lockupResults.entrySet()) {
-            // final Map<String, Object> item = (Map<String, Object>) entry.getValue();
-            // final List<Map<String, Object>> offers = (List<Map<String, Object>>)item.get("offers");
-            // for(final Map<String, Object>offer:offers) {
-            // final List<Map<String, Object>> assets = (List<Map<String, Object>>)offer.get("assets");
-            // for(final Map<String, Object> asset:assets) {
-            //
-            // }
-            // }
-            // }
         }
     }
 
@@ -256,7 +314,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     }
                     dlLink.setFinalFileName(name);
                     dlLink.setReferrerUrl(br.getURL());
-                    dlLink.setProperty("pSize", pSize);
+                    dlLink.setProperty(PROPERTY_HEIGHT, pSize);
                     dlLink.setAvailable(true);
                     temp.add(dlLink);
                 }
@@ -272,7 +330,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     DownloadLink dlLink = createDownloadlink(url[0].replace(".apple.com", ".appledecrypted.com"));
                     dlLink.setFinalFileName(name);
                     dlLink.setReferrerUrl(br.getURL());
-                    dlLink.setProperty("pSize", pSize);
+                    dlLink.setProperty(PROPERTY_HEIGHT, pSize);
                     dlLink.setAvailable(true);
                     temp.add(dlLink);
                 }
@@ -315,7 +373,7 @@ public class AppleTrailer extends PluginForDecrypt {
             final String name = title + " - " + "Trailer" + " (" + p_q(psize) + ").mov";
             url = url.replace("/trailers.apple.com/", "/trailers.appledecrypted.com/");
             DownloadLink dlLink = createDownloadlink(url);
-            dlLink.setProperty("pSize", psize);
+            dlLink.setProperty(PROPERTY_HEIGHT, psize);
             dlLink.setFinalFileName(name);
             dlLink.setAvailable(true);
             dlLink.setReferrerUrl(br2.getURL());
@@ -351,7 +409,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     final String name = title + " - " + t_name + " (" + p_q(psize) + ").mov";
                     url = url.replace("/trailers.apple.com/", "/trailers.appledecrypted.com/");
                     DownloadLink dlLink = createDownloadlink(url);
-                    dlLink.setProperty("pSize", psize);
+                    dlLink.setProperty(PROPERTY_HEIGHT, psize);
                     dlLink.setFinalFileName(name);
                     dlLink.setAvailable(true);
                     dlLink.setReferrerUrl(br2.getURL());
@@ -475,7 +533,7 @@ public class AppleTrailer extends PluginForDecrypt {
                 }
                 url = url.replace("/trailers.apple.com/", "/trailers.appledecrypted.com/");
                 DownloadLink dlLink = createDownloadlink(url);
-                dlLink.setProperty("pSize", psize);
+                dlLink.setProperty(PROPERTY_HEIGHT, psize);
                 dlLink.setFinalFileName(name);
                 dlLink.setAvailable(true);
                 dlLink.setReferrerUrl(br.getURL());
@@ -538,7 +596,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     final String name = title + " - " + trailerName + " (" + p_q(psize) + ").mov";
                     url = url.replace("/trailers.apple.com/", "/trailers.appledecrypted.com/");
                     DownloadLink dlLink = createDownloadlink(url);
-                    dlLink.setProperty("pSize", psize);
+                    dlLink.setProperty(PROPERTY_HEIGHT, psize);
                     dlLink.setFinalFileName(name);
                     dlLink.setAvailable(true);
                     dlLink.setReferrerUrl(br.getURL());
@@ -635,7 +693,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     if (size != null) {
                         dlLink.setDownloadSize(SizeFormatter.getSize(size));
                     }
-                    dlLink.setProperty("pSize", format);
+                    dlLink.setProperty(PROPERTY_HEIGHT, format);
                     dlLink.setFinalFileName(fname);
                     dlLink.setReferrerUrl(br.getURL());
                     dlLink.setAvailable(true);
@@ -673,7 +731,7 @@ public class AppleTrailer extends PluginForDecrypt {
                         dlLink.setFinalFileName(filename + " (" + p_q(pSize) + ")" + extension);
                         dlLink.setAvailable(true);
                         dlLink.setReferrerUrl(br.getURL());
-                        dlLink.setProperty("pSize", pSize);
+                        dlLink.setProperty(PROPERTY_HEIGHT, pSize);
                         temp.add(dlLink);
                         // lets see if we can add the other formats 20140224, generally found links are 480 others are cock blocked.
                         ArrayList<String> p = new ArrayList<String>(Arrays.asList(new String[] { "480", "720", "1080" }));
@@ -689,7 +747,7 @@ public class AppleTrailer extends PluginForDecrypt {
                             d.setFinalFileName(filename + " (" + p_q(n) + ")" + extension);
                             d.setAvailable(true);
                             d.setReferrerUrl(br.getURL());
-                            d.setProperty("pSize", n);
+                            d.setProperty(PROPERTY_HEIGHT, n);
                             temp.add(d);
                             p.remove(n);
                         }
@@ -781,7 +839,7 @@ public class AppleTrailer extends PluginForDecrypt {
                         final DownloadLink dlLink = createDownloadlink(url.replace(".apple.com", ".appledecrypted.com"));
                         dlLink.setLinkID(getHost() + "://" + filmID + "/" + Hash.getMD5(clipTitle) + "/" + format);
                         dlLink.setFinalFileName(fname);
-                        dlLink.setProperty("pSize", format);
+                        dlLink.setProperty(PROPERTY_HEIGHT, format);
                         dlLink.setReferrerUrl(br.getURL());
                         dlLink.setAvailable(true);
                         temp.add(dlLink);
@@ -792,51 +850,57 @@ public class AppleTrailer extends PluginForDecrypt {
         }
     }
 
+    /** Decides which of the crawled items we want to add */
     private ArrayList<DownloadLink> analyseUserSettings(final ArrayList<DownloadLink> links) {
-        if (this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.TrailersAppleCom.preferBest, jd.plugins.hoster.TrailersAppleCom.preferBest_default)) {
-            int bestest = 0;
-            DownloadLink bdlink = null;
-            for (final DownloadLink dl : links) {
-                if (dl.getStringProperty("pSize", null) != null) {
-                    int p = Integer.parseInt(dl.getStringProperty("pSize"));
-                    if (!isPqualityEnabled(p)) {
-                        continue;
-                    }
-                    if (p > bestest) {
-                        bestest = p;
-                        bdlink = dl;
-                    }
-                }
-            }
-            if (bdlink != null) {
-                final ArrayList<DownloadLink> b = new ArrayList<DownloadLink>();
-                b.add(bdlink);
-                return b;
-            }
+        if (links == null || links.isEmpty()) {
+            return links;
         }
-        // we need code to still respect checkboxes when best isn't enabled
-        final ArrayList<DownloadLink> results = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> selectedAllowedQualities = new ArrayList<DownloadLink>();
+        int bestWidth = 0;
+        int bestHeight = 0;
+        DownloadLink best = null;
         for (final DownloadLink dl : links) {
-            if (dl.getStringProperty("pSize", null) != null) {
-                int p = Integer.parseInt(dl.getStringProperty("pSize"));
-                if (isPqualityEnabled(p)) {
-                    results.add(dl);
+            final int width = dl.getIntegerProperty(PROPERTY_WIDTH, -1);
+            final Object heightO = dl.getProperty(PROPERTY_HEIGHT);
+            if (heightO != null || width != -1) {
+                /* Check if user wants to have this quality */
+                int height = Integer.parseInt(heightO.toString());
+                if (!isPqualityEnabled(height) && !isPqualityEnabled(width)) {
+                    continue;
+                }
+                selectedAllowedQualities.add(dl);
+                if (width > bestWidth) {
+                    bestWidth = width;
+                    best = dl;
+                } else if (height > bestHeight) {
+                    bestHeight = height;
+                    best = dl;
                 }
             }
         }
-        return results.isEmpty() ? links : results;
+        if (this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.TrailersAppleCom.preferBest, jd.plugins.hoster.TrailersAppleCom.preferBest_default) && best != null) {
+            final ArrayList<DownloadLink> b = new ArrayList<DownloadLink>();
+            b.add(best);
+            return b;
+        } else if (selectedAllowedQualities.size() > 0) {
+            return selectedAllowedQualities;
+        } else {
+            /* Fallback: Return all */
+            logger.info("Unable to find user selected quality -> Return all");
+            return links;
+        }
     }
 
-    private final boolean isPqualityEnabled(final int p) {
-        if (p == 1080) {
+    private final boolean isPqualityEnabled(final int heightOrWidth) {
+        if (heightOrWidth == 1920 || heightOrWidth == 1080) {
             return this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.TrailersAppleCom.p1080, jd.plugins.hoster.TrailersAppleCom.p1080_default);
-        } else if (p == 720) {
+        } else if (heightOrWidth == 1280 || heightOrWidth == 720) {
             return this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.TrailersAppleCom.p720, jd.plugins.hoster.TrailersAppleCom.p720_default);
-        } else if (p == 640) {
+        } else if (heightOrWidth == 640) {
             return this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.TrailersAppleCom.p640, jd.plugins.hoster.TrailersAppleCom.p720_default);
-        } else if (p == 480) {
+        } else if (heightOrWidth == 480) {
             return this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.TrailersAppleCom.p480, jd.plugins.hoster.TrailersAppleCom.p480_default);
-        } else if (p == 360) {
+        } else if (heightOrWidth == 360) {
             return this.getPluginConfig().getBooleanProperty(jd.plugins.hoster.TrailersAppleCom.p360, jd.plugins.hoster.TrailersAppleCom.p360_default);
         } else {
             return true;
@@ -852,7 +916,7 @@ public class AppleTrailer extends PluginForDecrypt {
         }
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

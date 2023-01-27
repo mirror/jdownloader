@@ -32,19 +32,18 @@ public class FacebookVideoShortURLs extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceFirst("http://", "https://");
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        br.getPage(param.getCryptedUrl().replaceFirst("http://", "https://"));
         /* We expect a redirect to: https://www.facebook.com/watch/?v=<videoID> */
         final String redirect = br.getRedirectLocation();
         /* No redirect or redirect to self --> Probably offline content */
         if (redirect == null || this.canHandle(redirect)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            decryptedLinks.add(createDownloadlink(redirect));
-            return decryptedLinks;
+            ret.add(createDownloadlink(redirect));
+            return ret;
         }
     }
 }

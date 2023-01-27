@@ -34,7 +34,6 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -50,7 +49,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "https?://(?:www\\.)?dl[^\\.]*\\.rpnet\\.biz/download/.*/([^/\\s]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "" })
 public class RPNetBiz extends PluginForHost {
     private static final String          mName                    = "rpnet.biz";
     private static final String          mProt                    = "http://";
@@ -69,14 +68,6 @@ public class RPNetBiz extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replace("http://www.", "http://"));
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        if (host == null || "rpnet.biz".equals(host)) {
-            return "premium.rpnet.biz";
-        }
-        return super.rewriteHost(host);
     }
 
     @Override
@@ -99,54 +90,25 @@ public class RPNetBiz extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // tested with 20 seems fine.
         return -1;
     }
 
     @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception, PluginException {
-        handleDL(link, link.getPluginPatternMatcher(), default_maxchunks);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        /* This should never be called */
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception, PluginException {
-        /* Directurls will work without logging in which is why we'll allow handleFree in this case. */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, default_maxchunks);
-        final URLConnectionAdapter con = dl.getConnection();
-        final List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
-        if (!allowedResponseCodes.contains(con.getResponseCode()) || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
-            try {
-                br.followConnection();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dl.startDownload();
+        /* This should never be called */
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        prepBrowser();
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(link.getPluginPatternMatcher());
-            final List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
-            if (!allowedResponseCodes.contains(con.getResponseCode()) || con.getContentType().contains("html") || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            link.setName(getFileNameFromHeader(con));
-            if (con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
-        return AvailableStatus.TRUE;
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception, PluginException {
+        /* This should never be called */
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
@@ -162,10 +124,10 @@ public class RPNetBiz extends PluginForHost {
         } else if (br.containsHTML("IP Ban in effect for")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is temporarily banned", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        entries = (Map<String, Object>) entries.get("accountInfo");
-        final String currentServer = (String) entries.get("currentServer");
-        final long expiryDate = ((Number) entries.get("premiumExpiry")).longValue();
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> accountinfo = (Map<String, Object>) entries.get("accountInfo");
+        final String currentServer = (String) accountinfo.get("currentServer");
+        final long expiryDate = ((Number) accountinfo.get("premiumExpiry")).longValue();
         ai.setValidUntil(expiryDate * 1000, br);
         final String hosts = br.getPage(api_base + "hostlist.php");
         if (hosts != null) {
@@ -194,8 +156,9 @@ public class RPNetBiz extends PluginForHost {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     @Override
@@ -218,7 +181,7 @@ public class RPNetBiz extends PluginForHost {
             if (queueID > 0) {
                 logger.info("Continuing with stored queueID: " + queueID);
             } else {
-                showMessage(link, "Generating Link");
+                setStatusText(link, "Generating Link");
                 /* request Download */
                 String apiDownloadLink = api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
                 br.getPage(apiDownloadLink);
@@ -358,7 +321,7 @@ public class RPNetBiz extends PluginForHost {
                 filename = (String) entries.get("filename");
             }
         }
-        showMessage(link, "Download begins!");
+        setStatusText(link, "Download begins!");
         if (StringUtils.isEmpty(generatedLink)) {
             mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 20);
         }
@@ -389,7 +352,17 @@ public class RPNetBiz extends PluginForHost {
             } else {
                 logger.info("Using final filename from Content-Disposition Header");
             }
-            handleDL(link, generatedLink, maxChunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, true, maxChunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
+            }
+            link.setProperty("cachedDllink", generatedLink);
+            dl.startDownload();
             return;
         } catch (final PluginException e1) {
             if (e1.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
@@ -417,51 +390,36 @@ public class RPNetBiz extends PluginForHost {
         }
     }
 
-    private void handleDL(final DownloadLink link, String dllink, int maxChunks) throws Exception {
-        /* we want to follow redirects in final stage */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
-        if (dl.getConnection().isContentDisposition()) {
-            link.setProperty("cachedDllink", dllink);
-            /* contentdisposition, lets download it */
-            dl.startDownload();
-            return;
-        } else {
-            /*
-             * download is not contentdisposition, so remove this host from premiumHosts list
-             */
-            br.followConnection();
-        }
-        /* temp disabled the host */
-        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
-    }
-
-    private void showMessage(DownloadLink link, String message) {
+    private void setStatusText(final DownloadLink link, final String message) {
         link.getLinkStatus().setStatusText(message);
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property, null);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
-                Browser br2 = br.cloneBrowser();
+                final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                con = br2.openGetConnection(dllink);
-                final List<Integer> allowedResponseCodes = Arrays.asList(200, 206);
-                if (!allowedResponseCodes.contains(con.getResponseCode()) || con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseMessage().contains("Download doesn't exist for given Hash/ID/Key")) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                link.removeProperty(property);
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 }
