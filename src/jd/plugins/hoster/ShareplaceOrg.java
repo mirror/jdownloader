@@ -197,6 +197,7 @@ public class ShareplaceOrg extends YetiShareCore {
         }
     }
 
+    @Deprecated
     private void handleFreeOLD(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         /* 2016-08-23: Added captcha implementation */

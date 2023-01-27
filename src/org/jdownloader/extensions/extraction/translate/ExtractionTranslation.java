@@ -12,10 +12,6 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Extracts all usual types of archives (zip,rar,7zip,...)", "Entpackt all üblichen Archivtypen (zip,rar,7zip,..)" })
     String description();
 
-    // TODO Remove unused code found by UCDetector
-    // @Default(lngs = { "en" }, values = {
-    // "Leave x MiB additional space after unpacking" })
-    // String gui_config_extraction_additional_space();
     @Default(lngs = { "en" }, values = { "Archive has %s1 part(s) and is complete" })
     String ValidateArchiveAction_actionPerformed_(int size);
 

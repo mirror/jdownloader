@@ -46,7 +46,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -99,15 +98,6 @@ public class UpToBoxCom extends antiDDoSForHost {
     }
 
     /* Connection stuff */
-    private final boolean        FREE_RESUME                                      = true;
-    private final int            FREE_MAXCHUNKS                                   = 1;
-    private final int            FREE_MAXDOWNLOADS                                = 1;
-    private final boolean        ACCOUNT_FREE_RESUME                              = true;
-    private final int            ACCOUNT_FREE_MAXCHUNKS                           = 1;
-    private final int            ACCOUNT_FREE_MAXDOWNLOADS                        = 1;
-    private final boolean        ACCOUNT_PREMIUM_RESUME                           = true;
-    private final int            ACCOUNT_PREMIUM_MAXCHUNKS                        = 0;
-    private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS                     = 20;
     public static final String   API_BASE                                         = "https://uptobox.com/api";
     /* If pre-download-waittime is > this, reconnect exception will be thrown! */
     private static final int     WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT             = 240;
@@ -128,8 +118,9 @@ public class UpToBoxCom extends antiDDoSForHost {
         final boolean requires_premium = link.getBooleanProperty(PROPERTY_needs_premium, false);
         if (requires_premium && (account == null || account.getType() != AccountType.PREMIUM)) {
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     @Override
@@ -336,15 +327,23 @@ public class UpToBoxCom extends antiDDoSForHost {
     /** Website handling */
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        final String directlinkproperty = "free_directlink";
-        String dllink = this.checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
+        final String directlinkproperty = this.getDirectlinkProperty(null);
+        String dllink = link.getStringProperty(directlinkproperty);
+        final boolean isFreshDirecturl;
+        if (dllink != null) {
+            isFreshDirecturl = false;
+            logger.info("Re-using previously generated directurl");
+        } else {
             /* Always check for errors here as download1 Form can be present e.g. along with a (reconnect-waittime) error. */
+            isFreshDirecturl = true;
             this.requestFileInformationAPI(link);
             handlePropertyBasedErrors(link, null);
+            if (link.getBooleanProperty(PROPERTY_needs_premium, false)) {
+                throw new AccountRequiredException();
+            }
             /* Now access website - check availablestatus again here! */
             requestFileInformationWebsite(link);
-            checkErrorsWebsite(link, null);
+            checkErrorsWebsite(br, link, null);
             dllink = this.getDllinkWebsite(br);
             if (dllink == null) {
                 String passCode = null;
@@ -366,7 +365,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                     } else {
                         link.setPasswordProtected(false);
                     }
-                    final int waittime = getPreDownloadWaittimeWebsite(br);
+                    final int waittime = regexPreDownloadWaittimeWebsite(br);
                     if (waittime > 0) {
                         logger.info("Found pre-download-waittime: " + waittime);
                         this.sleep(waittime * 1001l, link);
@@ -374,7 +373,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                         logger.info("ZERO pre-download waittime");
                     }
                     this.submitForm(dlform);
-                    checkErrorsWebsite(link, null);
+                    checkErrorsWebsite(br, link, null);
                     dllink = getDllinkWebsite(br);
                     /* Save correctly entered password. */
                     if (passCode != null) {
@@ -397,14 +396,18 @@ public class UpToBoxCom extends antiDDoSForHost {
             }
         }
         dllink = correctProtocolOfFinalDownloadURL(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(null));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
-            this.checkErrorsWebsite(link, null);
+            if (!isFreshDirecturl) {
+                link.removeProperty(directlinkproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Old directurl expired");
+            }
+            this.checkErrorsWebsite(br, link, null);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         /* Save final downloadurl for later usage */
@@ -416,16 +419,14 @@ public class UpToBoxCom extends antiDDoSForHost {
         return br.getRegex("\"(https?://[^\"]+/dl/[^\"]+)\"").getMatch(0);
     }
 
-    protected void checkErrorsWebsite(final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
-        final boolean requires_premium = link != null && link.getBooleanProperty(PROPERTY_needs_premium, false);
-        if (requires_premium) {
-            throw new AccountRequiredException();
-        } else if (br.containsHTML(">\\s*Wrong password")) {
+    protected void checkErrorsWebsite(final Browser br, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
+        checkResponsecodeErrors(br, link, account);
+        if (br.containsHTML(">\\s*Wrong password")) {
             link.setPasswordProtected(true);
             link.setDownloadPassword(null);
             throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
         }
-        final int waittimeSeconds = getPreDownloadWaittimeWebsite(br);
+        final int waittimeSeconds = regexPreDownloadWaittimeWebsite(br);
         if (waittimeSeconds > WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittimeSeconds * 1001l);
         }
@@ -486,7 +487,14 @@ public class UpToBoxCom extends antiDDoSForHost {
         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable, please retry later", 5 * 60 * 1000);
     }
 
-    private int getPreDownloadWaittimeWebsite(final Browser br) {
+    private void checkResponsecodeErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 428) {
+            /* Rare case e.g. user is turning on/off a VPN during pre download wait. */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "IP mismatch: Your IP has changed between pre download wait and download attempt", 1 * 60 * 1000l);
+        }
+    }
+
+    private int regexPreDownloadWaittimeWebsite(final Browser br) {
         final String waittimeSecondsStr = br.getRegex("data-remaining-time='(\\d+)'").getMatch(0);
         if (waittimeSecondsStr != null) {
             return Integer.parseInt(waittimeSecondsStr);
@@ -495,11 +503,12 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
     }
 
-    private void handleDownloadAPI(final DownloadLink link, final Account account, boolean resumable, final int maxchunks, String directlinkproperty) throws Exception, PluginException {
+    private void handleDownloadAPI(final DownloadLink link, final Account account) throws Exception, PluginException {
         if (account == null) {
             /* This function should never be called without account */
             throw new AccountRequiredException();
         }
+        String directlinkproperty = getDirectlinkProperty(account);
         final UrlQuery queryBasic = new UrlQuery();
         queryBasic.append("token", account.getPass(), true);
         queryBasic.append("file_code", this.getFUID(link), false);
@@ -508,24 +517,27 @@ public class UpToBoxCom extends antiDDoSForHost {
         final String preferredQuality = getConfiguredQuality();
         final String preferredQualityLastTime = link.getStringProperty(PROPERTY_last_downloaded_quality, null);
         boolean isDownloadingStream = false;
+        boolean isFreshDirecturl = true;
         if (preferredQuality != null && streamDownloadAvailable && account.getType() == AccountType.PREMIUM) {
             logger.info("Download preferred quality: " + preferredQuality);
             /* Different streaming URLs = different property to store them on! */
             final String directlinkpropertyTmp = directlinkproperty + preferredQuality;
-            dllink = checkDirectLink(link, directlinkpropertyTmp);
+            dllink = link.getStringProperty(directlinkpropertyTmp);
             if (dllink != null) {
                 logger.info("Successfully re-used last streaming-URL");
                 directlinkproperty = directlinkpropertyTmp;
                 isDownloadingStream = true;
+                isFreshDirecturl = false;
             } else {
                 logger.info("Trying to generate new streaming URL in preferred quality");
+                isFreshDirecturl = true;
                 this.getPage(API_BASE + "/streaming?" + queryBasic.toString());
                 try {
                     /*
                      * Streams can also contain multiple video streams with e.g. different languages --> We will ignore this rare case and
                      * always download the first stream of the user preferred quality we get.
                      */
-                    Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                     dllink = (String) JavaScriptEngineFactory.walkJson(entries, "data/streamLinks/" + preferredQuality + "/{0}");
                     if (!StringUtils.isEmpty(dllink)) {
                         logger.info("Successfully found user preferred quality " + preferredQuality);
@@ -541,10 +553,14 @@ public class UpToBoxCom extends antiDDoSForHost {
             }
         }
         if (dllink == null) {
-            logger.info("Download original");
-            dllink = checkDirectLink(link, directlinkproperty);
+            dllink = link.getStringProperty(directlinkproperty);
+            if (dllink != null) {
+                logger.info("Download original | Re-using old directurl");
+                isFreshDirecturl = false;
+            }
         }
         if (StringUtils.isEmpty(dllink)) {
+            isFreshDirecturl = true;
             Map<String, Object> entries = null;
             int statusCode = 0;
             final UrlQuery queryDownload = queryBasic;
@@ -593,7 +609,7 @@ public class UpToBoxCom extends antiDDoSForHost {
              */
             if (statusCode != 16) {
                 /* Unexpected statuscode -> Check for errors */
-                this.checkErrorsAPI(link, account);
+                this.checkErrorsAPI(br, link, account);
             }
             entries = (Map<String, Object>) entries.get("data");
             final String waitingToken = (String) entries.get("waitingToken");
@@ -615,7 +631,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             dllink = (String) entries.get("dlLink");
             if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
                 /* This should never happen! */
-                this.checkErrorsAPI(link, account);
+                this.checkErrorsAPI(br, link, account);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
             }
         }
@@ -623,6 +639,7 @@ public class UpToBoxCom extends antiDDoSForHost {
          * TODO: Reset progress instead of disabling resume otherwise user would get the "this download is not resumable" warning which is
          * not true in this case.
          */
+        boolean resumable = this.isResumeable(link, account);
         final boolean isDifferentQualityThanLastTime = !StringUtils.equals(preferredQualityLastTime, preferredQuality);
         if (isDifferentQualityThanLastTime) {
             /* Disable resume for this time otherwise we may end up with a broken file. */
@@ -639,13 +656,18 @@ public class UpToBoxCom extends antiDDoSForHost {
             link.removeProperty(PROPERTY_last_downloaded_quality);
         }
         dllink = correctProtocolOfFinalDownloadURL(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, getMaxChunks(account));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
+            if (!isFreshDirecturl) {
+                link.removeProperty(directlinkproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Old directurl expired");
+            }
+            this.checkResponsecodeErrors(br, link, account);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
@@ -662,35 +684,9 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    return dllink;
-                } else {
-                    throw new IOException();
-                }
-            } catch (final Exception e) {
-                link.removeProperty(property);
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
-        }
-        return null;
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return 1;
     }
 
     private Map<String, Object> loginAPI(final Account account, final boolean verifySession) throws Exception {
@@ -707,7 +703,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             } else {
                 logger.info("Performing full login");
                 this.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(apikey));
-                this.checkErrorsAPI(null, account);
+                this.checkErrorsAPI(br, null, account);
                 account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
                 return restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             }
@@ -727,7 +723,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         String accountStatus;
         if (premium != null && premium.intValue() == 1) {
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(-1);
             accountStatus = "Premium Account";
             /* 2020-04-06: All premium accounts should have an expiredate given but let's just assume lifetime accounts can exist. */
             final String expireDate = (String) userdata.get("premium_expire");
@@ -736,7 +732,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             }
         } else {
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(1);
             accountStatus = "Free Account";
         }
         accountStatus += String.format(" | %s points", points);
@@ -755,10 +751,39 @@ public class UpToBoxCom extends antiDDoSForHost {
         requestFileInformationAPI(link);
         handlePropertyBasedErrors(link, account);
         loginAPI(account, false);
-        if (account.getType() == AccountType.FREE) {
-            handleDownloadAPI(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        handleDownloadAPI(link, account);
+    }
+
+    private String getDirectlinkProperty(final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
+            /* Free Account */
+            return "account_free_directlink";
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+            /* Premium account */
+            return "premium_directlink";
         } else {
-            handleDownloadAPI(link, account, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS, "premium_directlink");
+            /* Free(anonymous) and unknown account type */
+            return "directlink";
+        }
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    private int getMaxChunks(final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
+            /* Free Account */
+            return 1;
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+            /* Premium account */
+            return 0;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return 1;
         }
     }
 
@@ -784,7 +809,7 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return -1;
     }
 
     @Override
@@ -798,19 +823,19 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
     }
 
-    private void checkErrorsAPI(final DownloadLink link, final Account account) throws PluginException {
+    private void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         try {
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            checkErrorsAPI(link, account, entries);
+            checkErrorsAPI(br, link, account, entries);
         } catch (final JSonMapperException jse) {
             /* Assume we got html code and check for errors in html code */
             try {
-                this.checkErrorsWebsite(link, account);
+                this.checkErrorsWebsite(br, link, account);
             } catch (final PluginException e) {
                 throw Exceptions.addSuppressed(e, jse);
             }
             logger.log(jse);
-            throw new AccountUnavailableException("Unvalid API response", 1 * 60 * 1000l);
+            throw new AccountUnavailableException("Invalid API response", 1 * 60 * 1000l);
         }
     }
 
@@ -819,7 +844,7 @@ public class UpToBoxCom extends antiDDoSForHost {
      *
      * @throws PluginException
      */
-    private void checkErrorsAPI(final DownloadLink link, final Account account, final Map<String, Object> entries) throws PluginException {
+    private void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account, final Map<String, Object> entries) throws PluginException {
         try {
             String errorMsg = (String) entries.get("message");
             if (StringUtils.isEmpty(errorMsg)) {
@@ -889,7 +914,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         } catch (final JSonMapperException jse) {
             /* Assume we got html code and check for errors in html code */
             try {
-                this.checkErrorsWebsite(link, account);
+                this.checkErrorsWebsite(br, link, account);
             } catch (PluginException e) {
                 throw Exceptions.addSuppressed(e, jse);
             }
