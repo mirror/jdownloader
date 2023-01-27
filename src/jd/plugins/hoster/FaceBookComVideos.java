@@ -204,6 +204,21 @@ public class FaceBookComVideos extends PluginForHost {
         return ret;
     }
 
+    /** Returns directurl without checking it. */
+    private static String getDirecturl(final DownloadLink link) {
+        String ret = link.getStringProperty(PROPERTY_DIRECTURL_LAST);
+        if (ret == null && PluginJsonConfig.get(FacebookConfig.class).isPreferHD()) {
+            ret = link.getStringProperty(PROPERTY_DIRECTURL_HD);
+        }
+        if (ret == null) {
+            ret = link.getStringProperty(PROPERTY_DIRECTURL_LOW);
+            if (ret == null) {
+                ret = link.getStringProperty(PROPERTY_DIRECTURL_OLD);
+            }
+        }
+        return ret;
+    }
+
     private String downloadURL = null;
 
     private int getMaxChunks(final DownloadLink link) {
@@ -410,7 +425,18 @@ public class FaceBookComVideos extends PluginForHost {
             /* No title given at all -> use fuid only */
             filename += getFID(link);
         }
-        filename += ".mp4";
+        String ext = null;
+        if (isVideo(link)) {
+            ext = ".mp4";
+        } else {
+            final String directurl = getDirecturl(link);
+            if (directurl != null) {
+                ext = Plugin.getFileNameExtensionFromURL(directurl);
+            }
+        }
+        if (ext != null) {
+            filename += ext;
+        }
         link.setFinalFileName(filename);
     }
 
