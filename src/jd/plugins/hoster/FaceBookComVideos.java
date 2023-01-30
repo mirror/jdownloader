@@ -89,6 +89,7 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String PROPERTY_IS_CHECKABLE_VIA_PLUGIN_EMBED = "is_checkable_via_plugin_embed";
     public static final String  PROPERTY_ACCOUNT_REQUIRED              = "account_required";
     public static final String  PROPERTY_RUNTIME_MILLISECONDS          = "runtime_milliseconds";
+    public static final String  PROPERTY_DESCRIPTION                   = "description";
     public static final String  PROPERTY_TYPE                          = "type";
     public static final String  TYPE_VIDEO                             = "video";
     public static final String  TYPE_PHOTO                             = "photo";

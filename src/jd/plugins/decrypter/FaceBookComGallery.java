@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -124,33 +125,20 @@ public class FaceBookComGallery extends PluginForDecrypt {
             ((FaceBookComVideos) hosterplugin).login(account, false);
         }
         String url = param.getCryptedUrl();
-        final Regex embeddedVideoRegex = new Regex(url, "https?://[^/]+/video/embed\\?video_id=(\\d+)");
+        final Regex embeddedVideoRegex = new Regex(url, "(?i)https?://[^/]+/video/embed\\?video_id=(\\d+)");
+        // final String mobileSubdomain = new Regex(url, "(?i)https?:/(m\\.[^/]+)/.+").getMatch(0);
         if (embeddedVideoRegex.matches()) {
             /* Small workaround for embedded videourls */
             url = "https://www." + this.getHost() + "/watch/?v=" + embeddedVideoRegex.getMatch(0);
         }
+        // if (mobileSubdomain != null) {
+        // /* Remove mobile sobdomain */
+        // url = url.replaceFirst(Pattern.quote(mobileSubdomain), this.getHost());
+        // }
         br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> videoExtraInfoMap = null;
-        String titleHTML = HTMLSearch.searchMetaTag(br, "og:title");
-        if (titleHTML != null) {
-            titleHTML = Encoding.htmlDecode(titleHTML);
-            titleHTML = titleHTML.replaceAll("(?i)( \\| By.+)", "");
-            titleHTML = titleHTML.replaceAll("\\.\\.\\.$", "");
-            titleHTML = titleHTML.trim();
-        }
-        String slugOfSingleVideo = null;
-        final String videoIDInsideURL = new Regex(br.getURL(), "(\\d+)/?$").getMatch(0);
-        if (videoIDInsideURL != null) {
-            slugOfSingleVideo = br.getRegex("/videos/([^/]+)/" + videoIDInsideURL).getMatch(0);
-        }
-        logger.info("-----------------");
-        logger.info("Detected possible info of single video if this is a single video:");
-        logger.info("Title: " + titleHTML);
-        logger.info("slug: " + slugOfSingleVideo);
-        logger.info("-----------------");
         /* Different sources to parse their json. */
         final List<String> jsonRegExes = new ArrayList<String>();
         /* 2021-03-19: E.g. when user is loggedIN */
@@ -161,24 +149,20 @@ public class FaceBookComGallery extends PluginForDecrypt {
         jsonRegExes.add("<script type=\"application/json\" data-content-len=\"\\d+\" data-sjs>(\\{.*?)</script>");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         // final ArrayList<DownloadLink> videoPermalinks = new ArrayList<DownloadLink>();
-        final HashSet<String> processedJsons = new HashSet<String>();
+        final HashSet<String> processedJsonStrings = new HashSet<String>();
+        final List<Object> parsedJsons = new ArrayList<Object>();
         int numberofJsonsFound = 0;
         for (final String jsonRegEx : jsonRegExes) {
             final String[] jsons = br.getRegex(jsonRegEx).getColumn(0);
             for (final String json : jsons) {
                 /* Do not process/parse same json multiple times. */
-                if (!processedJsons.add(json)) {
+                if (!processedJsonStrings.add(json)) {
                     continue;
                 }
                 numberofJsonsFound++;
                 try {
                     final Object jsonO = JavaScriptEngineFactory.jsonToJavaMap(json);
-                    if (videoExtraInfoMap == null) {
-                        final Object mapO = this.findVideoExtraInfoMap(jsonO, videoIDInsideURL);
-                        if (mapO != null) {
-                            videoExtraInfoMap = (Map<String, Object>) mapO;
-                        }
-                    }
+                    parsedJsons.add(jsonO);
                     /* 2021-03-23: Use JavaScriptEngineFactory as they can also have json without quotes around the keys. */
                     // final Object jsonO = JSonStorage.restoreFromString(json, TypeRef.OBJECT);
                     final ArrayList<DownloadLink> videos = new ArrayList<DownloadLink>();
@@ -203,19 +187,56 @@ public class FaceBookComGallery extends PluginForDecrypt {
             logger.info("Failed to find any jsons --> Probably unsupported URL");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* Check if user only wanted to have a single video crawled. If so, filter out all other stuff we might have picked up. */
-        String contentIDOfSingleDesiredVideo = null;
-        final ArrayList<DownloadLink> resultsForOneDesiredVideo = new ArrayList<DownloadLink>();
+        final Map<String, List<DownloadLink>> contentIDPackages = new HashMap<String, List<DownloadLink>>();
+        final Map<String, List<DownloadLink>> videoPackages = new HashMap<String, List<DownloadLink>>();
         for (final DownloadLink result : ret) {
-            final String videoID = result.getStringProperty(FaceBookComVideos.PROPERTY_CONTENT_ID);
-            if (StringUtils.containsIgnoreCase(url, videoID)) {
-                resultsForOneDesiredVideo.add(result);
-                contentIDOfSingleDesiredVideo = videoID;
+            final String contentID = result.getStringProperty(FaceBookComVideos.PROPERTY_CONTENT_ID);
+            if (contentID == null) {
+                continue;
+            }
+            if (contentIDPackages.containsKey(contentID)) {
+                contentIDPackages.get(contentID).add(result);
+            } else {
+                final List<DownloadLink> contentIDPackage = new ArrayList<DownloadLink>();
+                contentIDPackage.add(result);
+                contentIDPackages.put(contentID, contentIDPackage);
             }
         }
-        if (resultsForOneDesiredVideo.size() > 0 && resultsForOneDesiredVideo.size() <= ret.size()) {
+        /**
+         * Check if user only wanted to have a single video crawled. </br>
+         * If so, filter out all other stuff we might have picked up.
+         */
+        String contentIDOfSingleDesiredVideo = null;
+        for (final DownloadLink result : ret) {
+            final String contentID = result.getStringProperty(FaceBookComVideos.PROPERTY_CONTENT_ID);
+            if (FaceBookComVideos.isVideo(result) && contentID != null) {
+                videoPackages.put(contentID, contentIDPackages.get(contentID));
+                if (url.contains(contentID)) {
+                    contentIDOfSingleDesiredVideo = contentID;
+                }
+            }
+        }
+        if (contentIDOfSingleDesiredVideo != null) {
             logger.info("Returning only results for content: " + contentIDOfSingleDesiredVideo);
             /* Try to update meta data of that single item */
+            final List<DownloadLink> resultsForOneDesiredVideo = videoPackages.get(contentIDOfSingleDesiredVideo);
+            String titleHTML = HTMLSearch.searchMetaTag(br, "og:title");
+            if (titleHTML != null) {
+                titleHTML = Encoding.htmlDecode(titleHTML);
+                titleHTML = titleHTML.replaceFirst("(?i)( \\| By.+)", "");
+                titleHTML = titleHTML.replaceAll("\\.\\.\\.$", "");
+                titleHTML = titleHTML.trim();
+            }
+            String slugOfVideoTitle = br.getRegex("/videos/([^/]+)/" + contentIDOfSingleDesiredVideo).getMatch(0);
+            if (slugOfVideoTitle != null) {
+                slugOfVideoTitle = Encoding.htmlDecode(slugOfVideoTitle).trim();
+            }
+            logger.info("-----------------");
+            logger.info("Possible extra info for this video found in html:");
+            logger.info("title: " + titleHTML);
+            logger.info("slug: " + slugOfVideoTitle);
+            logger.info("-----------------");
+            final Map<String, Object> videoExtraInfoMap = this.findVideoExtraInfoMap(parsedJsons, contentIDOfSingleDesiredVideo);
             if (titleHTML != null || videoExtraInfoMap != null) {
                 boolean updatedMetadata = false;
                 String videoTitleFromExtraMap = null;
@@ -251,15 +272,40 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     }
                 }
                 if (updatedMetadata) {
-                    logger.info("Used title from HTML for single desired video item: " + titleHTML);
+                    logger.info("Successfully updated video metadata");
                 }
             }
             ret.clear();
             ret.addAll(resultsForOneDesiredVideo);
         }
-        /* Finally set filenames */
+        /* Finally set filenames and packagenames */
+        final Map<String, FilePackage> packages = new HashMap<String, FilePackage>();
         for (final DownloadLink result : ret) {
             FaceBookComVideos.setFilename(result);
+            final String videoID = result.getStringProperty(FaceBookComVideos.PROPERTY_CONTENT_ID);
+            if (videoID != null) {
+                final String description = result.getStringProperty(FaceBookComVideos.PROPERTY_DESCRIPTION);
+                FilePackage fp = packages.get(videoID);
+                if (fp == null) {
+                    fp = FilePackage.getInstance();
+                    final String title = result.getStringProperty(FaceBookComVideos.PROPERTY_TITLE);
+                    final String uploaderNameForPackage = FaceBookComVideos.getUploaderNameAny(result);
+                    if (uploaderNameForPackage != null && title != null) {
+                        fp.setName(uploaderNameForPackage + " - " + title + " - " + videoID);
+                    } else if (uploaderNameForPackage != null) {
+                        fp.setName(uploaderNameForPackage + " - " + videoID);
+                    } else if (title != null) {
+                        fp.setName(title + " - " + videoID);
+                    } else {
+                        fp.setName(videoID);
+                    }
+                    if (!StringUtils.isEmpty(description)) {
+                        fp.setComment(description);
+                    }
+                    packages.put(videoID, fp);
+                }
+                result._setFilePackage(fp);
+            }
         }
         return ret;
     }
@@ -328,16 +374,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                         video.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LOW, urlLow);
                     }
                     video.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_VIDEO);
-                    final FilePackage fp = FilePackage.getInstance();
-                    final String uploaderNameForPackage = FaceBookComVideos.getUploaderNameAny(video);
-                    if (uploaderNameForPackage != null) {
-                        fp.setName(uploaderNameForPackage + " - " + ifThisisAVideoThisIsTheVideoID);
-                    } else {
-                        fp.setName(ifThisisAVideoThisIsTheVideoID);
-                    }
-                    if (!StringUtils.isEmpty(description)) {
-                        fp.setComment(description);
-                    }
                     final ArrayList<DownloadLink> thisResults = new ArrayList<DownloadLink>();
                     thisResults.add(video);
                     thisResults.add(thumbnail);
@@ -356,7 +392,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
                         if (publishDateFormatted != null) {
                             thisResult.setProperty(FaceBookComVideos.PROPERTY_DATE_FORMATTED, publishDateFormatted);
                         }
-                        thisResult._setFilePackage(fp);
+                        if (description != null) {
+                            thisResult.setProperty(FaceBookComVideos.PROPERTY_DESCRIPTION, description);
+                        }
                         thisResult.setAvailable(true);
                     }
                     results.addAll(thisResults);
@@ -379,8 +417,21 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
     }
 
-    /** Recursive function. */
-    private Object findVideoExtraInfoMap(final Object o, final String videoid) {
+    /**
+     * Tries to find map containing extra video metadata. </br>
+     * This does NOT work for reel videos -> facebook.com/reels/...
+     */
+    private Map<String, Object> findVideoExtraInfoMap(final List<Object> parsedJsons, final String videoid) {
+        for (final Object parsedJsonO : parsedJsons) {
+            final Object mapO = findVideoExtraInfoMapRecursive(parsedJsonO, videoid);
+            if (mapO != null) {
+                return (Map<String, Object>) mapO;
+            }
+        }
+        return null;
+    }
+
+    private Object findVideoExtraInfoMapRecursive(final Object o, final String videoid) {
         if (videoid == null) {
             return null;
         }
@@ -395,7 +446,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 if (StringUtils.equalsIgnoreCase(__typename, "video") && StringUtils.equals(id, videoid) && titlemap instanceof Map) {
                     return entrymap;
                 } else if (value instanceof List || value instanceof Map) {
-                    final Object ret = findVideoExtraInfoMap(value, videoid);
+                    final Object ret = findVideoExtraInfoMapRecursive(value, videoid);
                     if (ret != null) {
                         return ret;
                     }
@@ -406,7 +457,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             final List<Object> array = (List) o;
             for (final Object arrayo : array) {
                 if (arrayo instanceof List || arrayo instanceof Map) {
-                    final Object pico = findVideoExtraInfoMap(arrayo, videoid);
+                    final Object pico = findVideoExtraInfoMapRecursive(arrayo, videoid);
                     if (pico != null) {
                         return pico;
                     }
