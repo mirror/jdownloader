@@ -358,7 +358,6 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     public boolean checkLinks(final DownloadLink[] urls) {
-        getCustomReferer(urls[0]);
         // required to get overrides to work
         final Browser br = prepAPI(new Browser());
         try {
