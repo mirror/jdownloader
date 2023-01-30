@@ -20,6 +20,18 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.RFC2047;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
@@ -47,18 +59,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.RFC2047;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -358,6 +358,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     public boolean checkLinks(final DownloadLink[] urls) {
+        getCustomReferer(urls[0]);
         // required to get overrides to work
         final Browser br = prepAPI(new Browser());
         try {
@@ -471,8 +472,8 @@ public abstract class K2SApi extends PluginForHost {
                             if (StringUtils.equals((String) root.get("message"), "Invalid request params")) {
                                 /**
                                  * 2022-02-25: Workaround for when checking only one <b>invalid</b> fileID e.g.
-                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br> This may also happen when there are multiple
-                                 * fileIDs to check and all of them are invalid.
+                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br>
+                                 * This may also happen when there are multiple fileIDs to check and all of them are invalid.
                                  */
                                 for (final DownloadLink dl : links) {
                                     dl.setAvailable(false);
@@ -875,29 +876,26 @@ public abstract class K2SApi extends PluginForHost {
 
     private String getCustomReferer(final DownloadLink link) {
         final Keep2shareConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
-        String custom_referer = cfg.getReferer();
-        String url_referer = this.getRefererFromURL(link);
+        final String custom_referer = cfg.getReferer();
+        final String url_referer = this.getRefererFromURL(link);
         final String sourceURL = link.getContainerUrl();
-        if (!StringUtils.isEmpty(url_referer) && !cfg.isForceCustomReferer()) {
+        if (!StringUtils.isEmpty(url_referer) || !StringUtils.isEmpty(custom_referer)) {
             /* Use Referer from inside added URL if given. */
-            logger.info("Using referer from URL: " + url_referer);
-            if (!url_referer.startsWith("http")) {
-                logger.info("Applying protocol to url_referer:");
-                logger.info("url_referer before: " + url_referer);
-                url_referer = "https://" + url_referer;
-                logger.info("url_referer after: " + url_referer);
+            String chosenReferer = null;
+            if (!StringUtils.isEmpty(custom_referer) && (cfg.isForceCustomReferer() || StringUtils.isEmpty(url_referer))) {
+                logger.info("Using referer from config: " + custom_referer);
+                chosenReferer = custom_referer;
+            } else {
+                logger.info("Using referer from URL: " + url_referer);
+                chosenReferer = url_referer;
             }
-            return url_referer;
-        } else if (!StringUtils.isEmpty(custom_referer)) {
-            /* Use user selected Referer */
-            if (!custom_referer.startsWith("http")) {
-                logger.info("Applying protocol to custom_referer:");
-                logger.info("custom_referer before: " + custom_referer);
-                custom_referer = "https://" + custom_referer;
-                logger.info("custom_referer after: " + custom_referer);
+            chosenReferer = Encoding.htmlDecode(chosenReferer);
+            if (!chosenReferer.startsWith("http")) {
+                logger.info("Applying protocol to chosen referer: Before: " + chosenReferer);
+                chosenReferer = "https://" + chosenReferer;
+                logger.info("After: " + chosenReferer);
             }
-            logger.info("Using custom referer: " + custom_referer);
-            return custom_referer;
+            return chosenReferer;
         } else if (!StringUtils.isEmpty(sourceURL) && !new Regex(sourceURL, this.getSupportedLinks()).matches()) {
             /*
              * Try to use source URL as Referer if it does not match any supported URL of this plugin.
