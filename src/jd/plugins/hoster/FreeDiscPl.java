@@ -27,6 +27,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
@@ -197,6 +198,8 @@ public class FreeDiscPl extends PluginForHost {
     public static Browser prepBRStatic(final Browser br) {
         br.setAllowedResponseCodes(410);
         br.setFollowRedirects(true);
+        /* 2023-01-30: Looks like they've blocked our default User-Agent. */
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36");
         return br;
     }
 
@@ -279,7 +282,13 @@ public class FreeDiscPl extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         if (preferAvailablecheckViaAjaxRequest(link)) {
-            return requestFileInformationAJAX(link, account);
+            try {
+                return requestFileInformationAJAX(link, account);
+            } catch (final JSonMapperException ignore) {
+                logger.log(ignore);
+                logger.warning("requestFileInformationAJAX failed -> Fallback to check over html");
+                return this.requestFileInformationHTML(link, account);
+            }
         } else {
             return this.requestFileInformationHTML(link, account);
         }
