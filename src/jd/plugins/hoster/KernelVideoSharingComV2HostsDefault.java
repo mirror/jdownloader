@@ -31,7 +31,6 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "kvs-demo.com" });
         ret.add(new String[] { "sleazyneasy.com" });
         ret.add(new String[] { "pornwhite.com" });
         ret.add(new String[] { "voyeurhit.com" });

@@ -253,42 +253,43 @@ public class OdyseeCom extends PluginForHost {
             }
             final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(true);
+            brc.getHeaders().put("Origin", "https://" + this.getHost());
+            brc.getHeaders().put("Referer", "https://" + this.getHost() + "/");
             final URLConnectionAdapter con = brc.openGetConnection(dllink);
             if (!looksLikeDownloadableContent(con, link)) {
                 brc.followConnection();
-                if (LinkCrawlerDeepInspector.looksLikeMpegURL(con)) {
-                    final List<HlsContainer> hls = HlsContainer.getHlsQualities(brc);
-                    final HlsContainer best = HlsContainer.findBestVideoByBandwidth(hls);
-                    if (best == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final HlsContainer chosenQuality;
-                    final PreferredStreamQuality quality = getPreferredQuality(link);
-                    final int userPreferredQualityHeight = this.getPreferredQualityHeight(link, quality);
-                    if (userPreferredQualityHeight == -1) {
-                        chosenQuality = best;
-                    } else {
-                        HlsContainer userPreferred = null;
-                        for (final HlsContainer hlsTmp : hls) {
-                            if (hlsTmp.getHeight() == userPreferredQualityHeight) {
-                                userPreferred = hlsTmp;
-                                break;
-                            }
-                        }
-                        if (userPreferred != null) {
-                            logger.info("Using user selected quality: " + userPreferredQualityHeight + "p");
-                            chosenQuality = userPreferred;
-                        } else {
-                            logger.info("Failed to find user preferred quality -> Using BEST instead");
-                            chosenQuality = best;
-                        }
-                    }
-                    link.setVerifiedFileSize(-1);
-                    checkFFmpeg(link, "Download a HLS Stream");
-                    dl = new HLSDownloader(link, br, chosenQuality.getStreamURL());
-                } else {
+                if (!LinkCrawlerDeepInspector.looksLikeMpegURL(con)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                final List<HlsContainer> hls = HlsContainer.getHlsQualities(brc);
+                final HlsContainer best = HlsContainer.findBestVideoByBandwidth(hls);
+                if (best == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final HlsContainer chosenQuality;
+                final PreferredStreamQuality quality = getPreferredQuality(link);
+                final int userPreferredQualityHeight = this.getPreferredQualityHeight(link, quality);
+                if (userPreferredQualityHeight == -1) {
+                    chosenQuality = best;
+                } else {
+                    HlsContainer userPreferred = null;
+                    for (final HlsContainer hlsTmp : hls) {
+                        if (hlsTmp.getHeight() == userPreferredQualityHeight) {
+                            userPreferred = hlsTmp;
+                            break;
+                        }
+                    }
+                    if (userPreferred != null) {
+                        logger.info("Using user selected quality: " + userPreferredQualityHeight + "p");
+                        chosenQuality = userPreferred;
+                    } else {
+                        logger.info("Failed to find user preferred quality -> Using BEST instead");
+                        chosenQuality = best;
+                    }
+                }
+                link.setVerifiedFileSize(-1);
+                checkFFmpeg(link, "Download a HLS Stream");
+                dl = new HLSDownloader(link, br, chosenQuality.getStreamURL());
             } else {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, con.getRequest(), resumable, maxchunks);
                 if (!this.looksLikeDownloadableContent(dl.getConnection(), link)) {

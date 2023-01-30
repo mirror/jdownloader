@@ -23,6 +23,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -40,13 +47,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.FreeDiscPl;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freedisc.pl" }, urls = { "https?://(?:(?:www|m)\\.)?freedisc\\.pl/([A-Za-z0-9_\\-]+),d-(\\d+)(,([\\w\\-]+))?" })
 public class FreeDiscPlFolder extends PluginForDecrypt {
     public FreeDiscPlFolder(PluginWrapper wrapper) {
@@ -61,7 +61,7 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
     protected static Cookies botSafeCookies = new Cookies();
 
     private Browser prepBR(final Browser br, final Account account) {
-        jd.plugins.hoster.FreeDiscPl.prepBRStatic(br);
+        FreeDiscPl.prepBRStatic(br);
         /* In account mode we're using account cookies thus we only need those whenthere is not account available. */
         if (account == null) {
             synchronized (botSafeCookies) {
@@ -81,7 +81,7 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex dir = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
         final String user = dir.getMatch(0);
         final String folderID = dir.getMatch(1);
@@ -91,7 +91,7 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         /* Login whenever possible. The only benefit we got from this in this crawler is that we should not get any antiBot captchas. */
         if (account != null) {
             final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-            ((jd.plugins.hoster.FreeDiscPl) plg).login(account, false);
+            ((FreeDiscPl) plg).login(account, false);
         }
         FreeDiscPl.prepBRAjax(this.br);
         /* First let's find the absolute path to the folder we want. If we fail to do so we can assume that it is offline. */
@@ -108,8 +108,8 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         if (dir_count.equals("0") && file_count.equals("0")) {
             /* Folder is empty --> Return dummy item */
             final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER_" + folderPath, "This folder is empty");
-            decryptedLinks.add(dummy);
-            return decryptedLinks;
+            ret.add(dummy);
+            return ret;
         }
         getPage("https://" + this.getHost() + "/directory/directory_data/get/" + user + "/" + folderID, param, account);
         final boolean crawlSubfolders = PluginJsonConfig.get(FreeDiscPlConfig.class).isCrawlSubfolders();
@@ -138,12 +138,12 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
                 dl.setAvailable(true);
             }
             dl.setRelativeDownloadFolderPath(folderPath);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(folderPath);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 
     private Map<String, Object> findFolderMap(final Map<String, Map<String, Object>> folderTree, final String folderID) {
