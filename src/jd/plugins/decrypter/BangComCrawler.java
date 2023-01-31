@@ -16,16 +16,20 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -76,6 +80,8 @@ public class BangComCrawler extends PluginForDecrypt {
             logger.info("This plugin is still under development!");
             return ret;
         }
+        final List<String> knownVideoQualities = Arrays.asList(new String[] { "2160p", "1080p", "720p", "540p", "480p", "360p" });
+        final List<String> selectedVideoQualities = new ArrayList<String>();
         br.setFollowRedirects(true);
         final BangCom plg = (BangCom) this.getNewPluginForHostInstance(this.getHost());
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
@@ -101,10 +107,10 @@ public class BangComCrawler extends PluginForDecrypt {
         }
         final String contentID = videoObject.get("@id").toString();
         final String title = videoObject.get("name").toString();
-        final String thumbnailUrl = videoObject.get("thumbnailUrl").toString();
-        final String previewURL = videoObject.get("contentUrl").toString();
+        final String thumbnailUrl = videoObject.get("thumbnailUrl").toString(); // always available
+        final String previewURL = videoObject.get("contentUrl").toString(); // always available
         final String description = (String) videoObject.get("description");
-        final String photosAsZipURL = br.getRegex("\"(https?://photos\\.[^/]+/\\.zip[^\"]+)\"").getMatch(0);
+        final String photosAsZipURL = br.getRegex("\"(https?://photos\\.[^/]+/\\.zip[^\"]+)\"").getMatch(0); // not always available
         if (thumbnailUrl != null) {
             final DownloadLink thumb = new DownloadLink(plg, null, this.getHost(), thumbnailUrl, true);
             thumb.setProperty(BangCom.PROPERTY_QUALITY_IDENTIFIER, "THUMBNAIL");
@@ -119,6 +125,47 @@ public class BangComCrawler extends PluginForDecrypt {
             final DownloadLink zip = new DownloadLink(plg, null, this.getHost(), photosAsZipURL, true);
             zip.setProperty(BangCom.PROPERTY_QUALITY_IDENTIFIER, "ZIP");
             ret.add(zip);
+        }
+        final String[] videoDownloadurls = br.getRegex("\"(https?://[^\"]+\\d+p\\.mp4[^\"]+)\"").getColumn(0);
+        if (videoDownloadurls != null && videoDownloadurls.length > 0) {
+            /* Video streams are only available for premium users */
+            final ArrayList<DownloadLink> allVideoItems = new ArrayList<DownloadLink>();
+            DownloadLink bestVideo = null;
+            int pixelHeightBest = -1;
+            DownloadLink bestVideoOfSelection = null;
+            int pixelHeightBestOfSelection = -1;
+            final String[] videoFilesizes = br.getRegex("class=\"text-light text-opacity-75\">([^<]+)</span>").getColumn(0);
+            // final String[] videoQualityLabels = br.getRegex("</svg>([^<]+)</span>").getColumn(0);
+            int position = -1;
+            for (String videoDownloadurl : videoDownloadurls) {
+                position++;
+                final String pixelHeightStr = new Regex(videoDownloadurl, "(\\d+)p\\.mp4").getMatch(0);
+                if (pixelHeightStr == null) {
+                    logger.warning("Unsupported video format/url: " + videoDownloadurl);
+                    continue;
+                }
+                if (videoDownloadurl.contains("&amp;")) {
+                    videoDownloadurl = Encoding.htmlDecode(videoDownloadurl);
+                }
+                final DownloadLink video = new DownloadLink(plg, null, this.getHost(), videoDownloadurl, true);
+                /* Set rough filesize if we're able to find it. */
+                if (videoFilesizes != null && videoFilesizes.length == videoDownloadurls.length) {
+                    final String filesizeStr = videoFilesizes[position];
+                    video.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+                }
+                video.setProperty(BangCom.PROPERTY_QUALITY_IDENTIFIER, pixelHeightStr + "p");
+                final int pixelHeight = Integer.parseInt(pixelHeightStr);
+                if (bestVideo == null || pixelHeight > pixelHeightBest) {
+                    pixelHeightBest = pixelHeight;
+                    bestVideo = video;
+                }
+                allVideoItems.add(video);
+            }
+            ret.addAll(allVideoItems);
+        } else {
+            if (account != null) {
+                logger.warning("Failed to find any video streams although account is available -> Possible plugin failure!");
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);

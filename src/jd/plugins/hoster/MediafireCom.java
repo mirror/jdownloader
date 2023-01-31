@@ -25,6 +25,13 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,13 +58,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(?:www\\.|m\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))|https?://download\\d+.mediafire\\.com/[a-z0-9]+/([a-z0-9]+)/([^/]+)" })
 public class MediafireCom extends PluginForHost {
@@ -230,6 +230,7 @@ public class MediafireCom extends PluginForHost {
             br.getHeaders().put("User-Agent", MediafireCom.agent.get());
         }
         do {
+            logger.info("Downloadloop number: " + trycounter);
             if (finalDownloadurl != null) {
                 break;
             }
@@ -263,6 +264,7 @@ public class MediafireCom extends PluginForHost {
                 captchaCorrect = false;
                 final Form captchaForm = br.getFormbyProperty("name", "form_captcha");
                 if (captchaForm != null) {
+                    logger.info("Found captchaForm");
                     if (captchaForm.containsHTML("solvemedia.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
                         handleExtraReconnectSettingOnCaptcha(account);
@@ -339,6 +341,8 @@ public class MediafireCom extends PluginForHost {
                     } else {
                         br.submitForm(captchaForm);
                     }
+                } else {
+                    logger.info("Didn't find captchaForm -> Captcha not needed or already solved");
                 }
             }
             captchaCorrect = true;
@@ -351,7 +355,10 @@ public class MediafireCom extends PluginForHost {
                     finalDownloadurl = br.getRedirectLocation();
                 }
                 if (finalDownloadurl == null) {
-                    finalDownloadurl = br.getRegex("(https?://download\\d+.mediafire\\.com/[^\"']+)").getMatch(0);
+                    finalDownloadurl = br.getRegex("href=\"(https?://[^\"]+)\"\\s*id=\"downloadButton\"").getMatch(0);
+                    if (finalDownloadurl == null) {
+                        finalDownloadurl = br.getRegex("(https?://download\\d+\\.[^/]+/[^\"']+)").getMatch(0);
+                    }
                 }
             }
             trycounter++;
@@ -670,7 +677,7 @@ public class MediafireCom extends PluginForHost {
                         account.clearCookies("");
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                    // offline file, to file/get_info as a single file... we need to return so the proper
+                // offline file, to file/get_info as a single file... we need to return so the proper
                 case 110:
                     // invalid uid
                 case 111:

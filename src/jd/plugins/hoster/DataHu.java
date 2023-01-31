@@ -145,7 +145,6 @@ public class DataHu extends antiDDoSForHost {
                 this.getAPISafe(API_BASE + "?act=check_download_links&links=" + sb.toString());
                 final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final Map<String, Object> link_info = (Map<String, Object>) entries.get("link_info");
-                br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
                 for (final DownloadLink link : links) {
                     final Map<String, Object> info = (Map<String, Object>) link_info.get(link.getPluginPatternMatcher());
                     if (info == null) {
