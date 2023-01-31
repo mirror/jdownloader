@@ -39,6 +39,7 @@ import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -137,16 +138,97 @@ public class FikperCom extends PluginForHost {
 
     private String getFiletitleFromURL(final DownloadLink link) {
         String title = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        final Regex looksLikeTitleWithExtension = new Regex(title, "(.+)([A-Za-z0-9]{3})$");
-        if (looksLikeTitleWithExtension.matches()) {
-            /* This will work for all file extensions with length == 3. */
-            return looksLikeTitleWithExtension.getMatch(0) + "." + looksLikeTitleWithExtension.getMatch(1);
-        } else {
-            return title;
-        }
+        title = title.replaceFirst("(?i)\\.html$", "");
+        return title;
     }
 
     private final String API_BASE = "https://sapi.fikper.com/";
+
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        /* Mass-linkchecking via API is only possible for premium users. */
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account == null) {
+            /* No mass linkchecking possible */
+            return false;
+        }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
+        try {
+            this.login(account, false);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    if (index == urls.length || links.size() == 100) {
+                        break;
+                    } else {
+                        links.add(urls[index]);
+                        index++;
+                    }
+                }
+                sb.delete(0, sb.capacity());
+                final List<String> urlstocheck = new ArrayList<String>();
+                for (final DownloadLink link : links) {
+                    urlstocheck.add(link.getPluginPatternMatcher());
+                }
+                final Map<String, Object> postdata = new HashMap<String, Object>();
+                postdata.put("links", urlstocheck);
+                br.postPageRaw(API_BASE + "api/file/check-links", JSonStorage.serializeToJson(postdata));
+                this.checkErrorsAPI(br, null, account, null);
+                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+                for (final DownloadLink link : links) {
+                    if (!link.isNameSet()) {
+                        link.setName(getFiletitleFromURL(link));
+                    }
+                    final String fileID = this.getFID(link);
+                    Map<String, Object> finfo = null;
+                    for (final Map<String, Object> ressource : ressourcelist) {
+                        final String fileIDTmp = (String) ressource.get("fileHashName");
+                        if (StringUtils.equals(fileIDTmp, fileID)) {
+                            finfo = ressource;
+                            break;
+                        }
+                    }
+                    if (finfo == null) {
+                        /* This should never happen! */
+                        link.setAvailable(false);
+                    } else {
+                        final Object error = finfo.get("error");
+                        final String filename = (String) finfo.get("fileName");
+                        final Object filesizeO = finfo.get("fileSize");
+                        if (!StringUtils.isEmpty(filename)) {
+                            link.setFinalFileName(filename);
+                        }
+                        if (filesizeO != null) {
+                            if (filesizeO instanceof Number) {
+                                link.setVerifiedFileSize(((Number) filesizeO).longValue());
+                            } else if (filesizeO instanceof String) {
+                                /* 2023-01-31: Sometimes they're returning numbers as strings lol */
+                                link.setVerifiedFileSize(Long.parseLong(filesizeO.toString()));
+                            }
+                        }
+                        if (error != null) {
+                            /* E.g. {"fileHashName":"filehash","error":404,"message":"Not found"} */
+                            link.setAvailable(false);
+                        } else {
+                            link.setAvailable(true);
+                        }
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            logger.log(e);
+            return false;
+        }
+        return true;
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -350,6 +432,7 @@ public class FikperCom extends PluginForHost {
         return -1;
     }
 
+    /** Using API: https://sapi.fikper.com/api/reference/ */
     private Map<String, Object> login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
@@ -392,7 +475,7 @@ public class FikperCom extends PluginForHost {
             /* No error */
             return;
         case 401:
-            throw new AccountInvalidException(message);
+            throw new AccountInvalidException("401 Invalid API key");
         case 404:
             if (link != null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -415,6 +498,7 @@ public class FikperCom extends PluginForHost {
         ai.setTrafficMax(traffixMax);
         final String expireDate = (String) user.get("premiumExpire");
         if (StringUtils.isEmpty(expireDate)) {
+            /* Free users can't use the API */
             ai.setExpired(true);
             return ai;
         }

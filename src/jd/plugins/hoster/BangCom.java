@@ -17,7 +17,9 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
@@ -56,7 +58,7 @@ public class BangCom extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "bang.com" });
+        ret.add(new String[] { "bang.com", "videosz.com" });
         return ret;
     }
 
@@ -167,6 +169,7 @@ public class BangCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
+                final boolean cookieLoginOnly = false;
                 if (userCookies != null || cookies != null) {
                     if (userCookies != null) {
                         br.setCookies(userCookies);
@@ -191,6 +194,10 @@ public class BangCom extends PluginForHost {
                             br.clearAll();
                         }
                     }
+                }
+                if (cookieLoginOnly) {
+                    showCookieLoginInfo();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 logger.info("Performing full login");
                 br.getPage("https://www." + this.getHost() + "/modal/login");
@@ -230,7 +237,28 @@ public class BangCom extends PluginForHost {
         login(account, true);
         br.getPage("/subscriptions");
         ai.setUnlimitedTraffic();
-        final boolean isSubscriptionRunning = br.containsHTML("(?i)>\\s*Click to cancel");
+        /* 2023-01-31: A public API is available but so far is not of any use for us: https://api.bang.com */
+        final String userJson = br.getRegex("window\\.user = (\\{.*?\\});\\s").getMatch(0);
+        boolean isSubscriptionRunning = br.containsHTML("(?i)>\\s*Click to cancel");
+        String email = null;
+        if (userJson != null) {
+            final Map<String, Object> user = restoreFromString(userJson, TypeRef.MAP);
+            final Map<String, Object> accountType = (Map<String, Object>) user.get("accountType");
+            if (!isSubscriptionRunning && accountType.get("type").toString().equalsIgnoreCase("paid")) {
+                isSubscriptionRunning = true;
+            }
+            email = (String) user.get("email");
+            // final String apiKey = (String)user.get("apiKey");
+        } else {
+            logger.warning("Failed to find userJson");
+        }
+        if (!StringUtils.isEmpty(email) && account.loadUserCookies() != null) {
+            /*
+             * Try to use unique usernames even when users are using cookie login and thus can enter whatever they want into the username
+             * field in JDownloader.
+             */
+            account.setUser(email);
+        }
         if (!isSubscriptionRunning) {
             /* Free Accounts got no advantages over using no account at all -> Do not allow the usage of such accounts. */
             ai.setExpired(true);

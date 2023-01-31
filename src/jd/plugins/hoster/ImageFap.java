@@ -489,8 +489,8 @@ public class ImageFap extends PluginForHost {
                 link.setFinalFileName(correctedFilename);
             }
         }
-        controlSlot(+1);
         try {
+            controlSlot(+1);
             dl.startDownload();
         } finally {
             // remove download slot

@@ -132,14 +132,14 @@ public class FastShareCz extends antiDDoSForHost {
                 filesize = br.getRegex("<strong>(Velikost|Size) :</strong>([^<>\"]*?)<").getMatch(1);
                 if (filesize == null) {
                     filesize = br.getRegex("class\\s*=\\s*\"footer-video-size\"\\s*>\\s*(<i.*?</i>\\s*)?([0-9\\.,]+\\s*(?:&nbsp;)?[MBTKG]+)\\s*<").getMatch(1);
-                    filesize = Encoding.htmlDecode(filesize);
                 }
             }
         }
         if (filename != null) {
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
+            filesize = Encoding.htmlDecode(filesize);
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
