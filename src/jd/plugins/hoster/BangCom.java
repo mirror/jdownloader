@@ -55,7 +55,7 @@ public class BangCom extends PluginForHost {
         return "https://www.bang.com/terms-of-service";
     }
 
-    private static List<String[]> getPluginDomains() {
+    public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "bang.com", "videosz.com" });
