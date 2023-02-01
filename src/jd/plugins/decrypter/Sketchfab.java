@@ -29,6 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sketchfab.com" }, urls = { "https?://(?:www\\.)?sketchfab\\.com/(3d-models/[a-z0-9\\-]+\\-[a-f0-9]{32}|models/[a-f0-9]{32}/embed)" })
 public class Sketchfab extends PluginForDecrypt {
@@ -40,7 +41,7 @@ public class Sketchfab extends PluginForDecrypt {
     private static final String TYPE_EMBED  = "https?://(?:www\\.)?sketchfab\\.com/models/([a-f0-9]{32})/embed";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String modelHash;
         if (param.getCryptedUrl().matches(TYPE_EMBED)) {
@@ -54,7 +55,7 @@ public class Sketchfab extends PluginForDecrypt {
             /* Fallback */
             fpName = modelHash;
         }
-        String archiveLink = br.getRegex("(http[^#;]+ile\\.osgjs\\.gz)").getMatch(0);
+        final String archiveLink = br.getRegex("(http[^#;]+ile\\.osgjs\\.gz)").getMatch(0);
         if (archiveLink != null && archiveLink.length() > 0) {
             /* TODO: Check if this is still needed */
             String decodedLink = br.getURL(Encoding.htmlDecode(archiveLink)).toString();
@@ -65,9 +66,10 @@ public class Sketchfab extends PluginForDecrypt {
                 dl1.setFinalFileName(fpName + "_file.osgjs");
                 dl2.setFinalFileName(fpName + "_model_file.bin");
             }
-            decryptedLinks.add(dl1);
-            decryptedLinks.add(dl2);
+            ret.add(dl1);
+            ret.add(dl2);
         }
+        final String binzExtension = ".binz";
         String configData = br.getRegex("<div[^>]+id\\s*=\\s*\"js-dom-data-prefetched-data\"[^>]*><!--([^<]*)--></div>").getMatch(0);
         if (StringUtils.isNotEmpty(configData)) {
             configData = Encoding.htmlDecode(configData);
@@ -78,16 +80,25 @@ public class Sketchfab extends PluginForDecrypt {
             final String[] links = HTMLParser.getHttpLinks(configData, null);
             if (links != null && links.length > 0) {
                 for (String link : links) {
-                    if (link.contains(modelHash) || link.contains(".bin.gz")) {
-                        link = Encoding.htmlDecode(link);
-                        decryptedLinks.add(createDownloadlink(link));
+                    link = Encoding.htmlDecode(link);
+                    if (!this.canHandle(link) && (link.contains(modelHash) || link.endsWith(".bin.gz") || link.endsWith(binzExtension))) {
+                        ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(link)));
                     }
                 }
             }
         }
+        // /* Search for .binz URLs */
+        // final String[] links = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), null);
+        // if (links != null && links.length > 0) {
+        // for (String link : links) {
+        // if (!this.canHandle(link) && link.endsWith(".binz")) {
+        // ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(link)));
+        // }
+        // }
+        // }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 }

@@ -24,6 +24,8 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.BangComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -74,6 +76,11 @@ public class BangComCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return crawlVideo(param.getCryptedUrl(), account, PluginJsonConfig.get(BangComConfig.class));
+    }
+
+    public ArrayList<DownloadLink> crawlVideo(final String url, final Account account, final BangComConfig cfg) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             logger.info("This plugin is still under development!");
@@ -81,13 +88,34 @@ public class BangComCrawler extends PluginForDecrypt {
         }
         final List<String> knownVideoQualities = Arrays.asList(new String[] { "2160p", "1080p", "720p", "540p", "480p", "360p" });
         final List<String> selectedVideoQualities = new ArrayList<String>();
+        if (cfg == null || cfg.isCrawl2160p()) {
+            selectedVideoQualities.add(knownVideoQualities.get(0));
+        }
+        if (cfg == null || cfg.isCrawl1080p()) {
+            selectedVideoQualities.add(knownVideoQualities.get(1));
+        }
+        if (cfg == null || cfg.isCrawl720p()) {
+            selectedVideoQualities.add(knownVideoQualities.get(2));
+        }
+        if (cfg == null || cfg.isCrawl540p()) {
+            selectedVideoQualities.add(knownVideoQualities.get(3));
+        }
+        if (cfg == null || cfg.isCrawl480p()) {
+            selectedVideoQualities.add(knownVideoQualities.get(4));
+        }
+        if (cfg == null || cfg.isCrawl360p()) {
+            selectedVideoQualities.add(knownVideoQualities.get(5));
+        }
+        if (selectedVideoQualities.isEmpty() && cfg != null && !cfg.isGrabPreviewVideo() && !cfg.isGrabThumbnail()) {
+            logger.info("Returning nothing because user has deselected all qualities -> Disabled crawler");
+            return ret;
+        }
         br.setFollowRedirects(true);
         final BangCom plg = (BangCom) this.getNewPluginForHostInstance(this.getHost());
-        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
             plg.login(account, false);
         }
-        br.getPage(param.getCryptedUrl());
+        br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -110,17 +138,22 @@ public class BangComCrawler extends PluginForDecrypt {
         final String previewURL = videoObject.get("contentUrl").toString(); // always available
         final String description = (String) videoObject.get("description");
         final String photosAsZipURL = br.getRegex("\"(https?://photos\\.[^/]+/\\.zip[^\"]+)\"").getMatch(0); // not always available
-        if (thumbnailUrl != null) {
+        if (StringUtils.isEmpty(previewURL) || StringUtils.isEmpty(thumbnailUrl)) {
+        }
+        if (cfg == null || cfg.isGrabThumbnail()) {
             final DownloadLink thumb = new DownloadLink(plg, null, this.getHost(), thumbnailUrl, true);
             thumb.setProperty(BangCom.PROPERTY_QUALITY_IDENTIFIER, "THUMBNAIL");
             ret.add(thumb);
         }
-        if (previewURL != null) {
+        /*
+         * Enforce preview video download if no account is given as without account we will not be able to download any full length streams.
+         */
+        if (cfg == null || cfg.isGrabPreviewVideo() || account == null) {
             final DownloadLink preview = new DownloadLink(plg, null, this.getHost(), previewURL, true);
             preview.setProperty(BangCom.PROPERTY_QUALITY_IDENTIFIER, "PREVIEW");
             ret.add(preview);
         }
-        if (photosAsZipURL != null) {
+        if (photosAsZipURL != null && (cfg == null || cfg.isGrabPhotosZipArchive())) {
             final DownloadLink zip = new DownloadLink(plg, null, this.getHost(), photosAsZipURL, true);
             zip.setProperty(BangCom.PROPERTY_QUALITY_IDENTIFIER, "ZIP");
             ret.add(zip);
@@ -129,6 +162,7 @@ public class BangComCrawler extends PluginForDecrypt {
         if (videoDownloadurls != null && videoDownloadurls.length > 0) {
             /* Video streams are only available for premium users */
             final ArrayList<DownloadLink> allVideoItems = new ArrayList<DownloadLink>();
+            final ArrayList<DownloadLink> selectedVideoItems = new ArrayList<DownloadLink>();
             DownloadLink bestVideo = null;
             int pixelHeightBest = -1;
             DownloadLink bestVideoOfSelection = null;
@@ -143,6 +177,7 @@ public class BangComCrawler extends PluginForDecrypt {
                     logger.warning("Unsupported video format/url: " + videoDownloadurl);
                     continue;
                 }
+                final int pixelHeight = Integer.parseInt(pixelHeightStr);
                 if (videoDownloadurl.contains("&amp;")) {
                     videoDownloadurl = Encoding.htmlDecode(videoDownloadurl);
                 }
@@ -153,7 +188,15 @@ public class BangComCrawler extends PluginForDecrypt {
                     video.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                 }
                 video.setProperty(BangCom.PROPERTY_QUALITY_IDENTIFIER, pixelHeightStr + "p");
-                final int pixelHeight = Integer.parseInt(pixelHeightStr);
+                if (selectedVideoQualities.contains(pixelHeightStr + "p")) {
+                    selectedVideoItems.add(video);
+                    /* Determine best quality within selected qualities */
+                    if (bestVideoOfSelection == null || pixelHeight > pixelHeightBestOfSelection) {
+                        pixelHeightBestOfSelection = pixelHeight;
+                        bestVideoOfSelection = video;
+                    }
+                }
+                /* Determine best overall quality */
                 if (bestVideo == null || pixelHeight > pixelHeightBest) {
                     pixelHeightBest = pixelHeight;
                     bestVideo = video;
@@ -171,6 +214,7 @@ public class BangComCrawler extends PluginForDecrypt {
         if (!StringUtils.isEmpty(description)) {
             fp.setComment(description);
         }
+        // TODO: Set contenturl/container URL property
         for (final DownloadLink result : ret) {
             result.setProperty(BangCom.PROPERTY_CONTENT_ID, contentID);
             result.setAvailable(true);
