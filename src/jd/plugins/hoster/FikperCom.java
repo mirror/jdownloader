@@ -163,6 +163,7 @@ public class FikperCom extends PluginForHost {
             while (true) {
                 links.clear();
                 while (true) {
+                    /* 2023-02-01: Send max 100 items at once RE: admin */
                     if (index == urls.length || links.size() == 100) {
                         break;
                     } else {
