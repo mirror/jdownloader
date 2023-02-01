@@ -69,7 +69,8 @@ public class Sketchfab extends PluginForDecrypt {
             ret.add(dl1);
             ret.add(dl2);
         }
-        final String binzExtension = ".binz";
+        final String supportedExtensionRegex = "\\.(binz|bin\\.gz|png|jpe?g|zip)$";
+        // final String binzExtension = ".binz";
         String configData = br.getRegex("<div[^>]+id\\s*=\\s*\"js-dom-data-prefetched-data\"[^>]*><!--([^<]*)--></div>").getMatch(0);
         if (StringUtils.isNotEmpty(configData)) {
             configData = Encoding.htmlDecode(configData);
@@ -81,7 +82,7 @@ public class Sketchfab extends PluginForDecrypt {
             if (links != null && links.length > 0) {
                 for (String link : links) {
                     link = Encoding.htmlDecode(link);
-                    if (!this.canHandle(link) && (link.contains(modelHash) || link.endsWith(".bin.gz") || link.endsWith(binzExtension))) {
+                    if (!this.canHandle(link) && link.matches(".*" + supportedExtensionRegex)) {
                         ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(link)));
                     }
                 }

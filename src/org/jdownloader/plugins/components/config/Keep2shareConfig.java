@@ -19,11 +19,11 @@ public interface Keep2shareConfig extends PluginConfigInterface {
         }
 
         public String getReferer_label() {
-            return "Set custom Referer here (if it does not start without 'http://', 'https://' will be auto-applied internally!)";
+            return "Custom referer e.g. 'examplewebsite.com'";
         }
 
         public String getForceCustomReferer_label() {
-            return "Force custom Referer even if Referer is given in URL via '?site=http://...'?";
+            return "Force custom referer even if referer is given in URL via '?site=examplewebsite.com'?";
         }
 
         public String getEnableSSL_label() {
