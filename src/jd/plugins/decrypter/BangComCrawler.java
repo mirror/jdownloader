@@ -80,7 +80,7 @@ public class BangComCrawler extends PluginForDecrypt {
         return crawlVideo(param.getCryptedUrl(), account, PluginJsonConfig.get(BangComConfig.class));
     }
 
-    public ArrayList<DownloadLink> crawlVideo(final String url, final Account account, final BangComConfig cfg) throws Exception {
+    public <QualitySelectionMode> ArrayList<DownloadLink> crawlVideo(final String url, final Account account, final BangComConfig cfg) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             logger.info("This plugin is still under development!");
@@ -159,7 +159,7 @@ public class BangComCrawler extends PluginForDecrypt {
             ret.add(zip);
         }
         final String[] videoDownloadurls = br.getRegex("\"(https?://[^\"]+\\d+p\\.mp4[^\"]+)\"").getColumn(0);
-        if (videoDownloadurls != null && videoDownloadurls.length > 0) {
+        videoCrawler: if (videoDownloadurls != null && videoDownloadurls.length > 0) {
             /* Video streams are only available for premium users */
             final ArrayList<DownloadLink> allVideoItems = new ArrayList<DownloadLink>();
             final ArrayList<DownloadLink> selectedVideoItems = new ArrayList<DownloadLink>();
@@ -203,7 +203,22 @@ public class BangComCrawler extends PluginForDecrypt {
                 }
                 allVideoItems.add(video);
             }
-            ret.addAll(allVideoItems);
+            if (allVideoItems.isEmpty()) {
+                logger.warning("Failed to find any video items");
+                break videoCrawler;
+            }
+            final BangComConfig.QualitySelectionMode mode = cfg.getQualitySelectionMode();
+            if (mode == BangComConfig.QualitySelectionMode.BEST && bestVideo != null) {
+                ret.add(bestVideo);
+            } else if (mode == BangComConfig.QualitySelectionMode.BEST_OF_SELECTED && bestVideoOfSelection != null) {
+                ret.add(bestVideoOfSelection);
+            } else if (mode == BangComConfig.QualitySelectionMode.ALL_SELECTED && selectedVideoItems.size() > 0) {
+                ret.addAll(selectedVideoItems);
+            } else {
+                /* Fallback */
+                logger.info("No results according to user quality selection -> Adding all video qualities");
+                ret.addAll(allVideoItems);
+            }
         } else {
             if (account != null) {
                 logger.warning("Failed to find any video streams although account is available -> Possible plugin failure!");

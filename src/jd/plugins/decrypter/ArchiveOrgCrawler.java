@@ -70,7 +70,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
     }
 
-    private final String PATTERN_DOWNLOAD = "(https?://[^/]+)/download/(.+)";
+    private final String PATTERN_DOWNLOAD = "https?://[^/]+/download/(.+)";
     final Set<String>    dups             = new HashSet<String>();
     private ArchiveOrg   hostPlugin       = null;
 
@@ -79,13 +79,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         param.setCryptedUrl(param.getCryptedUrl().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/"));
         final Regex typeDownload = new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD);
         if (typeDownload.matches()) {
-            final String path = typeDownload.getMatch(1);
-            if (path == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String titleSlug = new Regex(path, "^([^/]+)").getMatch(0);
-            final String xmlurl = typeDownload.getMatch(0) + "/download/" + titleSlug + "/" + titleSlug + "_files.xml";
-            return crawlXML(br, xmlurl, path);
+            final String path = typeDownload.getMatch(0);
+            return crawlXML(br, path);
         } else {
             /*
              * 2020-08-26: Login might sometimes be required for book downloads.
@@ -140,16 +135,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     }
                 }
             }
-            /*
-             * All "account required" issues usually come with http error 403. See also ArchiveOrg host plugin errorhandling in function
-             * "connectionErrorhandling".
-             */
-            if (br.containsHTML("(?i)>\\s*You must log in to view this content")) {
-                /* 2021-02-24: <p class="theatre-title">You must log in to view this content</p> */
-                throw new AccountRequiredException();
-            } else if (br.containsHTML("(?i)>\\s*Item not available|>\\s*The item is not available due to issues with the item's content")) {
-                throw new AccountRequiredException();
-            } else if (br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final boolean isBookPreviewAvailable = getBookReaderURL(br) != null;
@@ -195,20 +181,18 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (titleSlug == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String xmlurl = br.getURL("/download/" + titleSlug + "/" + titleSlug + "_files.xml").toString();
-        return crawlXML(br, xmlurl, subfolderPathURLEncoded);
+        return crawlXML(br, subfolderPathURLEncoded);
     }
 
     private ArrayList<DownloadLink> crawlDetails(final CryptedLink param) throws Exception {
+        final String titleSlug = new Regex(param.getCryptedUrl(), "/details/([^/]+)").getMatch(0);
+        if (titleSlug == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String downloadurl = br.getURL("/download/" + titleSlug).toString();
         if (br.containsHTML("id=\"gamepadtext\"")) {
             /* 2020-09-29: Rare case: Download browser emulated games */
-            final String titleSlug = new Regex(param.getCryptedUrl(), "/details/([^/]+)").getMatch(0);
-            if (titleSlug == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String xmlurl = br.getURL("/download/" + titleSlug + "/" + titleSlug + "_files.xml").toString();
-            final Browser xmlbr = br.cloneBrowser();
-            return this.crawlXML(xmlbr, xmlurl, titleSlug);
+            return this.crawlXML(br, titleSlug);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String videoJson = br.getRegex("class=\"js-tv3-init\"[^>]*value='(\\{.*?\\})").getMatch(0);
@@ -232,20 +216,29 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* Do not stop here maybe we will find some more downloadable items. */
             // return ret;
         }
+        final String showAll = br.getRegex("(?i)href=\"(/download/[^\"]*?)\">SHOW ALL").getMatch(0);
+        if (showAll != null) {
+            /* This link will go back into this crawler to find all individual downloadlinks. */
+            ret.add(createDownloadlink(downloadurl));
+            return ret;
+        } else if (br.containsHTML("(?i)>\\s*You must log in to view this content") || br.containsHTML("(?i)>\\s*Item not available|>\\s*The item is not available due to issues with the item's content")) {
+            /* 2021-02-24: <p class="theatre-title">You must log in to view this content</p> */
+            if (br.containsHTML("/download/" + titleSlug)) {
+                /* Account is still required but we can go ahead and crawl all individual file URLs via XML. */
+                ret.add(createDownloadlink(downloadurl));
+                return ret;
+            } else {
+                throw new AccountRequiredException();
+            }
+        }
         /** TODO: 2020-09-29: Consider taking the shortcut here to always use that XML straight away (?!) */
         final URL url = br._getURL();
         final String pageIndex = new Regex(url.getQuery(), "(?:\\?|&)page=(\\d+)").getMatch(0);
         int page = pageIndex != null ? Integer.parseInt(pageIndex) : 1;
         do {
+            // TODO: Review this
             if (br.containsHTML("This item is only available to logged in Internet Archive users")) {
                 ret.add(createDownloadlink(param.getCryptedUrl().replace("/details/", "/download/")));
-                break;
-            }
-            final String showAll = br.getRegex("(?i)href=\"(/download/[^\"]*?)\">SHOW ALL").getMatch(0);
-            if (showAll != null) {
-                /* This link will go back into this crawler to find all individual downloadlinks. */
-                ret.add(createDownloadlink(br.getURL(showAll).toString()));
-                logger.info("Creating: " + br.getURL(showAll).toString());
                 break;
             }
             final String[] details = br.getRegex("<div class=\"item-ia\".*? <a href=\"(/details/[^\"]*?)\" title").getColumn(0);
@@ -451,11 +444,28 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         return br.getRegex("(?i)(?:\\'|\")([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)").getMatch(0);
     }
 
-    private ArrayList<DownloadLink> crawlXML(final Browser xmlbr, final String xmlurl, final String path) throws IOException, PluginException {
-        if (xmlbr == null || xmlurl == null || path == null) {
+    private ArrayList<DownloadLink> crawlXML(final Browser xmlbr, final String path) throws IOException, PluginException {
+        if (xmlbr == null || path == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /*
+         * 2020-03-04: Prefer crawling xml if possible as we then get all contents of that folder including contents of subfolders via only
+         * one request!
+         */
+        final String titleSlug;
+        String desiredSubpathDecoded = null;
+        if (path.contains("/")) {
+            /* XML will always contain all files but in this case we only want to get all files in a specific subfolder. */
+            final String[] urlParts = path.split("/");
+            titleSlug = urlParts[0];
+            if (urlParts.length > 1) {
+                desiredSubpathDecoded = Encoding.htmlDecode(path.substring(path.indexOf("/") + 1));
+            }
+        } else {
+            titleSlug = path;
+        }
+        final String xmlurl = "https://archive.org/download/" + titleSlug + "/" + titleSlug + "_files.xml";
         xmlbr.setFollowRedirects(true);
         final int previousLoadLimit = xmlbr.getLoadLimit();
         try {
@@ -474,20 +484,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final boolean crawlArchiveView = cfg.isFileCrawlerCrawlArchiveView();
         final boolean crawlMetadataFiles = cfg.isFileCrawlerCrawlMetadataFiles();
         final String[] items = new Regex(xmlbr.getRequest().getHtmlCode(), "<file\\s*(.*?)\\s*</file>").getColumn(0);
-        /*
-         * 2020-03-04: Prefer crawling xml if possible as we then get all contents of that folder including contents of subfolders via only
-         * one request!
-         */
-        final String titleSlug;
-        String desiredSubpathDecoded = null;
-        if (path.contains("/")) {
-            /* XML will always contain all files but in this case we only want to get all files in a specific subfolder. */
-            final String[] urlParts = path.split("/");
-            titleSlug = urlParts[0];
-            desiredSubpathDecoded = Encoding.htmlDecode(path.substring(path.indexOf("/") + 1));
-        } else {
-            titleSlug = path;
-        }
         logger.info("Crawling all files below path: " + path);
         final String basePath = "https://archive.org/download/" + titleSlug;
         final List<String> skippedItems = new ArrayList<String>();
