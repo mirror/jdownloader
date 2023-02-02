@@ -1605,7 +1605,23 @@ public class GoogleDrive extends PluginForHost {
         } else {
             /* Website login */
             final GoogleHelper helper = new GoogleHelper(br, this.getLogger());
-            final boolean loggedIN = helper.login(account, forceLoginValidation);
+            boolean loggedIN = helper.login(account, forceLoginValidation);
+            if (loggedIN && forceLoginValidation && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* 2021-02-02: Testing advanced login-check for GDrive */
+                final boolean oldFollowRedirects = br.isFollowingRedirects();
+                try {
+                    br.setFollowRedirects(true);
+                    br.getPage("https://drive.google.com/");
+                    if (br.getURL().contains("accounts.google.com")) {
+                        logger.warning("Looks like GDrive login failed");
+                        // loggedIN = false;
+                    } else {
+                        logger.info("Looks like GDrive login was successful");
+                    }
+                } finally {
+                    br.setFollowRedirects(oldFollowRedirects);
+                }
+            }
             if (!loggedIN) {
                 GoogleHelper.errorAccountInvalid(account);
             }
