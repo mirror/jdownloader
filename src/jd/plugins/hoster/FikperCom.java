@@ -209,6 +209,7 @@ public class FikperCom extends PluginForHost {
                                 link.setVerifiedFileSize(((Number) filesizeO).longValue());
                             } else if (filesizeO instanceof String) {
                                 /* 2023-01-31: Sometimes they're returning numbers as strings lol */
+                                // 2023-02-02: According to the admin this has been fixed.
                                 link.setVerifiedFileSize(Long.parseLong(filesizeO.toString()));
                             }
                         }

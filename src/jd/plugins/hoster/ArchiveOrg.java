@@ -85,6 +85,9 @@ public class ArchiveOrg extends PluginForHost {
     public static final String                            PROPERTY_BOOK_PAGE                              = "book_page";
     /* Real page index */
     public static final String                            PROPERTY_BOOK_PAGE_INTERNAL_INDEX               = "book_page_internal_index";
+    /* For files */
+    public static final String                            PROPERTY_IS_ACCOUNT_REQUIRED                    = "is_account_required";
+    /* For books */
     public static final String                            PROPERTY_IS_LENDING_REQUIRED                    = "is_lending_required";
     public static final String                            PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE = "is_free_downloadable_book_preview_page";
     public static final String                            PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP            = "is_borrowed_until_timestamp";
@@ -701,6 +704,15 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public void reset() {
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (account == null && link.getBooleanProperty(PROPERTY_IS_ACCOUNT_REQUIRED, false) == true) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     @Override
