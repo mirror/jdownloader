@@ -45,6 +45,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -1177,5 +1178,31 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             formattedDate = input;
         }
         return formattedDate;
+    }
+
+    /**
+     * Searches for videos in zdfmediathek that match the given search term. </br>
+     * This is mostly used as a workaround to find stuff that is hosted on their other website on zdfmediathek instead as zdfmediathek is
+     * providing a fairly stable search function while other websites hosting the same content such as kika.de can be complicated to parse.
+     * </br>
+     * This does not (yet) support pagination!
+     */
+    public ArrayList<DownloadLink> crawlZDFMediathekSearchResultsVOD(final String tvChannel, final String searchTerm, final int maxResults) throws Exception {
+        if (StringUtils.isEmpty(tvChannel) || StringUtils.isEmpty(searchTerm)) {
+            /* Developer mistake */
+            return null;
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.getPage("https://www.zdf.de/suche?q=" + Encoding.urlEncode(searchTerm) + "&synth=true&sender=" + Encoding.urlEncode(tvChannel) + "&from=&to=&attrs=&abName=&abGroup=gruppe-a");
+        final String[] urls = br.getRegex("\"(/[^\"]+)\"[^>]*class=\"teaser-title-link m-clickarea-action js-track-click\"").getColumn(0);
+        logger.info("Found " + urls.length + " search results on page 1");
+        for (String url : urls) {
+            url = br.getURL(url).toString();
+            ret.add(super.createDownloadlink(url));
+            if (ret.size() == maxResults) {
+                break;
+            }
+        }
+        return ret;
     }
 }
