@@ -31,25 +31,6 @@ import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.ClipboardMonitoring.ClipboardContent;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledLinkModifiers;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.modifier.CommentModifier;
-import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
-import jd.controlling.linkcrawler.modifier.PackageNameModifier;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
-import jd.gui.swing.laf.LookAndFeelController;
-import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLParser.HtmlParserCharSequence;
-import jd.parser.html.HTMLParser.HtmlParserResultSet;
-import jd.plugins.DownloadLink;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -93,6 +74,25 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.ClipboardMonitoring.ClipboardContent;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledLinkModifiers;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.modifier.CommentModifier;
+import jd.controlling.linkcrawler.modifier.DownloadFolderModifier;
+import jd.controlling.linkcrawler.modifier.PackageNameModifier;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.VariableAction;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
+import jd.plugins.DownloadLink;
 
 public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     private ExtTextArea                         input;
@@ -142,7 +142,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     private JComboBox              priority;
     private final HashSet<String>  autoPasswords = new HashSet<String>();
     private ExtTextField           comment;
-    private JCheckBox              overwritePackagizer;                              ;
+    private JCheckBox              overwritePackagizer;;
 
     public boolean isDeepAnalyse() {
         return deepAnalyse;
@@ -751,24 +751,27 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     thisThread = Thread.currentThread();
                     final String resultText;
                     if (toAnalyse != null) {
-                        final HashSet<String> passwords = PasswordUtils.getPasswords(toAnalyse);
-                        if (passwords != null && passwords.size() > 0) {
-                            synchronized (autoPasswords) {
-                                autoPasswords.addAll(passwords);
-                            }
-                        }
-                        new EDTRunner() {
-                            @Override
-                            protected void runInEDT() {
+                        if (config.isAddLinksPreParserAutoExtractionPasswordSearchEnabled()) {
+                            /* Look for passwords in pasted text if wished by the user. */
+                            final HashSet<String> passwords = PasswordUtils.getPasswords(toAnalyse);
+                            if (passwords != null && passwords.size() > 0) {
                                 synchronized (autoPasswords) {
-                                    if (autoPasswords.size() > 1) {
-                                        password.setText(JSonStorage.serializeToJson(autoPasswords));
-                                    } else if (autoPasswords.size() > 0) {
-                                        password.setText(autoPasswords.toArray(new String[] {})[0]);
-                                    }
+                                    autoPasswords.addAll(passwords);
                                 }
                             }
-                        };
+                            new EDTRunner() {
+                                @Override
+                                protected void runInEDT() {
+                                    synchronized (autoPasswords) {
+                                        if (autoPasswords.size() > 1) {
+                                            password.setText(JSonStorage.serializeToJson(autoPasswords));
+                                        } else if (autoPasswords.size() > 0) {
+                                            password.setText(autoPasswords.toArray(new String[] {})[0]);
+                                        }
+                                    }
+                                }
+                            };
+                        }
                         String[] result = HTMLParser.getHttpLinks(toAnalyse, base, new HtmlParserResultSet() {
                             @Override
                             public boolean add(HtmlParserCharSequence e) {
