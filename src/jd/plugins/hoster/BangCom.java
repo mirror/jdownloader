@@ -35,20 +35,21 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.BangComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BangCom extends PluginForHost {
     public BangCom(PluginWrapper wrapper) {
         super(wrapper);
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            this.enablePremium("https://www.bang.com/joinnow");
-        }
+        this.enablePremium("https://www.bang.com/joinnow");
     }
 
     @Override
@@ -58,8 +59,8 @@ public class BangCom extends PluginForHost {
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "bang.com", "videosz.com" });
+        ret.add(new String[] { "eroticavipclub.com" });
         return ret;
     }
 
@@ -86,6 +87,7 @@ public class BangCom extends PluginForHost {
     }
 
     private final int          ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
+    public static final String PROPERTY_MAINLINK            = "mainlink";
     public static final String PROPERTY_CONTENT_ID          = "content_id";
     public static final String PROPERTY_QUALITY_IDENTIFIER  = "quality";
 
@@ -109,21 +111,64 @@ public class BangCom extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        final String directurl = link.getPluginPatternMatcher();
         try {
-            final URLConnectionAdapter con;
-            if (isDownload) {
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, true, 0);
-                con = dl.getConnection();
-            } else {
-                con = br.openHeadConnection(directurl);
-            }
+            URLConnectionAdapter con;
+            boolean hasAttemptedRefresh = false;
+            do {
+                final String directurl = link.getPluginPatternMatcher();
+                if (isDownload) {
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, true, 0);
+                    con = dl.getConnection();
+                } else {
+                    con = br.openHeadConnection(directurl);
+                }
+                if (hasAttemptedRefresh) {
+                    break;
+                }
+                if (this.looksLikeDownloadableContent(con)) {
+                    break;
+                } else {
+                    if (!canRefresh(link)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    logger.info("Directurl expired -> Refreshing it");
+                    if (account == null) {
+                        /* Account required to refresh directurls. */
+                        throw new AccountRequiredException();
+                    }
+                    final BangComCrawler crawler = (BangComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
+                    final ArrayList<DownloadLink> results = crawler.crawlVideo(link.getStringProperty(PROPERTY_MAINLINK), account, null);
+                    DownloadLink hit = null;
+                    crawlLoop: for (final DownloadLink result : results) {
+                        if (StringUtils.equals(getFID(link), getFID(result))) {
+                            hit = result;
+                            break crawlLoop;
+                        }
+                    }
+                    if (hit == null) {
+                        logger.warning("Failed to refresh directurl");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    logger.info("Successfully refreshed directurl");
+                    link.setProperties(hit.getProperties());
+                    hasAttemptedRefresh = true;
+                }
+            } while (true);
             if (!this.looksLikeDownloadableContent(con)) {
-                if (!canRefresh(link)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (hasAttemptedRefresh) {
+                    logger.warning("Fresh directurl is invalid");
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                if (hasAttemptedRefresh) {
+                    logger.info("Fresh directurl is valid");
+                }
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+                final String serverFilename = Plugin.getFileNameFromHeader(con);
+                if (serverFilename != null) {
+                    link.setFinalFileName(serverFilename);
                 }
             }
-            link.setVerifiedFileSize(con.getCompleteContentLength());
         } finally {
             if (!isDownload && dl != null) {
                 try {
@@ -141,6 +186,7 @@ public class BangCom extends PluginForHost {
         if (StringUtils.equals(qualityIdentifier, "THUMBNAIL") || StringUtils.equals(qualityIdentifier, "PREVIEW")) {
             return false;
         } else {
+            /* Video URLs can expire and need to be refreshed then. */
             return true;
         }
     }
@@ -164,13 +210,24 @@ public class BangCom extends PluginForHost {
     }
 
     public void login(final Account account, final boolean force) throws Exception {
+        login(account, force, "https://www." + this.getHost() + "/");
+    }
+
+    public void login(final Account account, final boolean force, final String checkurl) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
-                final boolean cookieLoginOnly = false;
+                final boolean cookieLoginOnly;
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    /* Testing: Allow non-cookie login */
+                    cookieLoginOnly = false;
+                } else {
+                    /* Public/stable release: Allow only cookie login */
+                    cookieLoginOnly = true;
+                }
                 if (userCookies != null || cookies != null) {
                     if (userCookies != null) {
                         br.setCookies(userCookies);
@@ -178,7 +235,7 @@ public class BangCom extends PluginForHost {
                         br.setCookies(cookies);
                     }
                     logger.info("Attempting user cookie login");
-                    br.getPage("https://www." + this.getHost() + "/");
+                    br.getPage(checkurl);
                     if (this.isLoggedin(br)) {
                         logger.info("Cookie login successful");
                         return;

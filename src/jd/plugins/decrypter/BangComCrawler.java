@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.config.BangComConfig;
@@ -81,11 +80,11 @@ public class BangComCrawler extends PluginForDecrypt {
     }
 
     public <QualitySelectionMode> ArrayList<DownloadLink> crawlVideo(final String url, final Account account, final BangComConfig cfg) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            logger.info("This plugin is still under development!");
-            return ret;
+        if (StringUtils.isEmpty(url)) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final List<String> knownVideoQualities = Arrays.asList(new String[] { "2160p", "1080p", "720p", "540p", "480p", "360p" });
         final List<String> selectedVideoQualities = new ArrayList<String>();
         if (cfg == null || cfg.isCrawl2160p()) {
@@ -113,9 +112,10 @@ public class BangComCrawler extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final BangCom plg = (BangCom) this.getNewPluginForHostInstance(this.getHost());
         if (account != null) {
-            plg.login(account, false);
+            plg.login(account, true, url);
+        } else {
+            br.getPage(url);
         }
-        br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -207,16 +207,20 @@ public class BangComCrawler extends PluginForDecrypt {
                 logger.warning("Failed to find any video items");
                 break videoCrawler;
             }
-            final BangComConfig.QualitySelectionMode mode = cfg.getQualitySelectionMode();
-            if (mode == BangComConfig.QualitySelectionMode.BEST && bestVideo != null) {
-                ret.add(bestVideo);
-            } else if (mode == BangComConfig.QualitySelectionMode.BEST_OF_SELECTED && bestVideoOfSelection != null) {
-                ret.add(bestVideoOfSelection);
-            } else if (mode == BangComConfig.QualitySelectionMode.ALL_SELECTED && selectedVideoItems.size() > 0) {
-                ret.addAll(selectedVideoItems);
+            if (cfg != null) {
+                final BangComConfig.QualitySelectionMode mode = cfg.getQualitySelectionMode();
+                if (mode == BangComConfig.QualitySelectionMode.BEST && bestVideo != null) {
+                    ret.add(bestVideo);
+                } else if (mode == BangComConfig.QualitySelectionMode.BEST_OF_SELECTED && bestVideoOfSelection != null) {
+                    ret.add(bestVideoOfSelection);
+                } else if (mode == BangComConfig.QualitySelectionMode.ALL_SELECTED && selectedVideoItems.size() > 0) {
+                    ret.addAll(selectedVideoItems);
+                } else {
+                    /* Fallback */
+                    logger.info("No results according to user quality selection -> Adding all video qualities");
+                    ret.addAll(allVideoItems);
+                }
             } else {
-                /* Fallback */
-                logger.info("No results according to user quality selection -> Adding all video qualities");
                 ret.addAll(allVideoItems);
             }
         } else {
@@ -229,8 +233,9 @@ public class BangComCrawler extends PluginForDecrypt {
         if (!StringUtils.isEmpty(description)) {
             fp.setComment(description);
         }
-        // TODO: Set contenturl/container URL property
         for (final DownloadLink result : ret) {
+            result.setContainerUrl(br.getURL());
+            result.setProperty(BangCom.PROPERTY_MAINLINK, br.getURL());
             result.setProperty(BangCom.PROPERTY_CONTENT_ID, contentID);
             result.setAvailable(true);
         }
