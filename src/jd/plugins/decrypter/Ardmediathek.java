@@ -37,7 +37,6 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.ArdConfigInterface;
 import org.jdownloader.plugins.components.config.DasersteConfig;
 import org.jdownloader.plugins.components.config.EurovisionConfig;
-import org.jdownloader.plugins.components.config.KikaDeConfig;
 import org.jdownloader.plugins.components.config.MdrDeConfig;
 import org.jdownloader.plugins.components.config.MediathekDasersteConfig;
 import org.jdownloader.plugins.components.config.MediathekProperties;
@@ -72,8 +71,8 @@ import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.ARDMediathek;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "kika.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de", "tagesschau.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/.*?\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?kika\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html",
-        "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?tagesschau\\.de/[^<>\"]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de", "tagesschau.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/.*?\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html",
+        "https?://(?:www\\.)?tagesschau\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
     /* Constants */
     private static final String  type_embedded                          = "https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js";
@@ -108,8 +107,6 @@ public class Ardmediathek extends PluginForDecrypt {
             return WDRConfig.class;
         } else if ("sportschau.de".equalsIgnoreCase(getHost())) {
             return SportschauConfig.class;
-        } else if ("kika.de".equalsIgnoreCase(getHost())) {
-            return KikaDeConfig.class;
         } else if ("eurovision.de".equalsIgnoreCase(getHost())) {
             return EurovisionConfig.class;
         } else if ("sputnik.de".equalsIgnoreCase(getHost())) {
@@ -218,7 +215,7 @@ public class Ardmediathek extends PluginForDecrypt {
             ret = this.crawlNdrMediathek(param);
         } else if (host.equalsIgnoreCase("sandmann.de")) {
             ret = this.crawlSandmannDe(param);
-        } else if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("kika.de") || host.equalsIgnoreCase("sputnik.de") || host.equalsIgnoreCase("mdr.de")) {
+        } else if (host.equalsIgnoreCase("daserste.de") || host.equalsIgnoreCase("sputnik.de") || host.equalsIgnoreCase("mdr.de")) {
             ret = crawlDasersteVideo(param);
         } else if (host.equalsIgnoreCase("tagesschau.de")) {
             ret = this.crawlTagesschauVideos(param);
