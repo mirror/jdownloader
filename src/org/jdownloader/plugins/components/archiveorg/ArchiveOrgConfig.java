@@ -16,6 +16,7 @@ import org.jdownloader.plugins.config.Type;
 public interface ArchiveOrgConfig extends PluginConfigInterface {
     final String                    text_FileCrawlerCrawlOnlyOriginalVersions                    = "File crawler: Download only original versions of files?";
     final String                    text_FileCrawlerCrawlArchiveView                             = "File crawler: Also crawl archive view?";
+    final String                    text_FileCrawlerCrawlMetadataFiles                           = "File crawler: Also crawl metadata files (typically .xml, .sqlite files)?";
     final String                    text_BookImageQuality                                        = "Set book image quality (0 = highest, 10 = lowest)";
     final String                    text_BookCrawlMode                                           = "Set book crawl mode";
     final String                    text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable = "Mark non viewable book pages as offline if no account is available?";
@@ -28,6 +29,10 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
         public String getFileCrawlerCrawlArchiveView_label() {
             return text_FileCrawlerCrawlArchiveView;
+        }
+
+        public String getFileCrawlerCrawlMetadataFiles_label() {
+            return text_FileCrawlerCrawlMetadataFiles;
         }
 
         public String getBookImageQuality_label() {
@@ -58,6 +63,14 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     boolean isFileCrawlerCrawlArchiveView();
 
     void setFileCrawlerCrawlArchiveView(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_FileCrawlerCrawlMetadataFiles)
+    @Order(25)
+    boolean isFileCrawlerCrawlMetadataFiles();
+
+    void setFileCrawlerCrawlMetadataFiles(boolean b);
 
     @AboutConfig
     @SpinnerValidator(min = 0, max = 10, step = 1)

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -65,5 +66,19 @@ public class OkXxx extends KernelVideoSharingComV2 {
             return null;
         }
         return this.getProtocol() + host + "/video/" + fuid + "/";
+    }
+
+    @Override
+    protected String regexNormalTitleWebsite(final Browser br) {
+        String title = br.getRegex("(?i)<title>Video\\s*🌶️([^<]+) - OK\\.XXX</title>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("(?i)<div class=\"desc\">(?!description)([^<]+)</div>").getMatch(0);
+        }
+        if (title != null) {
+            return title;
+        } else {
+            /* Fallback to upper handling */
+            return super.regexNormalTitleWebsite(br);
+        }
     }
 }

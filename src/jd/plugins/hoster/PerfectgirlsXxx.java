@@ -25,8 +25,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class BravopornCom extends KernelVideoSharingComV2 {
-    public BravopornCom(final PluginWrapper wrapper) {
+public class PerfectgirlsXxx extends KernelVideoSharingComV2 {
+    public PerfectgirlsXxx(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -34,7 +34,7 @@ public class BravopornCom extends KernelVideoSharingComV2 {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "bravoporn.com" });
+        ret.add(new String[] { "perfectgirls.xxx", "perfectgirls.net", "perfektdamen.co" });
         return ret;
     }
 
@@ -50,7 +50,7 @@ public class BravopornCom extends KernelVideoSharingComV2 {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/videos/(\\d+)/");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video|embed)/(\\d+)/");
         }
         return ret.toArray(new String[0]);
     }
@@ -62,9 +62,9 @@ public class BravopornCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String regexNormalTitleWebsite(final Browser br) {
-        String title = br.getRegex("class=\"headline\"><h1>([^<>\"]+)<").getMatch(0);
+        String title = br.getRegex("class=\"wrapper-player([^\"]+)\"").getMatch(0);
         if (title == null) {
-            title = br.getRegex("<title>([^<>\"]+) \\| BravoPorn</title>").getMatch(0);
+            title = br.getRegex("(?i)<title>([^<]+) - PerfectGirls\\.[A-Za-z0-9]+</title>").getMatch(0);
         }
         if (title != null) {
             return title;
@@ -76,6 +76,6 @@ public class BravopornCom extends KernelVideoSharingComV2 {
 
     @Override
     String generateContentURL(final String host, final String fuid, final String urlSlug) {
-        return this.getProtocol() + this.appendWWWIfRequired(host) + "/videos/" + fuid + "/";
+        return this.getProtocol() + this.appendWWWIfRequired(host) + "/video/" + fuid + "/";
     }
 }
