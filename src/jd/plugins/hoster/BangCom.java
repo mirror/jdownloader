@@ -23,6 +23,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.BangComConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -284,6 +285,11 @@ public class BangCom extends PluginForHost {
     public boolean hasCaptcha(final DownloadLink link, final Account acc) {
         /* No captchas at all */
         return false;
+    }
+
+    @Override
+    public Class<? extends BangComConfig> getConfigInterface() {
+        return BangComConfig.class;
     }
 
     @Override

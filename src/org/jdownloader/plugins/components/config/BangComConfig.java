@@ -4,21 +4,24 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionMode;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.config.Type;
 
+@PluginHost(host = "bang.com", type = Type.HOSTER)
 public interface BangComConfig extends PluginConfigInterface {
     final String                    text_GrabPreviewVideo     = "Grab preview video?";
     final String                    text_GrabThumbnail        = "Grab thumbnail?";
     final String                    text_GrabPhotosZipArchive = "Grab photos zip archive?";
     final String                    text_QualitySelectionMode = "Define how this plugin should pick your desired qualities";
     final String                    text_Crawl360p            = "Crawl 360p?";
-    final String                    text_Crawl480p            = "Crawl 480?";
-    final String                    text_Crawl540p            = "Crawl 540?";
+    final String                    text_Crawl480p            = "Crawl 480p?";
+    final String                    text_Crawl540p            = "Crawl 540p?";
     final String                    text_Crawl720p            = "Crawl 720p?";
     final String                    text_Crawl1080p           = "Crawl 1080p?";
-    final String                    text_Crawl2160p           = "Crawl 2160?";
+    final String                    text_Crawl2160p           = "Crawl 2160p?";
     public static final TRANSLATION TRANSLATION               = new TRANSLATION();
 
     public static class TRANSLATION {
@@ -86,6 +89,27 @@ public interface BangComConfig extends PluginConfigInterface {
     boolean isGrabPhotosZipArchive();
 
     void setGrabPhotosZipArchive(boolean b);
+
+    public static enum QualitySelectionMode implements LabelInterface {
+        BEST {
+            @Override
+            public String getLabel() {
+                return "Best quality";
+            }
+        },
+        BEST_OF_SELECTED {
+            @Override
+            public String getLabel() {
+                return "Best quality of selected";
+            }
+        },
+        ALL_SELECTED {
+            @Override
+            public String getLabel() {
+                return "All selected qualities";
+            }
+        };
+    }
 
     @AboutConfig
     @DefaultEnumValue("ALL_SELECTED")
