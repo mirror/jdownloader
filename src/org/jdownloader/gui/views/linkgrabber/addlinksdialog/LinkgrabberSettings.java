@@ -84,10 +84,17 @@ public interface LinkgrabberSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("If false, The AddLinks Dialog in Linkgrabber works on the pasted text, and does not prefilter URLS any more")
+    @DescriptionForConfigEntry("If false, The 'Add Links' dialog in Linkgrabber works on the pasted text, and does not prefilter URLS anymore")
     boolean isAddLinksPreParserEnabled();
 
     void setAddLinksPreParserEnabled(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Automatically search for possible extraction password in pasted text and show them in 'Add Links' dialog")
+    @DefaultBooleanValue(true)
+    boolean isAddLinksPreParserAutoExtractionPasswordSearchEnabled();
+
+    void setAddLinksPreParserAutoExtractionPasswordSearchEnabled(boolean b);
 
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
@@ -295,7 +302,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
     OnDupesLinksAction getHandleDupesOnConfirmLatestSelection();
 
     @AboutConfig
-    @DescriptionForConfigEntry("Linkanalyse in the dialog Add Links Dialog before button \"continue\" works")
+    @DescriptionForConfigEntry("Linkanalyze in the 'Add Links' dialog before button \"continue\" works")
     @DefaultBooleanValue(true)
     boolean getAddLinksDialogCheck();
 
