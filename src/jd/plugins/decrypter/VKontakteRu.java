@@ -142,7 +142,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String PATTERN_PHOTO_SINGLE_Z                    = "(?i)https?://[^/]+/([a-z0-9]+)\\?z=photo(-?\\d+_\\d+)((/|%2F).+)";
     private static final String PATTERN_PHOTO_ALBUM                       = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
     private static final String PATTERN_PHOTO_ALBUMS                      = "(?i)https?://[^/]+/.*?albums((?:\\-)?\\d+)";
-    private static final String PATTERN_GENERAL_WALL_LINK                 = "(?i)https?://[^/]+/wall(?:\\-)?\\d+(?:\\?maxoffset=\\d+\\&currentoffset=\\d+)?";
+    private static final String PATTERN_GENERAL_WALL_LINK                 = "(?i)https?://[^/]+/wall(-?\\d+).*";
     private static final String PATTERN_USER_STORY                        = "(?i)https?://[^/]+/[^\\?]+\\?w=story-?(\\d+)_(\\d+).*";
     private static final String PATTERN_WALL_LOOPBACK_LINK                = "(?i)https?://[^/]+/wall\\-\\d+.*maxoffset=(\\d+)\\&currentoffset=(\\d+).*";
     private static final String PATTERN_WALL_POST_LINK                    = ".+wall(?:\\-)?\\d+_\\d+.*?";
@@ -1803,21 +1803,41 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         br.followConnection();
         int counter_wall_start_from = 0;
-        final int offset_increase = 10;
+        int offset_increase = 10;
         String postvalue_fixed = null;
         int total_numberof_entries = -1;
         int currentOffset = 0;
-        String json_source = null;
+        final String preGivenOffsetStr = UrlQuery.parse(param.getCryptedUrl()).get("offset");
+        if (preGivenOffsetStr != null && preGivenOffsetStr.matches("\\d+")) {
+            final int preGivenOffset = Integer.parseInt(preGivenOffsetStr);
+            if (preGivenOffset > 0) {
+                logger.info("Starting with pre given offset: " + preGivenOffset);
+                currentOffset = preGivenOffset;
+            }
+        }
+        String ownerID = null;
         /* 2020-02-07: This is most likely not given but we have other fail safes in place to stop once we're done. */
         // final String total_numberof_entriesStr = br.getRegex("id=\"page_wall_count_all\" value=\"(\\d+)\"").getMatch(0);
-        final String total_numberof_entriesStr = br.getRegex("id=\"page_wall_count_own\" value=\"(\\d+)\"").getMatch(0);
-        if (total_numberof_entriesStr != null) {
-            total_numberof_entries = Integer.parseInt(total_numberof_entriesStr);
-        } else {
-            /* Old handling */
-            json_source = this.br.getRegex("var opts\\s*?=\\s*?(\\{.*?\\});\\s+").getMatch(0);
-            if (json_source != null) {
-                total_numberof_entries = Integer.parseInt(PluginJSonUtils.getJsonValue(json_source, "count"));
+        final String optsJson = br.getRegex("var opts = (\\{.*?\\}), preload = ").getMatch(0);
+        if (optsJson != null) {
+            final Map<String, Object> entries = restoreFromString(optsJson, TypeRef.MAP);
+            final Object ownerIDO = entries.get("owner_id");
+            if (ownerIDO != null) {
+                ownerID = ownerIDO.toString();
+            }
+            final Number total_numberof_entriesO = (Number) entries.get("count");
+            if (total_numberof_entriesO != null) {
+                total_numberof_entries = total_numberof_entriesO.intValue();
+            }
+            final Number per_pageO = (Number) entries.get("per_page");
+            if (per_pageO != null) {
+                offset_increase = per_pageO.intValue();
+            }
+        }
+        if (total_numberof_entries == -1) {
+            final String total_numberof_entriesStr = br.getRegex("id=\"page_wall_count_own\" value=\"(\\d+)\"").getMatch(0);
+            if (total_numberof_entriesStr != null) {
+                total_numberof_entries = Integer.parseInt(total_numberof_entriesStr);
             }
         }
         if (total_numberof_entries == -1) {
@@ -1827,37 +1847,41 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         /* Find owner_id */
         /* First try to obtain ownerID from URL */
-        String ownerID = new Regex(param.getCryptedUrl(), "https?://[^/]+/(?:id|wall)(-?\\d+)").getMatch(0);
-        /* Next from HTML */
-        ownerID = br.getRegex("class=\"_wall_tab_own\">\\s*<a href=\"/wall(-?\\d+)\\?own=1\"").getMatch(0);
-        if (ownerID == null) {
-            /* Old handling/Fallback */
-            /* We need to find the owner_id - without it we would only be able to find all entries from the first page. */
-            json_source = br.getRegex("window\\[\\'public\\'\\]\\.init\\((\\{.*?)</script>").getMatch(0);
-            if (json_source == null) {
-                json_source = br.getRegex("Profile\\.init\\((\\{.*?)</script>").getMatch(0);
+        if (StringUtils.isEmpty(ownerID)) {
+            ownerID = new Regex(param.getCryptedUrl(), "https?://[^/]+/(?:id|wall)(-?\\d+)").getMatch(0);
+            if (ownerID == null) {
+                /* Next from HTML */
+                ownerID = br.getRegex("class=\"_wall_tab_own\">\\s*<a href=\"/wall(-?\\d+)\\?own=1\"").getMatch(0);
             }
-            if (json_source == null) {
-                /* Public groups */
-                json_source = br.getRegex("Groups\\.init\\((\\{.*?)</script>").getMatch(0);
-                if (json_source != null) {
-                    ownerID = PluginJSonUtils.getJson(json_source, "group_id");
+            if (ownerID == null) {
+                /* Old handling/Fallback */
+                /* We need to find the owner_id - without it we would only be able to find all entries from the first page. */
+                String json_source = br.getRegex("window\\[\\'public\\'\\]\\.init\\((\\{.*?)</script>").getMatch(0);
+                if (json_source == null) {
+                    json_source = br.getRegex("Profile\\.init\\((\\{.*?)</script>").getMatch(0);
                 }
-            }
-            if (StringUtils.isEmpty(ownerID)) {
-                ownerID = PluginJSonUtils.getJson(json_source, "public_id");
-            }
-            postvalue_fixed = PluginJSonUtils.getJson(json_source, "fixed_post_id");
-            if (StringUtils.isEmpty(ownerID) || ownerID.equals("null")) {
-                /* ownerID is given as double value --> Correct that */
-                ownerID = PluginJSonUtils.getJson(json_source, "user_id");
-                if (!StringUtils.isEmpty(ownerID) && ownerID.matches("\\d+\\.\\d+")) {
-                    ownerID = ownerID.split("\\.")[0];
+                if (json_source == null) {
+                    /* Public groups */
+                    json_source = br.getRegex("Groups\\.init\\((\\{.*?)</script>").getMatch(0);
+                    if (json_source != null) {
+                        ownerID = PluginJSonUtils.getJson(json_source, "group_id");
+                    }
                 }
-            }
-            if (ownerID != null && !ownerID.equals("null")) {
-                /* Correct crawled values */
-                ownerID = "-" + ownerID;
+                if (StringUtils.isEmpty(ownerID)) {
+                    ownerID = PluginJSonUtils.getJson(json_source, "public_id");
+                }
+                postvalue_fixed = PluginJSonUtils.getJson(json_source, "fixed_post_id");
+                if (StringUtils.isEmpty(ownerID) || ownerID.equals("null")) {
+                    /* ownerID is given as double value --> Correct that */
+                    ownerID = PluginJSonUtils.getJson(json_source, "user_id");
+                    if (!StringUtils.isEmpty(ownerID) && ownerID.matches("\\d+\\.\\d+")) {
+                        ownerID = ownerID.split("\\.")[0];
+                    }
+                }
+                if (ownerID != null && !ownerID.equals("null")) {
+                    /* Correct crawled values */
+                    ownerID = "-" + ownerID;
+                }
             }
         }
         if (StringUtils.isEmpty(ownerID) || ownerID.equals("null")) {
@@ -1875,8 +1899,8 @@ public class VKontakteRu extends PluginForDecrypt {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final int max_pages_without_downloadable_content_in_a_row = 5;
         int pages_without_downloadable_content_in_a_row = 0;
-        int totalResults = 0;
-        int resultsUntilReset = 0;
+        int totalNumberofResults = 0;
+        int resultsUntilMemorySaveReset = 0;
         do {
             logger.info("Crawling offset " + currentOffset);
             if (currentOffset > 0) {
@@ -1900,10 +1924,10 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Crawling items inside single post as part of a wall");
                 ret.addAll(websiteCrawlContent(br.getURL(), br.toString(), fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.photos_store_picture_directurls));
             }
-            final int numberof_items_new = ret.size();
-            final int counter_items_found_in_current_offset = numberof_items_new - numberof_items_old;
-            totalResults += counter_items_found_in_current_offset;
-            resultsUntilReset += counter_items_found_in_current_offset;
+            final int numberof_items_current = ret.size();
+            final int counter_items_found_in_current_offset = numberof_items_current - numberof_items_old;
+            totalNumberofResults += counter_items_found_in_current_offset;
+            resultsUntilMemorySaveReset += counter_items_found_in_current_offset;
             if (counter_items_found_in_current_offset == 0) {
                 logger.info("Failed to find any items for offset: " + currentOffset);
                 pages_without_downloadable_content_in_a_row++;
@@ -1911,7 +1935,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 /* Reset this */
                 pages_without_downloadable_content_in_a_row = 0;
             }
-            logger.info("Found " + totalResults + " items so far");
+            logger.info("Crawled offset " + currentOffset + " | Found items so far: " + totalNumberofResults);
             /*
              * Stop conditions are placed here and not in the while loops' footer on purpose to place loggers and get to know the exact stop
              * reason!
@@ -1925,15 +1949,11 @@ public class VKontakteRu extends PluginForDecrypt {
             } else if (pages_without_downloadable_content_in_a_row >= max_pages_without_downloadable_content_in_a_row) {
                 logger.info("Stopping because: Failed to find more items for " + pages_without_downloadable_content_in_a_row + " times in the row");
                 break;
-            } else if (total_numberof_entries != -1 && currentOffset >= total_numberof_entries) {
-                /* Also output the exact number of found items as it could be higher than what we expected! */
-                logger.info(String.format("Stopping because: Found all %d of %d items", ret.size(), total_numberof_entries));
-                break;
             }
-            if (resultsUntilReset >= MAX_LINKS_PER_RUN) {
+            if (resultsUntilMemorySaveReset >= MAX_LINKS_PER_RUN) {
                 logger.info("Reached " + MAX_LINKS_PER_RUN + " links per run limit -> Clearing array to save memory");
                 ret.clear();
-                resultsUntilReset = 0;
+                resultsUntilMemorySaveReset = 0;
             }
         } while (true);
         return ret;
