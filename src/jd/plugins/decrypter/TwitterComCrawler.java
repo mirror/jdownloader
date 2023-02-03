@@ -774,19 +774,23 @@ public class TwitterComCrawler extends PluginForDecrypt {
             boolean reachedUserDefinedMaxItemsLimit = false;
             boolean reachedUserDefinedMaxDate = false;
             Long lastCrawledTweetTimestamp = null;
-            while (iterator.hasNext()) {
+            tweetItemsLoop: while (iterator.hasNext()) {
                 final Map<String, Object> tweet = (Map<String, Object>) iterator.next().getValue();
                 final Map<String, Object> userWhoPostedThisTweet = (Map<String, Object>) users.get(tweet.get("user_id_str").toString());
                 ret.addAll(crawlTweetMap(tweet, userWhoPostedThisTweet, fp));
                 totalCrawledTweetsCount++;
                 lastCreatedAtDateStr = (String) tweet.get("created_at");
                 lastCrawledTweetTimestamp = ret.get(ret.size() - 1).getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+                /*
+                 * Set stop conditions here but don't break out of the main loop yet. The reason for this is that we want to have the
+                 * important log statement that comes next to this loop!
+                 */
                 if (this.maxTweetsToCrawl != null && totalCrawledTweetsCount >= this.maxTweetsToCrawl.intValue()) {
                     reachedUserDefinedMaxItemsLimit = true;
-                    break;
+                    break tweetItemsLoop;
                 } else if (this.crawlUntilTimestamp != null && lastCrawledTweetTimestamp != null && lastCrawledTweetTimestamp < crawlUntilTimestamp) {
                     reachedUserDefinedMaxDate = true;
-                    break;
+                    break tweetItemsLoop;
                 }
             }
             logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | lastCreatedAtDateStr = " + lastCreatedAtDateStr + " | last nextCursor = " + nextCursor);
@@ -817,7 +821,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 final String entryId = (String) pagination_info_entries.get("entryId");
                 if (!entryId.contains("cursor-bottom")) {
                     logger.info("Stopping because: Found wrong cursor object --> Plugin probably needs update");
-                    break;
+                    break tweetTimeline;
                 }
                 nextCursor = (String) JavaScriptEngineFactory.walkJson(pagination_info_entries, "content/operation/cursor/value");
                 if (StringUtils.isEmpty(nextCursor)) {
@@ -830,7 +834,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             } catch (final Throwable e) {
                 logger.log(e);
                 logger.info("Stopping because: Failed to get nextCursor (Exception occured)");
-                break;
+                break tweetTimeline;
             }
             if (numberofPagesInARowWithoutResult >= maxNumberofPagesInARowWithoutResult) {
                 logger.info("Stopping because: Reached max number of pages without result in a row [probably explicit content]: " + maxNumberofPagesInARowWithoutResult);
