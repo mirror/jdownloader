@@ -1610,6 +1610,17 @@ public class GoogleDrive extends PluginForHost {
                 /* 2021-02-02: Testing advanced login-check for GDrive */
                 final boolean oldFollowRedirects = br.isFollowingRedirects();
                 try {
+                    final String cookieOSID = br.getCookie("google.com", "OSID");
+                    if (cookieOSID != null && cookieOSID.equals("")) {
+                        final Cookies userCookies = account.loadUserCookies();
+                        if (userCookies != null) {
+                            final Cookie realOSID = userCookies.get("OSID");
+                            if (realOSID != null && realOSID.getValue().length() > 0) {
+                                logger.info("Testing OSID login workaround, real OSID cookie value is: " + realOSID.getValue());
+                                br.setCookies(userCookies);
+                            }
+                        }
+                    }
                     br.setFollowRedirects(true);
                     br.getPage("https://drive.google.com/");
                     if (br.getURL().contains("accounts.google.com")) {
