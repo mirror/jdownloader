@@ -551,6 +551,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         return false;
     }
 
+    /**
+     * Set this to false if a website is using links that look like short URLs but are not short URLs. </br>
+     * Example: streamhide.com
+     */
+    protected boolean supportsShortURLs() {
+        return true;
+    }
+
     @Override
     public String getLinkID(DownloadLink link) {
         final String fuid = getFUIDFromURL(link);
@@ -630,7 +638,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         if (pluginPatternMatcher == null || fuid == null) {
             return;
         }
-        /* TODO: Refrain froum modifying URLs here. Maybe always keep them and later get what we want. */
+        /* TODO: Refrain from modifying URLs here. Maybe always keep them and later get what we want. */
         final String urlCorrected = getContentURL(link);
         link.setPluginPatternMatcher(urlCorrected);
     }
@@ -1010,7 +1018,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         if (url != null) {
             if (isImagehoster() && url.matches("(?i)^https?://[^/]+/(?:th|i)/\\d+/([a-z0-9]{12}).*")) {
                 return URL_TYPE.IMAGE;
-            } else if (url.matches("(?i)^https?://[^/]+/d/([a-z0-9]+).*")) {
+            } else if (url.matches("(?i)^https?://[^/]+/d/([a-z0-9]+).*") && this.supportsShortURLs()) {
                 return URL_TYPE.SHORT;
             } else if (url.matches("(?i)^https?://[^/]+/([a-z0-9]{12}).*")) {
                 return URL_TYPE.NORMAL;
@@ -3179,11 +3187,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     /** Returns unique id from inside URL - usually with this pattern: [a-z0-9]{12} */
     public String getFUIDFromURL(final DownloadLink link) {
         final URL_TYPE type = getURLType(link);
-        if (type != null) {
-            return getFUID(link, type);
-        } else {
-            return null;
-        }
+        return getFUID(link, type);
     }
 
     /**
