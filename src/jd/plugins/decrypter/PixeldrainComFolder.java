@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -33,10 +37,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.PixeldrainCom;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PixeldrainCom.class })
@@ -71,7 +71,7 @@ public class PixeldrainComFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
         final String folderID = urlinfo.getMatch(0);
         PixeldrainCom.prepBR(this.br);
@@ -102,11 +102,11 @@ public class PixeldrainComFolder extends PluginForDecrypt {
             if (targetIndex != null && index == targetIndex.intValue()) {
                 /* User wants only one item within that folder */
                 logger.info("Found target-file at index: " + index + " | " + dl.getFinalFileName());
-                decryptedLinks.clear();
-                decryptedLinks.add(dl);
+                ret.clear();
+                ret.add(dl);
                 break;
             } else {
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 index += 1;
             }
         }
@@ -117,8 +117,8 @@ public class PixeldrainComFolder extends PluginForDecrypt {
             /* Fallback */
             fp.setName(folderID);
         }
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 
     private String generateFileURL(final String fileID) {

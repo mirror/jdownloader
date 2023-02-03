@@ -28,6 +28,21 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -62,21 +77,6 @@ import jd.plugins.components.UserAgents.BrowserName;
 import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|s/v1/doc/[A-Za-z0-9\\-_]+|video[\\d\\-]+_[\\d\\-]+(?:#quality=\\d+p)?)(\\?hash=[^&#]+(\\&dl=[^&#]{16,})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip|pdf).+|[rz][0-9]{2}.+)" })
@@ -1108,23 +1108,27 @@ public class VKontakteRuHoster extends PluginForHost {
      * Returns the final filename for photourls based on given circumstances and user-setting
      * VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME .
      */
-    public static String photoGetFinalFilename(final String photo_id, String finalfilename, final String directlink) throws MalformedURLException {
-        final String url_filename = directlink != null ? getFileNameFromURL(new URL(directlink)) : null;
-        final PluginForHost plg = JDUtilities.getPluginForHost(DOMAIN);
-        if (finalfilename != null) {
-            /* Do nothing - final filename has already been set (usually this is NOT the case). */
-        } else if (plg != null && plg.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
-            finalfilename = url_filename;
-        } else if (plg != null && plg.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
-            finalfilename = photo_id + " - " + url_filename;
-        } else if (directlink != null) {
-            /* Default filename */
-            finalfilename = photo_id + getFileNameExtensionFromString(directlink, ".jpg");
-        } else {
-            /* Default filename */
-            finalfilename = photo_id + ".jpg";
+    public static String photoGetFinalFilename(final String photo_id, String finalfilename, final String directlink) {
+        try {
+            final String url_filename = directlink != null ? getFileNameFromURL(new URL(directlink)) : null;
+            final PluginForHost plg = JDUtilities.getPluginForHost(DOMAIN);
+            if (finalfilename != null) {
+                /* Do nothing - final filename has already been set (usually this is NOT the case). */
+            } else if (plg != null && plg.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
+                finalfilename = url_filename;
+            } else if (plg != null && plg.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
+                finalfilename = photo_id + " - " + url_filename;
+            } else if (directlink != null) {
+                /* Default filename */
+                finalfilename = photo_id + getFileNameExtensionFromString(directlink, ".jpg");
+            } else {
+                /* Default filename */
+                finalfilename = photo_id + ".jpg";
+            }
+            return finalfilename;
+        } catch (final MalformedURLException ignore) {
+            return null;
         }
-        return finalfilename;
     }
 
     /** TODO: Maybe add login via API: https://vk.com/dev/auth_mobile */

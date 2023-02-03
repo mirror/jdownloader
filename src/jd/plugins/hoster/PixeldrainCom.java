@@ -40,6 +40,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.PixeldrainConfig;
+import org.jdownloader.plugins.components.config.PixeldrainConfig.ActionOnCaptchaRequired;
 import org.jdownloader.plugins.components.config.PixeldrainConfig.ActionOnSpeedLimitReached;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -339,7 +340,8 @@ public class PixeldrainCom extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link, account);
-        if (isTransferLimitReached(link, account) && PluginJsonConfig.get(getConfigInterface()).getActionOnSpeedLimitReached() == ActionOnSpeedLimitReached.TRIGGER_RECONNECT_TO_CHANGE_IP) {
+        final PixeldrainConfig cfg = PluginJsonConfig.get(getConfigInterface());
+        if (isTransferLimitReached(link, account) && cfg.getActionOnSpeedLimitReached() == ActionOnSpeedLimitReached.TRIGGER_RECONNECT_TO_CHANGE_IP) {
             /**
              * User prefers to perform reconnect to be able to download without speedlimit again. </br>
              * 2022-07-19: Speedlimit sits only on IP, not on account but our upper system will of not do reconnects for accounts atm.
@@ -350,8 +352,12 @@ public class PixeldrainCom extends PluginForHost {
         final UrlQuery query = new UrlQuery();
         query.add("download", "");
         if (this.hasCaptcha(link, account)) {
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lfbzz4UAAAAAAaBgox1R7jU0axiGneLDkOA-PKf").getToken();
-            query.appendEncoded("recaptcha_response", recaptchaV2Response);
+            if (cfg.getActionOnCaptchaRequired() == ActionOnCaptchaRequired.PROCESS_CAPTCHA) {
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lfbzz4UAAAAAAaBgox1R7jU0axiGneLDkOA-PKf").getToken();
+                query.appendEncoded("recaptcha_response", recaptchaV2Response);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait to avoid captcha", 5 * 60 * 1000l);
+            }
         }
         dllink += "?" + query.toString();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));

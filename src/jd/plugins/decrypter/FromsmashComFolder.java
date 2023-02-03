@@ -123,18 +123,18 @@ public class FromsmashComFolder extends PluginForDecrypt {
         brc.getPage("https://link.fromsmash.co/target/fromsmash.com%2F" + URLEncode.encodeURIComponent(folderName) + "?version=10-2019");
         Map<String, Object> json = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
         final String target = (String) JavaScriptEngineFactory.walkJson(json, "target/target");
-        if (target == null) {
+        final String url = (String) JavaScriptEngineFactory.walkJson(json, "target/url");
+        if (target == null && url == null) {
             if (brc.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        final String url = (String) JavaScriptEngineFactory.walkJson(json, "target/url");
-        if (url == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
+        if (target != null) {
             return new String[] { target, url };
+        } else {
+            return new String[] { folderName, url };
         }
     }
 
