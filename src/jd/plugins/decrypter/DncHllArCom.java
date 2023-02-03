@@ -11,25 +11,26 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 /**
  * category not designed to do spanning page support!
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dancehallarena.com" }, urls = { "https?://(\\w*\\.)?dancehallarena\\.com/(?:[a-zA-Z0-9\\-/]+|category/(?:(?:dancehall|reggae)/(?:singles/|dancehall-albums/|instrumental-dancehall/)?|soca/|mixtapes/(?:dancehall-mixtapes/|reggae-mixtapes/|hiphoprb/)?|videos/(?:music-videos/|viral-videos/)?|efx/)(?:page/\\d+)?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dancehallarena.com" }, urls = { "https?://(?:\\w*\\.)?dancehallarena\\.com/(?:[a-zA-Z0-9\\-/]+|category/(?:(?:dancehall|reggae)/(?:singles/|dancehall-albums/|instrumental-dancehall/)?|soca/|mixtapes/(?:dancehall-mixtapes/|reggae-mixtapes/|hiphoprb/)?|videos/(?:music-videos/|viral-videos/)?|efx/)(?:page/\\d+)?)" })
 public class DncHllArCom extends antiDDoSForDecrypt {
     public DncHllArCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         getPage(parameter);
         // invalid url
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h2>No posts")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (parameter.contains("/category/")) {
             final String filter = br.getRegex("(<div class=\"td-ss-main-content\">.*?)<div class=\"clearfix\">").getMatch(0);
@@ -44,32 +45,43 @@ public class DncHllArCom extends antiDDoSForDecrypt {
                 }
             }
             for (final String result : results) {
-                decryptedLinks.add(createDownloadlink(result));
+                ret.add(createDownloadlink(result));
             }
-            return decryptedLinks;
-        }
-        // all external links pass via there own tracking url
-        // String[] links = br.getRegex("xurl=(http[^\"]+|://[^\"]+|%3A%2F%2F[^\"]+)").getColumn(0);
-        String[] links = br.getRegex("xurl=(%3A%2F%2F[^\"]+)\" target=").getColumn(0);
-        if (links != null) {
-            for (String link : links) {
-                link = validate(link);
-                if (link != null) {
-                    decryptedLinks.add(createDownloadlink(link));
+            return ret;
+        } else {
+            // all external links pass via there own tracking url
+            // String[] links = br.getRegex("xurl=(http[^\"]+|://[^\"]+|%3A%2F%2F[^\"]+)").getColumn(0);
+            String[] links = br.getRegex("xurl=(%3A%2F%2F[^\"]+)\" target=").getColumn(0);
+            if (links != null) {
+                for (String link : links) {
+                    link = validate(link);
+                    if (link != null) {
+                        ret.add(createDownloadlink(link));
+                    }
                 }
             }
-        }
-        // audiomac provided via iframe
-        links = br.getRegex("<iframe[^>]* src=(\"|')(.*?)\\1").getColumn(1);
-        if (links != null) {
-            for (String link : links) {
-                link = validate(link);
-                if (link != null) {
-                    decryptedLinks.add(createDownloadlink(link));
+            // audiomac provided via iframe
+            links = br.getRegex("<iframe[^>]* src=(\"|')(.*?)\\1").getColumn(1);
+            if (links != null) {
+                for (String link : links) {
+                    link = validate(link);
+                    if (link != null) {
+                        ret.add(createDownloadlink(link));
+                    }
                 }
             }
+            /* 2023-02-03 */
+            links = br.getRegex("href=\"(https?://[^\"]+)\" target=\"_blank\" rel=\"noopener nofollow").getColumn(0);
+            if (links != null) {
+                for (String link : links) {
+                    link = validate(link);
+                    if (link != null) {
+                        ret.add(createDownloadlink(link));
+                    }
+                }
+            }
+            return ret;
         }
-        return decryptedLinks;
     }
 
     /**

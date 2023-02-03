@@ -16,9 +16,11 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
@@ -259,21 +261,34 @@ public class BangCom extends PluginForHost {
                 }
                 logger.info("Performing full login");
                 br.getPage("https://www." + this.getHost() + "/modal/login");
-                // final Map<String, Object> postdata = new HashMap<String, Object>();
-                // postdata.put("username", account.getUser());
-                // postdata.put("password", account.getPass());
-                // postdata.put("_csrf_token", "TODO");
-                // br.postPage("https://www.bang.com/modal/login", "");
-                final Form loginform = br.getFormbyActionRegex(".*/modal/login.*");
-                if (loginform == null) {
-                    logger.warning("Failed to find loginform");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final boolean useAjaxHandling = true;
+                if (useAjaxHandling) {
+                    final String csrftoken = br.getRegex("name=\"_csrf_token\" value=\"([^\"]+)").getMatch(0);
+                    final Map<String, Object> postdata = new HashMap<String, Object>();
+                    postdata.put("username", account.getUser());
+                    postdata.put("password", account.getPass());
+                    if (csrftoken != null) {
+                        postdata.put("_csrf_token", csrftoken);
+                    } else {
+                        logger.warning("Failed to find csrftoken -> Login will probably fail");
+                    }
+                    br.postPageRaw(br.getURL(), JSonStorage.serializeToJson(postdata));
+                } else {
+                    final Form loginform = br.getFormbyActionRegex(".*/modal/login.*");
+                    if (loginform == null) {
+                        logger.warning("Failed to find loginform");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    loginform.put("username", Encoding.urlEncode(account.getUser()));
+                    loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    br.submitForm(loginform);
                 }
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginform);
                 if (!isLoggedin(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && br.isCloudflareBlocked()) {
+                        throw new AccountInvalidException("Developer! Login failed due to Cloudflare! Use cookie login instead!");
+                    } else {
+                        throw new AccountInvalidException();
+                    }
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
