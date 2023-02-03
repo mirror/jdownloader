@@ -49,13 +49,14 @@ public class ArchivosMe extends YetiShareCore {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         /* 2021-04-28: IP workaround is still required! */
-        ret.add(new String[] { "95.215.205.103", "archivos.club", "archivos.me" });
+        ret.add(new String[] { "212.162.153.174", "95.215.205.103", "archivos.club", "archivos.me" });
         return ret;
     }
 
     @Override
     public String rewriteHost(String host) {
         /* 2020-02-26: archivos.club --> archivos.me */
+        /* 2023-02-03: 95.215.205.103 -> 212.162.153.174 */
         return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
