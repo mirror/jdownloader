@@ -395,13 +395,17 @@ public abstract class HighWayCore extends UseNet {
                 /* Request creation of downloadlink */
                 br.setFollowRedirects(true);
                 Map<String, Object> entries = null;
-                String passCode = Encoding.urlEncode(link.getDownloadPassword());
+                String passCode = link.getDownloadPassword();
                 int counter = 0;
                 do {
                     if (counter > 0) {
                         passCode = getUserInput("Password?", link);
                     }
-                    br.getPage(getWebsiteBase() + "load.php?json&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)) + "&pass=" + Encoding.urlEncode(passCode));
+                    String getdata = "json&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
+                    if (passCode != null) {
+                        getdata += "&pass=" + Encoding.urlEncode(passCode);
+                    }
+                    br.getPage(getWebsiteBase() + "load.php?" + getdata);
                     entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                     statuscode = ((Number) entries.get("code")).intValue();
                     if (statuscode != STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
@@ -411,7 +415,7 @@ public abstract class HighWayCore extends UseNet {
                         break;
                     } else {
                         if (passCode != null) {
-                            logger.info("Wrong password");
+                            logger.info("Wrong password: " + passCode);
                         } else {
                             logger.info("Password required");
                         }
@@ -574,7 +578,8 @@ public abstract class HighWayCore extends UseNet {
                  * i = direct download without cache </br>
                  * s = Cached download is ready for downloading
                  */
-                if (!entries.containsKey("cacheStatus") || entries.get("cacheStatus").toString().matches("i|s")) {
+                final Object cacheStatusO = entries.get("cacheStatus");
+                if (cacheStatusO != null && cacheStatusO.toString().matches("(?i)i|s")) {
                     logger.info("Stepping out of cache handling");
                     return;
                 } else {
@@ -587,17 +592,10 @@ public abstract class HighWayCore extends UseNet {
                         final int retryInSeconds = Math.min(retryInSecondsThisRound, maxWaitSeconds - secondsWaited);
                         this.sleep(retryInSeconds * 1000l, link);
                         secondsWaited += retryInSeconds;
-                        final Integer currentProgress = ((Number) entries.get("percentage_Complete")).intValue();
+                        final int currentProgress = ((Number) entries.get("percentage_Complete")).intValue();
                         link.addPluginProgress(waitProgress);
-                        waitProgress.updateValues(currentProgress.intValue(), 100);
-                        for (int sleepRound = 0; sleepRound < retryInSeconds; sleepRound++) {
-                            if (isAbort()) {
-                                throw new PluginException(LinkStatus.ERROR_RETRY);
-                            } else {
-                                Thread.sleep(1000);
-                            }
-                        }
-                        logger.info("Cache handling: Seconds waited " + secondsWaited + "/" + maxWaitSeconds + "|Remaining: " + (maxWaitSeconds - secondsWaited));
+                        waitProgress.updateValues(currentProgress, 100);
+                        logger.info("Cache handling: Seconds waited " + secondsWaited + "/" + maxWaitSeconds);
                         continue;
                     } else {
                         /*
