@@ -79,6 +79,7 @@ public class HitomilaTo extends PluginForDecrypt {
         }
         for (String url : links) {
             final String ext = Plugin.getFileNameExtensionFromURL(url);
+            /* Change thumbnail-URL to fullsize URL. */
             url = url.replaceFirst("t" + ext + "$", ext);
             final DownloadLink image = createDownloadlink(url);
             image.setAvailable(true);
