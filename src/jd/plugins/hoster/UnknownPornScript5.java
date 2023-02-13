@@ -136,13 +136,6 @@ public class UnknownPornScript5 extends PluginForHost {
         } else if (br.containsHTML(">Sorry, we couldn't find")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // if (br.getHost().equals("bigcamtube.com") && br.toString().length() <= 100) {
-        // /*
-        // * 2017-01-20: Workaround for bug (same via browser). First request sets cookies but server does not return html - 2nd request
-        // * returns html.
-        // */
-        // br.getPage(link.getDownloadURL());
-        // }
         String filename = regexStandardTitleWithHost(this.getHost());
         if (filename == null) {
             filename = HTMLSearch.searchMetaTag(br, "og:title");
