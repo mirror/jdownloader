@@ -5,6 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.http.Browser;
@@ -14,10 +18,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CyberdropMeAlbum;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { CyberdropMeAlbum.class })
@@ -107,7 +107,7 @@ public class CyberdropMe extends DirectHTTP {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        if ("bunkr.ru".equals(getHost()) || "cyberdrop.me".equals(getHost())) {
+        if ("bunkr.ru".equals(getHost()) || "bunkr.su".equals(getHost()) || "cyberdrop.me".equals(getHost())) {
             return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.ASSIGN_PLUGIN };
         } else {
             return new LazyPlugin.FEATURE[0];

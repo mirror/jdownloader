@@ -139,7 +139,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String PATTERN_VIDEO_ALBUM                       = "(https?://)?.*?/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|video/.*|videos(?:-)?\\d+(?:\\?section=[^\\&]+)?)";
     private static final String PATTERN_VIDEO_COMMUNITY_ALBUM             = "(https?://)?[^/]*/video\\?gid=\\d+.*";
     private static final String PATTERN_PHOTO_SINGLE                      = "https?://[^/]+/photo(\\-)?\\d+_\\d+.*?";
-    private static final String PATTERN_PHOTO_SINGLE_Z                    = "(?i)https?://[^/]+/([a-z0-9]+)\\?z=photo(-?\\d+_\\d+)((/|%2F).+)";
+    private static final String PATTERN_PHOTO_SINGLE_Z                    = "(?i)https?://[^/]+/([a-z0-9]+).*z=photo(-?\\d+_\\d+)((/|%2F).+)";
     private static final String PATTERN_PHOTO_ALBUM                       = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
     private static final String PATTERN_PHOTO_ALBUMS                      = "(?i)https?://[^/]+/.*?albums((?:\\-)?\\d+)";
     private static final String PATTERN_GENERAL_WALL_LINK                 = "(?i)https?://[^/]+/wall(-?\\d+).*";
@@ -1045,7 +1045,9 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String dllink_temp = VKontakteRuHoster.getHighestQualityPicFromSavedJson(picture_preview_json);
         final String tempFilename = VKontakteRuHoster.photoGetFinalFilename(photoID, null, dllink_temp);
-        dl.setName(tempFilename);
+        if (tempFilename != null) {
+            dl.setName(tempFilename);
+        }
         dl.setContentUrl(getProtocol() + "vk.com/photo" + photoID);
         return dl;
     }
@@ -1982,18 +1984,18 @@ public class VKontakteRu extends PluginForDecrypt {
         boolean isContentFromWall = false;
         boolean isContentFromWallReply = false;
         boolean isPostContentURLGivenAndTheSameForAllItems = false;
-        if (url_source != null && url_source.matches(PATTERN_PHOTO_ALBUMS)) {
+        if (url_source.matches(PATTERN_PHOTO_ALBUMS)) {
             /* 2019-10-02: Newly added albums support */
             isContentFromWall = false;
             album_ID = new Regex(url_source, PATTERN_PHOTO_ALBUMS).getMatch(0);
             grabAlbums = true;
-        } else if (url_source != null && url_source.matches(PATTERN_PHOTO_ALBUM)) {
+        } else if (url_source.matches(PATTERN_PHOTO_ALBUM)) {
             final String id_of_current_album = new Regex(url_source, "/album((?:\\-)?\\d+_\\d+)").getMatch(0);
             if (id_of_current_album != null) {
                 photo_list_id = "album" + id_of_current_album;
             }
             photo_module = "photos";
-        } else if (url_source != null && url_source.matches("^(?:\\-)?\\d+_\\d+$")) {
+        } else if (url_source.matches("^-?\\d+_\\d+$")) {
             /* url_source = not an URL but our wall_IDs */
             isContentFromWall = true;
             photo_module = "wall";
@@ -2006,6 +2008,10 @@ public class VKontakteRu extends PluginForDecrypt {
             wall_post_content_id = wall_post_IDs[1];
             wall_single_post_url = String.format("https://vk.com/wall%s", url_source);
             isPostContentURLGivenAndTheSameForAllItems = true;
+        } else if (url_source.matches(PATTERN_GENERAL_WALL_LINK)) {
+            /* url_source = not an URL but our wall_IDs */
+            isContentFromWall = true;
+            photo_module = "wall";
         }
         String ownerIDTemp = null;
         String contentIDTemp = null;
@@ -2042,7 +2048,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 String picture_preview_json = null;
                 String photo_htmlOLD = new Regex(html, "showPhoto\\(([^\\)]*?" + photoContentStr + "[^\\)]*?)\\)").getMatch(0);
                 String photo_htmlNEW = new Regex(html, "<div [^>]*data-photo-id=\"" + photoContentStr + "\".*?</div>\\s+</div>").getMatch(-1);
-                String single_photo_content_url = null;
+                String single_photo_content_url = getProtocol() + this.getHost() + "/photo" + ownerIDTemp + "_" + contentIDTemp;
                 if (photo_htmlOLD != null) {
                     /* Old/deprecated! Remove in 2023-05 if still not needed anymore then! */
                     photo_htmlOLD = photo_htmlOLD.replace("'", "");
@@ -2054,7 +2060,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         if (html.contains("?reply=" + wall_post_reply_content_idTmp)) {
                             isContentFromWallReply = true;
                             wall_post_reply_content_id = wall_post_reply_content_idTmp;
-                            single_photo_content_url = getProtocol() + this.getHost() + "/wall" + url_source + "?reply=" + wall_post_reply_content_id + "&z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + ownerIDTemp + "_" + wall_post_reply_content_id;
+                            single_photo_content_url = url_source_without_params + "?reply=" + wall_post_reply_content_id + "&z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + ownerIDTemp + "_" + wall_post_reply_content_id;
                             if (!isPostContentURLGivenAndTheSameForAllItems) {
                                 /* Try to find post_id - if this goes wrong we might not be able to download the content later on. */
                                 final String postIDs = new Regex(html, "<div class=\"wall_text\"><div id=\"wpt(-\\d+_\\d+)\" class=\"wall_post_cont _wall_post_cont\"><div[^>]+>[^>]+</div><div[^>]+><a[^>]+showPhoto\\('" + photoContentStr).getMatch(0);
@@ -2067,7 +2073,7 @@ public class VKontakteRu extends PluginForDecrypt {
                             }
                         } else {
                             /* Link post containing the photo */
-                            single_photo_content_url = getProtocol() + this.getHost() + "/wall" + url_source + "?z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + url_source;
+                            single_photo_content_url = getProtocol() + this.getHost() + "/wall" + "?z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + url_source;
                             photo_list_id = url_source;
                         }
                     } else if (photo_list_id_tmp.matches("tag-?\\d+")) {
@@ -2096,7 +2102,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         if (html.contains("?reply=" + wall_post_reply_content_idTmp)) {
                             isContentFromWallReply = true;
                             wall_post_reply_content_id = wall_post_reply_content_idTmp;
-                            single_photo_content_url = getProtocol() + this.getHost() + "/wall" + url_source + "?reply=" + wall_post_reply_content_id + "&z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + ownerIDTemp + "_" + wall_post_reply_content_id;
+                            single_photo_content_url = url_source_without_params + "?reply=" + wall_post_reply_content_id + "&z=photo" + ownerIDTemp + "_" + contentIDTemp + "%2Fwall" + ownerIDTemp + "_" + wall_post_reply_content_id;
                             if (!isPostContentURLGivenAndTheSameForAllItems) {
                                 // TODO: Check/fix this part
                                 /* Try to find post_id - if this goes wrong we might not be able to download the content later on. */
@@ -2123,10 +2129,6 @@ public class VKontakteRu extends PluginForDecrypt {
                             single_photo_content_url = String.format("https://vk.com/photo%s?tag=%s", photoContentStr, tag_id);
                         }
                     }
-                }
-                if (single_photo_content_url == null) {
-                    /* Fallback and or photos inside photo album --> Set default content_url */
-                    single_photo_content_url = getProtocol() + this.getHost() + "/photo" + ownerIDTemp + "_" + contentIDTemp;
                 }
                 if (isContentFromWallReply && !vkwall_grabphotos) {
                     logger.info("Skipping wall comment item because user has deselected such items: " + photoContentStr);

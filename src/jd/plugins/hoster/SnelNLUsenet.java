@@ -7,6 +7,7 @@ import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 
@@ -17,6 +18,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -57,26 +59,41 @@ public class SnelNLUsenet extends UseNet {
         setBrowserExclusive();
         final AccountInfo ai = new AccountInfo();
         final Cookies cookies = account.loadCookies("");
+        final Cookies userCookies = account.loadUserCookies();
+        /* 2023-02-13: Required due to Cloudflare blocking login page. */
+        final boolean allowOnlyUserCookieLogin = true;
         br.setFollowRedirects(true);
         try {
-            Form login = null;
-            if (cookies != null) {
+            Form loginform = null;
+            if (cookies != null || userCookies != null) {
                 logger.info("Checking login cookies");
-                br.setCookies(getHost(), cookies);
-                br.getPage("https://www.snelnl.com/en/user/login");
-                login = br.getFormbyActionRegex("/en/user/login\\?.*");
-                if (login != null && login.containsHTML("name") && login.containsHTML("pass")) {
+                if (userCookies != null) {
+                    br.setCookies(userCookies);
+                } else {
+                    br.setCookies(cookies);
+                }
+                br.getPage("https://www." + this.getHost() + "/en/user/login");
+                loginform = br.getFormbyActionRegex("/en/user/login\\?.*");
+                if ((loginform != null && loginform.containsHTML("name") && loginform.containsHTML("pass")) || !containsSessionCookie(br.getCookies(getHost()))) {
                     logger.info("Cookie login failed");
-                    br.getCookies(getHost()).clear();
-                } else if (!containsSessionCookie(br.getCookies(getHost()))) {
-                    logger.info("Cookie login failed");
-                    br.getCookies(getHost()).clear();
+                    br.clearCookies(null);
+                    if (userCookies != null) {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
                 } else {
                     logger.info("Cookie login successful");
                     if (!StringUtils.endsWithCaseInsensitive(br.getURL(), "en/user")) {
-                        br.getPage("https://www.snelnl.com/en/user");
+                        br.getPage("https://www." + this.getHost() + "/en/user");
                     }
                 }
+            }
+            if (allowOnlyUserCookieLogin && userCookies == null) {
+                showCookieLoginInfo();
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
             if (!containsSessionCookie(br.getCookies(getHost()))) {
                 logger.info("Performing full login");
@@ -86,32 +103,39 @@ public class SnelNLUsenet extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please use your email address to login", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 br.setCookie(getHost(), "language", "en");
-                br.getPage("https://www.snelnl.com/en/user/login");
-                login = br.getFormbyActionRegex("/en/user/login\\?.*");
-                login.put("name", Encoding.urlEncode(username));
-                login.put("pass", Encoding.urlEncode(account.getPass()));
-                br.submitForm(login);
-                login = br.getFormbyActionRegex("/en/user/login\\?.*");
-                if (login != null && login.containsHTML("name") && login.containsHTML("pass")) {
+                br.getPage("https://www." + this.getHost() + "/en/user/login");
+                loginform = br.getFormbyActionRegex("/en/user/login\\?.*");
+                loginform.put("name", Encoding.urlEncode(account.getUser()));
+                loginform.put("pass", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginform);
+                loginform = br.getFormbyActionRegex("/en/user/login\\?.*");
+                if (loginform != null && loginform.containsHTML("name") && loginform.containsHTML("pass")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (!containsSessionCookie(br.getCookies(getHost()))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            account.saveCookies(br.getCookies(getHost()), "");
-            final String userName = br.getRegex("(?i)item-title\">\\s*Username\\s*:\\s*</div>.*?item-text\">(.*?)<").getMatch(0);
-            if (StringUtils.isEmpty(userName)) {
+            if (userCookies == null) {
+                account.saveCookies(br.getCookies(getHost()), "");
+            }
+            String usenetUsername = br.getRegex("(?i)item-title\">\\s*Username\\s*:\\s*</div>.*?item-text\">(.*?)<").getMatch(0);
+            if (StringUtils.isEmpty(usenetUsername)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            account.setProperty(PROPERTY_ACCOUNT_USENET_USERNAME, userName);
+            usenetUsername = Encoding.htmlDecode(usenetUsername).trim();
+            account.setProperty(PROPERTY_ACCOUNT_USENET_USERNAME, usenetUsername);
+            if (userCookies != null) {
+                /* When using cookie login, user can enter whatever he wants into username field but we want to have unique usernames. */
+                account.setUser(usenetUsername);
+            }
             final String packageType = br.getRegex("(?i)item-title\">\\s*Account type\\s*:\\s*</div>.*?item-text\">(.*?)<").getMatch(0);
             if (packageType == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Please contact JDownloader support");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             ai.setStatus(packageType);
             ai.setUnlimitedTraffic();
-            final String endDate = br.getRegex("End date:</div>.*?item-text\">(.*?)<").getMatch(0);
+            final String endDate = br.getRegex("(?i)End date:</div>.*?item-text\">(.*?)<").getMatch(0);
             if (endDate == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

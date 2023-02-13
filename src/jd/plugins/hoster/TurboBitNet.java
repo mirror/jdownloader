@@ -44,7 +44,7 @@ public class TurboBitNet extends TurbobitCore {
     }
 
     /* Keep this up2date! */
-    public static String[] domains      = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc", "turbobit.pw", "turbo.to", "turb.to", "turbo-bit.pw", "turbobit.cloud", "turbobit.online", "turbobit.live", "wayupload.com", "turb.cc", "turbobit5.net", "turbobith.net", "turbobi.pw", "turbobbit.com", "turbobyt.com", "trubobit.com", "turb.pw", "turboget.net", "turbobiyt.net" };
+    public static String[] domains      = new String[] { "turbobit.net", "ifolder.com.ua", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "hotshare.biz", "sibit.net", "turbobit.ru", "xrfiles.ru", "turbabit.net", "filedeluxe.com", "filemaster.ru", "файлообменник.рф", "turboot.ru", "kilofile.com", "twobit.ru", "forum.flacmania.ru", "filhost.ru", "fayloobmennik.com", "rapidfile.tk", "turbo.to", "cccy.su", "turbo-bit.net", "turbobit.cc", "turbobit.pw", "turbo.to", "turb.to", "turbo-bit.pw", "turbobit.cloud", "turbobit.online", "turbobit.live", "wayupload.com", "turb.cc", "turbobit5.net", "turbobith.net", "turbobi.pw", "turbobbit.com", "turbobyt.com", "trubobit.com", "turb.pw", "turboget.net", "turbobiyt.net", "turbobif.com" };
     public static String[] domains_dead = new String[] { "turbobbit.com", "ifolder.com.ua" };
 
     /* Setting domains */

@@ -85,9 +85,9 @@ public class ArchiveOrg extends PluginForHost {
     public static final String                            PROPERTY_BOOK_PAGE                              = "book_page";
     /* Real page index */
     public static final String                            PROPERTY_BOOK_PAGE_INTERNAL_INDEX               = "book_page_internal_index";
-    /* For files */
+    /* For officially downloadable files */
     public static final String                            PROPERTY_IS_ACCOUNT_REQUIRED                    = "is_account_required";
-    /* For books */
+    /* For book page downloads */
     public static final String                            PROPERTY_IS_LENDING_REQUIRED                    = "is_lending_required";
     public static final String                            PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE = "is_free_downloadable_book_preview_page";
     public static final String                            PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP            = "is_borrowed_until_timestamp";
@@ -225,7 +225,7 @@ public class ArchiveOrg extends PluginForHost {
     private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account, final ArchiveOrgLendingInfo oldLendingInfo) throws Exception {
         if (this.isBook(link)) {
             /* Check errors for books */
-            if (!this.looksLikeDownloadableContent(con)) {
+            if (!this.looksLikeDownloadableContent(con, link)) {
                 final int responsecode = con.getResponseCode();
                 if (account != null && isBookLendingRequired(link) && (responsecode == 403 || responsecode == 404)) {
                     synchronized (bookBorrowSessions) {
@@ -254,7 +254,7 @@ public class ArchiveOrg extends PluginForHost {
             }
         }
         /* Generic errorhandling */
-        if (!this.looksLikeDownloadableContent(con)) {
+        if (!this.looksLikeDownloadableContent(con, link)) {
             br.followConnection(true);
             /* <h1>Item not available</h1> */
             if (br.containsHTML("(?i)>\\s*Item not available<")) {
@@ -300,7 +300,7 @@ public class ArchiveOrg extends PluginForHost {
         final String directurl = getDirectURL(link, account);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, account), getMaxChunks(link, account));
         connectionErrorhandling(br.getHttpConnection(), link, account, lendingInfoForBeforeDownload);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection(), link)) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
@@ -677,19 +677,40 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     @Override
-    public boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-        if (super.looksLikeDownloadableContent(urlConnection)) {
+    public boolean looksLikeDownloadableContent(final URLConnectionAdapter con) {
+        return looksLikeDownloadableContent(con, false);
+    }
+
+    public boolean looksLikeDownloadableContent(final URLConnectionAdapter con, final DownloadLink link) {
+        if (this.isBook(link)) {
+            return looksLikeDownloadableContent(con, false);
+        } else {
+            return looksLikeDownloadableContent(con, true);
+        }
+    }
+
+    public boolean looksLikeDownloadableContent(final URLConnectionAdapter con, final boolean isOfficialDownloadurl) {
+        if (isOfficialDownloadurl && con.isOK()) {
+            /**
+             * It's an official downloadurl but they're not necessarily sending a Content-Disposition header so checks down below could e.g.
+             * fail for .html files. </br>
+             */
             return true;
-        } else if (StringUtils.containsIgnoreCase(urlConnection.getURL().getPath(), ".xml")) {
+        } else if (super.looksLikeDownloadableContent(con)) {
+            return true;
+        } else if (StringUtils.containsIgnoreCase(con.getURL().getPath(), ".xml")) {
             /* 2021-02-15: Special handling for .xml files */
-            return StringUtils.containsIgnoreCase(urlConnection.getContentType(), "xml");
-        } else if (urlConnection.getURL().getPath().matches("(?i).*\\.(txt|log)$")) {
+            return StringUtils.containsIgnoreCase(con.getContentType(), "xml");
+        } else if (con.getURL().getPath().matches("(?i).*\\.(txt|log)$")) {
             /* 2021-05-03: Special handling for .txt files */
-            return StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text/plain");
+            return StringUtils.containsIgnoreCase(con.getContentType(), "text/plain");
+        } else if (StringUtils.containsIgnoreCase(con.getURL().getPath(), ".html")) {
+            /* 2023-02-13: Special handling for .html files */
+            return StringUtils.containsIgnoreCase(con.getContentType(), "html") || StringUtils.containsIgnoreCase(con.getContentType(), "text/plain");
         } else {
             /* MimeType file-extension and extension at the end of the URL are the same -> Also accept as downloadable content. */
-            final String extension = getExtensionFromMimeType(urlConnection.getContentType());
-            if (StringUtils.endsWithCaseInsensitive(urlConnection.getURL().getPath(), "." + extension)) {
+            final String extension = getExtensionFromMimeType(con.getContentType());
+            if (StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), "." + extension)) {
                 return true;
             } else {
                 return false;
