@@ -434,15 +434,14 @@ public class VKontakteRuHoster extends PluginForHost {
                     this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
                 }
                 if (this.finalUrl == null) {
-                    String photo_list_id = link.getStringProperty(PROPERTY_PHOTOS_photo_list_id);
+                    final String old_photo_list_id = this.getPhotoListID(link);
+                    String new_photo_list_id = null;
                     final String module = link.getStringProperty(PROPERTY_PHOTOS_photo_module);
                     final String photoID = getPhotoID(link);
+                    String photo_list_idToUse = old_photo_list_id;
                     setHeadersPhoto(br);
                     if (module != null) {
-                        /* Access photo inside wall-post or qwall reply or photo album */
-                        if (photo_list_id == null) {
-                            photo_list_id = "";
-                        }
+                        /* Access photo inside wall-post or wall reply or photo album */
                         int photo_counter = 0;
                         do {
                             photo_counter++;
@@ -459,7 +458,7 @@ public class VKontakteRuHoster extends PluginForHost {
                                 }
                                 logger.info("Attempting photo_list_id workaround");
                                 this.getPageSafe(account, link, content_url);
-                                final String new_photo_list_id = br.getRegex(photoID + "(?:%2F|/)([a-f0-9]+)").getMatch(0);
+                                new_photo_list_id = br.getRegex(photoID + "(?:%2F|/)([a-f0-9]+)").getMatch(0);
                                 if (new_photo_list_id == null) {
                                     logger.warning("photo_list_id workaround failed");
                                     if (account == null) {
@@ -470,17 +469,26 @@ public class VKontakteRuHoster extends PluginForHost {
                                         throw new AccountRequiredException("Missing permissions");
                                     }
                                 } else {
-                                    logger.warning("Successfully found new photo_list_id: " + new_photo_list_id);
-                                    photo_list_id = new_photo_list_id;
+                                    logger.warning("Successfully found new photo_list_id: " + new_photo_list_id + " | Old: " + link.getStringProperty(PROPERTY_PHOTOS_photo_list_id));
+                                    try {
+                                        /* Ugly workaround */
+                                        link.setProperty(PROPERTY_PHOTOS_photo_list_id, new_photo_list_id);
+                                        photo_list_idToUse = this.getPhotoListID(link);
+                                    } finally {
+                                        link.setProperty(PROPERTY_PHOTOS_photo_list_id, old_photo_list_id);
+                                    }
                                 }
                             }
                             /*
                              * 2020-01-27: Browser request would also contain "&dmcah=".
                              */
-                            final String postData = "act=show&al=1&al_ad=0&dmcah=&list=" + photo_list_id + "&module=" + module + "" + "&photo=" + photoID;
+                            final String postData = "act=show&al=1&al_ad=0&dmcah=&list=" + photo_list_idToUse + "&module=" + module + "&photo=" + photoID;
                             postPageSafe(br, account, link, getBaseURL() + "/al_photos.php?act=show", postData);
                         } while (photo_counter <= 1 && PluginJSonUtils.unescape(br.toString()).contains("\"Access denied\""));
                         checkErrorsPhoto(br);
+                        if (!StringUtils.equalsIgnoreCase(old_photo_list_id, new_photo_list_id)) {
+                            link.setProperty(PROPERTY_PHOTOS_photo_list_id, new_photo_list_id);
+                        }
                     } else {
                         /* Access normal photo / photo inside album */
                         String albumID = link.getStringProperty(PROPERTY_PHOTOS_album_id);
@@ -556,6 +564,18 @@ public class VKontakteRuHoster extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getPhotoListID(final DownloadLink link) {
+        String photo_list_id = link.getStringProperty(PROPERTY_PHOTOS_photo_list_id);
+        if (photo_list_id != null) {
+            photo_list_id = Encoding.htmlDecode(photo_list_id);
+            if (photo_list_id.length() > 1 && photo_list_id.startsWith("/")) {
+                photo_list_id = photo_list_id.substring(photo_list_id.indexOf("/") + 1);
+            }
+            return photo_list_id;
+        }
+        return null;
     }
 
     /** Check errors which may happen after POST '/al_photos.php' request. */
@@ -1109,26 +1129,29 @@ public class VKontakteRuHoster extends PluginForHost {
      * VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME .
      */
     public static String photoGetFinalFilename(final String photo_id, String finalfilename, final String directlink) {
-        try {
-            final String url_filename = directlink != null ? getFileNameFromURL(new URL(directlink)) : null;
-            final PluginForHost plg = JDUtilities.getPluginForHost(DOMAIN);
-            if (finalfilename != null) {
-                /* Do nothing - final filename has already been set (usually this is NOT the case). */
-            } else if (plg != null && plg.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
-                finalfilename = url_filename;
-            } else if (plg != null && plg.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
-                finalfilename = photo_id + " - " + url_filename;
-            } else if (directlink != null) {
-                /* Default filename */
-                finalfilename = photo_id + getFileNameExtensionFromString(directlink, ".jpg");
-            } else {
-                /* Default filename */
-                finalfilename = photo_id + ".jpg";
+        String url_filename = null;
+        if (directlink != null) {
+            try {
+                url_filename = getFileNameFromURL(new URL(directlink));
+            } catch (final MalformedURLException ignore) {
+                return null;
             }
-            return finalfilename;
-        } catch (final MalformedURLException ignore) {
-            return null;
         }
+        final PluginForHost plg = JDUtilities.getPluginForHost(DOMAIN);
+        if (finalfilename != null) {
+            /* Do nothing - final filename has already been set (usually this is NOT the case). */
+        } else if (plg != null && plg.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
+            finalfilename = url_filename;
+        } else if (plg != null && plg.getPluginConfig().getBooleanProperty(VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME, default_VKPHOTOS_TEMP_SERVER_FILENAME_AND_OWNER_ID_AND_CONTENT_ID_AS_FINAL_FILENAME) && !StringUtils.isEmpty(url_filename)) {
+            finalfilename = photo_id + " - " + url_filename;
+        } else if (directlink != null) {
+            /* Default filename */
+            finalfilename = photo_id + getFileNameExtensionFromString(directlink, ".jpg");
+        } else {
+            /* Default filename */
+            finalfilename = photo_id + ".jpg";
+        }
+        return finalfilename;
     }
 
     /** TODO: Maybe add login via API: https://vk.com/dev/auth_mobile */

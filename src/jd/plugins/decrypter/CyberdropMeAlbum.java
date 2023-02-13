@@ -60,7 +60,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "cyberdrop.me", "cyberdrop.to", "cyberdrop.cc" });
-        ret.add(new String[] { "bunkr.ru", "bunkr.is" });// same template/system?
+        ret.add(new String[] { "bunkr.su", "bunkr.ru", "bunkr.is" });
         return ret;
     }
 
@@ -184,14 +184,18 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             final String albumjs = br.getRegex("const albumData\\s*=\\s*(\\{.*?\\})").getMatch(0);
             String fpName = new Regex(albumjs, "name\\s*:\\s*'([^\\']+)'").getMatch(0);
             if (fpName == null) {
-                // bunkr.is
+                // bunkr.su
                 fpName = br.getRegex("property\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
             }
             if (fpName == null) {
                 fpName = br.getRegex("<h1 id=\"title\"[^>]*title=\"([^\"]+)\"[^>]*>").getMatch(0);
                 if (fpName == null) {
-                    // bunkr.is
+                    // bunkr.su
                     fpName = br.getRegex("<h1 id=\"title\"[^>]*>\\s*(.*?)\\s*<").getMatch(0);
+                }
+                if (fpName == null) {
+                    // bunkr.su 2023-02-13
+                    fpName = br.getRegex("<title>([^<]+) \\| Bunkr\\s*</title>").getMatch(0);
                 }
             }
             final String albumDescription = br.getRegex("<span id=\"description-box\"[^>]*>([^<>\"]+)</span>").getMatch(0);
@@ -251,6 +255,22 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                     final String filesizeBytes = new Regex(html, "class=\"(?:is-hidden)?\\s*file-size\"[^>]*>(\\d+) B").getMatch(0);
                     final String filesize = new Regex(html, "class=\"(?:is-hidden)?\\s*file-size\"[^>]*>([0-9\\.]+\\s+[MKG]B)").getMatch(0);
                     add(ret, dups, directurl, filename, filesizeBytes, filesize);
+                }
+            }
+            /* 2023-02-13: bunkr.su */
+            final String[] htmls2 = br.getRegex("<div class=\"grid-images_box rounded-lg[^\"]+\"(.*?)</div>\\s+</div>").getColumn(0);
+            for (final String html : htmls2) {
+                String filename = new Regex(html, "target=\"_blank\" title=\"([^<>\"]+)\"").getMatch(0);
+                if (filename == null) {
+                    // bunkr.is
+                    filename = new Regex(html, "<p\\s*class\\s*=\\s*\"name\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
+                }
+                final String directurl = new Regex(html, "href=\"(https?://[^\"]+)\"").getMatch(0);
+                if (directurl != null) {
+                    final String filesize = new Regex(html, "<p class=\"mt-0 dark:text-white-900\"[^>]*>([^<]+)</p>").getMatch(0);
+                    add(ret, dups, directurl, filename, null, filesize);
+                } else {
+                    logger.warning("html Parser broken? HTML: " + html);
                 }
             }
             if (ret.isEmpty()) {
