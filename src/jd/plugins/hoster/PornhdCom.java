@@ -114,6 +114,9 @@ public class PornhdCom extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"player-container no-video\"|class=\"no\\-video\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getURL().contains(this.getFID(link))) {
+            /* E.g. redirect to mainpage */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = br.getRegex("name=\"og:title\" content=\"([^<>\"]+)\\s*- HD porn video \\| PornHD\"").getMatch(0);
         if (title == null) {

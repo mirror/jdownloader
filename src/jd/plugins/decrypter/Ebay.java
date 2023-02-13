@@ -16,6 +16,12 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.appwork.utils.Hash;
+import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,9 +33,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.Regex;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ebay.com" }, urls = { "https?://(?:www\\.)?ebay[\\.\\w]+/itm/(\\d+).*" })
 public class Ebay extends PluginForDecrypt {
     public Ebay(PluginWrapper wrapper) {
@@ -37,28 +40,52 @@ public class Ebay extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         final String fpName = br.getRegex("<title>([^<]+?)\\s+\\|\\s*eBay\\s*</title>").getMatch(0);
         final String itemID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         String[] links = br.getRegex("\"maxImageUrl\":\"([^\"]+)\"").getColumn(0);
-        if (links.length == 0) {
+        if (links == null || links.length == 0) {
+            links = br.getRegex("\"ZOOM_GUID\",\"URL\":\"(https?://[^\"]+)\"").getColumn(0);
+        }
+        if (links == null || links.length == 0) {
             links = br.getRegex("<div\\s*class\\s*=\\s*\"ux-image-carousel-item[^>]*>\\s*<img[^>]*src\\s*=\\s*(https?[^\" >]+)").getColumn(0);
         }
+        /* Images may be available in up to 4 qualities -> Try to return best only */
+        int highestHeight = -1;
+        final Map<Integer, List<DownloadLink>> qualityPackages = new HashMap<Integer, List<DownloadLink>>();
         for (String link : links) {
             final DownloadLink dl = createDownloadlink(Encoding.unicodeDecode(link));
-            String filename = itemID + "_" + Hash.getMD5(link) + Plugin.getFileNameExtensionFromURL(link);
+            final String filename = itemID + "_" + Hash.getMD5(link) + Plugin.getFileNameExtensionFromURL(link);
             dl.setFinalFileName(filename);
-            decryptedLinks.add(dl);
+            ret.add(dl);
+            final String heightStr = new Regex(link, "(\\d+)\\.jpg$").getMatch(0);
+            if (heightStr != null) {
+                final int height = Integer.parseInt(heightStr);
+                if (height > highestHeight) {
+                    highestHeight = height;
+                }
+                if (qualityPackages.containsKey(height)) {
+                    qualityPackages.get(height).add(dl);
+                } else {
+                    final ArrayList<DownloadLink> qualitypackage = new ArrayList<DownloadLink>();
+                    qualitypackage.add(dl);
+                    qualityPackages.put(height, qualitypackage);
+                }
+            }
+        }
+        if (highestHeight != -1) {
+            ret.clear();
+            ret.addAll(qualityPackages.get(highestHeight));
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(fpName).trim());
             fp.setAllowMerge(true);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

@@ -34,6 +34,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -47,7 +48,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "porneq.com" }, urls = { "https?://(?:\\w+\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "https?://(?:\\w+\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?porneq\\.com/video/\\d+/[a-z0-9\\-]+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "porneq.com" }, urls = { "https?://(?:\\w+\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "https?://(?:\\w+\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?porneq\\.com/(?:video/\\d+/[a-z0-9\\-]+/?|wporn/porn-videos/[a-z0-9\\-]+/\\d+/)" })
 public class UnknownPornScript5 extends PluginForHost {
     public UnknownPornScript5(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,6 +84,41 @@ public class UnknownPornScript5 extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+        if (!link.isNameSet()) {
+            /* Now lets find the url_slug as a fallback in case we cannot find the filename inside the html code. */
+            String url_slug = null;
+            final String[] urlparts = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(.+)").getMatch(0).split("/");
+            String url_id = null;
+            for (String urlpart : urlparts) {
+                if (urlpart.matches("\\d+")) {
+                    url_id = urlpart;
+                } else {
+                    url_slug = urlpart;
+                    break;
+                }
+            }
+            if (url_slug != null) {
+                url_slug = url_slug.replace(".html", "");
+                if (url_id == null) {
+                    /* In case we have an ID, it might be in the url_filename --> Find it */
+                    /* First check if we find it at the beginning. */
+                    url_id = new Regex(url_slug, "^(\\d+\\-).+").getMatch(0);
+                    if (url_id == null) {
+                        /* Secondly check if we find it at the end. */
+                        url_id = new Regex(url_slug, ".+(\\-\\d+)$").getMatch(0);
+                    }
+                }
+                if (url_id != null) {
+                    /* Remove url_id from url_filename */
+                    url_slug = url_slug.replace(url_id, "");
+                }
+            } else {
+                url_slug = url_id;
+            }
+            /* Make it look nicer! */
+            url_slug = url_slug.replace("-", " ");
+            link.setName(url_slug + default_Extension);
+        }
         br.setAllowedResponseCodes(new int[] { 410 });
         br.setFollowRedirects(true);
         if (link.getDownloadURL().contains("bigcamtube.com")) {
@@ -93,58 +129,24 @@ public class UnknownPornScript5 extends PluginForHost {
             this.login(account, false);
         }
         br.getPage(link.getDownloadURL());
-        if (br.getHost().equals("bigcamtube.com") && br.toString().length() <= 100) {
-            /*
-             * 2017-01-20: Workaround for bug (same via browser). First request sets cookies but server does not return html - 2nd request
-             * returns html.
-             */
-            br.getPage(link.getDownloadURL());
-        }
-        /* Now lets find the url_filename as a fallback in case we cannot find the filename inside the html code. */
-        String url_filename = null;
-        final String[] urlparts = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/[^/]+/(.+)").getMatch(0).split("/");
-        String url_id = null;
-        for (String urlpart : urlparts) {
-            if (urlpart.matches("\\d+")) {
-                url_id = urlpart;
-            } else {
-                url_filename = urlpart;
-                break;
-            }
-        }
-        if (url_filename != null) {
-            url_filename = url_filename.replace(".html", "");
-            if (url_id == null) {
-                /* In case we have an ID, it might be in the url_filename --> Find it */
-                /* First check if we find it at the beginning. */
-                url_id = new Regex(url_filename, "^(\\d+\\-).+").getMatch(0);
-                if (url_id == null) {
-                    /* Secondly check if we find it at the end. */
-                    url_id = new Regex(url_filename, ".+(\\-\\d+)$").getMatch(0);
-                }
-            }
-            if (url_id != null) {
-                /* Remove url_id from url_filename */
-                url_filename = url_filename.replace(url_id, "");
-            }
-        } else {
-            url_filename = url_id;
-        }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML(">Sorry, we couldn't find")) {
-            /* E.g. responsecode 404: boyfriendtv.com */
-            /* E.g. 410: pornoxo.com (DMCA removed content) */
-            if (url_filename != null) {
-                /* Offline content should at least display a name in linkgrabber instead of 'unknownFileName' */
-                link.setName(url_filename);
-            }
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">Sorry, we couldn't find")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (url_filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Make it look nicer! */
-        url_filename = url_filename.replace("-", " ");
+        // if (br.getHost().equals("bigcamtube.com") && br.toString().length() <= 100) {
+        // /*
+        // * 2017-01-20: Workaround for bug (same via browser). First request sets cookies but server does not return html - 2nd request
+        // * returns html.
+        // */
+        // br.getPage(link.getDownloadURL());
+        // }
         String filename = regexStandardTitleWithHost(this.getHost());
+        if (filename == null) {
+            filename = HTMLSearch.searchMetaTag(br, "og:title");
+        }
         if (filename == null) {
             /* Works e.g. for: boyfriendtv.com, ashemaletube.com, pornoxo.com */
             filename = br.getRegex("<div id=\"maincolumn2\">\\s*?<h1>([^<>]*?)</h1>").getMatch(0);
@@ -152,12 +154,11 @@ public class UnknownPornScript5 extends PluginForHost {
         if (filename == null && link.getDownloadURL().matches(type_allow_title_as_filename)) {
             filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
         }
-        if (filename == null) {
-            filename = url_filename;
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            filename = encodeUnicode(filename);
+            link.setFinalFileName(filename + default_Extension);
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        filename = encodeUnicode(filename);
-        link.setFinalFileName(filename + default_Extension);
         getDllink();
         if (!inValidateDllink(dllink)) {
             logger.info("dllink: " + dllink);

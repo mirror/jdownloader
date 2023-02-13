@@ -26,6 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
@@ -72,12 +73,13 @@ public class HitomilaTo extends PluginForDecrypt {
         }
         String fpName = br.getRegex("<h1>([^<]+)</h1>").getMatch(0);
         /* Get thumbnail URLs */
-        final String[] links = br.getRegex("data-src=\"(https?://[^/]+/galleries/\\d+/\\d+)t\\.jpg\"").getColumn(0);
+        final String[] links = br.getRegex("data-src=\"(https?://[^/]+/galleries/\\d+/\\d+[^\"]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (String url : links) {
-            url += ".jpg";
+            final String ext = Plugin.getFileNameExtensionFromURL(url);
+            url = url.replaceFirst("t" + ext + "$", ext);
             final DownloadLink image = createDownloadlink(url);
             image.setAvailable(true);
             ret.add(image);
