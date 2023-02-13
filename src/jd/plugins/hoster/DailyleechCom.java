@@ -26,6 +26,12 @@ import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,12 +52,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailyleech.com" }, urls = { "" })
 public class DailyleechCom extends antiDDoSForHost {
@@ -116,7 +116,7 @@ public class DailyleechCom extends antiDDoSForHost {
         login(account, false);
         final String dllink = getDllink(link, account);
         if (StringUtils.isEmpty(dllink)) {
-            mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
+            mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 2, 5 * 60 * 1000l);
         }
         handleDL(account, link, dllink);
     }
@@ -228,6 +228,7 @@ public class DailyleechCom extends antiDDoSForHost {
             final String[] foundMyFiles = searchMyFiles(br, link);
             String dllink = foundMyFiles != null ? foundMyFiles[1] : null;
             if (dllink != null) {
+                logger.info("Re-using directurl found via searchMyFiles: " + dllink);
                 return dllink;
             }
             String host = new Regex(cbox_main_url, "https?://(www\\d+)\\..+").getMatch(0);
@@ -283,7 +284,7 @@ public class DailyleechCom extends antiDDoSForHost {
                     /* Every time we call this URL we will go back in time one single post ... */
                     /* Wait here on the first loop as bots need some seconds to reply with downloadlinks. */
                     this.sleep(5000, link);
-                    logger.info("Searching downloadlink : Attempt " + counter + " of " + maxLoops);
+                    logger.info("Searching downloadlink | Attempt " + counter + " of " + maxLoops);
                     getPage(cbox_main_url);
                     final String archive_url = br.getRegex("\\'([^\"\\']+sec=archive[^\"\\']+i=)\\'").getMatch(0);
                     final String archive_id = br.getRegex("\\?cf\\.op:(\\d+)\\)").getMatch(0);
@@ -295,8 +296,20 @@ public class DailyleechCom extends antiDDoSForHost {
                             dllink = searchDownloadlink(link, account);
                         }
                     }
-                    counter++;
-                } while (dllink == null && counter <= maxLoops);
+                    if (this.isAbort()) {
+                        logger.info("Stopping because: Aborted by user");
+                        break;
+                    } else if (counter >= maxLoops) {
+                        logger.info("Stopping because: Failed to find final downloadurl");
+                        break;
+                    } else if (dllink != null) {
+                        logger.info("Stopping because: Found final downloadurl: " + dllink);
+                        break;
+                    } else {
+                        counter++;
+                        continue;
+                    }
+                } while (true);
             }
             return dllink;
         } finally {
@@ -312,26 +325,27 @@ public class DailyleechCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, message);
             } else if (message.matches("(?i).*hoster (unavailable|unavailable).*")) {
                 // <span class="bbColor" style="color:red"> hoster: Hoster unvailable. _RANDOMNUM_ </span>
-                mhm.putError(account, link, 15 * 60 * 1000l, message);
+                mhm.putError(account, link, 5 * 60 * 1000l, message);
             } else if (message.matches("(?i).*error getting the link.*")) {
                 // <span class="bbColor" style="color:red"> Error getting the link from this account. _RANDOMNUM_ </span>
-                mhm.putError(account, link, 15 * 60 * 1000l, message);
+                mhm.putError(account, link, 5 * 60 * 1000l, message);
             } else if (message.matches("(?i).*No account is working.*")) {
                 // <span class="bbColor" style="color:red"> No account is working. Try repost later. </span>
-                mhm.putError(account, link, 15 * 60 * 1000l, message);
+                mhm.putError(account, link, 5 * 60 * 1000l, message);
             } else if (message.matches("(?i).*No account is working.*")) {
                 // <span class="bbColor" style="color:red">Your file is big! (875.2 MB). You have left (756.4 MB) bandwidth limit 3.0 GB.
                 // Try this
                 // host tomorrow <img class.....> <br> [....]Time Left To Reset Your Bandwith For This Host: [do]4 Hours 47 Minutes 16
                 // Seconds</span>
-                mhm.putError(account, link, 30 * 60 * 1000l, message);
+                mhm.putError(account, link, 5 * 60 * 1000l, message);
             }
         }
-        if (new Regex(post, "I have a problem. Please repost your link later").patternFind()) {
+        if (new Regex(post, "(?i)I have a problem. Please repost your link later").patternFind()) {
             // <b>I have a problem. Please repost your link later. </b>
             mhm.putError(account, link, 30 * 60 * 1000l, "I have a problem. Please repost your link later");
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, message);
         }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, message);
     }
 
     private String searchDownloadlink(final DownloadLink link, final Account account) throws Exception {
@@ -392,16 +406,15 @@ public class DailyleechCom extends antiDDoSForHost {
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else {
-            link.setProperty(getCachedLinkPropertyKey(account), dllink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
-                link.removeProperty(getCachedLinkPropertyKey(account));
-                br.followConnection(true);
-                mhm.handleErrorGeneric(account, link, "unknowndlerror", 2, 5 * 60 * 1000l);
-            }
-            this.dl.startDownload();
         }
+        link.setProperty(getCachedLinkPropertyKey(account), dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            link.removeProperty(getCachedLinkPropertyKey(account));
+            br.followConnection(true);
+            mhm.handleErrorGeneric(account, link, "unknowndlerror", 2, 5 * 60 * 1000l);
+        }
+        this.dl.startDownload();
     }
 
     private URLConnectionAdapter checkDirectLink(final Browser br, final Request request) {
@@ -427,8 +440,8 @@ public class DailyleechCom extends antiDDoSForHost {
         }
     }
 
-    private String checkDirectLink(final Browser br, final DownloadLink downloadLink, final String property) {
-        final String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final Browser br, final DownloadLink link, final String property) {
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             try {
                 final Browser brc = br.cloneBrowser();
@@ -440,7 +453,7 @@ public class DailyleechCom extends antiDDoSForHost {
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
+                link.setProperty(property, Property.NULL);
                 return null;
             }
         } else {
@@ -463,7 +476,7 @@ public class DailyleechCom extends antiDDoSForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         long expire = 0;
-        final String expireStr = br.getRegex("Until\\&nbsp;([^<>\"]+)<").getMatch(0);
+        final String expireStr = br.getRegex("(?i)Until\\&nbsp;([^<>\"]+)<").getMatch(0);
         if (expireStr != null) {
             expire = TimeFormatter.getMilliSeconds(expireStr, "E',' dd MMM yyyy HH:mm:ss", Locale.ENGLISH);
         }
@@ -499,7 +512,7 @@ public class DailyleechCom extends antiDDoSForHost {
 
     private void loginWebsite(final Account account, final boolean force) throws Exception {
         try {
-            Cookies cookies = account.loadCookies("");
+            final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
                 /* Try to avoid login-captcha! */
                 this.br.setCookies(this.getHost(), cookies);
@@ -509,8 +522,7 @@ public class DailyleechCom extends antiDDoSForHost {
                 getPage(PROTOCOL + this.getHost() + "/cbox/cbox.php");
                 if (isLoggedIn()) {
                     logger.info("Login via cached cookies successful");
-                    cookies = this.br.getCookies(this.getHost());
-                    account.saveCookies(cookies, "");
+                    account.saveCookies(br.getCookies(this.getHost()), "");
                     return;
                 } else {
                     logger.info("Login via cached cookies failed");
@@ -537,8 +549,7 @@ public class DailyleechCom extends antiDDoSForHost {
             if (!isLoggedIn()) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                cookies = this.br.getCookies(this.getHost());
-                account.saveCookies(cookies, "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             }
         } catch (final PluginException e) {
             account.clearCookies("");

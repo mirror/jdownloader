@@ -79,8 +79,8 @@ public class RumbleCom extends PluginForDecrypt {
     private static final String TYPE_EMBED  = "https?://[^/]+/embedJS/([a-z0-9]+)";
     private static final String TYPE_NORMAL = "https?://[^/]+/([^/]+)\\.html";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String videoID;
         if (param.getCryptedUrl().matches(TYPE_EMBED)) {
             videoID = new Regex(param.getCryptedUrl(), TYPE_EMBED).getMatch(0);
@@ -157,23 +157,23 @@ public class RumbleCom extends PluginForDecrypt {
             if (qualityHeight == preferredHeight) {
                 selectedQuality = dl;
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         if (mode == QualitySelectionMode.WORST && worst != null) {
-            decryptedLinks.clear();
-            decryptedLinks.add(worst);
-            return decryptedLinks;
+            ret.clear();
+            ret.add(worst);
+            return ret;
         } else if (mode == QualitySelectionMode.BEST && best != null) {
-            decryptedLinks.clear();
-            decryptedLinks.add(best);
-            return decryptedLinks;
+            ret.clear();
+            ret.add(best);
+            return ret;
         } else if (mode == QualitySelectionMode.SELECTED_ONLY && selectedQuality != null) {
-            decryptedLinks.clear();
-            decryptedLinks.add(selectedQuality);
-            return decryptedLinks;
+            ret.clear();
+            ret.add(selectedQuality);
+            return ret;
         } else {
             /* Return all if wanted by user and also as fallback. */
-            return decryptedLinks;
+            return ret;
         }
     }
 
