@@ -360,9 +360,6 @@ public class FileCryptCc extends PluginForDecrypt {
         try {
             int progressNumber = 0;
             for (final String mirrorURL : mirrors) {
-                if (true) {
-                    break;
-                }
                 progressNumber++;
                 logger.info("Crawling mirror " + progressNumber + "/" + mirrors.size() + " | " + mirrorURL);
                 br.getPage(mirrorURL);
