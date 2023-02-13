@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Application;
@@ -357,35 +358,44 @@ public class FileCryptCc extends PluginForDecrypt {
         }
         Collections.sort(mirrors);
         try {
-            int prgress = 0;
+            int progressNumber = 0;
             for (final String mirrorURL : mirrors) {
-                prgress++;
-                logger.info("Crawling mirror " + prgress + "/" + mirrors.size() + " | " + mirrorURL);
+                if (true) {
+                    break;
+                }
+                progressNumber++;
+                logger.info("Crawling mirror " + progressNumber + "/" + mirrors.size() + " | " + mirrorURL);
                 br.getPage(mirrorURL);
-                final ArrayList<DownloadLink> tdl = new ArrayList<DownloadLink>();
                 // Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down!
-                handleCnl2(tdl, param.getCryptedUrl());
-                if (!tdl.isEmpty()) {
-                    ret.addAll(tdl);
+                final ArrayList<DownloadLink> cnlResults = handleCnl2(param.getCryptedUrl());
+                if (!cnlResults.isEmpty()) {
+                    logger.info("CNL success");
+                    ret.addAll(cnlResults);
                     if (fpName != null) {
                         if (fp == null) {
                             fp = FilePackage.getInstance();
                             fp.setName(Encoding.htmlDecode(fpName).trim());
                         }
-                        fp.addLinks(tdl);
+                        fp.addLinks(cnlResults);
                     }
-                    distribute(tdl.toArray(new DownloadLink[0]));
+                    distribute(cnlResults.toArray(new DownloadLink[0]));
                 } else {
                     /* Second try DLC, then single links */
-                    final String dlc_id = br.getRegex("DownloadDLC\\('([^<>\"]*?)'\\)").getMatch(0);
+                    logger.info("CNL failure -> Trying DLC");
+                    String dlc_id = br.getRegex("DownloadDLC\\('([^<>\"]*?)'\\)").getMatch(0);
+                    if (dlc_id == null) {
+                        /* 2023-02-13 */
+                        dlc_id = br.getRegex("onclick=\"DownloadDLC[^\\(]*\\('([^']+)'").getMatch(0);
+                    }
                     if (dlc_id != null) {
                         logger.info("DLC found - trying to add it");
-                        tdl.addAll(loadcontainer(br.getURL("/DLC/" + dlc_id + ".dlc").toExternalForm()));
-                        if (tdl.isEmpty()) {
+                        final ArrayList<DownloadLink> dlcResults = loadcontainer(br.getURL("/DLC/" + dlc_id + ".dlc").toExternalForm());
+                        if (dlcResults.isEmpty()) {
                             logger.warning("DLC for current mirror is empty or something is broken!");
                             continue;
+                        } else {
+                            ret.addAll(dlcResults);
                         }
-                        ret.addAll(tdl);
                     }
                 }
                 if (this.isAbort()) {
@@ -403,12 +413,17 @@ public class FileCryptCc extends PluginForDecrypt {
             if (links == null || links.length == 0) {
                 /* 2023-02-03 */
                 links = br.getRegex("onclick=\"openLink[^\\(\"\\']*\\('([^<>\"\\']+)'").getColumn(0);
+                if (links == null || links.length == 0) {
+                    /* 2023-02-13 */
+                    links = br.getRegex("'([^\"']+)', this\\);\" class=\"download\"[^>]*target=\"_blank\"").getColumn(0);
+                }
             }
             if (links == null || links.length == 0) {
                 if (br.containsHTML("Der Inhaber dieses Ordners hat leider alle Hoster in diesem Container in seinen Einstellungen deaktiviert\\.")) {
                     return ret;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.setFollowRedirects(false);
             br.setCookie(this.getHost(), "BetterJsPopCount", "1");
@@ -514,12 +529,13 @@ public class FileCryptCc extends PluginForDecrypt {
         }
     }
 
-    private void handleCnl2(final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws Exception {
+    private ArrayList<DownloadLink> handleCnl2(final String url) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Form[] forms = br.getForms();
         Form CNLPOP = null;
         Form cnl = null;
         for (final Form f : forms) {
-            if (f.containsHTML("CNLPOP")) {
+            if (f.containsHTML("CNLPOP") || f.containsHTML("cnlform")) {
                 CNLPOP = f;
                 break;
             }
@@ -530,8 +546,8 @@ public class FileCryptCc extends PluginForDecrypt {
             cnl.addInputField(new InputField("crypted", infos[2]));
             cnl.addInputField(new InputField("jk", "function f(){ return \'" + infos[1] + "';}"));
             cnl.addInputField(new InputField("source", null));
-        }
-        if (cnl == null) {
+        } else {
+            /* 2nd attempt */
             for (final Form f : forms) {
                 if (f.hasInputFieldByName("jk")) {
                     cnl = f;
@@ -540,20 +556,21 @@ public class FileCryptCc extends PluginForDecrypt {
             }
         }
         if (cnl != null) {
-            final HashMap<String, String> infos = new HashMap<String, String>();
+            final Map<String, String> infos = new HashMap<String, String>();
             infos.put("crypted", Encoding.urlDecode(cnl.getInputField("crypted").getValue(), false));
             infos.put("jk", Encoding.urlDecode(cnl.getInputField("jk").getValue(), false));
             String source = cnl.getInputField("source").getValue();
             if (StringUtils.isEmpty(source)) {
-                source = parameter;
+                source = url;
             } else {
                 infos.put("source", source);
             }
             infos.put("source", source);
             final String json = JSonStorage.toString(infos);
             final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
+        return ret;
     }
 
     private final boolean containsCaptcha() {
