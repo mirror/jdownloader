@@ -24,14 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.parser.html.HTMLParser;
-
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.BOM;
 import org.appwork.utils.Regex;
@@ -43,6 +35,14 @@ import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.parser.html.HTMLParser;
 
 public class ClipboardMonitoring {
     public static class HTMLFragment {
@@ -226,15 +226,15 @@ public class ClipboardMonitoring {
             return browserURL;
         }
 
-        private ClipboardContent(String content, String browserURL) {
+        public ClipboardContent(String content, String browserURL) {
             this.content = content;
             this.browserURL = browserURL;
         }
     }
 
-    private static final ClipboardMonitoring                                                 INSTANCE            = new ClipboardMonitoring();
-    private static final DataFlavor                                                          URLFLAVOR;
-    private static final DataFlavor                                                          URILISTFLAVOR;
+    private static final ClipboardMonitoring INSTANCE = new ClipboardMonitoring();
+    private static final DataFlavor          URLFLAVOR;
+    private static final DataFlavor          URILISTFLAVOR;
     static {
         DataFlavor ret = null;
         try {
@@ -435,7 +435,7 @@ public class ClipboardMonitoring {
                                                             oldHTMLFragment = new ClipboardHash(htmlFragment.getFragment());
                                                             debugHtmlFragment = htmlFragment.getFragment();
                                                             /*
-                                                             * remember that we had HTML content this round
+                                                             * Remember that we had HTML content this round
                                                              */
                                                             if (htmlFlavorAllowed) {
                                                                 handleThisRound = handleThisRound(handleThisRound, htmlFragment.getFragment());
@@ -557,7 +557,10 @@ public class ClipboardMonitoring {
         }
     }
 
-    public synchronized ClipboardContent getCurrentContent(Transferable currentContent) {
+    /**
+     * Returns clipboard content in form: <StringContent> [Optional (User setting)]\r\n<htmlContent> </br>
+     */
+    public synchronized ClipboardContent getCurrentContent(final Transferable currentContent) {
         if (currentContent != null) {
             String stringContent = null;
             try {
@@ -592,12 +595,67 @@ public class ClipboardMonitoring {
                     String sourceURL = null;
                     try {
                         sourceURL = getCurrentBrowserURL(currentContent);
-                    } catch (final Throwable e) {
-                        e.printStackTrace();
+                    } catch (final Throwable ignore) {
+                        ignore.printStackTrace();
                     }
                     return new ClipboardContent(sb.toString(), sourceURL);
                 }
             }
+        }
+        return null;
+    }
+
+    public synchronized ClipboardContent getCurrentContentTEXT() {
+        if (clipboard != null) {
+            try {
+                final Transferable currentContent = clipboard.getContents(null);
+                return getCurrentContentTEXT(currentContent);
+            } catch (final Throwable e) {
+            }
+        }
+        return null;
+    }
+
+    /** Returns clipboard string content. */
+    public synchronized ClipboardContent getCurrentContentTEXT(final Transferable currentContent) {
+        if (currentContent == null) {
+            return null;
+        }
+        String stringContent = null;
+        try {
+            stringContent = getStringTransferData(currentContent, null);
+            if (stringContent != null) {
+                return new ClipboardContent(stringContent, null);
+            }
+        } catch (final Throwable e) {
+        }
+        return null;
+    }
+
+    public synchronized ClipboardContent getCurrentContentHTML() {
+        if (clipboard != null) {
+            try {
+                final Transferable currentContent = clipboard.getContents(null);
+                return getCurrentContentHTML(currentContent);
+            } catch (final Throwable e) {
+            }
+        }
+        return null;
+    }
+
+    /** Returns clipboard HTML content. */
+    public synchronized ClipboardContent getCurrentContentHTML(final Transferable currentContent) {
+        if (currentContent == null) {
+            return null;
+        }
+        try {
+            /* lets fetch fresh HTML Content if available */
+            final HTMLFragment htmlFragment = getHTMLFragment(currentContent, null);
+            if (htmlFragment != null) {
+                new ClipboardContent(htmlFragment.getFragment(), htmlFragment.getSourceURL());
+            }
+        } catch (final Throwable e) {
+            e.printStackTrace();
         }
         return null;
     }
