@@ -32,6 +32,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -78,7 +79,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (account.getUser().equals("") || account.getPass().equals("")) {
+        if (StringUtils.isEmpty(account.getUser()) || StringUtils.isEmpty(account.getPass())) {
             /* Server returns 401 if you send empty fields (logindata) */
             accountInvalid();
         }
@@ -86,24 +87,21 @@ public class DebridItaliaCom extends antiDDoSForHost {
         ac.setProperty("multiHostSupport", Property.NULL);
         ac.setUnlimitedTraffic();
         if (!loginAPI(account)) {
-            if (br.containsHTML("<status>expired</status>")) {
-                ac.setStatus("Account is expired!");
-                ac.setExpired(true);
-                return ac;
-            } else {
-                accountInvalid();
-            }
+            accountInvalid();
+        }
+        if (br.containsHTML("<status>expired</status>")) {
+            ac.setExpired(true);
+            return ac;
         }
         final String expire = br.getRegex("<expiration>(\\d+)</expiration>").getMatch(0);
         if (expire == null) {
-            ac.setStatus("Account is invalid. Invalid or unsupported accounttype!");
             accountInvalid();
         }
         ac.setValidUntil(Long.parseLong(expire) * 1000l, this.br);
         getPage(API_BASE + "?hosts");
         final String[] hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
         ac.setMultiHostSupport(this, new ArrayList<String>(Arrays.asList(hosts)));
-        ac.setStatus("Premium Account");
+        account.setType(AccountType.PREMIUM);
         return ac;
     }
 
@@ -288,7 +286,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
     private boolean loginAPI(final Account account) throws Exception {
         getPage(API_BASE + "?check=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + encodePassword(account.getPass()));
         checkResponsecodeErrors(br);
-        if (br.containsHTML("<status>valid</status>")) {
+        if (br.containsHTML("<status>valid</status>") || br.containsHTML("<status>expired</status>")) {
             return true;
         } else if (br.containsHTML("<status>invalid</status>")) {
             return false;
