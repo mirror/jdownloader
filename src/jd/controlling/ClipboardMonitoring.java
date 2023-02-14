@@ -652,7 +652,7 @@ public class ClipboardMonitoring {
             /* lets fetch fresh HTML Content if available */
             final HTMLFragment htmlFragment = getHTMLFragment(currentContent, null);
             if (htmlFragment != null) {
-                new ClipboardContent(htmlFragment.getFragment(), htmlFragment.getSourceURL());
+                return new ClipboardContent(htmlFragment.getFragment(), htmlFragment.getSourceURL());
             }
         } catch (final Throwable e) {
             e.printStackTrace();
