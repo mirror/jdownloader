@@ -33,6 +33,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -76,8 +77,13 @@ public class RumbleCom extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_EMBED  = "https?://[^/]+/embedJS/([a-z0-9]+)";
-    private static final String TYPE_NORMAL = "https?://[^/]+/([^/]+)\\.html";
+    private static final String TYPE_EMBED        = "https?://[^/]+/embedJS/([a-z0-9]+)";
+    private static final String TYPE_NORMAL       = "https?://[^/]+/([^/]+)\\.html";
+    private final String        PROPERTY_USERNAME = "username";
+    private final String        PROPERTY_TITLE    = "title";
+    private final String        PROPERTY_WIDTH    = "width";
+    private final String        PROPERTY_HEIGHT   = "height";
+    private final String        PROPERTY_DATE     = "date";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -95,7 +101,7 @@ public class RumbleCom extends PluginForDecrypt {
             }
         }
         final RumbleComConfig cfg = PluginJsonConfig.get(RumbleComConfig.class);
-        br.getPage("https://" + this.getHost() + "/embedJS/u3/?request=video&v=" + videoID);
+        br.getPage("https://" + this.getHost() + "/embedJS/u3/?request=video&ver=2&v=" + videoID + "&ext=%7B%22ad_count%22%3Anull%7D&ad_wt=0");
         /* Double-check for offline content */
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -107,8 +113,8 @@ public class RumbleCom extends PluginForDecrypt {
             dateFormatted = new Regex(dateStr, "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         }
         final String uploaderName = (String) JavaScriptEngineFactory.walkJson(root, "author/name");
-        String title = (String) root.get("title");
-        String baseTitle = title;
+        String title = Encoding.htmlDecode(root.get("title").toString()).trim();
+        String baseTitle = Encoding.htmlDecode(title);
         if (StringUtils.isEmpty(baseTitle)) {
             /* Fallback */
             baseTitle = videoID;
@@ -119,10 +125,12 @@ public class RumbleCom extends PluginForDecrypt {
         if (dateFormatted != null) {
             baseTitle = dateFormatted + "_" + baseTitle;
         }
+        final int generalWidth = ((Number) root.get("w")).intValue();
+        final int generalHeight = ((Number) root.get("h")).intValue();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(baseTitle);
         final Map<String, Object> videoInfo = (Map<String, Object>) root.get("ua");
-        final Iterator<Entry<String, Object>> iterator = videoInfo.entrySet().iterator();
+        final Iterator<Entry<String, Object>> streamingTypeIterator = videoInfo.entrySet().iterator();
         final QualitySelectionMode mode = cfg.getQualitySelectionMode();
         int bestQualityHeight = 0;
         DownloadLink best = null;
@@ -130,34 +138,70 @@ public class RumbleCom extends PluginForDecrypt {
         DownloadLink worst = null;
         final int preferredHeight = getUserPreferredqualityHeight();
         DownloadLink selectedQuality = null;
-        while (iterator.hasNext()) {
-            final Entry<String, Object> entry = iterator.next();
-            final String qualityHeightStr = entry.getKey();
-            final int qualityHeight = Integer.parseInt(qualityHeightStr);
-            final List<Object> qualityInfoArray = (List<Object>) entry.getValue();
-            final String url = (String) qualityInfoArray.get(0);
-            if (StringUtils.isEmpty(url) || StringUtils.isEmpty(qualityHeightStr)) {
-                /* Skip invalid items */
-                continue;
+        while (streamingTypeIterator.hasNext()) {
+            final Entry<String, Object> entry = streamingTypeIterator.next();
+            final List<Map<String, Object>> qualityInfoArray;
+            if (entry.getValue() instanceof Map) {
+                qualityInfoArray = new ArrayList<Map<String, Object>>();
+                final Map<String, Object> streamingQualities = (Map<String, Object>) entry.getValue();
+                final Iterator<Entry<String, Object>> streamingQualityIterator = streamingQualities.entrySet().iterator();
+                while (streamingQualityIterator.hasNext()) {
+                    final Entry<String, Object> streamingQualityEntry = streamingQualityIterator.next();
+                    qualityInfoArray.add((Map<String, Object>) streamingQualityEntry.getValue());
+                }
+            } else {
+                qualityInfoArray = (List<Map<String, Object>>) entry.getValue();
             }
-            final DownloadLink dl = this.createDownloadlink(url);
-            /* Set this so when user copies URL of any video quality he'll get the URL to the main video. */
-            dl.setContentUrl(param.getCryptedUrl());
-            dl.setForcedFileName(baseTitle + "_" + qualityHeightStr + ".mp4");
-            dl.setAvailable(true);
-            dl._setFilePackage(fp);
-            if (qualityHeight > bestQualityHeight) {
-                bestQualityHeight = qualityHeight;
-                best = dl;
+            for (final Map<String, Object> qualityInfo : qualityInfoArray) {
+                final Map<String, Object> qualityInfoMeta = (Map<String, Object>) qualityInfo.get("meta");
+                final String url = qualityInfo.get("url").toString();
+                if (StringUtils.isEmpty(url)) {
+                    /* This should never happen */
+                    continue;
+                }
+                final Number filesize = (Number) qualityInfoMeta.get("size");
+                final int thisQualityWidth = ((Number) qualityInfoMeta.get("w")).intValue();
+                final int thisQualityHeight = ((Number) qualityInfoMeta.get("h")).intValue();
+                final int height;
+                final int width;
+                if (thisQualityHeight == 0) {
+                    /* Rare case: For unplayable videos or videos with only one quality. */
+                    height = thisQualityHeight;
+                    width = thisQualityWidth;
+                } else {
+                    height = generalHeight;
+                    width = generalWidth;
+                }
+                final DownloadLink dl = this.createDownloadlink(url);
+                /* Set this so when user copies URL of any video quality he'll get the URL to the main video. */
+                dl.setContentUrl(param.getCryptedUrl());
+                dl.setForcedFileName(baseTitle + "_" + height + ".mp4");
+                if (filesize != null) {
+                    dl.setDownloadSize(filesize.longValue());
+                }
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                if (uploaderName != null) {
+                    dl.setProperty(PROPERTY_USERNAME, uploaderName);
+                }
+                dl.setProperty(PROPERTY_TITLE, title);
+                dl.setProperty(PROPERTY_WIDTH, width);
+                dl.setProperty(PROPERTY_HEIGHT, height);
+                dl.setProperty(PROPERTY_DATE, dateFormatted);
+                if (height > bestQualityHeight) {
+                    bestQualityHeight = height;
+                    best = dl;
+                }
+                if (height < worstQualityHeight) {
+                    worstQualityHeight = height;
+                    worst = dl;
+                }
+                if (height == preferredHeight) {
+                    selectedQuality = dl;
+                }
+                ret.add(dl);
+                break;
             }
-            if (qualityHeight < worstQualityHeight) {
-                worstQualityHeight = qualityHeight;
-                worst = dl;
-            }
-            if (qualityHeight == preferredHeight) {
-                selectedQuality = dl;
-            }
-            ret.add(dl);
         }
         if (mode == QualitySelectionMode.WORST && worst != null) {
             ret.clear();
