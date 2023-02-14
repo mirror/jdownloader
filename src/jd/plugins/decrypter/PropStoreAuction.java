@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "propstoreauction.com" }, urls = { "https?://(?:www\\\\.)?propstoreauction\\.com/lot-details/index/catalog/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "propstoreauction.com" }, urls = { "https?://(?:\\w+\\.)?propstoreauction\\.com/(?:lot-details/index/catalog/|(?:view-)?auctions/catalog/id/|search\\?)[\\w/?=&%\\.+]+" })
 public class PropStoreAuction extends antiDDoSForDecrypt {
     public PropStoreAuction(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,7 +46,13 @@ public class PropStoreAuction extends antiDDoSForDecrypt {
         }
         this.br.setFollowRedirects(true);
         String title = br.getRegex("<title[^>]*>\\s*([^<]+)\\s*").getMatch(0);
+        if (StringUtils.isEmpty(title)) {
+            title = br.getRegex("<span[^>]+class\\s*=\\s*\"lot-name\"[^>]*>\\s*([^<]+)</span").getMatch(0);
+        }
+        // Detail page images
         Collections.addAll(links, br.getRegex("<div[^>]*class\\s*=\\s*\"carousel-item modal-trigger\"[^>]*style\\s*=\\s*\"background-image:url\\('\\s*([^']+)\\s*").getColumn(0));
+        Collections.addAll(links, br.getRegex("<li[^>]+class\\s*=\\s*\"image-slide\"[^>]*>[^/]+href\\s*=\\s*\"\\s*([^\"\\s]+)").getColumn(0));
+        Collections.addAll(links, br.getRegex("<li[^>]*class\\s*=\\s*\"[^\"]*products-gallery3__item[^>]*>\\s*<a[^>]*href\\s*=\\s*\"\\s*([^\"]+)\"").getColumn(0));
         for (String link : links) {
             link = br.getURL(Encoding.htmlDecode(link)).toString().replaceAll("(\\-\\d+)(\\.\\w+)$", "$2");
             decryptedLinks.add(createDownloadlink(link));
