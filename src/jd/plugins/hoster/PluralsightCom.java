@@ -61,26 +61,27 @@ import jd.plugins.decrypter.PluralsightComDecrypter;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https://app\\.pluralsight\\.com/course-player\\?clipId=[a-f0-9\\-]+" })
 public class PluralsightCom extends antiDDoSForHost {
-    private static WeakHashMap<Account, List<Long>> map100PerHour                        = new WeakHashMap<Account, List<Long>>();
-    private static WeakHashMap<Account, List<Long>> map200Per4Hours                      = new WeakHashMap<Account, List<Long>>();
-    public static final String                      PROPERTY_DURATION_SECONDS            = "duration";
-    public static final String                      PROPERTY_CLIP_ID                     = "clipID";
-    public static final String                      PROPERTY_CLIP_VERSION                = "version";
-    public static final String                      PROPERTY_MODULE_ORDER_ID             = "module";
-    public static final String                      PROPERTY_CLIP_ORDER_ID               = "module_clip_order_id";
+    private static WeakHashMap<Account, List<Long>> map100PerHour                            = new WeakHashMap<Account, List<Long>>();
+    private static WeakHashMap<Account, List<Long>> map200Per4Hours                          = new WeakHashMap<Account, List<Long>>();
+    public static final String                      PROPERTY_DURATION_SECONDS                = "duration";
+    public static final String                      PROPERTY_CLIP_ID                         = "clipID";
+    public static final String                      PROPERTY_CLIP_VERSION                    = "version";
+    public static final String                      PROPERTY_MODULE_ORDER_ID                 = "module";
+    public static final String                      PROPERTY_CLIP_ORDER_ID                   = "module_clip_order_id";
     @Deprecated
-    public static final String                      PROPERTY_ORDERING                    = "ordering";
+    public static final String                      PROPERTY_ORDERING                        = "ordering";
     @Deprecated
-    public static final String                      PROPERTY_SUPPORTS_WIDESCREEN_FORMATS = "supportsWideScreenVideoFormats";
-    public static final String                      PROPERTY_TYPE                        = "type";
-    public static final String                      PROPERTY_FORCED_RESOLUTION           = "forced_resolution";
-    private static final String                     PROPERTY_DIRECTURL                   = "directurl";
+    public static final String                      PROPERTY_SUPPORTS_WIDESCREEN_FORMATS     = "supportsWideScreenVideoFormats";
+    public static final String                      PROPERTY_TYPE                            = "type";
+    public static final String                      PROPERTY_FORCED_RESOLUTION               = "forced_resolution";
+    private static final String                     PROPERTY_DIRECTURL                       = "directurl";
     /* Packagizer properties */
-    public static final String                      PROPERTY_MODULE_TITLE                = "module_title";
-    public static final String                      PROPERTY_MODULE_CLIP_TITLE           = "module_clip_title";
-    public static final String                      WEBSITE_BASE_APP                     = "https://app.pluralsight.com";
-    private static final AtomicLong                 timestampLastDownloadStarted         = new AtomicLong(0);
-    private static final AtomicInteger              durationSecondsOfLastDownloadedClip  = new AtomicInteger(0);
+    public static final String                      PROPERTY_MODULE_TITLE                    = "module_title";
+    public static final String                      PROPERTY_MODULE_CLIP_TITLE               = "module_clip_title";
+    private final String                            PROPERTY_ACCOUNT_COOKIE_LOGIN_HINT_SHOWN = "cookie_login_hint_shown";
+    public static final String                      WEBSITE_BASE_APP                         = "https://app.pluralsight.com";
+    private static final AtomicLong                 timestampLastDownloadStarted             = new AtomicLong(0);
+    private static final AtomicInteger              durationSecondsOfLastDownloadedClip      = new AtomicInteger(0);
 
     public PluralsightCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -159,6 +160,7 @@ public class PluralsightCom extends antiDDoSForHost {
                         br.setCookies(this.getHost(), cookies);
                     }
                     if (!revalidate) {
+                        /* Do not validate cookies */
                         return;
                     } else {
                         logger.info("Attempting cookie login");
@@ -167,7 +169,7 @@ public class PluralsightCom extends antiDDoSForHost {
                         if (request.getHttpConnection().getResponseCode() != 200 || !StringUtils.containsIgnoreCase(request.getHttpConnection().getContentType(), "json")) {
                             /* Full login required */
                             logger.info("Cookie login failed");
-                            br.clearCookies(br.getHost());
+                            br.clearCookies(null);
                             if (userCookies != null) {
                                 if (account.hasEverBeenValid()) {
                                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
@@ -182,36 +184,55 @@ public class PluralsightCom extends antiDDoSForHost {
                         }
                     }
                 }
-                logger.info("Performing full login");
-                getRequest(br, this, br.createGetRequest(WEBSITE_BASE_APP + "/id/"));
-                final Form form = br.getFormbyKey("Username");
-                if (form == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                try {
+                    logger.info("Performing full login");
+                    getRequest(br, this, br.createGetRequest(WEBSITE_BASE_APP + "/id/"));
+                    final Form form = br.getFormbyKey("Username");
+                    if (form == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final boolean isCaptchaVisible = br.getRegex("<input\\s+id=\"ReCaptchaSiteKey\"\\s+[\\w\\s\\d=\"]+(type=\"hidden\")[\\w\\s\\d=\"]+\\/>").getMatch(0) == null;
+                    if (br.containsHTML("ReCaptchaSiteKey") && isCaptchaVisible) {
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LeVIgoTAAAAAIhx_TOwDWIXecbvzcWyjQDbXsaV").getToken();
+                        form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    }
+                    form.put("Username", URLEncoder.encode(account.getUser(), "UTF-8"));
+                    form.put("Password", URLEncoder.encode(account.getPass(), "UTF-8"));
+                    getRequest(br, this, br.createFormRequest(form));
+                    if (br.containsHTML("(?i)>\\s*Invalid user name or password\\s*<")) {
+                        throw new AccountInvalidException("Invalid user name or password");
+                    } else if (br.getHostCookie("PsJwt-production", Cookies.NOTDELETEDPATTERN) == null) {
+                        throw new AccountInvalidException();
+                    }
+                    getRequest(br, this, br.createGetRequest(WEBSITE_BASE_APP + "/web-analytics/api/v1/users/current"));
+                    final Request request = br.getRequest();
+                    if (request.getHttpConnection().getResponseCode() == 401) {
+                        throw new AccountInvalidException();
+                    } else if (request.getHttpConnection().getResponseCode() == 429) {
+                        throw new AccountUnavailableException("Unfortunately the site is currently unavilable. We expect everything back in order shortly. If you continue to experience problems, let us know.", 5 * 60 * 1000);
+                    } else if (request.getHttpConnection().getResponseCode() != 200) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    account.saveCookies(br.getCookies(this.getHost()), "");
+                } catch (final Exception e) {
+                    boolean displayCookieLoginHint = false;
+                    if (e instanceof AccountInvalidException) {
+                        displayCookieLoginHint = true;
+                    } else if (e instanceof PluginException) {
+                        if (((PluginException) e).getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+                            displayCookieLoginHint = true;
+                        }
+                    }
+                    if (displayCookieLoginHint) {
+                        if (!account.hasProperty(PROPERTY_ACCOUNT_COOKIE_LOGIN_HINT_SHOWN)) {
+                            showCookieLoginInfo();
+                            account.setProperty(PROPERTY_ACCOUNT_COOKIE_LOGIN_HINT_SHOWN, true);
+                        }
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+                    } else {
+                        throw e;
+                    }
                 }
-                final boolean isCaptchaVisible = br.getRegex("<input\\s+id=\"ReCaptchaSiteKey\"\\s+[\\w\\s\\d=\"]+(type=\"hidden\")[\\w\\s\\d=\"]+\\/>").getMatch(0) == null;
-                if (br.containsHTML("ReCaptchaSiteKey") && isCaptchaVisible) {
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LeVIgoTAAAAAIhx_TOwDWIXecbvzcWyjQDbXsaV").getToken();
-                    form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                }
-                form.put("Username", URLEncoder.encode(account.getUser(), "UTF-8"));
-                form.put("Password", URLEncoder.encode(account.getPass(), "UTF-8"));
-                getRequest(br, this, br.createFormRequest(form));
-                if (br.containsHTML("(?i)>\\s*Invalid user name or password\\s*<")) {
-                    throw new AccountInvalidException("Invalid user name or password");
-                }
-                if (br.getHostCookie("PsJwt-production", Cookies.NOTDELETEDPATTERN) == null) {
-                    throw new AccountInvalidException();
-                }
-                getRequest(br, this, br.createGetRequest(WEBSITE_BASE_APP + "/web-analytics/api/v1/users/current"));
-                final Request request = br.getRequest();
-                if (request.getHttpConnection().getResponseCode() == 401) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (request.getHttpConnection().getResponseCode() == 429) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unfortunately the site is currently unavilable. We expect everything back in order shortly. If you continue to experience problems, let us know.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else if (request.getHttpConnection().getResponseCode() != 200) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
