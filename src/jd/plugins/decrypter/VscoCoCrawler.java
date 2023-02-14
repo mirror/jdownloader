@@ -33,6 +33,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -128,8 +130,7 @@ public class VscoCoCrawler extends PluginForDecrypt {
             fp.setName(username);
             final List<Map<String, Object>> mediasFirstPage = (List<Map<String, Object>>) firstPageMediaInfo.get("medias");
             if (mediasFirstPage == null) {
-                logger.info("Empty profile");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
             }
             /* Add items of first page --> They got slightly different field names (wtf) which is why we're processing them separately. */
             for (final Map<String, Object> mediaWeakInfo : mediasFirstPage) {

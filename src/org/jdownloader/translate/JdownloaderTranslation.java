@@ -164,6 +164,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Empty folder" })
     String decrypter_empty_folder();
 
+    @Default(lngs = { "en" }, values = { "Empty profile" })
+    String decrypter_empty_profile();
+
     @Default(lngs = { "en" }, values = { "This folder is empty." })
     String decrypter_empty_folder_description();
 
