@@ -452,7 +452,6 @@ public abstract class antiDDoSForHost extends PluginForHost {
      */
     protected final void antiDDoS(final Browser ibr) throws Exception {
         antiDDoS(ibr, null);
-        ibr.checkForAfterRequestAntiddosBlock();
     }
 
     protected final AtomicInteger antiDDosCaptcha = new AtomicInteger(0);
@@ -520,6 +519,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 antiDDosCaptcha.decrementAndGet();
             }
         }
+        ibr.checkForAfterRequestAntiddosBlock();
     }
 
     private static Map<String, AtomicReference<Object>> concurrentLock = new HashMap<String, AtomicReference<Object>>();
