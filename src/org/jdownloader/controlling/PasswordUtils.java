@@ -24,7 +24,7 @@ public class PasswordUtils {
         }
     }
 
-    public static HashSet<String> getPasswords(String data) {
+    public static HashSet<String> getPasswords(final String data) {
         final HashSet<String> ret = new HashSet<String>();
         if (data != null) {
             final String passwordPattern = org.jdownloader.translate._JDT.T.pattern_password();
@@ -55,15 +55,23 @@ public class PasswordUtils {
             final Iterator<String> it = ret.iterator();
             while (it.hasNext()) {
                 final String next = it.next();
+                /**
+                 * Remove empty/null strings. </br>
+                 * TODO: Null check can be removed, only check for length.
+                 */
                 if (StringUtils.isEmpty(next)) {
                     it.remove();
                 } else if (next.length() < 2) {
+                    /* Remove 1-char strings. */
                     it.remove();
                 } else if (next.matches("^\\s*</?span.*")) {
+                    /* Remove html snippets #1 */
                     it.remove();
                 } else if (next.matches("^\\s*</?td.*")) {
+                    /* Remove html snippets #2 */
                     it.remove();
                 } else if (next.matches("(?i).*(rar|zip|jpg|gif|png|html|php|avi|mpg)$")) {
+                    /* Remove passwords which look to be filenames. */
                     it.remove();
                 }
             }

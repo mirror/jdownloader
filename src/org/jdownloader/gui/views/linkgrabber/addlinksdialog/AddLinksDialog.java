@@ -514,13 +514,26 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     @Override
                     public void run() {
                         inform();
-                        String newText = config.getPresetDebugLinks();
+                        String textAuto = null;
+                        String textOnlyText = null;
                         String browserURL = null;
-                        if (StringUtils.isEmpty(newText) && config.isAutoFillAddLinksDialogWithClipboardContentEnabled()) {
-                            final ClipboardContent content = ClipboardMonitoring.getINSTANCE().getCurrentContent();
-                            if (content != null) {
-                                newText = preprocessFind(content.getContent());
-                                browserURL = content.getBrowserURL();
+                        final String presetDebugLinks = config.getPresetDebugLinks();
+                        if (presetDebugLinks != null) {
+                            textAuto = presetDebugLinks;
+                        } else if (config.isAutoFillAddLinksDialogWithClipboardContentEnabled() || config.isAddLinksPreParserEnabled()) {
+                            final ClipboardMonitoring clp = ClipboardMonitoring.getINSTANCE();
+                            final ClipboardContent contentAuto = clp.getCurrentContent();
+                            if (contentAuto != null) {
+                                if (config.isAutoFillAddLinksDialogWithClipboardContentEnabled()) {
+                                    textAuto = preprocessFind(contentAuto.getContent());
+                                } else {
+                                    textAuto = contentAuto.getContent();
+                                }
+                                browserURL = contentAuto.getBrowserURL();
+                            }
+                            final ClipboardContent contentTextOnly = clp.getCurrentContentTEXT();
+                            if (contentTextOnly != null) {
+                                textOnlyText = contentTextOnly.getContent();
                             }
                         }
                         if (config.isAddLinksPreParserEnabled()) {
@@ -531,7 +544,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                     input.setText(_GUI.T.AddLinksDialog_ParsingClipboard());
                                 };
                             };
-                            asyncAnalyse(newText, browserURL);
+                            asyncAnalyse(textAuto, textOnlyText, browserURL);
                         }
                     }
                 }.start();
@@ -724,7 +737,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private final AtomicReference<Thread> asyncImportThread = new AtomicReference<Thread>();
 
-    protected void asyncAnalyse(final String toAnalyse, final String base) {
+    protected void asyncAnalyse(final String textAuto, final String textOnlyText, final String base) {
         final Thread thread = new Thread() {
             private Thread thisThread = null;
             {
@@ -750,10 +763,15 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 try {
                     thisThread = Thread.currentThread();
                     final String resultText;
-                    if (toAnalyse != null) {
+                    if (textAuto != null) {
                         if (config.isAddLinksPreParserAutoExtractionPasswordSearchEnabled()) {
                             /* Look for passwords in pasted text if wished by the user. */
-                            final HashSet<String> passwords = PasswordUtils.getPasswords(toAnalyse);
+                            /* First look for passwords only in text. If no passwords are found, check auto text for passwords. */
+                            HashSet<String> passwords = PasswordUtils.getPasswords(textOnlyText);
+                            if (passwords.isEmpty()) {
+                                /* Look for passwords in auto generated text / html. */
+                                passwords = PasswordUtils.getPasswords(textAuto);
+                            }
                             if (passwords != null && passwords.size() > 0) {
                                 synchronized (autoPasswords) {
                                     autoPasswords.addAll(passwords);
@@ -772,7 +790,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                 }
                             };
                         }
-                        String[] result = HTMLParser.getHttpLinks(toAnalyse, base, new HtmlParserResultSet() {
+                        String[] result = HTMLParser.getHttpLinks(textAuto, base, new HtmlParserResultSet() {
                             @Override
                             public boolean add(HtmlParserCharSequence e) {
                                 if (thisThread != asyncImportThread.get()) {
@@ -782,7 +800,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                             }
                         });
                         if (result.length == 0) {
-                            result = HTMLParser.getHttpLinks(toAnalyse.replace("www.", "http://www."), base, new HtmlParserResultSet() {
+                            result = HTMLParser.getHttpLinks(textAuto.replace("www.", "http://www."), base, new HtmlParserResultSet() {
                                 @Override
                                 public boolean add(HtmlParserCharSequence e) {
                                     if (thisThread != asyncImportThread.get()) {
@@ -793,7 +811,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                             });
                         }
                         if (result.length == 0) {
-                            result = HTMLParser.getHttpLinks("http://" + toAnalyse, base, new HtmlParserResultSet() {
+                            result = HTMLParser.getHttpLinks("http://" + textAuto, base, new HtmlParserResultSet() {
                                 @Override
                                 public boolean add(HtmlParserCharSequence e) {
                                     if (thisThread != asyncImportThread.get()) {
