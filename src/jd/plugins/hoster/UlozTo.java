@@ -22,8 +22,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
@@ -33,6 +38,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -44,13 +50,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UlozTo extends PluginForHost {
-    private boolean              passwordProtected            = false;
     // private static final String CAPTCHA_TEXT = "CAPTCHA_TEXT";
     // private static final String CAPTCHA_ID = "CAPTCHA_ID";
     private static final String  QUICKDOWNLOAD                = "https?://[^/]+/quickDownload/\\d+";
@@ -144,7 +145,6 @@ public class UlozTo extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        passwordProtected = false;
         correctDownloadLink(link);
         prepBR(this.br);
         br.setFollowRedirects(false);
@@ -171,14 +171,15 @@ public class UlozTo extends PluginForHost {
         } else if (handleLimitExceeded(link, br, isDownload)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Limit exceeded");
         }
-        passwordProtected = this.isPasswordProtected();
+        final boolean passwordProtected = this.isPasswordProtected(br);
+        link.setPasswordProtected(passwordProtected);
         if (!passwordProtected && !this.br.containsHTML("class=\"jsFileTitle[^\"]*")) {
             /* Seems like whatever url the user added, it is not a downloadurl. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* E.g. video with streaming: "filename.avi | on-line video | Ulož.to" */
         String filename = br.getRegex("<title>\\s*(.*?)\\s*(\\| on-line video\\s+)?(?:\\|\\s*(PORNfile.cz|Ulož.to)\\s*)?</title>").getMatch(0);
-        if (this.passwordProtected) {
+        if (passwordProtected) {
             if (filename != null) {
                 link.setName(Encoding.htmlDecode(filename.trim()));
             }
@@ -311,7 +312,7 @@ public class UlozTo extends PluginForHost {
     /** Handles special redirects e.g. after submitting 'Age restricted' Form. */
     private void handleRedirect() throws Exception {
         for (int i = 0; i <= i; i++) {
-            final String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
+            final String continuePage = br.getRegex("(?i)<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
             if (continuePage != null) {
                 br.getPage(continuePage);
             } else {
@@ -356,7 +357,7 @@ public class UlozTo extends PluginForHost {
                 dllink = br.getRegex("(/slowDownload[^\"<>]+)\"").getMatch(0);
             }
             if (dllink == null) {
-                if (passwordProtected) {
+                if (link.isPasswordProtected()) {
                     handlePassword(link);
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -461,9 +462,9 @@ public class UlozTo extends PluginForHost {
                     final String redirectToSecondCaptcha = PluginJSonUtils.getJson(br, "redirectDialogContent");
                     if (redirectToSecondCaptcha != null) {
                         /**
-                         * 2021-02-11: Usually: /download-dialog/free/limit-exceeded?fileSlug=<FUID>&repeated=0&nocaptcha=0 </br> This can
-                         * happen after downloading some files. The user is allowed to download more but has to solve two captchas in a row
-                         * to do so!
+                         * 2021-02-11: Usually: /download-dialog/free/limit-exceeded?fileSlug=<FUID>&repeated=0&nocaptcha=0 </br>
+                         * This can happen after downloading some files. The user is allowed to download more but has to solve two captchas
+                         * in a row to do so!
                          */
                         br.getPage(redirectToSecondCaptcha);
                         final Form f = br.getFormbyActionRegex(".*limit-exceeded.*");
@@ -625,13 +626,13 @@ public class UlozTo extends PluginForHost {
                 }
                 pwform.put("password", Encoding.urlEncode(passCode));
                 br.submitForm(pwform);
-                if (this.isPasswordProtected()) {
+                if (this.isPasswordProtected(br)) {
                     // failure
-                    logger.info("Incorrect password was entered");
+                    logger.info("Incorrect password was entered: " + passCode);
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 } else {
-                    logger.info("Correct password has been entered");
+                    logger.info("Correct password has been entered: " + passCode);
                     link.setDownloadPassword(passCode);
                     return;
                 }
@@ -641,7 +642,7 @@ public class UlozTo extends PluginForHost {
                     passCode = getUserInput("Password?", link);
                 }
                 br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode) + "&password_send=Send&do=passwordProtectedForm-submit");
-                if (this.isPasswordProtected()) {
+                if (this.isPasswordProtected(br)) {
                     // failure
                     logger.info("Incorrect password was entered");
                     link.setDownloadPassword(null);
@@ -657,9 +658,9 @@ public class UlozTo extends PluginForHost {
         }
     }
 
-    private boolean isPasswordProtected() {
-        final boolean isPasswordProtectedAccordingToResponseCode = this.br.getHttpConnection() != null && this.br.getHttpConnection().getResponseCode() == 401;
-        final boolean isPasswordProtectedAccordingToHTML = this.br.containsHTML("\"frm\\-passwordProtectedForm\\-password\"");
+    private boolean isPasswordProtected(final Browser br) {
+        final boolean isPasswordProtectedAccordingToResponseCode = br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 401;
+        final boolean isPasswordProtectedAccordingToHTML = br.containsHTML("\"frm\\-passwordProtectedForm\\-password\"");
         return isPasswordProtectedAccordingToHTML || isPasswordProtectedAccordingToResponseCode;
     }
 
@@ -677,6 +678,7 @@ public class UlozTo extends PluginForHost {
                     throw new IOException();
                 }
             } catch (final Exception e) {
+                link.removeProperty(property);
                 logger.log(e);
                 return null;
             } finally {
@@ -703,7 +705,7 @@ public class UlozTo extends PluginForHost {
                 if (link.getDownloadURL().matches(QUICKDOWNLOAD)) {
                     dllink = link.getDownloadURL();
                 } else {
-                    if (passwordProtected) {
+                    if (link.isPasswordProtected()) {
                         handlePassword(link);
                     }
                     // dllink = br.getURL() + "?do=directDownload";
@@ -731,17 +733,14 @@ public class UlozTo extends PluginForHost {
         }
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
+        if (acc != null && acc.getType() == AccountType.PREMIUM) {
+            /* Premium account -> No captchas expected */
+            return false;
+        } else {
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
     }
 
     private void loginAPI(Account account, final AccountInfo aa) throws Exception {
@@ -780,7 +779,7 @@ public class UlozTo extends PluginForHost {
     private void checkGeoBlocked(final Browser br, final Account account) throws PluginException {
         if (StringUtils.containsIgnoreCase(br.getURL(), "/blocked")) {
             if (account != null) {
-                throw new AccountUnavailableException("Geoblocked", 24 * 60 * 60 * 1000l);
+                throw new AccountUnavailableException("Geoblocked", 5 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Geoblocked", 24 * 60 * 60 * 1000l);
             }
@@ -799,15 +798,13 @@ public class UlozTo extends PluginForHost {
                     this.br.getPage("https://" + account.getHoster());
                     checkGeoBlocked(br, account);
                     handleAgeRestrictedRedirects();
-                    if (br.containsHTML("do=web-login")) {
-                        logger.info("Cookie login failed");
-                    } else if (br.getCookie(this.br.getHost(), "permanentLogin2", Cookies.NOTDELETEDPATTERN) == null) {
-                        logger.info("Cookie login failed");
-                    } else {
+                    if (isLoggedIn(br)) {
                         logger.info("Cookie login successful");
                         /* Re-new cookie timestamp */
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return;
+                    } else {
+                        logger.info("Cookie login failed");
                     }
                 }
                 logger.info("Performing full login");
@@ -817,15 +814,16 @@ public class UlozTo extends PluginForHost {
                 final Form loginform = br.getFormbyKey("username");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (loginform.hasInputFieldByName("remember")) {
+                }
+                if (loginform.hasInputFieldByName("remember")) {
                     loginform.remove("remember");
                 }
                 loginform.put("remember", "on");
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(loginform);
-                if (br.getCookie(this.br.getHost(), "permanentLogin2", Cookies.NOTDELETEDPATTERN) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!isLoggedIn(br)) {
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
@@ -834,6 +832,22 @@ public class UlozTo extends PluginForHost {
                 }
                 throw e;
             }
+        }
+    }
+
+    private boolean isLoggedIn(final Browser br) {
+        final boolean isLoggedinByHTML = br.containsHTML("do=web-logout");
+        boolean isLoggedinByCookie = false;
+        for (final Cookie cookie : br.getCookies(br.getHost()).getCookies()) {
+            if (cookie.getKey() != null && cookie.getKey().matches("permanentLogin.*") && cookie.getValue() != null && cookie.getValue().matches(Cookies.NOTDELETEDPATTERN)) {
+                isLoggedinByCookie = true;
+                break;
+            }
+        }
+        if (isLoggedinByHTML || isLoggedinByCookie) {
+            return true;
+        } else {
+            return false;
         }
     }
 

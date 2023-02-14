@@ -27,6 +27,8 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -98,8 +100,7 @@ public class VideoFc2ComProfileCrawler extends PluginForDecrypt {
             expectedNumberofItems = -1;
         }
         if (expectedNumberofItems == 0) {
-            logger.info("Empty profile");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
         }
         final HashSet<String> dupes = new HashSet<String>();
         int page = 1;
