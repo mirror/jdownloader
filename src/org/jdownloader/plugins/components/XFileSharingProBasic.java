@@ -2897,7 +2897,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     public String decodeDownloadLink(final DownloadLink link, final Account account, final Browser br, final String s) {
         String decoded = null;
         try {
-            Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
+            final Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));

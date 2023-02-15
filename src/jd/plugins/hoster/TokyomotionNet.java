@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -33,9 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tokyomotion.net", "osakamotion.net" }, urls = { "https?://(?:www\\.)?tokyomotion\\.net/(?:video/\\d+(?:/[^/]+)?|embed/[a-f0-9]{20})", "https?://(?:www\\.)?osakamotion\\.net/(?:video/\\d+(?:/[^/]+)?|embed/[a-f0-9]{20})" })
 public class TokyomotionNet extends PluginForHost {
@@ -113,6 +113,8 @@ public class TokyomotionNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
         if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*This video is not available on this platform")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("(?i)>\\s*This is a private video")) {
             isPrivateContent = true;

@@ -111,7 +111,7 @@ public class DailyleechCom extends antiDDoSForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = prepBR(this.br);
+        prepBR(this.br);
         mhm.runCheck(account, link);
         login(account, false);
         final String dllink = getDllink(link, account);
@@ -463,7 +463,7 @@ public class DailyleechCom extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.br = prepBR(this.br);
+        prepBR(this.br);
         final AccountInfo ai = fetchAccountInfoWebsite(account);
         return ai;
     }
@@ -503,9 +503,8 @@ public class DailyleechCom extends antiDDoSForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            /* Load cookies */
             br.setCookiesExclusive(true);
-            this.br = prepBR(this.br);
+            prepBR(this.br);
             loginWebsite(account, force);
         }
     }
@@ -520,7 +519,7 @@ public class DailyleechCom extends antiDDoSForHost {
                  * Even though login is forced first check if our cookies are still valid --> If not, force login!
                  */
                 getPage(PROTOCOL + this.getHost() + "/cbox/cbox.php");
-                if (isLoggedIn()) {
+                if (isLoggedIn(br)) {
                     logger.info("Login via cached cookies successful");
                     account.saveCookies(br.getCookies(this.getHost()), "");
                     return;
@@ -528,7 +527,7 @@ public class DailyleechCom extends antiDDoSForHost {
                     logger.info("Login via cached cookies failed");
                 }
                 /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                this.br = prepBR(createNewBrowserInstance());
+                prepBR(createNewBrowserInstance());
             }
             getPage(PROTOCOL + this.getHost() + "/cbox/login.php");
             final Form loginform = br.getFormbyProperty("class", "omb_loginForm");
@@ -546,7 +545,7 @@ public class DailyleechCom extends antiDDoSForHost {
             }
             submitForm(loginform);
             getPage("/cbox/cbox.php");
-            if (!isLoggedIn()) {
+            if (!isLoggedIn(br)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 account.saveCookies(br.getCookies(this.getHost()), "");
@@ -557,7 +556,7 @@ public class DailyleechCom extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedIn() {
+    private boolean isLoggedIn(final Browser br) {
         return br.containsHTML("logout\\.php");
     }
 
