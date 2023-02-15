@@ -396,6 +396,7 @@ public class DailyleechCom extends antiDDoSForHost {
                 return url_download_tmp;
             }
         }
+        logger.info("Failed to find any result");
         return null;
     }
 
