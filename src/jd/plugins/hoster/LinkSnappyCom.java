@@ -25,7 +25,9 @@ import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -188,8 +190,10 @@ public class LinkSnappyCom extends PluginForHost {
             final Map<String, Object> userResponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
             final Map<String, Object> usermap = (Map<String, Object>) userResponse.get("return");
             final Object expireTimestampO = usermap.get("expire");
-            // final String accountType = (String) entries.get("accountType"); // "free" for free accounts and "elite" for premium and
-            // lifetime accounts
+            /*
+             * final String accountType = (String) entries.get("accountType"); // "free" for free accounts and "elite" for premium AND
+             * lifetime accounts
+             */
             if ("lifetime".equalsIgnoreCase(expireTimestampO.toString()) || "2177388000".equals(expireTimestampO.toString())) {
                 /* 2177388000 -> Valid until 2038 -> Lifetime account */
                 account.setType(AccountType.LIFETIME);
@@ -443,8 +447,8 @@ public class LinkSnappyCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 br.getPage("https://" + this.getHost() + "/api/CACHEDLSTATUS?id=" + Encoding.urlEncode(id));
-                final Map<String, Object> data = restoreFromString(br.toString(), TypeRef.HASHMAP);
-                this.handleErrors(link, account);
+                final Map<String, Object> data = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                this.handleErrors(link, account, data);
                 if (data.get("return") == null) {
                     logger.warning("Bad cache state/answer");
                     break;
@@ -518,7 +522,7 @@ public class LinkSnappyCom extends PluginForHost {
                 final List<Object> ressourcelist = (List<Object>) entries.get("links");
                 entries = (Map<String, Object>) ressourcelist.get(0);
                 final String message = this.getError(entries);
-                if (this.isErrorPasswordRequiredOrWrong(message)) {
+                if (this.isErrorDownloadPasswordRequiredOrWrong(message)) {
                     wrongPasswordAttempts += 1;
                     passCode = getUserInput("Password?", link);
                     /**
@@ -540,7 +544,7 @@ public class LinkSnappyCom extends PluginForHost {
             if (passCode != null) {
                 link.setDownloadPassword(passCode);
             }
-            handleErrors(link, account);
+            handleErrors(link, account, entries);
             /* 2021-02-18: Downloadurl will always be returned even if file hasn't been downloaded successfully serverside yet! */
             dllink = (String) entries.get("generated");
             if (StringUtils.isEmpty(dllink)) {
@@ -699,13 +703,17 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     private void handleErrors(final DownloadLink link, final Account account) throws PluginException, InterruptedException {
-        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
         final Object linksO = entries.get("links");
         if (linksO != null && linksO instanceof List) {
             /* Make sure we're working on the correct map! */
             final List<Object> ressourcelist = (List<Object>) linksO;
             entries = (Map<String, Object>) ressourcelist.get(0);
         }
+        handleErrors(link, account, entries);
+    }
+
+    private void handleErrors(final DownloadLink link, final Account account, final Map<String, Object> entries) throws PluginException, InterruptedException {
         final String err = getError(entries);
         if (err != null) {
             if (new Regex(err, "(?i)No server available for this filehost, Please retry after few minutes").matches()) {
@@ -745,9 +753,12 @@ public class LinkSnappyCom extends PluginForHost {
                     account.getAccountInfo().setExpired(true);
                 } catch (final Throwable e) {
                 }
-                throw new AccountUnavailableException("Account expired", 3 * 60 * 60 * 1000l);
-            } else if (isErrorPasswordRequiredOrWrong(err)) {
+                throw new AccountUnavailableException("Account expired", 5 * 60 * 1000l);
+            } else if (isErrorDownloadPasswordRequiredOrWrong(err)) {
                 /** This error will usually be handled outside of here! */
+                if (link != null) {
+                    link.setDownloadPassword(null);
+                }
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             } else if (new Regex(err, "(?i)Please upgrade to Elite membership").matches()) {
                 /* 2019-09-05: Free Account daily downloadlimit reached */
@@ -763,7 +774,7 @@ public class LinkSnappyCom extends PluginForHost {
         }
     }
 
-    private boolean isErrorPasswordRequiredOrWrong(final String msg) {
+    private boolean isErrorDownloadPasswordRequiredOrWrong(final String msg) {
         return msg != null && msg.matches("(?i)This file requires password");
     }
 
@@ -772,6 +783,9 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     private String getError(final Map<String, Object> map) {
+        if (map == null) {
+            return null;
+        }
         final Object status = map.get("status");
         final Object error = map.get("error");
         if (status != null) {
@@ -808,7 +822,7 @@ public class LinkSnappyCom extends PluginForHost {
                 } else {
                     logger.info("Validating cookies");
                     br.getPage("https://" + this.getHost() + "/api/USERDETAILS");
-                    final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                     final String error = getError(entries);
                     // "Invalid username" is shown when 2Fa login is required o_O.
                     if (error == null) {
@@ -825,7 +839,7 @@ public class LinkSnappyCom extends PluginForHost {
             /* Full login is required */
             logger.info("Performing full login");
             br.getPage("https://" + this.getHost() + "/api/AUTHENTICATE?" + "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
             final String error = getError(entries);
             if (error != null) {
                 final String redirect = (String) entries.get("redirect");
@@ -893,15 +907,18 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     public static interface LinkSnappyComConfig extends PluginConfigInterface {
-        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+        final String                    text_ClearDownloadHistoryEnabled = "Clear download history after each successful download?";
+        public static final TRANSLATION TRANSLATION                      = new TRANSLATION();
 
         public static class TRANSLATION {
             public String getClearDownloadHistoryEnabled_label() {
-                return "Clear download history after each successful download?";
+                return text_ClearDownloadHistoryEnabled;
             }
         }
 
+        @AboutConfig
         @DefaultBooleanValue(false)
+        @DescriptionForConfigEntry(text_ClearDownloadHistoryEnabled)
         boolean isClearDownloadHistoryEnabled();
 
         void setClearDownloadHistoryEnabled(boolean b);
