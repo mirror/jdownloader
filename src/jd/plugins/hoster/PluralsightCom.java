@@ -155,9 +155,9 @@ public class PluralsightCom extends antiDDoSForHost {
                 final Cookies userCookies = account.loadUserCookies();
                 if (cookies != null || userCookies != null) {
                     if (userCookies != null) {
-                        br.setCookies(this.getHost(), userCookies);
+                        br.setCookies(userCookies);
                     } else {
-                        br.setCookies(this.getHost(), cookies);
+                        br.setCookies(cookies);
                     }
                     if (!revalidate) {
                         /* Do not validate cookies */
@@ -179,7 +179,9 @@ public class PluralsightCom extends antiDDoSForHost {
                             }
                         } else {
                             logger.info("Cookie login successful");
-                            account.saveCookies(br.getCookies(this.getHost()), "");
+                            if (userCookies == null) {
+                                account.saveCookies(br.getCookies(this.getHost()), "");
+                            }
                             return;
                         }
                     }
@@ -224,6 +226,7 @@ public class PluralsightCom extends antiDDoSForHost {
                         }
                     }
                     if (displayCookieLoginHint) {
+                        /* Tell user to try again using cookie login method. Only do this once per account. */
                         if (!account.hasProperty(PROPERTY_ACCOUNT_COOKIE_LOGIN_HINT_SHOWN)) {
                             showCookieLoginInfo();
                             account.setProperty(PROPERTY_ACCOUNT_COOKIE_LOGIN_HINT_SHOWN, true);
