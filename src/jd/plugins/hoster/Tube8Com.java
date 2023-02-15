@@ -77,7 +77,7 @@ public class Tube8Com extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "tube8.com", "tube8.fr" });
+        ret.add(new String[] { "tube8.com", "tube8.es", "tube8.fr" });
         return ret;
     }
 
@@ -97,7 +97,7 @@ public class Tube8Com extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/.+/([0-9]+)/?");
+            ret.add("https?://(?:(?:www|[a-z]{2})\\.)?" + buildHostsPatternPart(domains) + "/.+/([0-9]+)/?");
         }
         return ret.toArray(new String[0]);
     }
