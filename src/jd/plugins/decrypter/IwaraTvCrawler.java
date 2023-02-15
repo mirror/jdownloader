@@ -40,8 +40,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.YoutubeDashV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "iwara.tv" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?(?:trollvids\\.com|iwara\\.tv)/((?:videos|node)/[A-Za-z0-9]+|users/[^/\\?]+(/videos)?)" })
-public class IwaraTv extends PluginForDecrypt {
-    public IwaraTv(PluginWrapper wrapper) {
+public class IwaraTvCrawler extends PluginForDecrypt {
+    public IwaraTvCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
