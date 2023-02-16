@@ -29,11 +29,9 @@ import java.util.regex.Pattern;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -45,6 +43,7 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -54,7 +53,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailyleech.com" }, urls = { "" })
-public class DailyleechCom extends antiDDoSForHost {
+public class DailyleechCom extends PluginForHost {
     private static final String          PROTOCOL                  = "http://";
     /* Connection limits */
     private static final int             ACCOUNT_MAXDLS            = 1;
@@ -85,7 +84,7 @@ public class DailyleechCom extends antiDDoSForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
@@ -95,7 +94,7 @@ public class DailyleechCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
@@ -114,58 +113,301 @@ public class DailyleechCom extends antiDDoSForHost {
         prepBR(this.br);
         mhm.runCheck(account, link);
         login(account, false);
-        final String dllink = getDllink(link, account);
-        if (StringUtils.isEmpty(dllink)) {
-            mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 2, 5 * 60 * 1000l);
+        final String directurlproperty = getCachedLinkPropertyKey(account);
+        // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        // link.removeProperty(directurlproperty);
+        // }
+        final String storedDirecturl = link.getStringProperty(directurlproperty);
+        final String directurl;
+        if (storedDirecturl != null) {
+            directurl = storedDirecturl;
+        } else {
+            directurl = this.getDllinkWebsite(link, account);
+            if (StringUtils.isEmpty(directurl)) {
+                mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 50, 3 * 60 * 1000l);
+            }
         }
-        handleDL(account, link, dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            if (storedDirecturl != null) {
+                link.removeProperty(directurlproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+            } else {
+                mhm.handleErrorGeneric(account, link, "Final downloadurl did not lead to file", 20, 3 * 60 * 1000l);
+            }
+        }
+        link.setProperty(directurlproperty, directurl);
+        this.dl.startDownload();
     }
 
-    private String getDllink(final DownloadLink link, final Account account) throws Exception {
-        String dllink = checkDirectLink(br, link, getCachedLinkPropertyKey(account));
-        if (dllink == null) {
-            dllink = getDllinkWebsite(link, account);
+    private String getDllinkWebsite(final DownloadLink link, final Account account) throws Exception {
+        final ReentrantLock lock = getLock(link, account);
+        try {
+            lock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            throw new PluginException(LinkStatus.ERROR_RETRY, null, e);
         }
-        return dllink;
-    }
-
-    private String[] searchMyFiles(final Browser br, final DownloadLink link) throws Exception {
-        final Browser brc = br.cloneBrowser();
-        brc.getPage(PROTOCOL + this.getHost() + "/cbox/myfile.php");
-        final String elements[] = brc.getRegex("<tr>\\s*(<td>\\s*\\d+\\s*</td>.*?)</tr>").getColumn(0);
-        final PluginForHost hostPlugin = getNewPluginInstance(link.getDefaultPlugin().getLazyP());
-        if (elements != null && elements.length > 0) {
-            for (String element : elements) {
-                final String source = new Regex(element, "href\\s*=\\s*\'(.*?)'").getMatch(0);
-                final String name = new Regex(element, "</a>\\s*</td>\\s*<td>\\s*(.*?)\\s*</td").getMatch(0);
-                final String size = new Regex(element, "</td>\\s*<td>\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*<").getMatch(0);
-                final String download = new Regex(element, "href\\s*=\\s*'(https?://" + getHost() + "/download/.*?)'").getMatch(0);
-                String ret = null;
-                if (StringUtils.isAllNotEmpty(source, download) && hostPlugin.canHandle(source)) {
-                    // same plugin
-                    if (StringUtils.equals(link.getPluginPatternMatcher(), source)) {
-                        // same URL
-                        ret = download;
-                    } else {
-                        final DownloadLink dummy = new DownloadLink(hostPlugin, hostPlugin.getHost(), source);
-                        if (StringUtils.equals(link.getLinkID(), dummy.getLinkID())) {
-                            // same linkID
-                            ret = download;
-                        }
+        try {
+            final String target_filename = link.getName();
+            if (target_filename == null) {
+                /* 2019-06-28: We cannot download URLs without filenames */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Cannot download URLs without filename");
+            }
+            /**
+             * Okay this website is an absolute chaos. We need to generate downloadlinks through a chatbox ... after adding new URLs, we
+             * need to try to find our downloadlinks by going through the chat and need to identify our file by filename! </br>
+             * Direct-downloadurls can be broken so we need to ignore the ones we know are broken to speed-up the process of finding the
+             * correct one.
+             */
+            br.getPage(PROTOCOL + this.getHost() + "/cbox/cbox.php");
+            final String cbox_first_access_url = br.getRegex("name=\"cboxform\"\\s*?scrolling=\"no\"\\s*?src=\"(http[^\"]+)").getMatch(0);
+            final String cbox_main_url = br.getRegex("name=\"cboxmain\"[^<>]*?src=\"(http[^\"]+)").getMatch(0);
+            /* Get main parameters. */
+            final String username = br.getRegex("nme=([^<>\"\\&]+)").getMatch(0);
+            final String key = br.getRegex("nmekey=([a-f0-9]{32})").getMatch(0);
+            final String boxid = new Regex(cbox_main_url, "boxid=(\\d+)").getMatch(0);
+            final String boxtag = new Regex(cbox_main_url, "boxtag=([^\\&]+)").getMatch(0);
+            if (cbox_main_url == null || username == null || key == null || boxid == null || boxtag == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final HashSet<String> invalidatedUrls = new HashSet<String>();
+            String dllink = findFinalDownloadurl(invalidatedUrls, br.cloneBrowser(), link, account, true);
+            if (dllink != null) {
+                /* User has attempted to download this URL before so we can re-use the resulting directurl. */
+                logger.info("Re-using directurl found via searchMyFiles: " + dllink);
+                return dllink;
+            }
+            String internalSubdomain = new Regex(cbox_main_url, "^https?://(www\\d+)\\..*").getMatch(0);
+            if (internalSubdomain == null) {
+                if (cbox_first_access_url != null) {
+                    br.getPage(cbox_first_access_url);
+                    internalSubdomain = br.getRegex("s_phost\\s*?=\\s*?\"([a-z0-9]+)\"").getMatch(0);
+                }
+                if (internalSubdomain == null) {
+                    /* Fallback */
+                    internalSubdomain = "www4";
+                    logger.warning("Using hardcoded internalSubdomain as fallback: " + internalSubdomain);
+                }
+            }
+            /* Post downloadurl in chat --> Wait for answer of bot containing downloadlink */
+            logger.info("POSTing downloadurl in bot chat");
+            String downloadurlStr = getDownloadurlForMultihost(link);
+            if (link.getDownloadPassword() != null) {
+                /* Add download-password if needed */
+                downloadurlStr += "|" + link.getDownloadPassword();
+            }
+            final String readable_filesize = SizeFormatter.formatBytes(link.getDownloadSize());
+            final Form dlform = new Form();
+            dlform.setMethod(MethodType.POST);
+            dlform.setAction("http://" + internalSubdomain + ".cbox.ws/box/index.php?boxid=" + boxid + "&boxtag=" + boxtag + "&sec=submit");
+            final String param_post = "%5Bcenter%5D%20" + Encoding.urlEncode(downloadurlStr) + "%20good_link%20%7C%20%5Bcolor%3Dred%5D%5Bb%5D%20" + Encoding.urlEncode("JDOWNLOADER_" + target_filename) + "%20%5B%2Fb%5D%5B%2Fcolor%5D%20%7C%20%5Bcolor%3Dblack%5D%5Bb%5D%20" + Encoding.urlEncode(readable_filesize) + "%20%5B%2Fb%5D%5B%2Fcolor%5D%5Bbr%5D%20%5Bden%5DChecked%20By%5Bxanh%5D%20Dailyleech.com%5B%2Fcenter%5D%20";
+            dlform.put("nme", username);
+            dlform.put("eml", "");
+            dlform.put("key", key);
+            dlform.put("fkey", "");
+            dlform.put("pic", "");
+            dlform.put("auth", "");
+            dlform.put("pst", param_post);
+            dlform.put("captme", "");
+            dlform.put("capword", "");
+            dlform.put("caphash", "");
+            dlform.put("aj", "x");
+            dlform.put("lp", "0");
+            br.submitForm(dlform);
+            /* Load the list of recent posts and try to find the answer which contains our downloadurl. */
+            int counter = 0;
+            final int maxLoops = 120;
+            do {
+                /* Every time we call this URL we will go back in time one single post ... */
+                /* Wait here on the first loop as bots need some seconds to reply with downloadlinks. */
+                this.sleep(5000, link);
+                logger.info("Searching final downloadlink | Attempt " + counter + " of " + maxLoops);
+                br.getPage(cbox_main_url);
+                final Browser brc = br.cloneBrowser();
+                brc.getPage(PROTOCOL + this.getHost() + "/cbox/myfile.php");
+                dllink = findFinalDownloadurl(invalidatedUrls, brc, link, account, false);
+                if (StringUtils.isEmpty(dllink)) {
+                    final String archive_url = br.getRegex("\\'([^\"\\']+sec=archive[^\"\\']+i=)\\'").getMatch(0);
+                    final String archive_id = br.getRegex("\\?cf\\.op:(\\d+)\\)").getMatch(0);
+                    if (archive_url != null && archive_id != null) {
+                        /* Let's also go back into the archive (if possible) just in case there are many posts in a short time. */
+                        final String archiveurl_full = archive_url + archive_id;
+                        logger.info("Searching for downloadurl in archive: " + archiveurl_full);
+                        brc.getPage(archiveurl_full);
+                        dllink = findFinalDownloadurl(invalidatedUrls, brc, link, account, false);
                     }
                 }
-                if (ret != null) {
-                    final Browser brCheck = brc.cloneBrowser();
-                    final URLConnectionAdapter con = checkDirectLink(brCheck, brCheck.createHeadRequest(ret));
+                if (this.isAbort()) {
+                    logger.info("Stopping because: Aborted by user");
+                    break;
+                } else if (counter >= maxLoops) {
+                    logger.info("Stopping because: Failed to find final downloadurl");
+                    break;
+                } else if (dllink != null) {
+                    logger.info("Stopping because: Found final downloadurl: " + dllink);
+                    break;
+                } else {
+                    counter++;
+                    continue;
+                }
+            } while (true);
+            if (dllink != null) {
+                /* Print additional information */
+                this.searchDownloadlinkBotPost(link, account, false);
+                return dllink;
+            } else {
+                /* Look for reason of failure */
+                this.searchDownloadlinkBotPost(link, account, true);
+                return null;
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private String getDownloadurlForMultihost(final DownloadLink link) {
+        return link.getDefaultPlugin().buildExternalDownloadURL(link, this);
+    }
+
+    private String findFinalDownloadurl(final HashSet<String> invalidatedUrls, final Browser br, final DownloadLink link, final Account account, final boolean checkResult) throws Exception {
+        final String foundMyFiles[] = findFinalDownloadurlCore(invalidatedUrls, br, link, account, checkResult);
+        if (foundMyFiles == null) {
+            logger.info("Failed to find any result");
+            return null;
+        } else {
+            return foundMyFiles[1];
+        }
+    }
+
+    private String[] findFinalDownloadurlCore(final HashSet<String> invalidatedUrls, final Browser br, final DownloadLink link, final Account account, final boolean checkResult) throws Exception {
+        final String elements[] = br.getRegex("<tr>\\s*(<td>\\s*\\d+\\s*</td>.*?)</tr>").getColumn(0);
+        if (elements == null || elements.length == 0) {
+            return null;
+        }
+        // final PluginForHost hostPlugin = getNewPluginInstance(link.getDefaultPlugin().getLazyP());
+        final String filehosterSourceDownloadurl = this.getDownloadurlForMultihost(link);
+        for (final String element : elements) {
+            final String sourceurl = new Regex(element, "href\\s*=\\s*\'([^<>\"']+)'").getMatch(0);
+            final String filename = new Regex(element, "</a>\\s*</td>\\s*<td>\\s*(.*?)\\s*</td").getMatch(0);
+            // final String size = new Regex(element, "</td>\\s*<td>\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*<").getMatch(0);
+            final String possibleDownloadurl = new Regex(element, "href\\s*=\\s*'(https?://" + Pattern.quote(getHost()) + "/download/[^<>\"']+)'").getMatch(0);
+            if (possibleDownloadurl == null) {
+                /* This should never happen. */
+                logger.warning("Skipping element because: Possibly incomplete element: " + element);
+                continue;
+            }
+            /*
+             * Try to identify postText even if file is not (yet) downloadable so that we can at least find the reason of failure in the
+             * end.
+             */
+            if (StringUtils.equals(sourceurl, filehosterSourceDownloadurl)) {
+                logger.info("Matched post via filehosterSourceDownloadurl");
+            } else if (StringUtils.equals(filename, link.getName())) {
+                logger.info("Matched post via filename");
+            } else {
+                logger.info("Skipping non-matching element: " + element);
+                continue;
+            }
+            if (invalidatedUrls.contains(possibleDownloadurl)) {
+                logger.info("Skipping element because: Directurl was previously invalidated: " + possibleDownloadurl);
+                continue;
+            }
+            if (possibleDownloadurl != null) {
+                String[] res = null;
+                if (checkResult) {
+                    logger.info("Checking possible result: " + possibleDownloadurl);
+                    final Browser brCheck = br.cloneBrowser();
+                    final URLConnectionAdapter con = checkDirectLink(brCheck, brCheck.createHeadRequest(possibleDownloadurl));
                     if (con != null) {
-                        final String[] res = new String[] { ret, con.getURL().toExternalForm() };
-                        logger.info("found searchMyFiles: " + link + "->" + Arrays.toString(res));
-                        return res;
+                        res = new String[] { possibleDownloadurl, con.getURL().toExternalForm(), element };
+                    } else {
+                        logger.warning("Possible final downloadurl looks to be broken");
+                        invalidatedUrls.add(possibleDownloadurl);
                     }
+                } else {
+                    res = new String[] { possibleDownloadurl, possibleDownloadurl, element };
+                }
+                if (res != null) {
+                    logger.info("Returning result: " + link + "->" + Arrays.toString(res));
+                    return res;
                 }
             }
         }
         return null;
+    }
+
+    /** Searches bot-post about state of added downloads in chatbox: https://dailyleech.com/cbox/cbox.php */
+    private String searchDownloadlinkBotPost(final DownloadLink link, final Account account, final boolean checkErrors) throws Exception {
+        final Set<String> domains = new HashSet<String>();
+        domains.add(link.getHost());
+        final String[] siteSupportedNames = link.getDefaultPlugin().siteSupportedNames();
+        if (siteSupportedNames != null) {
+            domains.addAll(Arrays.asList(siteSupportedNames));
+        }
+        final String[] posts = br.getRegex("tr id=\"\\d+\">.*?</tr>").getColumn(-1);
+        String resultPostText = null;
+        final String filehosterSourceDownloadurl = this.getDownloadurlForMultihost(link);
+        for (final String post : posts) {
+            if (post.contains(filehosterSourceDownloadurl)) {
+                resultPostText = post;
+                break;
+            }
+        }
+        if (resultPostText != null) {
+            logger.info("Found postText: " + resultPostText);
+            /* That information is only given for hosts that have daily limits. */
+            final String todayUsed = new Regex(resultPostText, "(?i)Today\\s*used\\s*:\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*<").getMatch(0);
+            final String hosterUsed = new Regex(resultPostText, "(?i)\\s*used\\s*:\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*<").getMatch(0);
+            final String hosterLeft = new Regex(resultPostText, "(?i)\\s*left\\s*:\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*<").getMatch(0);
+            logger.info("Today used: " + todayUsed + " | " + link.getHost() + " used: " + hosterUsed + " | " + link.getHost() + " left: " + hosterLeft);
+            if (checkErrors) {
+                handlePostErrors(resultPostText, link, account);
+            }
+            return resultPostText;
+        } else {
+            logger.info("Failed to find any result");
+            return null;
+        }
+    }
+
+    /** Checks for errormessage in text posted by bot in "cbox chat". */
+    private void handlePostErrors(final String postText, final DownloadLink link, final Account account) throws Exception {
+        if (postText == null) {
+            return;
+        }
+        final String message = new Regex(postText, "<span[^>]*class\\s*=\\s*\"bbColor\"[^>]*style\\s*=\\s*\"color:red\"[^>]*>(.*?)</span>").getMatch(0);
+        if (message != null) {
+            if (message.matches("(?i).*Your file is big.*when only allowed.*")) {
+                // <span class="bbColor" style="color:red">Your file is big! (5.1 GB) when allowed only 5.0 GB</span>
+                throw new PluginException(LinkStatus.ERROR_FATAL, message);
+            } else if (message.matches("(?i).*hoster (unavailable|unavailable).*")) {
+                // <span class="bbColor" style="color:red"> hoster: Hoster unvailable. _RANDOMNUM_ </span>
+                mhm.putError(account, link, 5 * 60 * 1000l, message);
+            } else if (message.matches("(?i).*error getting the link.*")) {
+                // <span class="bbColor" style="color:red"> Error getting the link from this account. _RANDOMNUM_ </span>
+                mhm.putError(account, link, 5 * 60 * 1000l, message);
+            } else if (message.matches("(?i).*No account is working.*")) {
+                // <span class="bbColor" style="color:red"> No account is working. Try repost later. </span>
+                mhm.putError(account, link, 5 * 60 * 1000l, message);
+            } else if (message.matches("(?i).*No account is working.*")) {
+                // <span class="bbColor" style="color:red">Your file is big! (875.2 MB). You have left (756.4 MB) bandwidth limit 3.0 GB.
+                // Try this
+                // host tomorrow <img class.....> <br> [....]Time Left To Reset Your Bandwith For This Host: [do]4 Hours 47 Minutes 16
+                // Seconds</span>
+                mhm.putError(account, link, 5 * 60 * 1000l, message);
+            }
+        }
+        if (new Regex(postText, "(?i)I have a problem. Please repost your link later").patternFind()) {
+            // <b>I have a problem. Please repost your link later. </b>
+            mhm.putError(account, link, 5 * 60 * 1000l, "I have a problem. Please repost your link later");
+        } else {
+            logger.info("Unable to find any errormessage in given postText");
+        }
     }
 
     @Override
@@ -196,226 +438,8 @@ public class DailyleechCom extends antiDDoSForHost {
         }
     }
 
-    private String getDllinkWebsite(final DownloadLink link, final Account account) throws Exception {
-        final ReentrantLock lock = getLock(link, account);
-        try {
-            lock.lockInterruptibly();
-        } catch (InterruptedException e) {
-            throw new PluginException(LinkStatus.ERROR_RETRY, null, e);
-        }
-        try {
-            final String readable_filesize = SizeFormatter.formatBytes(link.getDownloadSize());
-            final String target_filename = link.getName();
-            if (target_filename == null) {
-                /* 2019-06-28: We cannot download URLs without filenames */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Cannot download URLs without filename");
-            }
-            /*
-             * Okay this website is an absolute chaos. We need to generate downloadlinks through a chatbox ... after adding new URLs, we
-             * need to try to find our downloadlinks by going through the chat and need to identify our file by filename!
-             */
-            getPage(PROTOCOL + this.getHost() + "/cbox/cbox.php");
-            final String cbox_first_access_url = br.getRegex("name=\"cboxform\"\\s*?scrolling=\"no\"\\s*?src=\"(http[^\"]+)").getMatch(0);
-            final String cbox_main_url = br.getRegex("name=\"cboxmain\"[^<>]*?src=\"(http[^\"]+)").getMatch(0);
-            /* Get main parameters. */
-            final String username = br.getRegex("nme=([^<>\"\\&]+)").getMatch(0);
-            final String key = br.getRegex("nmekey=([a-f0-9]{32})").getMatch(0);
-            final String boxid = new Regex(cbox_main_url, "boxid=(\\d+)").getMatch(0);
-            final String boxtag = new Regex(cbox_main_url, "boxtag=([^\\&]+)").getMatch(0);
-            if (cbox_main_url == null || username == null || key == null || boxid == null || boxtag == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String[] foundMyFiles = searchMyFiles(br, link);
-            String dllink = foundMyFiles != null ? foundMyFiles[1] : null;
-            if (dllink != null) {
-                logger.info("Re-using directurl found via searchMyFiles: " + dllink);
-                return dllink;
-            }
-            String host = new Regex(cbox_main_url, "https?://(www\\d+)\\..+").getMatch(0);
-            if (host == null) {
-                if (cbox_first_access_url != null) {
-                    getPage(cbox_first_access_url);
-                    host = br.getRegex("s_phost\\s*?=\\s*?\"([a-z0-9]+)\"").getMatch(0);
-                }
-                if (host == null) {
-                    /* Fallback */
-                    host = "www4";
-                }
-            }
-            // /* Find parameters to load single posts in that chat. */
-            // getPage("http://flr-eu0.cbox.ws/4/lp/_?pool=" + boxid + "-0-" + boxtag);
-            // final String id = br.getRegex("id=(\\d+)").getMatch(0);
-            // final String hash = br.getRegex("hash=(\\d+)").getMatch(0);
-            // /* That is easentially boxid + "-0" */
-            // final String pool = br.getRegex("pool=([0-9\\-]+)").getMatch(0);
-            // if (id == null || hash == null || pool == null) {
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // }
-            {
-                /* Post downloadurl in chat --> Wait for answer of bot containing downloadlink */
-                String downloadurlStr = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
-                if (link.getDownloadPassword() != null) {
-                    /* Add download-password if needed */
-                    downloadurlStr += "|" + link.getDownloadPassword();
-                }
-                final Form dlform = new Form();
-                dlform.setMethod(MethodType.POST);
-                dlform.setAction("http://" + host + ".cbox.ws/box/index.php?boxid=" + boxid + "&boxtag=" + boxtag + "&sec=submit");
-                final String param_post = "%5Bcenter%5D%20" + Encoding.urlEncode(downloadurlStr) + "%20good_link%20%7C%20%5Bcolor%3Dred%5D%5Bb%5D%20" + Encoding.urlEncode("JDOWNLOADER_" + target_filename) + "%20%5B%2Fb%5D%5B%2Fcolor%5D%20%7C%20%5Bcolor%3Dblack%5D%5Bb%5D%20" + Encoding.urlEncode(readable_filesize) + "%20%5B%2Fb%5D%5B%2Fcolor%5D%5Bbr%5D%20%5Bden%5DChecked%20By%5Bxanh%5D%20Dailyleech.com%5B%2Fcenter%5D%20";
-                dlform.put("nme", username);
-                dlform.put("eml", "");
-                dlform.put("key", key);
-                dlform.put("fkey", "");
-                dlform.put("pic", "");
-                dlform.put("auth", "");
-                dlform.put("pst", param_post);
-                dlform.put("captme", "");
-                dlform.put("capword", "");
-                dlform.put("caphash", "");
-                dlform.put("aj", "x");
-                dlform.put("lp", "0");
-                br.submitForm(dlform);
-            }
-            /* Load the list of recent posts and try to find the answer which contains our downloadurl */
-            {
-                int counter = 0;
-                final int maxLoops = 120;
-                do {
-                    /* Every time we call this URL we will go back in time one single post ... */
-                    /* Wait here on the first loop as bots need some seconds to reply with downloadlinks. */
-                    this.sleep(5000, link);
-                    logger.info("Searching downloadlink | Attempt " + counter + " of " + maxLoops);
-                    getPage(cbox_main_url);
-                    final String archive_url = br.getRegex("\\'([^\"\\']+sec=archive[^\"\\']+i=)\\'").getMatch(0);
-                    final String archive_id = br.getRegex("\\?cf\\.op:(\\d+)\\)").getMatch(0);
-                    dllink = searchDownloadlink(link, account);
-                    if (StringUtils.isEmpty(dllink)) {
-                        if (archive_url != null && archive_id != null) {
-                            /* Let's also go back into the archive (if possible) just in case there are many posts in a short time. */
-                            getPage(archive_url + archive_id);
-                            dllink = searchDownloadlink(link, account);
-                        }
-                    }
-                    if (this.isAbort()) {
-                        logger.info("Stopping because: Aborted by user");
-                        break;
-                    } else if (counter >= maxLoops) {
-                        logger.info("Stopping because: Failed to find final downloadurl");
-                        break;
-                    } else if (dllink != null) {
-                        logger.info("Stopping because: Found final downloadurl: " + dllink);
-                        break;
-                    } else {
-                        counter++;
-                        continue;
-                    }
-                } while (true);
-            }
-            return dllink;
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    private void handlePostError(final String post, final DownloadLink link, final Account account) throws Exception {
-        final String message = new Regex(post, "<span[^>]*class\\s*=\\s*\"bbColor\"[^>]*style\\s*=\\s*\"color:red\"[^>]*>(.*?)</span>").getMatch(0);
-        if (message != null) {
-            if (message.matches("(?i).*Your file is big.*when only allowed.*")) {
-                // <span class="bbColor" style="color:red">Your file is big! (5.1 GB) when allowed only 5.0 GB</span>
-                throw new PluginException(LinkStatus.ERROR_FATAL, message);
-            } else if (message.matches("(?i).*hoster (unavailable|unavailable).*")) {
-                // <span class="bbColor" style="color:red"> hoster: Hoster unvailable. _RANDOMNUM_ </span>
-                mhm.putError(account, link, 5 * 60 * 1000l, message);
-            } else if (message.matches("(?i).*error getting the link.*")) {
-                // <span class="bbColor" style="color:red"> Error getting the link from this account. _RANDOMNUM_ </span>
-                mhm.putError(account, link, 5 * 60 * 1000l, message);
-            } else if (message.matches("(?i).*No account is working.*")) {
-                // <span class="bbColor" style="color:red"> No account is working. Try repost later. </span>
-                mhm.putError(account, link, 5 * 60 * 1000l, message);
-            } else if (message.matches("(?i).*No account is working.*")) {
-                // <span class="bbColor" style="color:red">Your file is big! (875.2 MB). You have left (756.4 MB) bandwidth limit 3.0 GB.
-                // Try this
-                // host tomorrow <img class.....> <br> [....]Time Left To Reset Your Bandwith For This Host: [do]4 Hours 47 Minutes 16
-                // Seconds</span>
-                mhm.putError(account, link, 5 * 60 * 1000l, message);
-            }
-        }
-        if (new Regex(post, "(?i)I have a problem. Please repost your link later").patternFind()) {
-            // <b>I have a problem. Please repost your link later. </b>
-            mhm.putError(account, link, 30 * 60 * 1000l, "I have a problem. Please repost your link later");
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, message);
-        }
-    }
-
-    private String searchDownloadlink(final DownloadLink link, final Account account) throws Exception {
-        final Set<String> domains = new HashSet<String>();
-        domains.add(link.getHost());
-        final String[] siteSupportedNames = link.getDefaultPlugin().siteSupportedNames();
-        if (siteSupportedNames != null) {
-            domains.addAll(Arrays.asList(siteSupportedNames));
-        }
-        final String username = "RicardoXV";
-        final String[] posts = br.getRegex("tr id=\"\\d+\">.*?</tr>").getColumn(-1);
-        for (final String post : posts) {
-            final String adminPost = new Regex(post, "class\\s*=\\s*\"[^\"]*pn_adm[^\"]*\"[^>]*>\\s*(.*?)\\s*<").getMatch(0);
-            if (adminPost == null) {
-                // not from admin/bot
-                continue;
-            } else if (new Regex(post, "(" + Pattern.quote(username) + ":)").getMatch(0) == null) {
-                // no reply to our user
-                continue;
-            }
-            String domain = null;
-            for (final String checkDomain : domains) {
-                if (new Regex(post, "(?i)(domain=" + Pattern.quote(checkDomain) + ")").getMatch(0) != null || new Regex(post, "(?i)(\\[" + Pattern.quote(checkDomain) + "\\])").getMatch(0) != null) {
-                    domain = checkDomain;
-                    break;
-                }
-            }
-            if (domain == null) {
-                // different domain
-                continue;
-            }
-            /* 2022-12-28 - user can post multiple urls , resulting in /multi */
-            // final String url_multi = br.getRegex("(https?://(?:www\\.)?dailyleech\\.com/multi/[^<>\"]+)\"").getMatch(0);
-            final String url_download_tmp = new Regex(post, "(https?://(?:www\\.)?dailyleech\\.com/download/[^<>\"]+)\"").getMatch(0);
-            if (url_download_tmp == null) {
-                handlePostError(post, link, account);
-            }
-            final String todayUsed = new Regex(post, "(?i)Today\\s*used\\s*:\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*<").getMatch(0);
-            final String hosterUsed = new Regex(post, "(?i)" + Pattern.quote(domain) + "\\s*used\\s*:\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*<").getMatch(0);
-            final String hosterLeft = new Regex(post, "(?i)" + Pattern.quote(domain) + "\\s*left\\s*:\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*<").getMatch(0);
-            final String foundMyFiles[] = searchMyFiles(br, link);
-            logger.info("Today used:" + todayUsed + "|" + domain + " used:" + hosterUsed + "|" + domain + " left:" + hosterLeft);
-            if (foundMyFiles != null && foundMyFiles[0].equals(url_download_tmp)) {
-                logger.info("found searchMyFiles: " + link + "->" + Arrays.toString(foundMyFiles));
-                return foundMyFiles[1];
-            } else {
-                logger.info("found message: " + link + "->" + url_download_tmp);
-                return url_download_tmp;
-            }
-        }
-        logger.info("Failed to find any result");
-        return null;
-    }
-
     private String getCachedLinkPropertyKey(final Account account) {
         return this.getHost() + "directlink";
-    }
-
-    private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        link.setProperty(getCachedLinkPropertyKey(account), dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            link.removeProperty(getCachedLinkPropertyKey(account));
-            br.followConnection(true);
-            mhm.handleErrorGeneric(account, link, "unknowndlerror", 2, 5 * 60 * 1000l);
-        }
-        this.dl.startDownload();
     }
 
     private URLConnectionAdapter checkDirectLink(final Browser br, final Request request) {
@@ -441,35 +465,8 @@ public class DailyleechCom extends antiDDoSForHost {
         }
     }
 
-    private String checkDirectLink(final Browser br, final DownloadLink link, final String property) {
-        final String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                if (checkDirectLink(brc, brc.createHeadRequest(dllink)) != null) {
-                    return dllink;
-                } else {
-                    throw new IOException();
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                link.setProperty(property, Property.NULL);
-                return null;
-            }
-        } else {
-            return null;
-        }
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        prepBR(this.br);
-        final AccountInfo ai = fetchAccountInfoWebsite(account);
-        return ai;
-    }
-
-    public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         /*
          * 2017-11-29: Lifetime premium not (yet) supported via website mode! But by the time we might need the website version again, they
          * might have stopped premium lifetime sales already as that has never been a good idea for any (M)OCH.
@@ -477,7 +474,7 @@ public class DailyleechCom extends antiDDoSForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         long expire = 0;
-        final String expireStr = br.getRegex("(?i)Until\\&nbsp;([^<>\"]+)<").getMatch(0);
+        final String expireStr = br.getRegex("(?i)Until(?:\\&nbsp;)?([^<>\"]+)<").getMatch(0);
         if (expireStr != null) {
             expire = TimeFormatter.getMilliSeconds(expireStr, "E',' dd MMM yyyy HH:mm:ss", Locale.ENGLISH);
         }
@@ -493,7 +490,7 @@ public class DailyleechCom extends antiDDoSForHost {
             account.setMaxSimultanDownloads(ACCOUNT_MAXDLS);
             ai.setTrafficLeft(0);
         }
-        getPage("/hostsp/");
+        br.getPage("/hostsp/");
         final String[] hostlist = br.getRegex("domain=([^<>\"\\'/]+)\"").getColumn(0);
         if (hostlist != null) {
             supportedHosts = new ArrayList<String>(Arrays.asList(hostlist));
@@ -513,41 +510,48 @@ public class DailyleechCom extends antiDDoSForHost {
     private void loginWebsite(final Account account, final boolean force) throws Exception {
         try {
             final Cookies cookies = account.loadCookies("");
+            /* Re-use cookies to try to avoid login-captcha! */
             if (cookies != null) {
-                /* Try to avoid login-captcha! */
-                this.br.setCookies(this.getHost(), cookies);
+                this.br.setCookies(cookies);
                 /*
                  * Even though login is forced first check if our cookies are still valid --> If not, force login!
                  */
-                getPage(PROTOCOL + this.getHost() + "/cbox/cbox.php");
+                br.getPage(PROTOCOL + this.getHost() + "/cbox/cbox.php");
                 if (isLoggedIn(br)) {
                     logger.info("Login via cached cookies successful");
                     account.saveCookies(br.getCookies(this.getHost()), "");
                     return;
                 } else {
                     logger.info("Login via cached cookies failed");
+                    br.clearCookies(null);
                 }
-                /* Clear cookies to prevent unknown errors as we'll perform a full login below now. */
-                prepBR(createNewBrowserInstance());
             }
-            getPage(PROTOCOL + this.getHost() + "/cbox/login.php");
+            br.getPage(PROTOCOL + this.getHost() + "/cbox/login.php");
             final Form loginform = br.getFormbyProperty("class", "omb_loginForm");
             if (loginform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             loginform.put("Email", Encoding.urlEncode(account.getUser()));
             loginform.put("Password", Encoding.urlEncode(account.getPass()));
+            /* Login-Captcha seems to be always required. */
             final String image = loginform.getRegex("(captcha_code_file\\.php\\?rand=\\d+)").getMatch(0);
             if (image != null) {
-                /* Captcha seems to always be present! */
-                final DownloadLink dummyLink = new DownloadLink(this, "Account", getHost(), "http://" + getHost(), true);
+                final DownloadLink dummyLink = new DownloadLink(this, "Account", getHost(), "https://" + getHost(), true);
                 final String captcha = getCaptchaCode(image, dummyLink);
                 loginform.put("6_letters_code", Encoding.urlEncode(captcha));
             }
-            submitForm(loginform);
-            getPage("/cbox/cbox.php");
+            /*
+             * Sending this form will always redirect us to the login page once again. We need to refresh this once to see if we're actually
+             * logged in or not but let's check for invalid captcha status before.
+             */
+            br.submitForm(loginform);
+            if (!isLoggedIn(br) && br.containsHTML("(?i)>\\s*The captcha code does not match")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            logger.info("Looks like correct login captcha has been entered -> Checking if we're logged in");
+            br.getPage("/cbox/cbox.php");
             if (!isLoggedIn(br)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException();
             } else {
                 account.saveCookies(br.getCookies(this.getHost()), "");
             }
