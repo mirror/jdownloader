@@ -402,7 +402,15 @@ public class InstaGramCom extends PluginForHost {
         }
         /* E.g. {"message": "Invalid media_id 1234561234567862322X", "status": "fail"} */
         /* E.g. {"message": "Media not found or unavailable", "status": "fail"} */
-        if (br.getHttpConnection().getResponseCode() == 403) {
+        if (br.getHttpConnection().getResponseCode() == 400) {
+            /* Either the request we made was plain wrong or we were (partly) logged out */
+            /*
+             * {"message":"challenge_required","challenge":{"url":"https://i.instagram.com/challenge/?next=/api/v1/feed/user/...","api_path"
+             * :"/challenge/","hide_webview_header":true,"lock":true,"logout":false,"native_flow":true,"flow_render_type":0},"status":
+             * "fail"}
+             */
+            errorSessionExpired(account);
+        } else if (br.getHttpConnection().getResponseCode() == 403) {
             /*
              * {"message":"login_required","error_title":"Du wurdest abgemeldet","error_body":"Bitte melde dich wieder an."
              * ,"logout_reason":8,"status":"fail"}

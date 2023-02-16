@@ -26,7 +26,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornsteep.com", "frigtube.com", "vidxporn.com", "porndull.com" }, urls = { "https?://(?:www\\.)?pornsteep\\.com/video/([a-z0-9\\-]+)\\-(\\d+)\\.html", "https?://(?:www\\.)?frigtube\\.com/video/([a-z0-9\\-]+)\\-(\\d+)\\.html", "https?://(?:www\\.)?vidxporn\\.com/video/([a-z0-9\\-]+)\\-(\\d+)\\.html", "https?://(?:www\\.)?porndull\\.com/video/([a-z0-9\\-]+)\\-(\\d+)\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UnknownPornScript1Crawler extends PornEmbedParser {
     public UnknownPornScript1Crawler(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,7 +40,6 @@ public class UnknownPornScript1Crawler extends PornEmbedParser {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         ret.add(new String[] { "pornsteep.com" });
-        ret.add(new String[] { "frigtube.com" });
         ret.add(new String[] { "vidxporn.com" });
         ret.add(new String[] { "porndull.com" });
         ret.add(new String[] { "dansmovies.com" });
