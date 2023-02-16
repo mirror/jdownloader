@@ -247,8 +247,7 @@ public class LinkSnappyCom extends PluginForHost {
                 }
             }
             if (trafficUsedTodayBytes != null) {
-                ac.setStatus(account.getType().getLabel() + " | Today's usage: ");
-                ac.setStatus(String.format("%s | Today's daily usage: %s/%s", account.getType().getLabel(), SizeFormatter.formatBytes(trafficUsedTodayBytes.longValue()), trafficMaxDailyHumanReadable));
+                ac.setStatus(String.format("%s | Today's usage: %s/%s", account.getType().getLabel(), SizeFormatter.formatBytes(trafficUsedTodayBytes.longValue()), trafficMaxDailyHumanReadable));
             }
             br.getPage("/api/FILEHOSTS");
             final String error = getError(br);
