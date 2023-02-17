@@ -51,7 +51,7 @@ public class StreamlareCom extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamlare.com", "slmaxed.com", "slwatch.co" });
+        ret.add(new String[] { "streamlare.com", "slmaxed.com", "slwatch.co", "sltube.org" });
         return ret;
     }
 
@@ -129,6 +129,9 @@ public class StreamlareCom extends PluginForHost {
             requestFileInformation(link);
             final Browser brc = br.cloneBrowser();
             brc.postPageRaw("/api/video/get", "{\"id\":\"" + this.getFID(link) + "\"}");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
             final String message = (String) entries.get("message");
             if (!entries.containsKey("result") || !StringUtils.equalsIgnoreCase(message, "ok")) {

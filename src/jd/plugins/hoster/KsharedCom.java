@@ -165,8 +165,6 @@ public class KsharedCom extends PluginForHost {
         br.postPageRaw("https://www." + this.getHost() + "/v1/drive/get_download", JSonStorage.serializeToJson(data));
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.isCloudflareBlocked()) {
-            return AvailableStatus.UNCHECKABLE;
         }
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
         if (entries == null) {
@@ -459,10 +457,7 @@ public class KsharedCom extends PluginForHost {
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         if (!this.attemptStoredDownloadurlDownload(link, account)) {
             requestFileInformation(link, account);
-            if (br.isCloudflareBlocked()) {
-                /* TODO: Move this to a better, more centralized place */
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Blocked by Cloudflare");
-            } else if (isPremiumonly(link)) {
+            if (isPremiumonly(link)) {
                 throw new AccountRequiredException();
             }
             final Map<String, Object> data = new HashMap<String, Object>();

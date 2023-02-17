@@ -63,8 +63,8 @@ public class TubePerverzijaCom extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -77,9 +77,13 @@ public class TubePerverzijaCom extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink(singleLink);
                 /* Required in order to access embedded content later. */
                 dl.setReferrerUrl(this.br.getURL());
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         }
-        return decryptedLinks;
+        if (ret.isEmpty()) {
+            logger.info("Item offline or we failed to find any supported links");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return ret;
     }
 }

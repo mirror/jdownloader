@@ -10,8 +10,20 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "fshare.vn", type = Type.HOSTER)
 public interface FshareVnConfig extends PluginConfigInterface {
+    public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+    public static class TRANSLATION {
+        public String getApiAppKey_label() {
+            return "App Key";
+        }
+
+        public String getApiUserAgent_label() {
+            return "API User-Agent";
+        }
+    }
+
     @AboutConfig
-    @DescriptionForConfigEntry("Enter your App Key")
+    @DescriptionForConfigEntry("App Key")
     @Order(10)
     @DefaultStringValue("JDDEFAULT")
     String getApiAppKey();
@@ -19,7 +31,7 @@ public interface FshareVnConfig extends PluginConfigInterface {
     void setApiAppKey(String apiAppKey);
 
     @AboutConfig
-    @DescriptionForConfigEntry("Enter your User-Agent")
+    @DescriptionForConfigEntry("User-Agent used for API requests.")
     @Order(20)
     @DefaultStringValue("JDDEFAULT")
     String getApiUserAgent();
