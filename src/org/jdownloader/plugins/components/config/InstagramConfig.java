@@ -17,6 +17,7 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "instagram.com", type = Type.HOSTER)
 public interface InstagramConfig extends PluginConfigInterface {
+    final String                    text_ProfileCrawlerCrawlStoryHighlights           = "Profile crawler: Crawl story highlights?";
     final String                    text_ProfileCrawlerCrawlProfilePicture            = "Profile crawler: Crawl profile picture?";
     final String                    text_ProfileCrawlerReelsPaginationMaxItemsPerPage = "Profile reels crawler: Max items per pagination (higher value = faster crawl process, can result in account ban!)";
     final String                    text_ProfileTaggedCrawledMaxItemsLimit            = "Tagged profile crawler: How many items shall be grabbed (applies for '/profile/tagged/')? [0 = disable tagged profile crawler]";
@@ -88,7 +89,7 @@ public interface InstagramConfig extends PluginConfigInterface {
         }
 
         public String getProfileCrawlerCrawlStoryHighlights_label() {
-            return "Profile crawler: Crawl story highlights?";
+            return text_ProfileCrawlerCrawlStoryHighlights;
         }
 
         public String getProfileCrawlerCrawlProfilePicture_label() {
@@ -340,7 +341,7 @@ public interface InstagramConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Profile crawler: Crawl story highlights?")
+    @DescriptionForConfigEntry(text_ProfileCrawlerCrawlStoryHighlights)
     @Order(72)
     boolean isProfileCrawlerCrawlStoryHighlights();
 

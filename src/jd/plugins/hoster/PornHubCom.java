@@ -127,10 +127,12 @@ public class PornHubCom extends PluginForHost {
     public static final String                    GIFS_WEBM                             = "GIFS_WEBM";
     private final String                          REMOVED_VIDEO                         = ">\\s*This video has been removed\\s*<";
     public static final String                    PROPERT_FORMAT                        = "format";
-    public static final String                    PROPERTY_QUALITY                       = "quality";
+    public static final String                    PROPERTY_QUALITY                      = "quality";
     public static final String                    PROPERT_DIRECTLINK                    = "directlink";
     public static final String                    PROPERT_DATE                          = "date";
     public static final String                    PROPERTY_CATEGORIES_COMMA_SEPARATED   = "categories_comma_separated";
+    public static final String                    PROPERTY_TAGS_COMMA_SEPARATED         = "tags_comma_separated";
+    public static final String                    PROPERTY_ACTORS_COMMA_SEPARATED       = "actors_comma_separated";
     public static final String                    PROPERTY_USERNAME                     = "username";
     public static final String                    PROPERTY_VIEWKEY                      = "viewkey";
     public static final String                    PROPERTY_ACCOUNT_is_cookie_login_only = "is_cookie_login_only";
