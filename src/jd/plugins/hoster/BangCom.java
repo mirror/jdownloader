@@ -284,11 +284,7 @@ public class BangCom extends PluginForHost {
                     br.submitForm(loginform);
                 }
                 if (!isLoggedin(br)) {
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && br.isCloudflareBlocked()) {
-                        throw new AccountInvalidException("Developer! Login failed due to Cloudflare! Use cookie login instead!");
-                    } else {
-                        throw new AccountInvalidException();
-                    }
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
