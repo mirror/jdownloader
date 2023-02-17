@@ -127,7 +127,7 @@ public class PornHubCom extends PluginForHost {
     public static final String                    GIFS_WEBM                             = "GIFS_WEBM";
     private final String                          REMOVED_VIDEO                         = ">\\s*This video has been removed\\s*<";
     public static final String                    PROPERT_FORMAT                        = "format";
-    public static final String                    PROPERT_QUALITY                       = "quality";
+    public static final String                    PROPERTY_QUALITY                       = "quality";
     public static final String                    PROPERT_DIRECTLINK                    = "directlink";
     public static final String                    PROPERT_DATE                          = "date";
     public static final String                    PROPERTY_CATEGORIES_COMMA_SEPARATED   = "categories_comma_separated";
@@ -233,7 +233,7 @@ public class PornHubCom extends PluginForHost {
 
     @Override
     public String getMirrorID(final DownloadLink link) {
-        final String quality = link.getStringProperty(PROPERT_QUALITY);
+        final String quality = link.getStringProperty(PROPERTY_QUALITY);
         final String viewkey = link.getStringProperty(PROPERTY_VIEWKEY);
         if (quality != null && viewkey != null) {
             final StringBuilder sb = new StringBuilder(32);
@@ -251,7 +251,7 @@ public class PornHubCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String quality = link.getStringProperty(PROPERT_QUALITY);
+        final String quality = link.getStringProperty(PROPERTY_QUALITY);
         final String viewkey = link.getStringProperty(PROPERTY_VIEWKEY);
         if (quality != null && viewkey != null) {
             final StringBuilder sb = new StringBuilder(32);
@@ -438,7 +438,7 @@ public class PornHubCom extends PluginForHost {
         String html_filename = null;
         String server_filename = null;
         boolean isVideo = false;
-        final String quality = link.getStringProperty(PROPERT_QUALITY, null);
+        final String quality = link.getStringProperty(PROPERTY_QUALITY, null);
         /*
          * TODO account handling: Prefer account from handlePremium to be sure not to use ANY account for downloading but the account the
          * upper handling is using!
