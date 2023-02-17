@@ -84,7 +84,7 @@ public class DailyleechCom extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
@@ -159,8 +159,9 @@ public class DailyleechCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Cannot download URLs without filename");
             }
             /**
-             * Okay this website is an absolute chaos. We need to generate downloadlinks through a chatbox ... after adding new URLs, we
-             * need to try to find our downloadlinks by going through the chat and need to identify our file by filename! </br>
+             * Okay this website is an absolute chaos: </br>
+             * We need to generate downloadlinks through a chatbox ... after adding new URLs, we need to try to find our downloadlinks by
+             * going through the chat and need to identify our file by filename! </br>
              * Direct-downloadurls can be broken so we need to ignore the ones we know are broken to speed-up the process of finding the
              * correct one.
              */
@@ -173,6 +174,7 @@ public class DailyleechCom extends PluginForHost {
             final String boxid = new Regex(cbox_main_url, "boxid=(\\d+)").getMatch(0);
             final String boxtag = new Regex(cbox_main_url, "boxtag=([^\\&]+)").getMatch(0);
             if (cbox_main_url == null || username == null || key == null || boxid == null || boxtag == null) {
+                logger.warning("One or more required parameters are missing: cbox_main_url = " + cbox_main_url + " username = " + username + " key = " + key + " boxid = " + boxid + " boxtag = " + boxtag);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final HashSet<String> invalidatedUrls = new HashSet<String>();
@@ -185,6 +187,7 @@ public class DailyleechCom extends PluginForHost {
             String internalSubdomain = new Regex(cbox_main_url, "^https?://(www\\d+)\\..*").getMatch(0);
             if (internalSubdomain == null) {
                 if (cbox_first_access_url != null) {
+                    logger.info("Failed to find internalSubdomain right away -> Accessing cbox_first_access_url to find it");
                     br.getPage(cbox_first_access_url);
                     internalSubdomain = br.getRegex("s_phost\\s*?=\\s*?\"([a-z0-9]+)\"").getMatch(0);
                 }
@@ -201,11 +204,12 @@ public class DailyleechCom extends PluginForHost {
                 /* Add download-password if needed */
                 downloadurlStr += "|" + link.getDownloadPassword();
             }
-            final String readable_filesize = SizeFormatter.formatBytes(link.getDownloadSize());
+            final String humanReadableFilesize = SizeFormatter.formatBytes(link.getView().getBytesTotal());
             final Form dlform = new Form();
             dlform.setMethod(MethodType.POST);
             dlform.setAction("http://" + internalSubdomain + ".cbox.ws/box/index.php?boxid=" + boxid + "&boxtag=" + boxtag + "&sec=submit");
-            final String param_post = "%5Bcenter%5D%20" + Encoding.urlEncode(downloadurlStr) + "%20good_link%20%7C%20%5Bcolor%3Dred%5D%5Bb%5D%20" + Encoding.urlEncode("JDOWNLOADER_" + target_filename) + "%20%5B%2Fb%5D%5B%2Fcolor%5D%20%7C%20%5Bcolor%3Dblack%5D%5Bb%5D%20" + Encoding.urlEncode(readable_filesize) + "%20%5B%2Fb%5D%5B%2Fcolor%5D%5Bbr%5D%20%5Bden%5DChecked%20By%5Bxanh%5D%20Dailyleech.com%5B%2Fcenter%5D%20";
+            /* The text "good_link" will indicate to the bot/chat that this file has been checked and is valid. */
+            final String param_post = Encoding.urlEncode("[center] good_link " + downloadurlStr + " [br] Filename: " + link.getName() + " ([b][color=red]" + humanReadableFilesize + "[/color][/b]) [br] HashInfo: " + link.getHashInfo() + " [br] [b]Automatically added by JDownloader[/b] [br] [den]Checked by JDownloader[/center]");
             dlform.put("nme", username);
             dlform.put("eml", "");
             dlform.put("key", key);
@@ -261,7 +265,7 @@ public class DailyleechCom extends PluginForHost {
                 this.searchDownloadlinkBotPost(link, account, false);
                 return dllink;
             } else {
-                /* Look for reason of failure */
+                /* Print additional information and look for reason of failure */
                 this.searchDownloadlinkBotPost(link, account, true);
                 return null;
             }
@@ -291,22 +295,33 @@ public class DailyleechCom extends PluginForHost {
         }
         // final PluginForHost hostPlugin = getNewPluginInstance(link.getDefaultPlugin().getLazyP());
         final String filehosterSourceDownloadurl = this.getDownloadurlForMultihost(link);
+        final PluginForHost hostPlugin = getNewPluginInstance(link.getDefaultPlugin().getLazyP());
         for (final String element : elements) {
             final String sourceurl = new Regex(element, "href\\s*=\\s*\'([^<>\"']+)'").getMatch(0);
             final String filename = new Regex(element, "</a>\\s*</td>\\s*<td>\\s*(.*?)\\s*</td").getMatch(0);
             // final String size = new Regex(element, "</td>\\s*<td>\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*<").getMatch(0);
             final String possibleDownloadurl = new Regex(element, "href\\s*=\\s*'(https?://" + Pattern.quote(getHost()) + "/download/[^<>\"']+)'").getMatch(0);
-            if (possibleDownloadurl == null) {
+            if (sourceurl == null || possibleDownloadurl == null) {
                 /* This should never happen. */
-                logger.warning("Skipping element because: Possibly incomplete element: " + element);
+                logger.warning("Skipping element because: Required parameter is missing | filename = " + filename + " | possibleDownloadurl = " + possibleDownloadurl);
+                logger.warning("element = " + element);
                 continue;
             }
             /*
              * Try to identify postText even if file is not (yet) downloadable so that we can at least find the reason of failure in the
              * end.
              */
-            if (StringUtils.equals(sourceurl, filehosterSourceDownloadurl)) {
+            final DownloadLink dummy = new DownloadLink(hostPlugin, hostPlugin.getHost(), sourceurl);
+            if (sourceurl.equals(filehosterSourceDownloadurl)) {
                 logger.info("Matched post via filehosterSourceDownloadurl");
+            } else if (StringUtils.equals(link.getLinkID(), dummy.getLinkID())) {
+                /* same linkID */
+                /**
+                 * This extra check is necessary because in theory this website may display the submitted URL in a slightly modified version
+                 * than the original. </br>
+                 * Using the linkIDs for comparison might increase our chances of finding a result.
+                 */
+                logger.info("Matched post via linkID");
             } else if (StringUtils.equals(filename, link.getName())) {
                 logger.info("Matched post via filename");
             } else {
