@@ -889,15 +889,51 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             logger.info("Enable HLS because no MP4 found!");
             crawlHLS = true;
         }
-        String categoriesCommaSeparated = "";
-        final String categoriesSrc = br.getRegex("<div class=\"categoriesWrapper\">(.*?)</div>\\s+</div>").getMatch(0);
-        if (categoriesSrc != null) {
-            final String[] categories = new Regex(categoriesSrc, ", 'Category'[^\"]+\">([^<>\"]+)</a>").getColumn(0);
-            for (int index = 0; index < categories.length; index++) {
-                final boolean isLastItem = index == categories.length - 1;
-                categoriesCommaSeparated += categories[index];
+        String categoriesCommaSeparated = br.getRegex("'categories_in_video'\\s*:\\s*'([^<>\"']+)'").getMatch(0);
+        String tagsCommaSeparated = null;
+        String pornstarsCommaSeparated = br.getRegex("'pornstars_in_video'\\s*:\\s*'([^<>\"']+)'").getMatch(0);
+        if (StringUtils.isEmpty(categoriesCommaSeparated)) {
+            /* Fallback */
+            final String categoriesSrc = br.getRegex("<div class=\"categoriesWrapper\">(.*?)</div>\\s+</div>").getMatch(0);
+            if (categoriesSrc != null) {
+                final String[] categories = new Regex(categoriesSrc, ", 'Category'[^\"]+\">([^<>\"]+)</a>").getColumn(0);
+                if (categories != null && categories.length > 0) {
+                    categoriesCommaSeparated = "";
+                    for (int index = 0; index < categories.length; index++) {
+                        final boolean isLastItem = index == categories.length - 1;
+                        categoriesCommaSeparated += categories[index];
+                        if (!isLastItem) {
+                            categoriesCommaSeparated += ",";
+                        }
+                    }
+                }
+            }
+        }
+        final String[] tags = br.getRegex("(?i)data-label=\"Tag\"[^>]*>([^<]+)</a>").getColumn(0);
+        if (tags != null && tags.length > 0) {
+            tagsCommaSeparated = "";
+            for (int index = 0; index < tags.length; index++) {
+                final boolean isLastItem = index == tags.length - 1;
+                tagsCommaSeparated += tags[index];
                 if (!isLastItem) {
-                    categoriesCommaSeparated += ",";
+                    tagsCommaSeparated += ",";
+                }
+            }
+        }
+        if (StringUtils.isEmpty(pornstarsCommaSeparated)) {
+            /* Fallback */
+            final String pornstarsSrc = br.getRegex("<div class=\"pornstarsWrapper js-pornstarsWrapper\">(.*?)<div class=\"tooltipTrig suggestBtn\"").getMatch(0);
+            if (pornstarsSrc != null) {
+                final String[] pornstars = new Regex(pornstarsSrc, "data-mxptext=\"([^\"]+)").getColumn(0);
+                if (pornstars != null && pornstars.length > 0) {
+                    pornstarsCommaSeparated = "";
+                    for (int index = 0; index < tags.length; index++) {
+                        final boolean isLastItem = index == tags.length - 1;
+                        pornstarsCommaSeparated += tags[index];
+                        if (!isLastItem) {
+                            pornstarsCommaSeparated += ",";
+                        }
+                    }
                 }
             }
         }
@@ -1040,6 +1076,12 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             }
             if (!StringUtils.isEmpty(categoriesCommaSeparated)) {
                 result.setProperty(PornHubCom.PROPERTY_CATEGORIES_COMMA_SEPARATED, categoriesCommaSeparated);
+            }
+            if (!StringUtils.isEmpty(tagsCommaSeparated)) {
+                result.setProperty(PornHubCom.PROPERTY_TAGS_COMMA_SEPARATED, tagsCommaSeparated);
+            }
+            if (!StringUtils.isEmpty(pornstarsCommaSeparated)) {
+                result.setProperty(PornHubCom.PROPERTY_ACTORS_COMMA_SEPARATED, pornstarsCommaSeparated);
             }
         }
         final FilePackage fp = FilePackage.getInstance();
