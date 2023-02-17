@@ -40,6 +40,7 @@ import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.components.config.InstagramConfig.ActionOnRateLimitReached;
 import org.jdownloader.plugins.components.config.InstagramConfig.FilenameType;
 import org.jdownloader.plugins.components.config.InstagramConfig.SinglePostPackagenameSchemeType;
 import org.jdownloader.plugins.components.config.InstagramConfig.StoriesHighlightsPackagenameSchemeType;
@@ -199,9 +200,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 logger.info(String.format("Waiting %d seconds on error 502 until retry", waittime / 1000));
                 sleep(waittime, link);
             } else if (responsecode == 403 || responsecode == 429) {
-                if (PluginJsonConfig.get(InstagramConfig.class).isCrawlerAbortOnRateLimitReached()) {
-                    logger.info("abort_on_rate_limit_reached setting active --> Rate limit has been reached --> Aborting");
-                    throw new DecrypterRetryException(RetryReason.CAPTCHA, "RATE_LIMIT_REACHED_AND_ABORT_ON_RATE_LIMIT_ACTIVE_" + br._getURL().getPath(), "Rate limit has been reached and 'Abort on rate limit reached' is activated in plugin settings.");
+                if (PluginJsonConfig.get(InstagramConfig.class).getActionOnRateLimitReached() == ActionOnRateLimitReached.ABORT) {
+                    logger.info("Rate limit has been reached --> Aborting");
+                    throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT, "RATE_LIMIT_REACHED_" + br._getURL().getPath(), "Rate limit has been reached and user prefers abort in this case.");
                 } else {
                     final int waittime = 20000 + 15000 * retry;
                     totalWaittime += waittime;
@@ -712,17 +713,18 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        logger.info("Crawling all reels of user: " + username);
         final String userID = this.findUserID(param, account, loggedIN, username);
         final UrlQuery query = new UrlQuery();
         query.add("target_user_id", userID);
-        query.add("page_size", "12");
-        String max_id = "";
+        query.add("page_size", Integer.toString(PluginJsonConfig.get(InstagramConfig.class).getProfileCrawlerReelsPaginationMaxItemsPerPage()));
+        query.add("include_feed_video", "true");
+        String max_id = null;
         final InstagramMetadata metadata = new InstagramMetadata();
         metadata.setPackageName(username + " - reels");
         InstaGramCom.prepBRAltAPI(this.br);
         int page = 1;
         do {
-            query.addAndReplace("max_id", Encoding.urlEncode(max_id));
             InstaGramCom.postPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/clips/user/", query);
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             final Map<String, Object> paging_info = (Map<String, Object>) entries.get("paging_info");
@@ -746,6 +748,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 break;
             } else {
                 page++;
+                query.addAndReplace("max_id", Encoding.urlEncode(max_id));
             }
         } while (true);
         return ret;

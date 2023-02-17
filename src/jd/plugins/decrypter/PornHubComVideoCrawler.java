@@ -939,7 +939,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                     String html_filename = siteTitle + "_";
                     final DownloadLink dl = getDecryptDownloadlink(viewkey, format, quality);
                     dl.setProperty(PornHubCom.PROPERT_DIRECTLINK, url);
-                    dl.setProperty(PornHubCom.PROPERT_QUALITY, quality);
+                    dl.setProperty(PornHubCom.PROPERTY_QUALITY, quality);
                     dl.setProperty("mainlink", param.getCryptedUrl());
                     dl.setProperty(PornHubCom.PROPERTY_VIEWKEY, viewkey);
                     dl.setProperty(PornHubCom.PROPERT_FORMAT, format);
@@ -952,18 +952,6 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                     }
                     html_filename += quality + "p.mp4";
                     dl.setProperty("decryptedfilename", html_filename);
-                    {
-                        /* Set some Packagizer properties */
-                        if (!StringUtils.isEmpty(username)) {
-                            dl.setProperty(PornHubCom.PROPERTY_USERNAME, username);
-                        }
-                        if (!StringUtils.isEmpty(uploadDate)) {
-                            dl.setProperty(PornHubCom.PROPERT_DATE, uploadDate);
-                        }
-                        if (!StringUtils.isEmpty(categoriesCommaSeparated)) {
-                            dl.setProperty(PornHubCom.PROPERTY_CATEGORIES_COMMA_SEPARATED, categoriesCommaSeparated);
-                        }
-                    }
                     if (prefer_server_filename && server_filename != null) {
                         dl.setFinalFileName(server_filename);
                     } else {
@@ -993,8 +981,8 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 if (best == null) {
                     best = found;
                 } else {
-                    final String bestQuality = best.getStringProperty(PornHubCom.PROPERT_QUALITY);
-                    final String foundQuality = found.getStringProperty(PornHubCom.PROPERT_QUALITY);
+                    final String bestQuality = best.getStringProperty(PornHubCom.PROPERTY_QUALITY);
+                    final String foundQuality = found.getStringProperty(PornHubCom.PROPERTY_QUALITY);
                     if (Integer.parseInt(foundQuality) > Integer.parseInt(bestQuality)) {
                         best = found;
                     } else {
@@ -1030,11 +1018,28 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 dl.setProperty(DirectHTTP.FIXNAME, html_filename);
                 dl.setFinalFileName(html_filename);
                 dl.setContentUrl(param.getCryptedUrl());
+                /*
+                 * 2023-02-17: The following line of code contains a typo. This typo now needs to be there forever otherwise it would break
+                 * the ability to find duplicates for thumbnails added in order versions :D
+                 */
                 dl.setLinkID("pornhub://" + viewkey + "_thumnail");
                 if (fastlinkcheck) {
                     dl.setAvailable(true);
                 }
                 ret.add(dl);
+            }
+        }
+        /* Add properties */
+        for (final DownloadLink result : ret) {
+            /* Set some Packagizer properties */
+            if (!StringUtils.isEmpty(username)) {
+                result.setProperty(PornHubCom.PROPERTY_USERNAME, username);
+            }
+            if (!StringUtils.isEmpty(uploadDate)) {
+                result.setProperty(PornHubCom.PROPERT_DATE, uploadDate);
+            }
+            if (!StringUtils.isEmpty(categoriesCommaSeparated)) {
+                result.setProperty(PornHubCom.PROPERTY_CATEGORIES_COMMA_SEPARATED, categoriesCommaSeparated);
             }
         }
         final FilePackage fp = FilePackage.getInstance();

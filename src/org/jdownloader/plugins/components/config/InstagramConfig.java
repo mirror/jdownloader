@@ -17,9 +17,14 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "instagram.com", type = Type.HOSTER)
 public interface InstagramConfig extends PluginConfigInterface {
-    final String                    text_EnforceLoginIfAccountIsAvailable       = "Only for debugging purposes: Enforce login if account is available?";
-    final String                    text_GlobalRequestIntervalLimitMilliseconds = "Define global request limit for domains 'instagram.com' and 'cdninstagram.com' in milliseconds (0 = no limit)";
-    public static final TRANSLATION TRANSLATION                                 = new TRANSLATION();
+    final String                    text_ProfileCrawlerCrawlProfilePicture            = "Profile crawler: Crawl profile picture?";
+    final String                    text_ProfileCrawlerReelsPaginationMaxItemsPerPage = "Profile reels crawler: Max items per pagination (higher value = faster crawl process, can result in account ban!)";
+    final String                    text_ProfileTaggedCrawledMaxItemsLimit            = "Tagged profile crawler: How many items shall be grabbed (applies for '/profile/tagged/')? [0 = disable tagged profile crawler]";
+    final String                    text_HashtagCrawlerMaxItemsLimit                  = "Hashtag crawler: How many items shall be grabbed (applies for '/explore/tags/example')? [0 = disable hashtag crawler]";
+    final String                    text_ActionOnRateLimitReached                     = "Crawler: Action on rate limit reached";
+    final String                    text_EnforceLoginIfAccountIsAvailable             = "Only for debugging purposes: Enforce login if account is available?";
+    final String                    text_GlobalRequestIntervalLimitMilliseconds       = "Define global request limit for domains 'instagram.com' and 'cdninstagram.com' in milliseconds (0 = no limit)";
+    public static final TRANSLATION TRANSLATION                                       = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getPostCrawlerAddPostDescriptionAsTextfile_label() {
@@ -87,19 +92,23 @@ public interface InstagramConfig extends PluginConfigInterface {
         }
 
         public String getProfileCrawlerCrawlProfilePicture_label() {
-            return "Profile crawler: Crawl profile picture?";
+            return text_ProfileCrawlerCrawlProfilePicture;
+        }
+
+        public String getProfileCrawlerReelsPaginationMaxItemsPerPage_label() {
+            return text_ProfileCrawlerReelsPaginationMaxItemsPerPage;
         }
 
         public String getProfileTaggedCrawledMaxItemsLimit_label() {
-            return "Tagged profile crawler: How many items shall be grabbed (applies for '/profile/tagged/')? [0 = disable tagged profile crawler]";
+            return text_ProfileTaggedCrawledMaxItemsLimit;
         }
 
         public String getHashtagCrawlerMaxItemsLimit_label() {
-            return "Hashtag crawler: How many items shall be grabbed (applies for '/explore/tags/example')? [0 = disable hashtag crawler]";
+            return text_HashtagCrawlerMaxItemsLimit;
         }
 
-        public String getCrawlerAbortOnRateLimitReached_label() {
-            return "Crawler: Abort crawl process once rate limit is reached?";
+        public String getActionOnRateLimitReached_label() {
+            return text_ActionOnRateLimitReached;
         }
 
         public String getGlobalRequestIntervalLimitMilliseconds_label() {
@@ -339,16 +348,25 @@ public interface InstagramConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Profile crawler: Crawl profile picture?")
+    @DescriptionForConfigEntry(text_ProfileCrawlerCrawlProfilePicture)
     @Order(73)
     boolean isProfileCrawlerCrawlProfilePicture();
 
     void setProfileCrawlerCrawlProfilePicture(boolean b);
 
     @AboutConfig
+    @SpinnerValidator(min = 12, max = 100, step = 1)
+    @DefaultIntValue(12)
+    @DescriptionForConfigEntry(text_ProfileCrawlerReelsPaginationMaxItemsPerPage)
+    @Order(85)
+    int getProfileCrawlerReelsPaginationMaxItemsPerPage();
+
+    void setProfileCrawlerReelsPaginationMaxItemsPerPage(int items);
+
+    @AboutConfig
     @SpinnerValidator(min = 0, max = 10000, step = 25)
     @DefaultIntValue(25)
-    @DescriptionForConfigEntry("Tagged profile crawler: How many items shall be grabbed (applies for '/profile/tagged/')? [0 = disable tagged profile crawler]")
+    @DescriptionForConfigEntry(text_ProfileTaggedCrawledMaxItemsLimit)
     @Order(85)
     int getProfileTaggedCrawledMaxItemsLimit();
 
@@ -358,20 +376,35 @@ public interface InstagramConfig extends PluginConfigInterface {
     @SpinnerValidator(min = 0, max = 10000, step = 25)
     @DefaultIntValue(25)
     @TakeValueFromSubconfig("ONLY_GRAB_X_ITEMS_HASHTAG_CRAWLER_NUMBER")
-    @DescriptionForConfigEntry("Hashtag crawler: How many items shall be grabbed (applies for '/explore/tags/example')? [0 = disable hashtag crawler]")
+    @DescriptionForConfigEntry(text_HashtagCrawlerMaxItemsLimit)
     @Order(90)
     int getHashtagCrawlerMaxItemsLimit();
 
     void setHashtagCrawlerMaxItemsLimit(int items);
 
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @TakeValueFromSubconfig("QUIT_ON_RATE_LIMIT_REACHED")
-    @DescriptionForConfigEntry("Crawler: Abort crawl process once rate limit is reached?")
-    @Order(500)
-    boolean isCrawlerAbortOnRateLimitReached();
+    public static enum ActionOnRateLimitReached implements LabelInterface {
+        CONTINUE {
+            @Override
+            public String getLabel() {
+                return "Wait and try again";
+            }
+        },
+        ABORT {
+            @Override
+            public String getLabel() {
+                return "Abort crawl process";
+            }
+        };
+    }
 
-    void setCrawlerAbortOnRateLimitReached(boolean b);
+    @AboutConfig
+    @DefaultEnumValue("CONTINUE")
+    @Order(500)
+    @DescriptionForConfigEntry(text_ActionOnRateLimitReached)
+    @DefaultOnNull
+    ActionOnRateLimitReached getActionOnRateLimitReached();
+
+    void setActionOnRateLimitReached(final ActionOnRateLimitReached action);
 
     @AboutConfig
     @SpinnerValidator(min = 0, max = 60000, step = 100)
