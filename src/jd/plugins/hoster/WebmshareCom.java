@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -94,12 +95,19 @@ public class WebmshareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String fid = this.getFID(link);
+        final String ext = ".webm";
+        final String weakFilename = fid + ext;
         if (!link.isNameSet()) {
-            link.setName(fid + ".webm");
+            link.setName(weakFilename);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
+        /* 2023-02-20: This form cannot be skipped e.g. via setting a cookie before. We need to send it to view mature content. */
+        final Form matureContentConfirm = br.getFormbyProperty("id", "is_adult");
+        if (matureContentConfirm != null) {
+            br.submitForm(matureContentConfirm);
+        }
         final boolean isVideoContent = br.containsHTML("report_id\\s*:\\s*'" + fid) || br.containsHTML("/play/" + this.getFID(link));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -109,7 +117,13 @@ public class WebmshareCom extends PluginForHost {
         }
         final String title = br.getRegex("property=\"og:title\" content=\"([^\"]+) — webmshare\"").getMatch(0);
         if (title != null) {
-            link.setFinalFileName(Encoding.htmlDecode(title).trim() + ".webm");
+            link.setFinalFileName(Encoding.htmlDecode(title).trim() + ext);
+        } else {
+            /**
+             * Some items do not have any title. Website will return "webmshare_<fileID>.webm as title. </br>
+             * We do not want to have that "webmshare_" 'branding'.
+             */
+            link.setFinalFileName(weakFilename);
         }
         if (!link.isSizeSet()) {
             URLConnectionAdapter con = null;

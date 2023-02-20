@@ -17,11 +17,19 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "instagram.com", type = Type.HOSTER)
 public interface InstagramConfig extends PluginConfigInterface {
+    final String                    text_FilenameType                                 = "Filename type for all crawled media items";
+    final String                    text_FilenameScheme                               = "Custom filenames: Enter filename scheme";
+    final String                    text_AddDateToFilenames                           = "Default filenames: Include date (yyyy-MM-dd) in filenames?";
+    final String                    text_AddOrderidToFilenames                        = "Default filenames: Include 'order-ID' in filenames if an album contains more than one element?\r\nCan be useful to keep the original order of multiple elements of an album/story.";
+    final String                    text_AddShortcodeToFilenames                      = "Default filenames: Include 'shortcode' in filenames if it is available?";
+    final String                    text_MediaQualityDownloadMode                     = "Media quality download mode.\r\nOriginal quality = bigger filesize, without image-effects, works only when an account is available.";
+    final String                    text_ProfileCrawlerMaxItemsLimit                  = "Profile crawler: Only grab X latest posts? [0 = disable, -1 = crawl all]";
+    final String                    text_ProfileCrawlerCrawlStory                     = "Profile crawler: Crawl story?";
     final String                    text_ProfileCrawlerCrawlStoryHighlights           = "Profile crawler: Crawl story highlights?";
     final String                    text_ProfileCrawlerCrawlProfilePicture            = "Profile crawler: Crawl profile picture?";
     final String                    text_ProfileCrawlerReelsPaginationMaxItemsPerPage = "Profile reels crawler: Max items per pagination (higher value = faster crawl process, can result in account ban!)";
     final String                    text_ProfileTaggedCrawledMaxItemsLimit            = "Tagged profile crawler: How many items shall be grabbed (applies for '/profile/tagged/')? [0 = disable tagged profile crawler]";
-    final String                    text_HashtagCrawlerMaxItemsLimit                  = "Hashtag crawler: How many items shall be grabbed (applies for '/explore/tags/example')? [0 = disable hashtag crawler]";
+    final String                    text_HashtagCrawlerMaxItemsLimit                  = "Hashtag crawler: How many items shall be grabbed (applies for '/explore/tags/example')? [0 = disable]";
     final String                    text_ActionOnRateLimitReached                     = "Crawler: Action on rate limit reached";
     final String                    text_EnforceLoginIfAccountIsAvailable             = "Only for debugging purposes: Enforce login if account is available?";
     final String                    text_GlobalRequestIntervalLimitMilliseconds       = "Define global request limit for domains 'instagram.com' and 'cdninstagram.com' in milliseconds (0 = no limit)";
@@ -57,35 +65,35 @@ public interface InstagramConfig extends PluginConfigInterface {
         }
 
         public String getFilenameType_label() {
-            return "Select filename type for all crawled media items";
+            return text_FilenameType;
         }
 
         public String getFilenameScheme_label() {
-            return "Custom filenames: Enter filename scheme";
+            return text_FilenameScheme;
         }
 
         public String getAddDateToFilenames_label() {
-            return "Default filenames: Include date (yyyy-MM-dd) in filenames?";
+            return text_AddDateToFilenames;
         }
 
         public String getAddOrderidToFilenames_label() {
-            return "Default filenames: Include order-ID in filenames if an album contains more than one element?\r\nCan be useful to keep the original order of multiple elements of an album/story.";
+            return text_AddOrderidToFilenames;
         }
 
         public String getAddShortcodeToFilenames_label() {
-            return "Default filenames: Include 'shortcode' in filenames if it is available?";
+            return text_AddShortcodeToFilenames;
         }
 
         public String getMediaQualityDownloadMode_label() {
-            return "Select media quality download mode.\r\nOriginal quality = bigger filesize, without image-effects, works only when an account is available.";
+            return text_MediaQualityDownloadMode;
         }
 
         public String getProfileCrawlerMaxItemsLimit_label() {
-            return "Profile crawler: Only grab X latest posts? [0 = do not crawl posts, -1 = crawl all posts]";
+            return text_ProfileCrawlerMaxItemsLimit;
         }
 
         public String getProfileCrawlerCrawlStory_label() {
-            return "Profile crawler: Crawl story?";
+            return text_ProfileCrawlerCrawlStory;
         }
 
         public String getProfileCrawlerCrawlStoryHighlights_label() {
@@ -252,14 +260,14 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
     @Order(10)
-    @DescriptionForConfigEntry("Select filename type for all crawled media items")
+    @DescriptionForConfigEntry(text_FilenameType)
     FilenameType getFilenameType();
 
     void setFilenameType(final FilenameType filenameNamingSchemeType);
 
     @AboutConfig
     @DefaultStringValue("*date*_*uploader* - *main_content_id* *orderid*_of_*orderid_max* - *shortcode**ext*")
-    @DescriptionForConfigEntry("Custom filenames: Enter filename scheme")
+    @DescriptionForConfigEntry(text_FilenameScheme)
     @Order(15)
     String getFilenameScheme();
 
@@ -268,7 +276,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("ADD_DATE_TO_FILENAMES")
-    @DescriptionForConfigEntry("Default filenames: Include date (yyyy-MM-dd) in filenames?")
+    @DescriptionForConfigEntry(text_AddDateToFilenames)
     @Order(20)
     boolean isAddDateToFilenames();
 
@@ -277,7 +285,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("ADD_ORDERID_TO_FILENAMES")
-    @DescriptionForConfigEntry("Default filenames: Include order-ID in filenames if an album contains more than one element?\r\nCan be useful to keep the original order of multiple elements of an album/story.")
+    @DescriptionForConfigEntry(text_AddOrderidToFilenames)
     @Order(30)
     boolean isAddOrderidToFilenames();
 
@@ -286,7 +294,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @TakeValueFromSubconfig("ADD_SHORTCODE_TO_FILENAMES")
-    @DescriptionForConfigEntry("Default filenames: Include 'shortcode' in filenames if it is available?")
+    @DescriptionForConfigEntry(text_AddShortcodeToFilenames)
     @Order(40)
     boolean isAddShortcodeToFilenames();
 
@@ -316,7 +324,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("DEFAULT_QUALITY")
     @Order(50)
-    @DescriptionForConfigEntry("Select media quality download mode.\r\nOriginal quality = bigger filesize, without image-effects, works only when an account is available.")
+    @DescriptionForConfigEntry(text_MediaQualityDownloadMode)
     @DefaultOnNull
     MediaQualityDownloadMode getMediaQualityDownloadMode();
 
@@ -325,7 +333,7 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @SpinnerValidator(min = -1, max = 1024, step = 1)
     @DefaultIntValue(-1)
-    @DescriptionForConfigEntry("Profile crawler: Only grab X latest posts? [0 = do not crawl posts, -1 = crawl all posts]")
+    @DescriptionForConfigEntry(text_ProfileCrawlerMaxItemsLimit)
     @Order(70)
     int getProfileCrawlerMaxItemsLimit();
 
@@ -333,7 +341,7 @@ public interface InstagramConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Profile crawler: Crawl story?")
+    @DescriptionForConfigEntry(text_ProfileCrawlerCrawlStory)
     @Order(71)
     boolean isProfileCrawlerCrawlStory();
 
