@@ -56,8 +56,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(?:secure\\.|www\\.)?flickr\\.com/(?:photos|groups)/.+" })
-public class FlickrCom extends PluginForDecrypt {
-    public FlickrCom(PluginWrapper wrapper) {
+public class FlickrComCrawler extends PluginForDecrypt {
+    public FlickrComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -76,7 +76,6 @@ public class FlickrCom extends PluginForDecrypt {
     private static final String                  INVALIDLINKS             = "^https?://[^/]+/(photos/(me|upload|tags.*?)|groups/[^<>\"/]+/rules|groups/[^<>\"/]+/discuss.*?)";
     public static final String                   API_BASE                 = "https://api.flickr.com/";
     private static final int                     api_max_entries_per_page = 500;
-    private ArrayList<DownloadLink>              decryptedLinks           = new ArrayList<DownloadLink>();
     private static LinkedHashMap<String, String> INTERNAL_USERNAME_CACHE  = new LinkedHashMap<String, String>() {
                                                                               protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
                                                                                   return size() > 200;
@@ -106,21 +105,22 @@ public class FlickrCom extends PluginForDecrypt {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
             /* Login whenever possible */
+            logger.info("Account available -> Logging in");
             ((jd.plugins.hoster.FlickrCom) flickrHostPlugin).login(account, false);
         }
         if (param.getCryptedUrl().matches(INVALIDLINKS) || param.getCryptedUrl().equals("https://www.flickr.com/photos/groups/") || param.getCryptedUrl().contains("/map")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (flickrHostPlugin.canHandle(param.getCryptedUrl())) {
             /* Pass to hostplugin */
-            decryptedLinks.add(createDownloadlink(param.getCryptedUrl()));
-            return decryptedLinks;
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            ret.add(createDownloadlink(param.getCryptedUrl()));
+            return ret;
         } else {
             if (param.getCryptedUrl().matches(TYPE_SETS_OF_USER_ALL)) {
-                apiCrawlSetsOfUser(param, account);
+                return apiCrawlSetsOfUser(param, account);
             } else {
-                crawlStreamsAPI(param, account);
+                return crawlStreamsAPI(param, account);
             }
-            return decryptedLinks;
         }
     }
 
@@ -150,7 +150,8 @@ public class FlickrCom extends PluginForDecrypt {
      *
      * @throws Exception
      */
-    private void crawlStreamsAPI(final CryptedLink param, final Account account) throws Exception {
+    private ArrayList<DownloadLink> crawlStreamsAPI(final CryptedLink param, final Account account) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String apikey = getPublicAPIKey(this, this.br);
         if (StringUtils.isEmpty(apikey)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -357,12 +358,12 @@ public class FlickrCom extends PluginForDecrypt {
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
                 distribute(dl);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
-            logger.info("Page " + page + " / " + totalpages + " DONE | Progress: " + decryptedLinks.size() + " of " + totalNumberofItems);
+            logger.info("Page " + page + " / " + totalpages + " DONE | Progress: " + ret.size() + " of " + totalNumberofItems);
             if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                return;
+                logger.info("Stopping because: Aborted by user");
+                return ret;
             } else if (page >= totalpages) {
                 logger.info("Stopping because: Reached last page number " + page);
                 break;
@@ -371,9 +372,10 @@ public class FlickrCom extends PluginForDecrypt {
                 /* continue */
             }
         } while (true);
-        if (decryptedLinks.size() != totalNumberofItems) {
-            logger.warning("Number of results != expected number of results: Found: " + decryptedLinks.size() + " Expected: " + totalNumberofItems);
+        if (ret.size() != totalNumberofItems) {
+            logger.warning("Number of results != expected number of results: Found: " + ret.size() + " Expected: " + totalNumberofItems);
         }
+        return ret;
     }
 
     /** Wrapper */
@@ -410,7 +412,8 @@ public class FlickrCom extends PluginForDecrypt {
     }
 
     /** Crawls all sets/albums of a user. */
-    private void apiCrawlSetsOfUser(final CryptedLink param, final Account account) throws Exception {
+    private ArrayList<DownloadLink> apiCrawlSetsOfUser(final CryptedLink param, final Account account) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String username = new Regex(param.getCryptedUrl(), TYPE_SETS_OF_USER_ALL).getMatch(0);
         if (username == null) {
             /* Most likely developer mistake */
@@ -442,16 +445,17 @@ public class FlickrCom extends PluginForDecrypt {
             final Map<String, Object> setInfo = (Map<String, Object>) entries.get("photosets");
             totalitems = ((Number) setInfo.get("total")).intValue();
             maxPage = ((Number) setInfo.get("pages")).intValue();
-            logger.info("Crawling page " + page + " / " + maxPage + " | Sets crawler: " + decryptedLinks.size() + " / " + totalitems);
+            logger.info("Crawling page " + page + " / " + maxPage + " | Sets crawler: " + ret.size() + " / " + totalitems);
             final List<Map<String, Object>> sets = (List<Map<String, Object>>) setInfo.get("photoset");
             for (final Map<String, Object> set : sets) {
                 /* Those ones go back into our crawler. */
                 final String contenturl = "https://www." + this.getHost() + "/photos/" + username + "/sets/" + set.get("id") + "/";
                 final DownloadLink fina = createDownloadlink(contenturl);
-                decryptedLinks.add(fina);
+                ret.add(fina);
             }
             if (this.isAbort()) {
-                return;
+                logger.info("Stopping because: Aborted by user");
+                return ret;
             } else if (sets.size() < api_max_entries_per_page) {
                 logger.info("Stopping because: Current page contains less than max. item number");
                 break;
@@ -463,9 +467,10 @@ public class FlickrCom extends PluginForDecrypt {
                 /* Continue */
             }
         } while (true);
-        if (decryptedLinks.size() < totalitems) {
-            logger.warning("Number of results != expected number of results: Found: " + decryptedLinks.size() + " Expected: " + totalitems);
+        if (ret.size() < totalitems) {
+            logger.warning("Number of results != expected number of results: Found: " + ret.size() + " Expected: " + totalitems);
         }
+        return ret;
     }
 
     public static boolean looksLikeInternalUsername(final String str) {
@@ -678,7 +683,8 @@ public class FlickrCom extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked" })
     @Deprecated
     /** Deprecated! Uses website without ajax requests! */
-    private void crawlStreamsWebsite(final CryptedLink param, final Account account) throws Exception {
+    private ArrayList<DownloadLink> crawlStreamsWebsite(final CryptedLink param, final Account account) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         prepBrowserWebsite(this.br);
         // if not logged in this is 25... need to confirm for logged in -raztoki20160717
         int maxEntriesPerPage = 25;
@@ -743,7 +749,7 @@ public class FlickrCom extends PluginForDecrypt {
             final String json = this.br.getRegex("modelExport\\s*:\\s*(\\{.+\\}),").getMatch(0);
             if (json == null) {
                 /* This should never happen but if we found links before, lets return them. */
-                if (decryptedLinks.isEmpty()) {
+                if (ret.isEmpty()) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
                     break;
@@ -824,21 +830,25 @@ public class FlickrCom extends PluginForDecrypt {
                 fina.setAvailable(true);
                 fp.add(fina);
                 distribute(fina);
-                decryptedLinks.add(fina);
+                ret.add(fina);
             }
-            final int dsize = decryptedLinks.size();
+            final int dsize = ret.size();
             logger.info("Found " + dsize + " links from " + i + " pages of searching.");
-            if (dsize == 0 || (dsize * i) == totalEntries || dsize != (maxEntriesPerPage * i)) {
-                logger.info("Stopping at page " + i + " because it seems like we got everything decrypted.");
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                return ret;
+            } else if (dsize == 0 || (dsize * i) == totalEntries || dsize != (maxEntriesPerPage * i)) {
+                logger.info("Stopping because: Stopping at page " + i + " because it seems like we got everything decrypted.");
                 break;
             } else if (currentPage != -1) {
                 // we only want to decrypt the page user selected.
-                logger.info("Stopped at page " + i + " because user selected a single page to decrypt!");
+                logger.info("Stopping because: Stopped at page " + i + " because user selected a single page to decrypt!");
                 break;
             } else {
                 i++;
             }
-        } while (!this.isAbort());
+        } while (true);
+        return ret;
     }
 
     private String buildContentURL(final String pathAlias, final String contentID) {

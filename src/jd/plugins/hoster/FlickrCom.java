@@ -62,6 +62,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.FlickrComCrawler;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/([^<>\"/]+)/(\\d+)(?:/in/album-\\d+|/in/gallery-\\d+@N\\d+-\\d+)?" })
@@ -169,7 +170,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     private String getPublicAPIKey(final Browser br) throws IOException {
-        return jd.plugins.decrypter.FlickrCom.getPublicAPIKey(this, br);
+        return FlickrComCrawler.getPublicAPIKey(this, br);
     }
 
     @Override
@@ -192,7 +193,7 @@ public class FlickrCom extends PluginForHost {
         /* Set some properties needed for custom filenames/Packagizer! */
         final String usernameFromURL = this.getUsername(link);
         /* Determine which type of username is inside the URL. */
-        if (jd.plugins.decrypter.FlickrCom.looksLikeInternalUsername(usernameFromURL)) {
+        if (FlickrComCrawler.looksLikeInternalUsername(usernameFromURL)) {
             link.setProperty(PROPERTY_USERNAME_INTERNAL, usernameFromURL);
         } else {
             link.setProperty(PROPERTY_USERNAME, usernameFromURL);
@@ -288,7 +289,7 @@ public class FlickrCom extends PluginForHost {
             final String usernameFromHTML = br.getRegex("id=\"canonicalurl\"[^>]*href=\"https?://[^/]+/photos/([^/]+)/").getMatch(0);
             if (usernameFromHTML != null) {
                 /* Overwrite property! */
-                if (jd.plugins.decrypter.FlickrCom.looksLikeInternalUsername(usernameFromHTML)) {
+                if (FlickrComCrawler.looksLikeInternalUsername(usernameFromHTML)) {
                     link.setProperty(PROPERTY_USERNAME_INTERNAL, usernameFromHTML);
                 } else {
                     link.setProperty(PROPERTY_USERNAME, usernameFromHTML);
@@ -486,7 +487,7 @@ public class FlickrCom extends PluginForHost {
         }
         query.add("method", "flickr.photos.getInfo");
         query.add("photo_id", this.getFID(link));
-        br.getPage(jd.plugins.decrypter.FlickrCom.API_BASE + "services/rest?" + query.toString());
+        br.getPage(FlickrComCrawler.API_BASE + "services/rest?" + query.toString());
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         /*
          * Compared to the website, this API will return offline status for private files too while website would return error 403. We don't
@@ -521,7 +522,7 @@ public class FlickrCom extends PluginForHost {
         query.add("hermes", "1");
         query.add("hermesClient", "1");
         query.add("nojsoncallback", "1");
-        apibr.getPage(jd.plugins.decrypter.FlickrCom.API_BASE + "services/rest?" + query.toString());
+        apibr.getPage(FlickrComCrawler.API_BASE + "services/rest?" + query.toString());
         Map<String, Object> entries = JSonStorage.restoreFromString(apibr.toString(), TypeRef.HASHMAP);
         /*
          * 2021-09-09: Found 2 video types so far: "700" and "iphone_wifi" --> Both are equal in filesize. If more are available,
@@ -954,11 +955,12 @@ public class FlickrCom extends PluginForHost {
                 showCookieLoginInfo();
                 throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
-            br.setCookies(getHost(), userCookies);
+            br.setCookies(userCookies);
             if (!force) {
                 /* Trust cookies without check */
                 return;
             }
+            logger.info("Performing full login");
             br.getPage("https://" + this.getHost() + "/");
             final String loginjson = br.getRegex("root\\.auth\\s*=\\s*(\\{.*?\\});").getMatch(0);
             final Map<String, Object> rootAuth = JavaScriptEngineFactory.jsonToJavaMap(loginjson);
