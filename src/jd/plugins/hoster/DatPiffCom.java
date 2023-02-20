@@ -38,7 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "https?://(?:www\\.)?datpiff\\.com/([^<>\"% ]*?\\-download(\\-track)?\\.php\\?id=[a-z0-9]+|mixtapes\\-detail\\.php\\?id=\\d+|.*?\\-mixtape\\.\\d+\\.html)" })
 public class DatPiffCom extends PluginForHost {
@@ -65,9 +64,12 @@ public class DatPiffCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.containsHTML(ONLYREGISTEREDUSERTEXT)) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.datpiffcom.only4premium", ONLYREGISTEREDUSERTEXT));
+            link.getLinkStatus().setStatusText(ONLYREGISTEREDUSERTEXT);
             return AvailableStatus.TRUE;
-        } else if (br.containsHTML("(?i)(>\\s*Download Unavailable\\s*<|>\\s*A zip file has not yet been generated\\s*<|>\\s*Mixtape Not Found\\s*<|has been removed<)")) {
+        }
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)(>\\s*A zip file has not yet been generated\\s*<|>\\s*Mixtape Not Found\\s*<|has been removed<)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (link.getPluginPatternMatcher().matches(TYPE_SONG)) {
@@ -78,6 +80,9 @@ public class DatPiffCom extends PluginForHost {
         } else {
             /* TYPE_MIXTAPE */
             String filename = null;
+            if (isOfficialDownloadUnavailable(br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (br.containsHTML(PATTERN_CURRENTLYUNAVAILABLE)) {
                 filename = br.getRegex("<title>([^<>\"]*?) \\- Mixtapes @ DatPiff\\.com</title>").getMatch(0);
                 if (filename == null) {
@@ -119,6 +124,10 @@ public class DatPiffCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private boolean isOfficialDownloadUnavailable(final Browser br) {
+        return br.containsHTML("(?i)>\\s*The uploader has disabled downloads") || br.containsHTML("(?i)>\\s*Download Unavailable\\s*<");
+    }
+
     public void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         // Untested
         // final String timeToRelease =
@@ -132,7 +141,7 @@ public class DatPiffCom extends PluginForHost {
             requestFileInformation(link);
             if (link.getPluginPatternMatcher().matches(TYPE_SONG)) {
                 /* Download single song */
-                if (br.containsHTML("(?i)>\\s*The uploader has disabled downloads")) {
+                if (isOfficialDownloadUnavailable(br)) {
                     logger.info("Official download is disabled --> Attempting stream download");
                     final String trackDownloadID = link.getStringProperty(PROPERTY_SONG_TRACK_DOWNLOAD_ID);
                     // final String mixtapeStreamID = link.getStringProperty(PROPERTY_SONG_MIXTAPE_STREAM_ID);
@@ -156,16 +165,18 @@ public class DatPiffCom extends PluginForHost {
                 } else if (br.containsHTML("(?i)>\\s*This track contains commercially-available content which we can not legally offer for download")) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "This track is not downloadable");
                 }
-                final Form dlform = br.getFormbyProperty("id", "loginform");
-                if (dlform == null) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Broken track");
+                if (dllink == null) {
+                    final Form dlform = br.getFormbyProperty("id", "loginform");
+                    if (dlform == null) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Broken track");
+                    }
+                    final Browser brc = br.cloneBrowser();
+                    brc.setFollowRedirects(false);
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    brc.submitForm(dlform);
+                    dllink = brc.getRedirectLocation();
                 }
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(false);
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                brc.submitForm(dlform);
-                dllink = brc.getRedirectLocation();
             } else {
                 /* Download complete mixtape as .zip file. */
                 if (br.containsHTML(PATTERN_PREMIUMONLY)) {

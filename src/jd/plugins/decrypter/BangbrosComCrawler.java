@@ -36,8 +36,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com", "mygf.com" }, urls = { "https?://members\\.bangbros\\.com/product/\\d+/movie/\\d+|https?://(?:bangbrothers\\.(?:com|net)|bangbros\\.com)/video\\d+/[a-z0-9\\-]+", "https?://members\\.mygf\\.com/product/\\d+/movie/\\d+" })
-public class BangbrosCom extends PluginForDecrypt {
-    public BangbrosCom(PluginWrapper wrapper) {
+public class BangbrosComCrawler extends PluginForDecrypt {
+    public BangbrosComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -61,7 +61,7 @@ public class BangbrosCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("bangbrothers.com", "bangbros.com");
         final String fid;
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
@@ -74,8 +74,8 @@ public class BangbrosCom extends PluginForDecrypt {
         br.getPage(parameter);
         if (isOffline(this.br, parameter)) {
             final DownloadLink offline = this.createOfflinelink(parameter);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            ret.add(offline);
+            return ret;
         }
         String title = null;
         String cast_comma_separated = null;
@@ -110,7 +110,7 @@ public class BangbrosCom extends PluginForDecrypt {
                 title = fid + "_" + title + ".mp4";
                 final DownloadLink dl = createDownloadlink(parameter, fid);
                 dl.setProperty("decryptername", title);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             } else {
                 /* TODO */
             }
@@ -156,7 +156,7 @@ public class BangbrosCom extends PluginForDecrypt {
                 if (fast_linkcheck) {
                     dl.setAvailable(true);
                 }
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
             if (cfg.getBooleanProperty("GRAB_photos", false) && directurl_photos != null) {
                 final String quality = "pictures";
@@ -165,7 +165,7 @@ public class BangbrosCom extends PluginForDecrypt {
                 if (fast_linkcheck) {
                     dl.setAvailable(true);
                 }
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
             if (cfg.getBooleanProperty("GRAB_screencaps", false) && directurl_screencaps != null) {
                 final String quality = "screencaps";
@@ -174,13 +174,13 @@ public class BangbrosCom extends PluginForDecrypt {
                 if (fast_linkcheck) {
                     dl.setAvailable(true);
                 }
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 
     public static String[] getVideourls(final Browser br) {

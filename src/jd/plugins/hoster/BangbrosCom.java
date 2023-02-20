@@ -41,6 +41,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.BangbrosComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com", "mygf.com" }, urls = { "bangbrosdecrypted://.+", "mygfdecrypted://.+" })
 public class BangbrosCom extends PluginForHost {
@@ -87,7 +88,7 @@ public class BangbrosCom extends PluginForHost {
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         String final_filename = link.getStringProperty("decryptername", null);
-        final boolean loginRequired = jd.plugins.decrypter.BangbrosCom.requiresAccount(this.getMainlink(link));
+        final boolean loginRequired = BangbrosComCrawler.requiresAccount(this.getMainlink(link));
         if (aa != null) {
             this.login(this.br, aa, false);
             logged_in = true;
@@ -134,9 +135,9 @@ public class BangbrosCom extends PluginForHost {
     private String getDllink(final DownloadLink dl) throws IOException, PluginException {
         final String mainlink = this.getMainlink(dl);
         String dllink;
-        if (mainlink.matches(jd.plugins.decrypter.BangbrosCom.type_userinput_video_couldbe_trailer)) {
+        if (mainlink.matches(BangbrosComCrawler.type_userinput_video_couldbe_trailer)) {
             br.getPage(mainlink);
-            if (jd.plugins.decrypter.BangbrosCom.isOffline(this.br, mainlink)) {
+            if (BangbrosComCrawler.isOffline(this.br, mainlink)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             dllink = br.getRegex("var\\s*?videoLink\\s*?=\\s*?\\'(http[^<>\"\\']+)\\';").getMatch(0);
@@ -163,15 +164,15 @@ public class BangbrosCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.br.getPage("http://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/product/" + product + "/movie/" + fid);
-        if (jd.plugins.decrypter.BangbrosCom.isOffline(this.br, getMainlink(link))) {
+        if (BangbrosComCrawler.isOffline(this.br, getMainlink(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (link.getDownloadURL().matches(jd.plugins.decrypter.BangbrosCom.type_decrypted_zip)) {
-            dllink = jd.plugins.decrypter.BangbrosCom.regexZipUrl(this.br, quality);
+        if (link.getDownloadURL().matches(BangbrosComCrawler.type_decrypted_zip)) {
+            dllink = BangbrosComCrawler.regexZipUrl(this.br, quality);
         } else {
-            final String[] htmls_videourls = jd.plugins.decrypter.BangbrosCom.getVideourls(this.br);
+            final String[] htmls_videourls = BangbrosComCrawler.getVideourls(this.br);
             for (final String html_videourl : htmls_videourls) {
-                String videourl = jd.plugins.decrypter.BangbrosCom.getVideourlFromHtml(html_videourl);
+                String videourl = BangbrosComCrawler.getVideourlFromHtml(html_videourl);
                 if (videourl == null) {
                     continue;
                 }
@@ -269,7 +270,7 @@ public class BangbrosCom extends PluginForHost {
                         return;
                     } else {
                         logger.info("Cookie login failed");
-                        br.clearCookies(br.getHost());
+                        br.clearCookies(null);
                         prepBR(br);
                     }
                 }
@@ -310,7 +311,7 @@ public class BangbrosCom extends PluginForHost {
                     br.getPage("/library");
                 }
                 if (!isLoggedin(br) || !br.getURL().contains("/library")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
             } catch (final PluginException e) {
@@ -378,7 +379,7 @@ public class BangbrosCom extends PluginForHost {
              * supported host array.
              */
             return true;
-        } else if (getMainlink(link) != null && getMainlink(link).matches(jd.plugins.decrypter.BangbrosCom.type_userinput_video_couldbe_trailer)) {
+        } else if (getMainlink(link) != null && getMainlink(link).matches(BangbrosComCrawler.type_userinput_video_couldbe_trailer)) {
             /* Multihost download only possible for specified linktype. */
             return true;
         } else {
