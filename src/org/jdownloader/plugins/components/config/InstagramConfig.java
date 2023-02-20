@@ -17,10 +17,17 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "instagram.com", type = Type.HOSTER)
 public interface InstagramConfig extends PluginConfigInterface {
+    final String                    text_PostCrawlerAddPostDescriptionAsTextfile      = "Post crawler: Add post description as textfile?";
+    final String                    text_PostCrawlerPackagenameSchemeType             = "Post crawler: Package name scheme type for instagram.com/p/<id>";
+    final String                    text_PostCrawlerPackagenameScheme                 = "Post crawler: Custom package name scheme for instagram.com/p/<id>";
+    final String                    text_StoryPackagenameSchemeType                   = "Story crawler: Package name scheme type for instagram.com/stories/username/<storyID>/ URLs";
+    final String                    text_StoryPackagenameScheme                       = "Story crawler: Custom package name scheme for instagram.com/stories/username/<storyID>/";
+    final String                    text_StoriesHighlightsPackagenameSchemeType       = "Story highlights crawler: Package name scheme type for instagram.com/stories/highlights/<storyID>/";
+    final String                    text_StoriesHighlightsPackagenameScheme           = "Story highlights crawler: Custom package name scheme for instagram.com/stories/highlights/<storyID>/";
     final String                    text_FilenameType                                 = "Filename type for all crawled media items";
-    final String                    text_FilenameScheme                               = "Custom filenames: Enter filename scheme";
+    final String                    text_FilenameScheme                               = "Custom filenames: Filename scheme";
     final String                    text_AddDateToFilenames                           = "Default filenames: Include date (yyyy-MM-dd) in filenames?";
-    final String                    text_AddOrderidToFilenames                        = "Default filenames: Include 'order-ID' in filenames if an album contains more than one element?\r\nCan be useful to keep the original order of multiple elements of an album/story.";
+    final String                    text_AddOrderidToFilenames                        = "Default filenames: Include 'order-ID' in filenames if an album contains more than one element?";
     final String                    text_AddShortcodeToFilenames                      = "Default filenames: Include 'shortcode' in filenames if it is available?";
     final String                    text_MediaQualityDownloadMode                     = "Media quality download mode.\r\nOriginal quality = bigger filesize, without image-effects, works only when an account is available.";
     final String                    text_ProfileCrawlerMaxItemsLimit                  = "Profile crawler: Only grab X latest posts? [0 = disable, -1 = crawl all]";
@@ -28,40 +35,40 @@ public interface InstagramConfig extends PluginConfigInterface {
     final String                    text_ProfileCrawlerCrawlStoryHighlights           = "Profile crawler: Crawl story highlights?";
     final String                    text_ProfileCrawlerCrawlProfilePicture            = "Profile crawler: Crawl profile picture?";
     final String                    text_ProfileCrawlerReelsPaginationMaxItemsPerPage = "Profile reels crawler: Max items per pagination (higher value = faster crawl process, can result in account ban!)";
-    final String                    text_ProfileTaggedCrawledMaxItemsLimit            = "Tagged profile crawler: How many items shall be grabbed (applies for '/profile/tagged/')? [0 = disable tagged profile crawler]";
-    final String                    text_HashtagCrawlerMaxItemsLimit                  = "Hashtag crawler: How many items shall be grabbed (applies for '/explore/tags/example')? [0 = disable]";
+    final String                    text_ProfileTaggedCrawledMaxItemsLimit            = "Tagged profile crawler: How many items shall be grabbed for instagram.com/profile/tagged/? [0 = disable tagged profile crawler]";
+    final String                    text_HashtagCrawlerMaxItemsLimit                  = "Hashtag crawler: How many items shall be grabbed for instagram.com/explore/tags/<tagName>? [0 = disable]";
     final String                    text_ActionOnRateLimitReached                     = "Crawler: Action on rate limit reached";
-    final String                    text_EnforceLoginIfAccountIsAvailable             = "Only for debugging purposes: Enforce login if account is available?";
-    final String                    text_GlobalRequestIntervalLimitMilliseconds       = "Define global request limit for domains 'instagram.com' and 'cdninstagram.com' in milliseconds (0 = no limit)";
+    final String                    text_GlobalRequestIntervalLimitMilliseconds       = "Define global request limit for domains 'instagram.com' and 'cdninstagram.com' in milliseconds [0 = no limit]";
+    final String                    text_EnforceLoginIfAccountIsAvailable             = "Debug: Enforce login if account is available?";
     public static final TRANSLATION TRANSLATION                                       = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getPostCrawlerAddPostDescriptionAsTextfile_label() {
-            return "Post crawler: Add post description as textfile?";
+            return text_PostCrawlerAddPostDescriptionAsTextfile;
         }
 
         public String getPostCrawlerPackagenameSchemeType_label() {
-            return "Post crawler: Select package name scheme type for instagram.com/p/<id> URLs";
+            return text_PostCrawlerPackagenameSchemeType;
         }
 
         public String getPostCrawlerPackagenameScheme_label() {
-            return "Post crawler: Enter custom package name scheme for instagram.com/p/<id>";
+            return text_PostCrawlerPackagenameScheme;
         }
 
         public String getStoryPackagenameSchemeType_label() {
-            return "Story crawler: Select package name scheme type for instagram.com/stories/username/123456789..../ URLs";
+            return text_StoryPackagenameSchemeType;
         }
 
         public String getStoryPackagenameScheme_label() {
-            return "Story crawler: Enter custom package name scheme for instagram.com/stories/username/123456789..../";
+            return text_StoryPackagenameScheme;
         }
 
         public String getStoriesHighlightsPackagenameSchemeType_label() {
-            return "Story highlights crawler: Select package name scheme type for instagram.com/stories/highlights/123456789..../ URLs";
+            return text_StoriesHighlightsPackagenameSchemeType;
         }
 
         public String getStoriesHighlightsPackagenameScheme_label() {
-            return "Story highlights crawler: Enter custom package name scheme for instagram.com/stories/highlights/123456789..../";
+            return text_StoriesHighlightsPackagenameScheme;
         }
 
         public String getFilenameType_label() {
@@ -131,7 +138,7 @@ public interface InstagramConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Post crawler: Add post description as textfile?")
+    @DescriptionForConfigEntry(text_PostCrawlerAddPostDescriptionAsTextfile)
     @Order(1)
     boolean isPostCrawlerAddPostDescriptionAsTextfile();
 
@@ -161,14 +168,14 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("UPLOADER")
     @Order(2)
-    @DescriptionForConfigEntry("Post crawler: Select package name scheme type for instagram.com/p/<id> URLs")
+    @DescriptionForConfigEntry(text_PostCrawlerPackagenameSchemeType)
     SinglePostPackagenameSchemeType getPostCrawlerPackagenameSchemeType();
 
     void setPostCrawlerPackagenameSchemeType(final SinglePostPackagenameSchemeType namingSchemeType);
 
     @AboutConfig
     @DefaultStringValue("*date*_*uploader* - *main_content_id*")
-    @DescriptionForConfigEntry("Post crawler: Enter custom package name scheme for instagram.com/p/<id>")
+    @DescriptionForConfigEntry(text_PostCrawlerPackagenameScheme)
     @Order(3)
     String getPostCrawlerPackagenameScheme();
 
@@ -192,14 +199,14 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("DEFAULT_1")
     @Order(4)
-    @DescriptionForConfigEntry("Story crawler: Select package name scheme type for instagram.com/stories/username/123456789..../ URLs")
+    @DescriptionForConfigEntry(text_StoryPackagenameSchemeType)
     StoryPackagenameSchemeType getStoryPackagenameSchemeType();
 
     void setStoryPackagenameSchemeType(final StoryPackagenameSchemeType namingSchemeType);
 
     @AboutConfig
     @DefaultStringValue("*date*_*uploader*")
-    @DescriptionForConfigEntry("Story crawler: Enter custom package name scheme for instagram.com/stories/username/123456789..../")
+    @DescriptionForConfigEntry(text_StoryPackagenameScheme)
     @Order(5)
     String getStoryPackagenameScheme();
 
@@ -223,14 +230,14 @@ public interface InstagramConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("DEFAULT_1")
     @Order(6)
-    @DescriptionForConfigEntry("Story highlights crawler: Select package name scheme type for instagram.com/stories/highlights/123456789..../ URLs")
+    @DescriptionForConfigEntry(text_StoriesHighlightsPackagenameSchemeType)
     StoriesHighlightsPackagenameSchemeType getStoriesHighlightsPackagenameSchemeType();
 
     void setStoriesHighlightsPackagenameSchemeType(final StoriesHighlightsPackagenameSchemeType namingSchemeType);
 
     @AboutConfig
     @DefaultStringValue("*date*_*uploader* - *title*")
-    @DescriptionForConfigEntry("Story highlights crawler: Enter custom package name scheme for instagram.com/stories/highlights/123456789..../")
+    @DescriptionForConfigEntry(text_StoriesHighlightsPackagenameScheme)
     @Order(7)
     String getStoriesHighlightsPackagenameScheme();
 
