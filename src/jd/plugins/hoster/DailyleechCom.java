@@ -204,7 +204,12 @@ public class DailyleechCom extends PluginForHost {
                 /* Add download-password if needed */
                 downloadurlStr += "|" + link.getDownloadPassword();
             }
-            final String humanReadableFilesize = SizeFormatter.formatBytes(link.getView().getBytesTotal());
+            final String humanReadableFilesize;
+            if (link.getView().getBytesTotal() == -1) {
+                humanReadableFilesize = "NAN";
+            } else {
+                humanReadableFilesize = SizeFormatter.formatBytes(link.getView().getBytesTotal());
+            }
             final Form dlform = new Form();
             dlform.setMethod(MethodType.POST);
             dlform.setAction("http://" + internalSubdomain + ".cbox.ws/box/index.php?boxid=" + boxid + "&boxtag=" + boxtag + "&sec=submit");

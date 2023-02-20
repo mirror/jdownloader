@@ -226,13 +226,7 @@ public class LinkSnappyCom extends PluginForHost {
                 trafficMaxDailyHumanReadable = SizeFormatter.formatBytes(maxtrafficDailyBytesO.longValue());
             }
             if (trafficleftGlobalO instanceof String) {
-                /* E.g. value is "unlimited" */
-                // if (maxtrafficO instanceof Number && ((Long) maxtrafficO).longValue() > 0) {
-                // ac.setTrafficLeft(((Long) maxtrafficO).longValue());
-                // ac.setSpecialTraffic(true);
-                // } else {
-                // ac.setUnlimitedTraffic();
-                // }
+                /* Value should be "unlimited" */
                 ac.setUnlimitedTraffic();
             } else if (trafficleftGlobalO instanceof Number) {
                 /* Also check for negative traffic */
@@ -260,7 +254,7 @@ public class LinkSnappyCom extends PluginForHost {
                 }
             }
             final ArrayList<String> supportedHosts = new ArrayList<String>();
-            /* connection info map */
+            /* Connection info map */
             final HashMap<String, HashMap<String, Object>> con = new HashMap<String, HashMap<String, Object>>();
             final Map<String, Object> hosterMapResponse = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
             final Map<String, Object> hosterMap = (Map<String, Object>) hosterMapResponse.get("return");
@@ -278,7 +272,7 @@ public class LinkSnappyCom extends PluginForHost {
                 final long quota;
                 boolean hostHasUnlimitedQuota;
                 if (quotaO != null && quotaO instanceof String) {
-                    if ("unlimited".equalsIgnoreCase((String) quotaO)) {
+                    if ("unlimited".equalsIgnoreCase(quotaO.toString())) {
                         hostHasUnlimitedQuota = true;
                         hostInfo.put("quota", -1);
                     } else {
@@ -322,7 +316,7 @@ public class LinkSnappyCom extends PluginForHost {
                 tempList.add(host);
                 final List<String> realHosts = ac.setMultiHostSupport(this, tempList);
                 if (realHosts == null || realHosts.isEmpty()) {
-                    logger.info("Skipping host because we don't have a plugin for it or the plugin we have doesn#t allow multihost usage: " + host);
+                    logger.info("Skipping host because we don't have a plugin for it or the plugin we have doesn't allow multihost usage: " + host);
                     continue;
                 }
                 final String realHost = realHosts.get(0);
@@ -336,6 +330,7 @@ public class LinkSnappyCom extends PluginForHost {
             /* Free account information & downloading is only possible via website; not via API! */
             if (AccountType.FREE == account.getType()) {
                 /* Try to find Free Account limits to display them properly */
+                logger.info("Trying to obtain free account information from website");
                 try {
                     br.getPage("/download");
                     /*
@@ -355,8 +350,8 @@ public class LinkSnappyCom extends PluginForHost {
                         ac.setUnlimitedTraffic();
                     }
                     ac.setStatus(String.format("Free Account [%s of %s daily links left]", remainingDailyURLsStr, maxDailyURLsStr));
-                } catch (final Throwable e) {
-                    logger.exception("Failed to find free Account limits --> Setting ZERO trafficleft", e);
+                } catch (final Throwable ignore) {
+                    logger.exception("Failed to find free Account limits --> Setting ZERO trafficleft", ignore);
                     ac.setTrafficLeft(0);
                     ac.setStatus("Free Account [Failed to find number of URLs left]");
                 }
@@ -441,10 +436,9 @@ public class LinkSnappyCom extends PluginForHost {
         try {
             long lastProgressChange = System.currentTimeMillis();
             int lastProgress = -1;
+            int round = 1;
             while (System.currentTimeMillis() - lastProgressChange < CACHE_WAIT_THRESHOLD) {
-                if (isAbort()) {
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
+                logger.info("Checking cache status round: " + round);
                 br.getPage("https://" + this.getHost() + "/api/CACHEDLSTATUS?id=" + Encoding.urlEncode(id));
                 final Map<String, Object> data = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                 this.handleErrors(link, account, data);
@@ -461,6 +455,7 @@ public class LinkSnappyCom extends PluginForHost {
                 } else {
                     link.addPluginProgress(waitProgress);
                     waitProgress.updateValues(currentProgress.intValue(), 100);
+                    /* Workaround: Do not use "sleep" statement as this would also update the status text visible to the user. */
                     for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
                         if (isAbort()) {
                             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -473,6 +468,7 @@ public class LinkSnappyCom extends PluginForHost {
                         lastProgress = currentProgress.intValue();
                     }
                 }
+                round++;
             }
         } finally {
             link.removePluginProgress(waitProgress);
@@ -491,18 +487,18 @@ public class LinkSnappyCom extends PluginForHost {
                 tt = a;
             }
         }
-        /* Typically downloading generated links do not require login session! */
+        this.loginAPI(account, false);
         if (attemptStoredDownloadurlDownload(link)) {
             logger.info("Using previously generated final downloadurl");
         } else {
             logger.info("Generating new downloadurl");
-            final String urlRaw;
+            final String urlRequest;
             if (AccountType.FREE == account.getType()) {
-                urlRaw = "https://" + this.getHost() + "/api/linkfree?genLinks=%s";
+                urlRequest = "https://" + this.getHost() + "/api/linkfree?genLinks=";
                 /* Free Account download - not possible via API! */
                 loginWebsite(account, false);
             } else {
-                urlRaw = "https://" + this.getHost() + "/api/linkgen?genLinks=%s";
+                urlRequest = "https://" + this.getHost() + "/api/linkgen?genLinks=";
                 this.loginAPI(account, false);
             }
             Map<String, Object> entries = null;
@@ -516,7 +512,7 @@ public class LinkSnappyCom extends PluginForHost {
                 if (!StringUtils.isEmpty(passCode)) {
                     urlinfo.put("linkpass", passCode);
                 }
-                br.getPage(String.format(urlRaw, URLEncode.encodeURIComponent(JSonStorage.serializeToJson(urlinfo))));
+                br.getPage(urlRequest + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(urlinfo)));
                 entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                 final List<Object> ressourcelist = (List<Object>) entries.get("links");
                 entries = (Map<String, Object>) ressourcelist.get(0);
@@ -579,47 +575,27 @@ public class LinkSnappyCom extends PluginForHost {
             link.setProperty(PROPERTY_DIRECTURL, dllink);
         }
         dl.setFilenameFix(true);
-        try {
-            if (!this.dl.startDownload()) {
+        if (this.dl.startDownload()) {
+            /**
+             * Check if user wants JD to clear serverside download history in linksnappy account after each successful download. </br>
+             * Also make sure we get no exception as our download was successful. </br>
+             * NOTE: Even failed downloads will appear in the download history - but they will also be cleared once there is one successful
+             * download.
+             */
+            if (PluginJsonConfig.get(LinkSnappyComConfig.class).isClearDownloadHistoryEnabled()) {
+                logger.info("Clearing download history");
                 try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-            } else {
-                /*
-                 * Check if user wants JD to clear serverside download history in linksnappy account after each download - only possible via
-                 * account - also make sure we get no exception as our download was successful NOTE: Even failed downloads will appear in
-                 * the download history - but they will also be cleared once you have one successful download.
-                 */
-                if (PluginJsonConfig.get(LinkSnappyComConfig.class).isClearDownloadHistoryEnabled()) {
-                    boolean history_deleted = false;
-                    try {
-                        br.getPage("https://" + this.getHost() + "/api/DELETELINK?type=filehost&hash=all");
-                        if (this.getError(this.br) == null) {
-                            history_deleted = true;
-                        }
-                    } catch (final Throwable e) {
-                        history_deleted = false;
-                    }
-                    if (history_deleted) {
-                        logger.warning("Delete history succeeded!");
+                    br.getPage("https://" + this.getHost() + "/api/DELETELINK?type=filehost&hash=all");
+                    if (this.getError(this.br) == null) {
+                        logger.info("Delete history succeeded!");
                     } else {
-                        logger.warning("Delete history failed");
+                        logger.warning("Delete history failed!");
                     }
+                } catch (final Throwable ignore) {
+                    logger.log(ignore);
+                    logger.warning("Delete download history failed due to exception!");
                 }
             }
-        } catch (final PluginException e) {
-            logger.log(e);
-            if (e.getMessage() != null && e.getMessage().contains("java.lang.ArrayIndexOutOfBoundsException")) {
-                if ((tt / 10) > link.getView().getBytesTotal()) {
-                    // this is when linksnappy dls text as proper filename
-                    dl.getConnection().disconnect();
-                    mhm.putError(account, link, 5 * 60 * 1000l, "Cache download failure");
-                }
-            }
-            throw e;
         }
     }
 
