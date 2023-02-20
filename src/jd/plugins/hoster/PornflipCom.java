@@ -18,18 +18,18 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hds.HDSDownloader;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hds.HDSContainer;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -37,7 +37,9 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -45,13 +47,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvids.com", "pornflip.com" }, urls = { "http://playviddecrypted\\.com/\\d+", "http://playviddecrypted\\.com/\\d+" })
 public class PornflipCom extends PluginForHost {
     public PornflipCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium();
+        this.enablePremium("https://www.pornflip.com/de/account/join");
         this.setConfigElements();
     }
 
@@ -83,12 +84,15 @@ public class PornflipCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, AccountController.getInstance().getValidAccount(this.getHost()));
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String qualityvalue = link.getStringProperty("qualityvalue", null);
         this.setBrowserExclusive();
-        final Account account = AccountController.getInstance().getValidAccount(this);
         if (account != null) {
             login(this.br, account, false);
         }
@@ -149,7 +153,7 @@ public class PornflipCom extends PluginForHost {
     }
 
     private void doDownload(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, account);
         final String qualityvalue = link.getStringProperty("qualityvalue");
         if (qualityvalue == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -220,37 +224,48 @@ public class PornflipCom extends PluginForHost {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
+                br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(cookies);
                     if (!verify) {
                         logger.info("Set cookies without check");
                         return;
-                    }
-                    logger.info("Attempting cookie login");
-                    br.getPage("https://www." + account.getHoster() + "/");
-                }
-                br.setFollowRedirects(true);
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("https://www." + account.getHoster() + "/de/account/login", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                final String lang = System.getProperty("user.language");
-                if (br.containsHTML("\"status\":\"error\"")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                String continuelink = PluginJSonUtils.getJson(br, "redirect");
-                if (continuelink == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        logger.info("Attempting cookie login");
+                        br.getPage("https://www." + this.getHost() + "/");
+                        if (this.isLoggedIN(br)) {
+                            logger.info("Cookie login successful");
+                            account.saveCookies(br.getCookies(br.getURL()), "");
+                            return;
+                        } else {
+                            logger.info("Cookie login failed");
+                            br.clearCookies(null);
+                        }
                     }
                 }
-                if (continuelink.isEmpty()) {
-                    continuelink = "/";
+                logger.info("Performing full login");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("https://www." + this.getHost() + "/de/account/login", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (br.containsHTML("\"status\":\"error\"")) {
+                    throw new AccountInvalidException();
                 }
-                br.getPage(continuelink);
+                String continuelink = null;
+                try {
+                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                    continuelink = entries.get("redirect").toString();
+                } catch (final Throwable ignore) {
+                }
+                if (continuelink != null) {
+                    if (continuelink.isEmpty()) {
+                        continuelink = "/";
+                    }
+                    br.getPage(continuelink);
+                } else {
+                    br.getPage("/");
+                }
                 if (!isLoggedIN(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(br.getCookies(br.getURL()), "");
             } catch (final PluginException e) {
@@ -263,15 +278,15 @@ public class PornflipCom extends PluginForHost {
     }
 
     public boolean isLoggedIN(final Browser br) {
-        return br.getCookie(br.getHost(), "sunsid", Cookies.NOTDELETEDPATTERN) != null;
+        return br.getCookie(br.getHost(), "sunsid", Cookies.NOTDELETEDPATTERN) != null && br.containsHTML("account/logout");
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         login(this.br, account, true);
         ai.setUnlimitedTraffic();
-        ai.setStatus("Registered (free) user");
+        account.setType(AccountType.FREE);
         return ai;
     }
 
@@ -335,28 +350,30 @@ public class PornflipCom extends PluginForHost {
         return videourl;
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        final String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = null;
-                try {
-                    con = br2.openGetConnection(dllink);
-                    if (!con.isOK() || con.getContentType().contains("text") || con.getLongContentLength() == -1) {
-                        downloadLink.setProperty(property, Property.NULL);
-                    } else {
-                        downloadLink.setDownloadSize(con.getLongContentLength());
-                        return dllink;
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                } finally {
-                    if (con != null) {
-                        con.disconnect();
-                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
+                link.removeProperty(property);
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
+                return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
         return null;

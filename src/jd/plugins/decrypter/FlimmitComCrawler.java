@@ -37,6 +37,7 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -110,7 +111,7 @@ public class FlimmitComCrawler extends PluginForDecrypt {
             return ret;
         } else if (errorO != null) {
             if (br.containsHTML("(?i)Sie ein laufendes Abo") || br.containsHTML("\"code\"\\s*:\\s*1006")) {
-                /* active subscription required */
+                /* Active subscription required -> User has either no account or only a free account */
                 throw new AccountRequiredException();
             } else {
                 /* Offline or GEO-blocked */
@@ -283,6 +284,9 @@ public class FlimmitComCrawler extends PluginForDecrypt {
             if (plugin == null) {
                 throw new IllegalStateException("flimmit hoster plugin not found!");
             } else {
+                if (account.getType() != AccountType.PREMIUM) {
+                    logger.warning("Looks like user does not own a premium account -> Crawler will most likely fail");
+                }
                 // set cross browser support
                 ((jd.plugins.hoster.FlimmitCom) plugin).setBrowser(br);
                 ((jd.plugins.hoster.FlimmitCom) plugin).login(account, false);

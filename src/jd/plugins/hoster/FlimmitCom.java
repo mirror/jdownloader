@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.FlimmitComConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -30,12 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.FlimmitComConfig;
 
 /**
  *
@@ -133,10 +133,11 @@ public class FlimmitCom extends PluginForHost {
                             return;
                         } else {
                             logger.info("Cookie login failed");
-                            br.clearAll();
+                            br.clearCookies(null);
                         }
                     }
                 }
+                logger.info("Performing full login");
                 final String user = account.getUser();
                 if (StringUtils.isEmpty(user) || !user.matches(".+@.+\\..+")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -151,15 +152,12 @@ public class FlimmitCom extends PluginForHost {
                 if ("failure".equals(response.get("status"))) {
                     /* E.g. bad response: {"status":"failure","message":"Email oder Passwort ist nicht korrekt","extraData":[]} */
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, StringUtils.valueOfOrNull(response.get("message")), PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    br.getPage("/dynamically/me/user-subscriptions/active");
-                    if (isValidUserSubscriptionsResponse(br)) {
-                        /* E.g. good response: */
-                        account.saveCookies(br.getCookies(br.getHost()), "");
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
                 }
+                br.getPage("/dynamically/me/user-subscriptions/active");
+                if (!isValidUserSubscriptionsResponse(br)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -191,6 +189,7 @@ public class FlimmitCom extends PluginForHost {
         }
         Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Object dataO = entries.get("data");
+        boolean autorenewal_active = false;
         if (dataO != null) {
             entries = (Map<String, Object>) dataO;
             final String valid_until = (String) entries.get("valid_until");
@@ -199,8 +198,9 @@ public class FlimmitCom extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(valid_until, "yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH));
             }
             final String next_payment_date = (String) entries.get("next_payment_date");
-            final Object autorenewal_active = entries.get("autorenewal_active");
-            if (ai.isExpired() && !StringUtils.isEmpty(next_payment_date) && Boolean.TRUE.equals(autorenewal_active)) {
+            final Object autorenewal_activeO = entries.get("autorenewal_active");
+            if (ai.isExpired() && !StringUtils.isEmpty(next_payment_date) && Boolean.TRUE.equals(autorenewal_activeO)) {
+                autorenewal_active = true;
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(next_payment_date, "yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH));
             }
             if (ai.isExpired()) {
@@ -216,6 +216,7 @@ public class FlimmitCom extends PluginForHost {
             account.setType(AccountType.FREE);
             /* Free accounts cannot download/stream anything. */
             ai.setTrafficLeft(0);
+            // ai.setExpired(true);
         }
         account.setConcurrentUsePossible(true);
         return ai;
@@ -225,7 +226,7 @@ public class FlimmitCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         // hls stuff
-        final String dllink = link.getStringProperty("m3u8url", null);
+        final String dllink = link.getStringProperty("m3u8url");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
