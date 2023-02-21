@@ -227,7 +227,7 @@ public class GoogleHelper {
         return thread;
     }
 
-    public boolean login(final Account account, final boolean forceLoginValidation) throws Exception {
+    public void login(final Account account, final boolean forceLoginValidation) throws Exception {
         synchronized (account) {
             try {
                 /*
@@ -282,14 +282,17 @@ public class GoogleHelper {
                     }
                     if (isCacheEnabled() && hasBeenValidatedRecently(account) && !forceLoginValidation) {
                         logger.info("Trust cookies without check");
-                        return true;
+                        return;
                     }
                     br.setAllowedResponseCodes(new int[] { 400 });
                     if (validateCookies(account)) {
                         logger.info("Login with cookies successful");
                         validate(account);
-                        account.saveCookies(br.getCookies(br.getHost()), "");
-                        return true;
+                        /* Only store cookies if username via username + password has been used. */
+                        if (userCookies == null) {
+                            account.saveCookies(br.getCookies(br.getHost()), "");
+                        }
+                        return;
                     } else {
                         logger.info("Login with stored cookies failed");
                         if (userCookies != null) {
@@ -442,9 +445,9 @@ public class GoogleHelper {
                 if (validateSuccessOLD()) {
                     account.saveCookies(br.getCookies(br.getURL()), "");
                     validate(account);
-                    return true;
+                    return;
                 } else {
-                    return false;
+                    errorAccountInvalid(account);
                 }
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

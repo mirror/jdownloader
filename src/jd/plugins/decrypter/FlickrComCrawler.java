@@ -55,6 +55,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.FlickrCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(?:secure\\.|www\\.)?flickr\\.com/(?:photos|groups)/.+" })
 public class FlickrComCrawler extends PluginForDecrypt {
@@ -101,17 +102,24 @@ public class FlickrComCrawler extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         correctAddedURL(param);
+        if (param.getCryptedUrl().matches(INVALIDLINKS) || param.getCryptedUrl().matches("(?i)^https://[^/]+/photos/groups/$") || param.getCryptedUrl().contains("/map")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         prepBrowserAPI(this.br);
         final PluginForHost flickrHostPlugin = this.getNewPluginForHostInstance(this.getHost());
-        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
             /* Login whenever possible */
             logger.info("Account available -> Logging in");
-            ((jd.plugins.hoster.FlickrCom) flickrHostPlugin).login(account, false);
+            try {
+                ((jd.plugins.hoster.FlickrCom) flickrHostPlugin).login(account, true);
+            } catch (final Throwable ignore) {
+                logger.log(ignore);
+                logger.info("Can't use existing account because login failed");
+                account = null;
+            }
         }
-        if (param.getCryptedUrl().matches(INVALIDLINKS) || param.getCryptedUrl().equals("https://www.flickr.com/photos/groups/") || param.getCryptedUrl().contains("/map")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (flickrHostPlugin.canHandle(param.getCryptedUrl())) {
+        if (flickrHostPlugin.canHandle(param.getCryptedUrl())) {
             /* Pass to hostplugin */
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             ret.add(createDownloadlink(param.getCryptedUrl()));
@@ -169,15 +177,15 @@ public class FlickrComCrawler extends PluginForDecrypt {
         String nameOfMainMap;
         final UrlQuery query = new UrlQuery();
         query.add("api_key", apikey);
-        query.add("extras", jd.plugins.hoster.FlickrCom.getApiParamExtras());
+        query.add("extras", FlickrCom.getApiParamExtras());
         query.add("format", "json");
         query.add("per_page", Integer.toString(api_max_entries_per_page));
         query.add("hermes", "1");
         query.add("hermesClient", "1");
         query.add("nojsoncallback", "1");
         if (account != null) {
-            query.add("csrf", Encoding.urlEncode(account.getStringProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ACCOUNT_CSRF)));
-            query.add("viewerNSID", Encoding.urlEncode(account.getStringProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ACCOUNT_USERNAME_INTERNAL)));
+            query.add("csrf", Encoding.urlEncode(account.getStringProperty(FlickrCom.PROPERTY_ACCOUNT_CSRF)));
+            query.add("viewerNSID", Encoding.urlEncode(account.getStringProperty(FlickrCom.PROPERTY_ACCOUNT_USERNAME_INTERNAL)));
         } else {
             query.add("csrf", "");
         }
@@ -337,25 +345,25 @@ public class FlickrComCrawler extends PluginForDecrypt {
                     contentURL += "/in/gallery-" + usernameFromURL + "-" + album.getGalleryID();
                 }
                 final DownloadLink dl = createDownloadlink(contentURL);
-                jd.plugins.hoster.FlickrCom.parseInfoAPI(this, dl, photo);
+                FlickrCom.parseInfoAPI(this, dl, photo);
                 {
                     /* Set different username/name properties in context */
                     if (givenUsernameDataIsValidForAllMediaItems) {
-                        setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, username, false);
-                        setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_INTERNAL, usernameInternal, false);
-                        setStringProperty(dl, jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_FULL, album.getUsernameFull(), false);
+                        setStringProperty(dl, FlickrCom.PROPERTY_USERNAME, username, false);
+                        setStringProperty(dl, FlickrCom.PROPERTY_USERNAME_INTERNAL, usernameInternal, false);
+                        setStringProperty(dl, FlickrCom.PROPERTY_USERNAME_FULL, album.getUsernameFull(), false);
                     }
                     /* Overwrite previously set properties if our "photo" object has them too as we can trust those ones 100%. */
-                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME_URL, usernameForContentURL);
+                    dl.setProperty(FlickrCom.PROPERTY_USERNAME_URL, usernameForContentURL);
                 }
                 if (album.getSetID() != null) {
-                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_SET_ID, album.getSetID());
+                    dl.setProperty(FlickrCom.PROPERTY_SET_ID, album.getSetID());
                 }
                 if (album.getGalleryID() != null) {
-                    dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_GALLERY_ID, album.getGalleryID());
+                    dl.setProperty(FlickrCom.PROPERTY_GALLERY_ID, album.getGalleryID());
                 }
-                dl.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ORDER_ID, df.format(imagePosition));
-                jd.plugins.hoster.FlickrCom.setFilename(dl);
+                dl.setProperty(FlickrCom.PROPERTY_ORDER_ID, df.format(imagePosition));
+                FlickrCom.setFilename(dl);
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
                 distribute(dl);
@@ -381,21 +389,21 @@ public class FlickrComCrawler extends PluginForDecrypt {
 
     /** Wrapper */
     private String getFormattedFilename(final DownloadLink dl) throws ParseException {
-        return jd.plugins.hoster.FlickrCom.getFormattedFilename(dl);
+        return FlickrCom.getFormattedFilename(dl);
     }
 
     private String getFormattedPackagename(final FlickrAlbum album) throws ParseException {
         String ret;
         final SubConfiguration cfg = SubConfiguration.getConfig("flickr.com");
-        final String customStringForEmptyTags = jd.plugins.hoster.FlickrCom.getCustomStringForEmptyTags();
+        final String customStringForEmptyTags = FlickrCom.getCustomStringForEmptyTags();
         if (album.getType() == AlbumType.GALLERY || album.getType() == AlbumType.SET) {
-            ret = cfg.getStringProperty(jd.plugins.hoster.FlickrCom.CUSTOM_PACKAGENAME_SET_GALLERY, jd.plugins.hoster.FlickrCom.defaultCustomPackagenameSetGallery);
+            ret = cfg.getStringProperty(FlickrCom.CUSTOM_PACKAGENAME_SET_GALLERY, FlickrCom.defaultCustomPackagenameSetGallery);
         } else {
-            ret = cfg.getStringProperty(jd.plugins.hoster.FlickrCom.CUSTOM_PACKAGENAME_OTHERS, jd.plugins.hoster.FlickrCom.defaultCustomPackagenameOthers);
+            ret = cfg.getStringProperty(FlickrCom.CUSTOM_PACKAGENAME_OTHERS, FlickrCom.defaultCustomPackagenameOthers);
         }
-        final String userDefinedDateFormat = cfg.getStringProperty(jd.plugins.hoster.FlickrCom.CUSTOM_DATE, jd.plugins.hoster.FlickrCom.defaultCustomDate);
-        final String dateFormatted = jd.plugins.hoster.FlickrCom.formatToUserDefinedDate(album.getCreateTimestamp(), userDefinedDateFormat, customStringForEmptyTags);
-        final String dateUpdatedFormatted = jd.plugins.hoster.FlickrCom.formatToUserDefinedDate(album.getLastUpdatedTimestamp(), userDefinedDateFormat, customStringForEmptyTags);
+        final String userDefinedDateFormat = cfg.getStringProperty(FlickrCom.CUSTOM_DATE, FlickrCom.defaultCustomDate);
+        final String dateFormatted = FlickrCom.formatToUserDefinedDate(album.getCreateTimestamp(), userDefinedDateFormat, customStringForEmptyTags);
+        final String dateUpdatedFormatted = FlickrCom.formatToUserDefinedDate(album.getLastUpdatedTimestamp(), userDefinedDateFormat, customStringForEmptyTags);
         ret = ret.replace("*type*", StringUtils.firstNotEmpty(album.getTypeAsString(), customStringForEmptyTags));
         ret = ret.replace("*total_number_of_items*", Integer.toString(album.getTotalNumberofItems()));
         ret = ret.replace("*set_id*", StringUtils.firstNotEmpty(album.getSetID(), customStringForEmptyTags));
@@ -431,8 +439,8 @@ public class FlickrComCrawler extends PluginForDecrypt {
         query.add("hermesClient", "1");
         query.add("nojsoncallback", "1");
         if (account != null) {
-            query.add("csrf", Encoding.urlEncode(account.getStringProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ACCOUNT_CSRF)));
-            query.add("viewerNSID", Encoding.urlEncode(account.getStringProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ACCOUNT_USERNAME_INTERNAL)));
+            query.add("csrf", Encoding.urlEncode(account.getStringProperty(FlickrCom.PROPERTY_ACCOUNT_CSRF)));
+            query.add("viewerNSID", Encoding.urlEncode(account.getStringProperty(FlickrCom.PROPERTY_ACCOUNT_USERNAME_INTERNAL)));
         } else {
             query.add("csrf", "");
         }
@@ -497,7 +505,7 @@ public class FlickrComCrawler extends PluginForDecrypt {
                     final UrlQuery query = new UrlQuery();
                     query.add("format", "json");
                     if (account != null) {
-                        query.add("csrf", Encoding.urlEncode(account.getStringProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ACCOUNT_CSRF)));
+                        query.add("csrf", Encoding.urlEncode(account.getStringProperty(FlickrCom.PROPERTY_ACCOUNT_CSRF)));
                     } else {
                         query.add("csrf", "");
                     }
@@ -531,7 +539,7 @@ public class FlickrComCrawler extends PluginForDecrypt {
                     final UrlQuery query = new UrlQuery();
                     query.add("format", "json");
                     if (account != null) {
-                        query.add("csrf", Encoding.urlEncode(account.getStringProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ACCOUNT_CSRF)));
+                        query.add("csrf", Encoding.urlEncode(account.getStringProperty(FlickrCom.PROPERTY_ACCOUNT_CSRF)));
                     } else {
                         query.add("csrf", "");
                     }
@@ -823,12 +831,12 @@ public class FlickrComCrawler extends PluginForDecrypt {
                 } else {
                     extension = ".jpg";
                 }
-                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_MEDIA_TYPE, media);
-                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_EXT, extension);
-                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_USERNAME, pathAlias);
-                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_CONTENT_ID, picID);
-                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_TITLE, title);
-                fina.setProperty(jd.plugins.hoster.FlickrCom.PROPERTY_ORDER_ID, df.format(imagePosition));
+                fina.setProperty(FlickrCom.PROPERTY_MEDIA_TYPE, media);
+                fina.setProperty(FlickrCom.PROPERTY_EXT, extension);
+                fina.setProperty(FlickrCom.PROPERTY_USERNAME, pathAlias);
+                fina.setProperty(FlickrCom.PROPERTY_CONTENT_ID, picID);
+                fina.setProperty(FlickrCom.PROPERTY_TITLE, title);
+                fina.setProperty(FlickrCom.PROPERTY_ORDER_ID, df.format(imagePosition));
                 final String formattedFilename = getFormattedFilename(fina);
                 fina.setName(formattedFilename);
                 fina.setAvailable(true);
@@ -860,7 +868,7 @@ public class FlickrComCrawler extends PluginForDecrypt {
     }
 
     public boolean setStringProperty(final DownloadLink link, final String property, String value, final boolean overwrite) {
-        return jd.plugins.hoster.FlickrCom.setStringProperty(this, link, property, value, overwrite);
+        return FlickrCom.setStringProperty(this, link, property, value, overwrite);
     }
 
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {

@@ -33,7 +33,7 @@ public interface LinkCollectorConfig extends ConfigInterface {
 
     @DefaultBooleanValue(false)
     @AboutConfig
-    @DescriptionForConfigEntry("autoexpand packages in linkcollector")
+    @DescriptionForConfigEntry("Auto expand packages in linkcollector")
     boolean isPackageAutoExpanded();
 
     void setPackageAutoExpanded(boolean b);

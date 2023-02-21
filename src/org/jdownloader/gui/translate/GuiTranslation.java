@@ -1166,10 +1166,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Settings" })
     String SettingsMenu_SettingsMenu_();
 
-    @Default(lngs = { "en" }, values = { "Max. Chunks per Download" })
+    @Default(lngs = { "en" }, values = { "Max. chunks per download" })
     String ChunksEditor_ChunksEditor_();
 
-    @Default(lngs = { "en" }, values = { "Max. simultaneous Downloads" })
+    @Default(lngs = { "en" }, values = { "Max. simultaneous downloads" })
     String ParalellDownloadsEditor_ParalellDownloadsEditor_();
 
     @Default(lngs = { "en" }, values = { "Speed Limit" })
