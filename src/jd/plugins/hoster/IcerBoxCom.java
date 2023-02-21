@@ -18,8 +18,16 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -31,6 +39,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,18 +47,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 /**
  *
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "icerbox.com" }, urls = { "https?://(www\\.)?icerbox\\.com/[A-Z0-9]{8}" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "icerbox.com" }, urls = { "https?://(?:www\\.)?icerbox\\.com/([A-Z0-9]{8})" })
 public class IcerBoxCom extends antiDDoSForHost {
     private final String language = System.getProperty("user.language");
     private final String baseURL  = "https://icerbox.com";
@@ -58,7 +61,6 @@ public class IcerBoxCom extends antiDDoSForHost {
     public IcerBoxCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(baseURL + "/premium");
-        // setConfigElement();
     }
 
     @Override
@@ -103,8 +105,9 @@ public class IcerBoxCom extends antiDDoSForHost {
     protected boolean useRUA() {
         if (freedl) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -117,7 +120,7 @@ public class IcerBoxCom extends antiDDoSForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         if (downloadLink != null) {
             // at this given time only premium acn be downloaded
             if (account != null && account.getType() == AccountType.PREMIUM) {
@@ -125,6 +128,20 @@ public class IcerBoxCom extends antiDDoSForHost {
             }
         }
         return false;
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -150,67 +167,69 @@ public class IcerBoxCom extends antiDDoSForHost {
                         if (atLeastOneDL) {
                             sb.append(",");
                         }
-                        sb.append(getFUID(dl));
+                        sb.append(getFID(dl));
                         atLeastOneDL = true;
                     }
                 }
                 getPage(br, apiURL + "/files?ids=" + sb);
-                if (br.containsHTML("In these moments we are upgrading the site system")) {
+                if (br.containsHTML("(?i)In these moments we are upgrading the site system")) {
                     for (final DownloadLink dl : links) {
                         dl.getLinkStatus().setStatusText("Hoster is in maintenance mode. Try again later");
                         dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                     }
                     return true;
                 }
-                final String[] results = PluginJSonUtils.getJsonResultsFromArray(PluginJSonUtils.getJsonArray(br, "data"));
-                loop: for (final DownloadLink dl : links) {
-                    if (results == null) {
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final List<Map<String, Object>> data = (List<Map<String, Object>>) entries.get("data");
+                for (final DownloadLink dl : links) {
+                    final String fid = this.getFID(dl);
+                    Map<String, Object> fileinfo = null;
+                    for (final Map<String, Object> tempmap : data) {
+                        if (StringUtils.equals(tempmap.get("id").toString(), fid)) {
+                            fileinfo = tempmap;
+                            break;
+                        }
+                    }
+                    /* Set fallback-filename */
+                    if (!dl.isNameSet()) {
+                        dl.setName(fid);
+                    }
+                    if (fileinfo == null) {
+                        /* This should never happen! */
                         dl.setProperty("apiInfo", Property.NULL);
-                        okay = false;
+                        dl.setAvailable(false);
                         continue;
                     }
-                    final String duid = getFUID(dl);
-                    for (final String filter : results) {
-                        final String ruid = PluginJSonUtils.getJsonValue(filter, "id");
-                        if (!duid.equals(ruid)) {
-                            continue;
-                        }
-                        final String status = PluginJSonUtils.getJsonValue(filter, "status");
-                        if ("active".equalsIgnoreCase(status)) {
-                            dl.setAvailable(true);
-                        } else {
-                            dl.setAvailable(false);
-                        }
-                        final String name = PluginJSonUtils.getJsonValue(filter, "name");
-                        final String size = PluginJSonUtils.getJsonValue(filter, "size");
-                        final String md5 = PluginJSonUtils.getJsonValue(filter, "md5");
-                        final String prem = PluginJSonUtils.getJsonValue(filter, "free_available");
-                        final String pass = PluginJSonUtils.getJsonValue(filter, "password");
-                        if (name != null) {
-                            dl.setFinalFileName(name);
-                        }
-                        if (size != null) {
-                            dl.setVerifiedFileSize(Long.parseLong(size));
-                        }
-                        if (md5 != null) {
-                            dl.setMD5Hash(md5);
-                        }
-                        if (prem != null) {
-                            dl.setProperty("premiumRequired", Boolean.parseBoolean(prem));
-                        } else {
-                            dl.setProperty("premiumRequired", Property.NULL);
-                        }
-                        if (pass != null) {
-                            dl.setProperty("passwordRequired", Boolean.parseBoolean(pass));
-                        } else {
-                            dl.setProperty("passwordRequired", Property.NULL);
-                        }
-                        dl.setProperty("apiInfo", Boolean.TRUE);
-                        continue loop;
+                    final String status = fileinfo.get("status").toString();
+                    if ("active".equalsIgnoreCase(status)) {
+                        dl.setAvailable(true);
+                    } else {
+                        dl.setAvailable(false);
                     }
-                    // never matched
-                    dl.setProperty("apiInfo", Property.NULL);
-                    okay = false;
+                    final String name = (String) fileinfo.get("name");
+                    final Number size = (Number) fileinfo.get("size");
+                    final String md5 = (String) fileinfo.get("md5");
+                    final Boolean free_available = (Boolean) fileinfo.get("free_available");
+                    if (name != null) {
+                        dl.setFinalFileName(name);
+                    }
+                    if (size != null) {
+                        dl.setVerifiedFileSize(size.longValue());
+                    }
+                    if (md5 != null) {
+                        dl.setMD5Hash(md5);
+                    }
+                    if (Boolean.TRUE.equals(free_available)) {
+                        dl.setProperty("premiumRequired", Property.NULL);
+                    } else {
+                        dl.setProperty("premiumRequired", true);
+                    }
+                    if (fileinfo.get("password") != null) {
+                        dl.setPasswordProtected(true);
+                    } else {
+                        dl.setPasswordProtected(false);
+                    }
+                    dl.setProperty("apiInfo", Boolean.TRUE);
                 }
                 if (index == urls.length) {
                     break;
@@ -317,7 +336,7 @@ public class IcerBoxCom extends antiDDoSForHost {
                 // free account
                 if (Boolean.FALSE.equals(is_premium)) {
                     // jdlog://8835079150841
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free Accounts on this provider are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free Accounts of this provider are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     // available traffic
                     final long bandwidth_Available = bandwidth_Max.longValue() - bandwitdh_Used.longValue();
@@ -330,8 +349,6 @@ public class IcerBoxCom extends antiDDoSForHost {
                     if (Boolean.TRUE.equals(is_premium) && !ai.isExpired()) {
                         // premium account
                         account.setType(AccountType.PREMIUM);
-                        ai.setStatus("Premium Account");
-                        account.setValid(true);
                     } else {
                         // this shouldn't happen....
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free Accounts on this provider are not supported", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -356,15 +373,15 @@ public class IcerBoxCom extends antiDDoSForHost {
         }
     }
 
-    private void handleDownload_API(final DownloadLink downloadLink, final Account account) throws Exception {
+    private void handleDownload_API(final DownloadLink link, final Account account) throws Exception {
         // prevent more than one download starting at a time, so that we don't perform relogin multiple times within synchronised queues
         synchronized (account) {
-            requestFileInformationApi(downloadLink);
-            dllink = checkDirectLink(downloadLink, directlinkproperty);
+            requestFileInformationApi(link);
+            dllink = checkDirectLink(link, directlinkproperty);
             if (inValidate(dllink)) {
                 // links that require premium...
-                if (downloadLink.getBooleanProperty("premiumRequired", false) && account == null) {
-                    throwPremiumRequiredException(downloadLink, true);
+                if (link.getBooleanProperty("premiumRequired", false) && account == null) {
+                    throw new AccountRequiredException();
                 }
                 br = new Browser();
                 br.getHeaders().put("Accept", "application/json");
@@ -376,13 +393,13 @@ public class IcerBoxCom extends antiDDoSForHost {
                     }
                     final String req = apiURL + "/dl/ticket";
                     br.getHeaders().put("Authorization", "Bearer " + token);
-                    postPage(req, "file=" + getFUID(downloadLink));
+                    postPage(req, "file=" + getFID(link));
                     dllink = PluginJSonUtils.getJsonValue(br, "url");
                 } else {
                     // currently only premium accounts can download... pointless making other download support at this time
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    throw new AccountRequiredException();
                 }
-                handleApiErrors(br, account, downloadLink);
+                handleApiErrors(br, account, link);
                 if (inValidate(dllink)) {
                     if (br.toString().matches("Connect failed: Can't connect to local MySQL server.+")) {
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
@@ -391,12 +408,12 @@ public class IcerBoxCom extends antiDDoSForHost {
                 }
             }
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumes, chunks);
-        if (!dl.getConnection().isContentDisposition()) {
-            downloadLink.setProperty(directlinkproperty, Property.NULL);
-            handleDownloadErrors(account, downloadLink, true);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            link.setProperty(directlinkproperty, Property.NULL);
+            handleDownloadErrors(account, link, true);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
@@ -408,8 +425,9 @@ public class IcerBoxCom extends antiDDoSForHost {
         }
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     private void handleApiErrors(final Browser br, final Account account, final DownloadLink downloadLink) throws Exception {
@@ -448,13 +466,6 @@ public class IcerBoxCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-    }
-
-    private void throwPremiumRequiredException(DownloadLink link, boolean setProperty) throws PluginException {
-        if (setProperty) {
-            link.setProperty("premiumRequired", Boolean.TRUE);
-        }
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -534,7 +545,6 @@ public class IcerBoxCom extends antiDDoSForHost {
             link.setProperty("freelink", Property.NULL);
             link.setProperty("premlink", Property.NULL);
             link.setProperty("premiumRequired", Property.NULL);
-            link.setProperty("passwordRequired", Property.NULL);
         }
     }
 
@@ -544,21 +554,16 @@ public class IcerBoxCom extends antiDDoSForHost {
     private boolean resumes            = true;
     private boolean isFree             = true;
 
-    private String getFUID(DownloadLink downloadLink) {
-        final String fuid = new Regex(downloadLink.getDownloadURL(), "icerbox\\.com/([A-Z0-9]+)").getMatch(0);
-        return fuid;
-    }
-
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
             return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
+        } else if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public boolean hasAutoCaptcha() {
@@ -567,7 +572,7 @@ public class IcerBoxCom extends antiDDoSForHost {
 
     @Override
     protected void runPostRequestTask(final Browser ibr) throws PluginException {
-        if (ibr.containsHTML(">OUR WEBSITE IS UNDER CONSTRUCTION</strong>")) {
+        if (ibr.containsHTML("(?i)>\\s*OUR WEBSITE IS UNDER CONSTRUCTION\\s*</strong>")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Website Under Construction!", 15 * 60 * 1000l);
         }
     }
