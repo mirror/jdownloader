@@ -21,10 +21,13 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DatanodesTo extends XFileSharingProBasic {
@@ -103,5 +106,23 @@ public class DatanodesTo extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        if (br.containsHTML("(?i)>\\s*Not allowed from domain you")) {
+            /* 2023-02-21 */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Not allowed from domain you're coming from");
+        }
+    }
+
+    @Override
+    public Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            /* 2023-02-21: Skips their simple "referer protection" */
+            prepBr.getHeaders().put("Referer", "https://datanodes.to/users");
+        }
+        return prepBr;
     }
 }
