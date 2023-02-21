@@ -13,11 +13,11 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "drive.google.com", type = Type.HOSTER)
 public interface GoogleConfig extends PluginConfigInterface {
-    final String                    text_UserAgent                                               = "Enter User-Agent which will be used for all Google website http requests";
-    final String                    text_PreferredVideoQuality                                   = "Select preferred video quality.\r\nIf you prefer stream download and the preferred stream quality is not found, best stream quality will be downloaded instead.";
+    final String                    text_UserAgent                                               = "User-Agent which will be used for all Google website http requests";
+    final String                    text_PreferredVideoQuality                                   = "Preferred video quality.\r\nIf you prefer stream download and the preferred stream quality is not found, best stream quality will be downloaded instead.";
     final String                    text_AllowStreamDownloadAsFallbackOnQuotaLimitReached        = "Allow stream download if original file can't be downloaded due to a quota limit?";
-    final String                    text_GoogleDriveAPIKey                                       = "Enter Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nIt will be used for GDrive folder crawling, linkchecking and downloading.";
-    final String                    text_APIDownloadMode                                         = "Set API download mode (only relevant if API Key is provided.)";
+    final String                    text_GoogleDriveAPIKey                                       = "Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nIt will be used for GDrive folder crawling, linkchecking and downloading.";
+    final String                    text_APIDownloadMode                                         = "API download mode (only relevant if API Key is provided.)";
     final String                    text_PreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible = "If API key is available: Prefer website for downloading if stream download is preferred and possible?";
     final String                    text_AddStreamQualityIdentifierToFilename                    = "Add quality identifier to filename if video stream (= non-original file) is downloaded?";
     public static final TRANSLATION TRANSLATION                                                  = new TRANSLATION();

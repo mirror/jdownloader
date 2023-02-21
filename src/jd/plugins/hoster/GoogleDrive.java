@@ -1605,20 +1605,20 @@ public class GoogleDrive extends PluginForHost {
         } else {
             /* Website login */
             final GoogleHelper helper = new GoogleHelper(br, this.getLogger());
-            boolean loggedIN = helper.login(account, forceLoginValidation);
-            if (loggedIN && forceLoginValidation && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            helper.login(account, forceLoginValidation);
+            final boolean runDevTest = false;
+            final Cookies userCookies = account.loadUserCookies();
+            if (forceLoginValidation && userCookies != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE && runDevTest) {
                 /* 2021-02-02: Testing advanced login-check for GDrive */
                 final boolean oldFollowRedirects = br.isFollowingRedirects();
                 try {
                     final String cookieOSID = br.getCookie("google.com", "OSID");
-                    if (cookieOSID != null && cookieOSID.equals("")) {
-                        final Cookies userCookies = account.loadUserCookies();
-                        if (userCookies != null) {
-                            final Cookie realOSID = userCookies.get("OSID");
-                            if (realOSID != null && realOSID.getValue().length() > 0) {
-                                logger.info("Testing OSID login workaround, real OSID cookie value is: " + realOSID.getValue());
-                                br.setCookies(userCookies);
-                            }
+                    if (cookieOSID == null || cookieOSID.equals("")) {
+                        logger.info("OSID cookie has empty value -> Checking if full value is present in user added cookies");
+                        final Cookie realOSID = userCookies.get("OSID");
+                        if (realOSID != null && realOSID.getValue().length() > 0) {
+                            logger.info("OSID login workaround needed(?), real OSID cookie value is: " + realOSID.getValue());
+                            br.setCookies(userCookies);
                         }
                     }
                     br.setFollowRedirects(true);
@@ -1626,15 +1626,13 @@ public class GoogleDrive extends PluginForHost {
                     if (br.getURL().contains("accounts.google.com")) {
                         logger.warning("Looks like GDrive login failed");
                         // loggedIN = false;
+                        GoogleHelper.errorAccountInvalid(account);
                     } else {
                         logger.info("Looks like GDrive login was successful");
                     }
                 } finally {
                     br.setFollowRedirects(oldFollowRedirects);
                 }
-            }
-            if (!loggedIN) {
-                GoogleHelper.errorAccountInvalid(account);
             }
         }
     }

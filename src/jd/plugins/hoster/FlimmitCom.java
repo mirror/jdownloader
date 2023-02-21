@@ -187,36 +187,31 @@ public class FlimmitCom extends PluginForHost {
                 throw e;
             }
         }
-        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-        final Object dataO = entries.get("data");
-        boolean autorenewal_active = false;
-        if (dataO != null) {
-            entries = (Map<String, Object>) dataO;
-            final String valid_until = (String) entries.get("valid_until");
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        // boolean autorenewal_active = false;
+        if (data != null) {
+            final String valid_until = (String) data.get("valid_until");
             ai.setValidUntil(0);
             if (ai.isExpired() && !StringUtils.isEmpty(valid_until)) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(valid_until, "yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH));
             }
-            final String next_payment_date = (String) entries.get("next_payment_date");
-            final Object autorenewal_activeO = entries.get("autorenewal_active");
-            if (ai.isExpired() && !StringUtils.isEmpty(next_payment_date) && Boolean.TRUE.equals(autorenewal_activeO)) {
-                autorenewal_active = true;
+            final String next_payment_date = (String) data.get("next_payment_date");
+            // final Object autorenewal_activeO = entries.get("autorenewal_active");
+            // if (Boolean.TRUE.equals(autorenewal_activeO)) {
+            // autorenewal_active = true;
+            // }
+            if (ai.isExpired() && !StringUtils.isEmpty(next_payment_date)) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(next_payment_date, "yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ENGLISH));
             }
-            if (ai.isExpired()) {
-                ai.setValidUntil(-1);
-                account.setType(AccountType.FREE);
-                /* Free accounts cannot download/stream anything. */
-                ai.setTrafficLeft(0);
-            } else {
+            if (!ai.isExpired()) {
                 account.setType(AccountType.PREMIUM);
-                ai.setUnlimitedTraffic();
             }
         } else {
             account.setType(AccountType.FREE);
             /* Free accounts cannot download/stream anything. */
             ai.setTrafficLeft(0);
-            // ai.setExpired(true);
+            ai.setExpired(true);
         }
         account.setConcurrentUsePossible(true);
         return ai;

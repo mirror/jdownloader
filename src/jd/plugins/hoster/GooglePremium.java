@@ -7,7 +7,6 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -43,13 +42,9 @@ public class GooglePremium extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final GoogleHelper helper = new GoogleHelper(br);
-        if (!helper.login(account, true)) {
-            throw new AccountUnavailableException("Login failed", 2 * 60 * 60 * 1000l);
-        }
+        helper.login(account, true);
         final AccountInfo ai = new AccountInfo();
-        ai.setStatus("Account OK");
         ai.setValidUntil(-1);
-        account.setValid(true);
         return ai;
     }
 
