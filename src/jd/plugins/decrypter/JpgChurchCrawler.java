@@ -99,6 +99,9 @@ public class JpgChurchCrawler extends PluginForDecrypt {
         br.getPage(contentURLCleaned);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().matches("(?i)^https?://[^/]+/?$")) {
+            /* Redirect to mainpage */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String passCode = null;
         Form pwform = getPasswordForm(br);

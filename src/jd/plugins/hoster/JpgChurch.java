@@ -68,7 +68,7 @@ public class JpgChurch extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "jpg.church" });
+        ret.add(new String[] { "jpg.fish", "jpg.church" });
         return ret;
     }
 
@@ -90,8 +90,14 @@ public class JpgChurch extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(final String host) {
+        /* 2023-02-21: Main domain changed from "jpg.church" to "jpg.fish". */
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
+    @Override
     public String getAGBLink() {
-        return "https://jpg.church/page/tos";
+        return "https://" + this.getHost() + "/page/tos";
     }
 
     @Override
@@ -147,7 +153,11 @@ public class JpgChurch extends PluginForHost {
             query.add("url", URLEncode.encodeURIComponent(link.getPluginPatternMatcher()));
             query.add("format", "json");
             br.getPage("https://" + this.getHost() + "/oembed/?" + query.toString());
-            if (br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                /* Link is broken/invalid */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
+                /* Content is offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* Check if item is password protected */
