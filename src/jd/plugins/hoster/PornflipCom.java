@@ -262,6 +262,7 @@ public class PornflipCom extends PluginForHost {
                     }
                     br.getPage(continuelink);
                 } else {
+                    logger.warning("Failed to find 'redirect' field in expected json answer -> Using mainpage as fallback");
                     br.getPage("/");
                 }
                 if (!isLoggedIN(br)) {

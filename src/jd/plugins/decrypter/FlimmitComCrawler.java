@@ -56,8 +56,9 @@ public class FlimmitComCrawler extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String PROPERTY_COLLECTION_SLUG  = "collectionSlug";
-    private static final String PROPERTY_COLLECTION_TITLE = "collectionTitle";
+    private static final String PROPERTY_COLLECTION_SLUG          = "collectionSlug";
+    private static final String PROPERTY_COLLECTION_TITLE         = "collectionTitle";
+    private final boolean       premiumAccountRequiredForCrawling = true;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -279,19 +280,15 @@ public class FlimmitComCrawler extends PluginForDecrypt {
         }
         if (account == null) {
             throw new AccountRequiredException();
-        } else {
-            final PluginForHost plugin = getNewPluginForHostInstance("flimmit.com");
-            if (plugin == null) {
-                throw new IllegalStateException("flimmit hoster plugin not found!");
-            } else {
-                if (account.getType() != AccountType.PREMIUM) {
-                    logger.warning("Looks like user does not own a premium account -> Crawler will most likely fail");
-                }
-                // set cross browser support
-                ((jd.plugins.hoster.FlimmitCom) plugin).setBrowser(br);
-                ((jd.plugins.hoster.FlimmitCom) plugin).login(account, false);
+        }
+        final PluginForHost plugin = getNewPluginForHostInstance("flimmit.com");
+        if (account.getType() != AccountType.PREMIUM) {
+            logger.warning("Looks like user does not own a premium account -> Crawler will most likely fail");
+            if (premiumAccountRequiredForCrawling) {
+                throw new AccountRequiredException();
             }
         }
+        ((jd.plugins.hoster.FlimmitCom) plugin).login(account, false);
     }
 
     @Override

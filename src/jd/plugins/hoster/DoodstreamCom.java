@@ -449,7 +449,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
         correctDownloadLink(link);
         /* First, set fallback-filename */
         if (!link.isNameSet()) {
-            setWeakFilename(link);
+            setWeakFilename(link, br);
         }
         this.br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());

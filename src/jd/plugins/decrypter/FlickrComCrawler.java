@@ -42,6 +42,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -581,6 +582,7 @@ public class FlickrComCrawler extends PluginForDecrypt {
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final String status = (String) entries.get("stat");
         if (StringUtils.equalsIgnoreCase(status, "fail")) {
+            // final String messageServerside = (String) entries.get("message");
             final int statuscode = ((Number) entries.get("code")).intValue();
             final String statusMessage;
             switch (statuscode) {
@@ -599,11 +601,13 @@ public class FlickrComCrawler extends PluginForDecrypt {
                 statusMessage = "No user specified or permission denied";
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 98:
+                /* Login failed */
                 statusMessage = "Login failed";
-                throw new DecrypterException("API_LOGIN_FAILED");
+                throw new AccountInvalidException();
             case 100:
+                /* Invalid api key */
                 statusMessage = "Invalid api key";
-                throw new DecrypterException("API_INVALID_APIKEY");
+                throw new AccountInvalidException();
             case 105:
                 statusMessage = "Service currently unavailable";
                 throw new DecrypterException("API_SERVICE_CURRENTLY_UNAVAILABLE");
