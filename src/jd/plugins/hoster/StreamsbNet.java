@@ -119,7 +119,7 @@ public class StreamsbNet extends XFileSharingProBasic {
         if (!StringUtils.isEmpty(specialFilenameResult)) {
             logger.info("Found nice file-title: " + specialFilenameResult);
             link.setProperty(EXTENDED_FILENAME_RESULT, specialFilenameResult);
-            setFilename(specialFilenameResult, link);
+            setFilename(specialFilenameResult, link, br);
         }
         return result;
     }

@@ -54,7 +54,6 @@ import org.jdownloader.captcha.v2.CaptchaHosterHelperInterface;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
@@ -130,7 +129,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     // return this.rewriteHost(getPluginDomains(), host);
     // }
     public static final String getDefaultAnnotationPatternPart() {
-        return "/(?:d/[A-Za-z0-9]+|(?:embed-)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?)";
+        return "/(?:d/[A-Za-z0-9]+|(?:embed-|e/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?)";
     }
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
@@ -331,7 +330,13 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
 
     /** Checks whether current html code contains embed code for current fuid which would indicate that we have a videohost. */
     protected boolean isVideohosterEmbedHTML(final Browser br) {
-        if (new Regex(correctedBR, "/embed-" + this.getFUIDFromURL(this.getDownloadLink()) + "\\.html").matches()) {
+        if (br == null) {
+            return false;
+        }
+        if (br.containsHTML("/embed-" + this.getFUIDFromURL(this.getDownloadLink()) + "\\.html")) {
+            return true;
+        } else if (br.containsHTML("/e/" + this.getFUIDFromURL(this.getDownloadLink()))) {
+            /* A lot of newer XFS templates got such embed URLs. */
             return true;
         } else {
             return false;
@@ -964,7 +969,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         processFileInfo(fileInfo, altbr, link);
         if (!StringUtils.isEmpty(fileInfo[0])) {
             /* Correct- and set filename */
-            setFilename(fileInfo[0], link);
+            setFilename(fileInfo[0], link, br);
+        } else {
+            /* Fallback. Do this again as now we got the html code available so we can e.g. know if this is a video-filehoster or not. */
+            this.setWeakFilename(link, br);
         }
         {
             /* Set filesize */
@@ -989,14 +997,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
      * Wrapper. </br>
      * Does some corrections on given name string and sets it as filename on given DownloadLink.
      */
-    protected void setFilename(String name, final DownloadLink link) {
+    protected void setFilename(String name, final DownloadLink link, final Browser br) {
         /* Correct- and set filename */
         if (Encoding.isHtmlEntityCoded(name)) {
             name = Encoding.htmlDecode(name);
         }
         /* Remove some html tags - in most cases not necessary! */
         name = name.replaceAll("(</b>|<b>|\\.html)", "").trim();
-        if (this.internal_isVideohoster_enforce_video_filename(link)) {
+        if (this.internal_isVideohoster_enforce_video_filename(link) || this.isVideohosterEmbedHTML(br)) {
             /* For videohosts we often get ugly filenames such as 'some_videotitle.avi.mkv.mp4' --> Correct that! */
             name = this.correctOrApplyFileNameExtension(name, ".mp4");
         }
@@ -1024,7 +1032,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                 return URL_TYPE.NORMAL;
             } else if (url.matches("(?i)^https?://[^/]+/file/([a-z0-9]{12}).*")) {
                 return URL_TYPE.FILE;
-            } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/embed-([a-z0-9]{12}).*")) {
+            } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/embed-([a-z0-9]{12}).*") || url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/e/([a-z0-9]{12}).*")) {
                 return URL_TYPE.EMBED;
             } else {
                 logger.info("Unknown URL_TYPE:" + url);
@@ -1044,7 +1052,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                         throw new IllegalArgumentException("Unsupported type:" + type + "|" + url);
                     }
                 case EMBED:
-                    return new Regex(new URL(url).getPath(), "/(?:embed-)?([a-z0-9]{12})").getMatch(0);
+                    return new Regex(new URL(url).getPath(), "/(?:embed-|e/)?([a-z0-9]{12})").getMatch(0);
                 case FILE:
                     return new Regex(new URL(url).getPath(), "/file/([a-z0-9]{12})").getMatch(0);
                 case SHORT:
@@ -3092,7 +3100,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
      */
     protected void fixFilenameHLSDownload(final DownloadLink link) {
         /* Either final filename from previous download attempt or filename found in HTML. */
-        final String orgNameWithExt = link.getFinalFileName();
+        final String orgNameWithExt = link.getName();
         if (orgNameWithExt != null) {
             link.setFinalFileName(this.correctOrApplyFileNameExtension(orgNameWithExt, ".mp4"));
         }
@@ -3220,11 +3228,15 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
      * Tries to get filename from URL and if this fails, will return <fuid> as filename. <br/>
      */
     protected String getFallbackFilename(final DownloadLink link) {
+        return getFallbackFilename(link, null);
+    }
+
+    protected String getFallbackFilename(final DownloadLink link, final Browser br) {
         String filenameURL = this.getFilenameFromURL(link);
         if (filenameURL != null) {
             return URLEncode.decodeURIComponent(filenameURL);
         } else {
-            if (this.isVideohoster_enforce_video_filename()) {
+            if (this.isVideohoster_enforce_video_filename() || this.isVideohosterEmbedHTML(br)) {
                 return this.getFUIDFromURL(link) + ".mp4";
             } else if (this.isImagehoster()) {
                 return this.getFUIDFromURL(link) + ".jpg";
@@ -5066,14 +5078,16 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                         }
                         /* E.g. check for "result":[{"status":404,"filecode":"xxxxxxyyyyyy"}] */
                         final long status = JavaScriptEngineFactory.toLong(fileInfo.get("status"), 404);
+                        if (!link.isNameSet()) {
+                            setWeakFilename(link);
+                        }
+                        String filename = null;
+                        boolean isVideohost = false;
                         if (status != 200) {
                             link.setAvailable(false);
-                            if (!link.isNameSet()) {
-                                setWeakFilename(link);
-                            }
                         } else {
                             link.setAvailable(true);
-                            String filename = (String) fileInfo.get("name");
+                            filename = (String) fileInfo.get("name");
                             if (StringUtils.isEmpty(filename)) {
                                 filename = (String) fileInfo.get("file_title");
                             }
@@ -5082,29 +5096,28 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
                             final Object views_started = fileInfo.get("views_started");
                             final Object views = fileInfo.get("views");
                             final Object length = fileInfo.get("length");
-                            final boolean isVideohost = canplay != null || views_started != null || views != null || length != null;
-                            if (!StringUtils.isEmpty(filename)) {
-                                /*
-                                 * At least for videohosts, filenames from json would often not contain a file extension!
-                                 */
-                                if (Encoding.isHtmlEntityCoded(filename)) {
-                                    filename = Encoding.htmlDecode(filename);
-                                }
-                                if (isVideohost) {
-                                    filename = this.correctOrApplyFileNameExtension(filename, ".mp4");
-                                }
-                                link.setFinalFileName(filename);
-                            } else {
-                                if (isVideohost) {
-                                    link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-                                }
-                                if (!link.isNameSet()) {
-                                    setWeakFilename(link);
-                                }
-                            }
+                            isVideohost = canplay != null || views_started != null || views != null || length != null;
                             /* Filesize is not always given especially not for videohosts. */
                             if (filesize > 0) {
                                 link.setDownloadSize(filesize);
+                            }
+                        }
+                        if (!StringUtils.isEmpty(filename)) {
+                            /*
+                             * At least for videohosts, filenames from json would often not contain a file extension!
+                             */
+                            if (Encoding.isHtmlEntityCoded(filename)) {
+                                filename = Encoding.htmlDecode(filename);
+                            }
+                            if (isVideohost) {
+                                filename = this.correctOrApplyFileNameExtension(filename, ".mp4");
+                            }
+                            /* Trust API filenames -> Set as final filename. */
+                            link.setFinalFileName(filename);
+                        } else {
+                            final String name = link.getName();
+                            if (name != null && isVideohost) {
+                                link.setName(this.correctOrApplyFileNameExtension(filename, ".mp4"));
                             }
                         }
                     }
@@ -5367,12 +5380,16 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         }
     }
 
+    protected void setWeakFilename(final DownloadLink link) {
+        setWeakFilename(link, null);
+    }
+
     /**
      * Use this to set filename based on filename inside URL or fuid as filename either before a linkcheck happens so that there is a
      * readable filename displayed in the linkgrabber or also for mass-linkchecking as in this case these is no filename given inside HTML.
      */
-    protected void setWeakFilename(final DownloadLink link) {
-        final String weakFilename = this.getFallbackFilename(link);
+    protected void setWeakFilename(final DownloadLink link, final Browser br) {
+        final String weakFilename = this.getFallbackFilename(link, br);
         if (weakFilename != null) {
             link.setName(weakFilename);
         }
