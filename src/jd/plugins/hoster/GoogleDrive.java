@@ -504,7 +504,7 @@ public class GoogleDrive extends PluginForHost {
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         /* Login whenever possible */
         if (account != null) {
-            login(this.br, account, false);
+            this.loginDuringLinkcheckOrDownload(br, account);
         }
         prepBrowser(this.br);
         final String fid = getFID(link);
@@ -513,55 +513,30 @@ public class GoogleDrive extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         try {
-            String filename = null;
-            final boolean allowExperimentalLinkcheck = false;
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && allowExperimentalLinkcheck) {
-                /* 2020-12-01: Only for testing! */
-                final Browser br2 = br.cloneBrowser();
-                br2.getHeaders().put("X-Drive-First-Party", "DriveViewer");
-                /* 2020-12-01: authuser=0 also for logged-in users! */
-                br2.postPage("https://drive.google.com/uc?id=" + this.getFID(link) + "&authuser=0&export=download", "");
-                if (br2.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                final String json = br2.getRegex(".*(\\{.+\\})$").getMatch(0);
-                final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
-                /* 2020-12-01: E.g. "SCAN_CLEAN" or "TOO_LARGE" or "QUOTA_EXCEEDED" */
-                // final String disposition = (String) entries.get("disposition");
-                /* 2020-12-01: E.g. "OK" or "WARNING" or "ERROR" */
-                final String scanResult = (String) entries.get("scanResult");
-                filename = (String) entries.get("fileName");
-                final Object filesizeO = entries.get("sizeBytes");
-                if (!StringUtils.isEmpty(filename)) {
-                    link.setFinalFileName(filename);
-                }
-                if (filesizeO != null && filesizeO instanceof Number) {
-                    final long filesize = ((Number) filesizeO).longValue();
-                    if (filesize > 0) {
-                        link.setDownloadSize(filesize);
-                        link.setVerifiedFileSize(filesize);
+            PluginException experimentalLinkcheckException = null;
+            if (PluginJsonConfig.get(GoogleConfig.class).isEnableExperimentalLinkcheck()) {
+                try {
+                    final AvailableStatus status = this.handleExperimentalLinkcheck(br, link, account);
+                    if (status == AvailableStatus.TRUE) {
+                        return status;
                     }
-                }
-                if (scanResult.equalsIgnoreCase("error")) {
-                    /* Assume that this has happened: {"disposition":"QUOTA_EXCEEDED","scanResult":"ERROR"} */
-                    if (isDownload) {
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "TODO");
-                    }
-                    if (link.isNameSet()) {
-                        return AvailableStatus.TRUE;
+                } catch (final PluginException exc) {
+                    if (exc.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        throw exc;
                     } else {
-                        logger.info("Continue to try to find filename");
+                        /**
+                         * Most likely file is not downloadable because quota limit reached or file is infected. </br>
+                         * In these cases, experimental linkcheck will not find any file information -> Try normal linkcheck
+                         */
+                        experimentalLinkcheckException = exc;
                     }
-                } else {
-                    this.dllink = (String) entries.get("downloadUrl");
-                    return AvailableStatus.TRUE;
                 }
             }
             /*
              * 2020-09-14: Check for possible direct download first. This will also get around Googles "IP/ISP captcha-blocks" (see code
              * below).
              */
-            URLConnectionAdapter con = br.openGetConnection(getPreferredConstructedDirecturl(link, account));
+            final URLConnectionAdapter con = br.openGetConnection(getPreferredConstructedDirecturl(link, account));
             if (con.getResponseCode() == 500 && !this.looksLikeDownloadableContent(con) && !this.isGoogleDocument(link)) {
                 isForSurePublicFileOrAtLeastDownloadableForSure = true;
                 try {
@@ -637,7 +612,7 @@ public class GoogleDrive extends PluginForHost {
                 this.handleErrorsWebsite(this.br, link, account);
             }
             /** Try to set filename- and size. This will even work for quota-blocked files! */
-            filename = br.getRegex("class=\"uc-name-size\"><a href=\"[^\"]+\">([^<>\"]+)<").getMatch(0);
+            String filename = br.getRegex("class=\"uc-name-size\"><a href=\"[^\"]+\">([^<>\"]+)<").getMatch(0);
             if (filename != null) {
                 link.setName(Encoding.htmlDecode(filename).trim());
             }
@@ -731,6 +706,10 @@ public class GoogleDrive extends PluginForHost {
                 // size of original file but the to be downloaded file could be a re-encoded stream with different file size
                 link.setDownloadSize(Long.parseLong(filesizeBytes));
             }
+            /* Exceptions in experimental linkcheck are more trustworthy so keep them and throw them if needed. */
+            if (experimentalLinkcheckException != null && isDownload) {
+                throw experimentalLinkcheckException;
+            }
         } catch (final AccountRequiredException ae) {
             if (isDownload) {
                 throw ae;
@@ -739,6 +718,64 @@ public class GoogleDrive extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private AvailableStatus handleExperimentalLinkcheck(final Browser br, final DownloadLink link, final Account account) throws PluginException, IOException {
+        logger.info("Attempting experimental linkcheck");
+        br.getHeaders().put("X-Drive-First-Party", "DriveViewer");
+        final UrlQuery query = new UrlQuery();
+        query.add("id", this.getFID(link));
+        /* 2020-12-01: authuser=0 also for logged-in users! */
+        query.add("authuser", "0");
+        query.add("export", "download");
+        br.postPage("https://drive.google.com/uc?" + query.toString(), "");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String json = br.getRegex(".*(\\{.+\\})$").getMatch(0);
+        final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+        /* 2020-12-01: E.g. "SCAN_CLEAN" or "TOO_LARGE" or "QUOTA_EXCEEDED" */
+        // final String disposition = (String) entries.get("disposition");
+        /* 2020-12-01: E.g. "OK" or "WARNING" or "ERROR" */
+        final String filename = (String) entries.get("fileName");
+        final Number filesizeO = (Number) entries.get("sizeBytes");
+        if (filesizeO != null) {
+            /* Filesize field will be 0 for google docs and given downloadUrl will be broken. */
+            final long filesize = filesizeO.longValue();
+            if (filesize == 0) {
+                logger.info("Do not trust experimental linkcheck with filesize == 0");
+                /* Do not trust this filename as it is most likely missing a file-extension. */
+                if (!StringUtils.isEmpty(filename)) {
+                    link.setName(filename);
+                }
+                return AvailableStatus.UNCHECKABLE;
+            } else {
+                link.setVerifiedFileSize(filesize);
+            }
+        }
+        if (!StringUtils.isEmpty(filename)) {
+            link.setFinalFileName(filename);
+        }
+        final String scanResult = (String) entries.get("scanResult");
+        if (scanResult != null && scanResult.equalsIgnoreCase("ERROR")) {
+            /* Assume that this has happened: {"disposition":"QUOTA_EXCEEDED","scanResult":"ERROR"} */
+            final String errorServersideEnumStr = entries.get("disposition").toString();
+            if (errorServersideEnumStr.equalsIgnoreCase("FILE_INFECTED_NOT_OWNER")) {
+                this.errorFileInfected(link);
+            } else if (errorServersideEnumStr.equalsIgnoreCase("QUOTA_EXCEEDED")) {
+                /* Filename/size can still be crawled from website html code but not via this linkcheck. */
+                this.errorDownloadQuotaReachedWebsite(link, account);
+            } else {
+                /* Unknown error state */
+                throw new PluginException(LinkStatus.ERROR_FATAL, errorServersideEnumStr);
+            }
+        } else {
+            /* Typically with scanResult == "CLEAN_FILE" */
+            this.dllink = entries.get("downloadUrl").toString();
+            logger.info("Experimental linkcheck successful and file should be downloadable");
+            return AvailableStatus.TRUE;
+        }
+        return AvailableStatus.UNCHECKABLE;
     }
 
     private void accessFileViewURLWithPartialErrorhandling(final Browser br, final DownloadLink link, final Account account) throws PluginException, IOException {
@@ -1180,7 +1217,7 @@ public class GoogleDrive extends PluginForHost {
                 if (this.isStreamDownloadPreferredAndAllowed(link) && PluginJsonConfig.get(GoogleConfig.class).isPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible()) {
                     if (account != null) {
                         usedAccount = true;
-                        this.login(br, account, usedAccount);
+                        this.loginDuringLinkcheckOrDownload(br, account);
                     }
                     final String streamDownloadlink = this.handleStreamQualitySelection(link, account);
                     if (!StringUtils.isEmpty(streamDownloadlink)) {
@@ -1301,6 +1338,14 @@ public class GoogleDrive extends PluginForHost {
         this.dl.startDownload();
     }
 
+    private void loginDuringLinkcheckOrDownload(final Browser br, final Account account) throws Exception {
+        if (PluginJsonConfig.get(GoogleConfig.class).isDebugForceValidateLoginAlways()) {
+            this.login(br, account, true);
+        } else {
+            this.login(br, account, false);
+        }
+    }
+
     private void checkErrorBlockedByGoogle(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         if (br.getHttpConnection().getResponseCode() == 403 && br.containsHTML("(?i)but your computer or network may be sending automated queries")) {
             /* 2022-02-24 */
@@ -1324,7 +1369,9 @@ public class GoogleDrive extends PluginForHost {
         }
         /* Check for other errors */
         checkErrorBlockedByGoogle(br, link, account);
-        if (br.containsHTML("(?i)error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive – (Quota|Cuota|Kuota|La quota|Quote)")) {
+        if (br.containsHTML("(?i)>\\s*Sorry, this file is infected with a virus")) {
+            this.errorFileInfected(link);
+        } else if (br.containsHTML("(?i)error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.|<title>Google Drive – (Quota|Cuota|Kuota|La quota|Quote)")) {
             errorDownloadQuotaReachedWebsite(link, account);
         } else if (isQuotaReachedWebsiteFile(br)) {
             errorDownloadQuotaReachedWebsite(link, account);
@@ -1572,6 +1619,10 @@ public class GoogleDrive extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: " + getDownloadQuotaReachedHint1(), getQuotaReachedWaittime());
     }
 
+    private void errorFileInfected(final DownloadLink link) throws PluginException {
+        throw new PluginException(LinkStatus.ERROR_FATAL, "File is v" + "irus infected. Only file owner can download this file.");
+    }
+
     private static String getDownloadQuotaReachedHint1() {
         return "Try later or import the file into your account and download it from there";
     }
@@ -1606,9 +1657,8 @@ public class GoogleDrive extends PluginForHost {
             /* Website login */
             final GoogleHelper helper = new GoogleHelper(br, this.getLogger());
             helper.login(account, forceLoginValidation);
-            final boolean runDevTest = false;
             final Cookies userCookies = account.loadUserCookies();
-            if (forceLoginValidation && userCookies != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE && runDevTest) {
+            if (forceLoginValidation && userCookies != null && PluginJsonConfig.get(GoogleConfig.class).isDebugAccountLogin()) {
                 /* 2021-02-02: Testing advanced login-check for GDrive */
                 final boolean oldFollowRedirects = br.isFollowingRedirects();
                 try {
@@ -1625,7 +1675,6 @@ public class GoogleDrive extends PluginForHost {
                     br.getPage("https://drive.google.com/");
                     if (br.getURL().contains("accounts.google.com")) {
                         logger.warning("Looks like GDrive login failed");
-                        // loggedIN = false;
                         GoogleHelper.errorAccountInvalid(account);
                     } else {
                         logger.info("Looks like GDrive login was successful");
@@ -1638,8 +1687,8 @@ public class GoogleDrive extends PluginForHost {
     }
 
     /**
+     * 2021-02-02: Unfinished work! </br>
      * TODO: Add settings for apiID and apiSecret </br>
-     * 2021-02-02: Unfinished work! ...
      */
     private void loginAPI(final Browser br, final Account account) throws IOException, InterruptedException, PluginException {
         /* https://developers.google.com/identity/protocols/oauth2/limited-input-device */

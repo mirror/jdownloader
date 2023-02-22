@@ -95,7 +95,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlWebsiteJson(final CryptedLink param, final ArrayList<DownloadLink> ret) throws Exception {
-        final String jsonRoot = br.getRegex("window\\.__DATA__\\s*=\\s*(\\{.*?\\};\\s+)").getMatch(0);
+        final String jsonRoot = br.getRegex("window\\.__DATA__\\s*=\\s*(\\{.*?\\});\\s+").getMatch(0);
         if (jsonRoot == null) {
             /* Assume that there is no downloadable content available. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -65,17 +67,33 @@ public class ClicksflyCom extends MightyScriptAdLinkFly {
         final boolean followRedirectsOld = br.isFollowingRedirects();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        br.setFollowRedirects(followRedirectsOld);
         Form form = br.getForm(0);
         form.setAction(Encoding.urlDecode(form.getInputField("url").getValue(), true));
         submitForm(form);
+        final Form form2 = br.getFormbyKey("alias");
+        if (form2 != null) {
+            /* Ads + captcha */
+            logger.info("form2 detected");
+            final String hcaptchaResponse = new CaptchaHelperCrawlerPluginHCaptcha(this, br).getToken();
+            form2.put("h-captcha-response", Encoding.urlEncode(hcaptchaResponse));
+            br.submitForm(form2);
+            final Form form3 = br.getFormbyKey("alias");
+            if (form3 != null) {
+                /* Back to original website -> Wait time -> Final link */
+                logger.info("form2 detected");
+                br.submitForm(form3);
+            }
+        }
+        br.setFollowRedirects(followRedirectsOld);
         return ret;
+        // return super.handlePreCrawlProcess(param);
     }
 
     @Override
     protected String getSpecialReferer() {
         /* Pre-set Referer to skip multiple ad pages e.g. clk.asia -> set referer -> clk.asia */
         /* Possible other fake blog domains: skincarie.com, howifx.com */
-        return "https://vavada5com.com/";
+        // Last updated: 2023-02-22
+        return "https://howifx.com/";
     }
 }
