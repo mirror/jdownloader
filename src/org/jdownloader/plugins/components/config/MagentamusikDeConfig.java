@@ -10,10 +10,10 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "magentamusik.de", type = Type.CRAWLER)
 public interface MagentamusikDeConfig extends PluginConfigInterface {
-    final String text_CrawlVR = "Crawl VR Videos?";
+    final String text_CrawlVR = "Crawl VR videos?";
 
     public static class TRANSLATION {
-        public String isCrawlVR() {
+        public String getCrawlVR_label() {
             return text_CrawlVR;
         }
     }
