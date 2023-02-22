@@ -21,7 +21,7 @@ public interface GoogleConfig extends PluginConfigInterface {
     final String                    text_PreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible = "If API key is available: Prefer website for downloading if stream download is preferred and possible?";
     final String                    text_AddStreamQualityIdentifierToFilename                    = "Add quality identifier to filename if video stream (= non-original file) is downloaded?";
     final String                    text_DebugAccountLogin                                       = "Debug: Perform extended account check?";
-    final String                    text_DebugForceValidateLoginAlways                           = "Debug: Force validate login on every linkcheck/download attempt (will slow things down!)?";
+    final String                    text_DebugForceValidateLoginAlways                           = "Debug: Force validate login on every linkcheck/download attempt (will slow things down)?";
     final String                    text_DebugEnableExperimentalLinkcheck                        = "Debug: Enable experimental linkcheck?";
     public static final TRANSLATION TRANSLATION                                                  = new TRANSLATION();
 
