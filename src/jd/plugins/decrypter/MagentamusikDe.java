@@ -25,7 +25,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "magentamusik.de" }, urls = { "https?://(?:www\\.)?(?:magenta-musik-360|magentamusik)\\.de/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "magentamusik.de" }, urls = { "https?://(?:www\\.)?(?:magenta-musik-360|magentamusik)\\.de/(?!artists|collection|genre|uploads).+" })
 public class MagentamusikDe extends PluginForDecrypt {
     public MagentamusikDe(final PluginWrapper wrapper) {
         super(wrapper);
