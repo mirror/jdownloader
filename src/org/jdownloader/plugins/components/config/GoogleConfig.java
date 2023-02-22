@@ -20,6 +20,9 @@ public interface GoogleConfig extends PluginConfigInterface {
     final String                    text_APIDownloadMode                                         = "API download mode (only relevant if API Key is provided.)";
     final String                    text_PreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible = "If API key is available: Prefer website for downloading if stream download is preferred and possible?";
     final String                    text_AddStreamQualityIdentifierToFilename                    = "Add quality identifier to filename if video stream (= non-original file) is downloaded?";
+    final String                    text_DebugAccountLogin                                       = "Debug: Perform extended account check?";
+    final String                    text_DebugForceValidateLoginAlways                           = "Debug: Force validate login on every linkcheck/download attempt (will slow things down!)?";
+    final String                    text_DebugEnableExperimentalLinkcheck                        = "Debug: Enable experimental linkcheck?";
     public static final TRANSLATION TRANSLATION                                                  = new TRANSLATION();
 
     public static class TRANSLATION {
@@ -49,6 +52,18 @@ public interface GoogleConfig extends PluginConfigInterface {
 
         public String getAddStreamQualityIdentifierToFilename_label() {
             return text_AddStreamQualityIdentifierToFilename;
+        }
+
+        public String getDebugAccountLogin_label() {
+            return text_DebugAccountLogin;
+        }
+
+        public String getDebugForceValidateLoginAlways_label() {
+            return text_DebugForceValidateLoginAlways;
+        }
+
+        public String getDebugEnableExperimentalLinkcheck_label() {
+            return text_DebugEnableExperimentalLinkcheck;
         }
     }
 
@@ -167,4 +182,28 @@ public interface GoogleConfig extends PluginConfigInterface {
     boolean isAddStreamQualityIdentifierToFilename();
 
     void setAddStreamQualityIdentifierToFilename(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_DebugAccountLogin)
+    @Order(60)
+    boolean isDebugAccountLogin();
+
+    void setDebugAccountLogin(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_DebugForceValidateLoginAlways)
+    @Order(70)
+    boolean isDebugForceValidateLoginAlways();
+
+    void setDebugForceValidateLoginAlways(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_DebugEnableExperimentalLinkcheck)
+    @Order(80)
+    boolean isEnableExperimentalLinkcheck();
+
+    void setEnableExperimentalLinkcheck(boolean b);
 }
