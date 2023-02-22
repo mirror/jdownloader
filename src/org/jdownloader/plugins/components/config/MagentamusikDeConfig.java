@@ -2,15 +2,19 @@ package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
-@PluginHost(host = "magenta-musik-360.de", type = Type.CRAWLER)
-public interface MagentaMusik360Config extends PluginConfigInterface {
+@PluginHost(host = "magentamusik.de", type = Type.CRAWLER)
+public interface MagentamusikDeConfig extends PluginConfigInterface {
+    final String text_CrawlVR = "Crawl VR Videos?";
+
     public static class TRANSLATION {
         public String isCrawlVR() {
-            return "Crawl VR Videos?";
+            return text_CrawlVR;
         }
     }
 
@@ -18,6 +22,8 @@ public interface MagentaMusik360Config extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_CrawlVR)
+    @Order(10)
     boolean isCrawlVR();
 
     void setCrawlVR(boolean b);
