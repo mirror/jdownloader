@@ -70,7 +70,6 @@ public class NewgroundsCom extends antiDDoSForHost {
     private static final int     maxdownloads   = 1;
     private String               dllink         = null;
     private boolean              server_issues  = false;
-    private boolean              accountneeded  = false;
 
     @Override
     public String getAGBLink() {
@@ -115,8 +114,10 @@ public class NewgroundsCom extends antiDDoSForHost {
             errorRateLimited();
         }
         final boolean addID2Filename = getPluginConfig().getBooleanProperty("Filename_id", true);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This entry was")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*This entry was")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (requiresAccount(br)) {
+            return AvailableStatus.TRUE;
         }
         String filename = HTMLSearch.searchMetaTag(br, "og:title");
         // String artist = br.getRegex("<em>(?:Artist|Author|Programming) ?<[^<>]+>([^<>]*?)<").getMatch(0);
@@ -173,10 +174,6 @@ public class NewgroundsCom extends antiDDoSForHost {
                 dllink = embedController.replaceAll("\\\\", "");
             } else {
                 /* Assume it's a video */
-                if (br.containsHTML("requires a Newgrounds account to play\\.\\s*<")) {
-                    accountneeded = true;
-                    return AvailableStatus.TRUE;
-                }
                 br.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 br.getPage("/portal/video/" + fid);
                 if (br.getHttpConnection().getResponseCode() == 404) {
@@ -249,6 +246,10 @@ public class NewgroundsCom extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    private boolean requiresAccount(final Browser br) {
+        return br.containsHTML("class=\"adult-only-error\"");
+    }
+
     private void errorRateLimited() throws PluginException {
         /* 2020-11-04: This serverside limit/block will usually last for 60 seconds. */
         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 - wait before starting new downloads", 120 * 1000l);
@@ -261,7 +262,7 @@ public class NewgroundsCom extends antiDDoSForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account);
-        if (accountneeded) {
+        if (requiresAccount(br)) {
             throw new AccountRequiredException();
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

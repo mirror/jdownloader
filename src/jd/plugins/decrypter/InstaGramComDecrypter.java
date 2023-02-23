@@ -1418,7 +1418,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             } catch (final Throwable ignore) {
             }
         }
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final ArrayList<Map<String, Object>> mediaItems = new ArrayList<Map<String, Object>>();
         if (typename.equalsIgnoreCase("GraphImage")) {
             /* Single image */
@@ -1533,15 +1533,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             final String filename = getFilename(this, dl);
             dl.setFinalFileName(filename);
             dl._setFilePackage(fp);
-            decryptedLinks.add(dl);
+            ret.add(dl);
             distribute(dl);
             orderID++;
         }
         if (cfg.isPostCrawlerAddPostDescriptionAsTextfile() && !StringUtils.isEmpty(description)) {
             /* Download picture-description as .txt file */
-            decryptedLinks.add(getTextDownloadlink(decryptedLinks));
+            ret.add(getTextDownloadlink(ret.get(0)));
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private FilePackage getFilePackageForGallery(final InstagramMetadata metadata) {
@@ -1737,7 +1737,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             }
             if (cfg.isPostCrawlerAddPostDescriptionAsTextfile() && !StringUtils.isEmpty(description)) {
                 /* Download picture-description as .txt file */
-                decryptedLinks.add(getTextDownloadlink(decryptedLinks));
+                decryptedLinks.add(getTextDownloadlink(decryptedLinks.get(0)));
             }
         }
         return decryptedLinks;
@@ -1747,20 +1747,20 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      * Returns DownloadLink object for text download of Instagram posts. Sets filename based on given list of DownloadLink objects
      * previously crawled for current Instagram post.
      */
-    private DownloadLink getTextDownloadlink(final ArrayList<DownloadLink> crawledPostItems) throws Exception {
-        final DownloadLink firstAddedMediaItemOfThisPost = crawledPostItems.get(0);
-        final DownloadLink text = this.createDownloadlink(firstAddedMediaItemOfThisPost.getPluginPatternMatcher() + "_description");
+    private DownloadLink getTextDownloadlink(final DownloadLink videoItem) throws Exception {
+        final DownloadLink text = this.createDownloadlink(videoItem.getPluginPatternMatcher() + "_description");
         /* Add all properties from previously added media. */
-        text.setProperties(firstAddedMediaItemOfThisPost.getProperties());
+        text.setProperties(videoItem.getProperties());
         /* Remove properties that are not relevant or even wrong for our text item. */
         text.removeProperty(InstaGramCom.PROPERTY_orderid);
         text.removeProperty(InstaGramCom.PROPERTY_orderid_raw);
         text.removeProperty(InstaGramCom.PROPERTY_orderid_max_raw);
         text.removeProperty(InstaGramCom.PROPERTY_shortcode);
+        text.removeProperty(InstaGramCom.PROPERTY_DIRECTURL);
         text.setProperty(InstaGramCom.PROPERTY_type, "text");
         /* Important!! This will be used in LinkID later! */
-        final String mainContentID = firstAddedMediaItemOfThisPost.getStringProperty(InstaGramCom.PROPERTY_main_content_id);
-        final String description = firstAddedMediaItemOfThisPost.getStringProperty(InstaGramCom.PROPERTY_description);
+        final String mainContentID = videoItem.getStringProperty(InstaGramCom.PROPERTY_main_content_id);
+        final String description = videoItem.getStringProperty(InstaGramCom.PROPERTY_description);
         text.setProperty(InstaGramCom.PROPERTY_internal_media_id, mainContentID);
         final String filename = getFilename(this, text);
         text.setFinalFileName(filename);
@@ -1769,9 +1769,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         } catch (final UnsupportedEncodingException ignore) {
             ignore.printStackTrace();
         }
-        if (firstAddedMediaItemOfThisPost.getFilePackage() != null) {
+        if (videoItem.getFilePackage() != null) {
             /* Put this textfile into the same package the other posts will go into. */
-            text._setFilePackage(firstAddedMediaItemOfThisPost.getFilePackage());
+            text._setFilePackage(videoItem.getFilePackage());
         }
         text.setAvailable(true);
         text.setComment(description);
@@ -1800,10 +1800,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             server_filename = null;
         }
         final String ext;
-        if (InstaGramCom.isVideo(link)) {
-            ext = ".mp4";
-        } else if (InstaGramCom.isText(link)) {
+        if (InstaGramCom.isText(link)) {
             ext = ".txt";
+        } else if (InstaGramCom.isVideo(link)) {
+            ext = ".mp4";
         } else {
             final String serverFileNameExtension = Files.getExtension(server_filename);
             ext = "." + (serverFileNameExtension != null ? serverFileNameExtension : "jpg");
