@@ -16,6 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -26,20 +30,44 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rmz.cr" }, urls = { "https?://(?:www\\.)?(?:rapidmoviez\\.(?:com|eu|cr|site)|rmz\\.rezavn|rmz\\.cr)/release/[^/]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RmzCr extends antiDDoSForDecrypt {
     public RmzCr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // 2020-02-25: Old RegEx: https?://(?:www\\.)?rmz\\.cr/(?:release/)?(?!l/)[^/]+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "rapidmoviez.me", "rapidmoviez.com", "rapidmoviez.cr", "rmz.cr" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/release/[\\w\\-]+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         getPage(parameter);
         String fpName = br.getRegex("<div id=\"title_release_before_title\"></div>\\s*<h2>([^<>\"]+)<").getMatch(0);
@@ -53,7 +81,7 @@ public class RmzCr extends antiDDoSForDecrypt {
                 coverURL = coverURL.replaceFirst("^(https?://)", br._getURL().getProtocol() + "://");
                 final DownloadLink dl = createDownloadlink("directhttp://" + coverURL);
                 dl.setAvailable(true);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         } else {
             logger.info("Failed to find any covers");
@@ -65,7 +93,7 @@ public class RmzCr extends antiDDoSForDecrypt {
             if (screencaps != null) {
                 logger.info("Found screencaps");
                 for (final String link : screencaps) {
-                    decryptedLinks.add(createDownloadlink(link));
+                    ret.add(createDownloadlink(link));
                 }
             } else {
                 logger.info("Failed to find screencaps");
@@ -85,7 +113,7 @@ public class RmzCr extends antiDDoSForDecrypt {
                 /* Sometimes this may contain multiple objects newline separated. */
                 final String[] links2 = HTMLParser.getHttpLinks(link, null);
                 for (final String link2 : links2) {
-                    decryptedLinks.add(createDownloadlink(link2));
+                    ret.add(createDownloadlink(link2));
                 }
             }
         }
@@ -93,8 +121,8 @@ public class RmzCr extends antiDDoSForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.setAllowMerge(true);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
