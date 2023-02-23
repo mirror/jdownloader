@@ -20,9 +20,9 @@ public interface GoogleConfig extends PluginConfigInterface {
     final String                    text_APIDownloadMode                                         = "API download mode (only relevant if API Key is provided.)";
     final String                    text_PreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible = "If API key is available: Prefer website for downloading if stream download is preferred and possible?";
     final String                    text_AddStreamQualityIdentifierToFilename                    = "Add quality identifier to filename if video stream (= non-original file) is downloaded?";
-    final String                    text_DebugAccountLogin                                       = "Debug: Perform extended account check?";
-    final String                    text_DebugForceValidateLoginAlways                           = "Debug: Force validate login on every linkcheck/download attempt (will slow things down)?";
-    final String                    text_DebugEnableExperimentalLinkcheck                        = "Debug: Enable experimental linkcheck?";
+    final String                    text_DebugAccountLogin                                       = "Debug: Website mode: Perform extended account check?";
+    final String                    text_DebugForceValidateLoginAlways                           = "Debug: Website mode: Force validate login on every linkcheck/download attempt (will slow things down)?";
+    final String                    text_DebugWebsiteTrustQuickLinkcheckOfflineStatus            = "Debug: Website mode: Trust quick linkcheck offline status?";
     public static final TRANSLATION TRANSLATION                                                  = new TRANSLATION();
 
     public static class TRANSLATION {
@@ -62,8 +62,8 @@ public interface GoogleConfig extends PluginConfigInterface {
             return text_DebugForceValidateLoginAlways;
         }
 
-        public String getDebugEnableExperimentalLinkcheck_label() {
-            return text_DebugEnableExperimentalLinkcheck;
+        public String getDebugWebsiteTrustQuickLinkcheckOfflineStatus_label() {
+            return text_DebugWebsiteTrustQuickLinkcheckOfflineStatus;
         }
     }
 
@@ -201,9 +201,9 @@ public interface GoogleConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry(text_DebugEnableExperimentalLinkcheck)
+    @DescriptionForConfigEntry(text_DebugWebsiteTrustQuickLinkcheckOfflineStatus)
     @Order(80)
-    boolean isDebugEnableExperimentalLinkcheck();
+    boolean isDebugWebsiteTrustQuickLinkcheckOfflineStatus();
 
-    void setDebugEnableExperimentalLinkcheck(boolean b);
+    void setDebugWebsiteTrustQuickLinkcheckOfflineStatus(boolean b);
 }

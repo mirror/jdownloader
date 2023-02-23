@@ -32,7 +32,6 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
-import org.appwork.utils.KeyValueStringEntry;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -58,14 +57,12 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.HTMLSearch;
-import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -236,6 +233,7 @@ public class GoogleDrive extends PluginForHost {
     private final String        PROPERTY_IS_QUOTA_REACHED_ACCOUNT              = "IS_QUOTA_REACHED_ACCOUNT";
     private final String        PROPERTY_IS_STREAM_QUOTA_REACHED_ANONYMOUS     = "IS_STREAM_QUOTA_REACHED_ANONYMOUS";
     private final String        PROPERTY_IS_STREAM_QUOTA_REACHED_ACCOUNT       = "IS_STREAM_QUOTA_REACHED_ACCOUNT";
+    private final String        PROPERTY_DIRECTURL                             = "directurl";
     /**
      * 2022-02-20: We store this property but we're not using it at this moment. It is required to access some folders though so it's good
      * to have it set on each DownloadLink if it exists.
@@ -247,7 +245,6 @@ public class GoogleDrive extends PluginForHost {
     private final String        PROPERTY_ACCOUNT_ACCESS_TOKEN                  = "ACCESS_TOKEN";
     private final String        PROPERTY_ACCOUNT_REFRESH_TOKEN                 = "REFRESH_TOKEN";
     private final String        PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
-    private String              dllink                                         = null;
     private boolean             quotaReachedForceStreamDownloadAsWorkaround    = false;
 
     public Browser prepBrowser(final Browser pbr) {
@@ -501,6 +498,8 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        /* Make sure the value in this property is always fresh. */
+        link.removeProperty(PROPERTY_DIRECTURL);
         /* Login whenever possible */
         if (account != null) {
             this.loginDuringLinkcheckOrDownload(br, account);
@@ -512,178 +511,45 @@ public class GoogleDrive extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         try {
-            PluginException experimentalLinkcheckException = null;
-            if (PluginJsonConfig.get(GoogleConfig.class).isDebugEnableExperimentalLinkcheck()) {
-                try {
-                    final AvailableStatus status = this.handleLinkcheckExperimental(br, link, account);
-                    if (status == AvailableStatus.TRUE) {
-                        return status;
-                    }
-                } catch (final PluginException exc) {
-                    if (isDownload) {
-                        throw exc;
-                    } else if (exc instanceof AccountRequiredException) {
-                        /*
-                         * Most likely private file -> We won't be able to find any additional information without the proper
-                         * permissions/account.
-                         */
-                        throw exc;
-                    } else if (exc.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+            PluginException quickLinkcheckException = null;
+            boolean performDeeperOfflineCheck = false;
+            try {
+                final AvailableStatus status = this.handleLinkcheckQuick(br, link, account);
+                if (status == AvailableStatus.TRUE) {
+                    return status;
+                } else {
+                    logger.info("Do not trust quick linkcheck as it returned status UNCHECKABLE -> This usually only happens if we got a Google Document but aren't sure about that yet");
+                }
+            } catch (final PluginException exc) {
+                if (exc.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    if (PluginJsonConfig.get(GoogleConfig.class).isDebugWebsiteTrustQuickLinkcheckOfflineStatus()) {
                         throw exc;
                     } else {
-                        /**
-                         * Most likely file is not downloadable because quota limit reached or file is infected. </br>
-                         * In these cases, experimental linkcheck will not find any file information -> Try normal linkcheck so we will at
-                         * least find filename/size information.
-                         */
-                        experimentalLinkcheckException = exc;
+                        logger.info("Looks like that file is offline -> Double-checking as it could also be a private file!");
+                        performDeeperOfflineCheck = true;
                     }
-                }
-            }
-            /*
-             * 2020-09-14: Check for possible direct download first. This will sometimes also get around Googles "IP/ISP captcha-blocks".
-             */
-            final URLConnectionAdapter con = br.openGetConnection(getPreferredConstructedDirecturl(link, account));
-            if (con.getResponseCode() == 500 && !this.looksLikeDownloadableContent(con) && !this.isGoogleDocument(link)) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                /* 2022-12-08: Workaround for single Google Documents without .zip download added directly without folder-crawler */
-                logger.info("Checking via WebAPI to see if instead of a file this is a Google Document");
-                crawlAdditionalFileInformationFromWebsite(br, link, account, true, true);
-                if (this.isGoogleDocument(link)) {
-                    logger.info("Confirmed: This is a Google Document");
-                    /* Working directurl might be available now. */
-                    this.dllink = this.getPreferredConstructedDirecturl(link, account);
+                } else if (isDownload) {
+                    throw exc;
+                } else if (exc instanceof AccountRequiredException) {
+                    /*
+                     * Most likely private file -> We won't be able to find any additional information without the proper
+                     * permissions/account.
+                     */
+                    throw exc;
                 } else {
-                    logger.warning("Not confirmed: No Google Document document -> Something went wrong or item is offline");
-                    /* This should never happen and download of such an item will fail! */
-                }
-                /* We know that this file is online */
-                return AvailableStatus.TRUE;
-            }
-            /* We hope for the file to be direct-downloadable. */
-            if (this.looksLikeDownloadableContent(con)) {
-                con.disconnect();
-                logger.info("Direct download active");
-                final String fileNameFromHeader = getFileNameFromHeader(con);
-                if (!StringUtils.isEmpty(fileNameFromHeader)) {
-                    link.setFinalFileName(fileNameFromHeader);
-                }
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                /** There could have been redirects in the meantime -> Be sure to assign the final URL! */
-                dllink = con.getURL().toString();
-                final HashInfo hashInfo = HTTPDownloader.parseXGoogHash(getLogger(), con);
-                if (hashInfo != null) {
-                    link.setHashInfo(hashInfo);
-                }
-                return AvailableStatus.TRUE;
-            } else {
-                logger.info("Direct download not possible -> Continuing linkcheck");
-                br.followConnection();
-            }
-            /**
-             * 2021-02-02: Interesting behavior of offline content: </br>
-             * Returns 403 when accessed via: https://drive.google.com/file/d/<fuid> </br>
-             * Returns 404 when accessed via: https://docs.google.com/uc?id=<fuid>&export=download
-             */
-            /* Check for offline */
-            if (this.isGoogleDocument(link)) {
-                /*
-                 * Google Documents do not provide an additional download page. They're either direct downloadable or there is some kind of
-                 * error.
-                 */
-                this.handleErrorsWebsite(this.br, link, account);
-                /* Document which is not direct-downloadable --> Must be offline */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (con.getResponseCode() == 404) {
-                /* 2020-09-14: Item should be offline */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /** Check for errors: Some errors prohibit us from continuing linkcheck, others still allow us to find filename/size! */
-            this.checkErrorBlockedByGoogle(this.br, link, account);
-            final boolean isDownloadQuotaReached = this.isQuotaReachedWebsiteFile(br);
-            if (isDownloadQuotaReached && this.videoStreamShouldBeAvailable(link) && (PluginJsonConfig.get(GoogleConfig.class).isAllowStreamDownloadAsFallbackOnQuotaLimitReached() || this.userPrefersStreamDownload())) {
-                /* Quota limit reached -> Download handling should try stream download as last resort fallback */
-                logger.info("Quota limit reached -> Attempting stream download as it looks like that might be possible");
-                this.quotaReachedForceStreamDownloadAsWorkaround = true;
-                return AvailableStatus.TRUE;
-            }
-            /** Try to set filename- and size. This will even work for quota-blocked files! */
-            String filename = br.getRegex("class=\"uc-name-size\"><a href=\"[^\"]+\">([^<>\"]+)<").getMatch(0);
-            if (filename != null) {
-                link.setName(Encoding.htmlDecode(filename).trim());
-            }
-            final String filesizeUnsafe = br.getRegex("\\((\\d+(?:[,\\.]\\d)?\\s*[KMGT])\\)</span>").getMatch(0);
-            if (filesizeUnsafe != null) {
-                link.setDownloadSize(SizeFormatter.getSize(filesizeUnsafe + "B"));
-            }
-            /* E.g. "This file is too big for Google to virus-scan it - download anyway?" */
-            dllink = regexConfirmDownloadurl(br);
-            if (dllink != null) {
-                /* We know that the file is online and downloadable. */
-                logger.info("File is too big for Google v_rus scan but should be downloadable");
-                final boolean printCookies = false;
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && printCookies) {
-                    /* 2023-01-25: Hunting bad "Insufficient permissions" bug as it must be related to account cookies */
-                    System.out.println("****************************************");
-                    final Iterator<Entry<String, Cookies>> iterator = br.getCookies().entrySet().iterator();
-                    while (iterator.hasNext()) {
-                        final Entry<String, Cookies> entry = iterator.next();
-                        System.out.println("Domain: " + entry.getKey());
-                        for (final Cookie cookie : entry.getValue().getCookies()) {
-                            System.out.println(cookie.getKey() + ": " + cookie.getValue());
-                        }
-                    }
-                    System.out.println("****************************************");
-                }
-                final boolean doDevTest = false;
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && doDevTest) {
-                    /* 2023-01-25: Hunting bad "Insufficient permissions" bug */
-                    final Form dlform = br.getFormbyProperty("id", "download-form");
-                    if (dlform != null) {
-                        /* This is a test as in browser a POST request is used while we're using a GET request in JD. */
-                        final UrlQuery query = UrlQuery.parse(dlform.getAction());
-                        for (final KeyValueStringEntry entry : query.list()) {
-                            dlform.addInputField(new InputField(entry.getKey(), entry.getValue()));
-                        }
-                        this.dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dlform, true, 0);
-                        if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                            logger.info("DevTest Pass");
-                        } else {
-                            logger.warning("DevTest Fail");
-                        }
-                    }
-                }
-                return AvailableStatus.TRUE;
-            }
-            if (isDownloadQuotaReached) {
-                logger.info("File is currently not downloadable because: Quota limit reached");
-            } else {
-                logger.info("File is currently not downloadable because: Unknown reasons");
-            }
-            PluginException downloadImpossibleException = null;
-            try {
-                this.handleErrorsWebsite(this.br, link, account);
-            } catch (final PluginException e) {
-                if (isDownload) {
-                    throw e;
-                } else {
-                    downloadImpossibleException = e;
+                    /**
+                     * Most likely file is not downloadable because quota limit reached or file is infected. </br>
+                     * In these cases, experimental linkcheck will not find any file information -> Try normal linkcheck so we will at least
+                     * find filename/size information.
+                     */
+                    quickLinkcheckException = exc;
+                    logger.info("Exception happened during quick linkcheck");
                 }
             }
-            /** In case we were not able to find a final download-URL until now, we'll have to try the more complicated way ... */
             logger.info("Checking availablestatus via file overview");
-            this.handleLinkcheckFileOverview(br, link, account, isDownload);
-            /* Exceptions in experimental linkcheck are more trustworthy so keep them and throw them if needed. */
-            if (isDownload && downloadImpossibleException != null) {
-                throw downloadImpossibleException;
-            } else if (isDownload && experimentalLinkcheckException != null) {
-                throw experimentalLinkcheckException;
+            this.handleLinkcheckFileOverview(br, link, account, isDownload, performDeeperOfflineCheck);
+            if (isDownload && quickLinkcheckException != null) {
+                throw quickLinkcheckException;
             }
         } catch (final AccountRequiredException ae) {
             if (isDownload) {
@@ -695,62 +561,22 @@ public class GoogleDrive extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    /** Check availablestatus via https://drive.google.com/file/d/<fuid> */
-    private AvailableStatus handleLinkcheckFileOverview(final Browser br, final DownloadLink link, final Account account, final boolean isDownload) throws PluginException, IOException, InterruptedException {
-        final String fid = this.getFID(link);
-        if (isDownload && canHandleGoogleSpecialCaptcha) {
-            synchronized (LOCK) {
-                accessFileViewURLWithPartialErrorhandling(br, link, account);
-                this.handleErrorsWebsite(this.br, link, account);
-            }
-        } else {
-            accessFileViewURLWithPartialErrorhandling(br, link, account);
-        }
-        this.handleErrorsWebsite(this.br, link, account);
-        this.handleSpecialCaptcha(br, link, account);
-        /** Only look for/set filename/filesize if it hasn't been done before! */
-        String filename = br.getRegex("'id'\\s*:\\s*'" + Pattern.quote(fid) + "'\\s*,\\s*'title'\\s*:\\s*'(.*?)'").getMatch(0);
-        if (filename != null) {
-            filename = PluginJSonUtils.unescape(filename);
-        } else {
-            filename = br.getRegex("'title'\\s*:\\s*'([^<>\"\\']*?)'").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("\"filename\"\\s*:\\s*\"([^\"]+)\",").getMatch(0);
-            }
-            if (filename == null) {
-                filename = br.getRegex("(?i)<title>([^\"]+) - Google Drive\\s*</title>").getMatch(0);
-            }
-            if (filename == null) {
-                /*
-                 * Chances are high that we have a non-officially-downloadable-document (pdf). PDF is displayed in browser via images (1
-                 * image per page) - we would need a decrypter for this.
-                 */
-                /* 2020-09-14: Handling for this edge case has been removed. Provide example URLs if it happens again! */
-                filename = HTMLSearch.searchMetaTag(br, "og:title");
+    private void debugPrintCookies(final Browser br) {
+        /* 2023-01-25: Hunting bad "Insufficient permissions" bug as it must be related to account cookies */
+        System.out.println("****************************************");
+        final Iterator<Entry<String, Cookies>> iterator = br.getCookies().entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Entry<String, Cookies> entry = iterator.next();
+            System.out.println("Domain: " + entry.getKey());
+            for (final Cookie cookie : entry.getValue().getCookies()) {
+                System.out.println(cookie.getKey() + ": " + cookie.getValue());
             }
         }
-        if (filename != null) {
-            filename = Encoding.unicodeDecode(filename).trim();
-            link.setName(filename);
-        } else {
-            logger.warning("Failed to find filename");
-        }
-        /* Try to find precise filesize */
-        String filesizeBytes = br.getRegex(Pattern.quote(fid) + "/view\"[^\\]]*\\s*,\\s*\"(\\d+)\"\\s*\\]").getMatch(0);
-        if (filesizeBytes == null) {
-            filesizeBytes = br.getRegex("\"sizeInBytes\"\\s*:\\s*(\\d+),").getMatch(0);
-        }
-        if (filesizeBytes != null) {
-            // size of original file but the to be downloaded file could be a re-encoded stream with different file size
-            link.setDownloadSize(Long.parseLong(filesizeBytes));
-        } else {
-            logger.warning("Failed to find filesize");
-        }
-        return AvailableStatus.TRUE;
+        System.out.println("****************************************");
     }
 
-    private AvailableStatus handleLinkcheckExperimental(final Browser br, final DownloadLink link, final Account account) throws PluginException, IOException, InterruptedException {
-        logger.info("Attempting experimental linkcheck");
+    private AvailableStatus handleLinkcheckQuick(final Browser br, final DownloadLink link, final Account account) throws PluginException, IOException, InterruptedException {
+        logger.info("Attempting quick linkcheck");
         br.getHeaders().put("X-Drive-First-Party", "DriveViewer");
         final UrlQuery query = new UrlQuery();
         query.add("id", this.getFID(link));
@@ -778,7 +604,6 @@ public class GoogleDrive extends PluginForHost {
             /* Filesize field will be 0 for google docs and given downloadUrl will be broken. */
             final long filesize = filesizeO.longValue();
             if (filesize == 0) {
-                logger.info("Do not trust experimental linkcheck with filesize == 0");
                 /**
                  * Do not trust this filename as it is most likely missing a file-extension. </br>
                  * Assume that it is a google document while not trusting it and set default file extension for google doc downloads.
@@ -786,7 +611,12 @@ public class GoogleDrive extends PluginForHost {
                 if (!StringUtils.isEmpty(filename)) {
                     link.setName(this.correctOrApplyFileNameExtension(filename, ".zip"));
                 }
-                return AvailableStatus.UNCHECKABLE;
+                if (this.isGoogleDocument(link)) {
+                    /* We know that this is a google document -> Trust this linkcheck. */
+                    return AvailableStatus.TRUE;
+                } else {
+                    return AvailableStatus.UNCHECKABLE;
+                }
             } else {
                 link.setVerifiedFileSize(filesize);
             }
@@ -801,20 +631,107 @@ public class GoogleDrive extends PluginForHost {
             final String errorServersideEnumStr = entries.get("disposition").toString();
             if (errorServersideEnumStr.equalsIgnoreCase("FILE_INFECTED_NOT_OWNER")) {
                 this.errorFileInfected(link);
-            } else if (errorServersideEnumStr.equalsIgnoreCase("QUOTA_EXCEEDED")) {
-                /* Filename/size can still be crawled from website html code but not via this linkcheck. */
-                this.errorDownloadQuotaReachedWebsite(link, account);
+            }
+            if (errorServersideEnumStr.equalsIgnoreCase("FILE_INFECTED_NOT_OWNER")) {
+                this.errorFileInfected(link);
+            } else if (errorServersideEnumStr.equalsIgnoreCase("DOWNLOAD_RESTRICTED")) {
+                /* Official download impossible -> Stream download may still be possible */
+                link.setProperty(PROPERTY_CAN_DOWNLOAD, false);
+                /**
+                 * Return this status so upper handling can look for more file information. </br>
+                 * This also allows user to perform stream download if this item is a video file and streamable.
+                 */
+                return AvailableStatus.UNCHECKABLE;
             } else {
                 /* Unknown error state */
                 throw new PluginException(LinkStatus.ERROR_FATAL, errorServersideEnumStr);
             }
         } else {
             /* Typically with scanResult == "CLEAN_FILE" */
-            this.dllink = directurl;
+            link.setProperty(PROPERTY_DIRECTURL, directurl);
             logger.info("Experimental linkcheck successful and file should be downloadable");
             return AvailableStatus.TRUE;
         }
         return AvailableStatus.UNCHECKABLE;
+    }
+
+    /** Check availablestatus via https://drive.google.com/file/d/<fuid> */
+    private AvailableStatus handleLinkcheckFileOverview(final Browser br, final DownloadLink link, final Account account, final boolean isDownload, final boolean specialOfflineCheck) throws PluginException, IOException, InterruptedException {
+        final String fid = this.getFID(link);
+        if (isDownload && canHandleGoogleSpecialCaptcha) {
+            synchronized (LOCK) {
+                accessFileViewURLWithPartialErrorhandling(br, link, account);
+            }
+        } else {
+            accessFileViewURLWithPartialErrorhandling(br, link, account);
+        }
+        final boolean looksLikeFileIsOffline = br.getHttpConnection().getResponseCode() == 403 && !br.containsHTML(Pattern.quote(fid));
+        if (specialOfflineCheck && looksLikeFileIsOffline) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* Special handling for private files. */
+        if (this.isAccountRequired(br)) {
+            this.errorAccountRequiredOrPrivateFile(br, link, account, false);
+        }
+        this.handleErrorsWebsite(this.br, link, account);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /** Only look for/set filename/filesize if it hasn't been done before! */
+        String filename = br.getRegex("'id'\\s*:\\s*'" + Pattern.quote(fid) + "'\\s*,\\s*'title'\\s*:\\s*'(.*?)'").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("'title'\\s*:\\s*'([^<>\"\\']*?)'").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("\"filename\"\\s*:\\s*\"([^\"]+)\",").getMatch(0);
+            }
+            if (filename == null) {
+                filename = br.getRegex("(?i)<title>([^\"]+) - Google Drive\\s*</title>").getMatch(0);
+            }
+            if (filename == null) {
+                /*
+                 * Chances are high that we have a non-officially-downloadable-document (pdf). PDF is displayed in browser via images (1
+                 * image per page) - we would need a decrypter for this.
+                 */
+                /* 2020-09-14: Handling for this edge case has been removed. Provide example URLs if it happens again! */
+                filename = HTMLSearch.searchMetaTag(br, "og:title");
+            }
+        }
+        final boolean isGoogleDocument = br.containsHTML("\"docs-dm\":\"application/vnd\\.google-apps");
+        if (filename != null) {
+            filename = PluginJSonUtils.unescape(filename);
+            filename = Encoding.unicodeDecode(filename).trim();
+            if (isGoogleDocument) {
+                link.setName(this.correctOrApplyFileNameExtension(filename, ".zip"));
+            } else {
+                link.setName(filename);
+            }
+        } else {
+            logger.warning("Failed to find filename");
+        }
+        /* Try to find precise filesize */
+        String filesizeBytesStr = br.getRegex(Pattern.quote(fid) + "/view\"[^\\]]*\\s*,\\s*\"(\\d+)\"\\s*\\]").getMatch(0);
+        if (filesizeBytesStr == null) {
+            filesizeBytesStr = br.getRegex("\"sizeInBytes\"\\s*:\\s*(\\d+),").getMatch(0);
+        }
+        if (isGoogleDocument) {
+            link.setProperty(PROPERTY_GOOGLE_DOCUMENT, true);
+        } else {
+            link.removeProperty(PROPERTY_GOOGLE_DOCUMENT);
+        }
+        if (filesizeBytesStr != null) {
+            /* Size of original file but the to be downloaded file could be a re-encoded stream with different file size */
+            final long filesize = Long.parseLong(filesizeBytesStr);
+            /* For Google Documents, filesize will be 0 here -> Do not set it at all as it is unknown. */
+            if (filesize > 0 || !isGoogleDocument) {
+                link.setDownloadSize(Long.parseLong(filesizeBytesStr));
+            }
+        } else {
+            /* Usually filesize is not given for google documents. */
+            if (!isGoogleDocument) {
+                logger.warning("Failed to find filesize");
+            }
+        }
+        return AvailableStatus.TRUE;
     }
 
     private void accessFileViewURLWithPartialErrorhandling(final Browser br, final DownloadLink link, final Account account) throws PluginException, IOException {
@@ -836,18 +753,25 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private String getPreferredConstructedDirecturl(final DownloadLink link, final Account account) throws PluginException {
+    /** Returns directurl for original file download items and google document items. */
+    private String getDirecturl(final DownloadLink link, final Account account) throws PluginException {
         if (this.isGoogleDocument(link)) {
             /* Google document download */
             final String forcedDocumentFinalDownloadlink = link.getStringProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL);
             if (forcedDocumentFinalDownloadlink != null) {
                 return forcedDocumentFinalDownloadlink;
             } else {
-                return constructGoogleDocumentZipDownloadUrl(link, account);
+                /* Default google docs download format. */
+                return "https://docs.google.com/feeds/download/documents/export/Export?id=" + this.getFID(link) + "&exportFormat=zip";
             }
         } else {
             /* File download */
-            return constructFileDownloadUrl(link, account);
+            final String lastStoredDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
+            if (lastStoredDirecturl != null) {
+                return lastStoredDirecturl;
+            } else {
+                return constructFileDirectDownloadUrl(link, account);
+            }
         }
     }
 
@@ -1186,7 +1110,7 @@ public class GoogleDrive extends PluginForHost {
     }
 
     /** Returns URL which should redirect to file download in website mode. */
-    private String constructFileDownloadUrl(final DownloadLink link, final Account account) throws PluginException {
+    private String constructFileDirectDownloadUrl(final DownloadLink link, final Account account) throws PluginException {
         final String fid = getFID(link);
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1211,11 +1135,6 @@ public class GoogleDrive extends PluginForHost {
         return url;
     }
 
-    /** Returns direct download URL to download Google Documents as .zip file. */
-    private String constructGoogleDocumentZipDownloadUrl(final DownloadLink link, final Account account) throws PluginException {
-        return "https://docs.google.com/feeds/download/documents/export/Export?id=" + this.getFID(link) + "&exportFormat=zip";
-    }
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         handleDownload(link, null);
@@ -1238,6 +1157,8 @@ public class GoogleDrive extends PluginForHost {
         }
         /* Account is not always used even if it is available. */
         boolean usedAccount = false;
+        String directurl = null;
+        boolean streamDownloadActive = false;
         if (useAPIForDownloading(link, account)) {
             /* API download */
             if (!this.canDownload(link)) {
@@ -1249,8 +1170,8 @@ public class GoogleDrive extends PluginForHost {
             }
             if (this.isGoogleDocument(link)) {
                 /* Expect stored directurl to be available. */
-                this.dllink = link.getStringProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL);
-                if (StringUtils.isEmpty(this.dllink)) {
+                directurl = link.getStringProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL);
+                if (StringUtils.isEmpty(directurl)) {
                     this.errorGoogleDocumentDownloadImpossible();
                 }
             } else {
@@ -1263,10 +1184,11 @@ public class GoogleDrive extends PluginForHost {
                     final String streamDownloadlink = this.handleStreamQualitySelection(link, account);
                     if (!StringUtils.isEmpty(streamDownloadlink)) {
                         /* Use found stream downloadlink. */
-                        this.dllink = streamDownloadlink;
+                        directurl = streamDownloadlink;
+                        streamDownloadActive = true;
                     }
                 }
-                if (this.dllink == null) {
+                if (StringUtils.isEmpty(directurl)) {
                     /* Use API */
                     final UrlQuery queryFile = new UrlQuery();
                     queryFile.appendEncoded("fileId", this.getFID(link));
@@ -1274,46 +1196,21 @@ public class GoogleDrive extends PluginForHost {
                     // queryFile.appendEncoded("fields", getFieldsAPI());
                     queryFile.appendEncoded("key", getAPIKey());
                     queryFile.appendEncoded("alt", "media");
-                    this.dllink = GoogleDrive.API_BASE + "/files/" + this.getFID(link) + "?" + queryFile.toString();
+                    directurl = GoogleDrive.API_BASE + "/files/" + this.getFID(link) + "?" + queryFile.toString();
                 }
             }
+            if (streamDownloadActive) {
+                logger.info("Downloading stream");
+            } else {
+                logger.info("Downloading original file");
+            }
+            this.dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, resume, maxChunks);
         } else {
             /* Website download */
             /* Check availablestatus again via website as we're downloading via website. */
             requestFileInformationWebsite(link, account, true);
-            if (account != null) {
-                /* Website mode will always use account if available. */
-                usedAccount = true;
-            }
-            if (StringUtils.isEmpty(this.dllink) && this.isGoogleDocument(link)) {
-                this.errorGoogleDocumentDownloadImpossible();
-            }
-            if (this.quotaReachedForceStreamDownloadAsWorkaround) {
-                logger.info("Attempting forced stream download in an attempt to get around quota limit");
-                try {
-                    if (this.userPrefersStreamDownload()) {
-                        this.dllink = this.handleStreamQualitySelection(link, account);
-                    } else {
-                        /*
-                         * User probably prefers original quality file but stream download handling expects a preferred stream quality ->
-                         * Prefer BEST stream quality.
-                         */
-                        this.dllink = this.handleStreamQualitySelection(link, account, PreferredVideoQuality.STREAM_BEST);
-                    }
-                } catch (final PluginException ignore) {
-                    logger.exception("Stream download fallback failed", ignore);
-                }
-                if (StringUtils.isEmpty(this.dllink)) {
-                    logger.info("Stream download fallback failed -> There is nothing we can do to avoid this limit");
-                    errorDownloadQuotaReachedWebsite(link, account);
-                }
-            } else {
-                if (StringUtils.isEmpty(this.dllink)) {
-                    /* Last chance errorhandling */
-                    this.handleErrorsWebsite(this.br, link, account);
-                    /* Give up */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+            boolean streamDownloadAttempted = false;
+            if (this.isStreamDownloadPreferredAndAllowed(link)) {
                 /*
                  * Sidenote: Files can be blocked for downloading but streaming may still be possible(rare case). Usually if downloads are
                  * blocked because of "too high traffic", streaming is blocked too!
@@ -1322,35 +1219,118 @@ public class GoogleDrive extends PluginForHost {
                  * 2020-11-29: Do NOT try to move this into availablecheck!</br>
                  * Availablecheck can get around Google's "sorry" captcha for downloading original files but this does not work for
                  * streaming! </br>
-                 * If a captcha is required and the user wants to download a stream there is no way around it! The user has to solve it!
+                 * If a captcha is required and the user wants to download a stream there is no way around it! The user has to solve it or
+                 * try again later or with another IP.
                  */
                 /** Check if stream download is preferred by the user. */
                 if (this.isStreamDownloadPreferredAndAllowed(link)) {
                     final String streamDownloadlink = this.handleStreamQualitySelection(link, account);
+                    streamDownloadAttempted = true;
                     if (!StringUtils.isEmpty(streamDownloadlink)) {
-                        this.dllink = streamDownloadlink;
+                        directurl = streamDownloadlink;
+                        streamDownloadActive = true;
                     }
                 }
             }
+            if (directurl == null) {
+                /* Attempt to download original file */
+                directurl = getDirecturl(link, account);
+            }
+            if (streamDownloadActive) {
+                logger.info("Downloading stream");
+            } else {
+                logger.info("Downloading original file");
+            }
+            this.dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, resume, maxChunks);
+            if (dl.getConnection().getResponseCode() == 500 && !this.looksLikeDownloadableContent(dl.getConnection()) && !this.isGoogleDocument(link)) {
+                /* 2022-12-08: Workaround for single Google Documents without .zip download added directly without folder-crawler */
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                logger.info("First download attempt failed --> Checking via WebAPI to see if instead of a file this is a Google Document");
+                crawlAdditionalFileInformationFromWebsite(br, link, account, true, true);
+                if (!this.isGoogleDocument(link)) {
+                    /* This should never happen */
+                    logger.warning("Not confirmed: No Google Document document -> Something went wrong or item is offline");
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Item is not downloadable for unknown reasons");
+                }
+                logger.info("Confirmed: This is a Google Document");
+                /* Working directurl might be available now. */
+                directurl = this.getDirecturl(link, account);
+                this.dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, resume, maxChunks);
+            } else if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.info("File download attempt failed -> Direct download not possible -> One step more might be required");
+                try {
+                    br.followConnection(true);
+                } catch (final IOException e) {
+                    logger.log(e);
+                }
+                this.handleErrorsWebsite(this.br, link, account);
+                /* Look for filename/size information along the way. */
+                String filename = br.getRegex("class=\"uc-name-size\"><a href=\"[^\"]+\">([^<>\"]+)<").getMatch(0);
+                if (filename != null) {
+                    link.setName(Encoding.htmlDecode(filename).trim());
+                }
+                final String filesizeUnsafe = br.getRegex("\\((\\d+(?:[,\\.]\\d)?\\s*[KMGT])\\)</span>").getMatch(0);
+                if (filesizeUnsafe != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(filesizeUnsafe + "B"));
+                }
+                /**
+                 * 2021-02-02: Interesting behavior of offline content: </br>
+                 * Returns 403 when accessed via: https://drive.google.com/file/d/<fuid> </br>
+                 * Returns 404 when accessed via: https://docs.google.com/uc?id=<fuid>&export=download
+                 */
+                /* E.g. "This file is too big for Google to virus-scan it - download anyway?" */
+                directurl = regexConfirmDownloadurl(br);
+                if (directurl != null) {
+                    /* We know that the file is online and downloadable. */
+                    logger.info("File is too big for Google v_rus scan but should be downloadable");
+                } else {
+                    final boolean isDownloadQuotaReached = this.isQuotaReachedWebsiteFile(br);
+                    if (isDownloadQuotaReached && this.videoStreamShouldBeAvailable(link) && (PluginJsonConfig.get(GoogleConfig.class).isAllowStreamDownloadAsFallbackOnQuotaLimitReached() || this.userPrefersStreamDownload()) && !streamDownloadActive && !streamDownloadAttempted) {
+                        /* Download quota limit reached -> Try stream download as last resort fallback */
+                        logger.info("Attempting forced stream download in an attempt to get around quota limit");
+                        try {
+                            if (this.userPrefersStreamDownload()) {
+                                directurl = this.handleStreamQualitySelection(link, account);
+                            } else {
+                                /*
+                                 * User probably prefers original quality file but stream download handling expects a preferred stream
+                                 * quality -> Force-Prefer BEST stream quality.
+                                 */
+                                directurl = this.handleStreamQualitySelection(link, account, PreferredVideoQuality.STREAM_BEST);
+                            }
+                        } catch (final PluginException ignore) {
+                            logger.exception("Stream download fallback failed", ignore);
+                        }
+                        if (StringUtils.isEmpty(directurl)) {
+                            logger.info("Stream download fallback failed -> There is nothing we can do to avoid this limit");
+                            errorDownloadQuotaReachedWebsite(link, account);
+                        } else {
+                            streamDownloadActive = true;
+                        }
+                    } else {
+                        /* Dead end */
+                        this.downloadFailedLastResortErrorhandling(link, account, streamDownloadActive);
+                    }
+                }
+                logger.info("Final download attempt");
+                this.dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, resume, maxChunks);
+            }
+            if (account != null) {
+                /* Website mode will always use account if available. */
+                usedAccount = true;
+            }
         }
-        this.dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
         if (!this.looksLikeDownloadableContent(this.dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
             }
-            if (br.getHttpConnection().getContentType().contains("application/json")) {
-                /* Looks like API response -> Check errors accordingly */
-                this.handleErrorsAPI(this.br, link, account);
-            }
-            this.handleErrorsWebsite(this.br, link, account);
-            if (this.dl.getConnection().getResponseCode() == 416) {
-                this.dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-            }
+            this.downloadFailedLastResortErrorhandling(link, account, streamDownloadActive);
         }
         if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified() && link.getLastModifiedTimestamp() == -1) {
             try {
@@ -1379,6 +1359,32 @@ public class GoogleDrive extends PluginForHost {
         this.dl.startDownload();
     }
 
+    private void downloadFailedLastResortErrorhandling(final DownloadLink link, final Account account, final boolean isStreamDownload) throws PluginException, InterruptedException, IOException {
+        if (br.getHttpConnection().getContentType().contains("application/json")) {
+            /* Looks like API response -> Check errors accordingly */
+            this.handleErrorsAPI(this.br, link, account);
+        }
+        this.handleErrorsWebsite(this.br, link, account);
+        if (this.dl.getConnection().getResponseCode() == 416) {
+            this.dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
+        } else {
+            if (this.isGoogleDocument(link)) {
+                this.errorGoogleDocumentDownloadImpossible();
+            } else {
+                if (isStreamDownload) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error: Stream download failed");
+                } else {
+                    if (!this.canDownload(link)) {
+                        errorCannotDownload(link);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error: File download failed");
+                    }
+                }
+            }
+        }
+    }
+
     private void loginDuringLinkcheckOrDownload(final Browser br, final Account account) throws Exception {
         if (PluginJsonConfig.get(GoogleConfig.class).isDebugForceValidateLoginAlways()) {
             this.login(br, account, true);
@@ -1403,11 +1409,7 @@ public class GoogleDrive extends PluginForHost {
      * in an attempt to avoid having to solve multiple captchas!
      */
     private void handleErrorsWebsite(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException, IOException {
-        handleSpecialCaptcha(br, link, account);
-        if (br.getHttpConnection().getResponseCode() == 429) {
-            /* 2022-11-21: This can maybe also indicate a reached quota limit for this file(?) */
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests");
-        }
+        checkHandleRateLimit(br, link, account);
         /* Check for other errors */
         checkErrorBlockedByGoogle(br, link, account);
         if (br.containsHTML("(?i)>\\s*Sorry, this file is infected with a virus")) {
@@ -1439,6 +1441,10 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private void errorAccountRequiredOrPrivateFile(final Browser br, final DownloadLink link, final Account account) throws IOException, InterruptedException, PluginException {
+        errorAccountRequiredOrPrivateFile(br, link, account, true);
+    }
+
+    private void errorAccountRequiredOrPrivateFile(final Browser br, final DownloadLink link, final Account account, final boolean verifyLoginStatus) throws IOException, InterruptedException, PluginException {
         synchronized (LOCK) {
             if (link == null) {
                 /* Problem happened during account-check -> Account must be invalid */
@@ -1451,8 +1457,9 @@ public class GoogleDrive extends PluginForHost {
                  * Typically Google will redirect us to accounts.google.com for private files but this can also happen when login session is
                  * expired -> Extra check is needed
                  */
-                if (account != null && this.dllink != null) {
-                    /* 2023-01-25: Temporary errorhandling for "Insufficient permissions" error happening for public files. */
+                final String directurl = link.getStringProperty(PROPERTY_DIRECTURL);
+                if (account != null && directurl != null) {
+                    /* 2023-01-25: TODO: Temporary errorhandling for "Insufficient permissions" error happening for public files. */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Try again later or delete your google account and re-add it");
                 } else {
                     logger.info("Checking if we got a private file or a login session failure");
@@ -1477,6 +1484,12 @@ public class GoogleDrive extends PluginForHost {
 
     private boolean isAccountRequired(final Browser br) {
         if (br.getHost(true).equals("accounts.google.com")) {
+            /* User is not logged in but file is private. */
+            return true;
+        } else if (br.getHttpConnection().getResponseCode() == 401) {
+            return true;
+        } else if (br.getHttpConnection().getResponseCode() == 403 && br.containsHTML("accounts\\.google\\.com/AccountChooser")) {
+            /* User is logged in and file is private but user is lacking permissions to view file. */
             return true;
         } else {
             return false;
@@ -1540,31 +1553,38 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private boolean requiresSpecialCaptcha(final Browser br) {
-        if (br.getHttpConnection().getResponseCode() == 429 && br.getURL().contains("/sorry/index")) {
+    private boolean isRateLimited(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 429) {
             return true;
         } else {
             return false;
         }
     }
 
-    private void handleSpecialCaptcha(final Browser br, final DownloadLink link, final Account account) throws PluginException, IOException, InterruptedException {
-        if (requiresSpecialCaptcha(br)) {
+    private void checkHandleRateLimit(final Browser br, final DownloadLink link, final Account account) throws PluginException, IOException, InterruptedException {
+        if (isRateLimited(br)) {
+            final boolean captchaRequired = CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br);
+            logger.info("Google rate-limit detected | captchaRequired =" + captchaRequired);
             if (link == null) {
                 /* 2020-11-29: This captcha should never happen during account-check! It should only happen when requesting files. */
-                throw new AccountUnavailableException("Captcha blocked", 5 * 60 * 1000l);
+                if (captchaRequired) {
+                    throw new AccountUnavailableException("Rate limited and captcha blocked", 5 * 60 * 1000l);
+                } else {
+                    throw new AccountUnavailableException("Rate limited", 5 * 60 * 1000l);
+                }
             } else {
                 /*
                  * 2020-09-09: Google is sometimes blocking users/whole ISP IP subnets so they need to go through this step in order to e.g.
                  * continue downloading.
                  */
-                logger.info("Google 'ISP/IP block captcha' detected");
                 /*
                  * 2020-09-14: TODO: This handling doesn't work so we'll at least display a meaningful errormessage. The captcha should
                  * never occur anyways as upper handling will try to avoid it!
                  */
-                if (!canHandleGoogleSpecialCaptcha) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Google blocked your IP - captcha required but not implemented yet");
+                if (!captchaRequired) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate limited");
+                } else if (!canHandleGoogleSpecialCaptcha) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate limited - captcha required but not implemented yet");
                 }
                 final Form captchaForm = br.getForm(0);
                 if (captchaForm == null) {
@@ -1576,8 +1596,8 @@ public class GoogleDrive extends PluginForHost {
                 // br.getHeaders().put("X-Client-Data", "0");
                 br.submitForm(captchaForm);
                 /* Double-check to make sure access was granted */
-                if (br.getHttpConnection().getResponseCode() == 429) {
-                    logger.info("Captcha failed");
+                if (this.isRateLimited(br)) {
+                    logger.info("Captcha failed and/or rate-limit is still there");
                     /*
                      * Do not invalidate captcha result because most likely that was correct but our plugin somehow failed -> Try again
                      * later
