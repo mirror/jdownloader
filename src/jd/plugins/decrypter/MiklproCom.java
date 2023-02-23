@@ -46,7 +46,10 @@ public class MiklproCom extends MightyScriptAdLinkFly {
         final String urlContainingTimestamp = Encoding.Base64Decode(base64Str);
         final UrlQuery query2 = UrlQuery.parse(urlContainingTimestamp);
         String timestamp = query2.get("d");
-        timestamp = Encoding.Base64Decode(timestamp);
+        if (!timestamp.matches("\\d+")) {
+            logger.info("Decoding timestamp value: " + timestamp);
+            timestamp = Encoding.Base64Decode(timestamp);
+        }
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl() + "/?d=" + timestamp);
         if (br.containsHTML("(?i)>\\s*Please close VPN or proxy")) {
@@ -60,7 +63,7 @@ public class MiklproCom extends MightyScriptAdLinkFly {
         return ret;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         return super.decryptIt(param, progress);
     }
 }
