@@ -510,6 +510,28 @@ public class GoogleHelper {
     }
 
     /**
+     * TODO: Maybe merge this into validateCookies
+     *
+     * @throws AccountInvalidException
+     * @throws IOException
+     */
+    public void validateCookiesGoogleDrive(final Browser br, final Account account) throws AccountInvalidException, IOException {
+        final boolean oldFollowRedirects = br.isFollowingRedirects();
+        try {
+            br.setFollowRedirects(true);
+            br.getPage("https://drive.google.com/");
+            if (br.getURL().contains("accounts.google.com")) {
+                logger.warning("Looks like GDrive login failed");
+                GoogleHelper.errorAccountInvalid(account);
+            } else {
+                logger.info("Looks like GDrive login was successful");
+            }
+        } finally {
+            br.setFollowRedirects(oldFollowRedirects);
+        }
+    }
+
+    /**
      * Validates login via e.g.
      * https://accounts.google.com/CheckCookie?hl=en&checkedDomains=youtube&checkConnection=youtube%3A210%3A1&pstMsg
      * =1&chtml=LoginDoneHtml&service=youtube&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue&gidl=CAA

@@ -203,7 +203,7 @@ public interface GoogleConfig extends PluginConfigInterface {
     @DefaultBooleanValue(false)
     @DescriptionForConfigEntry(text_DebugEnableExperimentalLinkcheck)
     @Order(80)
-    boolean isEnableExperimentalLinkcheck();
+    boolean isDebugEnableExperimentalLinkcheck();
 
-    void setEnableExperimentalLinkcheck(boolean b);
+    void setDebugEnableExperimentalLinkcheck(boolean b);
 }
