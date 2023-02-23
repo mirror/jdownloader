@@ -18,25 +18,21 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class ClicksflyCom extends MightyScriptAdLinkFly {
-    public ClicksflyCom(PluginWrapper wrapper) {
+public class Ez4shortCom extends MightyScriptAdLinkFly {
+    public Ez4shortCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "clicksfly.com", "clkfly.pw", "clk.asia", "enit.in" });
+        ret.add(new String[] { "ez4short.com" });
         return ret;
     }
 
@@ -63,38 +59,8 @@ public class ClicksflyCom extends MightyScriptAdLinkFly {
     }
 
     @Override
-    protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final boolean followRedirectsOld = br.isFollowingRedirects();
-        br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
-        Form form = br.getForm(0);
-        form.setAction(Encoding.urlDecode(form.getInputField("url").getValue(), true));
-        submitForm(form);
-        final Form form2 = br.getFormbyKey("alias");
-        if (form2 != null) {
-            /* Ads + captcha */
-            logger.info("form2 detected");
-            final String hcaptchaResponse = new CaptchaHelperCrawlerPluginHCaptcha(this, br).getToken();
-            form2.put("h-captcha-response", Encoding.urlEncode(hcaptchaResponse));
-            br.submitForm(form2);
-            final Form form3 = br.getFormbyKey("alias");
-            if (form3 != null) {
-                /* Back to original website -> Wait time -> Final link */
-                logger.info("form2 detected");
-                br.submitForm(form3);
-            }
-        }
-        br.setFollowRedirects(followRedirectsOld);
-        return ret;
-        // return super.handlePreCrawlProcess(param);
-    }
-
-    @Override
     protected String getSpecialReferer() {
-        /* Pre-set Referer to skip multiple ad pages e.g. clk.asia -> set referer -> clk.asia */
-        /* Possible other fake blog domains: skincarie.com, howifx.com */
-        // Last updated: 2023-02-22
-        return "https://howifx.com/";
+        /* 2023-02-23 */
+        return "https://techmody.io/";
     }
 }
