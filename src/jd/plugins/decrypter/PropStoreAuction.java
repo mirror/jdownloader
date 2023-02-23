@@ -61,7 +61,6 @@ public class PropStoreAuction extends antiDDoSForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(title).trim());
             fp.addLinks(decryptedLinks);
-            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
