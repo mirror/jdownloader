@@ -25,18 +25,14 @@ public class Signature {
     private final Pattern extensionUnsure;
 
     public Signature(String id, String signaturPattern, String desc, String ext) {
-        this.id = id;
-        this.signatur = signaturPattern != null ? Pattern.compile(signaturPattern, Pattern.CASE_INSENSITIVE) : null;
-        this.extensionUnsure = null;
-        this.extensionSure = ext != null ? Pattern.compile(ext, Pattern.CASE_INSENSITIVE) : null;
-        this.desc = desc;
+        this(id, signaturPattern, desc, ext, null);
     }
 
     public Signature(String id, String signaturPattern, String desc, String ext, String unsureext) {
         this.id = id;
         this.signatur = signaturPattern != null ? Pattern.compile(signaturPattern, Pattern.CASE_INSENSITIVE) : null;
         this.extensionSure = ext != null ? Pattern.compile(ext, Pattern.CASE_INSENSITIVE) : null;
-        this.extensionUnsure = ext != null ? Pattern.compile(unsureext, Pattern.CASE_INSENSITIVE) : null;
+        this.extensionUnsure = unsureext != null ? Pattern.compile(unsureext, Pattern.CASE_INSENSITIVE) : null;
         this.desc = desc;
     }
 
@@ -69,7 +65,7 @@ public class Signature {
         return signatur;
     }
 
-    public boolean matches(String sig) {
-        return signatur.matcher(sig).matches();
+    public boolean matches(CharSequence sig) {
+        return signatur != null && signatur.matcher(sig).matches();
     }
 }
