@@ -37,8 +37,7 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
     public int write(final byte[] data, final int off, final int len) throws SevenZipException {
         if (ctrl.gotKilled()) {
             throw new MultiSevenZipException("Extraction has been aborted", ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
-        }
-        if (ignoreWrite == false) {
+        } else if (ignoreWrite == false) {
             int toWrite = Math.min(buffer.free(), len);
             if (toWrite > 0) {
                 /* we still have enough buffer left to write the data */
@@ -48,23 +47,21 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
             }
             if (buffer.size() >= signatureMinLength) {
                 /* we have enough data available for a signature check */
-                StringBuilder sigger = new StringBuilder();
+                final StringBuilder magic = new StringBuilder();
                 for (int i = 0; i < buffer.size() - 1; i++) {
                     String s = Integer.toHexString(buffer.getInternalBuffer()[i]);
                     s = (s.length() < 2 ? "0" + s : s);
                     s = s.substring(s.length() - 2);
-                    sigger.append(s);
+                    magic.append(s);
                 }
-                final Signature signature = filesignatures.getSignature(sigger.toString(), itemName);
+                final Signature signature = filesignatures.getSignature(magic, itemName);
                 if (signature != null) {
-                    if (signature.getExtensionSure() != null && (itemName == null || signature.getExtensionSure().matcher(itemName).matches())) {
-                        /* signature matches, lets abort PWFinding now */
-                        if (signature.isPrecisePatternStart()) {
-                            passwordFound.set(signature);
-                            return 0;
-                        } else {
-                            lastSignature = signature;
-                        }
+                    /* signature matches, lets abort PWFinding now */
+                    if (signature.isPrecisePatternStart()) {
+                        passwordFound.set(signature);
+                        return 0;
+                    } else {
+                        lastSignature = signature;
                     }
                 }
             }

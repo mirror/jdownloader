@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
@@ -26,7 +25,6 @@ import org.appwork.utils.Regex;
 import org.jdownloader.logging.LogController;
 
 public class FileSignatures {
-
     private final Signature      SIG_TXT = new Signature("TXTfile", null, "Plaintext", ".*\\.(txt|doc|nfo|html|htm|xml)");
     private volatile Signature[] SIGNATURES;
 
@@ -77,23 +75,23 @@ public class FileSignatures {
             if (SIGNATURES != null) {
                 return SIGNATURES;
             }
-            String[] m;
+            final String[] mimes;
             try {
-                m = Regex.getLines(org.appwork.utils.IO.readURLToString(Application.getRessourceURL("org/jdownloader/extensions/extraction/mime.type")));
+                mimes = Regex.getLines(org.appwork.utils.IO.readURLToString(Application.getRessourceURL("org/jdownloader/extensions/extraction/mime.type")));
             } catch (IOException e1) {
                 LogController.CL().log(e1);
                 return new Signature[0];
             }
-            Signature[] ret = new Signature[m.length];
+            final Signature[] ret = new Signature[mimes.length];
             int i = 0;
-            for (String e : m) {
-                String[] entry = e.split(":::");
+            for (final String mime : mimes) {
+                final String[] entry = mime.split(":::");
                 if (entry.length >= 5) {
                     ret[i++] = new Signature(entry[0], entry[1], entry[2], entry[3], entry[4]);
                 } else if (entry.length >= 4) {
                     ret[i++] = new Signature(entry[0], entry[1], entry[2], entry[3]);
                 } else {
-                    LogController.CL().warning("Signature " + e + " invalid!");
+                    LogController.CL().warning("Signature " + mime + " invalid!");
                 }
             }
             SIGNATURES = ret;
@@ -107,7 +105,7 @@ public class FileSignatures {
      * @param sig
      * @return
      */
-    public Signature getSignature(final String sig) {
+    public Signature getSignature(final CharSequence sig) {
         if (sig != null) {
             final Signature[] db = getSignatureList();
             for (final Signature entry : db) {
@@ -120,7 +118,7 @@ public class FileSignatures {
         return null;
     }
 
-    public Signature getSignature(final String signature, final String fileName) {
+    public Signature getSignature(final CharSequence signature, final String fileName) {
         if (signature != null) {
             if (fileName == null) {
                 return getSignature(signature);
@@ -130,11 +128,10 @@ public class FileSignatures {
                 for (final Signature sig : db) {
                     if (sig != null && sig.matches(signature)) {
                         final Pattern extensionSure = sig.getExtensionSure();
-                        if (extensionSure != null) {
-                            if (extensionSure.matcher(fileName).matches()) {
-                                return sig;
-                            }
-                        } else {
+                        final Pattern extensionUnSure = sig.getExtensionUnsure();
+                        if (extensionSure != null && extensionSure.matcher(fileName).matches()) {
+                            return sig;
+                        } else if (extensionUnSure != null && extensionUnSure.matcher(fileName).matches()) {
                             ret = sig;
                         }
                     }
@@ -155,20 +152,17 @@ public class FileSignatures {
      * @param sig
      * @return
      */
-    private Signature checkTxt(String sig) {
+    private Signature checkTxt(CharSequence sig) {
         for (int i = 0; i < sig.length(); i += 2) {
             if ((i + 2) > sig.length()) {
                 return null;
             }
-            String b = sig.substring(i, i + 2);
-            int ch = Integer.parseInt(b, 16);
-
+            final CharSequence b = sig.subSequence(i, i + 2);
+            int ch = Integer.parseInt(b.toString(), 16);
             if (ch < 32 || ch > 126) {
                 return null;
             }
-
         }
-
         return SIG_TXT;
     }
 }
