@@ -16,7 +16,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jd.controlling.reconnect.ipcheck.IP;
 import jd.controlling.reconnect.pluginsinc.upnp.cling.StreamClientImpl;
 
 import org.appwork.utils.logging2.LogSource;
@@ -238,10 +237,12 @@ public class MyJDownloaderDirectServer extends Thread {
                 Socket clientSocket = null;
                 try {
                     clientSocket = currentServerSocket.accept();
-                    if (connectMode == DIRECTMODE.LAN && !IP.isLocalIP(((InetSocketAddress) clientSocket.getRemoteSocketAddress()).getAddress().getHostAddress())) {
-                        // TODO: add IPv6 check, is it even possible?
-                        clientSocket.close();
-                        continue;
+                    if (connectMode == DIRECTMODE.LAN) {
+                        final InetSocketAddress addr = (InetSocketAddress) clientSocket.getRemoteSocketAddress();
+                        if (!addr.getAddress().isLoopbackAddress() && !addr.getAddress().isSiteLocalAddress()) {
+                            clientSocket.close();
+                            continue;
+                        }
                     }
                     clientSocket.setReuseAddress(true);
                     clientSocket.setSoTimeout(180000);
