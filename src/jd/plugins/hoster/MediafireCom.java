@@ -25,13 +25,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -59,7 +52,14 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(?:www\\.|m\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))|https?://download\\d+.mediafire\\.com/[a-z0-9]+/([a-z0-9]+)/([^/]+)" })
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(?:www\\.|m\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))|https?://download\\d+.mediafire(?:cdn)?\\.com/[^/]+/([a-z0-9]+)/([^/]+)" })
 public class MediafireCom extends PluginForHost {
     /** Settings stuff */
     private static final String FREE_FORCE_RECONNECT_ON_CAPTCHA = "FREE_FORCE_RECONNECT_ON_CAPTCHA";
@@ -85,7 +85,7 @@ public class MediafireCom extends PluginForHost {
     // Referer: http://www.mediafire.com/file/nw1lc2pyrtp043c/1972+Fritz+the+Cat+-+Fritz+Bugs+Out%7BSirReal.rar
     private static final String PRIVATEFILE           = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
     private static final String PRIVATEFOLDERUSERTEXT = "This is a private folder. Re-Add this link while your account is active to make it work!";
-    private static final String TYPE_DIRECT           = "https?://download\\d+.mediafire\\.com/[a-z0-9]+/([a-z0-9]+)/([^/]+)";
+    private static final String TYPE_DIRECT           = "https?://download\\d+.mediafire(?:cdn)?\\.com/[^/]+/([a-z0-9]+)/([^/\"']+)";
 
     public static abstract class PasswordSolver {
         protected Browser       br;
@@ -355,9 +355,9 @@ public class MediafireCom extends PluginForHost {
                     finalDownloadurl = br.getRedirectLocation();
                 }
                 if (finalDownloadurl == null) {
-                    finalDownloadurl = br.getRegex("href=\"(https?://[^\"]+)\"\\s*id=\"downloadButton\"").getMatch(0);
+                    finalDownloadurl = br.getRegex("href\\s*=\\s*\"(https?://[^\"]+)\"\\s*id\\s*=\\s*\"downloadButton\"").getMatch(0);
                     if (finalDownloadurl == null) {
-                        finalDownloadurl = br.getRegex("(https?://download\\d+\\.[^/]+/[^\"']+)").getMatch(0);
+                        finalDownloadurl = br.getRegex("(" + TYPE_DIRECT + ")").getMatch(0);
                     }
                 }
             }
@@ -677,7 +677,7 @@ public class MediafireCom extends PluginForHost {
                         account.clearCookies("");
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                // offline file, to file/get_info as a single file... we need to return so the proper
+                    // offline file, to file/get_info as a single file... we need to return so the proper
                 case 110:
                     // invalid uid
                 case 111:

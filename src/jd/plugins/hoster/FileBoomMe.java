@@ -15,15 +15,17 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.components.config.Keep2shareConfigFileboom;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.components.config.Keep2shareConfigFileboom;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 /**
  *
@@ -49,9 +51,19 @@ public class FileBoomMe extends K2SApi {
     }
 
     @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.FAVICON };
+    }
+
+    @Override
     public String[] siteSupportedNames() {
         // keep2.cc no dns
         return new String[] { "fileboom.me", "fboom.me" };
+    }
+
+    @Override
+    public Object getFavIcon(String host) throws IOException {
+        return getInternalAPIDomain();
     }
 
     @Override

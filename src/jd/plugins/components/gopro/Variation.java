@@ -13,5 +13,7 @@ public interface Variation extends FlexiStorableInterface {
 
     public String getLabel();
 
+    public String getType();
+
     public int getItem_number();
 }
