@@ -37,10 +37,13 @@ import javax.swing.ImageIcon;
 
 import jd.captcha.utils.GifDecoder;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.PluginForHost;
 import net.sf.image4j.codec.ico.ICODecoder;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
@@ -64,7 +67,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class FavIcons {
@@ -237,21 +239,8 @@ public class FavIcons {
                     public void run() {
                         final List<String> tryHosts = new ArrayList<String>();
                         BufferedImage favicon = null;
-                        LogSource pluginLogger = null;
-                        LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
-                        if (false && existingHostPlugin == null) {
-                            final LogSource logger = LogController.getFastPluginLogger("FavIcons");
-                            try {
-                                existingHostPlugin = new PluginFinder(logger)._assignHost(host);
-                            } catch (Exception e) {
-                                logger.log(e);
-                            } finally {
-                                if (favicon != null) {
-                                    logger.clear();
-                                }
-                                logger.close();
-                            }
-                        }
+                        String[] siteSupportedNames = null;
+                        final LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
                         if (existingHostPlugin != null) {
                             if (existingHostPlugin.hasFeature(LazyPlugin.FEATURE.INTERNAL)) {
                                 synchronized (LOCK) {
@@ -267,6 +256,7 @@ public class FavIcons {
                                 try {
                                     final PluginForHost pluginInstance = existingHostPlugin.newInstance(null, false);
                                     pluginInstance.setLogger(logger);
+                                    siteSupportedNames = pluginInstance.siteSupportedNames();
                                     final Object result = pluginInstance.getFavIcon(host);
                                     if (result instanceof BufferedImage) {
                                         favicon = (BufferedImage) result;
@@ -313,7 +303,7 @@ public class FavIcons {
                                     }
                                 }
                             }
-                            favicon = downloadFavIcon(tryHosts);
+                            favicon = downloadFavIcon(tryHosts, siteSupportedNames);
                         }
                         synchronized (LOCK) {
                             final List<FavIconRequestor> requestors = QUEUE.remove(host);
@@ -443,7 +433,7 @@ public class FavIcons {
      * dirty hack to count number of unique colors, use only for small images like favicons!
      */
     private static int countColors(BufferedImage image) {
-        HashSet<Integer> color = new HashSet<Integer>();
+        final HashSet<Integer> color = new HashSet<Integer>();
         for (int x = 0; x < image.getWidth(); x++) {
             for (int y = 0; y < image.getHeight(); y++) {
                 color.add(image.getRGB(x, y));
@@ -454,30 +444,29 @@ public class FavIcons {
 
     private static BufferedImage returnBestImage(List<BufferedImage> images) {
         if (images != null && images.size() > 0) {
-            BufferedImage img = null;
+            BufferedImage ret = null;
             int size = -1;
             int colors = -1;
-            for (BufferedImage img2 : images) {
+            for (final BufferedImage img : images) {
                 /*
                  * loop through all available images to find best resolution
                  */
-                if (img2 == null) {
+                if (img == null) {
                     continue;
-                }
-                if (img == null || (img2.getHeight() * img2.getWidth()) > size || countColors(img2) > colors) {
-                    img = img2;
-                    size = img.getHeight() * img.getWidth();
-                    colors = countColors(img);
+                } else if (ret == null || (img.getHeight() * img.getWidth()) > size || countColors(img) > colors) {
+                    ret = img;
+                    size = ret.getHeight() * ret.getWidth();
+                    colors = countColors(ret);
                 }
             }
-            if (img != null && img.getHeight() > 1 && img.getWidth() > 1) {
-                return img;
+            if (ret != null && ret.getHeight() > 1 && ret.getWidth() > 1) {
+                return ret;
             }
         }
         return null;
     }
 
-    private static boolean isSameDomain(final Browser br, String host) throws IOException {
+    private static boolean isSameDomain(final Browser br, String host, final String[] siteSupportedNames) throws IOException {
         if (host.matches("(?i)^https?://.+")) {
             host = new URL(host).getHost();
         } else {
@@ -498,6 +487,13 @@ public class FavIcons {
                     return true;
                 }
             }
+            if (siteSupportedNames != null && siteSupportedNames.length > 0) {
+                for (String siteSupportedName : siteSupportedNames) {
+                    if (StringUtils.equalsIgnoreCase(siteSupportedName, domain) || StringUtils.equalsIgnoreCase(siteSupportedName, url.getHost())) {
+                        return true;
+                    }
+                }
+            }
             return false;
         }
         return true;
@@ -516,7 +512,7 @@ public class FavIcons {
         }
     }
 
-    public static BufferedImage download_FavIconTag(final String host, LogInterface logger) throws IOException {
+    public static BufferedImage download_FavIconTag(final String host, String[] siteSupportedNames, LogInterface logger) throws IOException {
         final Browser favBr = new Browser();
         favBr.setLogger(logger);
         favBr.setConnectTimeout(10000);
@@ -530,32 +526,89 @@ public class FavIcons {
             }
         }
         for (final String website : websites) {
-            try {
-                favBr.getPage(website);
-                if (favBr.getRedirectLocation() != null) {
-                    favBr.followRedirect(true);
-                    if (!isSameDomain(favBr, host)) {
-                        throw new IOException("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
+            boolean retryFlag = true;
+            int retryCount = 0;
+            while (retryFlag) {
+                retryFlag = false;
+                try {
+                    favBr.getPage(website);
+                    if (favBr.getRedirectLocation() != null) {
+                        favBr.followRedirect(true);
+                        if (!isSameDomain(favBr, host, siteSupportedNames)) {
+                            throw new IOException("redirect to different domain?" + favBr._getURL().getHost() + "!=" + host);
+                        }
                     }
+                    final BufferedImage ret = download_FavIconTag(favBr, host, logger);
+                    if (ret != null) {
+                        return ret;
+                    } else {
+                        break;
+                    }
+                } catch (final BrowserException e) {
+                    logger.log(e);
+                    final Request reg = e.getRequest();
+                    if (reg != null && reg.getHttpConnection() != null && reg.getHttpConnection().getResponseCode() == 429 && retryCount == 0) {
+                        try {
+                            int timeout = 2000;// minimum wait timeout
+                            final String retryAfter = reg.getHttpConnection().getHeaderField(HTTPConstants.HEADER_RESPONSE_RETRY_AFTER);
+                            if (retryAfter != null && retryAfter.matches("^\\s*\\d+\\s*$")) {
+                                timeout = Math.max(timeout, Math.min(Integer.parseInt(retryAfter) * 1000, 20000));
+                            }
+                            Thread.sleep(timeout);
+                            retryFlag = true;
+                            retryCount = 1;
+                        } catch (InterruptedException ignore) {
+                        }
+                    }
+                } catch (final IOException e) {
+                    logger.log(e);
                 }
-            } catch (final IOException e) {
-                logger.log(e);
             }
         }
-        return download_FavIconTag(favBr, host, logger);
+        if (websites.size() == 0) {
+            // host is absolute URL
+            final BufferedImage ret = download_FavIconTag(favBr, host, logger);
+            if (ret != null) {
+                return ret;
+            }
+        }
+        return null;
     }
 
     public static BufferedImage download_FavIconTag(Browser favBr, String host, LogInterface logger) throws IOException {
         final Set<String> favIconURLs = getFavIconURLs(favBr, host, logger);
         for (final String favIconURL : favIconURLs) {
-            try {
-                final Browser brc = favBr.cloneBrowser();
-                final BufferedImage ret = download_FavIconTag(brc, favIconURL, host, logger);
-                if (ret != null) {
-                    return ret;
+            boolean retryFlag = true;
+            int retryCount = 0;
+            while (retryFlag) {
+                retryFlag = false;
+                try {
+                    final Browser brc = favBr.cloneBrowser();
+                    final BufferedImage ret = download_FavIconTag(brc, favIconURL, host, logger);
+                    if (ret != null) {
+                        return ret;
+                    } else {
+                        break;
+                    }
+                } catch (final BrowserException e) {
+                    logger.log(e);
+                    final Request reg = e.getRequest();
+                    if (reg != null && reg.getHttpConnection() != null && reg.getHttpConnection().getResponseCode() == 429 && retryCount == 0) {
+                        try {
+                            int timeout = 2000;// minimum wait timeout
+                            final String retryAfter = reg.getHttpConnection().getHeaderField(HTTPConstants.HEADER_RESPONSE_RETRY_AFTER);
+                            if (retryAfter != null && retryAfter.matches("^\\s*\\d+\\s*$")) {
+                                timeout = Math.max(timeout, Math.min(Integer.parseInt(retryAfter) * 1000, 20000));
+                            }
+                            Thread.sleep(timeout);
+                            retryFlag = true;
+                            retryCount = 1;
+                        } catch (InterruptedException ignore) {
+                        }
+                    }
+                } catch (IOException e) {
+                    logger.log(e);
                 }
-            } catch (IOException e) {
-                logger.log(e);
             }
         }
         return null;
@@ -655,16 +708,18 @@ public class FavIcons {
             }
             return null;
         } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+            if (con != null) {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
     }
 
-    public static BufferedImage downloadFavIcon(List<String> hosts) {
+    public static BufferedImage downloadFavIcon(List<String> hosts, String[] siteSupportedNames) {
         for (final String host : hosts) {
-            final BufferedImage ret = downloadFavIcon(host);
+            final BufferedImage ret = downloadFavIcon(host, siteSupportedNames);
             if (ret != null) {
                 return ret;
             }
@@ -672,16 +727,21 @@ public class FavIcons {
         return null;
     }
 
+    @Deprecated
+    public static BufferedImage downloadFavIcon(String host) {
+        return downloadFavIcon(host, null);
+    }
+
     /**
      * downloads a favicon from the given host, icon must be bigger than 1x1, cause some hosts have fake favicon.ico with 1x1 size
      */
-    public static BufferedImage downloadFavIcon(String host) {
+    public static BufferedImage downloadFavIcon(String host, String[] siteSupportedNames) {
         final LogSource logger = LogController.getFastPluginLogger("FavIcons");
         logger.info("Download FavIcon for " + host);
         BufferedImage ret = null;
         try {
             /* first try to get the FavIcon specified in FavIconTag */
-            ret = download_FavIconTag(host, logger);
+            ret = download_FavIconTag(host, siteSupportedNames, logger);
         } catch (Throwable ignore) {
             logger.log(ignore);
         } finally {
