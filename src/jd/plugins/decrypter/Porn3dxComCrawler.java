@@ -74,6 +74,7 @@ public class Porn3dxComCrawler extends PluginForDecrypt {
             int index = 0;
             for (final String newEmbedURL : newEmbedURLs) {
                 final DownloadLink dl = this.createDownloadlink(newEmbedURL);
+                dl.setReferrerUrl(br.getURL());
                 dl.setProperty(MediadeliveryNet.PROPERTY_PORN3DX_POST_ID, postID);
                 if (authorSlug != null) {
                     dl.setProperty(MediadeliveryNet.PROPERTY_AUTHOR, authorSlug);

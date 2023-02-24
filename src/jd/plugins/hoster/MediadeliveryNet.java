@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -107,6 +106,24 @@ public class MediadeliveryNet extends antiDDoSForHost {
             link.setFinalFileName(this.getFID(link) + ".mp4");
         }
         this.setBrowserExclusive();
+        final String refererURL = this.getReferer(link);
+        if (refererURL != null) {
+            br.getHeaders().put("Referer", refererURL);
+        }
+        br.setFollowRedirects(true);
+        getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 403 || br.containsHTML("<h1>\\s*403\\s*</h1>")) {
+            // Wrong referer
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("<h1>404</h1>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    private String getReferer(final DownloadLink link) {
         String forced_referer = new Regex(link.getPluginPatternMatcher(), "((\\&|\\?|#)forced_referer=.+)").getMatch(0);
         if (forced_referer != null) {
             forced_referer = new Regex(forced_referer, "forced_referer=([A-Za-z0-9=]+)").getMatch(0);
@@ -120,25 +137,11 @@ public class MediadeliveryNet extends antiDDoSForHost {
                     ref = Encoding.Base64Decode(forced_referer);
                 }
                 if (ref != null) {
-                    try {
-                        br.getPage(ref);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    return ref;
                 }
             }
         }
-        br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 403 || br.containsHTML("<h1>\\s*403\\s*</h1>")) {
-            // Wrong referer
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("<h1>404</h1>")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        return AvailableStatus.TRUE;
+        return link.getReferrerUrl();
     }
 
     public static void setFilename(final DownloadLink link) {

@@ -272,6 +272,7 @@ public class RealDebridCom extends PluginForHost {
             /* 2020-08-11: Free accounts cannot be used to download anything */
             ai.setProperty("multiHostSupport", Property.NULL);
             ai.setTrafficLeft(0);
+            ai.setExpired(true);
         }
         return ai;
     }
@@ -520,7 +521,7 @@ public class RealDebridCom extends PluginForHost {
             case TRAFFIC_EXHAUSTED:
                 mhm.putError(account, link, 5 * 60 * 1000l, "Traffic exhausted");
             default:
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, e.getMessage(), e);
+                mhm.handleErrorGeneric(account, link, e.getMessage(), 50, 1 * 60 * 1000l);
             }
         }
     }

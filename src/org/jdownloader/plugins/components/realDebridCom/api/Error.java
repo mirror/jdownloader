@@ -32,12 +32,12 @@ public enum Error {
     FILE_NOT_ALLOWED(28, "File not allowed"),
     TORRENT_TOO_BIG(29, "Torrent too big"),
     TORRENT_FILE_INVALID(30, "Torrent file invalid"),
-
     ACTION_ALREADY_DONE(31, "Action already done"),
-
     IMAGE_RESOLUTION_ERROR(32, "Image resolution error"),
+    FAIR_USAGE_LIMIT_REACHED(36, "Fair usage limit reached"),
     // DUmmy Code:
     UNKNOWN(-99, "Unknown Error ID");
+
     public static Error getByCode(long id) {
         for (Error e : values()) {
             if (id == e.code) {
@@ -54,5 +54,4 @@ public enum Error {
         this.code = code;
         this.msg = msg;
     }
-
 }
