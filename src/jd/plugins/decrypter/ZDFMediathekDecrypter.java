@@ -31,15 +31,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -56,6 +47,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.YoutubeDashV2;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de", "phoenix.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/(?:.+/)?[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?phoenix\\.de/(?:.*?-\\d+\\.html.*|podcast/[A-Za-z0-9]+/video/rss\\.xml)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -116,6 +116,12 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         QUALITIES_MAP.put("v13", Arrays.asList(new String[][] { new String[] { "1496k_p13", QUALITY.MEDIUM.name() }, new String[] { "2296k_p14", QUALITY.VERYHIGH.name() }, new String[] { "2328k_p35", QUALITY.VERYHIGH.name() }, new String[] { "3296k_p15", QUALITY.HD.name() }, new String[] { "3328k_p36", QUALITY.HD.name() } }));
         QUALITIES_MAP.put("v14", Arrays.asList(new String[][] { new String[] { "1496k_p13", QUALITY.MEDIUM.name() }, new String[] { "2296k_p14", QUALITY.VERYHIGH.name() }, new String[] { "2328k_p35", QUALITY.VERYHIGH.name() }, new String[] { "3328k_p35", QUALITY.HD.name() }, new String[] { "3328k_p36", QUALITY.HD.name() } }));
         QUALITIES_MAP.put("v15", Arrays.asList(new String[][] { new String[] { "1628k_p13", QUALITY.MEDIUM.name() }, new String[] { "2360k_p35", QUALITY.VERYHIGH.name() }, new String[] { "3360k_p36", QUALITY.HD.name() } }));
+        /*
+         * new String[] { "508k_p9", QUALITY.LOW.name() }
+         * 
+         * new String[] { "808k_p11", QUALITY.HIGH.name() }
+         */
+        QUALITIES_MAP.put("v17", Arrays.asList(new String[][] { new String[] { "1628k_p13", QUALITY.MEDIUM.name() }, new String[] { "2360k_p35", QUALITY.VERYHIGH.name() }, new String[] { "3360k_p36", QUALITY.HD.name() }, new String[] { "6628k_p61", QUALITY.HD.name() }, new String[] { "6660k_p37", QUALITY.HD.name() } }));
     }
 
     public static List<String[]> getBetterQualities(final String url) {
@@ -496,6 +502,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         final boolean grabHls480 = cfg.isGrabHLS480pVideoEnabled();
         final boolean grabHls570 = cfg.isGrabHLS570pVideoEnabled();
         final boolean grabHls720 = cfg.isGrabHLS720pVideoEnabled();
+        final boolean grabHls1080 = cfg.isGrabHLS1080pVideoEnabled();
         if (grabHls170) {
             selectedQualityStringsTmp.add("hls_mp4_170");
         }
@@ -513,6 +520,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
         if (grabHls720) {
             selectedQualityStringsTmp.add("hls_mp4_720");
+        }
+        if (grabHls1080) {
+            selectedQualityStringsTmp.add("hls_mp4_1080");
         }
         boolean grabOfficialDownloadUrls = false;
         final int selectedQualityStringsTmpLengthOld = selectedQualityStringsTmp.size();
@@ -784,46 +794,18 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                      * Sometimes we can modify the final downloadurls and thus get higher quality streams. We want to keep all versions
                      * though!
                      */
-                    final boolean useNewHandling = true;
-                    if (useNewHandling) {
-                        final List<String[]> betterQualities = getBetterQualities(uri);
-                        if (betterQualities != null) {
-                            /* We cannot be 100% sure if these will work thus let's check... */
-                            for (final String[] betterQualityEntry : betterQualities) {
-                                final String betterQuality = betterQualityEntry[1];
-                                if (!httpQualities.contains(betterQuality)) {
-                                    final long filesizeNew = this.checkDownloadable(betterQualityEntry[0]);
-                                    if (filesizeNew > -1) {
-                                        logger.info("Optimization for: " + realQuality + "(" + uri + ")->" + betterQuality + "(" + betterQualityEntry[0] + ")");
-                                        qualities.add(new Object[] { betterQuality, betterQualityEntry[0], filesizeNew });
-                                        httpQualities.add(betterQuality);
-                                    }
+                    final List<String[]> betterQualities = getBetterQualities(uri);
+                    if (betterQualities != null) {
+                        /* We cannot be 100% sure if these will work thus let's check... */
+                        for (final String[] betterQualityEntry : betterQualities) {
+                            final String betterQuality = betterQualityEntry[1];
+                            if (!httpQualities.contains(betterQuality)) {
+                                final long filesizeNew = this.checkDownloadable(betterQualityEntry[0]);
+                                if (filesizeNew > -1) {
+                                    logger.info("Optimization for: " + realQuality + "(" + uri + ")->" + betterQuality + "(" + betterQualityEntry[0] + ")");
+                                    qualities.add(new Object[] { betterQuality, betterQualityEntry[0], filesizeNew });
+                                    httpQualities.add(betterQuality);
                                 }
-                            }
-                        }
-                    } else {
-                        /* Old handling */
-                        if (uri.matches("https?://[a-z0-9]*rodlzdf[^/]+\\.akamaihd\\.net/.+_\\d+k_p\\d+v\\d+\\.mp4")) {
-                            String improvedQualityDownloadURL = null;
-                            /* Improve "veryhigh" --> hd */
-                            final String improvedQuality;
-                            if (uri.contains("_1628k_p13v15.mp4")) {
-                                improvedQualityDownloadURL = uri.replace("_1628k_p13v15.mp4", "_3360k_p36v15.mp4");
-                                improvedQuality = "hd";
-                            } else if (uri.contains("_808k_p11v15.mp4")) {
-                                /* Improve "high/medium" --> veryhigh (?) */
-                                improvedQualityDownloadURL = uri.replace("_808k_p11v15.mp4", "_2360k_p35v15.mp4");
-                                improvedQuality = "veryhigh";
-                            } else if (uri.contains("_508k_p9v15.mp4")) {
-                                /* Improve "low" -> medium (?) */
-                                improvedQualityDownloadURL = uri.replace("_508k_p9v15.mp4", "_808k_p11v15.mp4");
-                                improvedQuality = "medium";
-                            } else {
-                                logger.info("Not altering quality: " + realQuality);
-                                improvedQuality = null;
-                            }
-                            if (improvedQualityDownloadURL != null && improvedQuality != null) {
-                                qualities.add(new Object[] { improvedQuality, improvedQualityDownloadURL, -1 });
                             }
                         }
                     }
@@ -846,8 +828,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         final DownloadLink dl = createDownloadlink(finalDownloadURL);
                         dl.setContentUrl(param.getCryptedUrl());
                         /**
-                         * Usually filesize is only given for the official downloads.</br>
-                         * Only set it here if we haven't touched the original downloadurls!
+                         * Usually filesize is only given for the official downloads.</br> Only set it here if we haven't touched the
+                         * original downloadurls!
                          */
                         if (filesize > 0) {
                             dl.setAvailable(true);
@@ -1181,11 +1163,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Searches for videos in zdfmediathek that match the given search term. </br>
-     * This is mostly used as a workaround to find stuff that is hosted on their other website on zdfmediathek instead as zdfmediathek is
-     * providing a fairly stable search function while other websites hosting the same content such as kika.de can be complicated to parse.
-     * </br>
-     * This does not (yet) support pagination!
+     * Searches for videos in zdfmediathek that match the given search term. </br> This is mostly used as a workaround to find stuff that is
+     * hosted on their other website on zdfmediathek instead as zdfmediathek is providing a fairly stable search function while other
+     * websites hosting the same content such as kika.de can be complicated to parse. </br> This does not (yet) support pagination!
      */
     public ArrayList<DownloadLink> crawlZDFMediathekSearchResultsVOD(final String tvChannel, final String searchTerm, final int maxResults) throws Exception {
         if (StringUtils.isEmpty(tvChannel) || StringUtils.isEmpty(searchTerm)) {

@@ -1126,7 +1126,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             if (variant.getType() == DownloadType.DASH_AUDIO) {
                 chunkOffset = 0;
             } else {
-                chunkOffset = streamData.getContentLength();
+                final YoutubeFinalLinkResource video = getYoutubeFinalLinkResource(downloadLink, YoutubeHelper.YT_STREAM_DATA_VIDEO);
+                long videoContentLength = video != null ? video.getContentLength() : -1;
+                if (videoContentLength == -1) {
+                    final String videoDashName = getDashVideoFileName(downloadLink);
+                    videoContentLength = Math.max(0, new File(downloadLink.getDownloadDirectory(), videoDashName).length());
+                }
+                chunkOffset = videoContentLength;
             }
             data.setDashAudioITag(streamData.getItag().getITAG());
         }

@@ -285,7 +285,7 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
             }
             if (source == null) {
                 try {
-                    int index = Integer.parseInt(variant);
+                    final int index = Integer.parseInt(variant);
                     for (Variation v : resp.getEmbedded().getFiles()) {
                         if (index == v.getItem_number()) {
                             source = v;
@@ -339,6 +339,13 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
             name = media.getId() + "-" + StringUtils.valueOrEmpty(name);
         }
         String fileExtension = media.getFile_extension();
+        if (source != null) {
+            if ("gpr".equals(source.getType())) {
+                fileExtension = "gpr";
+            } else if ("zip".equals(source.getType())) {
+                fileExtension = "zip";
+            }
+        }
         if (StringUtils.isNotEmpty(fileExtension)) {
             name = plugin.correctOrApplyFileNameExtension(name, "." + fileExtension);
         }
@@ -346,11 +353,11 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
             link.setFinalFileName(name);
         } else {
             String variant = "";
-            if (source != null && "source".equals(source.getLabel()) && !"Photo".equals(media.getType()) && !"Burst".equals(media.getType())) {
+            if (source != null && "source".equals(source.getLabel()) && !"Photo".equals(media.getType()) && !"Burst".equals(media.getType()) && !"TimeLapse".equals(media.getType())) {
                 variant = "_source";
-            } else if ((source != null && source.getLabel() == null) || "Burst".equals(media.getType())) {
+            } else if ((source != null && source.getLabel() == null) || "Burst".equals(media.getType()) || "TimeLapse".equals(media.getType())) {
                 if (!name.toLowerCase(Locale.ROOT).endsWith(".zip")) {
-                    // burst image
+                    // burst or timelapse image
                     int digits = (int) (Math.log10(media.getItem_count()) + 1);
                     variant = "_" + Files.getFileNameWithoutExtension(media.getFilename()) + "." + StringUtils.fillPre(source.getItem_number() + "", "0", digits);
                 }

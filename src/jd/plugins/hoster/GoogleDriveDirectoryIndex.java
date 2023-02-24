@@ -34,6 +34,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
@@ -50,12 +51,17 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "workers.dev" });
+        ret.add(new String[] { "workers.dev", "workers.cloudflare.com" });
         ret.add(new String[] { "dragsterps-team.tk" });
         ret.add(new String[] { "get.tgdrive.tech" });
         ret.add(new String[] { "mirror.sparrowisland.ga" });
         ret.add(new String[] { "cdn.web-dl.eu.org" });
         return ret;
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.FAVICON };
     }
 
     public static String[] getAnnotationNames() {

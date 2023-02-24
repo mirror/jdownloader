@@ -84,12 +84,14 @@ public class UsenextCom extends UseNet {
             }
         }
         String unit = (String) map.get("unitResourceStringKey");
-        if (StringUtils.contains(unit, "GIGA")) {
+        if (StringUtils.contains(unit, "GIGA") || StringUtils.equals(unit, "UNX_UNIT_GIGABYTES")) {
             unit = "GB";
         } else if (StringUtils.contains(unit, "MEGA")) {
             unit = "MB";
         } else if (StringUtils.contains(unit, "TERA")) {
             unit = "TB";
+        } else if (StringUtils.equals(unit, "UNX_UNIT_BYTES")) {
+            unit = "B";
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unsupported:" + unit);
         }
@@ -199,7 +201,6 @@ public class UsenextCom extends UseNet {
                 ai.setValidUntil(expireDate.getTime());
                 ai.setStatus((String) JavaScriptEngineFactory.walkJson(currentServiceRound, "article/name"));
             }
-            // TODO: check this
             account.setMaxSimultanDownloads(30);
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

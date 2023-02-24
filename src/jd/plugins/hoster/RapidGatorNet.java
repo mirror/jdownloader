@@ -32,23 +32,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
@@ -70,6 +53,23 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RapidGatorNet extends antiDDoSForHost {
@@ -124,7 +124,6 @@ public class RapidGatorNet extends antiDDoSForHost {
      * may lead to login-captchas!
      */
     private final long               WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES = 1;
-    private static Object            CTRLLOCK                                   = new Object();
     private static Map<String, Long> blockedIPsMap                              = new HashMap<String, Long>();
     private static final String      PROPERTY_LAST_BLOCKED_IPS_MAP              = "rapidgatornet__last_blockedIPsMap";
     private static final String      PROPERTY_sessionid                         = "session_id";
@@ -405,7 +404,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             if (StringUtils.isEmpty(finalDownloadURL)) {
                 if (useExperimentalHandling) {
                     logger.info("New Download with reconnectWorkaround: currentIP = " + currentIP);
-                    synchronized (CTRLLOCK) {
+                    synchronized (blockedIPsMap) {
                         /* Load list of saved IPs + timestamp of last download */
                         final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LAST_BLOCKED_IPS_MAP);
                         if (lastdownloadmap != null && lastdownloadmap instanceof Map && blockedIPsMap.isEmpty()) {
@@ -673,8 +672,12 @@ public class RapidGatorNet extends antiDDoSForHost {
             dl.startDownload();
         } finally {
             /* Save timestamp after download - does not matter whether it was finished or stopped by the user! */
-            blockedIPsMap.put(currentIP, System.currentTimeMillis());
-            this.getPluginConfig().setProperty(PROPERTY_LAST_BLOCKED_IPS_MAP, blockedIPsMap);
+            if (currentIP != null) {
+                synchronized (blockedIPsMap) {
+                    blockedIPsMap.put(currentIP, System.currentTimeMillis());
+                    this.getPluginConfig().setProperty(PROPERTY_LAST_BLOCKED_IPS_MAP, new HashMap<String, Long>(blockedIPsMap));
+                }
+            }
         }
     }
 
@@ -686,11 +689,11 @@ public class RapidGatorNet extends antiDDoSForHost {
                 final Entry<String, Long> ipentry = it.next();
                 final String ip = ipentry.getKey();
                 final long timestamp = ipentry.getValue();
-                if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT_GENERAL) {
+                if (StringUtils.isEmpty(ip) || System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT_GENERAL) {
                     /* Remove old entries */
                     it.remove();
                 }
-                if (ip.equals(currentIP)) {
+                if (ip != null && ip.equals(currentIP)) {
                     lastdownload = timestamp;
                 }
             }
