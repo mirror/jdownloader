@@ -1320,14 +1320,15 @@ public class GoogleDrive extends PluginForHost {
                         /* Download quota limit reached -> Try stream download as last resort fallback */
                         logger.info("Attempting forced stream download in an attempt to get around quota limit");
                         try {
-                            directurl = this.getStreamDownloadurl(link, account);
+                            streamDownloadlink = this.getStreamDownloadurl(link, account);
                         } catch (final PluginException ignore) {
-                            logger.exception("Stream download fallback failed", ignore);
+                            logger.log(ignore);
                         }
-                        if (StringUtils.isEmpty(directurl)) {
+                        if (StringUtils.isEmpty(streamDownloadlink)) {
                             logger.info("Stream download fallback failed -> There is nothing we can do to avoid this limit");
                             errorDownloadQuotaReachedWebsite(link, account);
                         } else {
+                            directurl = streamDownloadlink;
                             streamDownloadActive = true;
                             /* We can only know the original filesize -> Stream will be smaller. */
                             link.setVerifiedFileSize(-1);

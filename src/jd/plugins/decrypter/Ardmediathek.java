@@ -811,7 +811,7 @@ public class Ardmediathek extends PluginForDecrypt {
                                 }
                                 final DownloadLink download = addQualityHTTP(param, metadata, foundQualitiesMap, url, null, resolution, false);
                                 if (download != null) {
-                                    httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, resolution));
+                                    httpStreamsQualityIdentifiers.add(getQualityIdentifier(url, resolution, -1));
                                 }
                             }
                         }
@@ -872,7 +872,7 @@ public class Ardmediathek extends PluginForDecrypt {
                             logger.warning("Skipping unsupported width: " + width);
                             continue;
                         }
-                        final String qualityIdentifier = getQualityIdentifier(final_url, resolution);
+                        final String qualityIdentifier = getQualityIdentifier(final_url, resolution, -1);
                         if (!httpStreamsQualityIdentifiers_2_over_hls_master.contains(qualityIdentifier)) {
                             logger.info("Found (additional) http quality via HLS Master: " + qualityIdentifier);
                             addQualityHTTP(param, metadata, foundQualitiesMap_http_urls_via_HLS_master, final_url, null, resolution, false);
@@ -1058,7 +1058,7 @@ public class Ardmediathek extends PluginForDecrypt {
             /* E.g. daserste.de */
             String filesizeStr = getXML(stream, "size");
             if (StringUtils.isEmpty(filesizeStr)) {
-                /* E.g. kika.de */
+                /* E.g. kika.de, mdr.de */
                 filesizeStr = getXML(stream, "fileSize");
             }
             final String bitrate_video = getXML(stream, "bitrateVideo");
@@ -1081,6 +1081,12 @@ public class Ardmediathek extends PluginForDecrypt {
                 width = Integer.parseInt(resInfo[0]);
                 height = Integer.parseInt(resInfo[1]);
             }
+            // final boolean thisIsAudioItem;
+            // if (width == -1 && height == -1 && bitrate_audio != null && bitrate_video == null) {
+            // thisIsAudioItem = true;
+            // } else {
+            // thisIsAudioItem = false;
+            // }
             if (StringUtils.isEmpty(http_url) || isUnsupportedProtocolDasersteVideo(http_url)) {
                 continue;
             }
@@ -1113,6 +1119,8 @@ public class Ardmediathek extends PluginForDecrypt {
                     }
                 } else if (bitrateFromURLStr != null) {
                     bitrate = Long.parseLong(bitrateFromURLStr);
+                } else if (bitrate_audio != null) {
+                    bitrate = Long.parseLong(bitrate_audio);
                 } else {
                     bitrate = 0;
                 }
@@ -1124,12 +1132,15 @@ public class Ardmediathek extends PluginForDecrypt {
                 if (resolution == null) {
                     resolution = VideoResolution.getByURL(http_url);
                 }
-                if (resolution == null) {
+                if (resolution == null && bitrate_audio == null) {
                     /* Skip unsupported resolutions */
                     logger.warning("Found unsupported resolution for URL: " + http_url);
                     continue;
-                } else {
+                } else if (resolution != null) {
+                    /* No resolution but audio bitrate is available -> Looks like audio file */
                     addQuality(param, metadata, foundQualitiesMap, http_url, filesizeStr, bitrate, resolution, isAudioDescription);
+                } else if (bitrate_audio != null) {
+                    addQuality(param, metadata, foundQualitiesMap, http_url, filesizeStr, bitrate, resolution, true);
                 }
             }
         }
@@ -1325,7 +1336,7 @@ public class Ardmediathek extends PluginForDecrypt {
         return addQuality(param, metadata, qualitiesMap, directurl, filesize_str, -1, resolution, isAudioDescription);
     }
 
-    private DownloadLink addQuality(final CryptedLink param, final ArdMetadata metadata, final HashMap<String, DownloadLink> qualitiesMap, final String directurl, final String filesize_str, long bitrate, final VideoResolution resolution, final boolean isAudioDescription) {
+    private DownloadLink addQuality(final CryptedLink param, final ArdMetadata metadata, final HashMap<String, DownloadLink> qualitiesMap, final String directurl, final String filesize_str, final long bitrate, final VideoResolution resolution, final boolean isAudioDescription) {
         /* Errorhandling */
         final String ext;
         if (directurl == null) {
@@ -1375,7 +1386,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
             }
         }
-        final String qualityStringForQualitySelection = getQualityIdentifier(directurl, resolution);
+        final String qualityStringForQualitySelection = getQualityIdentifier(directurl, resolution, bitrate);
         final DownloadLink link = createDownloadlink(directurl.replaceAll("https?://", getHost() + "decrypted://"));
         final MediathekProperties data = link.bindData(MediathekProperties.class);
         data.setTitle(metadata.getTitle());
@@ -1427,22 +1438,20 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     /* Returns quality identifier String, compatible with quality selection values. Format: protocol_bitrateCorrected_heightCorrected */
-    private String getQualityIdentifier(final String directurl, final VideoResolution resolution) {
+    private String getQualityIdentifier(final String directurl, final VideoResolution resolution, final long bitrate) {
         final String protocol;
         if (directurl.contains("m3u8")) {
             protocol = "hls";
         } else {
             protocol = "http";
         }
-        /* Use this for quality selection as real resolution can be slightly different than the values which our users can select. */
-        final int height;
         if (resolution != null) {
-            height = resolution.getHeight();
+            return protocol + "_" + resolution.getHeight();
+        } else if (bitrate > 0) {
+            return protocol + "_" + bitrate;
         } else {
-            height = 0;
+            return protocol + "_0";
         }
-        final String qualityStringForQualitySelection = protocol + "_" + height;
-        return qualityStringForQualitySelection;
     }
 
     private ArrayList<DownloadLink> handleUserQualitySelection(final ArdMetadata metadata, final HashMap<String, DownloadLink> foundQualitiesMap) {
@@ -1455,7 +1464,11 @@ public class Ardmediathek extends PluginForDecrypt {
         HashMap<String, DownloadLink> finalSelectedQualityMap = new HashMap<String, DownloadLink>();
         if (cfg.isGrabBESTEnabled()) {
             /* User wants BEST only */
-            finalSelectedQualityMap = findBESTInsideGivenMap(foundQualitiesMap);
+            final DownloadLink best = findBESTInsideGivenMap(foundQualitiesMap);
+            if (best != null) {
+                finalSelectedQualityMap.clear();
+                finalSelectedQualityMap.put("best", best);
+            }
         } else {
             /* 2022-01-20: Grabbing unknown qualities is not supported anymore for now. */
             // final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
@@ -1479,7 +1492,11 @@ public class Ardmediathek extends PluginForDecrypt {
             }
             /* Check if user maybe only wants the best quality inside his selected video qualities. */
             if (cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled()) {
-                finalSelectedQualityMap = findBESTInsideGivenMap(finalSelectedQualityMap);
+                final DownloadLink best = findBESTInsideGivenMap(finalSelectedQualityMap);
+                if (best != null) {
+                    finalSelectedQualityMap.clear();
+                    finalSelectedQualityMap.put("best", best);
+                }
             }
         }
         if (finalSelectedQualityMap.isEmpty()) {
@@ -1529,23 +1546,39 @@ public class Ardmediathek extends PluginForDecrypt {
         return isUnsupported;
     }
 
-    private HashMap<String, DownloadLink> findBESTInsideGivenMap(final HashMap<String, DownloadLink> foundQualitiesMap) {
-        HashMap<String, DownloadLink> newMap = new HashMap<String, DownloadLink>();
-        DownloadLink keep = null;
-        if (foundQualitiesMap.size() > 0) {
-            for (final String quality : all_known_qualities) {
-                keep = foundQualitiesMap.get(quality);
-                if (keep != null) {
-                    newMap.put(quality, keep);
-                    break;
+    private DownloadLink findBESTInsideGivenMap(final HashMap<String, DownloadLink> foundQualitiesMap) {
+        if (foundQualitiesMap.isEmpty()) {
+            return null;
+        }
+        long highestFilesize = -1;
+        DownloadLink best = null;
+        /* First try to find best by filesize */
+        int numberofItemsWithFilesizeGiven = 0;
+        final Iterator<Entry<String, DownloadLink>> it = foundQualitiesMap.entrySet().iterator();
+        while (it.hasNext()) {
+            final Entry<String, DownloadLink> entry = it.next();
+            final DownloadLink dl = entry.getValue();
+            if (dl.getView().getBytesTotal() > 0) {
+                numberofItemsWithFilesizeGiven++;
+                if (dl.getView().getBytesTotal() > highestFilesize) {
+                    highestFilesize = dl.getView().getBytesTotal();
+                    best = dl;
                 }
             }
         }
-        if (newMap.isEmpty()) {
-            /* Failover in case of bad user selection or general failure! */
-            newMap = foundQualitiesMap;
+        if (best != null && numberofItemsWithFilesizeGiven == foundQualitiesMap.size()) {
+            /* All items has a filesize set -> We can be sure that we found a nice result. */
+            return best;
         }
-        return newMap;
+        /* Try to find best by known quality identifiers */
+        best = null;
+        for (final String quality : all_known_qualities) {
+            best = foundQualitiesMap.get(quality);
+            if (best != null) {
+                return best;
+            }
+        }
+        return null;
     }
 
     public class ArdMetadata {
