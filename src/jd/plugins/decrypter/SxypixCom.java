@@ -41,15 +41,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class PicsVc extends PluginForDecrypt {
-    public PicsVc(PluginWrapper wrapper) {
+public class SxypixCom extends PluginForDecrypt {
+    public SxypixCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "pics.vc", "sxypix.com" });
+        ret.add(new String[] { "sxypix.com" });
         return ret;
     }
 
