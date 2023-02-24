@@ -13,17 +13,16 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "drive.google.com", type = Type.HOSTER)
 public interface GoogleConfig extends PluginConfigInterface {
-    final String                    text_UserAgent                                               = "User-Agent which will be used for all Google website http requests";
-    final String                    text_PreferredVideoQuality                                   = "Preferred video quality.\r\nIf you prefer stream download and the preferred stream quality is not found, best stream quality will be downloaded instead.";
-    final String                    text_AllowStreamDownloadAsFallback                           = "Allow stream download if original file can't be downloaded?";
-    final String                    text_GoogleDriveAPIKey                                       = "Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nIt will be used for GDrive folder crawling, linkchecking and downloading.";
-    final String                    text_APIDownloadMode                                         = "API download mode (only relevant if API Key is provided.)";
-    final String                    text_PreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible = "If API key is available: Prefer website for downloading if stream download is preferred and possible?";
-    final String                    text_AddStreamQualityIdentifierToFilename                    = "Add quality identifier to filename if video stream (= non-original file) is downloaded?";
-    final String                    text_DebugAccountLogin                                       = "Debug: Website mode: Perform extended account check?";
-    final String                    text_DebugForceValidateLoginAlways                           = "Debug: Website mode: Force validate login on every linkcheck/download attempt (will slow things down)?";
-    final String                    text_DebugWebsiteTrustQuickLinkcheckOfflineStatus            = "Debug: Website mode: Trust quick linkcheck offline status?";
-    public static final TRANSLATION TRANSLATION                                                  = new TRANSLATION();
+    final String                    text_UserAgent                                    = "User-Agent which will be used for all Google website http requests";
+    final String                    text_PreferredVideoQuality                        = "Preferred video quality.\r\nIf you prefer stream download and the preferred stream quality is not found, best stream quality will be downloaded instead.";
+    final String                    text_AllowStreamDownloadAsFallback                = "Allow stream download if original file can't be downloaded?";
+    final String                    text_GoogleDriveAPIKey                            = "Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nIt will be used for GDrive folder crawling, linkchecking and downloading.";
+    final String                    text_APIDownloadMode                              = "API download mode (only relevant if API Key is provided.)";
+    final String                    text_AddStreamQualityIdentifierToFilename         = "Add quality identifier to filename if video stream (= non-original file) is downloaded?";
+    final String                    text_DebugAccountLogin                            = "Debug: Website mode: Perform extended account check?";
+    final String                    text_DebugForceValidateLoginAlways                = "Debug: Website mode: Force validate login on every linkcheck/download attempt (will slow things down)?";
+    final String                    text_DebugWebsiteTrustQuickLinkcheckOfflineStatus = "Debug: Website mode: Trust quick linkcheck offline status?";
+    public static final TRANSLATION TRANSLATION                                       = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getUserAgent_label() {
@@ -44,10 +43,6 @@ public interface GoogleConfig extends PluginConfigInterface {
 
         public String getAPIDownloadMode_label() {
             return text_APIDownloadMode;
-        }
-
-        public String getPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible_label() {
-            return text_PreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible;
         }
 
         public String getAddStreamQualityIdentifierToFilename_label() {
@@ -166,14 +161,6 @@ public interface GoogleConfig extends PluginConfigInterface {
     APIDownloadMode getAPIDownloadMode();
 
     void setAPIDownloadMode(final APIDownloadMode apiDownloadMode);
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry(text_PreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible)
-    @Order(40)
-    boolean isPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible();
-
-    void setPreferWebsiteOverAPIIfStreamDownloadIsWantedAndPossible(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(true)
