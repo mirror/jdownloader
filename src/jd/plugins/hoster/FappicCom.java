@@ -15,9 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -57,7 +59,19 @@ public class FappicCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    private final String PATTERN_THUMBNAIL = "(https?://img\\d+\\.[^/]+)?/i/\\d+/([a-z0-9]{12})_t\\.jpg";
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?::\\d+)?" + XFileSharingProBasic.getDefaultAnnotationPatternPart();
+            regex += "|https?://img\\d+\\." + buildHostsPatternPart(domains) + "/i/\\d+/[a-z0-9]{12}_t\\.jpg";
+            ret.add(regex);
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -107,5 +121,18 @@ public class FappicCom extends XFileSharingProBasic {
     protected boolean isImagehoster() {
         /* 2020-03-19: Special */
         return true;
+    }
+
+    @Override
+    protected String getFUID(final String url, URL_TYPE type) {
+        if (url != null && type == null) {
+            try {
+                return new Regex(new URL(url).getPath(), PATTERN_THUMBNAIL).getMatch(1);
+            } catch (final Throwable e) {
+            }
+            return null;
+        } else {
+            return super.getFUID(url, type);
+        }
     }
 }

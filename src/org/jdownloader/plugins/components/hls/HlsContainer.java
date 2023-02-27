@@ -7,15 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-import jd.plugins.DownloadLink;
-import jd.plugins.hoster.GenericM3u8;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.logging.LogController;
+
+import jd.http.Browser;
+import jd.plugins.DownloadLink;
+import jd.plugins.hoster.GenericM3u8;
 
 public class HlsContainer {
     public static List<HlsContainer> findBestVideosByBandwidth(final List<HlsContainer> media) {
@@ -281,6 +281,7 @@ public class HlsContainer {
         AVC(CODEC_TYPE.VIDEO, "avc", "mp4", "(avc1|avc3|h264)"),
         HEVC(CODEC_TYPE.VIDEO, "hevc", "mp4", "(hev1|hvc1|h265)"),
         UNKNOWN(CODEC_TYPE.UNKNOWN, null, null, null);
+
         private final CODEC_TYPE type;
 
         public CODEC_TYPE getType() {

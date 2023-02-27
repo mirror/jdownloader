@@ -127,7 +127,9 @@ public class RozhlasCz extends PluginForDecrypt {
                      * Do not set availablestatus for HLS items otherwise they won't be processed by the generic HLS crawler and this won't
                      * appear in the linkgrabber.
                      */
-                    if (!isHLSStreaming) {
+                    if (isHLSStreaming) {
+                        link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, title);
+                    } else {
                         link.setAvailable(true);
                     }
                     ret.add(link);

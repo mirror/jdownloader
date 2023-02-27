@@ -773,8 +773,8 @@ public class VKontakteRu extends PluginForDecrypt {
             foundQualities.put(http_quality + "p", http_url);
         }
         /* Use cachexxx as workaround e.g. for special videos that need groups permission. */
-        final String[][] qualities = { { "cache2160", "url2160", "2160p" }, { "cache1440", "url1440", "1440p" }, { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" }, { "cache144", "url144", "144p" } };
-        for (final String[] qualityInfo : qualities) {
+        final String[][] knownQualities = { { "cache2160", "url2160", "2160p" }, { "cache1440", "url1440", "1440p" }, { "cache1080", "url1080", "1080p" }, { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" }, { "cache144", "url144", "144p" } };
+        for (final String[] qualityInfo : knownQualities) {
             String finallink = (String) video.get(qualityInfo[0]);
             if (finallink == null) {
                 finallink = (String) video.get(qualityInfo[1]);
@@ -787,7 +787,7 @@ public class VKontakteRu extends PluginForDecrypt {
         if (manifest != null) {
             // mpd doesn't use split video/audio, 2021-04-19
             String representations[] = new Regex(manifest, "(<Representation.*?</Representation>)").getColumn(0);
-            for (final String[] qualityInfo : qualities) {
+            for (final String[] qualityInfo : knownQualities) {
                 if (!foundQualities.containsKey(qualityInfo[2])) {
                     for (final String representation : representations) {
                         final int height = Integer.parseInt(qualityInfo[2].replaceAll("[^\\d]", ""));
@@ -802,36 +802,51 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
             }
         }
-        boolean crawledHLS = false;
+        boolean crawlHLS = false;
         final String hls_master = (String) video.get("hls");
+        List<HlsContainer> hlsQualities = null;
         if (!StringUtils.isEmpty(hls_master)) {
             if (foundQualities.isEmpty()) {
                 /* HLS as fallback */
-                crawledHLS = true;
+                crawlHLS = true;
             } else if (this.getPreferHLS()) {
                 foundQualities.clear();
-                crawledHLS = true;
+                crawlHLS = true;
             }
-            if (crawledHLS) {
+            if (crawlHLS) {
+                logger.info("Crawling HLS qualities");
                 final Browser brc = br.cloneBrowser();
                 brc.getPage(hls_master);
-                final List<HlsContainer> hlsQualities = HlsContainer.getHlsQualities(brc);
+                hlsQualities = HlsContainer.getHlsQualities(brc);
+                /* Workaround to make lower handling work: Put best item to first position. */
+                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(hlsQualities);
+                final List<HlsContainer> hlsQualitiesBestFirst = new ArrayList<HlsContainer>();
+                hlsQualitiesBestFirst.add(hlsbest);
                 for (final HlsContainer hlsQuality : hlsQualities) {
+                    if (!hlsQualitiesBestFirst.contains(hlsQuality)) {
+                        hlsQualitiesBestFirst.add(hlsQuality);
+                    }
+                }
+                for (final HlsContainer hlsQuality : hlsQualitiesBestFirst) {
                     foundQualities.put(hlsQuality.getHeight() + "p", hlsQuality.getDownloadurl());
                 }
             }
         }
+        if (foundQualities.isEmpty()) {
+            /* Assume that content is offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // create sorted linkedHashMap with best->worse quality sort order
         final Map<String, String> foundAndSortedQualities = new LinkedHashMap<String, String>();
-        for (final String[] qualityInfo : qualities) {
+        for (final String[] qualityInfo : knownQualities) {
             final String url = foundQualities.get(qualityInfo[2]);
             if (url != null) {
                 foundAndSortedQualities.put(qualityInfo[2], url);
             }
         }
         if (foundAndSortedQualities.isEmpty()) {
-            /* Assume that content is offline */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            logger.info("Quality sort failed -> Found only unknown qualities -> Adding them unsorted");
+            foundAndSortedQualities.putAll(foundQualities);
         }
         final FilePackage fp = FilePackage.getInstance();
         if (cfg.getBooleanProperty(VKontakteRuHoster.VKVIDEO_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKVIDEO_USEIDASPACKAGENAME)) {
@@ -873,7 +888,7 @@ public class VKontakteRu extends PluginForDecrypt {
             if (!StringUtils.isEmpty(author)) {
                 dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_UPLOADER, author);
             }
-            if (crawledHLS) {
+            if (crawlHLS) {
                 dl.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_STREAM_TYPE, VKontakteRuHoster.VIDEO_STREAM_TYPE_HLS);
             } else {
                 dl.setProperty(VKontakteRuHoster.PROPERTY_VIDEO_STREAM_TYPE, VKontakteRuHoster.VIDEO_STREAM_TYPE_HTTP);
