@@ -25,6 +25,7 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -190,7 +191,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 throw new AccountRequiredException();
             }
             login(account, false);
-            long foundFilesize = -1;
+            long filesize = -1;
             if (link.getPluginPatternMatcher().matches(URL_EVILANGEL_FILM)) {
                 br.getPage(link.getPluginPatternMatcher());
                 if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -328,12 +329,25 @@ public abstract class EvilangelCore extends PluginForHost {
                         }
                     }
                     final List<Map<String, Object>> streamingSrcs = (List<Map<String, Object>>) root.get("streamingSources");
+                    if (streamingSrcs == null || streamingSrcs.isEmpty()) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     String bestQualityDownloadurl = null;
                     String userSelectedQualityDownloadurl = null;
                     String bestQualityLabel = null;
                     for (final Map<String, Object> streamingSrc : streamingSrcs) {
-                        final String url = (String) streamingSrc.get("src");
-                        final String label = (String) streamingSrc.get("label");
+                        final String url = streamingSrc.get("src").toString();
+                        String label = streamingSrc.get("label").toString();
+                        /* Correct label e.g. "576p" -> "540p" -> Needed for quality selection */
+                        final Regex labelWithWidth = new Regex(label, "(\\d+)p");
+                        if (labelWithWidth.matches()) {
+                            final int widthTmp = Integer.parseInt(labelWithWidth.getMatch(0));
+                            final String labelStringCorrected = getDisplayWidth(widthTmp) + "p";
+                            if (!labelStringCorrected.equals(label)) {
+                                logger.info("Corrected label: " + label + " --> " + labelStringCorrected);
+                                label = labelStringCorrected;
+                            }
+                        }
                         /* First == BEST */
                         if (bestQualityDownloadurl == null) {
                             bestQualityDownloadurl = url;
@@ -344,12 +358,24 @@ public abstract class EvilangelCore extends PluginForHost {
                             break;
                         }
                     }
+                    final String chosenQualityLabel;
                     if (userSelectedQualityDownloadurl != null) {
-                        logger.info("Chose best quality: " + bestQualityLabel);
-                        this.dllink = userSelectedQualityDownloadurl;
-                    } else if (bestQualityDownloadurl != null) {
                         logger.info("Chose user selected quality: " + preferredQualityStr);
+                        this.dllink = userSelectedQualityDownloadurl;
+                        chosenQualityLabel = preferredQualityStr;
+                    } else {
+                        if (preferredQualityStr == null) {
+                            logger.info("Chose best quality: " + bestQualityLabel);
+                        } else {
+                            logger.info("Chose best quality as FALLBACK: " + bestQualityLabel);
+                        }
                         this.dllink = bestQualityDownloadurl;
+                        chosenQualityLabel = bestQualityLabel;
+                    }
+                    /* If video is also officially downloadable, we might be able to find an estimated filesize in html code. */
+                    final String filesizeStr = br.getRegex(chosenQualityLabel + "</span>\\s*<span class=\"movieSize\"[^>]*>([^<]+)</span>").getMatch(0);
+                    if (filesizeStr != null) {
+                        filesize = SizeFormatter.getSize(filesizeStr);
                     }
                 }
                 if (dllink != null) {
@@ -397,7 +423,7 @@ public abstract class EvilangelCore extends PluginForHost {
                         final String chosenQuality = getQualityFilesizeMapping(link.getStringProperty(PROPERTY_QUALITY));
                         if (downloadFileSizes != null && link.hasProperty(PROPERTY_QUALITY)) {
                             if (downloadFileSizes.containsKey(chosenQuality)) {
-                                foundFilesize = ((Number) downloadFileSizes.get(chosenQuality)).longValue();
+                                filesize = ((Number) downloadFileSizes.get(chosenQuality)).longValue();
                             } else {
                                 logger.warning("Failed filesize for chosen quality: " + chosenQuality);
                             }
@@ -426,8 +452,9 @@ public abstract class EvilangelCore extends PluginForHost {
                 filename = applyFilenameExtension(filename, ".mp4");
                 link.setFinalFileName(filename);
             }
-            if (foundFilesize > 0) {
-                link.setDownloadSize(foundFilesize);
+            /* Try to find filesize if possible and needed. */
+            if (filesize > 0) {
+                link.setDownloadSize(filesize);
             } else if (!isDownload && dllink != null && !dllink.contains(".m3u8")) {
                 URLConnectionAdapter con = null;
                 try {
@@ -497,6 +524,25 @@ public abstract class EvilangelCore extends PluginForHost {
         default:
             /* E.g. BEST */
             return null;
+        }
+    }
+
+    private int getDisplayWidth(final int preciseWidth) {
+        if (preciseWidth > 200 && preciseWidth <= 300) {
+            return 240;
+        } else if (preciseWidth > 300 && preciseWidth <= 500) {
+            return 480;
+        } else if (preciseWidth > 500 && preciseWidth <= 680) {
+            return 540;
+        } else if (preciseWidth > 680 && preciseWidth <= 1000) {
+            return 720;
+        } else if (preciseWidth > 1000 && preciseWidth <= 2000) {
+            return 1080;
+        } else if (preciseWidth > 2000 && preciseWidth <= 3500) {
+            return 2160;
+        } else {
+            /* Fallback */
+            return preciseWidth;
         }
     }
 
