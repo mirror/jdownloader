@@ -231,8 +231,7 @@ public class GoogleDrive extends PluginForHost {
     private final String        PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP        = "LAST_IS_PRIVATE_FILE_TIMESTAMP";
     private final String        PROPERTY_IS_QUOTA_REACHED_ANONYMOUS            = "IS_QUOTA_REACHED_ANONYMOUS";
     private final String        PROPERTY_IS_QUOTA_REACHED_ACCOUNT              = "IS_QUOTA_REACHED_ACCOUNT";
-    private final String        PROPERTY_IS_STREAM_QUOTA_REACHED_ANONYMOUS     = "IS_STREAM_QUOTA_REACHED_ANONYMOUS";
-    private final String        PROPERTY_IS_STREAM_QUOTA_REACHED_ACCOUNT       = "IS_STREAM_QUOTA_REACHED_ACCOUNT";
+    private final String        PROPERTY_IS_STREAM_QUOTA_REACHED               = "IS_STREAM_QUOTA_REACHED";
     private final String        PROPERTY_DIRECTURL                             = "directurl";
     private final String        PROPERTY_TMP_ALLOW_OBTAIN_MORE_INFORMATION     = "tmp_allow_obtain_more_information";
     private final static String PROPERTY_CACHED_FILENAME                       = "cached_filename";
@@ -286,8 +285,8 @@ public class GoogleDrive extends PluginForHost {
     }
 
     /** Returns true if this link has the worst "Streaming Quota reached" status: It is currently not even downloadable via account. */
-    private boolean isStreamQuotaReachedAccount(final DownloadLink link) {
-        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_IS_STREAM_QUOTA_REACHED_ACCOUNT, 0) < 10 * 60 * 1000l) {
+    private boolean isStreamQuotaReached(final DownloadLink link) {
+        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_IS_STREAM_QUOTA_REACHED, 0) < 10 * 60 * 1000l) {
             return true;
         } else {
             return false;
@@ -298,24 +297,27 @@ public class GoogleDrive extends PluginForHost {
      * Returns true if this link has the most common "Quota reached" status: It is currently only downloadable via account (or not
      * downloadable at all).
      */
-    private boolean isDownloadQuotaReachedAnonymous(final DownloadLink link) {
+    private boolean isDownloadQuotaReachedAnonymous(final DownloadLink link, final Account account) {
         if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, 0) < 10 * 60 * 1000l) {
-            return true;
-        } else if (isDownloadQuotaReachedAccount(link)) {
-            /* If a file is quota limited in account mode, it is quota limited in anonymous download mode too. */
             return true;
         } else {
             return false;
         }
     }
 
-    /** Returns state of flag set during API availablecheck. */
-    private boolean canDownload(final DownloadLink link) {
-        if (isInfected(link)) {
-            return false;
+    private boolean isDownloadQuotaReached(final DownloadLink link, final Account account) {
+        if (account != null) {
+            return isDownloadQuotaReachedAccount(link);
+        } else if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, 0) < 10 * 60 * 1000l) {
+            return true;
         } else {
-            return link.getBooleanProperty(PROPERTY_CAN_DOWNLOAD, true);
+            return false;
         }
+    }
+
+    /** Returns false if official download has been disabled for this file. */
+    private boolean canDownloadOfficially(final DownloadLink link) {
+        return link.getBooleanProperty(PROPERTY_CAN_DOWNLOAD, true);
     }
 
     private boolean isInfected(final DownloadLink link) {
@@ -589,7 +591,7 @@ public class GoogleDrive extends PluginForHost {
         link.removeProperty(PROPERTY_CAN_DOWNLOAD);
         link.removeProperty(PROPERTY_IS_INFECTED);
         link.removeProperty(PROPERTY_CACHED_LAST_DISPOSITION_STATUS);
-        removeQuotaReachedFlags(link, account);
+        removeQuotaReachedFlags(link, account, false);
         link.setProperty(PROPERTY_TMP_ALLOW_OBTAIN_MORE_INFORMATION, true);
         br.getHeaders().put("X-Drive-First-Party", "DriveViewer");
         final UrlQuery query = new UrlQuery();
@@ -988,8 +990,12 @@ public class GoogleDrive extends PluginForHost {
         final UrlQuery query = UrlQuery.parse(br.toString());
         /* Attempt final fallback/edge-case: Check for download of "un-downloadable" streams. */
         final String errorcodeStr = query.get("errorcode");
-        final String errorReason = query.get("reason");
         if (errorcodeStr != null) {
+            String errorMessage = query.get("reason");
+            if (errorMessage != null) {
+                errorMessage = Encoding.htmlDecode(errorMessage);
+            }
+            logger.info("Stream download impossible because: " + errorcodeStr + " | " + errorMessage);
             final int errorCode = Integer.parseInt(errorcodeStr);
             if (errorCode == 100) {
                 /* This should never happen but if it does, we know for sure that the file is offline! */
@@ -997,35 +1003,20 @@ public class GoogleDrive extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (errorCode == 150) {
                 /**
-                 * Same as in file-download mode: File is definitely not streamable at this moment! </br>
-                 * The original file could still be downloadable via account.
+                 * Similar to file-download mode: File is definitely not streamable at this moment! </br>
+                 * Reasons for that may vary and there can be different reasons given for the same error-code. The original file could still
+                 * be downloadable via account.
                  */
                 /** Similar handling to { @link #errorDownloadQuotaReachedWebsite } */
-                if (account != null) {
-                    if (this.isDownloadQuotaReachedAccount(link)) {
-                        /* This link has already been tried in all download modes and is not downloadable at all at this moment. */
-                        errorQuotaReachedInAllModes(link);
-                    } else {
-                        /* User has never tried non-stream download with account --> This could still work for him. */
-                        link.setProperty(PROPERTY_IS_STREAM_QUOTA_REACHED_ACCOUNT, System.currentTimeMillis());
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream quota limit reached: Try later or disable stream download in plugin settings and try again", getQuotaReachedWaittime());
-                    }
-                } else {
-                    if (this.isDownloadQuotaReachedAccount(link)) {
-                        /* This link has already been tried in all download modes and is not downloadable at all at this moment. */
-                        errorQuotaReachedInAllModes(link);
-                    } else {
-                        link.setProperty(PROPERTY_IS_STREAM_QUOTA_REACHED_ANONYMOUS, true);
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream quota limit reached: Try later or add Google account and retry", getQuotaReachedWaittime());
-                    }
-                }
+                link.setProperty(PROPERTY_IS_STREAM_QUOTA_REACHED, true);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream download failed because: " + errorMessage, getQuotaReachedWaittime());
             } else {
                 /* Unknown error happened */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Stream download impossible because: " + errorcodeStr + " | " + errorReason);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Stream download failed because: " + errorMessage);
             }
         }
         /* Update limit properties */
-        removeQuotaReachedFlags(link, account);
+        removeQuotaReachedFlags(link, account, true);
         /* Usually same as the title we already have but always with .mp4 ending(?) */
         // final String streamFilename = query.get("title");
         // final String fmt_stream_map = query.get("fmt_stream_map");
@@ -1172,7 +1163,7 @@ public class GoogleDrive extends PluginForHost {
                 }
             } else {
                 /* Check if user prefers stream download which is only possible via website. */
-                if (this.videoStreamShouldBeAvailable(link) && (this.userPrefersStreamDownload() || !this.canDownload(link))) {
+                if (this.videoStreamShouldBeAvailable(link) && (this.userPrefersStreamDownload() || this.useStreamDownloadAsFallback(link, account))) {
                     if (this.userPrefersStreamDownload()) {
                         logger.info("Attempting stream download in API mode");
                     } else {
@@ -1187,7 +1178,7 @@ public class GoogleDrive extends PluginForHost {
                         /* Use found stream downloadlink. */
                         directurl = streamDownloadlink;
                         streamDownloadActive = true;
-                    } else if (!this.canDownload(link)) {
+                    } else if (!this.canDownloadOfficially(link)) {
                         errorCannotDownload(link);
                     }
                 }
@@ -1215,7 +1206,7 @@ public class GoogleDrive extends PluginForHost {
             requestFileInformationWebsite(link, account, true);
             this.checkUndownloadableConditions(link, account);
             boolean streamDownloadAttempted = false;
-            if (this.isStreamDownloadPreferredAndAllowed(link) || (!this.canDownload(link) && this.videoStreamShouldBeAvailable(link))) {
+            if (this.videoStreamShouldBeAvailable(link) && (this.userPrefersStreamDownload() || this.useStreamDownloadAsFallback(link, account))) {
                 if (this.isStreamDownloadPreferredAndAllowed(link)) {
                     /* Stream download because user prefers stream download. */
                     logger.info("Attempting stream download in website mode");
@@ -1231,7 +1222,7 @@ public class GoogleDrive extends PluginForHost {
                 if (!StringUtils.isEmpty(streamDownloadlink)) {
                     directurl = streamDownloadlink;
                     streamDownloadActive = true;
-                } else if (!this.canDownload(link)) {
+                } else if (!this.canDownloadOfficially(link)) {
                     this.errorCannotDownload(link);
                 }
             }
@@ -1332,9 +1323,9 @@ public class GoogleDrive extends PluginForHost {
         }
         /* Update quota properties */
         if (account != null && usedAccount) {
-            this.removeQuotaReachedFlags(link, account);
+            this.removeQuotaReachedFlags(link, account, streamDownloadActive);
         } else {
-            this.removeQuotaReachedFlags(link, null);
+            this.removeQuotaReachedFlags(link, null, streamDownloadActive);
         }
         /** Set final filename here in case previous handling failed to find a good final filename. */
         final String headerFilename = getFileNameFromHeader(this.dl.getConnection());
@@ -1351,13 +1342,46 @@ public class GoogleDrive extends PluginForHost {
 
     /** Checks for conditions which make a file un-downloadable and throws exception if any exist. */
     private void checkUndownloadableConditions(final DownloadLink link, final Account account) throws PluginException {
-        final boolean userDisabledAllStreamDownloadOptions = !this.userPrefersStreamDownload() && !this.userAllowsStreamDownloadAsFallback();
         if (this.isInfected(link)) {
             this.errorFileInfected(link);
-        } else if (!this.canDownload(link) && !this.videoStreamShouldBeAvailable(link) || (!this.canDownload(link) && this.videoStreamShouldBeAvailable(link) && userDisabledAllStreamDownloadOptions)) {
+        } else if (!this.canDownloadOfficially(link) && !allowVideoStreamDownloadAttempt(link, account)) {
             this.errorCannotDownload(link);
-        } else if ((account == null && this.isDownloadQuotaReachedAnonymous(link)) || account != null && this.isDownloadQuotaReachedAccount(link)) {
+        } else if (isDownloadQuotaReached(link, account) && !useStreamDownloadAsFallback(link, account)) {
             this.errorDownloadQuotaReachedWebsite(link, account);
+        }
+    }
+
+    /** Returns true if stream download would theoretically be possible. */
+    private boolean allowVideoStreamDownloadAttempt(final DownloadLink link, final Account account) {
+        if (!this.videoStreamShouldBeAvailable(link)) {
+            /* Stream download impossible. */
+            return false;
+        } else if (this.isStreamQuotaReached(link)) {
+            /* Stream download temporarily impossible */
+            return false;
+        }
+        /* File should be streamable -> Check if user allows stream download */
+        if (this.userPrefersStreamDownload() || useStreamDownloadAsFallback(link, account)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /** Returns true, if video stream download is preferred for given DownloadLink. */
+    private boolean useStreamDownloadAsFallback(final DownloadLink link, final Account account) {
+        if (!this.videoStreamShouldBeAvailable(link)) {
+            /* Stream download impossible. */
+            return false;
+        } else if (this.isStreamQuotaReached(link)) {
+            /* Stream download temporarily impossible */
+            return false;
+        }
+        final boolean normalDownloadImpossible = this.isDownloadQuotaReached(link, account) || !this.canDownloadOfficially(link);
+        if (normalDownloadImpossible && this.userAllowsStreamDownloadAsFallback()) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -1378,7 +1402,7 @@ public class GoogleDrive extends PluginForHost {
                 if (isStreamDownload) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error: Stream download failed");
                 } else {
-                    if (!this.canDownload(link)) {
+                    if (!this.canDownloadOfficially(link)) {
                         errorCannotDownload(link);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error: File download failed");
@@ -1700,11 +1724,9 @@ public class GoogleDrive extends PluginForHost {
      * This mostly gets called if a file is not downloadable according to the Google Drive API.
      */
     private void errorCannotDownload(final DownloadLink link) throws PluginException {
-        String errorMsg = "Download not allowed!";
+        String errorMsg = "Download disabled by file owner!";
         if (this.videoStreamShouldBeAvailable(link)) {
-            errorMsg += " Video stream download might be possible: Remove your API key, reset this file and try again.";
-        } else {
-            errorMsg += " If video streaming is available for this file, remove your Google Drive API key, reset this file and try again.";
+            errorMsg += " Video stream download might be possible: Enable stream download as fallback in plugin settings.";
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, errorMsg);
     }
@@ -1906,15 +1928,17 @@ public class GoogleDrive extends PluginForHost {
         handleDownload(link, account);
     }
 
-    private void removeQuotaReachedFlags(final DownloadLink link, final Account account) {
+    private void removeQuotaReachedFlags(final DownloadLink link, final Account account, final boolean isStream) {
+        // if(isStream) {
+        //
+        // }
         if (account != null) {
             link.removeProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT);
-            link.removeProperty(PROPERTY_IS_STREAM_QUOTA_REACHED_ACCOUNT);
             return;
         }
         /* No account = Remove all quota_reached properties. */
         link.removeProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS);
-        link.removeProperty(PROPERTY_IS_STREAM_QUOTA_REACHED_ANONYMOUS);
+        link.removeProperty(PROPERTY_IS_STREAM_QUOTA_REACHED);
     }
 
     @Override
@@ -1929,8 +1953,7 @@ public class GoogleDrive extends PluginForHost {
             link.removeProperty(PROPERTY_CAN_DOWNLOAD);
             link.removeProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT);
             link.removeProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS);
-            link.removeProperty(PROPERTY_IS_STREAM_QUOTA_REACHED_ACCOUNT);
-            link.removeProperty(PROPERTY_IS_STREAM_QUOTA_REACHED_ANONYMOUS);
+            link.removeProperty(PROPERTY_IS_STREAM_QUOTA_REACHED);
         }
     }
 
