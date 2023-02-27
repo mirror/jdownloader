@@ -117,6 +117,7 @@ public class CocoleechCom extends PluginForHost {
         try {
             final Browser brc = br.cloneBrowser();
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, defaultRESUME, link.getIntegerProperty(PROPERTY_MAXCHUNKS, defaultMAXCHUNKS));
+            dl.setFilenameFix(true);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
@@ -164,6 +165,7 @@ public class CocoleechCom extends PluginForHost {
                 link.setProperty(PROPERTY_MAXCHUNKS, maxChunks);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxChunks);
+            dl.setFilenameFix(true);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
