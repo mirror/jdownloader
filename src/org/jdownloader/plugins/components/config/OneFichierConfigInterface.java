@@ -30,7 +30,7 @@ public interface OneFichierConfigInterface extends PluginConfigInterface {
         }
 
         public String getUsePremiumAPIEnabled_label() {
-            return "Use premium API[recommended]? If you want to add 1fichier free-accounts, disable this and make sure to disable 2-factor-authentication in your 1fichier account!";
+            return "Use premium API[recommended]? If you want to add 1fichier free-accounts, disable this.";
         }
 
         public String getMaxPremiumChunks_label() {

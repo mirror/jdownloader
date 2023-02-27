@@ -196,8 +196,12 @@ public class JubaGetCom extends PluginForHost {
             account.setType(AccountType.FREE);
             /* 2022-08-12: Free accounts are not supported and/or have no traffic at all. */
             ai.setExpired(true);
+            return ai;
         }
         final String hostsHTML = br.getRegex("class=\"fas fa-cloud-download-alt\"></i> Hosts</div>\\s*<div class=\"card-body\">(.*?)</div>").getMatch(0);
+        if (hostsHTML == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String[] htmls = hostsHTML.split("<img");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (final String html : htmls) {
