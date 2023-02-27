@@ -77,7 +77,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
         while (source != null) {
             if (source.getDownloadLink() != null && StringUtils.equals(source.getURL(), param.getCryptedUrl())) {
                 final DownloadLink downloadLink = source.getDownloadLink();
-                cookiesString = downloadLink.getStringProperty("cookies", null);
+                cookiesString = downloadLink.getStringProperty("cookies");
                 if (cookiesString != null) {
                     final String host = Browser.getHost(source.getURL());
                     br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
