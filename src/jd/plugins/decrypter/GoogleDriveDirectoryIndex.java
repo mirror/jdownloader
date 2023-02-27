@@ -138,6 +138,31 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         return false;
     }
 
+    private DownloadLink getDirectDownload(URLConnectionAdapter con) throws IOException {
+        if (con != null && looksLikeDownloadableContent(con)) {
+            con.disconnect();
+            final DownloadLink direct = this.createDownloadlink(con.getURL().toString());
+            final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
+            if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {
+                direct.setFinalFileName(dispositionHeader.getFilename());
+                if (dispositionHeader.getEncoding() == null) {
+                    try {
+                        direct.setFinalFileName(URLEncode.decodeURIComponent(dispositionHeader.getFilename(), "UTF-8", true));
+                    } catch (final IllegalArgumentException ignore) {
+                    } catch (final UnsupportedEncodingException ignore) {
+                    }
+                }
+            }
+            if (con.getCompleteContentLength() > 0) {
+                direct.setVerifiedFileSize(con.getCompleteContentLength());
+            }
+            direct.setLinkID(getLinkidFromURL(direct.getPluginPatternMatcher()));
+            return direct;
+        } else {
+            return null;
+        }
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (param.toString().contains("?")) {
@@ -162,15 +187,17 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         URLConnectionAdapter con = null;
         try {
             con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
-            if (!looksLikeDownloadableContent(con)) {
+            DownloadLink direct = getDirectDownload(con);
+            if (direct != null) {
+                decryptedLinks.add(direct);
+                return decryptedLinks;
+            } else {
                 // initial get request (same as in browser) can set cookies/referer that might avoid 401
                 try {
                     br.followConnection(true);
                 } catch (IOException e) {
                     logger.log(e);
                 }
-            } else {
-                con.disconnect();
             }
             if (useOldPostRequest) {
                 con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, "")));
@@ -196,24 +223,8 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                 }
                 con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
             }
-            if (looksLikeDownloadableContent(con)) {
-                con.disconnect();
-                final DownloadLink direct = this.createDownloadlink(con.getURL().toString());
-                final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
-                if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {
-                    direct.setFinalFileName(dispositionHeader.getFilename());
-                    if (dispositionHeader.getEncoding() == null) {
-                        try {
-                            direct.setFinalFileName(URLEncode.decodeURIComponent(dispositionHeader.getFilename(), "UTF-8", true));
-                        } catch (final IllegalArgumentException ignore) {
-                        } catch (final UnsupportedEncodingException ignore) {
-                        }
-                    }
-                }
-                if (con.getCompleteContentLength() > 0) {
-                    direct.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                direct.setLinkID(getLinkidFromURL(direct.getPluginPatternMatcher()));
+            direct = getDirectDownload(con);
+            if (direct != null) {
                 decryptedLinks.add(direct);
                 return decryptedLinks;
             } else {

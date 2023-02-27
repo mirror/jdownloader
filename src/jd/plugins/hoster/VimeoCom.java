@@ -26,24 +26,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.JVMVersion;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -72,6 +54,24 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.JVMVersion;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
@@ -408,9 +408,9 @@ public class VimeoCom extends PluginForHost {
         SHOWCASE,
         SHOWCASE_VIDEO,
         RAW,
-        PLAYER,
-        PLAYER_UNLISTED,
-        CONFIG_TOKEN,
+        PLAYER, // https://player.vimeo.com/....
+        PLAYER_UNLISTED, // https://player.vimeo.com/....h=... or // https://player.vimeo.com/.../...
+        CONFIG_TOKEN, // .../config...token=....
         UNLISTED,
         NORMAL
     }
@@ -952,10 +952,10 @@ public class VimeoCom extends PluginForHost {
         if (ret == null) {
             ret = br.getRegex("window\\.vimeo\\.vod_title_page_config\\s*=\\s*(\\{.*?\\});").getMatch(0);
             if (ret == null) {
-                ret = br.getRegex("window = _extend\\(window, (\\{.*?\\})\\);").getMatch(0);
+                ret = br.getRegex("window\\s*=\\s*_extend\\(window, (\\{.*?\\})\\);").getMatch(0);
                 if (ret == null) {
                     /* 'normal' player.vimeo.com */
-                    ret = br.getRegex("var config = (\\{.*?\\});").getMatch(0);
+                    ret = br.getRegex("var\\s*config\\s*=\\s*(\\{.*?\\});").getMatch(0);
                     if (ret == null) {
                         /* player.vimeo.com with /config */
                         ret = br.getRegex("^\\s*(\\{.*?\\})\\s*$").getMatch(0);
@@ -965,7 +965,10 @@ public class VimeoCom extends PluginForHost {
         }
         if (ret == null) {
             /* 2022-11-10: player.vimeo.com/video/... */
-            ret = br.getRegex("window\\.playerConfig\\s*=\\s*(\\{.*?\\}); ").getMatch(0);
+            ret = br.getRegex("window\\.playerConfig\\s*=\\s*(\\{.*?\\})\\s*var\\s*\\w+\\s*= ").getMatch(0);
+            if (ret == null) {
+                ret = br.getRegex("window\\.playerConfig\\s*=\\s*(\\{.*?\\}); ").getMatch(0);
+            }
         }
         return ret;
     }
@@ -1085,13 +1088,13 @@ public class VimeoCom extends PluginForHost {
                     json = brc.getPage(configURL);
                 } else {
                     /* Fallback */
-                    json = ibr.getRegex("a\\s*=\\s*(\\s*\\{\\s*\"cdn_url\".*?);if\\(\\!?a\\.request\\)").getMatch(0);
+                    json = getJsonFromHTML(plugin, ibr);
                     if (json == null) {
-                        json = ibr.getRegex("t\\s*=\\s*(\\s*\\{\\s*\"cdn_url\".*?);if\\(\\!?t\\.request\\)").getMatch(0);
+                        json = ibr.getRegex("a\\s*=\\s*(\\s*\\{\\s*\"cdn_url\".*?);if\\(\\!?a\\.request\\)").getMatch(0);
                         if (json == null) {
-                            json = ibr.getRegex("^(\\s*\\{\\s*\"cdn_url\".+)").getMatch(0);
+                            json = ibr.getRegex("t\\s*=\\s*(\\s*\\{\\s*\"cdn_url\".*?);if\\(\\!?t\\.request\\)").getMatch(0);
                             if (json == null) {
-                                json = ibr.getRegex("(\\s*\\{\\s*\"cdn_url\".*?\\});").getMatch(0);
+                                json = ibr.getRegex("^(\\s*\\{\\s*\"cdn_url\".+)").getMatch(0);
                             }
                         }
                     }
