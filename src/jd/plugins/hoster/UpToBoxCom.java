@@ -716,9 +716,13 @@ public class UpToBoxCom extends antiDDoSForHost {
         final Map<String, Object> entries = loginAPI(account, true);
         final Map<String, Object> userdata = (Map<String, Object>) entries.get("data");
         final Number premium = (Number) userdata.get("premium");
-        String points = (String) userdata.get("point");
-        if (StringUtils.isEmpty(points)) {
-            points = "Unknown";
+        final Object pointsO = userdata.get("point");
+        String pointsStr = null;
+        if (pointsO != null) {
+            pointsStr = pointsO.toString();
+        }
+        if (StringUtils.isEmpty(pointsStr)) {
+            pointsStr = "Unknown";
         }
         String accountStatus;
         if (premium != null && premium.intValue() == 1) {
@@ -735,7 +739,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             account.setMaxSimultanDownloads(1);
             accountStatus = "Free Account";
         }
-        accountStatus += String.format(" | %s points", points);
+        accountStatus += String.format(" | %s points", pointsStr);
         final String user = (String) userdata.get("login");
         if (!StringUtils.isEmpty(user)) {
             account.setUser(user);

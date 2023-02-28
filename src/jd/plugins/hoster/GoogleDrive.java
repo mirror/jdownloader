@@ -56,6 +56,7 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -170,13 +171,15 @@ public class GoogleDrive extends PluginForHost {
     private static Object      LOCK                          = new Object();
     private String             websiteWebapiKey              = null;
     public static final String API_BASE                      = "https://www.googleapis.com/drive/v3";
+    public static final String WEBAPI_BASE                   = "https://content.googleapis.com/drive";
+    public static final String WEBAPI_BASE_2                 = "https://clients6.google.com/drive";
     private final String       PATTERN_GDOC                  = "(?i)https?://.*/document/d/([a-zA-Z0-9\\-_]+).*";
     private final String       PATTERN_FILE                  = "(?i)https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
     private final String       PATTERN_FILE_OLD              = "(?i)https?://[^/]+/(?:leaf|open)\\?([^<>\"/]+)?id=([A-Za-z0-9\\-_]+).*";
     private final String       PATTERN_FILE_DOWNLOAD_PAGE    = "(?i)https?://[^/]+/(?:u/\\d+/)?uc(?:\\?|.*?&)id=([A-Za-z0-9\\-_]+).*";
     private final String       PATTERN_VIDEO_STREAM          = "(?i)https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
+    /* Developer: Do not touch this!! You need to know what you're doing!! */
     private final boolean      canHandleGoogleSpecialCaptcha = false;
-    /* Do not touch this!! */
     private final boolean      attemptQuickLinkcheck         = true;
 
     private String getFID(final DownloadLink link) {
@@ -199,18 +202,6 @@ public class GoogleDrive extends PluginForHost {
                 logger.warning("Developer mistake!! URL with unknown pattern:" + link.getPluginPatternMatcher());
                 return null;
             }
-        }
-    }
-
-    /**
-     * Google has added this parameter to some long time shared URLs as of October 2021 to make those safer. </br>
-     * https://support.google.com/a/answer/10685032?p=update_drives&visit_id=637698313083783702-233025620&rd=1
-     */
-    private String getFileResourceKey(final DownloadLink link) {
-        try {
-            return UrlQuery.parse(link.getPluginPatternMatcher()).get("resourcekey");
-        } catch (final Throwable ignore) {
-            return null;
         }
     }
 
@@ -251,12 +242,28 @@ public class GoogleDrive extends PluginForHost {
     private final String        PROPERTY_ACCOUNT_REFRESH_TOKEN                 = "REFRESH_TOKEN";
     private final String        PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
 
-    public Browser prepBrowser(final Browser pbr) {
+    public static Browser prepBrowser(final Browser pbr) {
         pbr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         pbr.setCustomCharset("utf-8");
         pbr.setFollowRedirects(true);
         pbr.setAllowedResponseCodes(new int[] { 429 });
         return pbr;
+    }
+
+    public static Browser prepBrowserWebAPI(final Browser br, final Account account) throws PluginException {
+        br.getHeaders().put("X-Referer", "https://drive.google.com");
+        br.getHeaders().put("X-Origin", "https://drive.google.com");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("x-javascript-user-agent", "google-api-javascript-client/1.1.0");
+        if (account != null) {
+            /* For logged in users: */
+            final String sapisidhash = getSAPISidHash(br, "https://drive.google.com");
+            if (sapisidhash != null) {
+                br.getHeaders().put("Authorization", "SAPISIDHASH " + sapisidhash);
+            }
+            br.getHeaders().put("x-goog-authuser", "0");
+        }
+        return br;
     }
 
     public static Browser prepBrowserAPI(final Browser br) {
@@ -274,6 +281,19 @@ public class GoogleDrive extends PluginForHost {
         } else {
             /* Assume it's not a google document! */
             return false;
+        }
+    }
+
+    /**
+     * Google has added this parameter to some long time shared URLs as of October 2021 to make those safer. </br>
+     * https://support.google.com/a/answer/10685032?p=update_drives&visit_id=637698313083783702-233025620&rd=1
+     */
+    private String getFileResourceKey(final DownloadLink link) {
+        try {
+            return UrlQuery.parse(link.getPluginPatternMatcher()).get("resourcekey");
+        } catch (final MalformedURLException ignore) {
+            ignore.printStackTrace();
+            return null;
         }
     }
 
@@ -768,42 +788,42 @@ public class GoogleDrive extends PluginForHost {
 
     /** A function that parses filename/size/last-modified date from single files via "Details View" of Google Drive website. */
     private void crawlAdditionalFileInformationFromWebsite(final Browser br, final DownloadLink link, final Account account, final boolean accessFileViewPageIfNotAlreadyDone, final boolean trustAndSetFileInfo) throws PluginException, IOException {
-        final Browser br2 = br.cloneBrowser();
-        if (accessFileViewPageIfNotAlreadyDone && !br2.getURL().matches(PATTERN_FILE) && this.websiteWebapiKey == null) {
-            accessFileViewURLWithPartialErrorhandling(br2, link, account);
+        if (accessFileViewPageIfNotAlreadyDone && !br.getURL().matches(PATTERN_FILE) && this.websiteWebapiKey == null) {
+            accessFileViewURLWithPartialErrorhandling(br, link, account);
         }
         if (this.websiteWebapiKey == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (account != null) {
-            // TODO: https://svn.jdownloader.org/issues/88600
-            logger.info("!Dev! This doesn't work in account mode yet!");
-            return;
-        }
-        br2.getHeaders().put("X-Referer", "https://drive.google.com");
-        br2.getHeaders().put("X-Origin", "https://drive.google.com");
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        prepBrowserWebAPI(br, account);
         final UrlQuery query = new UrlQuery();
         query.add("fields", URLEncode.encodeURIComponent(getSingleFilesFieldsWebsite()));
         query.add("supportsTeamDrives", "true");
         // query.add("includeBadgedLabels", "true");
         query.add("enforceSingleParent", "true");
         query.add("key", URLEncode.encodeURIComponent(this.websiteWebapiKey));
-        // br2.setAllowedResponseCodes(400);
-        br2.getPage("https://content.googleapis.com/drive/v2beta/files/" + this.getFID(link) + "?" + query.toString());
-        /* For logged in users: */
-        // TODO: This will end up in error response 400 "message": "Authentication token must be issued to a non-anonymous app."
-        // br2.getHeaders().put("Authorization", "SAPISIDHASH TODO");
-        // br2.getHeaders().put("Referer", "https://clients6.google.com/static/proxy.html");
-        // br2.getHeaders().put("x-client-data", "TODO");
-        // br2.getHeaders().put("x-clientdetails",
-        // "appVersion=5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F108.0.0.0%20Safari%2F537.36&platform=Win32&userAgent=Mozilla%2F5.0%20(Windows%20NT%2010.0%3B%20Win64%3B%20x64)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F108.0.0.0%20Safari%2F537.36");
-        // br2.getHeaders().put("x-goog-authuser", "0");
-        // br2.getHeaders().put("x-goog-encode-response-if-executable", "base64");
-        // br2.getHeaders().put("x-javascript-user-agent:", "google-api-javascript-client/1.1.0");
-        // br2.getPage("https://clients6.google.com/drive/v2internal/files/" + this.getFID(link) + "?" + query.toString());
-        final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+        if (account != null) {
+            /* For logged in users */
+            br.getPage(WEBAPI_BASE_2 + "/v2internal/files/" + this.getFID(link) + "?" + query.toString());
+        } else {
+            br.getPage(WEBAPI_BASE + "/v2beta/files/" + this.getFID(link) + "?" + query.toString());
+        }
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         parseFileInfoAPIAndWebsiteWebAPI(this, JsonSchemeType.WEBSITE, link, trustAndSetFileInfo, trustAndSetFileInfo, trustAndSetFileInfo, entries);
+    }
+
+    /**
+     * See https://stackoverflow.com/questions/16907352/reverse-engineering-javascript-behind-google-button
+     *
+     * @throws PluginException
+     */
+    public static String getSAPISidHash(final Browser br, final String url) throws PluginException {
+        final String sapisid = br.getCookie("google.com", "SAPISID");
+        if (sapisid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            final String timeMillis = Long.toString(System.currentTimeMillis());
+            return timeMillis + "_" + JDHash.getSHA1(timeMillis + " " + sapisid + " " + url);
+        }
     }
 
     /** Returns directurl for original file download items and google document items. */
@@ -1227,7 +1247,7 @@ public class GoogleDrive extends PluginForHost {
             if (this.isGoogleDocument(link) && !this.hasObtainedInformationFromAPIOrWebAPI(link)) {
                 /* Important: Without this, some google documents will not be downloadable! */
                 logger.info("Handling extra linkcheck as preparation for google document download");
-                crawlAdditionalFileInformationFromWebsite(br, link, account, true, true);
+                crawlAdditionalFileInformationFromWebsite(br.cloneBrowser(), link, account, true, true);
             }
             streamDownloadAsFallback = this.useStreamDownloadAsFallback(link, account);
             if (this.videoStreamShouldBeAvailable(link) && (this.userPrefersStreamDownload() || streamDownloadAsFallback)) {
@@ -1255,8 +1275,10 @@ public class GoogleDrive extends PluginForHost {
             }
             if (streamDownloadlink != null) {
                 logger.info("Downloading stream");
+            } else if (this.isGoogleDocument(link)) {
+                logger.info("Downloading Google Document");
             } else {
-                logger.info("Downloading original file");
+                logger.info("Downloading file");
             }
             this.dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, resume, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -1296,7 +1318,7 @@ public class GoogleDrive extends PluginForHost {
         }
         if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified() && !hasObtainedInformationFromAPIOrWebAPI(link)) {
             try {
-                crawlAdditionalFileInformationFromWebsite(br, link, account, true, false);
+                crawlAdditionalFileInformationFromWebsite(br.cloneBrowser(), link, account, true, false);
             } catch (final Exception ignore) {
                 logger.log(ignore);
                 logger.info("Failed to crawl additional file information due to Exception");
@@ -1327,7 +1349,7 @@ public class GoogleDrive extends PluginForHost {
         if (!this.attemptQuickLinkcheck) {
             String directurl = null;
             if (br.getHttpConnection().getResponseCode() == 500 && !this.isGoogleDocument(link)) {
-                crawlAdditionalFileInformationFromWebsite(br, link, account, true, true);
+                crawlAdditionalFileInformationFromWebsite(br.cloneBrowser(), link, account, true, true);
                 if (!this.isGoogleDocument(link)) {
                     /* This should never happen */
                     logger.warning("Not confirmed: No Google Document document -> Something went wrong or item is offline");
@@ -1649,10 +1671,6 @@ public class GoogleDrive extends PluginForHost {
                  * 2020-09-09: Google is sometimes blocking users/whole ISP IP subnets so they need to go through this step in order to e.g.
                  * continue downloading.
                  */
-                /*
-                 * 2020-09-14: TODO: This handling doesn't work so we'll at least display a meaningful errormessage. The captcha should
-                 * never occur anyways as upper handling will try to avoid it!
-                 */
                 if (!captchaRequired) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate limited");
                 } else if (!canHandleGoogleSpecialCaptcha) {
@@ -1759,7 +1777,7 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private static long getQuotaReachedWaittime() {
-        return 2 * 60 * 60 * 1000;
+        return PluginJsonConfig.get(GoogleConfig.class).getWaitOnQuotaReachedMinutes() * 60 * 1000;
     }
 
     /**
@@ -1784,22 +1802,27 @@ public class GoogleDrive extends PluginForHost {
             loginAPI(br, account);
         } else {
             /* Website login */
-            final GoogleHelper helper = new GoogleHelper(br, this.getLogger());
-            helper.login(account, forceLoginValidation);
-            final Cookies userCookies = account.loadUserCookies();
-            if (forceLoginValidation && userCookies != null && PluginJsonConfig.get(GoogleConfig.class).isDebugAccountLogin()) {
-                /* 2021-02-02: Testing advanced login-check for GDrive */
-                final String cookieOSID = br.getCookie("google.com", "OSID");
-                if (cookieOSID == null || cookieOSID.equals("")) {
-                    logger.info("OSID cookie has empty value -> Checking if full value is present in user added cookies");
-                    final Cookie realOSID = userCookies.get("OSID");
-                    if (realOSID != null && realOSID.getValue().length() > 0) {
-                        logger.info("OSID login workaround needed(?), real OSID cookie value is: " + realOSID.getValue());
-                        br.setCookies(userCookies);
-                    }
+            loginWebsite(br, account, forceLoginValidation);
+        }
+    }
+
+    public void loginWebsite(final Browser br, final Account account, final boolean forceLoginValidation) throws Exception {
+        prepBrowser(br);
+        final GoogleHelper helper = new GoogleHelper(br, this.getLogger());
+        helper.login(account, forceLoginValidation);
+        final Cookies userCookies = account.loadUserCookies();
+        if (forceLoginValidation && userCookies != null && PluginJsonConfig.get(GoogleConfig.class).isDebugAccountLogin()) {
+            /* 2021-02-02: Testing advanced login-check for GDrive */
+            final String cookieOSID = br.getCookie("google.com", "OSID");
+            if (cookieOSID == null || cookieOSID.equals("")) {
+                logger.info("OSID cookie has empty value -> Checking if full value is present in user added cookies");
+                final Cookie realOSID = userCookies.get("OSID");
+                if (realOSID != null && realOSID.getValue().length() > 0) {
+                    logger.info("OSID login workaround needed(?), real OSID cookie value is: " + realOSID.getValue());
+                    br.setCookies(userCookies);
                 }
-                helper.validateCookiesGoogleDrive(br, account);
             }
+            helper.validateCookiesGoogleDrive(br, account);
         }
     }
 

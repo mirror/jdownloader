@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
@@ -35,10 +36,38 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shrink-service.it" }, urls = { "https?://(?:www\\.)?shrink-service\\.it/s/[A-Za-z0-9]+|https?://get\\.shrink-service\\.it/[A-Za-z0-9]+|https?://(?:www\\.)?adshnk\\.com/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ShrinkServiceIt extends PluginForDecrypt {
     public ShrinkServiceIt(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "shrink-service.it", "adshnk.com", "dshnk.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?:s/)?[A-Za-z0-9]{2,}");
+        }
+        return ret.toArray(new String[0]);
     }
 
     private final String API_BASE = "https://www.shrink-service.it/v3/api";

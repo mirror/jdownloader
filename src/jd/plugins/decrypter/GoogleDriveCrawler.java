@@ -31,7 +31,6 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -95,8 +94,8 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
     /* 2021-02-26: Theoretically, "leaf?" does the same but for now we'll only handle "open=" as TYPE_REDIRECT */
     private static final String  TYPE_REDIRECT                    = "https?://[^/]+/open\\?id=([a-zA-Z0-9\\-_]+)";
     private final String         PROPERTY_SPECIAL_SHORTCUT_FOLDER = "special_shortcut_folder";
-    /** https://svn.jdownloader.org/issues/88600 */
-    private static final boolean CAN_HANDLE_PRIVATE_FOLDERS       = false;
+    /* Developer: Set this to false if for some reason, private folders cannot be crawled with this plugin (anymore/temporarily). */
+    private static final boolean CAN_HANDLE_PRIVATE_FOLDERS       = true;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         param.setCryptedUrl(param.getCryptedUrl().replaceFirst("(?i)http://", "https://"));
@@ -273,7 +272,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
                      * Basically for big folder structures we really only need to do this once and after that we'll use the API only!
                      */
                     /*
-                     * TODO Login when API once API login is possible -> Then we'd be able to crawl private folders which are restricted to
+                     * TODO Login via API once API login is possible -> Then we'd be able to crawl private folders which are restricted to
                      * specified accounts.
                      */
                     // if (account != null) {
@@ -341,20 +340,15 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
-        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        /*
-         * 2020-11-17: Crawling doesn't work anymore when user is logged in at this stage AND crawling of private folders is broken anyways:
-         * https://svn.jdownloader.org/issues/88600
-         */
-        boolean loggedin = false;
-        final boolean allowLogin = false;
-        if (account != null && allowLogin) {
-            login(this.br, account);
+        Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null && CAN_HANDLE_PRIVATE_FOLDERS) {
+            logger.info("Account available -> Logging in");
+            loginWebsite(this.br, account);
         } else {
-            /* Respect users' plugin settings (e.g. custom User-Agent) */
+            logger.info("Account available -> Can't login (disabled by developer)");
+            account = null;
             ((jd.plugins.hoster.GoogleDrive) hostPlugin).prepBrowser(this.br);
         }
-        logger.info("LoggedIn:" + loggedin);
         br.setFollowRedirects(true);
         /* 2021-05-31: Folders can redirect to other folderIDs. Most likely we got a "Shortcut" then --> Very rare case */
         br.getPage(generateFolderURL(folderID, folderResourceKey));
@@ -375,11 +369,18 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
         } else {
             offlineOrEmptyFolderTitle = folderID;
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<p class=\"errorMessage\" style=\"padding-top: 50px\">Sorry, the file you have requested does not exist\\.</p>")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new GdriveException(GdriveFolderStatus.FOLDER_OFFLINE, offlineOrEmptyFolderTitle);
-        }
-        if (br.getURL().contains("//accounts.google.com/ServiceLogin?")) {
-            if (loggedin) {
+        } else if (br.getURL().contains("accounts.google.com")) {
+            if (account != null) {
+                /* We are logged in but the account doesn't have permission! */
+                throw new GdriveException(GdriveFolderStatus.FOLDER_PRIVATE_NO_ACCESS, offlineOrEmptyFolderTitle);
+            } else {
+                /* Account required! */
+                throw new GdriveException(GdriveFolderStatus.FOLDER_PRIVATE, offlineOrEmptyFolderTitle);
+            }
+        } else if (br.getHttpConnection().getResponseCode() == 403) {
+            if (account != null) {
                 /* We are logged in but the account doesn't have permission! */
                 throw new GdriveException(GdriveFolderStatus.FOLDER_PRIVATE_NO_ACCESS, offlineOrEmptyFolderTitle);
             } else {
@@ -411,17 +412,27 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
                 json_src = Encoding.unicodeDecode(json_src);
             }
         }
-        /* Handle the json way. */
         final String key;
-        final String keys[] = br.getRegex("\"([A-Za-z0-9\\-_]{6})([A-Za-z0-9\\-_]+)\"\\s*,\\s*\"\\1[A-Za-z0-9\\-_]+\"\\s*,\\s*null").getRow(0);
-        logger.info("Keys:" + Arrays.asList(keys));
-        if (keys == null || keys.length != 2) {
+        if (account != null) {
+            key = br.getRegex("\"([^\"]+)\",\"https://blobcomments-pa\\.clients6\\.google\\.com\"").getMatch(0);
+        } else {
+            final String keys[] = br.getRegex("\"([A-Za-z0-9\\-_]{6})([A-Za-z0-9\\-_]+)\"\\s*,\\s*\"\\1[A-Za-z0-9\\-_]+\"\\s*,\\s*null").getRow(0);
+            logger.info("Keys:" + Arrays.asList(keys));
+            if (keys == null || keys.length != 2) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            key = keys[0] + keys[1];
+        }
+        if (key == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        key = keys[0] + keys[1];
         logger.info("Using key: " + key);
-        // final String eof = br.getRegex("\\|eof\\|([^<>\"]*)\\\\x22").getMatch(0);
-        final String teamDriveID = new Regex(json_src, ",null,\\d{10,},\\d+,\"([A-Za-z0-9_\\-]{10,30})\",null,null").getMatch(0);
+        final int maxItemsPerRequest = 50;
+        String teamDriveID = new Regex(json_src, ",null,\\d{10,},\\d+,\"([A-Za-z0-9_\\-]{10,30})\",null,null").getMatch(0);
+        if (account != null && teamDriveID == null) {
+            /* 2023-02-28: Very ugly RegEx */
+            teamDriveID = br.getRegex("null,null,null,null,null,null,null,null,null,null,\"([A-Za-z0-9_\\-]{10,30})\",null,null").getMatch(0);
+        }
         final UrlQuery query = new UrlQuery();
         query.add("openDrive", "false");
         query.add("reason", "102");
@@ -431,7 +442,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
         query.add("fields", URLEncode.encodeURIComponent("kind,nextPageToken,incompleteSearch,items(" + GoogleDrive.getSingleFilesFieldsWebsite() + ")"));
         query.add("appDataFilter", "NO_APP_DATA");
         query.add("spaces", "drive");
-        query.add("maxResults", "50");
+        query.add("maxResults", Integer.toString(maxItemsPerRequest));
         query.add("orderBy", "folder%2Ctitle_natural%20asc");
         query.add("retryCount", "0");
         query.add("key", key);
@@ -448,22 +459,23 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
         String nextPageToken = null;
         int page = 0;
         final Browser brc = br.cloneBrowser();
-        brc.addAllowedResponseCodes(new int[] { 400 });
-        if (loggedin) {
-            /* TODO: This doesn't work! */
-            final String sapisid = br.getCookie(br.getHost(), "SAPISID");
-            final String auth = "SAPISIDHASH " + System.currentTimeMillis() * 1000 + "_" + JDHash.getSHA1(sapisid) + "_u";
-            brc.getHeaders().put("Authorization", auth);
-        }
+        GoogleDrive.prepBrowserWebAPI(brc, account);
         if (folderResourceKey != null) {
             setResourceKeyHeaderAPI(brc, folderID, folderResourceKey);
         }
+        logger.info("Start folder crawl process via WebAPI");
         do {
             page++;
-            logger.info("Crawling page: " + page);
-            sleep(500, param);
             /* Most common reason of failure: teamDriveID was not found thus the request is wrong! */
-            brc.getPage("https://clients6.google.com/drive/v2beta/files?" + query.toString());
+            if (account != null) {
+                brc.getPage(GoogleDrive.WEBAPI_BASE_2 + "/v2internal/files?" + query.toString());
+                // brc.getPage(GoogleDrive.WEBAPI_BASE_2 + "/v2internal/files?"
+                // +
+                // "openDrive=false&reason=102&syncType=0&errorRecovery=false&q=trashed%20%3D%20false%20and%20'1vicjZvBHw8ukoXtmtRtqwE5NSL5jWGH0'%20in%20parents&fields=kind%2CnextPageToken%2Citems(kind%2CmodifiedDate%2ChasVisitorPermissions%2CcontainsUnsubscribedChildren%2CmodifiedByMeDate%2ClastViewedByMeDate%2CfileSize%2Cowners(kind%2CpermissionId%2CemailAddressFromAccount%2Cdomain%2Cid)%2ClastModifyingUser(kind%2CpermissionId%2CemailAddressFromAccount%2Cid)%2CcustomerId%2CancestorHasAugmentedPermissions%2ChasThumbnail%2CthumbnailVersion%2Ctitle%2Cid%2CresourceKey%2CabuseIsAppealable%2CabuseNoticeReason%2Cshared%2CsharedWithMeDate%2CuserPermission(role)%2CexplicitlyTrashed%2CmimeType%2CquotaBytesUsed%2Ccopyable%2Csubscribed%2CfolderColor%2ChasChildFolders%2CfileExtension%2CprimarySyncParentId%2CsharingUser(kind%2CpermissionId%2CemailAddressFromAccount%2Cid)%2CflaggedForAbuse%2CfolderFeatures%2Cspaces%2CsourceAppId%2Crecency%2CrecencyReason%2Cversion%2CactionItems%2CteamDriveId%2ChasAugmentedPermissions%2CcreatedDate%2CprimaryDomainName%2CorganizationDisplayName%2CpassivelySubscribed%2CtrashingUser(kind%2CpermissionId%2CemailAddressFromAccount%2Cid)%2CtrashedDate%2Cparents(id)%2Ccapabilities(canMoveItemIntoTeamDrive%2CcanUntrash%2CcanMoveItemWithinTeamDrive%2CcanMoveItemOutOfTeamDrive%2CcanDeleteChildren%2CcanTrashChildren%2CcanRequestApproval%2CcanReadCategoryMetadata%2CcanEditCategoryMetadata%2CcanAddMyDriveParent%2CcanRemoveMyDriveParent%2CcanShareChildFiles%2CcanShareChildFolders%2CcanRead%2CcanMoveItemWithinDrive%2CcanMoveChildrenWithinDrive%2CcanAddFolderFromAnotherDrive%2CcanChangeSecurityUpdateEnabled%2CcanBlockOwner%2CcanReportSpamOrAbuse%2CcanCopy%2CcanDownload%2CcanEdit%2CcanAddChildren%2CcanDelete%2CcanRemoveChildren%2CcanShare%2CcanTrash%2CcanRename%2CcanReadTeamDrive%2CcanMoveTeamDriveItem)%2CcontentRestrictions(readOnly)%2CapprovalMetadata(approvalVersion%2CapprovalSummaries)%2CshortcutDetails(targetId%2CtargetMimeType%2CtargetLookupStatus%2CtargetFile%2CcanRequestAccessToTarget)%2CspamMetadata(markedAsSpamDate%2CinSpamView)%2Clabels(starred%2Ctrashed%2Crestricted%2Cviewed))%2CincompleteSearch&appDataFilter=NO_APP_DATA&spaces=drive&maxResults=50&supportsTeamDrives=true&includeItemsFromAllDrives=true&teamDriveId=0AF_idd2MNMVuUk9PVA&corpora=teamDrive&orderBy=folder%2Ctitle_natural%20asc&retryCount=0&key="
+                // + key);
+            } else {
+                brc.getPage(GoogleDrive.WEBAPI_BASE_2 + "/v2beta/files?" + query.toString());
+            }
             Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
             final List<Object> items = (List<Object>) entries.get("items");
             if (items == null) {
@@ -474,14 +486,16 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
                      * Important developer note!! If this happens but the folder is not empty, most of all times, "teamDriveId" is missing
                      * or wrong!
                      */
+                    logger.warning("!! Developer !! Check if teamDriveId is missing while being required!");
                     throw new GdriveException(GdriveFolderStatus.FOLDER_EMPTY, offlineOrEmptyFolderTitle);
                 } else {
+                    logger.info("Stopping because: Last pagination page is empty -> Should never happen but we'll allow it to happen.");
                     break;
                 }
             }
             nextPageToken = (String) entries.get("nextPageToken");
             parseFolderJsonWebsite(ret, entries, subfolderPath, currentFolderTitle);
-            logger.info("Crawled page " + page + " | Items current page: " + items.size() + " | Total: " + ret.size());
+            logger.info("Crawled page " + page + " | Items current page: " + items.size() + " of max " + maxItemsPerRequest + " | Total: " + ret.size());
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
@@ -495,6 +509,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
             } else {
                 /* Continue to next page */
                 query.addAndReplace("pageToken", Encoding.urlEncode(nextPageToken));
+                sleep(500, param);
             }
         } while (true);
         if (ret.size() == 0) {
@@ -669,9 +684,9 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
         }
     }
 
-    public void login(final Browser br, final Account account) throws Exception {
+    public void loginWebsite(final Browser br, final Account account) throws Exception {
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-        ((jd.plugins.hoster.GoogleDrive) plg).login(this.br, account, false);
+        ((jd.plugins.hoster.GoogleDrive) plg).loginWebsite(this.br, account, false);
     }
 
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {

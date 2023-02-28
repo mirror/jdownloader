@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -20,10 +24,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 /**
  * A plugin for downloading JPG galleries from plain HTML of configured sites. Single galleries are supported, but also all galleries for a
@@ -126,7 +126,6 @@ public class SimpleHtmlBasedGalleryPlugin extends PluginForDecrypt {
     private static final List<SiteData> SITE_DATA = new ArrayList<SiteData>();
     static {
         // only single gallery
-        SITE_DATA.add(new SiteData(new String[] { "coedcherry.com" }, "./*pics/[^/]+", null, null));
         SITE_DATA.add(new SiteData(new String[] { "erocurves.com" }, "/.+", null, null));
         SITE_DATA.add(new SiteData(new String[] { "xxxporn.pics" }, "/sex/(?!\\d+).+", null, null));
         SITE_DATA.add(new SiteData(new String[] { "fapcat.com" }, "/albums/\\d+/.+", null, null));
