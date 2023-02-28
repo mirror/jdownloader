@@ -3,9 +3,11 @@ package org.jdownloader.plugins.components.config;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
@@ -15,10 +17,11 @@ import org.jdownloader.plugins.config.Type;
 public interface GoogleConfig extends PluginConfigInterface {
     final String                    text_UserAgent                                           = "User-Agent which will be used for all Google website http requests";
     final String                    text_PreferredVideoQuality                               = "Preferred video quality.\r\nIf you prefer stream download and the preferred stream quality is not found, best stream quality will be downloaded instead.";
-    final String                    text_AllowStreamDownloadAsFallback                       = "Allow stream download if original file can't be downloaded?";
+    final String                    text_AllowStreamDownloadAsFallback                       = "Allow stream download as fallback if original file can't be downloaded?";
     final String                    text_GoogleDriveAPIKey                                   = "Google Drive API key see: developers.google.com/drive/api/v3/enable-drive-api\r\nIt will be used for GDrive folder crawling, linkchecking and downloading.";
     final String                    text_APIDownloadMode                                     = "API download mode (only relevant if API Key is provided.)";
     final String                    text_AddStreamQualityIdentifierToFilename                = "Add quality identifier to filename if video stream (= non-original file) is downloaded?";
+    final String                    text_WaitOnQuotaReachedMinutes                           = "Wait time minutes on quota limit reached";
     final String                    text_DebugAccountLogin                                   = "Debug: Website mode: Perform extended account check?";
     final String                    text_DebugForceValidateLoginAlways                       = "Debug: Website mode: Force validate login on every linkcheck/download attempt (will slow things down)?";
     final String                    text_DebugWebsiteTrustQuickLinkcheckOfflineStatus        = "Debug: Website mode: Trust quick linkcheck offline status?";
@@ -48,6 +51,10 @@ public interface GoogleConfig extends PluginConfigInterface {
 
         public String getAddStreamQualityIdentifierToFilename_label() {
             return text_AddStreamQualityIdentifierToFilename;
+        }
+
+        public String getWaitOnQuotaReachedMinutes_label() {
+            return text_WaitOnQuotaReachedMinutes;
         }
 
         public String getDebugAccountLogin_label() {
@@ -176,7 +183,17 @@ public interface GoogleConfig extends PluginConfigInterface {
     void setAddStreamQualityIdentifierToFilename(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
+    @SpinnerValidator(min = 10, max = 360, step = 1)
+    @DefaultIntValue(60)
+    @DescriptionForConfigEntry(text_WaitOnQuotaReachedMinutes)
+    @Order(51)
+    int getWaitOnQuotaReachedMinutes();
+
+    void setWaitOnQuotaReachedMinutes(int items);
+
+    /** 2023-02-28: Purposely enabled this setting as it will work around a rare login but we have yet to fully fix. */
+    @AboutConfig
+    @DefaultBooleanValue(true)
     @DescriptionForConfigEntry(text_DebugAccountLogin)
     @Order(60)
     boolean isDebugAccountLogin();

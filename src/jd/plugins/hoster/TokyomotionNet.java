@@ -16,9 +16,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -30,6 +33,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -37,7 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tokyomotion.net", "osakamotion.net" }, urls = { "https?://(?:www\\.)?tokyomotion\\.net/(?:video/\\d+(?:/[^/]+)?|embed/[a-f0-9]{20})", "https?://(?:www\\.)?osakamotion\\.net/(?:video/\\d+(?:/[^/]+)?|embed/[a-f0-9]{20})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TokyomotionNet extends PluginForHost {
     public TokyomotionNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,8 +49,42 @@ public class TokyomotionNet extends PluginForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://www.tokyomotion.net/static/terms";
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "tokyomotion.net" });
+        ret.add(new String[] { "osakamotion.net" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video/\\d+(?:/[^/]+)?|embed/[a-f0-9]{20})");
+        }
+        return ret.toArray(new String[0]);
     }
 
     /* Connection stuff */
@@ -55,7 +93,6 @@ public class TokyomotionNet extends PluginForHost {
     private final int            MAXDOWNLOADS                          = 20;
     private String               dllink                                = null;
     private boolean              server_issues                         = false;
-    private boolean              isPrivateContent                      = false;
     /* 2017-11-21: Deactivated this as cookies can get invalid at any time. */
     private static final boolean TRUST_YOUNG_COOKIES_WITHOUT_ANY_CHECK = false;
     public static final long     trust_cookie_age                      = 300000l;
@@ -104,7 +141,6 @@ public class TokyomotionNet extends PluginForHost {
         }
         dllink = null;
         server_issues = false;
-        isPrivateContent = false;
         this.setBrowserExclusive();
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
@@ -116,8 +152,7 @@ public class TokyomotionNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*This video is not available on this platform")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML("(?i)>\\s*This is a private video")) {
-            isPrivateContent = true;
+        } else if (isPrivateContent(br)) {
             return AvailableStatus.TRUE;
         }
         String filename;
@@ -130,7 +165,16 @@ public class TokyomotionNet extends PluginForHost {
             filename += ".mp4";
             link.setFinalFileName(filename);
         }
-        dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\"[^>]*?type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        final String[] directurls = br.getRegex("<source src=\"(https?://[^<>\"]*?)\"[^>]*?type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getColumn(0);
+        if (directurls != null && directurls.length > 0) {
+            for (final String directurl : directurls) {
+                this.dllink = directurl;
+                if (directurl.contains("/hd/")) {
+                    /* Prefer HD */
+                    break;
+                }
+            }
+        }
         if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
             URLConnectionAdapter con = null;
@@ -164,6 +208,10 @@ public class TokyomotionNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private boolean isPrivateContent(final Browser br) {
+        return br.containsHTML("(?i)>\\s*This is a private video");
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
@@ -173,8 +221,8 @@ public class TokyomotionNet extends PluginForHost {
     private void doFree(final DownloadLink link) throws Exception, PluginException {
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (isPrivateContent) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } else if (isPrivateContent(br)) {
+            throw new AccountRequiredException();
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -243,7 +291,6 @@ public class TokyomotionNet extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -252,7 +299,6 @@ public class TokyomotionNet extends PluginForHost {
         account.setType(AccountType.FREE);
         account.setMaxSimultanDownloads(MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
