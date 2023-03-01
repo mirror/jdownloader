@@ -69,7 +69,7 @@ public class CopyCaseCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:file|download)/([a-zA-Z0-9]{16})(/([^/]+))?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:file|download)/[a-zA-Z0-9]{16}(/([^/]+))?|folder/[a-zA-Z0-9]+/file/[a-zA-Z0-9]{16})");
         }
         return ret.toArray(new String[0]);
     }
@@ -80,7 +80,7 @@ public class CopyCaseCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String fid = getFID(link);
+        final String fid = getFileID(link);
         if (fid != null) {
             return this.getHost() + "://" + fid;
         } else {
@@ -88,8 +88,23 @@ public class CopyCaseCom extends PluginForHost {
         }
     }
 
-    private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    /** Returns a value if this file was added in cointext/as part of a folder. */
+    private String getFolderID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "/folder/([a-zA-Z0-9]+)").getMatch(0);
+    }
+
+    private String getFileID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "/(?:file|download)/([a-zA-Z0-9]{16})").getMatch(0);
+    }
+
+    private String getAPIPathFile(final DownloadLink link) {
+        final String folderID = this.getFolderID(link);
+        final String fileID = this.getFileID(link);
+        if (folderID != null) {
+            return "/file-folders/" + folderID + "/file/" + fileID;
+        } else {
+            return "/file/" + fileID;
+        }
     }
 
     @Override
@@ -98,12 +113,12 @@ public class CopyCaseCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
-        final String fileID = getFID(link);
+        final String fileID = getFileID(link);
         if (fileID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!link.isNameSet()) {
-            final String urlFileName = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+            final String urlFileName = new Regex(link.getPluginPatternMatcher(), "/(?:file|download)/[a-zA-Z0-9]{16}/([^/]+)").getMatch(2);
             if (urlFileName != null) {
                 link.setName(URLEncode.decodeURIComponent(urlFileName));
             } else {
@@ -111,7 +126,7 @@ public class CopyCaseCom extends PluginForHost {
             }
         }
         this.prepBrowserAPI(br);
-        this.callAPI(br, link, null, new GetRequest(this.getAPIBase() + "/files/" + fileID), true);
+        this.callAPI(br, link, null, new GetRequest(this.getAPIBase() + getAPIPathFile(link)), true);
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) entries.get("data");
         link.setFinalFileName(data.get("name").toString());
@@ -150,7 +165,7 @@ public class CopyCaseCom extends PluginForHost {
         }
         final Map<String, Object> postData = new HashMap<String, Object>();
         postData.put("password", passCode);
-        final PostRequest req = br.createPostRequest(this.getAPIBase() + "/files/" + this.getFID(link) + "/download", JSonStorage.serializeToJson(postData));
+        final PostRequest req = br.createPostRequest(this.getAPIBase() + getAPIPathFile(link) + "/download", JSonStorage.serializeToJson(postData));
         final Map<String, Object> resp = this.callAPI(br, link, account, req, true);
         final Map<String, Object> error_info = (Map<String, Object>) resp.get("error_info");
         if (error_info != null) {
@@ -194,7 +209,7 @@ public class CopyCaseCom extends PluginForHost {
         return br;
     }
 
-    public Map<String, Object> callAPI(final Browser br, final DownloadLink link, final Account account, final Request req, final boolean checkErrors) throws IOException, PluginException {
+    public Map<String, Object> callAPI(final Browser br, final Object link, final Account account, final Request req, final boolean checkErrors) throws IOException, PluginException {
         br.getPage(req);
         if (checkErrors) {
             return checkErrorsAPI(br, link, account);
@@ -230,16 +245,40 @@ public class CopyCaseCom extends PluginForHost {
             postData.put("email", account.getUser());
             postData.put("password", account.getPass());
             // postData.put("auth_code", "");
-            final PostRequest req = br.createPostRequest(getAPIBase() + "/auth/login", JSonStorage.serializeToJson(postData));
-            final Map<String, Object> resp = this.callAPI(br, null, account, req, true);
-            if (br.getHttpConnection().getResponseCode() == 422) {
-                // TODO: Add 2FA login handling
+            final Browser brc = br.cloneBrowser();
+            brc.setAllowedResponseCodes(422);
+            Map<String, Object> resp = this.callAPI(brc, null, account, brc.createPostRequest(getAPIBase() + "/auth/login", JSonStorage.serializeToJson(postData)), true);
+            boolean required2FALogin = false;
+            if (StringUtils.equalsIgnoreCase((String) resp.get("status"), "two_factor_auth")) {
+                logger.info("2FA code required");
+                required2FALogin = true;
+                final DownloadLink dl_dummy;
+                if (this.getDownloadLink() != null) {
+                    dl_dummy = this.getDownloadLink();
+                } else {
+                    dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + this.getHost(), true);
+                }
+                String twoFACode = getUserInput("Enter Google 2-Factor authentication code", dl_dummy);
+                if (twoFACode != null) {
+                    twoFACode = twoFACode.trim();
+                }
+                if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
+                    throw new AccountInvalidException("Invalid 2-factor-authentication code format!");
+                }
+                logger.info("Submitting 2FA code");
+                postData.put("auth_code", twoFACode);
+                resp = this.callAPI(brc, null, account, brc.createPostRequest(getAPIBase() + "/auth/login", JSonStorage.serializeToJson(postData)), true);
+                // Can return: {"status":"incorrect_auth_code"}
             }
             /* No exception -> Looks like login was successful */
             final String token = (String) resp.get("token");
             if (StringUtils.isEmpty(token)) {
                 /* This should never happen */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (required2FALogin) {
+                    throw new AccountInvalidException("Invalid 2-factor-authentication code!");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
             br.getHeaders().put("Authorization", "Bearer " + token);
@@ -251,20 +290,24 @@ public class CopyCaseCom extends PluginForHost {
         return this.callAPI(br, null, account, br.createGetRequest(getAPIBase() + "/account"), true);
     }
 
-    private Map<String, Object> checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+    private Map<String, Object> checkErrorsAPI(final Browser br, final Object link, final Account account) throws PluginException {
         final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Object data = resp.get("data");
         final String error = (String) resp.get("error");
-        if (data == null && error != null) {
+        final Object errors = resp.get("errors");
+        if (data == null && (error != null || errors != null)) {
             if (link != null) {
                 if (br.getHttpConnection().getResponseCode() == 403) {
-                    link.setDownloadPassword(null);
+                    if (link instanceof DownloadLink) {
+                        ((DownloadLink) link).setDownloadPassword(null);
+                    }
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 } else if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+            } else {
+                throw new AccountInvalidException(error);
             }
-            throw new AccountInvalidException(error);
         }
         return resp;
     }
@@ -273,7 +316,7 @@ public class CopyCaseCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         Map<String, Object> usermap = login(br, account, true);
-        if (!br.getURL().endsWith("/account")) {
+        if (br.getURL() == null || !br.getURL().endsWith("/account")) {
             usermap = this.getAccountInfo(br, account);
         }
         final Map<String, Object> user = (Map<String, Object>) usermap.get("me");
