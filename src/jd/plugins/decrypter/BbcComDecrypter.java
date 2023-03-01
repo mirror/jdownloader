@@ -123,6 +123,13 @@ public class BbcComDecrypter extends PluginForDecrypt {
             /* 2021-08-05: bbc.co.uk/archive/.* */
             jsons = this.br.getRegex("(\\{\"meta\".*?\\})\\);\\s*\\}\\);</script>").getColumn(0);
         }
+        if (jsons == null || jsons.length == 0) {
+            /*
+             * 2023-03-01: e.g.
+             * https://www.bbc.co.uk/reel/video/p0dztrm5/is-separation-marriage-key-to-a-healthy-relationship-?ocid=ww.social.link.twitter
+             */
+            jsons = this.br.getRegex("data-json=\"([^\"]+)\"").getColumn(0);
+        }
         Map<String, Object> entries = null;
         Map<String, Object> entries2 = null;
         for (String json : jsons) {
