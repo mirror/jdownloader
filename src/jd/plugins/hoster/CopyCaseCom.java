@@ -9,21 +9,20 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
-import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.http.requests.PostRequest;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -35,9 +34,7 @@ import jd.plugins.PluginForHost;
 public class CopyCaseCom extends PluginForHost {
     public CopyCaseCom(PluginWrapper wrapper) {
         super(wrapper);
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            this.enablePremium("https://copycase.com/pricing");
-        }
+        this.enablePremium("https://copycase.com/pricing");
     }
 
     @Override
@@ -45,8 +42,6 @@ public class CopyCaseCom extends PluginForHost {
         return "https://copycase.com/page/en-US/terms";
     }
 
-    // private final String FILE_PATTERN = "https?://[^/]+/file/([a-zA-Z0-9]{16})/?([^/]+)?";
-    private String       freeDownloadURL        = null;
     private final String PROPERTY_ACCOUNT_TOKEN = "token";
 
     public static List<String[]> getPluginDomains() {
@@ -74,19 +69,13 @@ public class CopyCaseCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:file|download)/([a-zA-Z0-9]{16})(/[^/]+)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:file|download)/([a-zA-Z0-9]{16})(/([^/]+))?");
         }
         return ret.toArray(new String[0]);
     }
 
-    private String getAPIBase() {
+    public String getAPIBase() {
         return "https://" + this.getHost() + "/api/v1";
-    }
-
-    @Override
-    public void clean() {
-        freeDownloadURL = null;
-        super.clean();
     }
 
     @Override
@@ -104,80 +93,41 @@ public class CopyCaseCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        freeDownloadURL = null;
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         final String fileID = getFID(link);
         if (fileID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!link.isNameSet()) {
-            final String urlFileName = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+            final String urlFileName = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
             if (urlFileName != null) {
                 link.setName(URLEncode.decodeURIComponent(urlFileName));
             } else {
                 link.setName(fileID);
             }
         }
-        final Browser brc = br.cloneBrowser();
-        brc.setFollowRedirects(false);
-        brc.getPage("https://" + this.getHost() + "/file/" + fileID);
-        final String downloadRedirect = brc.getRedirectLocation();
-        if (downloadRedirect == null) {
-            if (brc.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (brc.containsHTML("\"errors.not_found\"")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        this.prepBrowserAPI(br);
+        this.callAPI(br, link, null, new GetRequest(this.getAPIBase() + "/files/" + fileID), true);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        link.setFinalFileName(data.get("name").toString());
+        link.setVerifiedFileSize(((Number) data.get("size")).longValue());
+        final String error = (String) entries.get("error");
+        if (StringUtils.equalsIgnoreCase(error, "password_required")) {
+            link.setPasswordProtected(true);
+        } else {
+            link.setPasswordProtected(false);
         }
-        final URLConnectionAdapter con = brc.openHeadConnection(downloadRedirect);
-        try {
-            if (looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                final DispositionHeader fileName = parseDispositionHeader(con);
-                if (fileName != null && StringUtils.isNotEmpty(fileName.getFilename())) {
-                    link.setFinalFileName(fileName.getFilename());
-                }
-                brc.followConnection();
-                freeDownloadURL = downloadRedirect;
-                return AvailableStatus.TRUE;
-            } else {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                handleError(brc, link, con);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } finally {
-            con.disconnect();
-        }
-    }
-
-    private void handleError(final Browser br, DownloadLink link, final URLConnectionAdapter con) throws Exception {
-        switch (con.getResponseCode()) {
-        case 404:
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        case 429:
-            // HTTP/1.1 429 Too Many Requests
-            final DispositionHeader fileName = parseDispositionHeader(con);
-            if (fileName != null && StringUtils.isNotEmpty(fileName.getFilename())) {
-                link.setFinalFileName(fileName.getFilename());
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
-        default:
-            break;
-        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        handleDownload(null, link, freeDownloadURL);
+        handleDownload(link, null);
     }
 
     private int getMaxChunks(final Account account) {
@@ -188,7 +138,41 @@ public class CopyCaseCom extends PluginForHost {
         }
     }
 
-    private void handleDownload(final Account account, final DownloadLink link, final String directurl) throws Exception {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, account);
+        if (account != null) {
+            this.login(br, account, false);
+        }
+        String passCode = link.getDownloadPassword();
+        if (link.isPasswordProtected() && passCode == null) {
+            /* Ask user for password */
+            passCode = getUserInput("Password?", link);
+        }
+        final Map<String, Object> postData = new HashMap<String, Object>();
+        postData.put("password", passCode);
+        final PostRequest req = br.createPostRequest(this.getAPIBase() + "/files/" + this.getFID(link) + "/download", JSonStorage.serializeToJson(postData));
+        final Map<String, Object> resp = this.callAPI(br, link, account, req, true);
+        final Map<String, Object> error_info = (Map<String, Object>) resp.get("error_info");
+        if (error_info != null) {
+            final String errorID = error_info.get("id").toString();
+            if (errorID.equalsIgnoreCase("time")) {
+                final Map<String, Object> error_data = (Map<String, Object>) error_info.get("data");
+                final Number timeSeconds = (Number) error_data.get("time");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorID, timeSeconds.longValue() * 1001l);
+            } else {
+                /* Unknown error */
+                throw new PluginException(LinkStatus.ERROR_FATAL, errorID);
+            }
+        }
+        if (passCode != null) {
+            /* User entered correct password -> Save it */
+            link.setDownloadPassword(passCode);
+        }
+        final String directurl = resp.get("redirect").toString();
+        if (StringUtils.isEmpty(directurl)) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (StringUtils.isEmpty(directurl)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -199,27 +183,27 @@ public class CopyCaseCom extends PluginForHost {
             } catch (IOException e) {
                 logger.log(e);
             }
-            handleError(br, link, dl.getConnection());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server returned html code instead of file");
         }
         dl.startDownload();
     }
 
     private Browser prepBrowserAPI(final Browser br) {
         br.getHeaders().put("Accept", "application/json");
+        br.setFollowRedirects(true);
         return br;
     }
 
-    private Map<String, Object> callAPI(final Browser br, final Request req, final boolean checkErrors) throws IOException, PluginException {
+    public Map<String, Object> callAPI(final Browser br, final DownloadLink link, final Account account, final Request req, final boolean checkErrors) throws IOException, PluginException {
         br.getPage(req);
         if (checkErrors) {
-            return checkErrorsAPI(br);
+            return checkErrorsAPI(br, link, account);
         } else {
             return restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         }
     }
 
-    private Map<String, Object> login(final Browser br, final Account account, final boolean force) throws Exception {
+    public Map<String, Object> login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
@@ -247,7 +231,7 @@ public class CopyCaseCom extends PluginForHost {
             postData.put("password", account.getPass());
             // postData.put("auth_code", "");
             final PostRequest req = br.createPostRequest(getAPIBase() + "/auth/login", JSonStorage.serializeToJson(postData));
-            final Map<String, Object> resp = this.callAPI(br, req, true);
+            final Map<String, Object> resp = this.callAPI(br, null, account, req, true);
             if (br.getHttpConnection().getResponseCode() == 422) {
                 // TODO: Add 2FA login handling
             }
@@ -264,14 +248,25 @@ public class CopyCaseCom extends PluginForHost {
     }
 
     private Map<String, Object> getAccountInfo(final Browser br, final Account account) throws IOException, PluginException {
-        return this.callAPI(br, br.createGetRequest(getAPIBase() + "/account"), true);
+        return this.callAPI(br, null, account, br.createGetRequest(getAPIBase() + "/account"), true);
     }
 
-    private Map<String, Object> checkErrorsAPI(final Browser br) throws PluginException {
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    private Map<String, Object> checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Object data = resp.get("data");
+        final String error = (String) resp.get("error");
+        if (data == null && error != null) {
+            if (link != null) {
+                if (br.getHttpConnection().getResponseCode() == 403) {
+                    link.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                } else if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            }
+            throw new AccountInvalidException(error);
         }
-        return restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        return resp;
     }
 
     @Override
@@ -313,28 +308,7 @@ public class CopyCaseCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        this.login(br, account, false);
-        final Map<String, Object> postData = new HashMap<String, Object>();
-        postData.put("password", link.getDownloadPassword());
-        final PostRequest req = br.createPostRequest(this.getAPIBase() + "/account/files/" + this.getFID(link) + "/download", JSonStorage.serializeToJson(postData));
-        final Map<String, Object> resp = this.callAPI(br, req, true);
-        final Map<String, Object> error_info = (Map<String, Object>) resp.get("error_info");
-        if (error_info != null) {
-            final String errorID = error_info.get("id").toString();
-            if (errorID.equalsIgnoreCase("time")) {
-                final Map<String, Object> error_data = (Map<String, Object>) error_info.get("data");
-                final Number time = (Number) error_data.get("time");
-            } else {
-                // TODO: Add errorhandling/wait handling
-            }
-        }
-        final String directurl = resp.get("redirect").toString();
-        if (StringUtils.isEmpty(directurl)) {
-            /* This should never happen */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        this.handleDownload(account, link, directurl);
+        this.handleDownload(link, account);
     }
 
     @Override
