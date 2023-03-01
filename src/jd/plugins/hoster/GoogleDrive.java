@@ -229,6 +229,9 @@ public class GoogleDrive extends PluginForHost {
     private final String        PROPERTY_TMP_ALLOW_OBTAIN_MORE_INFORMATION     = "tmp_allow_obtain_more_information";
     private final static String PROPERTY_CACHED_FILENAME                       = "cached_filename";
     private final static String PROPERTY_CACHED_LAST_DISPOSITION_STATUS        = "cached_last_disposition_status";
+    private final String        PROPERTY_TIMESTAMP_STREAM_DOWNLOAD_FAILED      = "timestamp_stream_download_failed";
+    private final String        PROPERTY_STREAM_DOWNLOAD_ACTIVE                = "stream_download_active";
+    /* Misc */
     private final String        DISPOSITION_STATUS_QUOTA_EXCEEDED              = "QUOTA_EXCEEDED";
     /**
      * 2022-02-20: We store this property but we're not using it at this moment. It is required to access some folders though so it's good
@@ -1015,7 +1018,12 @@ public class GoogleDrive extends PluginForHost {
             /* Attempt final fallback/edge-case: Check for download of "un-downloadable" streams. */
             final String errorcodeStr = query.get("errorcode");
             if (errorcodeStr != null) {
-                /*  */
+                link.setProperty(PROPERTY_TIMESTAMP_STREAM_DOWNLOAD_FAILED, System.currentTimeMillis());
+                /**
+                 * This reason varies depending on the language of the google account in use / header preferred language. </br>
+                 * It would be a huge effort to differ between different errormessages so at this moment we will only rely on the
+                 * error-code.
+                 */
                 String errorMessage = query.get("reason");
                 if (errorMessage != null) {
                     errorMessage = Encoding.htmlDecode(errorMessage);
@@ -1067,6 +1075,7 @@ public class GoogleDrive extends PluginForHost {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Invalid state: Expected streaming download but none is available");
             }
+            link.setProperty(PROPERTY_STREAM_DOWNLOAD_ACTIVE, true);
             logger.info("Found " + qualities.size() + " stream qualities");
             String bestQualityDownloadlink = null;
             int bestQualityHeight = 0;
@@ -2020,6 +2029,7 @@ public class GoogleDrive extends PluginForHost {
             link.removeProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT);
             link.removeProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS);
             link.removeProperty(PROPERTY_IS_STREAM_QUOTA_REACHED);
+            link.removeProperty(PROPERTY_STREAM_DOWNLOAD_ACTIVE);
         }
     }
 
