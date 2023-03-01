@@ -82,6 +82,7 @@ public class CopyCaseComFolder extends PluginForDecrypt {
         final UrlQuery query = new UrlQuery();
         String passCode = param.getDecrypterPassword();
         boolean askedUserForPassword = false;
+        boolean userHasEnteredCorrectPassword = false;
         FilePackage fp = null;
         String path = null;
         int page = 1;
@@ -95,6 +96,11 @@ public class CopyCaseComFolder extends PluginForDecrypt {
                 final GetRequest req = new GetRequest(hosterplugin.getAPIBase() + "/file-folders/" + folderPathURL + "?" + query.toString());
                 resp = hosterplugin.callAPI(br, param, account, req, true);
                 if (br.getHttpConnection().getResponseCode() == 403) {
+                    if (userHasEnteredCorrectPassword) {
+                        /* This should never happen */
+                        logger.warning("Looks like password is invalid although we know the correct password -> Serverside bug or password was changed while we were crawling this folder");
+                        break;
+                    }
                     if (passCode == null) {
                         logger.info("Folder is password protected");
                     } else {
@@ -112,6 +118,7 @@ public class CopyCaseComFolder extends PluginForDecrypt {
                 } else {
                     if (passCode != null && askedUserForPassword) {
                         logger.info("User has entered correct password: " + passCode);
+                        userHasEnteredCorrectPassword = true;
                     }
                     break;
                 }
