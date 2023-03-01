@@ -25,9 +25,11 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.requests.GetRequest;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
@@ -79,12 +81,44 @@ public class CopyCaseComFolder extends PluginForDecrypt {
         final String folderPathURL = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final UrlQuery query = new UrlQuery();
         String passCode = param.getDecrypterPassword();
+        boolean askedUserForPassword = false;
         FilePackage fp = null;
         String path = null;
         int page = 1;
         do {
-            final GetRequest req = new GetRequest(hosterplugin.getAPIBase() + "/file-folders/" + folderPathURL + "?" + query.toString());
-            final Map<String, Object> resp = hosterplugin.callAPI(br, param, account, req, true);
+            int passwordAttempts = 0;
+            Map<String, Object> resp = null;
+            do {
+                if (passCode != null) {
+                    query.addAndReplace("password", Encoding.urlEncode(passCode));
+                }
+                final GetRequest req = new GetRequest(hosterplugin.getAPIBase() + "/file-folders/" + folderPathURL + "?" + query.toString());
+                resp = hosterplugin.callAPI(br, param, account, req, true);
+                if (br.getHttpConnection().getResponseCode() == 403) {
+                    if (passCode == null) {
+                        logger.info("Folder is password protected");
+                    } else {
+                        logger.info("User entered invalid password: " + passCode);
+                    }
+                    if (passwordAttempts >= 3) {
+                        logger.info("Too many wrong password attempts");
+                        break;
+                    } else {
+                        passCode = getUserInput("Password?", param);
+                        askedUserForPassword = true;
+                        passwordAttempts++;
+                        continue;
+                    }
+                } else {
+                    if (passCode != null && askedUserForPassword) {
+                        logger.info("User has entered correct password: " + passCode);
+                    }
+                    break;
+                }
+            } while (true);
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
             final Map<String, Object> data = (Map<String, Object>) resp.get("data");
             final Map<String, Object> pagination = (Map<String, Object>) resp.get("pagination");
             if (fp == null) {
