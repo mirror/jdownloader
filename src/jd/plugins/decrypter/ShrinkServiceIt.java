@@ -103,7 +103,6 @@ public class ShrinkServiceIt extends PluginForDecrypt {
         final UrlQuery query = new UrlQuery();
         query.add("req", "init");
         query.add("uri", Encoding.urlEncode(addedUrlWithNewDomain));
-        // query.add("uri", Encoding.urlEncode("https://adshnk.com/O3QMfR"));
         query.add("cookie_bypass_v1", Encoding.urlEncode(cookie_bypass_v1));
         // brc.setAllowedResponseCodes(500);
         brc.getHeaders().put("Origin", "https://" + forcedDomain);
