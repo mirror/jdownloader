@@ -83,9 +83,8 @@ public class CopyCaseComFolder extends PluginForDecrypt {
         String path = null;
         int page = 1;
         do {
-            /* TODO: Add pagination support */
             final GetRequest req = new GetRequest(hosterplugin.getAPIBase() + "/file-folders/" + folderPathURL + "?" + query.toString());
-            final Map<String, Object> resp = hosterplugin.callAPI(br, null, account, req, false);
+            final Map<String, Object> resp = hosterplugin.callAPI(br, param, account, req, true);
             final Map<String, Object> data = (Map<String, Object>) resp.get("data");
             final Map<String, Object> pagination = (Map<String, Object>) resp.get("pagination");
             if (fp == null) {
@@ -106,42 +105,48 @@ public class CopyCaseComFolder extends PluginForDecrypt {
             if ((files == null || files.isEmpty()) && (subfolders == null || subfolders.isEmpty())) {
                 throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_FOLDER_" + path);
             }
-            for (final Map<String, Object> file : files) {
-                final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/file/" + file.get("key") + "/" + file.get("slug"));
-                link.setFinalFileName(file.get("name").toString());
-                link.setVerifiedFileSize(((Number) file.get("size")).longValue());
-                link.setAvailable(true);
-                link.setRelativeDownloadFolderPath(path);
-                if (passCode != null) {
-                    /*
-                     * Download password can be different from folder password or even none but let's set this password here so if needed,
-                     * it will at least be tried first.
-                     */
-                    link.setDownloadPassword(passCode);
+            int numberofItemsOnThisPage = 0;
+            if (files != null) {
+                numberofItemsOnThisPage += files.size();
+                for (final Map<String, Object> file : files) {
+                    final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/folder/" + file.get("folder_share_key") + "/file/" + file.get("key"));
+                    link.setFinalFileName(file.get("name").toString());
+                    link.setVerifiedFileSize(((Number) file.get("size")).longValue());
+                    link.setAvailable(true);
+                    link.setRelativeDownloadFolderPath(path);
+                    if (passCode != null) {
+                        /*
+                         * Download password can be different from folder password or even none but let's set this password here so if
+                         * needed, it will at least be tried first.
+                         */
+                        link.setDownloadPassword(passCode);
+                    }
+                    link._setFilePackage(fp);
+                    ret.add(link);
+                    distribute(link);
                 }
-                link._setFilePackage(fp);
-                ret.add(link);
-                distribute(link);
             }
-            for (final Map<String, Object> subfolder : subfolders) {
-                // final int total_files = ((Number) subfolder.get("total_files")).intValue();
-                final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/folder/" + subfolder.get("folder_share_key") + "/folder/" + subfolder.get("key"));
-                if (passCode != null) {
-                    link.setDownloadPassword(passCode);
+            if (subfolders != null) {
+                numberofItemsOnThisPage += subfolders.size();
+                for (final Map<String, Object> subfolder : subfolders) {
+                    // final int total_files = ((Number) subfolder.get("total_files")).intValue();
+                    final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/folder/" + subfolder.get("folder_share_key") + "/folder/" + subfolder.get("key"));
+                    if (passCode != null) {
+                        link.setDownloadPassword(passCode);
+                    }
+                    ret.add(link);
+                    distribute(link);
                 }
-                ret.add(link);
-                distribute(link);
             }
-            final int pageMax = ((Number) pagination.get("total")).intValue();
-            logger.info("Crawlede page " + page + "/" + pageMax + " | Found items so far: " + ret.size());
+            final int pageMax = ((Number) pagination.get("pages")).intValue();
+            logger.info("Crawled page " + page + "/" + pageMax + " | Items on this page: " + numberofItemsOnThisPage + " of max " + pagination.get("per_page") + " | Found items so far: " + ret.size() + " / " + pagination.get("total"));
             if (page >= pageMax) {
                 logger.info("Stopping because: Reached last page: " + page);
                 break;
+            } else {
+                page++;
+                query.addAndReplace("page", Integer.toString(page));
             }
-            page++;
-            // TODO: Add pagination support
-            logger.info("Stopping because: Pagination hasn't been implemented yet");
-            break;
         } while (true);
         return ret;
     }
