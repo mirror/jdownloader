@@ -16,11 +16,18 @@
 package jd.plugins.decrypter;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.KemonoPartyConfig;
+import org.jdownloader.plugins.components.config.KemonoPartyConfig.TextCrawlMode;
+import org.jdownloader.plugins.components.config.KemonoPartyConfigCoomerParty;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -36,14 +43,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.KemonoParty;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.KemonoPartyConfig;
-import org.jdownloader.plugins.components.config.KemonoPartyConfig.TextCrawlMode;
-import org.jdownloader.plugins.components.config.KemonoPartyConfigCoomerParty;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KemonoPartyCrawler extends PluginForDecrypt {
@@ -220,20 +219,24 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
             fp.setName(portal + " - " + userID + " - " + postID);
         }
         final ArrayList<DownloadLink> kemonoResults = new ArrayList<DownloadLink>();
-        final String[] directURLs = br.getRegex("\"[^\"]*(/data/[^\"]+)").getColumn(0);
+        final String[] directURLs = br.getRegex("\"((https?://[^/]+)?/data/[^\"]+)").getColumn(0);
         if (directURLs != null && directURLs.length > 0) {
             /* Remove duplicates from results so our index will be correct down below. */
             final HashSet<String> dups = new HashSet<String>();
             int index = 0;
-            for (String directURL : directURLs) {
-                final URL url = br.getURL(directURL);
-                if (dups.add(url.getPath())) {
-                    directURL = url.toString();
-                    final DownloadLink media = this.createDownloadlink("directhttp://" + directURL);
+            for (final String directURL : directURLs) {
+                final String urlFull = br.getURL(directURL).toString();
+                if (dups.add(urlFull)) {
+                    final DownloadLink media = this.createDownloadlink("directhttp://" + urlFull);
                     media.setProperty(KemonoParty.PROPERTY_POST_CONTENT_INDEX, index);
-                    final UrlQuery query = UrlQuery.parse(directURL);
-                    final String betterFilename = Encoding.htmlDecode(query.get("f"));
+                    final UrlQuery query = UrlQuery.parse(urlFull);
+                    String betterFilename = Encoding.htmlDecode(query.get("f"));
+                    if (betterFilename == null) {
+                        /* 2023-03-01 */
+                        betterFilename = br.getRegex(Pattern.quote(directURL) + "\"\\s+download=\"([^\"]+)\"").getMatch(0);
+                    }
                     if (!StringUtils.isEmpty(betterFilename)) {
+                        betterFilename = Encoding.htmlDecode(betterFilename);
                         media.setFinalFileName(betterFilename);
                         media.setProperty(DirectHTTP.FIXNAME, betterFilename);
                     }

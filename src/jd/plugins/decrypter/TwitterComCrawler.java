@@ -435,91 +435,113 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final String urlToTweet = createTwitterPostURL(username, tweetID);
         fp.setAllowInheritance(true);
         fp.setAllowMerge(true);
-        final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "extended_entities/media");
+        /*
+         * mediasExtended can contasin image items + video items. medias can contain additional image items that are not inside
+         * mediasExtended.
+         */
+        final List<Map<String, Object>> mediasExtended = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "extended_entities/media");
+        final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "entities/media");
         final String vmapURL = (String) JavaScriptEngineFactory.walkJson(tweet, "card/binding_values/amplify_url_vmap/string_value");
+        final List<List<Map<String, Object>>> mediaLists = new ArrayList<List<Map<String, Object>>>();
+        if (mediasExtended != null && mediasExtended.size() > 0) {
+            mediaLists.add(mediasExtended);
+        }
+        if (medias != null && medias.size() > 0) {
+            mediaLists.add(medias);
+        }
         String lastFoundOriginalFilename = null;
-        if (medias != null && !medias.isEmpty()) {
-            int mediaIndex = 0;
-            int videoIndex = 0;
-            for (final Map<String, Object> media : medias) {
-                final String type = (String) media.get("type");
-                final DownloadLink dl;
-                String filename = null;
-                if (type.equals("video") || type.equals("animated_gif")) {
-                    /* Find highest video quality */
-                    /* animated_gif will usually only have one .mp4 version available with bitrate "0". */
-                    int highestBitrate = -1;
-                    final List<Map<String, Object>> videoVariants = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(media, "video_info/variants");
-                    String streamURL = null;
-                    String hlsMaster = null;
-                    for (final Map<String, Object> videoVariant : videoVariants) {
-                        final String content_type = (String) videoVariant.get("content_type");
-                        if (content_type.equalsIgnoreCase("video/mp4")) {
-                            final int bitrate = ((Number) videoVariant.get("bitrate")).intValue();
-                            if (bitrate > highestBitrate) {
-                                highestBitrate = bitrate;
-                                streamURL = (String) videoVariant.get("url");
-                            }
-                        } else if (content_type.equalsIgnoreCase("application/x-mpegURL")) {
-                            hlsMaster = (String) videoVariant.get("url");
-                        } else {
-                            logger.info("Skipping unsupported video content_type: " + content_type);
+        int mediaIndex = 0;
+        int videoIndex = 0;
+        if (mediaLists.size() > 0) {
+            boolean skipVideo = false;
+            for (final List<Map<String, Object>> mediaList : mediaLists) {
+                for (final Map<String, Object> media : mediaList) {
+                    final String type = (String) media.get("type");
+                    final DownloadLink dl;
+                    String filename = null;
+                    if (type.equals("video") || type.equals("animated_gif")) {
+                        /* Find highest video quality */
+                        if (skipVideo) {
+                            continue;
                         }
-                    }
-                    if (StringUtils.isEmpty(streamURL)) {
-                        /* This should never happen */
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    dl = this.createDownloadlink(createVideourlSpecific(username, tweetID, (videoIndex + 1)));
-                    dl.setProperty(PROPERTY_TYPE, "video");
-                    lastFoundOriginalFilename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(streamURL));
-                    if (cfg.isUseOriginalFilenames()) {
-                        filename = lastFoundOriginalFilename;
-                    } else if (medias.size() > 1) {
-                        filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + "_" + mediaIndex + ".mp4";
+                        /* animated_gif will usually only have one .mp4 version available with bitrate "0". */
+                        int highestBitrate = -1;
+                        final List<Map<String, Object>> videoVariants = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(media, "video_info/variants");
+                        String streamURL = null;
+                        String hlsMaster = null;
+                        for (final Map<String, Object> videoVariant : videoVariants) {
+                            final String content_type = (String) videoVariant.get("content_type");
+                            if (content_type.equalsIgnoreCase("video/mp4")) {
+                                final int bitrate = ((Number) videoVariant.get("bitrate")).intValue();
+                                if (bitrate > highestBitrate) {
+                                    highestBitrate = bitrate;
+                                    streamURL = (String) videoVariant.get("url");
+                                }
+                            } else if (content_type.equalsIgnoreCase("application/x-mpegURL")) {
+                                hlsMaster = (String) videoVariant.get("url");
+                            } else {
+                                logger.info("Skipping unsupported video content_type: " + content_type);
+                            }
+                        }
+                        if (StringUtils.isEmpty(streamURL)) {
+                            /* This should never happen */
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        dl = this.createDownloadlink(createVideourlSpecific(username, tweetID, (videoIndex + 1)));
+                        dl.setProperty(PROPERTY_TYPE, "video");
+                        lastFoundOriginalFilename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(streamURL));
+                        if (cfg.isUseOriginalFilenames()) {
+                            filename = lastFoundOriginalFilename;
+                        } else if (mediasExtended.size() > 1) {
+                            filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + "_" + mediaIndex + ".mp4";
+                        } else {
+                            filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + ".mp4";
+                        }
+                        dl.setProperty(PROPERTY_BITRATE, highestBitrate);
+                        dl.setProperty(TwitterCom.PROPERTY_DIRECTURL, streamURL);
+                        if (!StringUtils.isEmpty(hlsMaster)) {
+                            dl.setProperty(TwitterCom.PROPERTY_DIRECTURL_hls_master, hlsMaster);
+                        }
+                        dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
+                        videoIndex++;
+                    } else if (type.equals("photo")) {
+                        String photoURL = (String) media.get("media_url"); /* Also available as "media_url_https" */
+                        if (StringUtils.isEmpty(photoURL)) {
+                            photoURL = (String) media.get("media_url_https");
+                        }
+                        if (StringUtils.isEmpty(photoURL)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        dl = this.createDownloadlink(photoURL);
+                        dl.setProperty(PROPERTY_TYPE, "photo");
+                        lastFoundOriginalFilename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(photoURL));
+                        if (cfg.isUseOriginalFilenames()) {
+                            filename = lastFoundOriginalFilename;
+                        } else if (mediasExtended.size() > 1) {
+                            filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(photoURL);
+                        } else {
+                            filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + Plugin.getFileNameExtensionFromURL(photoURL);
+                        }
+                        dl.setContentUrl(urlToTweet);
                     } else {
-                        filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + ".mp4";
+                        /* Unknown type -> This should never happen! */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown media type:" + type);
                     }
-                    dl.setProperty(PROPERTY_BITRATE, highestBitrate);
-                    dl.setProperty(TwitterCom.PROPERTY_DIRECTURL, streamURL);
-                    if (!StringUtils.isEmpty(hlsMaster)) {
-                        dl.setProperty(TwitterCom.PROPERTY_DIRECTURL_hls_master, hlsMaster);
+                    if (filename != null) {
+                        dl.setFinalFileName(filename);
                     }
-                    dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
-                    videoIndex++;
-                } else if (type.equals("photo")) {
-                    String photoURL = (String) media.get("media_url"); /* Also available as "media_url_https" */
-                    if (StringUtils.isEmpty(photoURL)) {
-                        photoURL = (String) media.get("media_url_https");
-                    }
-                    if (StringUtils.isEmpty(photoURL)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    dl = this.createDownloadlink(photoURL);
-                    dl.setProperty(PROPERTY_TYPE, "photo");
-                    lastFoundOriginalFilename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(photoURL));
-                    if (cfg.isUseOriginalFilenames()) {
-                        filename = lastFoundOriginalFilename;
-                    } else if (medias.size() > 1) {
-                        filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(photoURL);
-                    } else {
-                        filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + Plugin.getFileNameExtensionFromURL(photoURL);
-                    }
-                    dl.setContentUrl(urlToTweet);
-                } else {
-                    /* Unknown type -> This should never happen! */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown media type:" + type);
+                    dl.setAvailable(true);
+                    dl.setProperty(PROPERTY_MEDIA_INDEX, mediaIndex);
+                    dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str"));
+                    ret.add(dl);
+                    mediaIndex += 1;
                 }
-                if (filename != null) {
-                    dl.setFinalFileName(filename);
-                }
-                dl.setAvailable(true);
-                dl.setProperty(PROPERTY_MEDIA_INDEX, mediaIndex);
-                dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str"));
-                ret.add(dl);
-                mediaIndex += 1;
+                /* We only expect video items in the first media list. */
+                skipVideo = true;
             }
-        } else if (!StringUtils.isEmpty(vmapURL)) {
+        }
+        /* Check for fallback video source if no video item has been found until now. */
+        if (videoIndex == 0 && !StringUtils.isEmpty(vmapURL)) {
             /* Fallback handling for very old (???) content */
             /* Expect such URLs which our host plugin can handle: https://video.twimg.com/amplify_video/vmap/<numbers>.vmap */
             final DownloadLink singleVideo = this.createDownloadlink(vmapURL);
