@@ -215,35 +215,37 @@ public class GoogleDrive extends PluginForHost {
      * Contains the quality modifier of the last chosen quality. This property gets reset on reset DownloadLink to ensure that a user cannot
      * change the quality and then resume the started download with another URL.
      */
-    private final String        PROPERTY_USED_QUALITY                          = "USED_QUALITY";
-    private static final String PROPERTY_GOOGLE_DOCUMENT                       = "IS_GOOGLE_DOCUMENT";
-    private static final String PROPERTY_FORCED_FINAL_DOWNLOADURL              = "FORCED_FINAL_DOWNLOADURL";
-    private static final String PROPERTY_CAN_DOWNLOAD                          = "CAN_DOWNLOAD";
-    private final String        PROPERTY_CAN_STREAM                            = "CAN_STREAM";
-    private final String        PROPERTY_IS_INFECTED                           = "is_infected";
-    private final String        PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP        = "LAST_IS_PRIVATE_FILE_TIMESTAMP";
-    private final String        PROPERTY_IS_QUOTA_REACHED_ANONYMOUS            = "IS_QUOTA_REACHED_ANONYMOUS";
-    private final String        PROPERTY_IS_QUOTA_REACHED_ACCOUNT              = "IS_QUOTA_REACHED_ACCOUNT";
-    private final String        PROPERTY_IS_STREAM_QUOTA_REACHED               = "IS_STREAM_QUOTA_REACHED";
-    private final String        PROPERTY_DIRECTURL                             = "directurl";
-    private final String        PROPERTY_TMP_ALLOW_OBTAIN_MORE_INFORMATION     = "tmp_allow_obtain_more_information";
-    private final static String PROPERTY_CACHED_FILENAME                       = "cached_filename";
-    private final static String PROPERTY_CACHED_LAST_DISPOSITION_STATUS        = "cached_last_disposition_status";
-    private final String        PROPERTY_TIMESTAMP_STREAM_DOWNLOAD_FAILED      = "timestamp_stream_download_failed";
-    private final String        PROPERTY_STREAM_DOWNLOAD_ACTIVE                = "stream_download_active";
+    private final String          PROPERTY_USED_QUALITY                          = "USED_QUALITY";
+    private static final String   PROPERTY_GOOGLE_DOCUMENT                       = "IS_GOOGLE_DOCUMENT";
+    private static final String   PROPERTY_FORCED_FINAL_DOWNLOADURL              = "FORCED_FINAL_DOWNLOADURL";
+    private static final String   PROPERTY_CAN_DOWNLOAD                          = "CAN_DOWNLOAD";
+    private final String          PROPERTY_CAN_STREAM                            = "CAN_STREAM";
+    private final String          PROPERTY_IS_INFECTED                           = "is_infected";
+    private final String          PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP        = "LAST_IS_PRIVATE_FILE_TIMESTAMP";
+    private final String          PROPERTY_IS_QUOTA_REACHED_ANONYMOUS            = "IS_QUOTA_REACHED_ANONYMOUS";
+    private final String          PROPERTY_IS_QUOTA_REACHED_ACCOUNT              = "IS_QUOTA_REACHED_ACCOUNT";
+    private final String          PROPERTY_IS_STREAM_QUOTA_REACHED               = "IS_STREAM_QUOTA_REACHED";
+    private final String          PROPERTY_DIRECTURL                             = "directurl";
+    private final String          PROPERTY_TMP_ALLOW_OBTAIN_MORE_INFORMATION     = "tmp_allow_obtain_more_information";
+    private final static String   PROPERTY_CACHED_FILENAME                       = "cached_filename";
+    private final static String   PROPERTY_CACHED_LAST_DISPOSITION_STATUS        = "cached_last_disposition_status";
+    private final String          PROPERTY_TIMESTAMP_STREAM_DOWNLOAD_FAILED      = "timestamp_stream_download_failed";
+    private final String          PROPERTY_STREAM_DOWNLOAD_ACTIVE                = "stream_download_active";
     /* Misc */
-    private final String        DISPOSITION_STATUS_QUOTA_EXCEEDED              = "QUOTA_EXCEEDED";
+    private final String          DISPOSITION_STATUS_QUOTA_EXCEEDED              = "QUOTA_EXCEEDED";
+    /* Pre defined exceptions */
+    private final PluginException exceptionRateLimitedSingle                     = new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate limited", getRateLimitWaittime());
     /**
      * 2022-02-20: We store this property but we're not using it at this moment. It is required to access some folders though so it's good
      * to have it set on each DownloadLink if it exists.
      */
-    public static final String  PROPERTY_TEAM_DRIVE_ID                         = "TEAM_DRIVE_ID";
+    public static final String    PROPERTY_TEAM_DRIVE_ID                         = "TEAM_DRIVE_ID";
     /* Packagizer property */
-    public static final String  PROPERTY_ROOT_DIR                              = "root_dir";
+    public static final String    PROPERTY_ROOT_DIR                              = "root_dir";
     /* Account properties */
-    private final String        PROPERTY_ACCOUNT_ACCESS_TOKEN                  = "ACCESS_TOKEN";
-    private final String        PROPERTY_ACCOUNT_REFRESH_TOKEN                 = "REFRESH_TOKEN";
-    private final String        PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
+    private final String          PROPERTY_ACCOUNT_ACCESS_TOKEN                  = "ACCESS_TOKEN";
+    private final String          PROPERTY_ACCOUNT_REFRESH_TOKEN                 = "REFRESH_TOKEN";
+    private final String          PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
 
     public static Browser prepBrowser(final Browser pbr) {
         pbr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
@@ -592,7 +594,17 @@ public class GoogleDrive extends PluginForHost {
             if (this.isGoogleDocument(link) && !this.hasObtainedInformationFromAPIOrWebAPI(link) && !cfg.isDebugWebsiteSkipExtendedLinkcheckForGoogleDocuments()) {
                 /* Important: Without this, some google documents will not be downloadable! */
                 logger.info("Handling extra linkcheck as preparation for google document download");
-                crawlAdditionalFileInformationFromWebsite(br, link, account, false, true);
+                try {
+                    crawlAdditionalFileInformationFromWebsite(br, link, account, false, true);
+                } catch (final PluginException docCheckFailure) {
+                    if (isDownload || docCheckFailure.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        throw docCheckFailure;
+                    } else {
+                        /* We know that the file is online. Do not throw exception during linkcheck. */
+                        logger.log(docCheckFailure);
+                        logger.info("Google Document extended linkcheck failed");
+                    }
+                }
             }
         } catch (final AccountRequiredException ae) {
             if (isDownload) {
@@ -810,6 +822,8 @@ public class GoogleDrive extends PluginForHost {
         } else {
             br.getPage(WEBAPI_BASE + "/v2beta/files/" + this.getFID(link) + "?" + query.toString());
         }
+        /* Use same errorhandling than used for official API usage. */
+        this.handleErrorsAPI(br, link, account);
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         parseFileInfoAPIAndWebsiteWebAPI(this, JsonSchemeType.WEBSITE, link, trustAndSetFileInfo, trustAndSetFileInfo, trustAndSetFileInfo, entries);
     }
@@ -1640,9 +1654,12 @@ public class GoogleDrive extends PluginForHost {
             } else if (reason.equalsIgnoreCase("downloadQuotaExceeded")) {
                 this.errorQuotaReachedInAPIMode(link, account);
             } else if (reason.equalsIgnoreCase("keyInvalid")) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API key invalid", 3 * 60 * 60 * 1000l);
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API key invalid", 2 * 60 * 60 * 1000l);
             } else if (reason.equalsIgnoreCase("cannotDownloadFile")) {
                 this.errorCannotDownload(link, false);
+            } else if (reason.equalsIgnoreCase("rateLimitExceeded")) {
+                throw exceptionRateLimitedSingle;
             }
             /* Now either continue to the next error or handle it as unknown error if it's the last one in our Array of errors */
             logger.info("Unknown error detected: " + message);
@@ -1659,7 +1676,7 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private boolean isRateLimited(final Browser br) {
+    private boolean isRateLimitedWebsite(final Browser br) {
         if (br.getHttpConnection().getResponseCode() == 429) {
             return true;
         } else {
@@ -1668,15 +1685,15 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private void checkHandleRateLimit(final Browser br, final DownloadLink link, final Account account) throws PluginException, IOException, InterruptedException {
-        if (isRateLimited(br)) {
+        if (isRateLimitedWebsite(br)) {
             final boolean captchaRequired = CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br);
             logger.info("Google rate-limit detected | captchaRequired =" + captchaRequired);
             if (link == null) {
                 /* 2020-11-29: This captcha should never happen during account-check! It should only happen when requesting files. */
                 if (captchaRequired) {
-                    throw new AccountUnavailableException("Rate limited and captcha blocked", 5 * 60 * 1000l);
+                    throw new AccountUnavailableException("Rate limited and captcha blocked", getRateLimitWaittime());
                 } else {
-                    throw new AccountUnavailableException("Rate limited", 5 * 60 * 1000l);
+                    throw new AccountUnavailableException("Rate limited", getRateLimitWaittime());
                 }
             } else {
                 /*
@@ -1684,9 +1701,9 @@ public class GoogleDrive extends PluginForHost {
                  * continue downloading.
                  */
                 if (!captchaRequired) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate limited");
+                    throw exceptionRateLimitedSingle;
                 } else if (!canHandleGoogleSpecialCaptcha) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate limited - captcha required but not implemented yet");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate limited - captcha required but not implemented yet", getRateLimitWaittime());
                 }
                 final Form captchaForm = br.getForm(0);
                 if (captchaForm == null) {
@@ -1698,13 +1715,13 @@ public class GoogleDrive extends PluginForHost {
                 // br.getHeaders().put("X-Client-Data", "0");
                 br.submitForm(captchaForm);
                 /* Double-check to make sure access was granted */
-                if (this.isRateLimited(br)) {
+                if (this.isRateLimitedWebsite(br)) {
                     logger.info("Captcha failed and/or rate-limit is still there");
                     /*
                      * Do not invalidate captcha result because most likely that was correct but our plugin somehow failed -> Try again
                      * later
                      */
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 too many requests: Captcha failed");
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate limited and captcha failed", getRateLimitWaittime());
                 } else {
                     logger.info("Captcha success");
                     if (account != null) {
@@ -1790,6 +1807,10 @@ public class GoogleDrive extends PluginForHost {
 
     private static long getQuotaReachedWaittime() {
         return PluginJsonConfig.get(GoogleConfig.class).getWaitOnQuotaReachedMinutes() * 60 * 1000;
+    }
+
+    private static long getRateLimitWaittime() {
+        return 5 * 60 * 1000;
     }
 
     /**
