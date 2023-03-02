@@ -80,8 +80,15 @@ public class CopyCaseCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
+        final String folderID = this.getFolderID(link);
         final String fid = getFileID(link);
-        if (fid != null) {
+        if (folderID != null) {
+            /*
+             * 2023-03-02: At this moment we do not know if fileIDs are unique for themselves or unique within each folder so if we know
+             * that a file is part of a folder, we incoprperate the folderID in our unique LinkID.
+             */
+            return this.getHost() + "://" + folderID + "_" + fid;
+        } else if (fid != null) {
             return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
@@ -107,6 +114,13 @@ public class CopyCaseCom extends PluginForHost {
         }
     }
 
+    private Browser prepBrowserAPI(final Browser br) {
+        br.getHeaders().put("Accept", "application/json");
+        br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(429);
+        return br;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, null);
@@ -118,6 +132,7 @@ public class CopyCaseCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!link.isNameSet()) {
+            /* Set fallback-filename */
             final String urlFileName = new Regex(link.getPluginPatternMatcher(), "/(?:file|download)/[a-zA-Z0-9]{16}/([^/]+)").getMatch(2);
             if (urlFileName != null) {
                 link.setName(URLEncode.decodeURIComponent(urlFileName));
@@ -146,11 +161,17 @@ public class CopyCaseCom extends PluginForHost {
     }
 
     private int getMaxChunks(final Account account) {
-        if (account == null || AccountType.FREE.equals(account.getType())) {
-            return -4;
+        /* Last adjusted: 2023-03-02 */
+        if (account != null && account.getType() == AccountType.PREMIUM) {
+            return -8;
         } else {
-            return -4;
+            return 1;
         }
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
@@ -164,6 +185,7 @@ public class CopyCaseCom extends PluginForHost {
             passCode = getUserInput("Password?", link);
         }
         final Map<String, Object> postData = new HashMap<String, Object>();
+        /* Null value is allowed here! */
         postData.put("password", passCode);
         final PostRequest req = br.createPostRequest(this.getAPIBase() + getAPIPathFile(link) + "/download", JSonStorage.serializeToJson(postData));
         final Map<String, Object> resp = this.callAPI(br, link, account, req, true);
@@ -188,9 +210,6 @@ public class CopyCaseCom extends PluginForHost {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (StringUtils.isEmpty(directurl)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, true, getMaxChunks(account));
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             try {
@@ -201,12 +220,6 @@ public class CopyCaseCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server returned html code instead of file");
         }
         dl.startDownload();
-    }
-
-    private Browser prepBrowserAPI(final Browser br) {
-        br.getHeaders().put("Accept", "application/json");
-        br.setFollowRedirects(true);
-        return br;
     }
 
     public Map<String, Object> callAPI(final Browser br, final Object link, final Account account, final Request req, final boolean checkErrors) throws IOException, PluginException {
@@ -244,12 +257,12 @@ public class CopyCaseCom extends PluginForHost {
             final Map<String, Object> postData = new HashMap<String, Object>();
             postData.put("email", account.getUser());
             postData.put("password", account.getPass());
-            // postData.put("auth_code", "");
             final Browser brc = br.cloneBrowser();
             brc.setAllowedResponseCodes(422);
             Map<String, Object> resp = this.callAPI(brc, null, account, brc.createPostRequest(getAPIBase() + "/auth/login", JSonStorage.serializeToJson(postData)), true);
             boolean required2FALogin = false;
             if (StringUtils.equalsIgnoreCase((String) resp.get("status"), "two_factor_auth")) {
+                /* Ask user for 2FA login code and try again. */
                 logger.info("2FA code required");
                 required2FALogin = true;
                 final DownloadLink dl_dummy;
@@ -273,10 +286,10 @@ public class CopyCaseCom extends PluginForHost {
             /* No exception -> Looks like login was successful */
             final String token = (String) resp.get("token");
             if (StringUtils.isEmpty(token)) {
-                /* This should never happen */
                 if (required2FALogin) {
                     throw new AccountInvalidException("Invalid 2-factor-authentication code!");
                 } else {
+                    /* This should never happen */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
@@ -291,11 +304,17 @@ public class CopyCaseCom extends PluginForHost {
     }
 
     private Map<String, Object> checkErrorsAPI(final Browser br, final Object link, final Account account) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 429) {
+            /* {"message":"Too Many Attempts."} */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "429 Rate Limit reached", 30 * 1000l);
+        }
         final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Object data = resp.get("data");
         final String error = (String) resp.get("error");
         final Object errors = resp.get("errors");
-        if (data == null && (error != null || errors != null)) {
+        final String status = (String) resp.get("status");
+        // final String message = (String) resp.get("message");
+        if (data == null && (error != null || errors != null) || StringUtils.equalsIgnoreCase(status, "failed")) {
             if (link != null) {
                 if (br.getHttpConnection().getResponseCode() == 403) {
                     if (link instanceof DownloadLink) {
@@ -306,6 +325,12 @@ public class CopyCaseCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } else {
+                /* Mostly along with http response 422 */
+                /*
+                 * If user enters invalid type of logins e.g. non-email address:
+                 * {"message":"The given data was invalid.","errors":{"email":[{"code":"email","data":[]}]}}
+                 */
+                /* Invalid logins: {"status":"failed"} */
                 throw new AccountInvalidException(error);
             }
         }
