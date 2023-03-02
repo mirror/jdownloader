@@ -1853,7 +1853,14 @@ public class GoogleDrive extends PluginForHost {
     public void loginWebsite(final Browser br, final Account account, final boolean forceLoginValidation) throws Exception {
         prepBrowser(br);
         final GoogleHelper helper = new GoogleHelper(br, this.getLogger());
-        helper.login(account, forceLoginValidation);
+        try {
+            helper.login(account, forceLoginValidation);
+        } catch (final PluginException e) {
+            /* Look for other reasons of failure */
+            this.checkErrorBlockedByGoogle(br, null, account);
+            this.checkHandleRateLimit(br, null, account);
+            throw e;
+        }
         final Cookies userCookies = account.loadUserCookies();
         if (userCookies != null && PluginJsonConfig.get(GoogleConfig.class).isDebugAccountLogin()) {
             /* Debug */
@@ -1866,6 +1873,8 @@ public class GoogleDrive extends PluginForHost {
                     // br.setCookies(userCookies);
                 }
                 throw new AccountInvalidException("OSID cookie login failure");
+            } else {
+                logger.info("cookieOSID cookie looks good");
             }
         }
     }

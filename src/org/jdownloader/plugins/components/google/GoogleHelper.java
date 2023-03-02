@@ -524,7 +524,9 @@ public class GoogleHelper {
         final boolean oldFollowRedirects = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(true);
-            br.getPage("https://drive.google.com/");
+            /** Important! Some URLs will redirect to accounts.google.com when not logged in or login cookies expired, others will not. */
+            // br.getPage("https://drive.google.com/");
+            br.getPage("https://drive.google.com/drive/my-drive");
             if (br.getURL().contains("accounts.google.com")) {
                 logger.warning("Looks like GDrive login failed");
                 GoogleHelper.errorAccountInvalid(account);
