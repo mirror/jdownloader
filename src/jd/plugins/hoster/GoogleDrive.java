@@ -950,10 +950,6 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private boolean userAllowsStreamDownloadAsFallback() {
-        return PluginJsonConfig.get(GoogleConfig.class).isAllowStreamDownloadAsFallback();
-    }
-
     private boolean videoStreamShouldBeAvailable(final DownloadLink link) {
         if (link.hasProperty(PROPERTY_CAN_STREAM)) {
             /* We know that file is streamable. */
@@ -1192,7 +1188,7 @@ public class GoogleDrive extends PluginForHost {
         final boolean resume = true;
         final int maxchunks = 0;
         /* Always use API for linkchecking, even if in the end, website is used for downloading! */
-        boolean streamDownloadAsFallback = PluginJsonConfig.get(GoogleConfig.class).isAllowStreamDownloadAsFallback();
+        boolean streamDownloadAsFallback = false;
         if (useAPIForLinkcheck()) {
             /* Additionally use API for availablecheck if possible. */
             this.requestFileInformationAPI(link, true);
@@ -1374,7 +1370,7 @@ public class GoogleDrive extends PluginForHost {
                 logger.info("Attempting google doc download as fallback");
             } else {
                 final boolean isDownloadQuotaReached = this.isQuotaReachedWebsiteFile(br, link);
-                if (isDownloadQuotaReached && this.videoStreamShouldBeAvailable(link) && this.userAllowsStreamDownloadAsFallback() && streamDownloadlink == null && PluginJsonConfig.get(GoogleConfig.class).isAllowStreamDownloadAsFallback()) {
+                if (isDownloadQuotaReached && this.videoStreamShouldBeAvailable(link) && streamDownloadlink == null && PluginJsonConfig.get(GoogleConfig.class).isAllowStreamDownloadAsFallbackIfFileDownloadQuotaIsReached()) {
                     /* Download quota limit reached -> Try stream download as last resort fallback */
                     logger.info("Attempting forced stream download in an attempt to get around quota limit");
                     directurl = this.getStreamDownloadurl(br.cloneBrowser(), link, account, true);
@@ -1447,14 +1443,18 @@ public class GoogleDrive extends PluginForHost {
     /** Returns true, if video stream download is preferred for given DownloadLink. */
     private boolean useStreamDownloadAsFallback(final DownloadLink link, final Account account) {
         if (!this.videoStreamShouldBeAvailable(link)) {
-            /* Stream download impossible. */
+            /* Stream download impossible (not a video file). */
             return false;
         } else if (this.isStreamQuotaReached(link)) {
             /* Stream download temporarily impossible */
             return false;
         }
-        final boolean normalDownloadPossible = this.canDownloadOfficially(link) && !this.isDownloadQuotaReached(link, account);
-        if (!normalDownloadPossible && this.userAllowsStreamDownloadAsFallback()) {
+        final GoogleConfig cfg = PluginJsonConfig.get(GoogleConfig.class);
+        if (this.canDownloadOfficially(link) && this.isDownloadQuotaReached(link, account) && cfg.isAllowStreamDownloadAsFallbackIfFileDownloadQuotaIsReached()) {
+            /* File is officially downloadable but download quota is reached and user allows stream download as fallback. */
+            return true;
+        } else if (!this.canDownloadOfficially(link) && cfg.isAllowStreamDownloadAsFallbackIfOfficialDownloadIsDisabled()) {
+            /* File owner disabled official downloads for this file and user allows stream download in this case. */
             return true;
         } else {
             return false;
@@ -1559,13 +1559,16 @@ public class GoogleDrive extends PluginForHost {
                  */
                 final String directurl = link.getStringProperty(PROPERTY_DIRECTURL);
                 if (account != null && directurl != null) {
-                    /* 2023-01-25: TODO: Temporary errorhandling for "Insufficient permissions" error happening for public files. */
+                    /**
+                     * 2023-01-25: TODO: Temporary errorhandling for "Insufficient permissions" error happening for public files. </br>
+                     * 2023-03-01: We should be able to remove this now as login handling has been refactored.
+                     */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Try again later or delete your google account and re-add it");
                 } else {
                     logger.info("Checking if we got a private file or a login session failure");
                     final Browser brc = br.cloneBrowser();
                     final GoogleHelper helper = new GoogleHelper(brc, this.getLogger());
-                    helper.validateCookiesGoogleDrive(br, account);
+                    helper.validateCookies(account);
                     /* No exception -> Login session is okay -> We can be sure that this is a private file! */
                     link.setProperty(PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP, System.currentTimeMillis());
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Insufficient permissions: Private file");
@@ -1795,8 +1798,8 @@ public class GoogleDrive extends PluginForHost {
      */
     private void errorCannotDownload(final DownloadLink link, final boolean isAfterStreamDownloadAttempt) throws PluginException {
         String errorMsg = "Download disabled by file owner!";
-        if (!isAfterStreamDownloadAttempt && this.videoStreamShouldBeAvailable(link)) {
-            errorMsg += " Video stream download might be possible: Enable stream download as fallback in plugin settings.";
+        if (!isAfterStreamDownloadAttempt && this.videoStreamShouldBeAvailable(link) && !PluginJsonConfig.get(GoogleConfig.class).isAllowStreamDownloadAsFallbackIfOfficialDownloadIsDisabled()) {
+            errorMsg += " Video stream download might be possible: Enable stream download as fallback for disabled downloads in plugin settings.";
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, errorMsg);
     }
@@ -1820,18 +1823,18 @@ public class GoogleDrive extends PluginForHost {
         final GoogleHelper helper = new GoogleHelper(br, this.getLogger());
         helper.login(account, forceLoginValidation);
         final Cookies userCookies = account.loadUserCookies();
-        if (forceLoginValidation && userCookies != null && PluginJsonConfig.get(GoogleConfig.class).isDebugAccountLogin()) {
-            /* 2021-02-02: Testing advanced login-check for GDrive */
+        if (userCookies != null && PluginJsonConfig.get(GoogleConfig.class).isDebugAccountLogin()) {
+            /* Debug */
             final String cookieOSID = br.getCookie("google.com", "OSID");
             if (cookieOSID == null || cookieOSID.equals("")) {
-                logger.info("OSID cookie has empty value -> Checking if full value is present in user added cookies");
+                logger.warning("OSID cookie has empty value -> This should never happen");
                 final Cookie realOSID = userCookies.get("OSID");
                 if (realOSID != null && realOSID.getValue().length() > 0) {
-                    logger.info("OSID login workaround needed(?), real OSID cookie value is: " + realOSID.getValue());
-                    br.setCookies(userCookies);
+                    logger.warning("OSID cookie value is: " + realOSID.getValue() + " | This should never_never happen!!");
+                    // br.setCookies(userCookies);
                 }
+                throw new AccountInvalidException("OSID cookie login failure");
             }
-            helper.validateCookiesGoogleDrive(br, account);
         }
     }
 
