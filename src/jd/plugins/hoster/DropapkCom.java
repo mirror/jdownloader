@@ -180,4 +180,15 @@ public class DropapkCom extends XFileSharingProBasic {
     public Class<? extends XFSConfigDropapk> getConfigInterface() {
         return XFSConfigDropapk.class;
     }
+
+    @Override
+    protected String regExTrafficLeft(final Browser br) {
+        /* 2023-03-02 */
+        final String betterResult = br.getRegex("(?i)>\\s*Traffic available today</div>\\s*<div[^>]*>([^<>\"]+)</div>").getMatch(0);
+        if (betterResult != null) {
+            return betterResult;
+        } else {
+            return super.regExTrafficLeft(br);
+        }
+    }
 }
