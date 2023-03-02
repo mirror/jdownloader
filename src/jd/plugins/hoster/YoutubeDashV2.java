@@ -1450,7 +1450,20 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     final int chunkLength = (int) Math.min(remaining, (long) (rndFactor / 100.0d * maxChunkSize));
                     final long chunk_to = position + chunkLength - 1;
                     if (chunkProgress == null || chunkProgress[0] < chunk_to) {
-                        final Segment segment = new Segment(streamData.getBaseUrl(), position, chunk_to);
+                        final Segment segment;
+                        if (false) {
+                            // range request via header
+                            segment = new Segment(streamData.getBaseUrl(), position, chunk_to);
+                        } else {
+                            // range request via query param
+                            String url = streamData.getBaseUrl();
+                            if (url.matches("(?i)(\\?|&)range=\\d+")) {
+                                url = url.replaceFirst("(range=\\d+-\\d+)", "range=" + position + "-" + chunk_to);
+                            } else {
+                                url = url + "&range=" + position + "-" + chunk_to;
+                            }
+                            segment = new Segment(url);
+                        }
                         segments.add(segment);
                     }
                     position += chunkLength;
@@ -1485,8 +1498,18 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     @Override
                     protected boolean isSegmentConnectionValid(Segment segment, URLConnectionAdapter con) throws IOException, PluginException {
                         final boolean ret = super.isSegmentConnectionValid(segment, con);
-                        if (ret && con.getCompleteContentLength() > 0 && streamData.getContentLength() != con.getCompleteContentLength()) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        if (ret) {
+                            final String query = con.getURL().getQuery();
+                            if (query.contains("range=")) {
+                                final long from = Long.parseLong(new Regex(query, "range=(\\d+)").getMatch(0));
+                                final long to = Long.parseLong(new Regex(query, "range=\\d+-(\\d+)").getMatch(0));
+                                final long length = to - from + 1;
+                                if (con.getContentLength() > 0 && length != con.getContentLength()) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                            } else if (con.getCompleteContentLength() > 0 && streamData.getContentLength() != con.getCompleteContentLength()) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
                         }
                         return ret;
                     }
