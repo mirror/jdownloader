@@ -168,19 +168,60 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private static Object      LOCK                          = new Object();
-    private String             websiteWebapiKey              = null;
-    public static final String API_BASE                      = "https://www.googleapis.com/drive/v3";
-    public static final String WEBAPI_BASE                   = "https://content.googleapis.com/drive";
-    public static final String WEBAPI_BASE_2                 = "https://clients6.google.com/drive";
-    private final String       PATTERN_GDOC                  = "(?i)https?://.*/document/d/([a-zA-Z0-9\\-_]+).*";
-    private final String       PATTERN_FILE                  = "(?i)https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
-    private final String       PATTERN_FILE_OLD              = "(?i)https?://[^/]+/(?:leaf|open)\\?([^<>\"/]+)?id=([A-Za-z0-9\\-_]+).*";
-    private final String       PATTERN_FILE_DOWNLOAD_PAGE    = "(?i)https?://[^/]+/(?:u/\\d+/)?uc(?:\\?|.*?&)id=([A-Za-z0-9\\-_]+).*";
-    private final String       PATTERN_VIDEO_STREAM          = "(?i)https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
+    private static Object         LOCK                                           = new Object();
+    private String                websiteWebapiKey                               = null;
+    /* Constants */
+    public static final String    API_BASE                                       = "https://www.googleapis.com/drive/v3";
+    public static final String    WEBAPI_BASE                                    = "https://content.googleapis.com/drive";
+    public static final String    WEBAPI_BASE_2                                  = "https://clients6.google.com/drive";
+    private final String          PATTERN_GDOC                                   = "(?i)https?://.*/document/d/([a-zA-Z0-9\\-_]+).*";
+    private final String          PATTERN_FILE                                   = "(?i)https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
+    private final String          PATTERN_FILE_OLD                               = "(?i)https?://[^/]+/(?:leaf|open)\\?([^<>\"/]+)?id=([A-Za-z0-9\\-_]+).*";
+    private final String          PATTERN_FILE_DOWNLOAD_PAGE                     = "(?i)https?://[^/]+/(?:u/\\d+/)?uc(?:\\?|.*?&)id=([A-Za-z0-9\\-_]+).*";
+    private final String          PATTERN_VIDEO_STREAM                           = "(?i)https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
     /* Developer: Do not touch this!! You need to know what you're doing!! */
-    private final boolean      canHandleGoogleSpecialCaptcha = false;
-    private final boolean      attemptQuickLinkcheck         = true;
+    private final boolean         canHandleGoogleSpecialCaptcha                  = false;
+    private final boolean         attemptQuickLinkcheck                          = true;
+    /** DownloadLink properties */
+    /**
+     * Contains the quality modifier of the last chosen quality. This property gets reset on reset DownloadLink to ensure that a user cannot
+     * change the quality and then resume the started download with another URL.
+     */
+    private final String          PROPERTY_USED_QUALITY                          = "USED_QUALITY";
+    private static final String   PROPERTY_GOOGLE_DOCUMENT                       = "IS_GOOGLE_DOCUMENT";
+    private static final String   PROPERTY_FORCED_FINAL_DOWNLOADURL              = "FORCED_FINAL_DOWNLOADURL";
+    private static final String   PROPERTY_CAN_DOWNLOAD                          = "CAN_DOWNLOAD";
+    private final String          PROPERTY_CAN_STREAM                            = "CAN_STREAM";
+    private final String          PROPERTY_IS_INFECTED                           = "is_infected";
+    private final String          PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP        = "LAST_IS_PRIVATE_FILE_TIMESTAMP";
+    private final String          PROPERTY_TIMESTAMP_QUOTA_REACHED_ANONYMOUS     = "TIMESTAMP_QUOTA_REACHED_ANONYMOUS";
+    private final String          PROPERTY_TIMESTAMP_QUOTA_REACHED_ACCOUNT       = "TIMESTAMP_QUOTA_REACHED_ACCOUNT";
+    private final String          PROPERTY_TIMESTAMP_STREAM_QUOTA_REACHED        = "TIMESTAMP_STREAM_QUOTA_REACHED";
+    private final String          PROPERTY_DIRECTURL                             = "directurl";
+    private final static String   PROPERTY_CACHED_FILENAME                       = "cached_filename";
+    private final static String   PROPERTY_CACHED_LAST_DISPOSITION_STATUS        = "cached_last_disposition_status";
+    private final String          PROPERTY_TIMESTAMP_STREAM_DOWNLOAD_FAILED      = "timestamp_stream_download_failed";
+    private final String          PROPERTY_TMP_ALLOW_OBTAIN_MORE_INFORMATION     = "tmp_allow_obtain_more_information";
+    private final String          PROPERTY_TMP_STREAM_DOWNLOAD_ACTIVE            = "tmp_stream_download_active";
+    /* Misc */
+    private final String          DISPOSITION_STATUS_QUOTA_EXCEEDED              = "QUOTA_EXCEEDED";
+    /* Pre defined exceptions */
+    private final PluginException exceptionRateLimitedSingle                     = new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate limited", getRateLimitWaittime());
+    /**
+     * 2022-02-20: We store this property but we're not using it at this moment. It is required to access some folders though so it's good
+     * to have it set on each DownloadLink if it exists.
+     */
+    public static final String    PROPERTY_TEAM_DRIVE_ID                         = "TEAM_DRIVE_ID";
+    public static final String    PROPERTY_ROOT_DIR                              = "root_dir";
+    /* Account properties */
+    private final String          PROPERTY_ACCOUNT_ACCESS_TOKEN                  = "ACCESS_TOKEN";
+    private final String          PROPERTY_ACCOUNT_REFRESH_TOKEN                 = "REFRESH_TOKEN";
+    private final String          PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
+
+    public static enum JsonSchemeType {
+        API,
+        WEBSITE;
+    }
 
     private String getFID(final DownloadLink link) {
         if (link == null) {
@@ -204,48 +245,6 @@ public class GoogleDrive extends PluginForHost {
             }
         }
     }
-
-    public static enum JsonSchemeType {
-        API,
-        WEBSITE;
-    }
-
-    /** DownloadLink properties */
-    /**
-     * Contains the quality modifier of the last chosen quality. This property gets reset on reset DownloadLink to ensure that a user cannot
-     * change the quality and then resume the started download with another URL.
-     */
-    private final String          PROPERTY_USED_QUALITY                          = "USED_QUALITY";
-    private static final String   PROPERTY_GOOGLE_DOCUMENT                       = "IS_GOOGLE_DOCUMENT";
-    private static final String   PROPERTY_FORCED_FINAL_DOWNLOADURL              = "FORCED_FINAL_DOWNLOADURL";
-    private static final String   PROPERTY_CAN_DOWNLOAD                          = "CAN_DOWNLOAD";
-    private final String          PROPERTY_CAN_STREAM                            = "CAN_STREAM";
-    private final String          PROPERTY_IS_INFECTED                           = "is_infected";
-    private final String          PROPERTY_LAST_IS_PRIVATE_FILE_TIMESTAMP        = "LAST_IS_PRIVATE_FILE_TIMESTAMP";
-    private final String          PROPERTY_IS_QUOTA_REACHED_ANONYMOUS            = "IS_QUOTA_REACHED_ANONYMOUS";
-    private final String          PROPERTY_IS_QUOTA_REACHED_ACCOUNT              = "IS_QUOTA_REACHED_ACCOUNT";
-    private final String          PROPERTY_IS_STREAM_QUOTA_REACHED               = "IS_STREAM_QUOTA_REACHED";
-    private final String          PROPERTY_DIRECTURL                             = "directurl";
-    private final String          PROPERTY_TMP_ALLOW_OBTAIN_MORE_INFORMATION     = "tmp_allow_obtain_more_information";
-    private final static String   PROPERTY_CACHED_FILENAME                       = "cached_filename";
-    private final static String   PROPERTY_CACHED_LAST_DISPOSITION_STATUS        = "cached_last_disposition_status";
-    private final String          PROPERTY_TIMESTAMP_STREAM_DOWNLOAD_FAILED      = "timestamp_stream_download_failed";
-    private final String          PROPERTY_STREAM_DOWNLOAD_ACTIVE                = "stream_download_active";
-    /* Misc */
-    private final String          DISPOSITION_STATUS_QUOTA_EXCEEDED              = "QUOTA_EXCEEDED";
-    /* Pre defined exceptions */
-    private final PluginException exceptionRateLimitedSingle                     = new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Rate limited", getRateLimitWaittime());
-    /**
-     * 2022-02-20: We store this property but we're not using it at this moment. It is required to access some folders though so it's good
-     * to have it set on each DownloadLink if it exists.
-     */
-    public static final String    PROPERTY_TEAM_DRIVE_ID                         = "TEAM_DRIVE_ID";
-    /* Packagizer property */
-    public static final String    PROPERTY_ROOT_DIR                              = "root_dir";
-    /* Account properties */
-    private final String          PROPERTY_ACCOUNT_ACCESS_TOKEN                  = "ACCESS_TOKEN";
-    private final String          PROPERTY_ACCOUNT_REFRESH_TOKEN                 = "REFRESH_TOKEN";
-    private final String          PROPERTY_ACCOUNT_ACCESS_TOKEN_EXPIRE_TIMESTAMP = "ACCESS_TOKEN_EXPIRE_TIMESTAMP";
 
     public static Browser prepBrowser(final Browser pbr) {
         pbr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
@@ -277,9 +276,10 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private boolean isGoogleDocument(final DownloadLink link) {
-        if (link.hasProperty(PROPERTY_GOOGLE_DOCUMENT)) {
+        final Boolean googleDocumentCachedStatus = (Boolean) link.getProperty(PROPERTY_GOOGLE_DOCUMENT);
+        if (googleDocumentCachedStatus != null) {
             /* Return stored property (= do not care about the URL). */
-            return link.getBooleanProperty(PROPERTY_GOOGLE_DOCUMENT, false);
+            return googleDocumentCachedStatus.booleanValue();
         } else if (link.getPluginPatternMatcher().matches(PATTERN_GDOC)) {
             /* URL looks like GDoc */
             return true;
@@ -304,7 +304,7 @@ public class GoogleDrive extends PluginForHost {
 
     /** Returns true if this link has the worst "Quota reached" status: It is currently not even downloadable via account. */
     private boolean isDownloadQuotaReachedAccount(final DownloadLink link) {
-        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT, 0) < 10 * 60 * 1000l) {
+        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ACCOUNT, 0) < 10 * 60 * 1000l) {
             return true;
         } else {
             return false;
@@ -313,7 +313,7 @@ public class GoogleDrive extends PluginForHost {
 
     /** Returns true if this link has the worst "Streaming Quota reached" status: It is currently not even downloadable via account. */
     private boolean isStreamQuotaReached(final DownloadLink link) {
-        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_IS_STREAM_QUOTA_REACHED, 0) < 10 * 60 * 1000l) {
+        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_TIMESTAMP_STREAM_QUOTA_REACHED, 0) < 10 * 60 * 1000l) {
             return true;
         } else {
             return false;
@@ -325,7 +325,7 @@ public class GoogleDrive extends PluginForHost {
      * downloadable at all).
      */
     private boolean isDownloadQuotaReachedAnonymous(final DownloadLink link, final Account account) {
-        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, 0) < 10 * 60 * 1000l) {
+        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ANONYMOUS, 0) < 10 * 60 * 1000l) {
             return true;
         } else {
             return false;
@@ -335,7 +335,7 @@ public class GoogleDrive extends PluginForHost {
     private boolean isDownloadQuotaReached(final DownloadLink link, final Account account) {
         if (account != null) {
             return isDownloadQuotaReachedAccount(link);
-        } else if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, 0) < 10 * 60 * 1000l) {
+        } else if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ANONYMOUS, 0) < 10 * 60 * 1000l) {
             return true;
         } else {
             return false;
@@ -347,6 +347,7 @@ public class GoogleDrive extends PluginForHost {
         return link.getBooleanProperty(PROPERTY_CAN_DOWNLOAD, true);
     }
 
+    /** Files marked as infected by Google can only be downloaded by the original uploader. */
     private boolean isInfected(final DownloadLink link) {
         return link.getBooleanProperty(PROPERTY_IS_INFECTED, false);
     }
@@ -635,6 +636,7 @@ public class GoogleDrive extends PluginForHost {
 
     private AvailableStatus handleLinkcheckQuick(final Browser br, final DownloadLink link, final Account account) throws PluginException, IOException, InterruptedException {
         logger.info("Attempting quick linkcheck");
+        /* Remove some flags that can always change and will be re-assigned here. */
         link.removeProperty(PROPERTY_DIRECTURL);
         link.removeProperty(PROPERTY_CAN_DOWNLOAD);
         link.removeProperty(PROPERTY_IS_INFECTED);
@@ -705,10 +707,7 @@ public class GoogleDrive extends PluginForHost {
                 link.setProperty(PROPERTY_CAN_DOWNLOAD, false);
                 return AvailableStatus.TRUE;
             } else if (disposition.equalsIgnoreCase(this.DISPOSITION_STATUS_QUOTA_EXCEEDED)) {
-                link.setProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, System.currentTimeMillis());
-                if (account != null) {
-                    link.setProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT, System.currentTimeMillis());
-                }
+                this.setQuotaReachedFlags(link, account, false);
                 return AvailableStatus.TRUE;
             } else {
                 /* Unknown error state */
@@ -799,6 +798,9 @@ public class GoogleDrive extends PluginForHost {
         if (br.containsHTML("\"docs-dm\":\\s*\"video/")) {
             link.setProperty(PROPERTY_CAN_STREAM, true);
         }
+        if (this.websiteWebapiKey == null) {
+            logger.warning("'Failed to find websiteWebapiKey");
+        }
     }
 
     /** A function that parses filename/size/last-modified date from single files via "Details View" of Google Drive website. */
@@ -851,7 +853,10 @@ public class GoogleDrive extends PluginForHost {
             if (forcedDocumentFinalDownloadlink != null) {
                 return forcedDocumentFinalDownloadlink;
             } else {
-                /* Default google docs download format. */
+                /**
+                 * Default google docs download format. </br>
+                 * Not all Google Documents are downloadable as .zip files!
+                 */
                 return "https://docs.google.com/feeds/download/documents/export/Export?id=" + this.getFID(link) + "&exportFormat=zip";
             }
         } else {
@@ -1056,7 +1061,7 @@ public class GoogleDrive extends PluginForHost {
                      * The original file could still be downloadable via account but maybe not at this moment.
                      */
                     /** Similar handling to { @link #errorDownloadQuotaReachedWebsite } */
-                    link.setProperty(PROPERTY_IS_STREAM_QUOTA_REACHED, System.currentTimeMillis());
+                    link.setProperty(PROPERTY_TIMESTAMP_STREAM_QUOTA_REACHED, System.currentTimeMillis());
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream download failed because: " + errorMessage, getQuotaReachedWaittime());
                 } else {
                     /* Unknown error happened */
@@ -1085,7 +1090,7 @@ public class GoogleDrive extends PluginForHost {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Invalid state: Expected streaming download but none is available");
             }
-            link.setProperty(PROPERTY_STREAM_DOWNLOAD_ACTIVE, true);
+            link.setProperty(PROPERTY_TMP_STREAM_DOWNLOAD_ACTIVE, true);
             logger.info("Found " + qualities.size() + " stream qualities");
             String bestQualityDownloadlink = null;
             int bestQualityHeight = 0;
@@ -1100,10 +1105,12 @@ public class GoogleDrive extends PluginForHost {
                     break;
                 }
             }
-            final int usedQuality;
+            final String chosenQualityDownloadlink;
+            final int chosenQuality;
             if (selectedQualityDownloadlink != null) {
                 logger.info("Using user preferred quality: " + preferredQualityHeight + "p");
-                usedQuality = preferredQualityHeight;
+                chosenQuality = preferredQualityHeight;
+                chosenQualityDownloadlink = selectedQualityDownloadlink;
             } else {
                 /* This should never happen! */
                 if (preferredQualityHeight == 0) {
@@ -1111,8 +1118,8 @@ public class GoogleDrive extends PluginForHost {
                 } else {
                     logger.info("Using best stream quality: " + bestQualityHeight + "p (BEST as fallback)");
                 }
-                selectedQualityDownloadlink = bestQualityDownloadlink;
-                usedQuality = bestQualityHeight;
+                chosenQuality = bestQualityHeight;
+                chosenQualityDownloadlink = bestQualityDownloadlink;
             }
             /** Reset this because hash could possibly have been set before and is only valid for the original file! */
             link.setHashInfo(null);
@@ -1126,14 +1133,14 @@ public class GoogleDrive extends PluginForHost {
                 logger.info("Resetting progress because user has downloaded parts of original file before but prefers stream download now");
                 link.setChunksProgress(null);
                 /* Save the quality we've decided to download in case user stops- and resumes download later. */
-                link.setProperty(PROPERTY_USED_QUALITY, usedQuality);
+                link.setProperty(PROPERTY_USED_QUALITY, chosenQuality);
             }
             final String filename = link.getName();
             if (filename != null) {
                 /* Update file-extension in filename to .mp4 and add quality identifier to filename if chosen by user. */
                 String filenameNew = correctOrApplyFileNameExtension(filename, ".mp4");
                 if (PluginJsonConfig.get(GoogleConfig.class).isAddStreamQualityIdentifierToFilename()) {
-                    final String newFilenameEnding = "_" + usedQuality + "p.mp4";
+                    final String newFilenameEnding = "_" + chosenQuality + "p.mp4";
                     if (!filenameNew.toLowerCase(Locale.ENGLISH).endsWith(newFilenameEnding)) {
                         filenameNew = filenameNew.replaceFirst("(?i)\\.mp4$", newFilenameEnding);
                     }
@@ -1143,7 +1150,8 @@ public class GoogleDrive extends PluginForHost {
                     link.setFinalFileName(filenameNew);
                 }
             }
-            return selectedQualityDownloadlink;
+            link.removeProperty(PROPERTY_TIMESTAMP_STREAM_DOWNLOAD_FAILED);
+            return chosenQualityDownloadlink;
         } catch (final PluginException pe) {
             if (isFallback) {
                 /* Expect this to throw an exception */
@@ -1201,10 +1209,9 @@ public class GoogleDrive extends PluginForHost {
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         final boolean resume = true;
         final int maxchunks = 0;
-        /* Always use API for linkchecking, even if in the end, website is used for downloading! */
         boolean streamDownloadAsFallback = false;
         if (useAPIForLinkcheck()) {
-            /* Additionally use API for availablecheck if possible. */
+            /* Always use API for linkchecking if possible, even if in the end, website is used for downloading! */
             this.requestFileInformationAPI(link, true);
             streamDownloadAsFallback = this.useStreamDownloadAsFallback(link, account);
         }
@@ -1337,10 +1344,14 @@ public class GoogleDrive extends PluginForHost {
         }
         if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified() && !hasObtainedInformationFromAPIOrWebAPI(link)) {
             try {
+                /*
+                 * Do not set final filename/setVerifiedFileSize here as we could be downloading the video stream which has a different
+                 * filesize/file-hash.
+                 */
                 crawlAdditionalFileInformationFromWebsite(br.cloneBrowser(), link, account, true, false);
             } catch (final Exception ignore) {
                 logger.log(ignore);
-                logger.info("Failed to crawl additional file information due to Exception");
+                logger.info("Failed to crawl additional file information for correct \"Last Modified\" date due to Exception");
             }
         }
         /* Update quota properties */
@@ -1751,14 +1762,14 @@ public class GoogleDrive extends PluginForHost {
             if (this.isDownloadQuotaReachedAccount(link)) {
                 errorQuotaReachedInAllModes(link);
             } else {
-                link.setProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT, System.currentTimeMillis());
+                link.setProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ACCOUNT, System.currentTimeMillis());
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: " + getDownloadQuotaReachedHint1(), getQuotaReachedWaittime());
             }
         } else {
             if (this.isDownloadQuotaReachedAccount(link)) {
                 errorQuotaReachedInAllModes(link);
             } else {
-                link.setProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, System.currentTimeMillis());
+                link.setProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ANONYMOUS, System.currentTimeMillis());
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: Try later or add Google account and retry", getQuotaReachedWaittime());
             }
         }
@@ -1767,10 +1778,10 @@ public class GoogleDrive extends PluginForHost {
     /** Use this for "Quota reached" errors during API download attempts. */
     private void errorQuotaReachedInAPIMode(final DownloadLink link, final Account account) throws PluginException {
         if (PluginJsonConfig.get(GoogleConfig.class).getAPIDownloadMode() == APIDownloadMode.WEBSITE_IF_ACCOUNT_AVAILABLE_AND_FILE_IS_QUOTA_LIMITED && account != null && !this.isDownloadQuotaReachedAccount(link)) {
-            link.setProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, System.currentTimeMillis());
+            link.setProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ANONYMOUS, System.currentTimeMillis());
             throw new PluginException(LinkStatus.ERROR_RETRY, "Retry with account in website mode to avoid 'Quota reached'");
         } else {
-            link.setProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS, System.currentTimeMillis());
+            link.setProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ANONYMOUS, System.currentTimeMillis());
             if (account != null) {
                 if (this.isDownloadQuotaReachedAccount(link)) {
                     errorQuotaReachedInAllModes(link);
@@ -2032,12 +2043,22 @@ public class GoogleDrive extends PluginForHost {
         //
         // }
         if (account != null) {
-            link.removeProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT);
+            link.removeProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ACCOUNT);
             return;
         }
         /* No account = Remove all quota_reached properties. */
-        link.removeProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS);
-        link.removeProperty(PROPERTY_IS_STREAM_QUOTA_REACHED);
+        link.removeProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ANONYMOUS);
+        link.removeProperty(PROPERTY_TIMESTAMP_STREAM_QUOTA_REACHED);
+    }
+
+    private void setQuotaReachedFlags(final DownloadLink link, final Account account, final boolean isStream) {
+        link.setProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ANONYMOUS, System.currentTimeMillis());
+        if (isStream) {
+            link.setProperty(PROPERTY_TIMESTAMP_STREAM_QUOTA_REACHED, System.currentTimeMillis());
+        }
+        if (account != null) {
+            link.setProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ACCOUNT, System.currentTimeMillis());
+        }
     }
 
     @Override
@@ -2050,10 +2071,10 @@ public class GoogleDrive extends PluginForHost {
             link.setProperty("ServerComaptibleForByteRangeRequest", true);
             link.removeProperty(PROPERTY_USED_QUALITY);
             link.removeProperty(PROPERTY_CAN_DOWNLOAD);
-            link.removeProperty(PROPERTY_IS_QUOTA_REACHED_ACCOUNT);
-            link.removeProperty(PROPERTY_IS_QUOTA_REACHED_ANONYMOUS);
-            link.removeProperty(PROPERTY_IS_STREAM_QUOTA_REACHED);
-            link.removeProperty(PROPERTY_STREAM_DOWNLOAD_ACTIVE);
+            link.removeProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ACCOUNT);
+            link.removeProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ANONYMOUS);
+            link.removeProperty(PROPERTY_TIMESTAMP_STREAM_QUOTA_REACHED);
+            link.removeProperty(PROPERTY_TMP_STREAM_DOWNLOAD_ACTIVE);
         }
     }
 
