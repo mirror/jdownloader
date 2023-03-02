@@ -184,13 +184,16 @@ public class GoogleHelper {
     private Thread showCookieLoginInformation(final String host) {
         final String serviceNameForUser;
         final String realhost;
-        if (host.contains("google")) {
-            /* For GoogleDrive downloads */
-            realhost = "google.com";
-            serviceNameForUser = "Google/GoogleDrive";
-        } else {
+        if (host.equals("youtube.com")) {
             realhost = "youtube.com";
             serviceNameForUser = "YouTube";
+        } else if (host.equals("drive.google.com")) {
+            /* For GoogleDrive downloads */
+            realhost = "drive.google.com";
+            serviceNameForUser = "Google Drive";
+        } else {
+            realhost = "google.com";
+            serviceNameForUser = "Google";
         }
         final Thread thread = new Thread() {
             public void run() {
@@ -472,7 +475,7 @@ public class GoogleHelper {
         }
     }
 
-    public boolean validateCookies(final Account account) throws IOException, InterruptedException {
+    public boolean validateCookies(final Account account) throws IOException, InterruptedException, AccountInvalidException {
         logger.info("Validating cookies");
         /*
          * 2020-09-07: psp: I was unable to just use the google.com cookies for youtube so basically we now expect the user to import the
@@ -484,6 +487,9 @@ public class GoogleHelper {
             boolean ret = br.containsHTML("\"key\"\\s*:\\s*\"logged_in\"\\s*,\\s*\"value\"\\s*:\\s*\"1\"");
             ret |= br.containsHTML("\"LOGGED_IN\"\\s*:\\s*true");
             return ret;
+        } else if (account.getHoster().equals("drive.google.com")) {
+            validateCookiesGoogleDrive(br, account);
+            return true;
         } else {
             final boolean useTwoLoginValidations = false;
             if (useTwoLoginValidations) {
@@ -510,12 +516,11 @@ public class GoogleHelper {
     }
 
     /**
-     * TODO: Maybe merge this into validateCookies
      *
      * @throws AccountInvalidException
      * @throws IOException
      */
-    public void validateCookiesGoogleDrive(final Browser br, final Account account) throws AccountInvalidException, IOException {
+    private void validateCookiesGoogleDrive(final Browser br, final Account account) throws AccountInvalidException, IOException {
         final boolean oldFollowRedirects = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(true);
