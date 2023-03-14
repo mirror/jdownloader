@@ -93,6 +93,7 @@ public class BayFilesCom extends UnknownHostingScriptCore {
         ret.add(new String[] { "openload.cc" });
         ret.add(new String[] { "hotfile.io" });
         ret.add(new String[] { "megaupload.nz" });
+        ret.add(new String[] { "upload.st" });
         return ret;
     }
 
