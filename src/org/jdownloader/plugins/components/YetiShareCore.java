@@ -1292,7 +1292,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             logger.info("Unidentified error happened: " + errorMsgURL);
         }
         /* YetiShareCoreNew */
-        if (br.getURL().matches("(?i)https?://[^/]+/register\\?f=[a-f0-9]{32}")) {
+        if (br.getURL().matches("(?i)https?://[^/]+/register\\?f=.+")) {
             throw new AccountRequiredException();
         }
     }
