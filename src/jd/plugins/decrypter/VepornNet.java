@@ -27,6 +27,8 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -61,7 +63,7 @@ public class VepornNet extends antiDDoSForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/([A-Za-z0-9\\-_]+)");
+            ret.add("https?://(?:(?:www|m)\\.)?" + buildHostsPatternPart(domains) + "/video/([A-Za-z0-9\\-_]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -71,18 +73,22 @@ public class VepornNet extends antiDDoSForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.getCryptedUrl().replaceFirst("https?://m\\.", "https://www.");
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.containsHTML("(?i)>\\s*Site is too crowded\\s*<")) {
+        final String rateLimitRegex = "(?i)>\\s*Site is too crowded\\s*<";
+        if (br.containsHTML(rateLimitRegex)) {
             for (int i = 1; i <= 3; i++) {
                 sleep(i * 3 * 1001l, param);
                 getPage(parameter);
-                if (!br.containsHTML(">Site is too crowded<")) {
+                if (!br.containsHTML(rateLimitRegex)) {
                     break;
                 }
+            }
+            if (br.containsHTML(rateLimitRegex)) {
+                throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
             }
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
