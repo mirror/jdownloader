@@ -40,7 +40,8 @@ public class LinkjustCom extends MightyScriptAdLinkFly {
 
     @Override
     protected String getSpecialReferer() {
-        /* Pre-set Referer to skip multiple ad pages e.g. linkjust.com -> forexmab.com -> linkjust.com */
+        /* Pre-set Referer to skip multiple ad pages e.g. linkjust.com -> ad domain -> ad domain 2 and so on -> linkjust.com */
+        /* Last updated: 2023-03-14 */
         return "https://forexrw7.com";
     }
 }

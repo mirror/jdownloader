@@ -17,28 +17,28 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.AkwamCc;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class AkwamCcCrawler extends PluginForDecrypt {
-    public AkwamCcCrawler(PluginWrapper wrapper) {
+public class RedirectKhsmIo extends PluginForDecrypt {
+    public RedirectKhsmIo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /** Part of akwam.to. */
     public static List<String[]> getPluginDomains() {
-        return AkwamCc.getPluginDomains();
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "redirect.khsm.io" });
+        return ret;
     }
 
     public static String[] getAnnotationNames() {
@@ -57,33 +57,23 @@ public class AkwamCcCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?!download)[^/]+/(?:episode/)?\\d+/.*");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/link/(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        final String html = br.getPage(param.getCryptedUrl());
+        br.getPage(param.getCryptedUrl().replaceFirst("http://", "https://"));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(html, "<title>(.*)</title>").getMatch(0).replace(" | اكوام", ""));
-        String[][] links;
-        final boolean isSeries = (html.contains("series-episodes") || html.contains("show-episodes")) && !br.getURL().matches("https?://[^/]+/movie/.+");
-        if (isSeries) {
-            final String bulkHtml = new Regex(html, "(id=\"(?:series|show)-episodes\"[\\s\\S]+widget-4)").getMatch(0);
-            links = new Regex(bulkHtml, "<a href=\"(https://" + Pattern.quote(br.getHost()) + "/[^\"]+)\"").getMatches();
-        } else {
-            links = new Regex(html, "<a href=\"([^\"]+)\"[^>]+link-download").getMatches();
+        final String[] urls = br.getRegex("\"(https?://[^/]+/download/[^\"]+)").getColumn(0);
+        if (urls == null || urls.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        for (final String[] link : links) {
-            final String finalLink = link[0];
-            final DownloadLink dl = createDownloadlink(finalLink);
-            dl._setFilePackage(fp);
-            ret.add(dl);
+        for (final String url : urls) {
+            ret.add(createDownloadlink(url));
         }
         return ret;
     }
