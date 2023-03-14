@@ -950,11 +950,15 @@ public class GoogleDrive extends PluginForHost {
     }
 
     /**
-     * @return: true: Allow stream download attempt </br>
-     *          false: Do not allow stream download -> Download original version of file
+     * @return: true: Prefer stream download. </br>
+     *          false: Do not prefer stream download -> Download original version of file
      */
-    private boolean isStreamDownloadPreferredAndAllowed(final DownloadLink link) {
-        if (userPrefersStreamDownload() && videoStreamShouldBeAvailable(link)) {
+    private boolean isStreamDownloadPreferred(final DownloadLink link) {
+        final int lastUsedQuality = link.getIntegerProperty(PROPERTY_USED_QUALITY, -1);
+        if (lastUsedQuality != -1) {
+            /* Stream download was used last time for this item -> Force-use it again */
+            return true;
+        } else if (userPrefersStreamDownload()) {
             return true;
         } else {
             return false;
@@ -962,10 +966,10 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private boolean userPrefersStreamDownload() {
-        if (PluginJsonConfig.get(GoogleConfig.class).getPreferredVideoQuality() == PreferredVideoQuality.ORIGINAL) {
-            return false;
-        } else {
+        if (PluginJsonConfig.get(GoogleConfig.class).getPreferredVideoQuality() != PreferredVideoQuality.ORIGINAL) {
             return true;
+        } else {
+            return false;
         }
     }
 
@@ -987,7 +991,8 @@ public class GoogleDrive extends PluginForHost {
         }
     }
 
-    private String getStreamDownloadurl(final Browser br, final DownloadLink link, final Account account, final boolean isFallback) throws PluginException, IOException, InterruptedException {
+    private String getStreamDownloadurl(final Browser br, final DownloadLink link, final Account account) throws PluginException, IOException, InterruptedException {
+        final boolean isFallback = this.useStreamDownloadAsFallback(link, account);
         try {
             final GoogleConfig cfg = PluginJsonConfig.get(GoogleConfig.class);
             final PreferredVideoQuality qual;
@@ -1011,8 +1016,8 @@ public class GoogleDrive extends PluginForHost {
                 preferredQualityHeight = getPreferredQualityHeight(qual);
             }
             final boolean looksLikeVideoFile = videoStreamShouldBeAvailable(link);
-            if (looksLikeVideoFile) {
-                /* Possible developer mistake */
+            if (!looksLikeVideoFile) {
+                /* Possible developer mistake but let's carry on anyways. */
                 logger.warning("Looks like stream download might not be available for this item - prepare for failure!");
             }
             logger.info("Obtaining stream information");
@@ -1132,9 +1137,9 @@ public class GoogleDrive extends PluginForHost {
                  */
                 logger.info("Resetting progress because user has downloaded parts of original file before but prefers stream download now");
                 link.setChunksProgress(null);
-                /* Save the quality we've decided to download in case user stops- and resumes download later. */
-                link.setProperty(PROPERTY_USED_QUALITY, chosenQuality);
             }
+            /* Save the quality we've decided to download in case user stops- and resumes download later. */
+            link.setProperty(PROPERTY_USED_QUALITY, chosenQuality);
             final String filename = link.getName();
             if (filename != null) {
                 /* Update file-extension in filename to .mp4 and add quality identifier to filename if chosen by user. */
@@ -1155,12 +1160,13 @@ public class GoogleDrive extends PluginForHost {
         } catch (final PluginException pe) {
             if (isFallback) {
                 /* Expect this to throw an exception */
+                logger.log(pe);
+                logger.info("Stream download failed due to exception -> Trying to find root cause of that to display more meaningful errormessage to user");
                 this.checkUndownloadableConditions(link, account, true);
                 /* This should never happen. */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Stream download attempt failed");
-            } else {
-                throw pe;
+                logger.info("Failed to find more meaningful error -> Throwing initial exception");
             }
+            throw pe;
         }
     }
 
@@ -1209,11 +1215,9 @@ public class GoogleDrive extends PluginForHost {
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         final boolean resume = true;
         final int maxchunks = 0;
-        boolean streamDownloadAsFallback = false;
         if (useAPIForLinkcheck()) {
             /* Always use API for linkchecking if possible, even if in the end, website is used for downloading! */
             this.requestFileInformationAPI(link, true);
-            streamDownloadAsFallback = this.useStreamDownloadAsFallback(link, account);
         }
         /* Account is not always used even if it is available. */
         boolean usedAccount = false;
@@ -1231,8 +1235,8 @@ public class GoogleDrive extends PluginForHost {
                 }
             } else {
                 /* Check if user prefers stream download which is only possible via website. */
-                if (this.videoStreamShouldBeAvailable(link) && (this.userPrefersStreamDownload() || streamDownloadAsFallback)) {
-                    if (this.userPrefersStreamDownload()) {
+                if (this.allowVideoStreamDownloadAttempt(link, account)) {
+                    if (this.isStreamDownloadPreferred(link)) {
                         logger.info("Attempting stream download in API mode");
                     } else {
                         logger.info("Attempting stream download FALLBACK in API mode");
@@ -1241,7 +1245,7 @@ public class GoogleDrive extends PluginForHost {
                         usedAccount = true;
                         this.loginDuringLinkcheckOrDownload(br, account);
                     }
-                    streamDownloadlink = this.getStreamDownloadurl(br.cloneBrowser(), link, account, streamDownloadAsFallback);
+                    streamDownloadlink = this.getStreamDownloadurl(br.cloneBrowser(), link, account);
                     if (!StringUtils.isEmpty(streamDownloadlink)) {
                         /* Use found stream downloadlink. */
                         directurl = streamDownloadlink;
@@ -1275,9 +1279,8 @@ public class GoogleDrive extends PluginForHost {
                 logger.info("Handling extra linkcheck as preparation for google document download");
                 crawlAdditionalFileInformationFromWebsite(br.cloneBrowser(), link, account, true, true);
             }
-            streamDownloadAsFallback = this.useStreamDownloadAsFallback(link, account);
-            if (this.videoStreamShouldBeAvailable(link) && (this.userPrefersStreamDownload() || streamDownloadAsFallback)) {
-                if (this.isStreamDownloadPreferredAndAllowed(link)) {
+            if (this.allowVideoStreamDownloadAttempt(link, account)) {
+                if (this.isStreamDownloadPreferred(link)) {
                     /* Stream download because user prefers stream download. */
                     logger.info("Attempting stream download in website mode");
                 } else {
@@ -1287,7 +1290,7 @@ public class GoogleDrive extends PluginForHost {
                  * Sidenote: Files can be blocked for downloading but streaming may still be possible(rare case). </br>
                  * If downloads are blocked because of "too high traffic", streaming can be blocked too!
                  */
-                streamDownloadlink = this.getStreamDownloadurl(br.cloneBrowser(), link, account, streamDownloadAsFallback);
+                streamDownloadlink = this.getStreamDownloadurl(br.cloneBrowser(), link, account);
                 if (!StringUtils.isEmpty(streamDownloadlink)) {
                     directurl = streamDownloadlink;
                 }
@@ -1394,11 +1397,13 @@ public class GoogleDrive extends PluginForHost {
                 }
                 logger.info("Attempting google doc download as fallback");
             } else {
-                final boolean isDownloadQuotaReached = this.isQuotaReachedWebsiteFile(br, link);
-                if (isDownloadQuotaReached && this.videoStreamShouldBeAvailable(link) && streamDownloadlink == null && PluginJsonConfig.get(GoogleConfig.class).isAllowStreamDownloadAsFallbackIfFileDownloadQuotaIsReached()) {
+                final boolean isFileDownloadQuotaReached = this.isQuotaReachedWebsiteFile(br, link);
+                if (isFileDownloadQuotaReached && this.videoStreamShouldBeAvailable(link) && streamDownloadlink == null && PluginJsonConfig.get(GoogleConfig.class).isAllowStreamDownloadAsFallbackIfFileDownloadQuotaIsReached()) {
                     /* Download quota limit reached -> Try stream download as last resort fallback */
                     logger.info("Attempting forced stream download in an attempt to get around quota limit");
-                    directurl = this.getStreamDownloadurl(br.cloneBrowser(), link, account, true);
+                    /* Very important! Set quota reached flags so stream download handling knows that it was called as a fallback! */
+                    this.setQuotaReachedFlags(link, account, false);
+                    directurl = this.getStreamDownloadurl(br.cloneBrowser(), link, account);
                     if (StringUtils.isEmpty(directurl)) {
                         /* This should never happen. */
                         logger.info("Stream download fallback failed -> There is nothing we can do to avoid this limit");
@@ -1443,7 +1448,7 @@ public class GoogleDrive extends PluginForHost {
             this.errorFileInfected(link);
         } else if (!this.canDownloadOfficially(link) && (streamDownloadFallbackAttempted || !allowVideoStreamDownloadAttempt(link, account))) {
             this.errorCannotDownload(link, streamDownloadFallbackAttempted);
-        } else if (isDownloadQuotaReached(link, account) && (streamDownloadFallbackAttempted || !useStreamDownloadAsFallback(link, account))) {
+        } else if (isDownloadQuotaReached(link, account) && (streamDownloadFallbackAttempted || !allowVideoStreamDownloadAttempt(link, account))) {
             this.errorDownloadQuotaReachedWebsite(link, account);
         }
     }
@@ -1457,8 +1462,8 @@ public class GoogleDrive extends PluginForHost {
             /* Stream download temporarily impossible */
             return false;
         }
-        /* File should be streamable -> Check if user allows stream download */
-        if (this.userPrefersStreamDownload() || useStreamDownloadAsFallback(link, account)) {
+        /* File should be streamable -> Check if user prefers stream download or allows stream download as fallback. */
+        if (this.isStreamDownloadPreferred(link) || useStreamDownloadAsFallback(link, account)) {
             return true;
         } else {
             return false;
@@ -1467,19 +1472,24 @@ public class GoogleDrive extends PluginForHost {
 
     /** Returns true, if video stream download is preferred for given DownloadLink. */
     private boolean useStreamDownloadAsFallback(final DownloadLink link, final Account account) {
+        final GoogleConfig cfg = PluginJsonConfig.get(GoogleConfig.class);
         if (!this.videoStreamShouldBeAvailable(link)) {
             /* Stream download impossible (not a video file). */
             return false;
         } else if (this.isStreamQuotaReached(link)) {
             /* Stream download temporarily impossible */
             return false;
+        } else if (cfg.getPreferredVideoQuality() == PreferredVideoQuality.ORIGINAL) {
+            /* User prefers stream download anyways -> Not a fallback situation. */
+            return false;
         }
-        final GoogleConfig cfg = PluginJsonConfig.get(GoogleConfig.class);
         if (this.canDownloadOfficially(link) && this.isDownloadQuotaReached(link, account) && cfg.isAllowStreamDownloadAsFallbackIfFileDownloadQuotaIsReached()) {
-            /* File is officially downloadable but download quota is reached and user allows stream download as fallback. */
+            /*
+             * Fallback case 1: File is officially downloadable but download quota is reached and user allows stream download as fallback.
+             */
             return true;
         } else if (!this.canDownloadOfficially(link) && cfg.isAllowStreamDownloadAsFallbackIfOfficialDownloadIsDisabled()) {
-            /* File owner disabled official downloads for this file and user allows stream download in this case. */
+            /* Fallback case 2: File owner disabled official downloads for this file and user allows stream download in this case. */
             return true;
         } else {
             return false;

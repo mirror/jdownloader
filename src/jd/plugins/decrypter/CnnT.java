@@ -38,7 +38,7 @@ public class CnnT extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "canna.to", "canna-power.to" });
+        ret.add(new String[] { "canna-power.to", "canna.to" });
         return ret;
     }
 
