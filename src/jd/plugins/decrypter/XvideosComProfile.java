@@ -23,13 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -50,6 +43,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.XvideosCom;
 import jd.plugins.hoster.XvideosCore;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -299,7 +298,7 @@ public class XvideosComProfile extends PluginForDecrypt {
             }
             final Browser brc = br.cloneBrowser();
             brc.postPage("/quickies-api/profilevideos/all/none/B/" + userID + "/0", "");
-            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> videos = (List<Map<String, Object>>) entries.get("videos");
             for (final Map<String, Object> video : videos) {
                 final String singleLink = video.get("url").toString();
@@ -348,7 +347,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                     break;
                 }
             }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final int totalNumberofItems = ((Number) entries.get("nb_videos")).intValue();
             if (totalNumberofItems == 0) {
                 logger.info("Stopping because: User doesn't have any videos");

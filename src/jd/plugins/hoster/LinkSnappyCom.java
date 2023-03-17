@@ -23,24 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -63,6 +45,24 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -129,8 +129,10 @@ public class LinkSnappyCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             /* Do NOT use HEAD request here as that will render our subsequent errorhandling useless. */
-            con = br.openGetConnection(link.getPluginPatternMatcher());
-            handleConnectionErrors(link, con);
+            final Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
+            con = br2.openGetConnection(link.getPluginPatternMatcher());
+            handleConnectionErrors(br2, link, con);
             if (con.getCompleteContentLength() > 0) {
                 link.setVerifiedFileSize(con.getCompleteContentLength());
             }
@@ -148,7 +150,7 @@ public class LinkSnappyCom extends PluginForHost {
      * Only call this for download-requests of files, hosted on linksnappy!! Do not call this in any handling which is taking care of other
      * filehoster downloads! Do not use this in handleMultihost!
      */
-    private void handleConnectionErrors(final DownloadLink link, final URLConnectionAdapter con) throws PluginException {
+    private void handleConnectionErrors(final Browser br, final DownloadLink link, final URLConnectionAdapter con) throws PluginException {
         if (!this.looksLikeDownloadableContent(con)) {
             try {
                 br.followConnection(true);
@@ -171,7 +173,7 @@ public class LinkSnappyCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.loginAPI(account, false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
-        handleConnectionErrors(link, dl.getConnection());
+        handleConnectionErrors(br, link, dl.getConnection());
         dl.startDownload();
     }
 
@@ -187,7 +189,7 @@ public class LinkSnappyCom extends PluginForHost {
             if (br.getURL() == null || !br.getURL().contains("/api/USERDETAILS")) {
                 br.getPage("/api/USERDETAILS");
             }
-            final Map<String, Object> userResponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> userResponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> usermap = (Map<String, Object>) userResponse.get("return");
             final Object expireTimestampO = usermap.get("expire");
             /*
@@ -440,7 +442,7 @@ public class LinkSnappyCom extends PluginForHost {
             while (System.currentTimeMillis() - lastProgressChange < CACHE_WAIT_THRESHOLD) {
                 logger.info("Checking cache status round: " + round);
                 br.getPage("https://" + this.getHost() + "/api/CACHEDLSTATUS?id=" + Encoding.urlEncode(id));
-                final Map<String, Object> data = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> data = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 this.handleErrors(link, account, data);
                 if (data.get("return") == null) {
                     logger.warning("Bad cache state/answer");
@@ -513,7 +515,7 @@ public class LinkSnappyCom extends PluginForHost {
                     urlinfo.put("linkpass", passCode);
                 }
                 br.getPage(urlRequest + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(urlinfo)));
-                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Object> ressourcelist = (List<Object>) entries.get("links");
                 entries = (Map<String, Object>) ressourcelist.get(0);
                 final String message = this.getError(entries);
@@ -521,8 +523,8 @@ public class LinkSnappyCom extends PluginForHost {
                     wrongPasswordAttempts += 1;
                     passCode = getUserInput("Password?", link);
                     /**
-                     * Do not reset initial password.</br>
-                     * Multihosters are prone to error - we do not want to remove the users' initial manually typed in PW!
+                     * Do not reset initial password.</br> Multihosters are prone to error - we do not want to remove the users' initial
+                     * manually typed in PW!
                      */
                     // link.setDownloadPassword(null);
                     continue;
@@ -577,10 +579,9 @@ public class LinkSnappyCom extends PluginForHost {
         dl.setFilenameFix(true);
         if (this.dl.startDownload()) {
             /**
-             * Check if user wants JD to clear serverside download history in linksnappy account after each successful download. </br>
-             * Also make sure we get no exception as our download was successful. </br>
-             * NOTE: Even failed downloads will appear in the download history - but they will also be cleared once there is one successful
-             * download.
+             * Check if user wants JD to clear serverside download history in linksnappy account after each successful download. </br> Also
+             * make sure we get no exception as our download was successful. </br> NOTE: Even failed downloads will appear in the download
+             * history - but they will also be cleared once there is one successful download.
              */
             if (PluginJsonConfig.get(LinkSnappyComConfig.class).isClearDownloadHistoryEnabled()) {
                 logger.info("Clearing download history");
@@ -600,8 +601,8 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     /**
-     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br>
-     * It should be minimum of 5 minutes and above!
+     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br> It should be
+     * minimum of 5 minutes and above!
      *
      * @throws InterruptedException
      */
@@ -678,7 +679,7 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     private void handleErrors(final DownloadLink link, final Account account) throws PluginException, InterruptedException {
-        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Object linksO = entries.get("links");
         if (linksO != null && linksO instanceof List) {
             /* Make sure we're working on the correct map! */
@@ -754,7 +755,7 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     private String getError(final Browser br) {
-        return getError(restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP));
+        return getError(restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP));
     }
 
     private String getError(final Map<String, Object> map) {
@@ -797,7 +798,7 @@ public class LinkSnappyCom extends PluginForHost {
                 } else {
                     logger.info("Validating cookies");
                     br.getPage("https://" + this.getHost() + "/api/USERDETAILS");
-                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     final String error = getError(entries);
                     // "Invalid username" is shown when 2Fa login is required o_O.
                     if (error == null) {
@@ -814,7 +815,7 @@ public class LinkSnappyCom extends PluginForHost {
             /* Full login is required */
             logger.info("Performing full login");
             br.getPage("https://" + this.getHost() + "/api/AUTHENTICATE?" + "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final String error = getError(entries);
             if (error != null) {
                 final String redirect = (String) entries.get("redirect");
@@ -845,8 +846,7 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     /**
-     * Checks login status by available cookies. </br>
-     * Works for website- and API.
+     * Checks login status by available cookies. </br> Works for website- and API.
      */
     private boolean isLoggedin(final Browser br) {
         return br.getCookie(this.getHost(), "Auth", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(this.getHost(), "username", Cookies.NOTDELETEDPATTERN) != null;

@@ -142,7 +142,9 @@ public class MvpdjCom extends PluginForHost {
                         }
                     }
                 }
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 serverissues = true;
             }

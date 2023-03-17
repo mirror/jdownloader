@@ -126,10 +126,10 @@ public class PornHubCom extends PluginForHost {
     private static final String                   USE_ORIGINAL_SERVER_FILENAME          = "USE_ORIGINAL_SERVER_FILENAME";
     public static final String                    GIFS_WEBM                             = "GIFS_WEBM";
     private final String                          REMOVED_VIDEO                         = ">\\s*This video has been removed\\s*<";
-    public static final String                    PROPERT_FORMAT                        = "format";
+    public static final String                    PROPERTY_FORMAT                        = "format";
     public static final String                    PROPERTY_QUALITY                      = "quality";
-    public static final String                    PROPERT_DIRECTLINK                    = "directlink";
-    public static final String                    PROPERT_DATE                          = "date";
+    public static final String                    PROPERTY_DIRECTLINK                    = "directlink";
+    public static final String                    PROPERTY_DATE                          = "date";
     public static final String                    PROPERTY_CATEGORIES_COMMA_SEPARATED   = "categories_comma_separated";
     public static final String                    PROPERTY_TAGS_COMMA_SEPARATED         = "tags_comma_separated";
     public static final String                    PROPERTY_ACTORS_COMMA_SEPARATED       = "actors_comma_separated";
@@ -308,7 +308,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     private String getFormat(final DownloadLink link) {
-        return link.getStringProperty(PROPERT_FORMAT, "mp4");
+        return link.getStringProperty(PROPERTY_FORMAT, "mp4");
     }
 
     public static boolean requiresPremiumAccount(final String url) {
@@ -529,7 +529,7 @@ public class PornHubCom extends PluginForHost {
             /* Offline links should also have nice filenames */
             link.setName(viewKey + ".mp4");
             html_filename = link.getStringProperty("decryptedfilename", null);
-            dlUrl = link.getStringProperty(PROPERT_DIRECTLINK, null);
+            dlUrl = link.getStringProperty(PROPERTY_DIRECTLINK, null);
             cachedURLFlag = true;
             if (dlUrl == null || html_filename == null) {
                 /* This should never happen as every url goes into the decrypter first! */
@@ -552,7 +552,7 @@ public class PornHubCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        String format = link.getStringProperty(PROPERT_FORMAT);
+        String format = link.getStringProperty(PROPERTY_FORMAT);
         if (format == null) {
             // older links
             format = "mp4";
@@ -592,7 +592,7 @@ public class PornHubCom extends PluginForHost {
                         logger.info("Fresh directurl did not lead to downloadable content");
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
                     } else {
-                        link.setProperty(PROPERT_FORMAT, format);
+                        link.setProperty(PROPERTY_FORMAT, format);
                     }
                 }
             }
@@ -633,7 +633,7 @@ public class PornHubCom extends PluginForHost {
                                 if (estimatedSize > 0) {
                                     link.setDownloadSize(estimatedSize);
                                 }
-                                link.setProperty(PROPERT_DIRECTLINK, url);
+                                link.setProperty(PROPERTY_DIRECTLINK, url);
                                 return true;
                             } else {
                                 segmentCheck.followConnection(true);
@@ -672,7 +672,7 @@ public class PornHubCom extends PluginForHost {
                         if (con.getLongContentLength() > 0) {
                             link.setDownloadSize(con.getLongContentLength());
                         }
-                        link.setProperty(PROPERT_DIRECTLINK, url);
+                        link.setProperty(PROPERTY_DIRECTLINK, url);
                         return true;
                     }
                 } finally {
@@ -999,7 +999,7 @@ public class PornHubCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void doFree(final DownloadLink link) throws Exception, PluginException {
-        final String format = link.getStringProperty(PROPERT_FORMAT);
+        final String format = link.getStringProperty(PROPERTY_FORMAT);
         if (StringUtils.equalsIgnoreCase(format, "hls")) {
             if (StringUtils.isEmpty(dlUrl)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

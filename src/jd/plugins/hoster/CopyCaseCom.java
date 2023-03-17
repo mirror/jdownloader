@@ -7,13 +7,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -29,6 +22,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CopyCaseCom extends PluginForHost {
@@ -142,7 +142,7 @@ public class CopyCaseCom extends PluginForHost {
         }
         this.prepBrowserAPI(br);
         this.callAPI(br, link, null, new GetRequest(this.getAPIBase() + getAPIPathFile(link)), true);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) entries.get("data");
         link.setFinalFileName(data.get("name").toString());
         link.setVerifiedFileSize(((Number) data.get("size")).longValue());

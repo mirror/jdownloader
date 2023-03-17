@@ -24,25 +24,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.UpToBoxComConfig;
-import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
@@ -59,6 +40,24 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends antiDDoSForHost {
@@ -255,7 +254,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                     }
                 }
                 this.getPage(checkbr, API_BASE + "/link/info?fileCodes=" + sb.toString());
-                final Map<String, Object> entries = JSonStorage.restoreFromString(checkbr.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(checkbr.toString(), TypeRef.MAP);
                 final List<Object> linkcheckResults = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/list");
                 /* Number of results should be == number of file-ids we wanted to check! */
                 if (linkcheckResults.size() != index) {
@@ -537,7 +536,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                      * Streams can also contain multiple video streams with e.g. different languages --> We will ignore this rare case and
                      * always download the first stream of the user preferred quality we get.
                      */
-                    final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                     dllink = (String) JavaScriptEngineFactory.walkJson(entries, "data/streamLinks/" + preferredQuality + "/{0}");
                     if (!StringUtils.isEmpty(dllink)) {
                         logger.info("Successfully found user preferred quality " + preferredQuality);
@@ -625,7 +624,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 final UrlQuery queryDL = queryBasic;
                 queryDL.append("waitingToken", waitingToken, true);
                 this.getPage(API_BASE + "/link?" + queryDL.toString());
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.MAP);
                 entries = (Map<String, Object>) entries.get("data");
             }
             dllink = (String) entries.get("dlLink");
@@ -716,14 +715,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         final Map<String, Object> entries = loginAPI(account, true);
         final Map<String, Object> userdata = (Map<String, Object>) entries.get("data");
         final Number premium = (Number) userdata.get("premium");
-        final Object pointsO = userdata.get("point");
-        String pointsStr = null;
-        if (pointsO != null) {
-            pointsStr = pointsO.toString();
-        }
-        if (StringUtils.isEmpty(pointsStr)) {
-            pointsStr = "Unknown";
-        }
+        final Object point = userdata.get("point");
         String accountStatus;
         if (premium != null && premium.intValue() == 1) {
             account.setType(AccountType.PREMIUM);
@@ -733,13 +725,18 @@ public class UpToBoxCom extends antiDDoSForHost {
             final String expireDate = (String) userdata.get("premium_expire");
             if (!StringUtils.isEmpty(expireDate)) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
+                if (ai.isExpired()) {
+                    account.setType(AccountType.FREE);
+                    account.setMaxSimultanDownloads(1);
+                    accountStatus = "Free Account (expired Premium)";
+                }
             }
         } else {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(1);
             accountStatus = "Free Account";
         }
-        accountStatus += String.format(" | %s points", pointsStr);
+        accountStatus += String.format(" | %s points", (point != null ? point.toString() : "Unknown"));
         final String user = (String) userdata.get("login");
         if (!StringUtils.isEmpty(user)) {
             account.setUser(user);
@@ -829,7 +826,7 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     private void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         try {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             checkErrorsAPI(br, link, account, entries);
         } catch (final JSonMapperException jse) {
             /* Assume we got html code and check for errors in html code */

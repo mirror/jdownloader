@@ -22,15 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -52,6 +43,14 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.ImgurComHoster;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /*Only accept single-imag URLs with an LID-length or either 5 OR 7 - everything else are invalid links or thumbnails*/
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -456,7 +455,7 @@ public class ImgurComGallery extends PluginForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             Object images = entries.get("data");
             final List<Map<String, Object>> items = (List<Map<String, Object>>) images;
             boolean foundNewItems = false;
@@ -503,7 +502,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         final boolean preferWebsiteJson = true;
         if (preferWebsiteJson) {
             final String json = br.getRegex("image\\s*:\\s*(\\{.+\\});\\s+").getMatch(0);
-            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             this.author = (String) entries.get("author");
             final Map<String, Object> album_images = (Map<String, Object>) entries.get("album_images");
             if (album_images != null) {
@@ -576,13 +575,13 @@ public class ImgurComGallery extends PluginForDecrypt {
         }
         this.br.getPage("https://" + this.getHost() + "/ajaxalbums/getimages/" + albumID + "/hit.json?all=true");
         /* 2020-09-29: Returns the following response on invalid albumID: {"data":[],"success":true,"status":200} */
-        Map<String, Object> entries = JSonStorage.restoreFromString(this.br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(this.br.toString(), TypeRef.MAP);
         this.author = (String) entries.get("author");
         final Object dataO = entries.get("data");
         if (!(dataO instanceof Map)) {
             /**
-             * 2020-10-06: Offline content or single item e.g.: {"data":[],"success":true,"status":200} </br>
-             * We've checked for offline already so let's just add it as a single item.
+             * 2020-10-06: Offline content or single item e.g.: {"data":[],"success":true,"status":200} </br> We've checked for offline
+             * already so let's just add it as a single item.
              */
             final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
             plg.setBrowser(brc);
@@ -608,7 +607,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         apiCrawlJsonMultipleItems((Map<String, Object>) entries.get("data"));
     }
 
@@ -619,7 +618,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("data");
         boolean is_album = false;
         final Object is_albumO = entries.get("is_album");
@@ -655,7 +654,7 @@ public class ImgurComGallery extends PluginForDecrypt {
                 }
                 page++;
                 br.getPage(ImgurComHoster.getAPIBaseWithVersion() + "/gallery/" + itemID + "/page/" + page + "?mature=true");
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.MAP);
                 entries = (Map<String, Object>) entries.get("data");
             }
         } while (!this.isAbort());
@@ -669,7 +668,7 @@ public class ImgurComGallery extends PluginForDecrypt {
         brc.getPage(parameter);
         this.fp.setName(siteGetPackagenameForGalleryAndAlbum(brc, galleryID));
         this.br.getPage("https://" + this.getHost() + "/gallery/" + galleryID + "/album_images/hit.json?all=true");
-        Map<String, Object> entries = JSonStorage.restoreFromString(this.br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(this.br.toString(), TypeRef.MAP);
         final Object dataO = entries.get("data");
         if (br.getHttpConnection().getResponseCode() == 404) {
             /*

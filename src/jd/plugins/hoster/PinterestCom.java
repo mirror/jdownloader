@@ -20,10 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,6 +41,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PinterestComDecrypter;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PinterestCom extends PluginForHost {
@@ -388,7 +388,7 @@ public class PinterestCom extends PluginForHost {
     }
 
     private boolean isLoggedINHTML(final Browser br) {
-        if (br.containsHTML("\"isAuthenticated\":true")) {
+        if (br.containsHTML("\"isAuth(enticated)?\"\\s*:\\s*true")) {
             return true;
         } else {
             return false;

@@ -351,12 +351,12 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
                 }
                 logger.info("Auto siteKeys filtered:" + siteKeys);
             }
-            siteKey = findCorretSiteKeys(source, br, siteKeys);
+            siteKey = findCorrectSiteKeys(source, br, siteKeys);
             return siteKey;
         }
     }
 
-    protected String findCorretSiteKeys(final String source, final Browser br, Set<String> siteKeys) {
+    protected String findCorrectSiteKeys(final String source, final Browser br, Set<String> siteKeys) {
         if (siteKeys.size() == 0) {
             logger.info("No siteKey found!");
             return null;

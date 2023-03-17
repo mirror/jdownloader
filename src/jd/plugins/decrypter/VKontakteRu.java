@@ -29,17 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -70,6 +59,16 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@:\\!]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -1010,7 +1009,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         }
         final String albumsJson = br.getRegex("extend\\(cur, (\\{\".*?\\})\\);\\s+").getMatch(0);
-        final Map<String, Object> albumInfo = JSonStorage.restoreFromString(albumsJson, TypeRef.HASHMAP);
+        final Map<String, Object> albumInfo = restoreFromString(albumsJson, TypeRef.MAP);
         if (numberOfItemsStr == null) {
             numberOfItemsStr = albumInfo.get("count").toString();
         }
@@ -1201,7 +1200,7 @@ public class VKontakteRu extends PluginForDecrypt {
         if (videoAlbumsJson == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(videoAlbumsJson, TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(videoAlbumsJson, TypeRef.MAP);
         final String oid = Integer.toString(((Number) entries.get("oid")).intValue());
         final int maxItemsPerPage = ((Number) entries.get("VIDEO_SILENT_VIDEOS_CHUNK_SIZE")).intValue();
         Map<String, Object> videoInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "pageVideosList/" + oid + "/" + internalSectionName);
@@ -1304,7 +1303,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
                 sleep(getPaginationSleepMillis(), param);
                 br.postPage(getBaseURL() + "/al_video.php?act=load_videos_silent", query.toString());
-                final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
                 videoInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(response, "payload/{1}/{0}/" + internalSectionName);
                 page += 1;
             }
@@ -1698,7 +1697,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 this.getPage(br, br.createPostRequest("/al_wall.php", getRepliesQuery));
                 try {
                     final String json = br.getRegex("(\\{.*\\})").getMatch(0);
-                    final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                    final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
                     final Map<String, Object> paginationInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/{1}/{2}");
                     if (totalNumberOfItems == 0) {
                         totalNumberOfItems = ((Number) paginationInfo.get("count")).intValue();
@@ -2869,9 +2868,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Basic preparations on user-added links.</br>
-     * Make sure to remove unneeded things so that in the end, our links match the desired linktypes.</br>
-     * This is especially important because we get required IDs out of these urls or even access them directly without API.
+     * Basic preparations on user-added links.</br> Make sure to remove unneeded things so that in the end, our links match the desired
+     * linktypes.</br> This is especially important because we get required IDs out of these urls or even access them directly without API.
      *
      * @param a
      *

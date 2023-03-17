@@ -23,19 +23,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -58,6 +45,19 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
@@ -544,11 +544,11 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private boolean isPasswordProtected(final Browser br) {
-        return br.containsHTML("class=\"video\\-password\\-block\"");
+        return br.containsHTML("class\\s*=\\s*\"video\\-password\\-block\"");
     }
 
     private boolean isPaidContent(final Browser br) {
-        if (br.containsHTML("(?i)class=\"buy_tips\"|<tipt>\\s*This video is paid\\s*</tipt>")) {
+        if (br.containsHTML("(?i)class\\s*=\\s*\"buy_tips\"|<tipt>\\s*This video is paid\\s*</tipt>")) {
             return true;
         } else {
             return false;
@@ -561,7 +561,7 @@ public class XHamsterCom extends PluginForHost {
      * @throws Exception
      */
     private String getDllinkPremium(final boolean isDownload) throws Exception {
-        final String[] htmls = br.getRegex("(<a[^<>]*class=\"list__item[^\"]*\".*?</a>)").getColumn(0);
+        final String[] htmls = br.getRegex("(<a[^<>]*class\\s*=\\s*\"list__item[^\"]*\".*?</a>)").getColumn(0);
         int highestQuality = 0;
         String internalVideoID = null;
         String filesizeStr = null;
@@ -573,7 +573,7 @@ public class XHamsterCom extends PluginForHost {
             }
             if (internalVideoID == null) {
                 /* This id is the same for every quality */
-                internalVideoID = new Regex(html, "data\\-el\\-item\\-id=\"(\\d+)\"").getMatch(0);
+                internalVideoID = new Regex(html, "data\\-el\\-item\\-id\\s*=\\s*\"(\\d+)\"").getMatch(0);
             }
             final int qualityTmp = Integer.parseInt(qualityIdentifierStr);
             if (qualityTmp > highestQuality) {
@@ -1076,7 +1076,7 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private boolean isLoggedInHTML(final Browser br) {
-        return br.containsHTML("class=\"profile-link-info-name\"");
+        return br.containsHTML("class\\s*=\\s*\"profile-link-info-name\"");
     }
 
     private boolean checkPremiumLogin(final Browser br) throws IOException {
@@ -1193,8 +1193,7 @@ public class XHamsterCom extends PluginForHost {
         /**
          * 2022-07-22: Workaround for possible serverside bug: In some countries, xhamster seems to redirect users to xhamster2.com. If
          * those users send an Accept-Language header of "de,en-gb;q=0.7,en;q=0.3" they can get stuck in a redirect-loop between
-         * deu.xhamster3.com and deu.xhamster3.com. </br>
-         * See initial report: https://board.jdownloader.org/showthread.php?t=91170
+         * deu.xhamster3.com and deu.xhamster3.com. </br> See initial report: https://board.jdownloader.org/showthread.php?t=91170
          */
         final String acceptLanguage = "en-gb;q=0.7,en;q=0.3";
         br.setAcceptLanguage(acceptLanguage);
