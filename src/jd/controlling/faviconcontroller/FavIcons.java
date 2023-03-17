@@ -257,6 +257,9 @@ public class FavIcons {
                                     final PluginForHost pluginInstance = existingHostPlugin.newInstance(null, false);
                                     pluginInstance.setLogger(logger);
                                     siteSupportedNames = pluginInstance.siteSupportedNames();
+                                    if (siteSupportedNames == null) {
+                                        siteSupportedNames = new String[0];
+                                    }
                                     final Object result = pluginInstance.getFavIcon(host);
                                     if (result instanceof BufferedImage) {
                                         favicon = (BufferedImage) result;
@@ -466,7 +469,7 @@ public class FavIcons {
         return null;
     }
 
-    private static boolean isSameDomain(final Browser br, String host, final String[] siteSupportedNames) throws IOException {
+    private static boolean isSameDomain(final Browser br, String host, String[] siteSupportedNames) throws IOException {
         if (host.matches("(?i)^https?://.+")) {
             host = new URL(host).getHost();
         } else {
@@ -485,6 +488,21 @@ public class FavIcons {
                 final String compareHost = host.replaceAll("\\." + hostTld + "$", "");
                 if (StringUtils.equalsIgnoreCase(compareDomain, compareHost)) {
                     return true;
+                }
+            }
+            if (siteSupportedNames == null) {
+                final LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
+                if (existingHostPlugin != null) {
+                    final LogSource logger = LogController.getFastPluginLogger("FavIcons");
+                    try {
+                        final PluginForHost pluginInstance = existingHostPlugin.newInstance(null, false);
+                        pluginInstance.setLogger(logger);
+                        siteSupportedNames = pluginInstance.siteSupportedNames();
+                    } catch (Exception e) {
+                        logger.log(e);
+                    } finally {
+                        logger.close();
+                    }
                 }
             }
             if (siteSupportedNames != null && siteSupportedNames.length > 0) {
