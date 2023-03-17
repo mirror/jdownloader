@@ -20,20 +20,6 @@ import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.SecondLevelLaunch;
 import jd.config.ConfigContainer;
@@ -59,6 +45,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.ImgurComGallery;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: https://api.imgur.com/models/image
@@ -162,7 +161,7 @@ public class ImgurComHoster extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 this.checkErrorsAPI(br, link, account);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final Map<String, Object> data = (Map<String, Object>) entries.get("data");
                 String title = (String) data.get("title");
                 final String description = (String) data.get("description");
@@ -320,8 +319,7 @@ public class ImgurComHoster extends PluginForHost {
             } else {
                 /**
                  * E.g. HTTP/1.1 503 first byte timeout or e.g. error on trying to do "/download/" (official download / download button):
-                 * </br>
-                 * {"data":{"error":"Imgur is temporarily over capacity. Please try again later."},"success":false,"status":500}
+                 * </br> {"data":{"error":"Imgur is temporarily over capacity. Please try again later."},"success":false,"status":500}
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error " + con.getResponseCode(), 10 * 60 * 1000l);
             }
@@ -520,7 +518,7 @@ public class ImgurComHoster extends PluginForHost {
                 brlogin.getPage(getAPIBaseWithVersion() + "/account/" + auth_username);
                 checkErrorsAPI(brlogin, null, account);
                 /* TODO: Check which error API will return on expired token. */
-                Map<String, Object> entries = JSonStorage.restoreFromString(brlogin.toString(), TypeRef.HASHMAP);
+                Map<String, Object> entries = restoreFromString(brlogin.toString(), TypeRef.MAP);
                 entries = (Map<String, Object>) entries.get("data");
                 loggedIN = entries != null && entries.containsKey("id");
                 /*
@@ -665,7 +663,7 @@ public class ImgurComHoster extends PluginForHost {
                 brlogin.getPage(getAPIBaseWithVersion() + "/account/" + auth_username);
                 checkErrorsAPI(brlogin, null, account);
                 /* TODO: Check which error API will return on expired token. */
-                Map<String, Object> entries = JSonStorage.restoreFromString(brlogin.toString(), TypeRef.HASHMAP);
+                Map<String, Object> entries = restoreFromString(brlogin.toString(), TypeRef.MAP);
                 entries = (Map<String, Object>) entries.get("data");
                 loggedIN = entries != null && entries.containsKey("id");
                 if (!loggedIN) {
@@ -792,7 +790,7 @@ public class ImgurComHoster extends PluginForHost {
                         codeAuthQuery.add("redirect_uri", Encoding.urlEncode("http://jdserv.jdownloader.org/oauth"));
                         brlogin.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                         brlogin.postPage(getAPIBase() + "/oauth2/token", codeAuthQuery);
-                        final Map<String, Object> entries = JSonStorage.restoreFromString(brlogin.toString(), TypeRef.HASHMAP);
+                        final Map<String, Object> entries = restoreFromString(brlogin.toString(), TypeRef.MAP);
                         auth_access_token = (String) entries.get("access_token");
                         auth_refresh_token = (String) entries.get("refresh_token");
                         success = true;
@@ -854,7 +852,7 @@ public class ImgurComHoster extends PluginForHost {
             br.getPage(getAPIBaseWithVersion() + "/account/" + account.getUser());
             checkErrorsAPI(this.br, null, account);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("data");
         // https://api.imgur.com/models/account_settings
         final Object pro_expiration = entries.get("pro_expiration");
@@ -901,7 +899,7 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     private void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final boolean success = ((Boolean) entries.get("success")).booleanValue();
         if (!success) {
             /*
@@ -975,8 +973,7 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     /**
-     * Returns downloadable imgur link. </br>
-     * Not all imgur items can be downloaded this way!
+     * Returns downloadable imgur link. </br> Not all imgur items can be downloaded this way!
      */
     public static final String getURLDownload(final String imgUID) {
         return "https://imgur.com/download/" + imgUID;
@@ -1215,37 +1212,37 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_PREFER_MP4", "Prefer .mp4 files over .gif?");
-                                                      put("SETTING_TEXT_API_SETTINGS", "API settings - see imgur.com/account/settings/apps");
-                                                      put("SETTING_USE_API", "Use API instead of website?");
-                                                      put("SETTING_USE_API_IN_ANONYMOUS_MODE", "Use API in anonymous mode? To be able to use the API you will have to add your own API credentials below otherwise this will render the imgur plugin useless!");
-                                                      put("SETTING_API_CREDENTIALS_CLIENTID", "Enter your own imgur Oauth Client-ID\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
-                                                      put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Enter your own imgur Oauth Client-Secret\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
-                                                      put("SETTING_TEXT_OTHER_SETTINGS", "Other settings:");
-                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
-                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*orderid* = Order-ID of the picture e.g. '007'\r\n*ext* = Extension of the file");
-                                                      put("LABEL_FILENAME", "Define custom filename:");
-                                                      put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
-                                                      put("LABEL_PACKAGENAME", "Define custom packagename for galleries:");
-                                                  }
-                                              };
+        {
+            put("SETTING_PREFER_MP4", "Prefer .mp4 files over .gif?");
+            put("SETTING_TEXT_API_SETTINGS", "API settings - see imgur.com/account/settings/apps");
+            put("SETTING_USE_API", "Use API instead of website?");
+            put("SETTING_USE_API_IN_ANONYMOUS_MODE", "Use API in anonymous mode? To be able to use the API you will have to add your own API credentials below otherwise this will render the imgur plugin useless!");
+            put("SETTING_API_CREDENTIALS_CLIENTID", "Enter your own imgur Oauth Client-ID\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
+            put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Enter your own imgur Oauth Client-Secret\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
+            put("SETTING_TEXT_OTHER_SETTINGS", "Other settings:");
+            put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
+            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*orderid* = Order-ID of the picture e.g. '007'\r\n*ext* = Extension of the file");
+            put("LABEL_FILENAME", "Define custom filename:");
+            put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
+            put("LABEL_PACKAGENAME", "Define custom packagename for galleries:");
+        }
+    };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_PREFER_MP4", "Bevorzuge .mp4 Dateien anstelle von .gif Dateien?");
-                                                      put("SETTING_TEXT_API_SETTINGS", "API Einstellungen - siehe imgur.com/account/settings/apps");
-                                                      put("SETTING_USE_API", "Verwende API anstatt Webseite?");
-                                                      put("SETTING_USE_API_IN_ANONYMOUS_MODE", "API als anonymer User verwenden? Um die API überhaupt verwenden zu können musst du deine eigenen API Zugangsdaten unten eintragen, ansonsten wirst du dieses Plugin nicht mehr verwenden können!");
-                                                      put("SETTING_API_CREDENTIALS_CLIENTID", "Gib deine persönliche imgur Oauth Client-ID ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
-                                                      put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Gib deinen persönlichen imgur Oauth Client Secret ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
-                                                      put("SETTING_TEXT_OTHER_SETTINGS", "Andere Einstellungen:");
-                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
-                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*orderid* = Platzierungs-ID des Bildes z.B. '007'\r\n*ext* = Dateiendung");
-                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
-                                                      put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
-                                                      put("LABEL_PACKAGENAME", "Gib das Muster des benutzerdefinierten Paketnamens für Gallerien an:");
-                                                  }
-                                              };
+        {
+            put("SETTING_PREFER_MP4", "Bevorzuge .mp4 Dateien anstelle von .gif Dateien?");
+            put("SETTING_TEXT_API_SETTINGS", "API Einstellungen - siehe imgur.com/account/settings/apps");
+            put("SETTING_USE_API", "Verwende API anstatt Webseite?");
+            put("SETTING_USE_API_IN_ANONYMOUS_MODE", "API als anonymer User verwenden? Um die API überhaupt verwenden zu können musst du deine eigenen API Zugangsdaten unten eintragen, ansonsten wirst du dieses Plugin nicht mehr verwenden können!");
+            put("SETTING_API_CREDENTIALS_CLIENTID", "Gib deine persönliche imgur Oauth Client-ID ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
+            put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Gib deinen persönlichen imgur Oauth Client Secret ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
+            put("SETTING_TEXT_OTHER_SETTINGS", "Andere Einstellungen:");
+            put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
+            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*orderid* = Platzierungs-ID des Bildes z.B. '007'\r\n*ext* = Dateiendung");
+            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+            put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
+            put("LABEL_PACKAGENAME", "Gib das Muster des benutzerdefinierten Paketnamens für Gallerien an:");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and

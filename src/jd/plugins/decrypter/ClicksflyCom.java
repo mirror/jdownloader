@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,6 +25,8 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ClicksflyCom extends MightyScriptAdLinkFly {
@@ -71,18 +71,22 @@ public class ClicksflyCom extends MightyScriptAdLinkFly {
         Form form = br.getForm(0);
         form.setAction(Encoding.urlDecode(form.getInputField("url").getValue(), true));
         submitForm(form);
-        final Form form2 = br.getFormbyKey("alias");
-        if (form2 != null) {
+        Form aliasForm = br.getFormbyKey("alias");
+        if (aliasForm != null) {
             /* Ads + captcha */
-            logger.info("form2 detected");
+            logger.info("alias form detected");
             final String hcaptchaResponse = new CaptchaHelperCrawlerPluginHCaptcha(this, br).getToken();
-            form2.put("h-captcha-response", Encoding.urlEncode(hcaptchaResponse));
-            br.submitForm(form2);
-            final Form form3 = br.getFormbyKey("alias");
-            if (form3 != null) {
+            aliasForm.put("h-captcha-response", Encoding.urlEncode(hcaptchaResponse));
+            br.submitForm(aliasForm);
+            aliasForm = br.getFormbyKey("alias");
+            if (aliasForm != null) {
                 /* Back to original website -> Wait time -> Final link */
-                logger.info("form2 detected");
-                br.submitForm(form3);
+                logger.info("alias form detected again");
+                br.submitForm(aliasForm);
+                aliasForm = br.getFormbyKey("alias");
+                if (aliasForm != null) {
+                    logger.info("alias form detected again?!");
+                }
             }
         }
         br.setFollowRedirects(followRedirectsOld);

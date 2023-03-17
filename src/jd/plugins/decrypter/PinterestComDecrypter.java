@@ -24,14 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -51,6 +43,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.PinterestCom;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PinterestCom.class })
@@ -116,8 +116,8 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         if (enable_crawl_alternative_URL) {
             /* The more complicated way (if wished by user). */
             /**
-             * 2021-03-02: PINs may redirect to other PINs in very rare cases -> Handle that </br>
-             * If that wasn't the case, we could rely on API-only!
+             * 2021-03-02: PINs may redirect to other PINs in very rare cases -> Handle that </br> If that wasn't the case, we could rely on
+             * API-only!
              */
             String pinURL = param.getCryptedUrl();
             br.getPage(pinURL);
@@ -243,9 +243,11 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         /* First check if we have a video */
         final Map<String, Object> video_list = (Map<String, Object>) (JavaScriptEngineFactory.walkJson(pinMap, "videos/video_list"));
         if (video_list != null) {
-            final Map<String, Object> p720 = (Map<String, Object>) video_list.get("V_720P");
-            if (p720 != null) {
-                return p720.get("url").toString();
+            for (final String videoQuality : new String[] { "V_1080P", "V_720P", "V_480P" }) {
+                final Map<String, Object> video = (Map<String, Object>) video_list.get(videoQuality);
+                if (video != null && video.get("url") != null) {
+                    return video.get("url").toString();
+                }
             }
         }
         /* No video --> Look for photo link */
@@ -270,7 +272,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     /* First image = highest (but original is somewhere 'in the middle') */
                     break;
                 }
-                directlink = (String) tempmap.get("url");
+                directlink = tempmap != null ? (String) tempmap.get("url") : null;
             }
         }
         return directlink;
@@ -294,8 +296,8 @@ public class PinterestComDecrypter extends PluginForDecrypt {
 
     /**
      * @return: true: target section was found and only this will be crawler false: failed to find target section - in this case we should
-     *          crawl everything we find </br>
-     *          This can crawl A LOT of stuff! E.g. a board contains 1000 sections, each section contains 1000 PINs...
+     *          crawl everything we find </br> This can crawl A LOT of stuff! E.g. a board contains 1000 sections, each section contains
+     *          1000 PINs...
      */
     private void crawlSections(final CryptedLink param, final Browser ajax, final String boardID, final long totalInsideSectionsPinCount) throws Exception {
         final String username_and_boardname = new Regex(param.getCryptedUrl(), "https?://[^/]+/(.+)/").getMatch(0).replace("/", " - ");

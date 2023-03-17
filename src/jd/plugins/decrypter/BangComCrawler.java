@@ -20,12 +20,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.BangComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -41,6 +35,12 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BangCom;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.BangComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { BangCom.class })
@@ -87,27 +87,31 @@ public class BangComCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final List<String> knownVideoQualities = Arrays.asList(new String[] { "2160p", "1080p", "720p", "540p", "480p", "360p" });
         final List<String> selectedVideoQualities = new ArrayList<String>();
-        if (cfg == null || cfg.isCrawl2160p()) {
-            selectedVideoQualities.add(knownVideoQualities.get(0));
-        }
-        if (cfg == null || cfg.isCrawl1080p()) {
-            selectedVideoQualities.add(knownVideoQualities.get(1));
-        }
-        if (cfg == null || cfg.isCrawl720p()) {
-            selectedVideoQualities.add(knownVideoQualities.get(2));
-        }
-        if (cfg == null || cfg.isCrawl540p()) {
-            selectedVideoQualities.add(knownVideoQualities.get(3));
-        }
-        if (cfg == null || cfg.isCrawl480p()) {
-            selectedVideoQualities.add(knownVideoQualities.get(4));
-        }
-        if (cfg == null || cfg.isCrawl360p()) {
-            selectedVideoQualities.add(knownVideoQualities.get(5));
-        }
-        if (selectedVideoQualities.isEmpty() && cfg != null && !cfg.isGrabPreviewVideo() && !cfg.isGrabThumbnail()) {
-            logger.info("Returning nothing because user has deselected all qualities -> Disabled crawler");
-            return ret;
+        if (cfg == null) {
+            selectedVideoQualities.addAll(knownVideoQualities);
+        } else {
+            if (cfg.isCrawl2160p()) {
+                selectedVideoQualities.add(knownVideoQualities.get(0));
+            }
+            if (cfg.isCrawl1080p()) {
+                selectedVideoQualities.add(knownVideoQualities.get(1));
+            }
+            if (cfg.isCrawl720p()) {
+                selectedVideoQualities.add(knownVideoQualities.get(2));
+            }
+            if (cfg.isCrawl540p()) {
+                selectedVideoQualities.add(knownVideoQualities.get(3));
+            }
+            if (cfg.isCrawl480p()) {
+                selectedVideoQualities.add(knownVideoQualities.get(4));
+            }
+            if (cfg.isCrawl360p()) {
+                selectedVideoQualities.add(knownVideoQualities.get(5));
+            }
+            if (!cfg.isGrabPreviewVideo() && !cfg.isGrabThumbnail()) {
+                logger.info("Returning nothing because user has deselected all qualities -> Disabled crawler");
+                return ret;
+            }
         }
         br.setFollowRedirects(true);
         final BangCom plg = (BangCom) this.getNewPluginForHostInstance(this.getHost());

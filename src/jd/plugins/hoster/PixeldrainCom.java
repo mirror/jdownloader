@@ -24,26 +24,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.PixeldrainConfig;
-import org.jdownloader.plugins.components.config.PixeldrainConfig.ActionOnCaptchaRequired;
-import org.jdownloader.plugins.components.config.PixeldrainConfig.ActionOnSpeedLimitReached;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -66,6 +46,25 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.PixeldrainConfig;
+import org.jdownloader.plugins.components.config.PixeldrainConfig.ActionOnCaptchaRequired;
+import org.jdownloader.plugins.components.config.PixeldrainConfig.ActionOnSpeedLimitReached;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PixeldrainCom extends PluginForHost {
@@ -343,8 +342,8 @@ public class PixeldrainCom extends PluginForHost {
         final PixeldrainConfig cfg = PluginJsonConfig.get(getConfigInterface());
         if (isTransferLimitReached(link, account) && cfg.getActionOnSpeedLimitReached() == ActionOnSpeedLimitReached.TRIGGER_RECONNECT_TO_CHANGE_IP) {
             /**
-             * User prefers to perform reconnect to be able to download without speedlimit again. </br>
-             * 2022-07-19: Speedlimit sits only on IP, not on account but our upper system will of not do reconnects for accounts atm.
+             * User prefers to perform reconnect to be able to download without speedlimit again. </br> 2022-07-19: Speedlimit sits only on
+             * IP, not on account but our upper system will of not do reconnects for accounts atm.
              */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, String.format("You are speed limited. Change your IP, try again later or allow speed limited downloads in %s plugin settings.", this.getHost()), 30 * 60 * 1000l);
         }
@@ -464,8 +463,8 @@ public class PixeldrainCom extends PluginForHost {
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
                 /**
-                 * First try to migrate old accounts which still used website login. </br>
-                 * Website cookies contain the API key too -> Extract and set this. Then delete cookies as we don't need them anymore.
+                 * First try to migrate old accounts which still used website login. </br> Website cookies contain the API key too ->
+                 * Extract and set this. Then delete cookies as we don't need them anymore.
                  */
                 /* TODO: Remove this legacy handling after 2023-05 */
                 logger.info("Trying to convert old website cookies to first time API key login");
@@ -503,7 +502,7 @@ public class PixeldrainCom extends PluginForHost {
             }
             logger.info("Validating apikey");
             br.getPage(getAPIURLUser());
-            final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
             if (br.getHttpConnection().getResponseCode() == 401 || (Boolean) response.get("success") == Boolean.FALSE) {
                 if (!account.hasEverBeenValid()) {
                     showApiLoginInformation(account);
@@ -515,7 +514,7 @@ public class PixeldrainCom extends PluginForHost {
     }
 
     private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Boolean status = (Boolean) entries.get("success");
         if (status == Boolean.FALSE) {
             final String value = (String) entries.get("value");
@@ -596,16 +595,15 @@ public class PixeldrainCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         /**
          * 2021-01-15: (Free) Accounts = No captcha required for downloading (usually not even via anonymous files but captchas can
-         * sometimes be required for files with high traffic). </br>
-         * There are also "Donator" Accounts (at this moment we don't try to differ between them) but the download process is no different
-         * when using those!
+         * sometimes be required for files with high traffic). </br> There are also "Donator" Accounts (at this moment we don't try to
+         * differ between them) but the download process is no different when using those!
          */
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         if (!StringUtils.equalsIgnoreCase(br.getURL(), getAPIURLUser())) {
             br.getPage(getAPIURLUser());
         }
-        final Map<String, Object> user = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> user = restoreFromString(br.toString(), TypeRef.MAP);
         /* User will always only have one running subscription. */
         final Map<String, Object> subscription = (Map<String, Object>) user.get("subscription");
         ai.setUsedSpace(((Number) user.get("storage_space_used")).longValue());
@@ -636,9 +634,8 @@ public class PixeldrainCom extends PluginForHost {
         accountStatusText += String.format(" | Balance: %2.2f€", euroBalance / 1000000);
         ai.setStatus(accountStatusText);
         /**
-         * Limits for anonymous users can be checked here: https://pixeldrain.com/api/misc/rate_limits </br>
-         * Once one of these limits is hit, a captcha will be required for downloading. These captchas can be avoided by using free/paid
-         * accounts.
+         * Limits for anonymous users can be checked here: https://pixeldrain.com/api/misc/rate_limits </br> Once one of these limits is
+         * hit, a captcha will be required for downloading. These captchas can be avoided by using free/paid accounts.
          */
         account.setAllowReconnectToResetLimits(true);
         return ai;

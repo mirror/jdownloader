@@ -22,13 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -51,6 +44,13 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.SpankBangCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SpankBangComCrawler extends PluginForDecrypt {
@@ -259,7 +259,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
         boolean q720p = cfg.getBooleanProperty(SpankBangCom.ALLOW_720p, SpankBangCom.default_ALLOW_720p);
         boolean q1080p = cfg.getBooleanProperty(SpankBangCom.ALLOW_1080p, SpankBangCom.default_ALLOW_1080p);
         boolean q4k = cfg.getBooleanProperty(SpankBangCom.ALLOW_4k, SpankBangCom.default_ALLOW_4k);
-        if (!q240p && !q320p && !q480p && !q720p && !q1080p) {
+        if (q240p == q320p == q480p == q720p == q1080p == q4k == false) {
             // user has made error and disabled them all, so we will treat as all enabled.
             q240p = true;
             q320p = true;
@@ -269,7 +269,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
             q4k = true;
         }
         final boolean best = cfg.getBooleanProperty(SpankBangCom.ALLOW_BEST, SpankBangCom.default_ALLOW_BEST);
-        // needs to be in reverse order
+        // needs to be in reverse order (best will stop at first hit)
         if (q4k) {
             selectedQualities.add("4k");
         }

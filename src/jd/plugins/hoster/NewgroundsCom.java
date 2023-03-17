@@ -21,11 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,6 +40,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(?:www\\.)?newgrounds\\.com/(?:portal/view/|audio/listen/)(\\d+)" })
 public class NewgroundsCom extends antiDDoSForHost {
@@ -179,7 +178,7 @@ public class NewgroundsCom extends antiDDoSForHost {
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 filename = (String) entries.get("title");
                 entries = (Map<String, Object>) entries.get("sources");
                 final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
@@ -223,7 +222,9 @@ public class NewgroundsCom extends antiDDoSForHost {
         if (dllink != null && checkForFilesize) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
                 filename = getFileNameFromHeader(con);
                 if (filename != null) {
                     filename = Encoding.htmlDecode(filename);
@@ -247,7 +248,7 @@ public class NewgroundsCom extends antiDDoSForHost {
     }
 
     private boolean requiresAccount(final Browser br) {
-        return br.containsHTML("class=\"adult-only-error\"");
+        return br.containsHTML("class\\s*=\\s*\"adult-only-error\"");
     }
 
     private void errorRateLimited() throws PluginException {
@@ -278,30 +279,20 @@ public class NewgroundsCom extends antiDDoSForHost {
             chunks = free_maxchunks;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, chunks);
-        if (dl.getConnection().getResponseCode() == 429) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException ignore) {
-                logger.log(ignore);
-            }
-            errorRateLimited();
-        }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             try {
                 br.followConnection(true);
             } catch (final IOException ignore) {
                 logger.log(ignore);
             }
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (dl.getConnection().getResponseCode() == 429) {
+                errorRateLimited();
+            } else if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 - wait before starting new downloads", 3 * 60 * 1000l);
-            }
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
             }
             /* 2020-02-18: https://board.jdownloader.org/showthread.php?t=81805 */
             final boolean art_zip_download_broken_serverside = true;
