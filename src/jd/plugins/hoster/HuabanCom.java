@@ -52,14 +52,29 @@ public class HuabanCom extends PluginForHost {
     /* don't touch the following! */
     private String             dllink            = null;
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         String filename = null;
-        final String pin_id = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String pin_id = getFID(link);
         /* Display ids for offline links */
-        link.setName(pin_id);
-        link.setLinkID(pin_id);
+        if (!link.isNameSet()) {
+            link.setName(pin_id + ".jpg");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String site_title = null;
@@ -78,19 +93,25 @@ public class HuabanCom extends PluginForHost {
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            /* 2nd check for offline */
+            final String contentID = br.getRegex("data-content-id=\"(\\d+)\"").getMatch(0);
+            if (!StringUtils.equals(pin_id, contentID)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             /*
              * Site actually contains similar json compared to API --> Grab that and get the final link via that as it is not always present
              * in the normal html code.
              */
-            String json = br.getRegex("app\\.page\\[\"pin\"\\] = (\\{.*?\\});\\s+").getMatch(0);
+            final String json = br.getRegex("id=\"__NEXT_DATA__\" type=\"application/json\"\\s*>(\\{.*?\\})</script>").getMatch(0);
             if (json == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
-            dllink = getDirectlinkFromJson(entries);
-            if (dllink == null) {
+            final String key = (String) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/pin/file/key");
+            if (key == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            dllink = "https://hbimg.huaban.com/" + key;
             link.setProperty("free_directlink", dllink);
         }
         final String ext = getFileNameExtensionFromString(dllink, default_extension);
@@ -160,15 +181,6 @@ public class HuabanCom extends PluginForHost {
             return url;
         }
         return null;
-    }
-
-    public static String getDirectlinkFromJson(final Map<String, Object> entries) {
-        String directlink = null;
-        final String key = (String) JavaScriptEngineFactory.walkJson(entries, "file/key");
-        if (key != null) {
-            directlink = "https://hbimg.huaban.com/" + key;
-        }
-        return directlink;
     }
 
     @Override

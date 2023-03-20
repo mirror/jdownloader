@@ -15,7 +15,8 @@ public class DecrypterRetryException extends Exception {
         HOST(_JDT.T.plugins_errors_hosterproblem()),
         HOST_RATE_LIMIT(_JDT.T.plugins_errors_hosterproblem_rate_limit()),
         GEO(_JDT.T.decrypter_unavailable_geo()),
-        IP(_JDT.T.decrypter_unavailable_ip());
+        IP(_JDT.T.decrypter_unavailable_ip()),
+        UNSUPPORTED_LIVESTREAM(_JDT.T.decrypter_unavailable_unsupported_livestream());
 
         private final String exp;
 
@@ -51,6 +52,8 @@ public class DecrypterRetryException extends Exception {
             return _JDT.T.decrypter_pluginsettings_description();
         } else if (this.reason == RetryReason.IP) {
             return _JDT.T.decrypter_unavailable_ip_description();
+        } else if (this.reason == RetryReason.UNSUPPORTED_LIVESTREAM) {
+            return _JDT.T.decrypter_unavailable_unsupported_livestream();
         } else {
             return null;
         }

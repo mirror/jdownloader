@@ -31,6 +31,8 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -67,19 +69,26 @@ public class ThreeQVideo extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://" + buildHostsPatternPart(domains) + "/config/[a-f0-9\\-]+(\\?[^/]+)?");
+            ret.add("https?://" + buildHostsPatternPart(domains) + "/(?:config|embed)/([a-f0-9\\-]+(\\?[^/]+)?)");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getHeaders().put("Accept", "*/*");
-        br.getPage(param.getCryptedUrl());
+        br.setFollowRedirects(true);
+        final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        br.getPage("https://" + this.getHost() + "/config/" + contentID);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final String contentType = root.get("streamContent").toString();
+        if (StringUtils.equalsIgnoreCase(contentType, "live")) {
+            logger.info("Livestreams are not supported");
+            throw new DecrypterRetryException(RetryReason.UNSUPPORTED_LIVESTREAM);
+        }
         final String title = root.get("title").toString();
         final String description = (String) root.get("description");
         final String date = root.get("upload_date").toString();
@@ -107,16 +116,16 @@ public class ThreeQVideo extends PluginForDecrypt {
                 heightMax = height;
                 maxQuality = video;
             }
-            decryptedLinks.add(video);
+            ret.add(video);
         }
         /* Check if user wants best quality only. */
         if (cfg.isOnlyGrabBestQuality()) {
             /* Clear list of collected items */
-            decryptedLinks.clear();
+            ret.clear();
             /* Add best quality only */
-            decryptedLinks.add(maxQuality);
+            ret.add(maxQuality);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     @Override

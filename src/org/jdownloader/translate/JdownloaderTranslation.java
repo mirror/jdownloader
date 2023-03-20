@@ -173,6 +173,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Not available for current IP" })
     String decrypter_unavailable_ip();
 
+    @Default(lngs = { "en" }, values = { "Livestreams are not supported." })
+    String decrypter_unavailable_unsupported_livestream();
+
     @Default(lngs = { "en" }, values = { "A limit on your current IP address makes crawling this item impossible. Change your IP address or try again later." })
     String decrypter_unavailable_ip_description();
 
