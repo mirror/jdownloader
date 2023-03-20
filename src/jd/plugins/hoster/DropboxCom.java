@@ -7,7 +7,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.Map;
 import java.util.Random;
 import java.util.WeakHashMap;
-import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -17,17 +16,15 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.DebugMode;
-import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
@@ -38,6 +35,7 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -58,6 +56,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.DropBoxComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
 public class DropboxCom extends PluginForHost {
@@ -127,6 +126,10 @@ public class DropboxCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         /*
          * Setting this cookie may save some http requests as the website will not ask us to enter the password again if it has been entered
          * successfully before!
@@ -186,15 +189,33 @@ public class DropboxCom extends PluginForHost {
                     if (brc.getHttpConnection().getResponseCode() == 403) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
-                        /*
-                         * 2020-08-04: Rare case: Content is available not not (officially) downloadable. For images, in theory a thumbnail
-                         * might sometimes be downloadable. Video and audio content can sometimes be streamed.
+                        /**
+                         * 2020-08-04: Rare case: Content is available not not (officially) downloadable. </br>
+                         * For images, in theory a thumbnail might sometimes be downloadable. Video and audio content can sometimes be
+                         * streamed.
                          */
+                        logger.info("Looks like this file is officially not downloadable");
+                        /* Try to gather more information about this file */
+                        final String fileJson = brc.getRegex("InitReact\\.mountComponent\\(mod, (\\{.*?\\})\\);").getMatch(0);
+                        if (fileJson != null) {
+                            final Map<String, Object> entries = restoreFromString(fileJson, TypeRef.MAP);
+                            final Map<String, Object> fileinfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/file");
+                            if (fileinfo != null) {
+                                DropBoxComCrawler.parseMiscFileInfo(link, fileinfo);
+                            } else {
+                                logger.warning("Failed to find fileinfo");
+                            }
+                        } else {
+                            logger.warning("Failed to find filejson");
+                        }
                         link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, false);
                         if (link.hasProperty(PROPERTY_PREVIEW_DOWNLOADLINK)) {
                             return AvailableStatus.TRUE;
                         } else {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "No download button available");
+                            /* File owner has disabled downloads and there is no streaming link available as fallback. */
+                            if (isDownload) {
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "File owner has disabled downloads");
+                            }
                         }
                     }
                 } else if (con.getResponseCode() == 404) {
@@ -309,7 +330,6 @@ public class DropboxCom extends PluginForHost {
         loginWebsite(account, true);
         /* 2019-09-19: Treat all accounts as FREE accounts */
         account.setType(AccountType.FREE);
-        ai.setStatus("Registered (free) user");
         ai.setUnlimitedTraffic();
         return ai;
     }
@@ -369,8 +389,6 @@ public class DropboxCom extends PluginForHost {
         return "https://www.dropbox.com/terms";
     }
 
-    // TODO: Move into Utilities (It's here for a hack)
-    // public class OAuth {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         String passCode = link.getDownloadPassword();
@@ -380,14 +398,15 @@ public class DropboxCom extends PluginForHost {
             handlePremium(link, null);
             return;
         }
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         /*
          * Important! Files may be password protected but if PROPERTY_PASSWORD_COOKIE has been set before we will not have to send the
          * password again! This is why it is crucial to also check for isPasswordProtectedWebsite here!!
          */
         final boolean resume_supported;
         String dllink = null;
-        if (link.hasProperty(IS_OFFICIALLY_DOWNLOADABLE) && !link.getBooleanProperty(IS_OFFICIALLY_DOWNLOADABLE, true)) {
+        final Object isOfficiallyDownloadable = link.getProperty(IS_OFFICIALLY_DOWNLOADABLE);
+        if (Boolean.FALSE.equals(isOfficiallyDownloadable)) {
             /* Workaround for files without official downloadbutton e.g. some video streams --> Downloads stream/"preview file" */
             logger.info("Attempting stream download");
             dllink = link.getStringProperty(PROPERTY_PREVIEW_DOWNLOADLINK);
@@ -481,48 +500,27 @@ public class DropboxCom extends PluginForHost {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink.contains(".m3u8")) {
-            /* HLS download (usually only required for stream downloading) */
+        final String directurlPreview = link.getStringProperty(PROPERTY_PREVIEW_DOWNLOADLINK);
+        if (StringUtils.equals(dllink, directurlPreview)) {
+            /* Stream download active -> Filesize can be different from size of original file. */
+            link.setVerifiedFileSize(-1);
+        }
+        dllink = dllink.replaceFirst("(?i)/dropbox.com/", "/www.dropbox.com/");
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, 1);
+        if (LinkCrawlerDeepInspector.looksLikeMpegURL(dl.getConnection())) {
+            /* HLS download (usually only needed as fallback if official download is disabled) */
             checkFFmpeg(link, "Download a HLS Stream");
-            final Browser brc = br.cloneBrowser();
-            brc.setFollowRedirects(true);
-            brc.getPage(dllink);
-            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(brc));
+            br.followConnection();
+            final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br));
             if (hlsbest == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = new HLSDownloader(link, brc, hlsbest.getDownloadurl());
-            final StreamInfo streamInfo = ((HLSDownloader) dl).getProbe();
-            String extension = null;
-            for (final Stream stream : streamInfo.getStreams()) {
-                if ("video".equalsIgnoreCase(stream.getCodec_type())) {
-                    extension = "mov";
-                    break;
-                } else if ("audio".equalsIgnoreCase(stream.getCodec_type())) {
-                    if ("aac".equalsIgnoreCase(stream.getCodec_name())) {
-                        extension = "aac";
-                        break;
-                    } else if ("mp3".equalsIgnoreCase(stream.getCodec_name())) {
-                        extension = "mp3";
-                        break;
-                    }
-                }
-            }
-            if (extension == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                String name = link.getName();
-                final String ext = Files.getExtension(name);
-                if (!StringUtils.equalsIgnoreCase(extension, ext)) {
-                    name = name.replaceFirst(Pattern.quote(ext) + "$", extension);
-                    link.setFinalFileName(name);
-                }
-            }
+            dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
+            final String extension = hlsbest.getFileExtension();
+            link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getName(), extension));
             dl.startDownload();
         } else {
             /* http download */
-            dllink = dllink.replaceFirst("(?i)/dropbox.com/", "/www.dropbox.com/");
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, 1);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("Final downloadlink lead to HTML code");
                 try {
@@ -533,8 +531,9 @@ public class DropboxCom extends PluginForHost {
                 final URLConnectionAdapter con = dl.getConnection();
                 if (con.getResponseCode() == 401) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else if (con.getResponseCode() == 403) {
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
                 }
             }
             dl.startDownload();
@@ -710,7 +709,7 @@ public class DropboxCom extends PluginForHost {
 
     /** Only use this in crawler!! In host-plugins, use isSingleFile(final DownloadLink link)!! */
     public static boolean isSingleFile(final String url) {
-        if (url.matches(TYPE_S)) {
+        if (url.matches(TYPE_S) || url.matches(TYPE_SH)) {
             return true;
         } else {
             return false;
