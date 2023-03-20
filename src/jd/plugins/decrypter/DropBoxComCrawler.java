@@ -760,9 +760,9 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    private DownloadLink crawlFolderItem(final Map<String, Object> entries) {
-        final String url = (String) entries.get("href");
-        final Boolean is_dir = (Boolean) entries.get("is_dir");
+    private DownloadLink crawlFolderItem(final Map<String, Object> filefolderinfo) {
+        final String url = (String) filefolderinfo.get("href");
+        final Boolean is_dir = (Boolean) filefolderinfo.get("is_dir");
         if (StringUtils.isEmpty(url)) {
             return null;
         }
@@ -772,29 +772,28 @@ public class DropBoxComCrawler extends PluginForDecrypt {
             dl = this.createDownloadlink(url);
         } else {
             dl = createSingleFileDownloadLink(url);
-            /* Try to grab special downloadurls needed for items without official download button. */
-            final String filename = (String) entries.get("filename");
-            final Number filesize = (Number) entries.get("bytes");
-            final String videoStreamURL = (String) JavaScriptEngineFactory.walkJson(entries, "preview/content/transcode_url");
-            final String photoStreamURL = (String) JavaScriptEngineFactory.walkJson(entries, "preview/content/full_size_src");
-            if (filesize != null) {
-                /*
-                 * Don't set verified filesize here as some files are not officially downloadable but are downloadable as stream -->
-                 * Filesize may vary for those!
-                 */
-                // dl.setVerifiedFileSize(filesize);
-                dl.setDownloadSize(filesize.longValue());
-            }
-            dl.setFinalFileName(filename);
-            dl.setAvailable(true);
-            if (!StringUtils.isEmpty(videoStreamURL)) {
-                dl.setProperty(DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, videoStreamURL);
-            } else if (!StringUtils.isEmpty(photoStreamURL)) {
-                dl.setProperty(DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, photoStreamURL);
-            }
-            dl.setProperty(DropboxCom.PROPERTY_ORIGINAL_FILENAME, filename);
+            parseMiscFileInfo(dl, filefolderinfo);
         }
         return dl;
+    }
+
+    public static void parseMiscFileInfo(final DownloadLink dl, final Map<String, Object> fileinfo) {
+        /* Try to grab special downloadurls needed for items without official download button. */
+        final String filename = (String) fileinfo.get("filename");
+        final Number filesize = (Number) fileinfo.get("bytes");
+        final String videoStreamURL = (String) JavaScriptEngineFactory.walkJson(fileinfo, "preview/content/transcode_url");
+        final String photoStreamURL = (String) JavaScriptEngineFactory.walkJson(fileinfo, "preview/content/full_size_src");
+        if (filesize != null) {
+            dl.setVerifiedFileSize(filesize.longValue());
+        }
+        dl.setFinalFileName(filename);
+        dl.setAvailable(true);
+        if (!StringUtils.isEmpty(videoStreamURL)) {
+            dl.setProperty(DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, videoStreamURL);
+        } else if (!StringUtils.isEmpty(photoStreamURL)) {
+            dl.setProperty(DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, photoStreamURL);
+        }
+        dl.setProperty(DropboxCom.PROPERTY_ORIGINAL_FILENAME, filename);
     }
 
     public static String getSharedJsonSource(final Browser br) {

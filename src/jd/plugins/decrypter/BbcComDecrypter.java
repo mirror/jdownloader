@@ -50,7 +50,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String        TYPE_EMBED      = "https?://[^/]+/news/av-embeds/(\\d+)";
+    private final String        TYPE_EMBED      = "https?://[^/]+/[^/]+/av-embeds/.+";
     private static final String TYPE_PROGRAMMES = "https?://[^/]+/programmes/([^/]+)$";
 
     @SuppressWarnings("unchecked")
