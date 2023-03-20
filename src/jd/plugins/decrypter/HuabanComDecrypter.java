@@ -19,19 +19,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "huaban.com" }, urls = { "https?://(?:www\\.)?huaban\\.com/boards/\\d+" })
 public class HuabanComDecrypter extends PluginForDecrypt {
@@ -39,15 +40,13 @@ public class HuabanComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private ArrayList<DownloadLink> decryptedLinks                      = null;
-    private String                  parameter                           = null;
-    private FilePackage             fp                                  = null;
-    private boolean                 enable_description_inside_filenames = jd.plugins.hoster.HuabanCom.defaultENABLE_DESCRIPTION_IN_FILENAMES;
+    private String      parameter                           = null;
+    private FilePackage fp                                  = null;
+    private boolean     enable_description_inside_filenames = jd.plugins.hoster.HuabanCom.defaultENABLE_DESCRIPTION_IN_FILENAMES;
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        br = new Browser();
-        decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         parameter = param.getCryptedUrl();
         final String boardid = new Regex(parameter, "(\\d+)").getMatch(0);
         enable_description_inside_filenames = SubConfiguration.getConfig("huaban.com").getBooleanProperty(jd.plugins.hoster.HuabanCom.ENABLE_DESCRIPTION_IN_FILENAMES, enable_description_inside_filenames);
@@ -58,8 +57,7 @@ public class HuabanComDecrypter extends PluginForDecrypt {
         String fpName = null;
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(getOffline(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (fpName == null) {
@@ -79,7 +77,7 @@ public class HuabanComDecrypter extends PluginForDecrypt {
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user: " + parameter);
-                return decryptedLinks;
+                return ret;
             }
             if (page == 0) {
                 json_source = br.getRegex("app\\.page\\[\"board\"\\] = (\\{.*?\\});[\t\n\r]+").getMatch(0);
@@ -89,8 +87,7 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
                 lnumberof_pins = JavaScriptEngineFactory.toLong(entries.get("pin_count"), 0);
                 if (lnumberof_pins == 0) {
-                    decryptedLinks.add(getOffline(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } else {
                 this.br.getHeaders().put("Accept", "application/json");
@@ -107,7 +104,7 @@ public class HuabanComDecrypter extends PluginForDecrypt {
             final List<Object> resource_data_list = (List) entries.get("pins");
             for (final Object pint : resource_data_list) {
                 final Map<String, Object> single_pin_data = (Map<String, Object>) pint;
-                final String pin_directlink = jd.plugins.hoster.HuabanCom.getDirectlinkFromJson(single_pin_data);
+                final String pin_directlink = getDirectlinkFromJson(single_pin_data);
                 final String pin_id = Long.toString(JavaScriptEngineFactory.toLong(single_pin_data.get("pin_id"), 0));
                 // final String description =(String) single_pin_data.get("description");
                 final String username = Long.toString(JavaScriptEngineFactory.toLong(single_pin_data.get("user_id"), 0));
@@ -139,36 +136,22 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 dl.setName(filename);
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 distribute(dl);
                 last_pin_id = pin_id;
             }
-            logger.info("Decrypter " + decryptedLinks.size() + " of " + lnumberof_pins + " pins");
+            logger.info("Decrypter " + ret.size() + " of " + lnumberof_pins + " pins");
             page++;
-        } while (last_pin_id != null && decryptedLinks.size() < lnumberof_pins);
-        return decryptedLinks;
+        } while (last_pin_id != null && ret.size() < lnumberof_pins);
+        return ret;
     }
 
-    private DownloadLink getOffline(final String parameter) {
-        final DownloadLink offline = this.createOfflinelink(parameter);
-        offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-        return offline;
+    public static String getDirectlinkFromJson(final Map<String, Object> entries) {
+        String directlink = null;
+        final String key = (String) JavaScriptEngineFactory.walkJson(entries, "file/key");
+        if (key != null) {
+            directlink = "https://hbimg.huaban.com/" + key;
+        }
+        return directlink;
     }
-    // /** Log in the account of the hostplugin */
-    // @SuppressWarnings({ "deprecation", "static-access" })
-    // private boolean getUserLogin(final boolean force) throws Exception {
-    // final PluginForHost hostPlugin = JDUtilities.getPluginForHost("huaban.com");
-    // final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
-    // if (aa == null) {
-    // logger.warning("There is no account available, stopping...");
-    // return false;
-    // }
-    // try {
-    // jd.plugins.hoster.HuabanCom.login(this.br, aa, false);
-    // } catch (final PluginException e) {
-    // aa.setValid(false);
-    // return false;
-    // }
-    // return true;
-    // }
 }

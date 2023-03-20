@@ -472,7 +472,10 @@ public abstract class YetiShareCore extends antiDDoSForHost {
              * 2021-11-19: YetiShare sometimes have a bug where it URL-encodes "_20" to "%20" but at this place this bug does not occur -->
              * Prefer to get filename from here.
              */
-            final String betterFilename = br.getRegex("(?i)>\\s*File Page Link\\s*</span>\\s*<pre>https?://[^/]+/[A-Za-z0-9]+/([^<]+)</pre>").getMatch(0);
+            String betterFilename = br.getRegex("(?i)>\\s*File Page Link\\s*</span>\\s*<pre>https?://[^/]+/[A-Za-z0-9]+/([^<]+)</pre>").getMatch(0);
+            if (betterFilename == null) {
+                betterFilename = br.getRegex("(?i)>\\s*(?:Information about|Informação sobre) \"([^\"]+)\"\\s*<").getMatch(0);
+            }
             if (betterFilename != null) {
                 fileInfo[0] = betterFilename;
             }
@@ -487,6 +490,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             }
         }
         if (supports_availablecheck_over_info_page(link)) {
+            /* Older handling */
             final List<String> fileNameCandidates = new ArrayList<String>();
             /* Add pre given candidate */
             if (!StringUtils.isEmpty(fileInfo[0])) {
@@ -498,7 +502,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 String lang_str_information = PluginJSonUtils.getJson(br, "file_information_left_description");
                 if (StringUtils.isEmpty(lang_str_information)) {
                     /* Fallback to English */
-                    lang_str_information = "Information about";
+                    lang_str_information = "(?:Information about|Informação sobre)";
                 }
                 String name = this.br.getRegex("data\\-animation\\-delay=\"\\d+\"\\s*>\\s*" + Pattern.quote(lang_str_information) + "\\s*([^<>\"]*?)\\s*</div>").getMatch(0);
                 if (name == null) {
