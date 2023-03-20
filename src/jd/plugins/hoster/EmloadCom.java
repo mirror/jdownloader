@@ -97,9 +97,10 @@ public class EmloadCom extends antiDDoSForHost {
         return this.rewriteHost(getPluginDomains(), host);
     }
 
-    /*
-     * New parts of the website, intriduced 2020-01-20 but then reverted back to old style 2020-01-21 </br> They will probably re-introduce
-     * their changes! In this case, simply setting this to true should fix availablecheck, login and (premium) download!
+    /**
+     * New parts of the website, intriduced 2020-01-20 but then reverted back to old style 2020-01-21 </br>
+     * They will probably re-introduce their changes! In this case, simply setting this to true should fix availablecheck, login and
+     * (premium) download!
      */
     private static final boolean useWebAPI = false;
 

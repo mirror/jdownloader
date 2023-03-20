@@ -70,6 +70,9 @@ public class WorkuploadCom extends PluginForHost {
         br.getPage("https://" + this.getHost() + "/file/" + this.getFID(link));
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404|> Datei gesperrt")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (isAntiBotCaptchaBlocked(br)) {
+            /* 2023-03-20: Added detection for this but captcha handling is still missing. */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Anti bot block");
         }
         final String sha256 = br.getRegex("(?i)([A-Fa-f0-9]{64})\\s*\\(SHA256\\)").getMatch(0);
         if (sha256 != null) {
@@ -167,6 +170,10 @@ public class WorkuploadCom extends PluginForHost {
         dl.setFilenameFix(true);
         link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
+    }
+
+    private boolean isAntiBotCaptchaBlocked(final Browser br) {
+        return br.containsHTML("class=\"fa fa-shield-check\"");
     }
 
     @Override
