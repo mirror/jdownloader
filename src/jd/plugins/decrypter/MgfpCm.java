@@ -30,6 +30,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -207,17 +208,6 @@ public class MgfpCm extends PluginForDecrypt {
                 String authorsName = ImageFap.getUserName(br, null, false);
                 galleryName = Encoding.htmlDecode(galleryName.trim());
                 authorsName = Encoding.htmlDecode(authorsName.trim());
-                /**
-                 * Max number of images per page = 1000, if we got more we always have at least 2 pages
-                 */
-                final String[] pages = br.getRegex("<a class=link3 href=\"\\?(pgid=&(?:amp;)?gid=\\d+&(?:amp;)?page=|gid=\\d+&(?:amp;)?page=)(\\d+)").getColumn(1);
-                if (pages != null && pages.length != 0) {
-                    for (final String page : pages) {
-                        if (!allPages.contains(page)) {
-                            allPages.add(page);
-                        }
-                    }
-                }
                 int counter = 1;
                 final DecimalFormat df = new DecimalFormat("0000");
                 final HashSet<String> incompleteOriginalFilenameWorkaround = new HashSet<String>();
@@ -226,6 +216,18 @@ public class MgfpCm extends PluginForDecrypt {
                 }
                 if (galleryIDStr == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                /**
+                 * Max number of images per page = 1000, if we got more we always have at least 2 pages
+                 */
+                final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+                for (final String url : urls) {
+                    final UrlQuery query = UrlQuery.parse(url);
+                    final String pageStrTmp = query.get("page");
+                    final String galleryIDStrTmp = query.get("gid");
+                    if (pageStrTmp != null && StringUtils.equals(galleryIDStrTmp, galleryIDStr) && !allPages.contains(pageStrTmp)) {
+                        allPages.add(pageStrTmp);
+                    }
                 }
                 final Long galleryID = Long.parseLong(galleryIDStr);
                 final FilePackage fp = FilePackage.getInstance();

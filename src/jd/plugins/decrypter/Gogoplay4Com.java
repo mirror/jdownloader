@@ -48,7 +48,7 @@ public class Gogoplay4Com extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "gogoplay4.com", "gogoplay5.com", "gogoplay1.com", "goload.pro", "asianwatch.net", "dembed1.com", "membed.net", "asianplay.net", "asianplay.pro", "gogohd.net" });
-        ret.add(new String[] { "asianload.net", "asianembed.io", "k-vid.net", "asianhdplay.net" });
+        ret.add(new String[] { "asianload.net", "asianembed.io", "k-vid.net", "asianhdplay.net", "asianhdplay.pro" });
         return ret;
     }
 
