@@ -22,6 +22,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -44,13 +47,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.hoster.ChoMikujPl;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "https?://((?:www\\.)?chomikuj\\.pl//?[^<>\"]+|chomikujpagedecrypt\\.pl/result/.+)" })
-public class ChoMikujPl extends PluginForDecrypt {
-    public ChoMikujPl(PluginWrapper wrapper) {
+public class ChoMikujPlFolder extends PluginForDecrypt {
+    public ChoMikujPlFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -92,15 +93,16 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        loadHosterPlugin();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setLoadLimit(3123000);
         int startPage = 1;
         boolean scanForMorePages = false;
         String parameter_without_page_number = null;
         if (new Regex(param.getCryptedUrl(), Pattern.compile(VIDEO_DIRECTURL, Pattern.CASE_INSENSITIVE)).matches()) {
             /* 2019-07-16: Very rare case e.g. svn.jdownloader.org/issues/81525 */
-            decryptedLinks.add(this.createDownloadlink("directhttp://" + param.toString()));
-            return decryptedLinks;
+            ret.add(this.createDownloadlink("directhttp://" + param.toString()));
+            return ret;
         }
         String parameter;
         if (param.toString().matches(PAGEDECRYPTLINK)) {
@@ -140,7 +142,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         /********************** Login if possible ************************/
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
-            jd.plugins.hoster.ChoMikujPl.setLoginCookies(this.br, account);
+            ((ChoMikujPl) this.plugin).login(account, false);
         }
         /********************** Multiple pages handling START ************************/
         getPage(parameter);
@@ -174,7 +176,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                         final DownloadLink dl = createDownloadlink(crawlerURL);
                         fp.add(dl);
                         distribute(dl);
-                        decryptedLinks.add(dl);
+                        ret.add(dl);
                     }
                 }
             }
@@ -184,8 +186,8 @@ public class ChoMikujPl extends PluginForDecrypt {
         /* Check if we have a single file or a folder */
         final DownloadLink singleFile = this.crawlSingleFile(this.br);
         if (singleFile != null) {
-            decryptedLinks.add(singleFile);
-            return decryptedLinks;
+            ret.add(singleFile);
+            return ret;
         }
         logger.info("Failed to find single file --> Crawling folder");
         /*
@@ -196,8 +198,8 @@ public class ChoMikujPl extends PluginForDecrypt {
             logger.info("Accessed page doesn't exist");
             final String errmsg = "LinkEnding mismatch: " + linkending;
             final DownloadLink offline = this.createOfflinelink(parameter, errmsg, errmsg);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            ret.add(offline);
+            return ret;
         }
         final String numberofFiles = br.getRegex("(?i)class=\"bold\">(\\d+)</span> plik\\&#243;w<br />").getMatch(0);
         if (br.containsHTML("(?i)Nie znaleziono \\- błąd 404") || br.getHttpConnection().getResponseCode() == 404) {
@@ -206,8 +208,8 @@ public class ChoMikujPl extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if ("0".equals(numberofFiles) && !br.containsHTML("foldersList")) {
             final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER_" + getCurrentURLFolderPath(param.getCryptedUrl()), "This folder doesn't contain any files.");
-            decryptedLinks.add(dummy);
-            return decryptedLinks;
+            ret.add(dummy);
+            return ret;
         }
         // Check if link can be decrypted
         final String cantDecrypt = getError();
@@ -217,8 +219,8 @@ public class ChoMikujPl extends PluginForDecrypt {
             final DownloadLink dloffline = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
             dloffline.setAvailable(false);
             dloffline.setName(cantDecrypt + "_" + new Regex(parameter, "chomikuj\\.pl/(.+)").getMatch(0));
-            decryptedLinks.add(dloffline);
-            return decryptedLinks;
+            ret.add(dloffline);
+            return ret;
         }
         /* Get needed values */
         String chomikID = br.getRegex("name=\"(?:chomikId|ChomikName)\" type=\"hidden\" value=\"(.+?)\"").getMatch(0);
@@ -242,17 +244,17 @@ public class ChoMikujPl extends PluginForDecrypt {
         }
         // All Main-POSTdata
         final String postdata = "ChomikName=" + chomikID + "&folderId=" + folderID + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken);
-        decryptedLinks = crawlAll(br.getURL(), postdata, param, chomikID);
+        ret = crawlAll(br.getURL(), postdata, param, chomikID);
         /* Save cookies for next time */
         synchronized (recentCookies) {
             recentCookies.put(this.getHost(), br.getCookies(br.getHost()));
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /**
-     * Returns DownloadLink if single downloadable file is available according to html code in given browser instance. </br> This can be
-     * used to determine if the current page is a folder or a single file.
+     * Returns DownloadLink if single downloadable file is available according to html code in given browser instance. </br>
+     * This can be used to determine if the current page is a folder or a single file.
      */
     private DownloadLink crawlSingleFile(final Browser br) {
         final String filename = br.getRegex("Download: <b>([^<>\"]*?)</b>").getMatch(0);
@@ -328,7 +330,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         }
         String subfolderStructure = br.getRegex("value=\"https?://[^/]+/([^\"]+)\"[^>]*id=\"FolderAddress\"").getMatch(0);
         final PluginForHost hosterPlugin = this.getNewPluginForHostInstance(this.getHost());
-        final boolean decryptFolders = hosterPlugin.getPluginConfig().getBooleanProperty(jd.plugins.hoster.ChoMikujPl.DECRYPTFOLDERS, false);
+        final boolean decryptFolders = hosterPlugin.getPluginConfig().getBooleanProperty(ChoMikujPl.DECRYPTFOLDERS, false);
         String[][] allFolders = null;
         FilePackage fp = null;
         if (subfolderStructure != null) {
@@ -495,9 +497,10 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     /**
-     * Handles all kind of folder-passwords. </br> Important: Folders can have special "user login folder password" protection AND simple
-     * "folder password" protections. </br> Subfolders may require different passwords than root folders so even though we store working
-     * passwords and retry them, users will be asked for passwords countless times when adding big folders!
+     * Handles all kind of folder-passwords. </br>
+     * Important: Folders can have special "user login folder password" protection AND simple "folder password" protections. </br>
+     * Subfolders may require different passwords than root folders so even though we store working passwords and retry them, users will be
+     * asked for passwords countless times when adding big folders!
      */
     public void passwordHandling(final Object param) throws Exception {
         synchronized (LOCK) {
@@ -677,9 +680,9 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     private void getPage(final Browser br, final String parameter) throws Exception {
-        loadPlugin();
-        ((jd.plugins.hoster.ChoMikujPl) plugin).setBrowser(br);
-        ((jd.plugins.hoster.ChoMikujPl) plugin).getPage(parameter);
+        loadHosterPlugin();
+        ((ChoMikujPl) plugin).setBrowser(br);
+        ((ChoMikujPl) plugin).getPage(parameter);
     }
 
     private void postPage(final String url, final String arg) throws Exception {
@@ -687,9 +690,9 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     private void postPage(final Browser br, final String url, final String arg) throws Exception {
-        loadPlugin();
-        ((jd.plugins.hoster.ChoMikujPl) plugin).setBrowser(br);
-        ((jd.plugins.hoster.ChoMikujPl) plugin).postPage(url, arg);
+        loadHosterPlugin();
+        ((ChoMikujPl) plugin).setBrowser(br);
+        ((ChoMikujPl) plugin).postPage(url, arg);
     }
 
     private void submitForm(final Form form) throws Exception {
@@ -697,14 +700,14 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     private void submitForm(final Browser br, final Form form) throws Exception {
-        loadPlugin();
+        loadHosterPlugin();
         plugin.setBrowser(br);
-        ((jd.plugins.hoster.ChoMikujPl) plugin).submitForm(form);
+        ((ChoMikujPl) plugin).submitForm(form);
     }
 
-    public void loadPlugin() throws PluginException {
+    public void loadHosterPlugin() throws PluginException {
         if (plugin == null) {
-            plugin = getNewPluginForHostInstance("chomikuj.pl");
+            plugin = getNewPluginForHostInstance(this.getHost());
         }
     }
 

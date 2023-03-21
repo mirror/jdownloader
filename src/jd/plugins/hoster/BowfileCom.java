@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -100,5 +101,40 @@ public class BowfileCom extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected String getContinueLink(final Browser br) throws Exception {
+        /* 2023-03-21: Cat mouse */
+        // final String jsFunc = br.getRegex("(function getNextDownloadPageLink\\(crl, btnText\\).*?\\s+\\})\\s+").getMatch(0);
+        // final String jsCall = br.getRegex("(getNextDownloadPageLink\\(\".*?\\))").getMatch(0);
+        // if (jsFunc != null && jsCall != null) {
+        // String result = null;
+        // final StringBuilder sb = new StringBuilder();
+        // sb.append(jsFunc);
+        // sb.append("\nvar result = " + jsCall + ";");
+        // final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+        // final ScriptEngine engine = manager.getEngineByName("javascript");
+        // try {
+        // engine.eval(sb.toString());
+        // result = engine.get("result").toString();
+        // } catch (final Exception e) {
+        // e.printStackTrace();
+        // }
+        // }
+        String continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        if (continue_link == null) {
+            continue_link = br.getRegex("class=\\'btn btn\\-free\\'[^>]*href=\\'([^<>\"\\']*?)\\'>").getMatch(0);
+        }
+        if (continue_link == null) {
+            continue_link = br.getRegex("<div class=\"captchaPageTable\">\\s*<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        }
+        if (continue_link == null) {
+            continue_link = br.getRegex("(https?://[^/]+/[^<>\"\\':]*pt=[^<>\"\\']*)(?:\"|\\')").getMatch(0);
+        }
+        if (continue_link == null) {
+            continue_link = getDllink(br);
+        }
+        return continue_link;
     }
 }
