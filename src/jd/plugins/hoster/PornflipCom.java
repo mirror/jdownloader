@@ -279,7 +279,7 @@ public class PornflipCom extends PluginForHost {
     }
 
     public boolean isLoggedIN(final Browser br) {
-        return br.getCookie(br.getHost(), "sunsid", Cookies.NOTDELETEDPATTERN) != null && br.containsHTML("account/logout");
+        return br.getCookie(br.getHost(), "sunsid", Cookies.NOTDELETEDPATTERN) != null && br.containsHTML("(?i)account/logout");
     }
 
     @Override
