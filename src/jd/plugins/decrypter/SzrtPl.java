@@ -34,21 +34,22 @@ public class SzrtPl extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String parameter = param.getCryptedUrl().replaceFirst("http://", "https://");
         br.setCustomCharset("iso-8859-2");
         // TODO: Seiten mit Passwort, Seite momentan buggy ...
         if (parameter.contains(".php")) {
             return ret;
-        }
-        if (parameter.endsWith(".gif")) {
+        } else if (parameter.endsWith(".gif")) {
             logger.info("Invalid link: " + parameter);
             return ret;
         }
         String link;
         while (true) {
             br.getPage(parameter);
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?)>\\s*BŁĄD 404 \\- brak strony")) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("class=\"error-404 text-center\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             link = br.getRegex(Pattern.compile("<frame name=\"strona\" src=\"(.*?)\">")).getMatch(0);

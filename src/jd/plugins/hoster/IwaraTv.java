@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -182,50 +183,47 @@ public class IwaraTv extends PluginForHost {
         String directurl = null;
         if (isVideo) {
             // TODO: Fix this
-            if (directurl == null) {
+            final String continueURL = (String) entries.get("fileUrl");
+            getVideourl: if (!StringUtils.isEmpty(continueURL) && (isDownload || cfg.isFindFilesizeDuringAvailablecheck())) {
+                // TODO: Make this work
+                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    break getVideourl;
+                }
                 /* Video new/current way */
-                if (isDownload || cfg.isFindFilesizeDuringAvailablecheck()) {
-                    final String drupal = br.getRegex("jQuery\\.extend\\([^{]+(.+)\\);").getMatch(0);
-                    final String videoHash = PluginJSonUtils.getJson(PluginJSonUtils.getJsonNested(drupal, "theme"), "video_hash");
-                    if (!StringUtils.isEmpty(videoHash)) {
-                        final Browser brc = br.cloneBrowser();
-                        brc.getPage("/api/video/" + videoHash);
-                        if (brc.toString().equals("[]")) {
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Processing video, please check back in a while");
-                        }
-                        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.OBJECT);
-                        int maxQuality = -1;
-                        String maxQualityStr = null;
-                        String bestQualityDownloadurl = null;
-                        for (final Map<String, Object> quality : ressourcelist) {
-                            String url = quality.get("uri").toString();
-                            final String qualityStr = quality.get("resolution").toString();
-                            final Integer qualityTmp = qualityModifierToHeight(qualityStr);
-                            if (qualityTmp == null || url == null) {
-                                /* Akip invalid items */
-                                continue;
-                            }
-                            /* Fix url (protocol might be missing) */
-                            url = br.getURL(url).toString();
-                            if (qualityTmp.intValue() > maxQuality) {
-                                maxQuality = qualityTmp.intValue();
-                                maxQualityStr = qualityStr;
-                                bestQualityDownloadurl = url;
-                            }
-                        }
-                        if (bestQualityDownloadurl != null) {
-                            logger.info("Found official downloadurl - quality: " + maxQualityStr);
-                            directurl = bestQualityDownloadurl;
-                            /* Extract upload-date from this URL */
-                            final UrlQuery query = UrlQuery.parse(bestQualityDownloadurl);
-                            String stringWithDate = query.get("file");
-                            if (stringWithDate != null) {
-                                stringWithDate = Encoding.htmlDecode(stringWithDate);
-                            }
-                        } else {
-                            logger.warning("Failed to find any official downloads although it looks like they should be available!");
-                        }
+                final Browser brc = br.cloneBrowser();
+                brc.getHeaders().put("Origin", "https://www.iwara.tv");
+                brc.getHeaders().put("Referer", "https://www.iwara.tv/");
+                brc.getHeaders().put("x-version", "TODO");
+                brc.getPage(continueURL);
+                if (brc.toString().equals("[]")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Processing video, please check back in a while");
+                }
+                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.OBJECT);
+                int maxQuality = -1;
+                String maxQualityStr = null;
+                String bestQualityDownloadurl = null;
+                for (final Map<String, Object> quality : ressourcelist) {
+                    String url = quality.get("uri").toString();
+                    final String qualityStr = quality.get("resolution").toString();
+                    final Integer qualityTmp = qualityModifierToHeight(qualityStr);
+                    if (qualityTmp == null || url == null) {
+                        /* Akip invalid items */
+                        continue;
                     }
+                    /* Fix url (protocol might be missing) */
+                    url = br.getURL(url).toString();
+                    if (qualityTmp.intValue() > maxQuality) {
+                        maxQuality = qualityTmp.intValue();
+                        maxQualityStr = qualityStr;
+                        bestQualityDownloadurl = url;
+                    }
+                }
+                if (bestQualityDownloadurl != null) {
+                    logger.info("Found official downloadurl - quality: " + maxQualityStr);
+                    directurl = bestQualityDownloadurl;
+                    link.setProperty(PROPERTY_DIRECTURL, directurl);
+                } else {
+                    logger.warning("Failed to find any official downloads although it looks like they should be available!");
                 }
             }
         }
@@ -257,9 +255,6 @@ public class IwaraTv extends PluginForHost {
                 directurl = "https://files.iwara.tv/image/large/" + filemap.get("id") + "/" + Encoding.urlEncode(filemap.get("name").toString());
                 break;
             }
-        }
-        if (StringUtils.isEmpty(directurl)) {
-            directurl = (String) entries.get("fileUrl");
         }
         if (!StringUtils.isEmpty(directurl)) {
             link.setProperty(PROPERTY_DIRECTURL, directurl);

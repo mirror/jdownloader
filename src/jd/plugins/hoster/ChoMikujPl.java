@@ -52,6 +52,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.decrypter.ChoMikujPlFolder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "https?://chomikujdecrypted\\.pl/.*?,\\d+$" })
 public class ChoMikujPl extends antiDDoSForHost {
@@ -116,7 +117,7 @@ public class ChoMikujPl extends antiDDoSForHost {
     }
 
     private String getMainlink(final DownloadLink link) {
-        final String mainlink = link.getStringProperty(jd.plugins.decrypter.ChoMikujPl.PROPERTY_MAINLINK);
+        final String mainlink = link.getStringProperty(ChoMikujPlFolder.PROPERTY_MAINLINK);
         if (mainlink != null) {
             return mainlink;
         } else {
@@ -210,9 +211,9 @@ public class ChoMikujPl extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         login(account, true);
-        final String remainingTraffic = br.getRegex("<strong>([^<>\"]*?)</strong>[\t\n\r ]+transferu").getMatch(0);
+        final String remainingTraffic = br.getRegex("<strong>([^<>\"]*?)</strong>\\s*transferu").getMatch(0);
         if (remainingTraffic != null) {
             if (this.getPluginConfig().getBooleanProperty(ChoMikujPl.IGNORE_TRAFFIC_LIMIT, false) || this.getPluginConfig().getBooleanProperty(ChoMikujPl.AVOIDPREMIUMMP3TRAFFICUSAGE, false)) {
                 /*
@@ -383,15 +384,15 @@ public class ChoMikujPl extends antiDDoSForHost {
         }
         final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(this.getHost());
         synchronized (thislock) {
-            ((jd.plugins.decrypter.ChoMikujPl) plg).passwordHandling(link);
+            ((ChoMikujPlFolder) plg).passwordHandling(link);
         }
     }
 
     /** Returns true if some kind of folder password needs to be entered into a Form according to given browsers' HTML code. */
     private static boolean requiresPasswordPrompt(final Browser br) {
-        if (jd.plugins.decrypter.ChoMikujPl.isFolderPasswordProtected(br)) {
+        if (ChoMikujPlFolder.isFolderPasswordProtected(br)) {
             return true;
-        } else if (jd.plugins.decrypter.ChoMikujPl.isSpecialUserPasswordProtected(br)) {
+        } else if (ChoMikujPlFolder.isSpecialUserPasswordProtected(br)) {
             return true;
         } else {
             return false;
@@ -549,7 +550,7 @@ public class ChoMikujPl extends antiDDoSForHost {
     }
 
     private String getFID(final DownloadLink dl) {
-        return dl.getStringProperty(jd.plugins.decrypter.ChoMikujPl.PROPERTY_FILEID);
+        return dl.getStringProperty(ChoMikujPlFolder.PROPERTY_FILEID);
     }
 
     @Override
@@ -665,14 +666,16 @@ public class ChoMikujPl extends antiDDoSForHost {
         }
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
-                if (setLoginCookies(this.br, account)) {
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
-                        logger.info("Trust cookies without checking");
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(cookies);
+                    if (!force) {
+                        /* Do not verify cookies */
                         return;
                     }
                     getPageWithCleanup(this.br, MAINPAGE);
@@ -726,16 +729,6 @@ public class ChoMikujPl extends antiDDoSForHost {
                 }
                 throw e;
             }
-        }
-    }
-
-    public static boolean setLoginCookies(final Browser brlogin, final Account account) {
-        final Cookies cookies = account.loadCookies("");
-        if (cookies != null) {
-            brlogin.setCookies(account.getHoster(), cookies);
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -858,7 +851,7 @@ public class ChoMikujPl extends antiDDoSForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.AVOIDPREMIUMMP3TRAFFICUSAGE, "Account download: Prefer download of stream versions of .mp3 files in account mode?\r\n<html><b>Avoids premium traffic usage for .mp3 files!</b></html>").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.FREE_ANONYMOUS_MODE_ALLOW_STREAM_DOWNLOAD_AS_FALLBACK, "Free (anonymous) download: Allow fallback to stream download if real file is not downloadable without account?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.DECRYPTFOLDERS, "Crawl subfolders in folders").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.IGNORE_TRAFFIC_LIMIT, "Ignore trafficlimit in account (e.g. useful to download self uploaded files or stream download)?").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.IGNORE_TRAFFIC_LIMIT, "Ignore trafficlimit in account (e.g. useful to download self uploaded files or stream download in account mode)?").setDefaultValue(false));
     }
 
     @Override

@@ -36,7 +36,7 @@ public class IsecureLink extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "isecure.link", "isecure.cfd" });
+        ret.add(new String[] { "isecure.link", "isecure.cfd", "isecure.hair" });
         return ret;
     }
 
@@ -61,8 +61,8 @@ public class IsecureLink extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
@@ -79,7 +79,7 @@ public class IsecureLink extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 }

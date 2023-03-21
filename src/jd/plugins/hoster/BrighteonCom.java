@@ -106,6 +106,8 @@ public class BrighteonCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>THE VIDEO YOU&#x27;VE SELECTED IS NOT CURRENTLY AVAILABLE|>This can be caused by the video creator deactivating the video")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String json = br.getRegex("id=\"__NEXT_DATA__\" type=\"application/json\">(\\{.*?\\})</script>").getMatch(0);
         if (json == null) {
