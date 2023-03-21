@@ -24,7 +24,6 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -39,6 +38,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -187,21 +187,22 @@ public class IwaraTv extends PluginForHost {
             link.setProperty(PROPERTY_EMBED_URL, embedUrl);
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported embedded content");
         }
-        final IwaraTvConfig cfg = PluginJsonConfig.get(IwaraTvConfig.class);
         String directurl = null;
         if (isVideo) {
-            // TODO: Fix this
             final String continueURL = (String) entries.get("fileUrl");
-            getVideourl: if (!StringUtils.isEmpty(continueURL) && (isDownload || cfg.isFindFilesizeDuringAvailablecheck())) {
-                // TODO: Make this work
-                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    break getVideourl;
+            if (!StringUtils.isEmpty(continueURL) && isDownload) {
+                final UrlQuery query = UrlQuery.parse(continueURL);
+                final String expires = query.get("expires");
+                final String partOfPath = new Regex(continueURL, "/([^/]+)\\?.*$").getMatch(0);
+                if (expires == null || partOfPath == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                /* Video new/current way */
+                /* As described here: https://github.com/yt-dlp/yt-dlp/issues/6549#issuecomment-1473771047 */
+                final String specialHash = JDHash.getSHA1(partOfPath + "_" + expires + "_5nFp9kmbNnHdAFhaqMvt");
                 final Browser brc = br.cloneBrowser();
-                brc.getHeaders().put("Origin", "https://www.iwara.tv");
-                brc.getHeaders().put("Referer", "https://www.iwara.tv/");
-                brc.getHeaders().put("x-version", "TODO");
+                brc.getHeaders().put("Origin", "https://www." + this.getHost());
+                brc.getHeaders().put("Referer", "https://www." + this.getHost() + "/");
+                brc.getHeaders().put("X-Version", specialHash);
                 brc.getPage(continueURL);
                 if (brc.toString().equals("[]")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Processing video, please check back in a while");
@@ -211,14 +212,16 @@ public class IwaraTv extends PluginForHost {
                 String maxQualityStr = null;
                 String bestQualityDownloadurl = null;
                 for (final Map<String, Object> quality : ressourcelist) {
-                    String url = quality.get("uri").toString();
-                    final String qualityStr = quality.get("resolution").toString();
+                    final Map<String, Object> src = (Map<String, Object>) quality.get("src");
+                    String url = src.get("view").toString();
+                    // String url = src.get("download").toString();
+                    final String qualityStr = quality.get("name").toString();
                     final Integer qualityTmp = qualityModifierToHeight(qualityStr);
                     if (qualityTmp == null || url == null) {
                         /* Akip invalid items */
                         continue;
                     }
-                    /* Fix url (protocol might be missing) */
+                    /* Fix url as protocol might be missing */
                     url = br.getURL(url).toString();
                     if (qualityTmp.intValue() > maxQuality) {
                         maxQuality = qualityTmp.intValue();
@@ -227,11 +230,11 @@ public class IwaraTv extends PluginForHost {
                     }
                 }
                 if (bestQualityDownloadurl != null) {
-                    logger.info("Found official downloadurl - quality: " + maxQualityStr);
+                    logger.info("Found download/stream downloadurl - quality: " + maxQualityStr);
                     directurl = bestQualityDownloadurl;
                     link.setProperty(PROPERTY_DIRECTURL, directurl);
                 } else {
-                    logger.warning("Failed to find any official downloads although it looks like they should be available!");
+                    logger.warning("Failed to find any download/stream");
                 }
             }
         }
@@ -292,7 +295,12 @@ public class IwaraTv extends PluginForHost {
         final String directurl = link.getStringProperty(PROPERTY_DIRECTURL);
         String originalServersideFilename = null;
         try {
-            originalServersideFilename = directurl != null ? UrlQuery.parse(directurl).get("file") : null;
+            final UrlQuery query = UrlQuery.parse(directurl);
+            originalServersideFilename = query.get("file");
+            if (originalServersideFilename == null) {
+                /* 2023-03-21 */
+                originalServersideFilename = query.get("filename");
+            }
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -341,7 +349,10 @@ public class IwaraTv extends PluginForHost {
             return null;
         }
         if (qualityStr.equalsIgnoreCase("Source")) {
-            return 10000;
+            /* Best quality/original */
+            return Integer.MAX_VALUE;
+        } else if (qualityStr.matches("\\d+")) {
+            return Integer.parseInt(qualityStr);
         } else if (qualityStr.matches("(?i)\\d+p")) {
             return Integer.parseInt(qualityStr.toLowerCase(Locale.ENGLISH).replace("p", ""));
         } else {
