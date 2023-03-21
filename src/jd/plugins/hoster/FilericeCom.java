@@ -68,7 +68,7 @@ public class FilericeCom extends XFileSharingProBasic {
             return false;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return false;
+            return true;
         } else {
             /* Free(anonymous) and unknown account type */
             return false;
@@ -102,6 +102,6 @@ public class FilericeCom extends XFileSharingProBasic {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 10;
     }
 }

@@ -39,7 +39,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.IwaraTv;
-import jd.plugins.hoster.YoutubeDashV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class IwaraTvCrawler extends PluginForDecrypt {
@@ -70,12 +69,13 @@ public class IwaraTvCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:[A-Za-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(?:users|profile)/[^/\\?]+(/videos)?");
+            ret.add("https?://(?:[A-Za-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(?:(?:users|profile)/[^/\\?]+(/videos)?|videos?/[A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_USER = "https?://[^/]+/users/([^/]+)(/videos)?";
+    private static final String TYPE_USER  = "https?://[^/]+/users/([^/]+)(/videos)?";
+    private static final String TYPE_VIDEO = "https?://[^/]+/videos?/[A-Za-z0-9]+";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         if (param.getCryptedUrl().matches(TYPE_USER)) {
@@ -137,13 +137,21 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                 dl.setContentUrl(videoURL);
                 dl.setProperty(IwaraTv.PROPERTY_VIDEOID, videoID);
                 IwaraTv.parseFileInfo(dl, result);
-                dl.setName(jd.plugins.hoster.IwaraTv.getFilename(dl));
-                if (PluginJsonConfig.get(IwaraTvConfig.class).isProfileCrawlerEnableFastLinkcheck()) {
-                    dl.setAvailable(true);
+                final String embedUrl = dl.getStringProperty(IwaraTv.PROPERTY_EMBED_URL);
+                if (embedUrl != null) {
+                    /* Video is not hosted on iwara.tv but on a 3rd party website. */
+                    final DownloadLink externalVideo = this.createDownloadlink(embedUrl);
+                    ret.add(externalVideo);
+                    distribute(externalVideo);
+                } else {
+                    dl.setName(IwaraTv.getFilename(dl));
+                    if (PluginJsonConfig.get(IwaraTvConfig.class).isProfileCrawlerEnableFastLinkcheck()) {
+                        dl.setAvailable(true);
+                    }
+                    dl._setFilePackage(fp);
+                    ret.add(dl);
+                    distribute(dl);
                 }
-                dl._setFilePackage(fp);
-                ret.add(dl);
-                distribute(dl);
                 foundNumberofNewItemsThisPage++;
             }
             final int count = ((Number) entries2.get("count")).intValue();
@@ -172,57 +180,29 @@ public class IwaraTvCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         final DownloadLink selfhostedVideo = this.createDownloadlink(param.getCryptedUrl());
         PluginException errorDuringAvailablecheck = null;
         try {
+            final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
             ((jd.plugins.hoster.IwaraTv) hostPlugin).requestFileInformation(selfhostedVideo, account, false);
         } catch (final PluginException e) {
             errorDuringAvailablecheck = e;
         }
-        String externID = br.getRegex("\"(https?://docs\\.google\\.com/file/d/[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            ret.add(createDownloadlink(externID));
-            return ret;
-        }
-        externID = br.getRegex("\"(?:https?:)?//(?:www\\.)?youtube(?:\\-nocookie)?\\.com/embed/([^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            ret.add(createDownloadlink(YoutubeDashV2.generateContentURL(externID)));
-            return ret;
-        }
-        final String[] images = br.getRegex("class=\"field-item even\"><a href=\"([^<>\"]+/files/photos/imported/[^<>\"]+)\"").getColumn(0);
-        if (images.length > 0) {
-            /* 2020-04-20: New: Images */
-            for (String image : images) {
-                if (image.startsWith("//")) {
-                    image = "https:" + image;
-                }
-                final DownloadLink dl = this.createDownloadlink(image);
-                ret.add(dl);
-            }
-        } else {
-            final String source_html = br.getRegex("<div class=\"watch_left\">(.*?)<div class=\"rating_container\">").getMatch(0);
-            if (source_html != null) {
-                externID = new Regex(source_html, "\"(https?[^<>\"]*?)\"").getMatch(0);
-                if (externID != null) {
-                    ret.add(createDownloadlink(externID));
-                    return ret;
-                }
-            }
-        }
-        if (ret.isEmpty()) {
+        final String embedUrl = selfhostedVideo.getStringProperty(IwaraTv.PROPERTY_EMBED_URL);
+        if (embedUrl != null) {
+            /* Video is not hosted on iwara.tv but on a 3rd party website. */
+            ret.add(this.createDownloadlink(embedUrl));
+        } else if (ret.isEmpty()) {
             /* Looks like content is selfhosted. */
-            if (errorDuringAvailablecheck != null) {
+            if (errorDuringAvailablecheck != null && errorDuringAvailablecheck.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                 /* Most likely content is offline */
                 throw errorDuringAvailablecheck;
+            } else {
+                selfhostedVideo.setAvailable(true);
+                ret.add(selfhostedVideo);
             }
-            selfhostedVideo.setAvailable(true);
-            ret.add(selfhostedVideo);
-            return ret;
-        } else {
-            /* Looks like we found embedded content. */
-            return ret;
         }
+        return ret;
     }
 }

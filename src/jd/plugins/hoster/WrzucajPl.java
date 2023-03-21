@@ -21,15 +21,14 @@ import java.util.List;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class BowfileCom extends YetiShareCore {
-    public BowfileCom(PluginWrapper wrapper) {
+public class WrzucajPl extends YetiShareCore {
+    public WrzucajPl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -38,14 +37,15 @@ public class BowfileCom extends YetiShareCore {
      * DEV NOTES YetiShare<br />
      ****************************
      * mods: See overridden functions<br />
-     * limit-info: 2021-08-23: No limits at all <br />
-     * captchatype-info: 2021-08-23: null<br />
+     * limit-info:<br />
+     * captchatype-info: 2023-03-21: null <br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "bowfile.com" });
+        // sister site of: wrzucajpliki.pl
+        ret.add(new String[] { "wrzucaj.pl" });
         return ret;
     }
 
@@ -101,27 +101,5 @@ public class BowfileCom extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    protected String getContinueLink(final Browser br) throws Exception {
-        /* 2023-03-21: Cat mouse */
-        // final String jsFunc = br.getRegex("(function getNextDownloadPageLink\\(crl, btnText\\).*?\\s+\\})\\s+").getMatch(0);
-        // final String jsCall = br.getRegex("(getNextDownloadPageLink\\(\".*?\\))").getMatch(0);
-        // if (jsFunc != null && jsCall != null) {
-        // String result = null;
-        // final StringBuilder sb = new StringBuilder();
-        // sb.append(jsFunc);
-        // sb.append("\nvar result = " + jsCall + ";");
-        // final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-        // final ScriptEngine engine = manager.getEngineByName("javascript");
-        // try {
-        // engine.eval(sb.toString());
-        // result = engine.get("result").toString();
-        // } catch (final Exception e) {
-        // e.printStackTrace();
-        // }
-        // }
-        return super.getContinueLink(br);
     }
 }

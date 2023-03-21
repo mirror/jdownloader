@@ -33,6 +33,7 @@ import org.jdownloader.plugins.components.config.IwaraTvConfig.FilenameScheme;
 import org.jdownloader.plugins.components.config.IwaraTvConfig.FilenameSchemeType;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -109,6 +110,7 @@ public class IwaraTv extends PluginForHost {
     public static final String   PROPERTY_VIDEOID    = "videoid";
     public static final String   PROPERTY_DIRECTURL  = "directurl";
     public static final String   PROPERTY_IS_PRIVATE = "is_private";
+    public static final String   PROPERTY_EMBED_URL  = "embed_url";
     public static final String   WEBAPI_BASE         = "https://api.iwara.tv";
 
     @Override
@@ -179,6 +181,12 @@ public class IwaraTv extends PluginForHost {
         }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         parseFileInfo(link, entries);
+        final String embedUrl = link.getStringProperty(PROPERTY_EMBED_URL);
+        if (embedUrl != null) {
+            /* This should never happen! */
+            link.setProperty(PROPERTY_EMBED_URL, embedUrl);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported embedded content");
+        }
         final IwaraTvConfig cfg = PluginJsonConfig.get(IwaraTvConfig.class);
         String directurl = null;
         if (isVideo) {
@@ -232,13 +240,23 @@ public class IwaraTv extends PluginForHost {
     }
 
     public static void parseFileInfo(final DownloadLink link, final Map<String, Object> entries) {
-        final Map<String, Object> user = (Map<String, Object>) entries.get("user");
-        final String date = new Regex(entries.get("createdAt").toString(), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+        final String message = (String) entries.get("message");
+        Map<String, Object> user = (Map<String, Object>) entries.get("user");
+        if (user == null) {
+            /* For private videos */
+            user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user");
+        }
+        final String createdAt = (String) entries.get("createdAt");
+        if (createdAt != null) {
+            final String date = new Regex(entries.get("createdAt").toString(), "^(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+            link.setProperty(PROPERTY_DATE, date);
+        }
         /* Collect metadata and set so we can later build filename */
-        link.setProperty(PROPERTY_USER, user.get("name"));
-        link.setProperty(PROPERTY_DATE, date);
+        if (user != null) {
+            link.setProperty(PROPERTY_USER, user.get("name"));
+        }
         link.setProperty(PROPERTY_TITLE, entries.get("title"));
-        if (Boolean.TRUE.equals(entries.get("private"))) {
+        if (Boolean.TRUE.equals(entries.get("private")) || StringUtils.equalsIgnoreCase(message, "errors.privateVideo")) {
             link.setProperty(PROPERTY_IS_PRIVATE, true);
         } else {
             link.removeProperty(PROPERTY_IS_PRIVATE);
@@ -248,7 +266,7 @@ public class IwaraTv extends PluginForHost {
         String directurl = null;
         if (file != null) {
             link.setDownloadSize(((Number) file.get("size")).longValue());
-        } else {
+        } else if (files != null) {
             for (final Map<String, Object> filemap : files) {
                 /* First = best */
                 link.setDownloadSize(((Number) filemap.get("size")).longValue());
@@ -258,6 +276,11 @@ public class IwaraTv extends PluginForHost {
         }
         if (!StringUtils.isEmpty(directurl)) {
             link.setProperty(PROPERTY_DIRECTURL, directurl);
+        }
+        final String embedUrl = (String) entries.get("embedUrl");
+        if (embedUrl != null) {
+            /* This should never happen! */
+            link.setProperty(PROPERTY_EMBED_URL, embedUrl);
         }
     }
 
