@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -25,8 +26,8 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.IwaraTvConfig;
 import org.jdownloader.plugins.components.config.IwaraTvConfig.FilenameScheme;
 import org.jdownloader.plugins.components.config.IwaraTvConfig.FilenameSchemeType;
@@ -37,14 +38,13 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookies;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -54,7 +54,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.IwaraTvCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -101,17 +100,18 @@ public class IwaraTv extends PluginForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private static final boolean free_resume         = true;
-    private static final int     free_maxchunks      = 0;
-    private static final int     free_maxdownloads   = -1;
-    private static final String  PROPERTY_DATE       = "date";
-    public static final String   PROPERTY_USER       = "user";
-    public static final String   PROPERTY_TITLE      = "title";
-    public static final String   PROPERTY_VIDEOID    = "videoid";
-    public static final String   PROPERTY_DIRECTURL  = "directurl";
-    public static final String   PROPERTY_IS_PRIVATE = "is_private";
-    public static final String   PROPERTY_EMBED_URL  = "embed_url";
-    public static final String   WEBAPI_BASE         = "https://api.iwara.tv";
+    private static final boolean free_resume                   = true;
+    private static final int     free_maxchunks                = 0;
+    private static final int     free_maxdownloads             = -1;
+    private static final String  PROPERTY_DATE                 = "date";
+    public static final String   PROPERTY_USER                 = "user";
+    public static final String   PROPERTY_TITLE                = "title";
+    public static final String   PROPERTY_VIDEOID              = "videoid";
+    public static final String   PROPERTY_DIRECTURL            = "directurl";
+    public static final String   PROPERTY_IS_PRIVATE           = "is_private";
+    public static final String   PROPERTY_EMBED_URL            = "embed_url";
+    private final String         PROPERTY_ACCOUNT_ACCESS_TOKEN = "access_token";
+    public static final String   WEBAPI_BASE                   = "https://api.iwara.tv";
 
     @Override
     public String getAGBLink() {
@@ -122,6 +122,7 @@ public class IwaraTv extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCustomCharset("UTF-8");
         br.setCookie(this.getHost(), "show_adult", "1");
+        br.setCookie(br.getHost(), "has_js", "1");
         return br;
     }
 
@@ -404,91 +405,82 @@ public class IwaraTv extends PluginForHost {
         return free_maxdownloads;
     }
 
-    public void login(final Account account, final boolean force) throws Exception {
+    public Map<String, Object> login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
+            br.setCookiesExclusive(true);
+            prepBR(br);
+            final int[] allowedResponseCodesBefore = br.getAllowedResponseCodes();
+            br.setAllowedResponseCodes(400);
             try {
-                br.setCookiesExclusive(true);
-                prepBR(br);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(this.getHost(), cookies);
+                final String storedAccessToken = account.getStringProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN);
+                if (storedAccessToken != null) {
+                    br.getHeaders().put("Authorization", "Bearer " + storedAccessToken);
                     if (!force) {
                         /* Trust cookies without check */
-                        return;
+                        return null;
                     }
-                    logger.info("Checking login cookies");
-                    br.getPage("https://" + this.getHost());
-                    if (isLoggedIN(br)) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(this.getHost()), "");
-                        return;
+                    logger.info("Checking login token");
+                    final Map<String, Object> userinfo = apiGetUserInfo(br);
+                    if (br.getHttpConnection().getResponseCode() == 200) {
+                        logger.info("Token login successful");
+                        return userinfo;
                     } else {
-                        logger.info("Cookie login failed");
-                        br.clearCookies(br.getHost());
+                        logger.info("Token login failed");
+                        br.getHeaders().remove("Authorization");
                     }
                 }
                 logger.info("Performing full login");
-                br.getPage("https://www." + this.getHost() + "/user/login?destination=front");
-                Form loginform = br.getFormbyProperty("id", "user-login");
-                if (loginform == null) {
-                    /* Fallback */
-                    loginform = br.getForm(0);
+                br.getPage("https://www." + this.getHost() + "/login");
+                final Map<String, Object> postData = new HashMap<String, Object>();
+                postData.put("email", account.getUser());
+                postData.put("password", account.getPass());
+                br.postPageRaw(WEBAPI_BASE + "/user/login", JSonStorage.serializeToJson(postData));
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                if (br.getHttpConnection().getResponseCode() == 400) {
+                    /* E.g. {"message":"errors.invalidLogin"} */
+                    throw new AccountInvalidException();
                 }
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("name", Encoding.urlEncode(account.getUser()));
-                loginform.put("pass", Encoding.urlEncode(account.getPass()));
-                if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                }
-                /* 2019-12-12: Anti-anti-bot against: https://www.iwara.tv/sites/all/modules/contrib/antibot/js/antibot.js */
-                final String key = PluginJSonUtils.getJson(br, "key");
-                if (key != null) {
-                    loginform.put("antibot_key", key);
-                }
-                if (loginform.getAction() == null || loginform.getAction().contains("/antibot")) {
-                    loginform.setAction(br.getURL());
-                }
-                br.setCookie(br.getHost(), "has_js", "1");
-                /* Anti-anti-bot END */
-                br.submitForm(loginform);
-                if (!isLoggedIN(br)) {
-                    if (br.getURL().contains("/antibot")) {
-                        /* 2019-12-12: Anti-anti-bot failed :( */
-                        logger.warning("Login failed due to anti-bot measures");
-                    }
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                account.saveCookies(br.getCookies(br.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
+                logger.info("Looks good - obtaining final login token");
+                final String token = entries.get("token").toString();
+                br.getHeaders().put("Authorization", "Bearer " + token);
+                /* Get final token. */
+                br.postPage("/user/token", "");
+                final Map<String, Object> entries2 = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final String accessToken = entries2.get("accessToken").toString();
+                br.getHeaders().put("Authorization", "Bearer " + accessToken);
+                account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN, accessToken);
+                return null;
+            } finally {
+                br.setAllowedResponseCodes(allowedResponseCodesBefore);
             }
         }
     }
 
-    private boolean isLoggedIN(final Browser br) {
-        if (br.containsHTML("/user/logout")) {
-            return true;
-        } else {
-            return false;
-        }
+    private Map<String, Object> apiGetUserInfo(final Browser br) throws IOException {
+        br.getPage(WEBAPI_BASE + "/user");
+        return JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        Map<String, Object> usermap = login(account, true);
+        if (usermap == null) {
+            usermap = apiGetUserInfo(br);
+        }
+        final Map<String, Object> user = (Map<String, Object>) usermap.get("user");
         ai.setUnlimitedTraffic();
-        account.setType(AccountType.FREE);
+        final String createdAt = user.get("createdAt").toString();
+        ai.setCreateTime(TimeFormatter.getMilliSeconds(createdAt, "yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.ENGLISH));
+        if (Boolean.TRUE.equals(user.get("premium"))) {
+            final String premiumUntil = (String) user.get("premiumUntil");
+            if (premiumUntil != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(premiumUntil, "yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.ENGLISH));
+            }
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+        }
         account.setConcurrentUsePossible(true);
         return ai;
     }
