@@ -52,7 +52,8 @@ public class PropStoreAuction extends antiDDoSForDecrypt {
         // Detail page images
         Collections.addAll(links, br.getRegex("<div[^>]*class\\s*=\\s*\"carousel-item modal-trigger\"[^>]*style\\s*=\\s*\"background-image:url\\('\\s*([^']+)\\s*").getColumn(0));
         Collections.addAll(links, br.getRegex("<li[^>]+class\\s*=\\s*\"image-slide\"[^>]*>[^/]+href\\s*=\\s*\"\\s*([^\"\\s]+)").getColumn(0));
-        Collections.addAll(links, br.getRegex("<li[^>]*class\\s*=\\s*\"[^\"]*products-gallery3__item[^>]*>\\s*<a[^>]*href\\s*=\\s*\"\\s*([^\"]+)\"").getColumn(0));
+        Collections.addAll(links, br.getRegex("<li[^>]*class\\s*=\\s*\"[^\"]*products-gallery[^\"]*__item[^>]*>\\s*<a[^>]*href\\s*=\\s*\"\\s*([^\"]+)\"").getColumn(0));
+        Collections.addAll(links, br.getRegex("<li[^>]+class\\s*=\\s*\"products-gallery[^\"]*\">\\s* <a[^>]+class\\s*=\\s*\"[^\"]+_thumb\"[^>]+href\\s*=\\s*\"([^\"]+)\"[^>]+>").getColumn(0));
         for (String link : links) {
             link = br.getURL(Encoding.htmlDecode(link)).toString().replaceAll("(\\-\\d+)(\\.\\w+)$", "$2");
             decryptedLinks.add(createDownloadlink(link));
