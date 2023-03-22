@@ -7,6 +7,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -16,19 +23,13 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CopyCaseCom extends PluginForHost {
@@ -110,7 +111,7 @@ public class CopyCaseCom extends PluginForHost {
         if (folderID != null) {
             return "/file-folders/" + folderID + "/file/" + fileID;
         } else {
-            return "/file/" + fileID;
+            return "/files/" + fileID;
         }
     }
 
@@ -126,14 +127,14 @@ public class CopyCaseCom extends PluginForHost {
         return requestFileInformation(link, null);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         final String fileID = getFileID(link);
         if (fileID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!link.isNameSet()) {
             /* Set fallback-filename */
-            final String urlFileName = new Regex(link.getPluginPatternMatcher(), "/(?:file|download)/[a-zA-Z0-9]{16}/([^/]+)").getMatch(2);
+            final String urlFileName = new Regex(link.getPluginPatternMatcher(), "/(?:file|download)/[a-zA-Z0-9]{16}/([^/]+)").getMatch(0);
             if (urlFileName != null) {
                 link.setName(URLEncode.decodeURIComponent(urlFileName));
             } else {
@@ -151,6 +152,11 @@ public class CopyCaseCom extends PluginForHost {
             link.setPasswordProtected(true);
         } else {
             link.setPasswordProtected(false);
+        }
+        /* 2023-03-22: Filename/filesize can also be available for deleted files! */
+        final String status = (String) data.get("status");
+        if (status.equalsIgnoreCase("deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }
@@ -196,6 +202,9 @@ public class CopyCaseCom extends PluginForHost {
                 final Map<String, Object> error_data = (Map<String, Object>) error_info.get("data");
                 final Number timeSeconds = (Number) error_data.get("time");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorID, timeSeconds.longValue() * 1001l);
+            } else if (errorID.equalsIgnoreCase("max_filesize_exceeded")) {
+                /* File too big to be downloaded without account / with current account. */
+                throw new AccountRequiredException();
             } else {
                 /* Unknown error */
                 throw new PluginException(LinkStatus.ERROR_FATAL, errorID);
