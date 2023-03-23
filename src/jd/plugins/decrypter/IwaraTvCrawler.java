@@ -78,15 +78,16 @@ public class IwaraTvCrawler extends PluginForDecrypt {
     private static final String TYPE_VIDEO = "https?://[^/]+/videos?/[A-Za-z0-9]+";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (param.getCryptedUrl().matches(TYPE_USER)) {
-            return crawlChannel(param);
+            return crawlChannel(param, account);
         } else {
-            return crawlSingleVideo(param);
+            return crawlSingleVideo(param, account);
         }
     }
 
     /** Crawls all videos of a user/channel. */
-    private ArrayList<DownloadLink> crawlChannel(final CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> crawlChannel(final CryptedLink param, final Account account) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String usernameSlug = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
         if (usernameSlug == null) {
@@ -94,6 +95,10 @@ public class IwaraTvCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // usernameSlug = URLEncode.decodeURIComponent(usernameSlug);
+        if (account != null) {
+            final IwaraTv hostplugin = (IwaraTv) this.getNewPluginForHostInstance(this.getHost());
+            hostplugin.login(account, false);
+        }
         br.getPage(IwaraTv.WEBAPI_BASE + "/profile/" + usernameSlug);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -178,14 +183,13 @@ public class IwaraTvCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    private ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param, final Account account) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         final DownloadLink selfhostedVideo = this.createDownloadlink(param.getCryptedUrl());
         PluginException errorDuringAvailablecheck = null;
         try {
-            final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
-            ((jd.plugins.hoster.IwaraTv) hostPlugin).requestFileInformation(selfhostedVideo, account, false);
+            final IwaraTv hostPlugin = (IwaraTv) this.getNewPluginForHostInstance(this.getHost());
+            hostPlugin.requestFileInformation(selfhostedVideo, account, false);
         } catch (final PluginException e) {
             errorDuringAvailablecheck = e;
         }

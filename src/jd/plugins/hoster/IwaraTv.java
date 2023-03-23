@@ -394,8 +394,13 @@ public class IwaraTv extends PluginForHost {
         }
         final FilenameSchemeType preferredFilenameSchemeType = PluginJsonConfig.get(IwaraTvConfig.class).getPreferredFilenameSchemeType();
         final String serverFilename = Plugin.getFileNameFromHeader(dl.getConnection());
-        if (preferredFilenameSchemeType == FilenameSchemeType.ORIGINAL_SERVER_FILENAMES && !StringUtils.isEmpty(serverFilename)) {
-            link.setFinalFileName(Encoding.htmlDecode(serverFilename));
+        final String mimeExt = getExtensionFromMimeType(dl.getConnection().getContentType());
+        if (preferredFilenameSchemeType == FilenameSchemeType.ORIGINAL_SERVER_FILENAMES) {
+            if (StringUtils.endsWithCaseInsensitive(serverFilename, mimeExt)) {
+                link.setFinalFileName(Encoding.htmlDecode(serverFilename));
+            } else {
+                logger.info("Ignoring bad filename from header: " + serverFilename);
+            }
         }
         dl.startDownload();
     }
@@ -420,6 +425,7 @@ public class IwaraTv extends PluginForHost {
                         return null;
                     }
                     logger.info("Checking login token");
+                    /* Returns responsecode 401 on failure */
                     final Map<String, Object> userinfo = apiGetUserInfo(br);
                     if (br.getHttpConnection().getResponseCode() == 200) {
                         logger.info("Token login successful");
@@ -430,7 +436,8 @@ public class IwaraTv extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
-                br.getPage("https://www." + this.getHost() + "/login");
+                // br.getPage("https://www." + this.getHost() + "/login");
+                br.getHeaders().put("Referer", "https://www." + this.getHost() + "/login");
                 final Map<String, Object> postData = new HashMap<String, Object>();
                 postData.put("email", account.getUser());
                 postData.put("password", account.getPass());
