@@ -1773,14 +1773,14 @@ public class GoogleDrive extends PluginForHost {
                 errorQuotaReachedInAllModes(link);
             } else {
                 link.setProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ACCOUNT, System.currentTimeMillis());
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: " + getDownloadQuotaReachedHint1(), getQuotaReachedWaittime());
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download quota reached: " + getDownloadQuotaReachedHint1(), getQuotaReachedWaittime());
             }
         } else {
             if (this.isDownloadQuotaReachedAccount(link)) {
                 errorQuotaReachedInAllModes(link);
             } else {
                 link.setProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ANONYMOUS, System.currentTimeMillis());
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: Try later or add Google account and retry", getQuotaReachedWaittime());
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download quota reached: Try later or add Google account and retry", getQuotaReachedWaittime());
             }
         }
     }
@@ -1797,13 +1797,13 @@ public class GoogleDrive extends PluginForHost {
                     errorQuotaReachedInAllModes(link);
                 } else {
                     /* We haven't yet attempted to download this link via account. */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: Try later or adjust API download mode in plugin settings", getQuotaReachedWaittime());
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download quota reached: Try later or adjust API download mode in plugin settings", getQuotaReachedWaittime());
                 }
             } else {
                 if (this.isDownloadQuotaReachedAccount(link)) {
                     errorQuotaReachedInAllModes(link);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: Try later or add Google account and retry", getQuotaReachedWaittime());
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download quota reached: Try later or add Google account and retry", getQuotaReachedWaittime());
                 }
             }
         }
@@ -1815,7 +1815,7 @@ public class GoogleDrive extends PluginForHost {
      * @throws PluginException
      */
     private void errorQuotaReachedInAllModes(final DownloadLink link) throws PluginException {
-        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download Quota reached: " + getDownloadQuotaReachedHint1(), getQuotaReachedWaittime());
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download quota reached: " + getDownloadQuotaReachedHint1(), getQuotaReachedWaittime());
     }
 
     private void errorFileInfected(final DownloadLink link) throws PluginException {
@@ -1841,7 +1841,7 @@ public class GoogleDrive extends PluginForHost {
     private void errorCannotDownload(final DownloadLink link, final boolean isAfterStreamDownloadAttempt) throws PluginException {
         String errorMsg = "Download disabled by file owner!";
         if (!isAfterStreamDownloadAttempt && this.videoStreamShouldBeAvailable(link) && !PluginJsonConfig.get(GoogleConfig.class).isAllowStreamDownloadAsFallbackIfOfficialDownloadIsDisabled()) {
-            errorMsg += " Video stream download might be possible: Enable stream download as fallback for disabled downloads in plugin settings.";
+            errorMsg += " Stream download might be possible: Enable stream download as fallback for disabled downloads in plugin settings.";
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, errorMsg);
     }
@@ -1873,7 +1873,7 @@ public class GoogleDrive extends PluginForHost {
         }
         final Cookies userCookies = account.loadUserCookies();
         if (userCookies != null && PluginJsonConfig.get(GoogleConfig.class).isDebugAccountLogin()) {
-            /* Debug */
+            /* Old debug check */
             final String cookieOSID = br.getCookie("google.com", "OSID");
             if (cookieOSID == null || cookieOSID.equals("")) {
                 logger.warning("OSID cookie has empty value -> This should never happen");
