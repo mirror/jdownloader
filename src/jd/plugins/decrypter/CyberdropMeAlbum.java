@@ -274,7 +274,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 }
             }
             if (ret.isEmpty()) {
-                if (br.containsHTML("(?i)>\\s*0 files\\s*<")) {
+                if (br.containsHTML("(?i)>\\s*0 files\\s*<") || br.containsHTML("(?i)There are no files in the album")) {
                     throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
