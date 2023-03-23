@@ -68,12 +68,24 @@ public class DebridLinkFr2 extends PluginForHost {
     private static final String          PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_CREATED     = "refresh_token_timestamp_created";
     private static final String          PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_VALID_UNTIL = "access_token_timestamp_valid_until";
     private static final String          PROPERTY_ACCOUNT_REFRESH_TOKEN                      = "refresh_token";
-    private static final String          PROPERTY_ACCOUNT_NEW_LOGIN_MESSAGE_DISPLAYED        = "NEW_LOGIN_MESSAGE_DISPLAYED";
-    private static Set<String>           quotaReachedHostsList                               = new HashSet<String>();
+    private static final Set<String>     quotaReachedHostsList                               = new HashSet<String>();
     /** Contains timestamp when quotas of all quota limited hosts will be reset. */
-    private static AtomicLong            nextQuotaReachedResetTimestamp                      = new AtomicLong(0l);
-    private static final boolean         LIMIT_resume                                        = true;
-    private static final int             LIMIT_chunks                                        = 1;
+    private static final AtomicLong      nextQuotaReachedResetTimestamp                      = new AtomicLong(0l);
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    private int getMaxChunks(final DownloadLink link) {
+        final int maxChunksStored = link.getIntegerProperty(PROPERTY_MAXCHUNKS, 1);
+        if (maxChunksStored > 1) {
+            /* Minus maxChunksStored -> Up to X chunks */
+            return -maxChunksStored;
+        } else {
+            return maxChunksStored;
+        }
+    }
 
     public DebridLinkFr2(PluginWrapper wrapper) {
         super(wrapper);
@@ -112,9 +124,9 @@ public class DebridLinkFr2 extends PluginForHost {
         final AccountInfo ac = new AccountInfo();
         login(account, true);
         if (br.getRequest() == null || !br.getURL().contains("/account/infos")) {
-            callAPIGetAccountInfo();
+            callAPIGetAccountInfo(br);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("value");
         /* Set censored E-Mail address of user as username. */
         final String emailCensored = (String) entries.get("email");
@@ -169,8 +181,8 @@ public class DebridLinkFr2 extends PluginForHost {
         /* Update list of supported hosts */
         /* https://debrid-link.com/api_doc/v2/downloader-regex */
         br.getPage(this.getApiBase() + "/downloader/hosts?keys=status%2CisFree%2Cname%2Cdomains");
-        List<String> supportedHosts = new ArrayList<String>();
-        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final List<String> supportedHosts = new ArrayList<String>();
+        entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
         final List<Object> hosters = (List<Object>) entries.get("value");
         final HashMap<String, String> name2RealHostMap = new HashMap<String, String>();
         final AccountInfo dummyAccInfo = new AccountInfo();
@@ -218,7 +230,7 @@ public class DebridLinkFr2 extends PluginForHost {
         }
         ac.setMultiHostSupport(this, supportedHosts);
         br.getPage(this.getApiBase() + "/downloader/limits/all");
-        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
         entries = (Map<String, Object>) entries.get("value");
         /** How much percent of the (daily?) quota is used up so far? */
         final Map<String, Object> usagePercentMap = (Map<String, Object>) entries.get("usagePercent");
@@ -295,7 +307,7 @@ public class DebridLinkFr2 extends PluginForHost {
         account.removeProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_VALID_UNTIL);
     }
 
-    private void callAPIGetAccountInfo() throws IOException {
+    private void callAPIGetAccountInfo(final Browser br) throws IOException {
         br.getPage(this.getApiBase() + "/account/infos");
     }
 
@@ -311,7 +323,7 @@ public class DebridLinkFr2 extends PluginForHost {
                     logger.info("Trust token without check");
                     return;
                 } else {
-                    this.callAPIGetAccountInfo();
+                    this.callAPIGetAccountInfo(br);
                     errHandling(account, null);
                     logger.info("Token login successful | Token is valid for: " + TimeFormatter.formatMilliSeconds(account.getLongProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_VALID_UNTIL, 0) - System.currentTimeMillis(), 0));
                     return;
@@ -532,6 +544,7 @@ public class DebridLinkFr2 extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception, PluginException {
+        /* This should never be called. */
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
@@ -592,7 +605,7 @@ public class DebridLinkFr2 extends PluginForHost {
                 logger.warning("Failed to find dllink");
                 mhm.handleErrorGeneric(account, link, "dllinknull", 50, 5 * 60 * 1000l);
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, LIMIT_resume, getMaxChunks(link));
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), getMaxChunks(link));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
@@ -630,16 +643,6 @@ public class DebridLinkFr2 extends PluginForHost {
         dl.startDownload();
     }
 
-    private int getMaxChunks(final DownloadLink link) {
-        final int maxChunksStored = link.getIntegerProperty(PROPERTY_MAXCHUNKS, LIMIT_chunks);
-        if (maxChunksStored > 1) {
-            /* Minus maxChunksStored -> Up to X chunks */
-            return -maxChunksStored;
-        } else {
-            return maxChunksStored;
-        }
-    }
-
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
         final String url = link.getStringProperty(PROPERTY_DIRECTURL);
         if (StringUtils.isEmpty(url)) {
@@ -647,7 +650,7 @@ public class DebridLinkFr2 extends PluginForHost {
         }
         try {
             final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, LIMIT_resume, this.getMaxChunks(link));
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, null), this.getMaxChunks(link));
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
