@@ -30,6 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -44,10 +45,11 @@ public class Open3dlabCom extends PluginForHost {
         return "https://www.test.com/help/privacy";
     }
 
-    private static List<String[]> getPluginDomains() {
+    public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "open3dlab.com" });
+        ret.add(new String[] { "smutba.se" });
         return ret;
     }
 
@@ -89,6 +91,16 @@ public class Open3dlabCom extends PluginForHost {
         }
     }
 
+    @Override
+    public String getMirrorID(final DownloadLink link) {
+        final String fid = this.getFID(link);
+        if (fid != null) {
+            return getHost() + "://" + fid;
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
     private String getFID(final DownloadLink link) {
         final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
         return urlinfo.getMatch(0) + "_" + urlinfo.getMatch(1);
@@ -110,6 +122,8 @@ public class Open3dlabCom extends PluginForHost {
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
+        } else {
+            logger.warning("Failed to find filename in HTML code");
         }
         final String dllink = findDirecturl(br);
         if (!StringUtils.isEmpty(dllink) && !link.isSizeSet()) {
@@ -119,6 +133,10 @@ public class Open3dlabCom extends PluginForHost {
                 con = br.openGetConnection(dllink);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String serverFilename = Plugin.getFileNameFromHeader(con);
+                if (serverFilename != null) {
+                    link.setFinalFileName(serverFilename);
                 }
             } finally {
                 try {
