@@ -436,11 +436,10 @@ public class IwaraTv extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
-                // br.getPage("https://www." + this.getHost() + "/login");
-                br.getHeaders().put("Referer", "https://www." + this.getHost() + "/login");
                 final Map<String, Object> postData = new HashMap<String, Object>();
                 postData.put("email", account.getUser());
                 postData.put("password", account.getPass());
+                br.getHeaders().put("Referer", "https://www." + this.getHost() + "/login");
                 br.postPageRaw(WEBAPI_BASE + "/user/login", JSonStorage.serializeToJson(postData));
                 final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 if (br.getHttpConnection().getResponseCode() == 400) {

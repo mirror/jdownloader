@@ -126,10 +126,10 @@ public class PornHubCom extends PluginForHost {
     private static final String                   USE_ORIGINAL_SERVER_FILENAME          = "USE_ORIGINAL_SERVER_FILENAME";
     public static final String                    GIFS_WEBM                             = "GIFS_WEBM";
     private final String                          REMOVED_VIDEO                         = ">\\s*This video has been removed\\s*<";
-    public static final String                    PROPERTY_FORMAT                        = "format";
+    public static final String                    PROPERTY_FORMAT                       = "format";
     public static final String                    PROPERTY_QUALITY                      = "quality";
-    public static final String                    PROPERTY_DIRECTLINK                    = "directlink";
-    public static final String                    PROPERTY_DATE                          = "date";
+    public static final String                    PROPERTY_DIRECTLINK                   = "directlink";
+    public static final String                    PROPERTY_DATE                         = "date";
     public static final String                    PROPERTY_CATEGORIES_COMMA_SEPARATED   = "categories_comma_separated";
     public static final String                    PROPERTY_TAGS_COMMA_SEPARATED         = "tags_comma_separated";
     public static final String                    PROPERTY_ACTORS_COMMA_SEPARATED       = "actors_comma_separated";
@@ -1549,9 +1549,9 @@ public class PornHubCom extends PluginForHost {
             }
         }
         br.setLoadLimit(br.getDefaultLoadLimit() * 4);
-        // only evaluated via js
-        // br.setCookie("pornhub.com", "cookiesBannerSeen", "1");
-        // br.setCookie("pornhub.com", "accessAgeDisclaimerPH", "1");
+        /* Mandatory since 2023-03-23 */
+        br.setCookie("pornhub.com", "cookiesBannerSeen", "1");
+        br.setCookie("pornhub.com", "accessAgeDisclaimerPH", "1");
         return br;
     }
 

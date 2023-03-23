@@ -16,67 +16,98 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "swzz.xyz" }, urls = { "https?://(?:www\\.)?swzz\\.xyz/link/[A-Za-z0-9]+/" })
-public class SwzzXyz extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class SwzzXyz extends MightyScriptAdLinkFly {
     public SwzzXyz(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.setFollowRedirects(true);
-        getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "swzz.xyz" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:link/)?[A-Za-z0-9]+/?");
         }
-        if (br.containsHTML("<em>Questo Link Non è ancora attivo\\.\\.\\.riprova tra qualche istante!<em>")) {
-            logger.warning("Retry in a few minutes: " + parameter);
-            return decryptedLinks;
-        }
-        // within packed
-        String finallink = br.getRegex("<a\\s*href\\s*=\\s*\"(https?[^\"]+)\"\\s*class\\s*=\\s*\"btn\\-wrapper link\"").getMatch(0);
-        if (StringUtils.isEmpty(finallink)) {
-            finallink = br.getRegex("var\\s*link\\s*=\\s*(\"|')([^'\"]*)").getMatch(1);
-        }
-        if (StringUtils.isEmpty(finallink)) {
-            final String js = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\))\\)").getMatch(0);
-            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-            try {
-                engine.eval("var res = " + js + ";");
-                final String result = (String) engine.get("res");
-                finallink = new Regex(result, "var link\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
-            } catch (final Exception e) {
-                logger.log(e);
-            }
-        }
-        if (StringUtils.isEmpty(finallink)) {
-            finallink = br.getRegex("href\\s*=\\s*\"(https?[^\"]+)\"\\s*role=\\s*\"button\"").getMatch(0);
-        }
-        if (StringUtils.isEmpty(finallink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String url = param.getCryptedUrl();
+        if (url.matches("https?://[^/]+/[A-Za-z0-9]+/?$")) {
+            return super.decryptIt(param, progress);
         } else {
-            decryptedLinks.add(createDownloadlink(finallink));
-            return decryptedLinks;
+            br.setFollowRedirects(true);
+            getPage(url);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("(?i)<em>\\s*Questo Link Non è ancora attivo\\.\\.\\.riprova tra qualche istante!<em>")) {
+                throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
+            }
+            // within packed
+            String finallink = br.getRegex("<a\\s*href\\s*=\\s*\"(https?[^\"]+)\"\\s*class\\s*=\\s*\"btn\\-wrapper link\"").getMatch(0);
+            if (StringUtils.isEmpty(finallink)) {
+                finallink = br.getRegex("var\\s*link\\s*=\\s*(\"|')([^'\"]*)").getMatch(1);
+            }
+            if (StringUtils.isEmpty(finallink)) {
+                final String js = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\))\\)").getMatch(0);
+                final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+                final ScriptEngine engine = manager.getEngineByName("javascript");
+                try {
+                    engine.eval("var res = " + js + ";");
+                    final String result = (String) engine.get("res");
+                    finallink = new Regex(result, "var link\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+                } catch (final Exception e) {
+                    logger.log(e);
+                }
+            }
+            if (StringUtils.isEmpty(finallink)) {
+                finallink = br.getRegex("href\\s*=\\s*\"(https?[^\"]+)\"\\s*role=\\s*\"button\"").getMatch(0);
+            }
+            if (StringUtils.isEmpty(finallink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                ret.add(createDownloadlink(finallink));
+                return ret;
+            }
         }
     }
 }
