@@ -97,4 +97,10 @@ public class MdhTo extends PluginForDecrypt {
         ret.add(createDownloadlink(finallink));
         return ret;
     }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2023-03-24: Avoid running into rate-limits. */
+        return 1;
+    }
 }

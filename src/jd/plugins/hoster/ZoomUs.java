@@ -23,7 +23,7 @@ import java.util.Map;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,9 +36,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class ZoomUs extends antiDDoSForHost {
+public class ZoomUs extends PluginForHost {
     public ZoomUs(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -104,7 +105,7 @@ public class ZoomUs extends antiDDoSForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -128,8 +129,9 @@ public class ZoomUs extends antiDDoSForHost {
                     prepwform.put("fileId", "");
                     prepwform.put("useWhichPasswd", Encoding.urlEncode(useWhichPasswd));
                     prepwform.put("sharelevel", Encoding.urlEncode(sharelevel));
-                    this.submitForm(prepwform);
-                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                    final Browser br2 = br.cloneBrowser();
+                    br2.submitForm(prepwform);
+                    final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
                     final Map<String, Object> result = (Map<String, Object>) entries.get("result");
                     if (result != null) {
                         final String topic = (String) result.get("topic");
@@ -155,8 +157,13 @@ public class ZoomUs extends antiDDoSForHost {
             pwform.put("id", Encoding.urlEncode(meetingID));
             pwform.put("passwd", Encoding.urlEncode(passCode));
             pwform.put("action", "viewdetailpage");
-            pwform.put("recaptcha", "");
-            this.submitForm(pwform);
+            String recaptchaV2Response = "";
+            if (this.requiresCaptcha(br)) {
+                final String reCaptchaID = br.getRegex("var gRecaptchaVisible\\s*=\\s*\"([^\"]+)").getMatch(0);
+                recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaID).getToken();
+            }
+            pwform.put("recaptcha", Encoding.urlEncode(recaptchaV2Response));
+            br.submitForm(pwform);
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             /* E.g. invalid password: {"status":false,"errorCode":3302,"errorMessage":"Falscher Kenncode","result":null} */
             if (Boolean.FALSE.equals(entries.get("status"))) {
@@ -165,10 +172,9 @@ public class ZoomUs extends antiDDoSForHost {
             } else {
                 /* Correct password! Item should now be downloadable. */
                 link.setDownloadPassword(passCode);
-                getPage(link.getPluginPatternMatcher());
+                br.getPage(link.getPluginPatternMatcher());
             }
         }
-        /* TODO: Add support for password protected items */
         String filename = br.getRegex("topic\\s*:\\s*\"([^<>\"]+)\"").getMatch(0);
         final String filesize = br.getRegex("fileSize\\:\\s*(?:\"|')(\\d+(\\.\\d{1,2})? [^\"\\']+)(?:\"|')").getMatch(0);
         if (!StringUtils.isEmpty(filename)) {
@@ -189,6 +195,7 @@ public class ZoomUs extends antiDDoSForHost {
         requestFileInformation(link, true);
         final String dllink = br.getRegex("viewMp4Url\\s*:\\s*(?:\"|')(https://[^<>\"\\']+)(?:\"|')").getMatch(0);
         if (StringUtils.isEmpty(dllink)) {
+            throwExceptionOnCaptcha(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
@@ -206,6 +213,16 @@ public class ZoomUs extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         }
         dl.startDownload();
+    }
+
+    private void throwExceptionOnCaptcha(final Browser br) throws PluginException {
+        if (requiresCaptcha(br)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Captcha required: Try again later");
+        }
+    }
+
+    private boolean requiresCaptcha(final Browser br) {
+        return br.containsHTML("(?i)needRecaptcha\\s*:\\s*true");
     }
 
     private boolean passwordRequired(final Browser br) {
