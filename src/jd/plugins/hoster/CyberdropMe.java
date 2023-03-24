@@ -5,10 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.http.Browser;
@@ -18,6 +14,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CyberdropMeAlbum;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { CyberdropMeAlbum.class })
@@ -53,7 +53,7 @@ public class CyberdropMe extends DirectHTTP {
 
     @Override
     protected int getMaxChunks(DownloadLink downloadLink, Set<String> optionSet, int chunks) {
-        if ("bunkr.is".equals(getHost())) {
+        if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(getHost())) {
             return 1;
         } else {
             return chunks;
@@ -62,7 +62,7 @@ public class CyberdropMe extends DirectHTTP {
 
     @Override
     protected int getMaxSimultanDownload(DownloadLink link, Account account) {
-        if ("bunkr.is".equals(getHost())) {
+        if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(getHost())) {
             return 1;
         } else {
             return super.getMaxSimultanDownload(link, account);
@@ -71,7 +71,7 @@ public class CyberdropMe extends DirectHTTP {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        if ("bunkr.is".equals(getHost())) {
+        if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(getHost())) {
             return 1;
         } else {
             return super.getMaxSimultanFreeDownloadNum();
@@ -84,9 +84,9 @@ public class CyberdropMe extends DirectHTTP {
         if (pluginFinder != null && CyberdropMe.class.equals(getClass()) && !pluginHost.equals(link.getHost())) {
             final String url = link.getPluginPatternMatcher();
             boolean checkHostFlag = false;
-            if ("cyberdrop.me".equals(pluginHost) && url.matches(CyberdropMeAlbum.TYPE_FS)) {
+            if (CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(pluginHost) && url.matches(CyberdropMeAlbum.TYPE_FS)) {
                 checkHostFlag = true;
-            } else if ("bunkr.is".equals(pluginHost) && (url.matches(CyberdropMeAlbum.TYPE_CDN) || url.matches(CyberdropMeAlbum.TYPE_STREAM))) {
+            } else if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(pluginHost) && (url.matches(CyberdropMeAlbum.TYPE_CDN) || url.matches(CyberdropMeAlbum.TYPE_STREAM))) {
                 checkHostFlag = true;
             } else {
                 return null;
@@ -107,7 +107,7 @@ public class CyberdropMe extends DirectHTTP {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        if ("bunkr.ru".equals(getHost()) || "bunkr.su".equals(getHost()) || "cyberdrop.me".equals(getHost())) {
+        if ("bunkr.ru".equals(getHost()) || CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(getHost()) || CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(getHost())) {
             return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.ASSIGN_PLUGIN };
         } else {
             return new LazyPlugin.FEATURE[0];
@@ -121,9 +121,10 @@ public class CyberdropMe extends DirectHTTP {
 
     @Override
     protected String getDownloadURL(DownloadLink downloadLink) throws IOException {
-        if (!hasCustomDownloadURL() && "cyberdrop.me".equals(getHost())) {
+        if (false && !hasCustomDownloadURL() && CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(getHost())) {
             final String url = downloadLink.getPluginPatternMatcher();
             /* 2022-11-10: fs-(03|04|05|06) are offline, rewrite to fs-01, fs-02 redirects to fs-01 */
+            /* 2023-03-24: looks like fs-(03|04|05|06) are working again */
             final String newUrl = url.replaceFirst("://fs-(03|04|05|06)", "://fs-01");
             return newUrl;
         } else {
