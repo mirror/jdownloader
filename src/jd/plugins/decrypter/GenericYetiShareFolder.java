@@ -82,6 +82,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         ret.add(new String[] { "cyberfile.su" });
         ret.add(new String[] { "filestank.com" });
         ret.add(new String[] { "wrzucaj.pl" });
+        ret.add(new String[] { "sabercathost.com" });
         return ret;
     }
 
