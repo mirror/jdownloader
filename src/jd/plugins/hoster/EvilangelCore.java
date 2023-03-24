@@ -716,16 +716,20 @@ public abstract class EvilangelCore extends PluginForHost {
                     login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
                 login.remove("submit");
-                /* 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! */
+                /**
+                 * 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! </br>
+                 * Only add "rememberme": "1" if that is not already present in our form.
+                 */
+                final String remembermeCookieKey = "rememberme";
                 boolean containsRemembermeFieldWithValue1 = false;
                 for (final InputField ifield : login.getInputFields()) {
-                    if (StringUtils.equals(ifield.getKey(), "rememberme") && StringUtils.equals(ifield.getValue(), "1")) {
+                    if (StringUtils.equals(ifield.getKey(), remembermeCookieKey) && StringUtils.equals(ifield.getValue(), "1")) {
                         containsRemembermeFieldWithValue1 = true;
                         break;
                     }
                 }
                 if (!containsRemembermeFieldWithValue1) {
-                    login.put("rememberme", "1");
+                    login.put(remembermeCookieKey, "1");
                 }
                 br.submitForm(login);
                 /* TODO: 2021-09-01: Add support for 2FA login (security code gets sent via mail) */
