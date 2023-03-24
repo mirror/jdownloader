@@ -43,6 +43,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -94,7 +95,7 @@ public abstract class EvilangelCore extends PluginForHost {
     private static final String URL_EVILANGEL_FILM                     = "https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
     @Deprecated
     private static final String URL_EVILANGEL_FREE_TRAILER             = "https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
-    private static final String URL_VIDEO                              = "https?://members\\.[^/]+/[a-z]{2}/video/([^/]+)(?:/([A-Za-z0-9\\-_]+))?/(\\d+)";
+    private static final String URL_VIDEO                              = "https?://members\\.[^/]+/[a-z]{2}/(?:video|movie)/([^/]+)(?:/([A-Za-z0-9\\-_]+))?/(\\d+)";
     private static final String PROPERTY_ACTORS                        = "actors";
     private static final String PROPERTY_DATE                          = "date";
     private static final String PROPERTY_QUALITY                       = "quality";
@@ -298,8 +299,8 @@ public abstract class EvilangelCore extends PluginForHost {
                     final Map<String, Object> root = JSonStorage.restoreFromString(htmlVideoJson2, TypeRef.HASHMAP);
                     final Map<String, Object> sceneInfos = (Map<String, Object>) root.get("sceneInfos");
                     if (sceneInfos != null) {
-                        final String sceneId = sceneInfos.get("sceneId").toString();
-                        if (br.getURL().contains(sceneId)) {
+                        final Object sceneIdO = sceneInfos.get("sceneId");
+                        if (sceneIdO != null && br.getURL().contains(sceneIdO.toString())) {
                             final String sceneReleaseDate = (String) sceneInfos.get("sceneReleaseDate");
                             final String sceneTitle = (String) sceneInfos.get("sceneTitle");
                             if (sceneReleaseDate != null) {
@@ -589,6 +590,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 return param1;
             }
         } else {
+            logger.warning("!Developer mistake! Unsupported URL!");
             return null;
         }
     }
@@ -674,12 +676,15 @@ public abstract class EvilangelCore extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage(getNamespaceLogin());
                 if (br.containsHTML("(?i)>\\s*We are experiencing some problems\\!<")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your IP is banned. Please re-connect to get a new IP to be able to log-in!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("Your IP is banned. Please re-connect to get a new IP to be able to log-in!");
                 }
                 final Form login = br.getFormbyProperty("id", "loginForm");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                br.setCookie(br.getHost(), "origin", "promo");
+                br.setCookie(br.getHost(), "enterSite", "true");
+                br.setCookie(br.getHost(), "activeMemberValidator", "1");
                 final boolean fillTimeFalues = true;
                 if (fillTimeFalues) {
                     final Date d = new Date();
@@ -712,15 +717,23 @@ public abstract class EvilangelCore extends PluginForHost {
                 }
                 login.remove("submit");
                 /* 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! */
-                login.put("rememberme", "1");
+                boolean containsRemembermeFieldWithValue1 = false;
+                for (final InputField ifield : login.getInputFields()) {
+                    if (StringUtils.equals(ifield.getKey(), "rememberme") && StringUtils.equals(ifield.getValue(), "1")) {
+                        containsRemembermeFieldWithValue1 = true;
+                        break;
+                    }
+                }
+                if (!containsRemembermeFieldWithValue1) {
+                    login.put("rememberme", "1");
+                }
                 br.submitForm(login);
                 /* TODO: 2021-09-01: Add support for 2FA login (security code gets sent via mail) */
                 if (br.containsHTML("(?i)>\\s*Your account is deactivated for abuse")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                if (br.getURL().contains("/reactivate")) {
+                    throw new AccountInvalidException("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
+                } else if (br.getURL().contains("/reactivate")) {
                     /* TODO: Expired free account(?) */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium subscription expired", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("Premium subscription expired");
                 }
                 if (!isLoggedIn(br)) {
                     throw new AccountInvalidException();

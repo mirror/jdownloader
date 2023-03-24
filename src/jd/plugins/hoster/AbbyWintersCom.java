@@ -15,30 +15,41 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.net.URL;
 import java.text.DecimalFormat;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
-import jd.http.Cookie;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abbywinters.com" }, urls = { "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/(images/stills/[a-z0-9\\-_]+|videos/video/clip)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AbbyWintersCom extends PluginForHost {
     public AbbyWintersCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,176 +58,204 @@ public class AbbyWintersCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.abbywinters.com/about/termsandconditions";
+        return "https://www.abbywinters.com/about/termsandconditions";
     }
 
-    private static final String PICTURELINK = "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/images/stills/[a-z0-9\\-_]+";
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "abbywinters.com" });
+        return ret;
+    }
 
-    // private static final String VIDEOLINK = "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/videos/video/clip";
-    /**
-     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
-     */
-    public boolean isProxyRotationEnabledForLinkChecker() {
-        return false;
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/.+/video/\\w+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private static final String PICTURELINK        = "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/images/stills/[a-z0-9\\-_]+";
+    // private static final String VIDEOLINK = "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/videos/video/clip";
+    private final String        PROPERTY_DIRECTURL = "directurl";
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        // Login required to check/download
-        final Account aa = AccountController.getInstance().getValidAccount(this);
         // This shouldn't happen
-        if (aa == null) {
+        if (account == null) {
             link.getLinkStatus().setStatusText("Only downlodable/checkable via account!");
             return AvailableStatus.UNCHECKABLE;
         }
-        login(aa, false);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("404 Page not found")) {
+        login(account, false);
+        br.setFollowRedirects(true);
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)404 Page not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
-        if (link.getDownloadURL().matches(PICTURELINK)) {
-            final Regex fInfo = br.getRegex("<title>([^<>\"]*?)\\| Image (\\d+) of \\d+</title>");
-            if (fInfo.getMatches().length != 1) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final DecimalFormat df = new DecimalFormat("0000");
-            filename = Encoding.htmlDecode(fInfo.getMatch(0).trim()) + "_" + df.format(Integer.parseInt(fInfo.getMatch(1))) + ".jpg";
+        final String videoDataResources = br.getRegex("data-sources=\"([^\"]+)").getMatch(0);
+        if (videoDataResources != null) {
+            final List<Object> ressourcelist = JSonStorage.restoreFromString(Encoding.htmlDecode(videoDataResources), TypeRef.LIST);
+            final Map<String, Object> bestVideo = (Map<String, Object>) ressourcelist.get(ressourcelist.size() - 1);
+            final String directurl = bestVideo.get("src").toString();
+            link.setProperty(PROPERTY_DIRECTURL, directurl);
+            filename = Plugin.getFileNameFromURL(new URL(directurl));
         } else {
-            String username = br.getRegex("title=\"View profile: ([^<>\"]*?)\"").getMatch(0);
-            if (username == null) {
-                username = br.getRegex("</span>([^<>\"]*?)<span class=\"icon_videoclip\">").getMatch(0);
-            }
-            final String videoName = br.getRegex("<title>([^<>\"]*?)Video: .*?</title>").getMatch(0);
-            if (username != null && videoName != null) {
-                filename = Encoding.htmlDecode(username) + " - " + Encoding.htmlDecode(videoName) + ".mp4";
+            // old code
+            if (link.getPluginPatternMatcher().matches(PICTURELINK)) {
+                final Regex fInfo = br.getRegex("<title>([^<>\"]*?)\\| Image (\\d+) of \\d+</title>");
+                if (fInfo.getMatches().length != 1) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final DecimalFormat df = new DecimalFormat("0000");
+                filename = Encoding.htmlDecode(fInfo.getMatch(0).trim()) + "_" + df.format(Integer.parseInt(fInfo.getMatch(1))) + ".jpg";
+            } else {
+                String username = br.getRegex("title=\"View profile: ([^<>\"]*?)\"").getMatch(0);
+                if (username == null) {
+                    username = br.getRegex("</span>([^<>\"]*?)<span class=\"icon_videoclip\">").getMatch(0);
+                }
+                final String videoName = br.getRegex("<title>([^<>\"]*?)Video: .*?</title>").getMatch(0);
+                if (username != null && videoName != null) {
+                    filename = Encoding.htmlDecode(username) + " - " + Encoding.htmlDecode(videoName) + ".mp4";
+                }
             }
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setFinalFileName(filename);
         }
-        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downlodable/checkable via account!");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        throw new AccountRequiredException();
     }
 
-    private static final String MAINPAGE = "http://abbywinters.com";
-    private static Object       LOCK     = new Object();
-
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
-                    final Map<String, String> cookies = (Map<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
-                        }
+                br.setCookie(this.getHost(), "ageverify", "1");
+                br.setFollowRedirects(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(cookies);
+                    if (!force) {
+                        /* Do not validate cookies */
                         return;
                     }
-                }
-                br.setFollowRedirects(false);
-                br.getPage("http://www.abbywinters.com/");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                if (br.containsHTML("for=\"captcha\">Security Check</label>")) {
-                    String captchaPublic = br.getRegex("name=\"captchapublic\" class=\"hide\" value=\"([^<>\"]*?)\"").getMatch(0);
-                    if (captchaPublic == null) {
-                        logger.warning("Login captcha handling failed!");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    br.getPage("https://www." + this.getHost() + "/members");
+                    if (this.isLoggedInHTML(br)) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                        return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(null);
                     }
-                    captchaPublic = Encoding.urlEncode(captchaPublic);
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "abbywinters.com", "http://abbywinters.com", true);
-                    final String code = getCaptchaCode("http://www.abbywinters.com/captcha?code=" + captchaPublic, dummyLink);
-                    br.postPage("http://www.abbywinters.com/rpc/login", "remember=on&form-action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&captcha=" + Encoding.urlEncode(code) + "&captchapublic=" + captchaPublic);
-                } else {
-                    br.postPage("http://www.abbywinters.com/rpc/login", "remember=on&form-action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 }
-                if (br.containsHTML("\"result\":\"failed\"") || !br.containsHTML("\"result\":\"ok\"") || br.getCookie(MAINPAGE, "user") == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                logger.info("Performing full login");
+                br.setFollowRedirects(false);
+                br.getPage("https://www." + this.getHost() + "/members");
+                final Form loginform = br.getFormbyProperty("id", "login-form");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+                loginform.setAction("/rpc/login");
+                loginform.setMethod(MethodType.POST);
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                loginform.put("remember", "on");
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+                    @Override
+                    public TYPE getType() {
+                        return TYPE.INVISIBLE;
+                    }
+                }.getToken();
+                loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                final Browser br2 = br.cloneBrowser();
+                br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br2.submitForm(loginform);
+                if (br2.containsHTML("\"result\":\"failed\"") || !br2.containsHTML("\"result\":\"ok\"") || br2.getCookie(br2.getHost(), "user", Cookies.NOTDELETEDPATTERN) == null) {
+                    throw new AccountInvalidException();
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br2.getCookies(br2.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
     }
 
+    private boolean isLoggedInHTML(final Browser br) {
+        return br.containsHTML("/logout");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        if (!br.getURL().endsWith("/myaccount/subscriptions")) {
+            br.getPage("/myaccount/subscriptions");
         }
-        br.getPage("http://www.abbywinters.com/myaccount");
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("<th>Rebill date:</th><td>([^<>\"]*?)</td>").getMatch(0);
+        final String expire = br.getRegex("(?i)<th>\\s*Rebill date\\s*:?\\s*</th>\\s*<td>([^<]+)</td>").getMatch(0);
         if (expire == null) {
-            account.setValid(false);
+            ai.setExpired(true);
             return ai;
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMM yyyy", Locale.ENGLISH));
         }
-        account.setValid(true);
-        ai.setStatus("Premium User");
+        account.setType(AccountType.PREMIUM);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        String dllink;
-        if (link.getDownloadURL().matches(PICTURELINK)) {
-            dllink = br.getRegex("\"(http://[^<>\"]*?)\" class=\"viewXLarge\"").getMatch(0);
-        } else {
-            dllink = br.getRegex("class=\"download_icon_ok\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        requestFileInformation(link, account);
+        String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (dllink == null) {
+            /* Old code */
+            if (link.getDownloadURL().matches(PICTURELINK)) {
+                dllink = br.getRegex("\"(http://[^<>\"]*?)\" class=\"viewXLarge\"").getMatch(0);
+            } else {
+                dllink = br.getRegex("class=\"download_icon_ok\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            }
         }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -240,16 +279,8 @@ public class AbbyWintersCom extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
         return false;
     }
 }

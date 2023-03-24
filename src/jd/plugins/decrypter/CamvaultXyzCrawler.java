@@ -115,39 +115,44 @@ public class CamvaultXyzCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        /* Look for external downloadurls. */
-        int progressnum = 0;
-        for (final String videoToken : videoTokens) {
-            progressnum++;
-            logger.info("Crawling item " + progressnum + "/" + videoTokens.length + ": " + videoToken);
-            final Browser br2 = this.br.cloneBrowser();
-            br2.postPage("/gallery/megadownload", "captcha=&token=" + Encoding.urlEncode(videoToken));
-            if (isRateLimitReached(br2)) {
-                throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
-            }
-            final String reCaptchaSiteKey = PluginJSonUtils.getJsonValue(br2, "sitekey");
-            if (!StringUtils.isEmpty(reCaptchaSiteKey)) {
-                /* Usually a reCaptchaV2 is required! */
-                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2, reCaptchaSiteKey).getToken();
-                br2.postPage("/gallery/megadownload", "captcha=" + Encoding.urlEncode(recaptchaV2Response) + "&token=" + Encoding.urlEncode(videoToken));
-            }
-            br2.getRequest().setHtmlCode(Encoding.unicodeDecode(br2.toString()));
-            br2.getRequest().setHtmlCode(PluginJSonUtils.unescape(br2.toString()));
-            final String[] dllinks = br2.getRegex("download\\-link\"><a href=\"(https?[^<>\"]+)\"").getColumn(0);
-            for (final String dllink : dllinks) {
-                ret.add(createDownloadlink(dllink));
-            }
-            if (this.isAbort()) {
-                break;
-            }
-        }
-        if (ret.isEmpty() && videoTokens.length == 1) {
+        if (videoTokens.length == 1) {
             /* Selfhosted content? Pass to hosterplugin. */
+            logger.info("Looks like selfhosted content");
             final DownloadLink selfhostedVideo = new DownloadLink(hosterPlugin, this.getHost(), this.getHost(), param.getCryptedUrl(), true);
             CamvaultXyz.parseFileInfo(br, selfhostedVideo);
             ret.add(selfhostedVideo);
+        } else {
+            /* 2023-03-24: TODO: Check if it is even still possible that an item can contain multiple/externally hosted items. */
+            logger.info("Looks like externally hosted content");
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            /* Look for external downloadurls. */
+            int progressnum = 0;
+            for (final String videoToken : videoTokens) {
+                progressnum++;
+                logger.info("Crawling item " + progressnum + "/" + videoTokens.length + ": " + videoToken);
+                final Browser br2 = this.br.cloneBrowser();
+                br2.postPage("/gallery/megadownload", "captcha=&token=" + Encoding.urlEncode(videoToken));
+                if (isRateLimitReached(br2)) {
+                    throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
+                }
+                final String reCaptchaSiteKey = PluginJSonUtils.getJsonValue(br2, "sitekey");
+                if (!StringUtils.isEmpty(reCaptchaSiteKey)) {
+                    /* Usually a reCaptchaV2 is required! */
+                    logger.info("Captcha required");
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2, reCaptchaSiteKey).getToken();
+                    br2.postPage("/gallery/megadownload", "captcha=" + Encoding.urlEncode(recaptchaV2Response) + "&token=" + Encoding.urlEncode(videoToken));
+                }
+                br2.getRequest().setHtmlCode(Encoding.unicodeDecode(br2.toString()));
+                br2.getRequest().setHtmlCode(PluginJSonUtils.unescape(br2.toString()));
+                final String[] dllinks = br2.getRegex("download\\-link\"><a href=\"(https?[^<>\"]+)\"").getColumn(0);
+                for (final String dllink : dllinks) {
+                    ret.add(createDownloadlink(dllink));
+                }
+                if (this.isAbort()) {
+                    break;
+                }
+            }
         }
         return ret;
     }

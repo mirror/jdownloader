@@ -28,6 +28,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -107,6 +108,11 @@ public class SeventySevenFileCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
+        /* 2023-03-24: Added check for redirect */
+        final String redirect = br.getRegex(">window\\.location\\.href='(/[^<>\"\\']+)'").getMatch(0);
+        if (redirect != null) {
+            br.getPage(redirect);
+        }
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("<span id=\"file_size\"></span>")) {
@@ -123,7 +129,7 @@ public class SeventySevenFileCom extends PluginForHost {
         String filename = br.getRegex("align='absbottom' border='0'[^/>]*/>([^<>\"]+)<").getMatch(0);
         String filesize = br.getRegex("<span id=\"file_size\">([^<>\"]+)</span>").getMatch(0);
         if (filename != null) {
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
             filesize += "b";
@@ -186,6 +192,7 @@ public class SeventySevenFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+            /* 2023-03-24: They will e.g. send "Content-Type: text/plain" for text-files and won't provide a content-disposition header. */
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection(true);
@@ -214,6 +221,7 @@ public class SeventySevenFileCom extends PluginForHost {
                 throw new IOException();
             }
         } catch (final Throwable e) {
+            link.removeProperty(directlinkproperty);
             logger.log(e);
             try {
                 dl.getConnection().disconnect();
@@ -295,8 +303,8 @@ public class SeventySevenFileCom extends PluginForHost {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(premiumExpire, "yyyy-MM-dd", Locale.ENGLISH), br);
             account.setType(AccountType.PREMIUM);
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(premiumExpire, "yyyy-MM-dd", Locale.ENGLISH), br);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
         }
@@ -340,6 +348,15 @@ public class SeventySevenFileCom extends PluginForHost {
             dl.startDownload();
         } else {
             this.handleFreeDownload(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        }
+    }
+
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        if (!urlConnection.getContentType().contains("html")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
