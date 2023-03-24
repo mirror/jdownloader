@@ -27,10 +27,10 @@ public interface HitomiLaConfig extends PluginConfigInterface {
                 return "WEBP";
             }
         },
-        AVIV {
+        AVIF {
             @Override
             public String getLabel() {
-                return "AVIV";
+                return "AVIF";
             }
         };
     }

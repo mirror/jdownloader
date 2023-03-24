@@ -149,19 +149,21 @@ public class SolverJob<T> {
     }
 
     public void setSolverDone(ChallengeSolver<T> solver) {
-        synchronized (LOCK) {
-            if (!solverList.contains(solver)) {
-                throw new IllegalStateException("This Job does not contain this solver");
+        try {
+            synchronized (LOCK) {
+                if (!solverList.contains(solver)) {
+                    throw new IllegalStateException("This Job does not contain this solver");
+                } else if (!doneList.add(solver)) {
+                    return;
+                }
             }
-            if (!doneList.add(solver)) {
-                return;
+            if (eventSender != null) {
+                eventSender.fireEvent(new ChallengeSolverJobEvent(this, ChallengeSolverJobEvent.Type.SOLVER_DONE, solver));
             }
-        }
-        if (eventSender != null) {
-            eventSender.fireEvent(new ChallengeSolverJobEvent(this, ChallengeSolverJobEvent.Type.SOLVER_DONE, solver));
-        }
-        synchronized (this) {
-            this.notifyAll();
+        } finally {
+            synchronized (this) {
+                this.notifyAll();
+            }
         }
     }
 

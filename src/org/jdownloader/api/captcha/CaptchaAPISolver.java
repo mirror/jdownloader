@@ -167,11 +167,10 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     public boolean isJobDone(final SolverJob<?> job) {
         if (isMyJDownloaderActive()) {
-            synchronized (map) {
-                return !map.containsKey(job);
-            }
+            return super.isJobDone(job);
+        } else {
+            return true;
         }
-        return false;
     }
 
     @Override
@@ -199,12 +198,12 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         }
         final Challenge<?> challenge = job.getChallenge();
         final AbstractResponse<?> ret = challenge.parseAPIAnswer(result, resultFormat, this);
-        if (ret != null) {
-            ((SolverJob<Object>) job).addAnswer((AbstractResponse<Object>) ret);
-        } else {
+        if (ret == null) {
             throw new InvalidChallengeTypeException(challenge.getClass().getName());
+        } else {
+            ((SolverJob<Object>) job).addAnswer((AbstractResponse<Object>) ret);
+            return true;
         }
-        return true;
     }
 
     @Deprecated

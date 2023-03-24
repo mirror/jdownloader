@@ -24,6 +24,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.parser.html.HTMLParser;
+
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.BOM;
 import org.appwork.utils.Regex;
@@ -35,14 +43,6 @@ import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-
-import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.parser.html.HTMLParser;
 
 public class ClipboardMonitoring {
     public static class HTMLFragment {
@@ -216,25 +216,43 @@ public class ClipboardMonitoring {
 
     public static class ClipboardContent {
         private final String content;
-        private final String browserURL;
 
         public String getContent() {
             return content;
         }
 
+        private final String contentText;
+
+        public String getContentText() {
+            return contentText;
+        }
+
+        public String getContentHtml() {
+            return contentHtml;
+        }
+
+        private final String contentHtml;
+        private final String browserURL;
+
         public String getBrowserURL() {
             return browserURL;
         }
 
-        public ClipboardContent(String content, String browserURL) {
-            this.content = content;
+        protected ClipboardContent(String browserURL, String contentText, String contentHtml) {
+            this(browserURL, contentText, contentHtml, null);
+        }
+
+        protected ClipboardContent(String browserURL, String contentText, String contentHtml, final String content) {
+            this.contentText = contentText;
+            this.contentHtml = contentHtml;
             this.browserURL = browserURL;
+            this.content = content;
         }
     }
 
-    private static final ClipboardMonitoring INSTANCE = new ClipboardMonitoring();
-    private static final DataFlavor          URLFLAVOR;
-    private static final DataFlavor          URILISTFLAVOR;
+    private static final ClipboardMonitoring                                                 INSTANCE            = new ClipboardMonitoring();
+    private static final DataFlavor                                                          URLFLAVOR;
+    private static final DataFlavor                                                          URILISTFLAVOR;
     static {
         DataFlavor ret = null;
         try {
@@ -557,118 +575,94 @@ public class ClipboardMonitoring {
         }
     }
 
+    public synchronized ClipboardContent getCurrentContent() {
+        if (clipboard != null) {
+            try {
+                final Transferable currentContent = clipboard.getContents(null);
+                return getCurrentContent(currentContent, true, true, true);
+            } catch (final Throwable e) {
+            }
+        }
+        return null;
+    }
+
     /**
      * Returns clipboard content in form: <StringContent> [Optional (User setting)]\r\n<htmlContent> </br>
      */
     public synchronized ClipboardContent getCurrentContent(final Transferable currentContent) {
         if (currentContent != null) {
-            String stringContent = null;
-            try {
-                stringContent = getStringTransferData(currentContent, null);
-            } catch (final Throwable e) {
-            }
-            HTMLFragment htmlFragment = null;
-            try {
-                /* lets fetch fresh HTML Content if available */
-                htmlFragment = getHTMLFragment(currentContent, null);
-            } catch (final Throwable e) {
-                e.printStackTrace();
+            final ClipboardContent ret = getCurrentContent(currentContent, true, true, true);
+            if (ret == null) {
+                return null;
             }
             final StringBuilder sb = new StringBuilder();
-            if (stringContent != null) {
+            if (StringUtils.isNotEmpty(ret.getContentText())) {
                 sb.append("<");
-                sb.append(stringContent);
+                sb.append(ret.getContentText());
                 sb.append(">");
             }
-            if (isHtmlFlavorAllowed() && htmlFragment != null && StringUtils.isNotEmpty(htmlFragment.getFragment())) {
+            if (isHtmlFlavorAllowed() && StringUtils.isNotEmpty(ret.getContentHtml())) {
                 if (sb.length() > 0) {
                     sb.append("\r\n");
                 }
                 sb.append("<");
-                sb.append(htmlFragment.getFragment());
+                sb.append(ret.getContentHtml());
                 sb.append(">");
             }
             if (sb.length() > 0) {
-                if (htmlFragment != null) {
-                    return new ClipboardContent(sb.toString(), htmlFragment.getSourceURL());
-                } else {
-                    String sourceURL = null;
-                    try {
-                        sourceURL = getCurrentBrowserURL(currentContent);
-                    } catch (final Throwable ignore) {
-                        ignore.printStackTrace();
-                    }
-                    return new ClipboardContent(sb.toString(), sourceURL);
+                return new ClipboardContent(ret.getBrowserURL(), ret.getContentText(), ret.getContentHtml(), sb.toString());
+            }
+        }
+        return null;
+    }
+
+    public synchronized ClipboardContent getCurrentContent(boolean browserURL, boolean contentText, boolean contentHtml) {
+        if (clipboard != null) {
+            try {
+                final Transferable currentContent = clipboard.getContents(null);
+                return getCurrentContent(currentContent, browserURL, contentText, contentHtml);
+            } catch (final Throwable e) {
+            }
+        }
+        return null;
+    }
+
+    public synchronized ClipboardContent getCurrentContent(final Transferable currentContent, boolean browserURL, boolean contentText, boolean contentHtml) {
+        if (currentContent == null) {
+            return null;
+        } else {
+            String stringContent = null;
+            if (contentText) {
+                try {
+                    stringContent = getStringTransferData(currentContent, null);
+                } catch (final Throwable e) {
+                    contentText = false;
                 }
             }
-        }
-        return null;
-    }
-
-    public synchronized ClipboardContent getCurrentContentTEXT() {
-        if (clipboard != null) {
-            try {
-                final Transferable currentContent = clipboard.getContents(null);
-                return getCurrentContentTEXT(currentContent);
-            } catch (final Throwable e) {
+            HTMLFragment htmlFragment = null;
+            String sourceURL = null;
+            if (browserURL || contentHtml) {
+                try {
+                    /* lets fetch fresh HTML Content if available */
+                    htmlFragment = getHTMLFragment(currentContent, null);
+                    sourceURL = htmlFragment.getSourceURL();
+                } catch (final Throwable e) {
+                    contentHtml = false;
+                }
+            }
+            if (browserURL && StringUtils.isEmpty(sourceURL)) {
+                try {
+                    sourceURL = getCurrentBrowserURL(currentContent);
+                } catch (final Throwable e) {
+                    browserURL = false;
+                }
+            }
+            if ((browserURL && StringUtils.isNotEmpty(sourceURL)) || (contentHtml && htmlFragment != null && StringUtils.isNotEmpty(htmlFragment.getFragment())) || (contentText && StringUtils.isNotEmpty(stringContent))) {
+                return new ClipboardContent(sourceURL, stringContent, htmlFragment == null ? null : htmlFragment.getFragment());
+            } else {
+                return null;
             }
         }
-        return null;
-    }
-
-    /** Returns clipboard string content. */
-    public synchronized ClipboardContent getCurrentContentTEXT(final Transferable currentContent) {
-        if (currentContent == null) {
-            return null;
-        }
-        String stringContent = null;
-        try {
-            stringContent = getStringTransferData(currentContent, null);
-            if (stringContent != null) {
-                return new ClipboardContent(stringContent, null);
-            }
-        } catch (final Throwable e) {
-        }
-        return null;
-    }
-
-    public synchronized ClipboardContent getCurrentContentHTML() {
-        if (clipboard != null) {
-            try {
-                final Transferable currentContent = clipboard.getContents(null);
-                return getCurrentContentHTML(currentContent);
-            } catch (final Throwable e) {
-            }
-        }
-        return null;
-    }
-
-    /** Returns clipboard HTML content. */
-    public synchronized ClipboardContent getCurrentContentHTML(final Transferable currentContent) {
-        if (currentContent == null) {
-            return null;
-        }
-        try {
-            /* lets fetch fresh HTML Content if available */
-            final HTMLFragment htmlFragment = getHTMLFragment(currentContent, null);
-            if (htmlFragment != null) {
-                return new ClipboardContent(htmlFragment.getFragment(), htmlFragment.getSourceURL());
-            }
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public synchronized ClipboardContent getCurrentContent() {
-        if (clipboard != null) {
-            try {
-                final Transferable currentContent = clipboard.getContents(null);
-                return getCurrentContent(currentContent);
-            } catch (final Throwable e) {
-            }
-        }
-        return null;
     }
 
     public synchronized void setCurrentContent(final String string) {
@@ -888,6 +882,7 @@ public class ClipboardMonitoring {
         }
     }
 
+    // TODO: rewrite to use getCurrentContent
     public static void processSupportedTransferData(final Transferable transferable, LinkOrigin origin) {
         try {
             final DataFlavor[] dataFlavors = null;
@@ -920,7 +915,7 @@ public class ClipboardMonitoring {
                 sb.append(stringContent);
                 sb.append(">\r\n\r\n");
             }
-            if (isHtmlFlavorAllowed() && htmlFragment != null && StringUtils.isNotEmpty(htmlFragment.getFragment())) {
+            if (htmlFragment != null && isHtmlFlavorAllowed() && StringUtils.isNotEmpty(htmlFragment.getFragment())) {
                 sb.append("<");
                 sb.append(htmlFragment.getFragment());
                 sb.append(">");

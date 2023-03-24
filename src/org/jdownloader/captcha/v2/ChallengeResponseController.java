@@ -131,12 +131,8 @@ public class ChallengeResponseController {
             addSolver(Captcha9kwSolverPuzzle.getInstance());
             if (!Application.isHeadless()) {
                 addSolver(DialogBasicCaptchaSolver.getInstance());
-            }
-            if (!Application.isHeadless()) {
                 addSolver(DialogClickCaptchaSolver.getInstance());
                 addSolver(DialogMultiClickCaptchaSolver.getInstance());
-            }
-            if (!Application.isHeadless()) {
                 addSolver(BrowserSolver.getInstance());
                 addSolver(OAuthDialogSolver.getInstance());
             }
@@ -306,11 +302,12 @@ public class ChallengeResponseController {
             }
             if (job.getSkipRequest() != null) {
                 throw new SkipException(c, job.getSkipRequest());
+            } else {
+                final ResponseList<T> response = job.getResponseAndKill();
+                logger.info("All Responses: " + job.getResponses());
+                logger.info("Solving Done. Result: " + response);
+                return job;
             }
-            final ResponseList<T> response = job.getResponseAndKill();
-            logger.info("All Responses: " + job.getResponses());
-            logger.info("Solving Done. Result: " + response);
-            return job;
         } catch (InterruptedException e) { // for example downloads have been stopped
             job.kill();
             throw e;

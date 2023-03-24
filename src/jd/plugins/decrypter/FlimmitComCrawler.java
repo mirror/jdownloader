@@ -23,14 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.FlimmitComConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -49,6 +41,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.GenericM3u8;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.FlimmitComConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flimmit.com" }, urls = { "https?://flimmit\\.at/([a-z0-9\\-]+)/assets/(\\d+)" })
 public class FlimmitComCrawler extends PluginForDecrypt {
@@ -71,7 +70,7 @@ public class FlimmitComCrawler extends PluginForDecrypt {
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         // final String httpURL = (String) JavaScriptEngineFactory.walkJson(entries, "data/config/progressive");
         // we get hls since thats all we support at this stage.
         final Object errorO = JavaScriptEngineFactory.walkJson(entries, "data/error");
@@ -255,7 +254,7 @@ public class FlimmitComCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    public void login() throws Exception {
+    public Account login() throws Exception {
         // we need an account
         Account account = null;
         final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
@@ -280,15 +279,15 @@ public class FlimmitComCrawler extends PluginForDecrypt {
         }
         if (account == null) {
             throw new AccountRequiredException();
-        }
-        final PluginForHost plugin = getNewPluginForHostInstance("flimmit.com");
-        if (account.getType() != AccountType.PREMIUM) {
+        } else if (account.getType() != AccountType.PREMIUM) {
             logger.warning("Looks like user does not own a premium account -> Crawler will most likely fail");
             if (premiumAccountRequiredForCrawling) {
                 throw new AccountRequiredException();
             }
         }
+        final PluginForHost plugin = getNewPluginForHostInstance("flimmit.com");
         ((jd.plugins.hoster.FlimmitCom) plugin).login(account, false);
+        return account;
     }
 
     @Override

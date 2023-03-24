@@ -18,8 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -34,7 +32,8 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.EmloadCom;
-import jd.utils.JDUtilities;
+
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { EmloadCom.class })
@@ -67,13 +66,11 @@ public class EmloadComFolder extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.getCryptedUrl();
-        final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(this.getHost()));
+        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa != null) {
             logger.info("Account available, logging in ...");
-            final PluginForHost plugin = JDUtilities.getNewPluginForHostInstance(getHost());
+            final PluginForHost plugin = getNewPluginForHostInstance(getHost());
             if (plugin != null) {
-                plugin.setBrowser(br);
-                plugin.setLogger(getLogger());
                 ((EmloadCom) plugin).login(br, null, false);
             }
         }

@@ -890,48 +890,53 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             crawlHLS = true;
         }
         String categoriesCommaSeparated = br.getRegex("'categories_in_video'\\s*:\\s*'([^<>\"']+)'").getMatch(0);
-        String tagsCommaSeparated = null;
-        String pornstarsCommaSeparated = br.getRegex("'pornstars_in_video'\\s*:\\s*'([^<>\"']+)'").getMatch(0);
         if (StringUtils.isEmpty(categoriesCommaSeparated)) {
             /* Fallback */
             final String categoriesSrc = br.getRegex("<div class=\"categoriesWrapper\">(.*?)</div>\\s+</div>").getMatch(0);
-            if (categoriesSrc != null) {
-                final String[] categories = new Regex(categoriesSrc, ", 'Category'[^\"]+\">([^<>\"]+)</a>").getColumn(0);
-                if (categories != null && categories.length > 0) {
-                    categoriesCommaSeparated = "";
-                    for (int index = 0; index < categories.length; index++) {
-                        final boolean isLastItem = index == categories.length - 1;
-                        categoriesCommaSeparated += categories[index];
-                        if (!isLastItem) {
-                            categoriesCommaSeparated += ",";
+            final String[] categories = new Regex(categoriesSrc, ", 'Category'[^\"]+\">([^<>\"]+)</a>").getColumn(0);
+            if (categories != null && categories.length > 0) {
+                categoriesCommaSeparated = "";
+                for (int index = 0; index < categories.length; index++) {
+                    final String category = categories[index];
+                    if (StringUtils.isNotEmpty(category)) {
+                        if (categoriesCommaSeparated.length() > 0) {
+                            categoriesCommaSeparated += "," + category;
+                        } else {
+                            categoriesCommaSeparated += category;
                         }
                     }
                 }
             }
         }
         final String[] tags = br.getRegex("(?i)data-label=\"Tag\"[^>]*>([^<]+)</a>").getColumn(0);
+        String tagsCommaSeparated = null;
         if (tags != null && tags.length > 0) {
             tagsCommaSeparated = "";
             for (int index = 0; index < tags.length; index++) {
-                final boolean isLastItem = index == tags.length - 1;
-                tagsCommaSeparated += tags[index];
-                if (!isLastItem) {
-                    tagsCommaSeparated += ",";
+                final String tag = tags[index];
+                if (StringUtils.isNotEmpty(tag)) {
+                    if (tagsCommaSeparated.length() > 0) {
+                        tagsCommaSeparated += "," + tag;
+                    } else {
+                        tagsCommaSeparated += tag;
+                    }
                 }
             }
         }
+        String pornstarsCommaSeparated = br.getRegex("'pornstars_in_video'\\s*:\\s*'([^<>\"']+)'").getMatch(0);
         if (StringUtils.isEmpty(pornstarsCommaSeparated)) {
             /* Fallback */
             final String pornstarsSrc = br.getRegex("<div class=\"pornstarsWrapper js-pornstarsWrapper\">(.*?)<div class=\"tooltipTrig suggestBtn\"").getMatch(0);
-            if (pornstarsSrc != null) {
-                final String[] pornstars = new Regex(pornstarsSrc, "data-mxptext=\"([^\"]+)").getColumn(0);
-                if (pornstars != null && pornstars.length > 0) {
-                    pornstarsCommaSeparated = "";
-                    for (int index = 0; index < tags.length; index++) {
-                        final boolean isLastItem = index == tags.length - 1;
-                        pornstarsCommaSeparated += tags[index];
-                        if (!isLastItem) {
-                            pornstarsCommaSeparated += ",";
+            final String[] pornstars = new Regex(pornstarsSrc, "data-mxptext=\"([^\"]+)").getColumn(0);
+            if (pornstars != null && pornstars.length > 0) {
+                pornstarsCommaSeparated = "";
+                for (int index = 0; index < pornstars.length; index++) {
+                    final String pornstar = pornstars[index];
+                    if (StringUtils.isNotEmpty(pornstar)) {
+                        if (pornstarsCommaSeparated.length() > 0) {
+                            pornstarsCommaSeparated += "," + pornstar;
+                        } else {
+                            pornstarsCommaSeparated += pornstar;
                         }
                     }
                 }

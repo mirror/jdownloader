@@ -2,6 +2,7 @@ package org.jdownloader.controlling;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +26,7 @@ public class PasswordUtils {
     }
 
     public static HashSet<String> getPasswords(final String data) {
-        final HashSet<String> ret = new HashSet<String>();
+        final LinkedHashSet<String> ret = new LinkedHashSet<String>();
         if (data != null) {
             final String passwordPattern = org.jdownloader.translate._JDT.T.pattern_password();
             Pattern pattern = Pattern.compile("(" + passwordPattern + ")\\s+[\"']([[^\\:\"'\\s]][^\"'\\s])[\"']?", Pattern.CASE_INSENSITIVE);
@@ -55,10 +56,6 @@ public class PasswordUtils {
             final Iterator<String> it = ret.iterator();
             while (it.hasNext()) {
                 final String next = it.next();
-                /**
-                 * Remove empty/null strings. </br>
-                 * TODO: Null check can be removed, only check for length.
-                 */
                 if (StringUtils.isEmpty(next)) {
                     it.remove();
                 } else if (next.length() < 2) {

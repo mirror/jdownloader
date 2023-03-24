@@ -21,14 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.StorageException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -47,6 +39,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.StorageException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KsharedCom extends PluginForHost {
@@ -166,7 +166,7 @@ public class KsharedCom extends PluginForHost {
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         if (entries == null) {
             /* 2021-02-18: Returns broken json for offline items */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -333,7 +333,7 @@ public class KsharedCom extends PluginForHost {
                 data.put("passw", account.getPass());
                 br.postPageRaw("/v1/account/signin", JSonStorage.serializeToJson(data));
                 this.handleErrors(br, null, account);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 // accessToken = (String) entries.get("accesstoken");
                 ut = (String) entries.get("ut");
                 ud = (String) entries.get("accesstoken");
@@ -389,7 +389,7 @@ public class KsharedCom extends PluginForHost {
     }
 
     private void handleErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         /** 2021-02-18: In some rare cases "error" can be true WITHOUT "reason" and without "message"! */
         final boolean isError = entries.containsKey("error") ? ((Boolean) entries.get("error")).booleanValue() : false;
         if (isError) {
@@ -417,7 +417,7 @@ public class KsharedCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> userinfo = (Map<String, Object>) entries.get("me");
         final Map<String, Object> spaceInfo = (Map<String, Object>) userinfo.get("disk");
         final Map<String, Object> trafficInfo = (Map<String, Object>) userinfo.get("bandwidth");
@@ -480,7 +480,7 @@ public class KsharedCom extends PluginForHost {
             }
             br.postPageRaw("/v1/drive/get_download_link", JSonStorage.serializeToJson(data));
             this.handleErrors(br, link, account);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final String dllink = (String) entries.get("link");
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl", 5 * 60 * 1000l);

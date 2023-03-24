@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.config.EromeComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +30,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.jdownloader.plugins.components.config.EromeComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EromeComCrawler extends PluginForDecrypt {
@@ -110,7 +110,7 @@ public class EromeComCrawler extends PluginForDecrypt {
                 ret.add(this.createDownloadlink(directurlVideo));
                 final String videoThumbnail = new Regex(mediagrouphtml, "poster=\"(https?://[^\"]+)\"").getMatch(0);
                 /* Add video thumbnail if user wants that. */
-                if (cfg.isAddThumbnail() && videoThumbnail != null) {
+                if (videoThumbnail != null && cfg.isAddThumbnail()) {
                     ret.add(this.createDownloadlink(videoThumbnail));
                 } else if (videoThumbnail == null) {
                     logger.warning("Failed to find video thumbnail for video: " + directurlVideo);

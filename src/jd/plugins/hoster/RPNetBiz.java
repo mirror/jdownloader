@@ -22,17 +22,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -48,6 +37,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "" })
 public class RPNetBiz extends PluginForHost {
@@ -124,7 +123,7 @@ public class RPNetBiz extends PluginForHost {
         } else if (br.containsHTML("IP Ban in effect for")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is temporarily banned", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> accountinfo = (Map<String, Object>) entries.get("accountInfo");
         final String currentServer = (String) accountinfo.get("currentServer");
         final long expiryDate = ((Number) accountinfo.get("premiumExpiry")).longValue();
@@ -185,7 +184,7 @@ public class RPNetBiz extends PluginForHost {
                 /* request Download */
                 String apiDownloadLink = api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
                 br.getPage(apiDownloadLink);
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.MAP);
                 checkErrors(link, account, entries);
                 Object downloadsO = entries.get("downloads");
                 if (downloadsO == null) {
@@ -268,7 +267,7 @@ public class RPNetBiz extends PluginForHost {
                         // br.getPage(api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" +
                         // Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + queueID);
                         br.getPage(api_base + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadsInformation&type=queue&ids%5B%5D=" + queueID);
-                        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                        entries = restoreFromString(br.toString(), TypeRef.MAP);
                         entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "downloads/{0}");
                         checkErrors(link, account, entries);
                         if (entries == null) {

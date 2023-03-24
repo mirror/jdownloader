@@ -20,9 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -34,6 +31,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ModsfireCom extends PluginForHost {
@@ -151,9 +151,9 @@ public class ModsfireCom extends PluginForHost {
             }
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
+        /* Add a download slot */
+        controlMaxFreeDownloads(null, link, +1);
         try {
-            /* Add a download slot */
-            controlMaxFreeDownloads(null, link, +1);
             /* Start download */
             dl.startDownload();
         } finally {

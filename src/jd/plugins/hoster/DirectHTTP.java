@@ -43,6 +43,7 @@ import jd.controlling.linkcrawler.LinkCrawlerRule;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Authentication;
 import jd.http.AuthenticationFactory;
+import jd.http.BlockedByAntiDDosException;
 import jd.http.Browser;
 import jd.http.CallbackAuthenticationFactory;
 import jd.http.Cookies;
@@ -66,6 +67,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
@@ -681,12 +683,16 @@ public class DirectHTTP extends antiDDoSForHost {
         return requestFileInformation(downloadLink, 0, optionSet);
     }
 
-    private void followURLConnection(Browser br, URLConnectionAdapter urlConnection) {
+    private void followURLConnection(Browser br, URLConnectionAdapter urlConnection) throws IOException {
         if (urlConnection != null) {
             try {
                 br.followConnection(true);
             } catch (final IOException e) {
                 logger.log(e);
+                final BlockedByAntiDDosException blocked = Exceptions.getInstanceof(e, BlockedByAntiDDosException.class);
+                if (blocked != null) {
+                    throw blocked;
+                }
             } finally {
                 urlConnection.disconnect();
             }
