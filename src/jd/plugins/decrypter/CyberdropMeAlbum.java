@@ -267,6 +267,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 }
                 final String directurl = new Regex(html, "href=\"(https?://[^\"]+)\"").getMatch(0);
                 if (directurl != null) {
+                    // directurl = HTMLEntities.unhtmlentities(directurl);
                     final String filesize = new Regex(html, "<p class=\"mt-0 dark:text-white-900\"[^>]*>([^<]+)</p>").getMatch(0);
                     add(ret, dups, directurl, filename, null, filesize);
                 } else {
@@ -301,7 +302,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
      * 2022-03-14: Especially required for bunkr.is video-URLs.
      */
     private String correctDirecturl(final String url) {
-        if (url.matches(".*(bunkr\\.is|bunkr\\.ru).*")) {
+        if (url.matches("(?i).*(bunkr\\.is|bunkr\\.ru).*")) {
             /* 2023-01-11: Cheap hotfix: Correcting such URLs to make direct-URLs out of them isn't possible anymore. */
             return null;
         }

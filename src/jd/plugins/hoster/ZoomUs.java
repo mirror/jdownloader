@@ -159,8 +159,11 @@ public class ZoomUs extends PluginForHost {
             pwform.put("action", "viewdetailpage");
             String recaptchaV2Response = "";
             if (this.requiresCaptcha(br)) {
-                final String reCaptchaID = br.getRegex("var gRecaptchaVisible\\s*=\\s*\"([^\"]+)").getMatch(0);
-                recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaID).getToken();
+                final String reCaptchaSiteKey = br.getRegex("var gRecaptchaVisible\\s*=\\s*\"([^\"]+)").getMatch(0);
+                if (reCaptchaSiteKey == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaSiteKey).getToken();
             }
             pwform.put("recaptcha", Encoding.urlEncode(recaptchaV2Response));
             br.submitForm(pwform);
