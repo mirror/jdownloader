@@ -786,7 +786,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
      *         false: Link is downloadable for all users.
      */
     private boolean isPremiumOnlyURL(final Browser br) {
-        return br.getURL() != null && br.getURL().contains("/?op=login&redirect=");
+        return br != null && br.getURL() != null && br.getURL().contains("/?op=login&redirect=");
     }
 
     /**
@@ -799,11 +799,11 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         final boolean premiumonly_by_url = isPremiumOnlyURL(br);
         final String premiumonly_filehost_regex = "( can download files up to |>\\s*Upgrade your account to download (?:larger|bigger) files|>\\s*The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file\\s*<|>\\s*This file reached max downloads limit|>\\s*This file is available for\\s*(<[^>]*>)?\\s*Premium Users only|>\\s*Available Only for Premium Members|>\\s*File is available only for Premium users|>(\\s*Sorry\\s*,)?\\s*This file (can|only can|can only) be downloaded by)";
         final String premiumonly_videohost_regex = ">\\s*This video is available for Premium users only";
-        final boolean premiumonly_filehost = br.getRegex(premiumonly_filehost_regex).matches();
+        final boolean premiumonly_filehost = br != null && br.getRegex(premiumonly_filehost_regex).matches();
         final String corrected = getCorrectBR(br);
         final boolean premiumonly_filehost_corrected = new Regex(corrected, premiumonly_filehost_regex).matches();
         /* 2019-05-30: Example: xvideosharing.com */
-        final boolean premiumonly_videohost = br.containsHTML(premiumonly_videohost_regex);
+        final boolean premiumonly_videohost = br != null && br.containsHTML(premiumonly_videohost_regex);
         final boolean premiumonly_videohost_corrected = new Regex(corrected, premiumonly_videohost_regex).matches();
         return premiumonly_by_url || premiumonly_filehost || premiumonly_filehost_corrected || premiumonly_videohost || premiumonly_videohost_corrected;
     }
