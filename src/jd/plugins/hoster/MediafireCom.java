@@ -25,6 +25,12 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -52,14 +58,7 @@ import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(?:www\\.|m\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/|file\\?|download/?).*?(?=http:|$|\r|\n))|https?://download\\d+.mediafire(?:cdn)?\\.com/[^/]+/([a-z0-9]+)/([^/]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(?:www\\.|m\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file(?:_premium)?/|file\\?|download/?).*?(?=http:|$|\r|\n))|https?://download\\d+.mediafire(?:cdn)?\\.com/[^/]+/([a-z0-9]+)/([^/]+)" })
 public class MediafireCom extends PluginForHost {
     /** Settings stuff */
     private static final String FREE_FORCE_RECONNECT_ON_CAPTCHA = "FREE_FORCE_RECONNECT_ON_CAPTCHA";
@@ -81,8 +80,6 @@ public class MediafireCom extends PluginForHost {
         return UserAgents.hbbtvUserAgent();
     }
 
-    // ?9579576935451
-    // Referer: http://www.mediafire.com/file/nw1lc2pyrtp043c/1972+Fritz+the+Cat+-+Fritz+Bugs+Out%7BSirReal.rar
     private static final String PRIVATEFILE           = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
     private static final String PRIVATEFOLDERUSERTEXT = "This is a private folder. Re-Add this link while your account is active to make it work!";
     private static final String TYPE_DIRECT           = "https?://download\\d+.mediafire(?:cdn)?\\.com/[^/]+/([a-z0-9]+)/([^/\"']+)";
@@ -142,6 +139,9 @@ public class MediafireCom extends PluginForHost {
     private Browser                        brAPI                      = null;
     private String                         sessionToken               = null;
 
+    /*
+     * https://www.mediafire.com/developers/core_api/1.5/getting_started/
+     */
     @SuppressWarnings("deprecation")
     public MediafireCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -170,14 +170,15 @@ public class MediafireCom extends PluginForHost {
         if (id != null) {
             link.setLinkID("mediafirecom_" + id);
         }
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("https?://media", "https://www.media"));
+        final String pluginMatcher = link.getPluginPatternMatcher().replaceFirst("https?://media", "https://www.media").replaceFirst("/file_premium/", "/file/");
+        link.setPluginPatternMatcher(pluginMatcher);
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(this.br, account, true);
-        Map<String, Object> entries = JSonStorage.restoreFromString(this.brAPI.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(this.brAPI.toString(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("response");
         entries = (Map<String, Object>) entries.get("user_info");
         /* 2021-04-29: All numbers are given as String -> Use "toLong" method! */
@@ -423,7 +424,7 @@ public class MediafireCom extends PluginForHost {
     }
 
     private String getFUID(final DownloadLink link) {
-        String fileID = new Regex(link.getDownloadURL(), "https?://.*?/(file|file\\.php|download|download\\.php)/?\\??([a-zA-Z0-9]+)").getMatch(1);
+        String fileID = new Regex(link.getDownloadURL(), "https?://.*?/(file(?:_premium)?|file\\.php|download|download\\.php)/?\\??([a-zA-Z0-9]+)").getMatch(1);
         if (fileID == null) {
             fileID = new Regex(link.getDownloadURL(), "\\?([a-zA-Z0-9]+)").getMatch(0);
             if (fileID == null) {
@@ -548,7 +549,7 @@ public class MediafireCom extends PluginForHost {
                 logger.info("Checking cookie validity");
                 try {
                     apiCommand(account, "user/get_info.php", null);
-                    final Map<String, Object> entries = JSonStorage.restoreFromString(brAPI.toString(), TypeRef.HASHMAP);
+                    final Map<String, Object> entries = restoreFromString(brAPI.toString(), TypeRef.MAP);
                     final String email = (String) JavaScriptEngineFactory.walkJson(entries, "response/user_info/email");
                     if (StringUtils.equalsIgnoreCase(email, account.getUser())) {
                         logger.info("Cookie login successful");
@@ -677,7 +678,7 @@ public class MediafireCom extends PluginForHost {
                         account.clearCookies("");
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                    // offline file, to file/get_info as a single file... we need to return so the proper
+                // offline file, to file/get_info as a single file... we need to return so the proper
                 case 110:
                     // invalid uid
                 case 111:
@@ -768,7 +769,7 @@ public class MediafireCom extends PluginForHost {
                     brAPI.getPage("https://www.mediafire.com/api/1.5/file/get_info.php" + "?r=" + getRandomFourLetters() + "&" + sb.toString() + "&response_format=json");
                     handleApiError(account);
                 }
-                final Map<String, Object> apiResponse = JSonStorage.restoreFromString(brAPI.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> apiResponse = restoreFromString(brAPI.toString(), TypeRef.MAP);
                 final List<Map<String, Object>> file_infos;
                 Object infos = JavaScriptEngineFactory.walkJson(apiResponse, "response/file_infos");
                 if (infos == null) {
@@ -807,7 +808,7 @@ public class MediafireCom extends PluginForHost {
                             final String hash = (String) file_info.get("hash");
                             final String privacy = (String) file_info.get("privacy");
                             final String pass = (String) file_info.get("password_protected");
-                            final String content_url = (String) JavaScriptEngineFactory.walkJson(file_info, "links/normal_download");
+                            String content_url = (String) JavaScriptEngineFactory.walkJson(file_info, "links/normal_download");
                             final String delete_date = (String) file_info.get("delete_date");
                             if (!StringUtils.isEmpty(name)) {
                                 item.setFinalFileName(name);
@@ -828,6 +829,7 @@ public class MediafireCom extends PluginForHost {
                                 /*
                                  * 2020-02-27: This may sometimes fix encoding issues: https://board.jdownloader.org/showthread.php?t=83274
                                  */
+                                content_url = content_url.replaceFirst("/file_premium/", "/file/");
                                 item.setContentUrl(content_url);
                                 item.setUrlDownload(content_url);
                             }
