@@ -82,6 +82,8 @@ public class FileCryptCc extends PluginForDecrypt {
         return true;
     }
 
+    private final String PROPERTY_PLUGIN_LAST_USED_PASSWORD = "last_used_password";
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /*
@@ -118,7 +120,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 final int maxPasswordRetries = 3;
                 final List<String> passwords = getPreSetPasswords();
                 final HashSet<String> usedPasswords = new HashSet<String>();
-                final String lastUsedPassword = this.getPluginConfig().getStringProperty("last_used_password");
+                final String lastUsedPassword = this.getPluginConfig().getStringProperty(PROPERTY_PLUGIN_LAST_USED_PASSWORD);
                 /**
                  * Magic auto passwords: </br>
                  * Creators can set custom logos on each folder. Each logo has a unique ID. This way we can try specific passwords first
@@ -152,10 +154,16 @@ public class FileCryptCc extends PluginForDecrypt {
                     }
                     logger.info("Password attempt: " + passwordCounter + " / " + maxPasswordRetries);
                     Form passwordForm = null;
+                    final String passwordFieldKey = "password_";
                     final Form[] allForms = br.getForms();
                     if (allForms != null && allForms.length != 0) {
                         findPwFormLoop: for (final Form aForm : allForms) {
-                            if (aForm.containsHTML("password")) {
+                            if (aForm.containsHTML("password") || aForm.hasInputFieldByName(passwordFieldKey)) {
+                                logger.info("Found password form by hasInputFieldByName(passwordFieldKey)");
+                                passwordForm = aForm;
+                                break findPwFormLoop;
+                            } else if (aForm.containsHTML("password")) {
+                                logger.info("Found password form by aForm.containsHTML(\"password\")");
                                 passwordForm = aForm;
                                 break findPwFormLoop;
                             }
@@ -183,7 +191,7 @@ public class FileCryptCc extends PluginForDecrypt {
                         logger.info("Skipping already tried password: " + passCode);
                         continue;
                     }
-                    passwordForm.put("password", Encoding.urlEncode(passCode));
+                    passwordForm.put(passwordFieldKey, Encoding.urlEncode(passCode));
                     submitForm(passwordForm);
                     if (!containsPassword()) {
                         logger.info("Password success: " + passCode);
@@ -195,7 +203,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     throw new DecrypterException(DecrypterException.PASSWORD);
                 }
                 logger.info("Saving correct password for future usage: " + successfullyUsedPassword);
-                this.getPluginConfig().setProperty("last_used_password", successfullyUsedPassword);
+                this.getPluginConfig().setProperty(PROPERTY_PLUGIN_LAST_USED_PASSWORD, successfullyUsedPassword);
             }
             /* Process captcha */
             int captchaCounter = -1;
@@ -571,15 +579,14 @@ public class FileCryptCc extends PluginForDecrypt {
     }
 
     private final boolean containsCaptcha() {
-        return new Regex(cleanHTML, containsCaptcha).matches();
+        return new Regex(cleanHTML, ">(?:Sicherheitsüberprüfung|Security prompt)</").matches();
     }
 
     private final boolean containsPassword() {
-        return new Regex(cleanHTML, "(?i)<h2>(?:Passwort erforderlich|Password required)</h2>").matches();
+        return new Regex(cleanHTML, "(?i)>(?:Passwort erforderlich|Password required)</").matches();
     }
 
-    private final String containsCaptcha = "<h2>(?:Sicherheitsüberprüfung|Security prompt)</h2>";
-    private String       cleanHTML       = null;
+    private String cleanHTML = null;
 
     private final void cleanUpHTML() {
         String toClean = br.toString();
