@@ -591,7 +591,7 @@ public class ClipboardMonitoring {
      */
     public synchronized ClipboardContent getCurrentContent(final Transferable currentContent) {
         if (currentContent != null) {
-            final ClipboardContent ret = getCurrentContent(currentContent, true, true, true);
+            final ClipboardContent ret = getCurrentContent(currentContent, true, true, isHtmlFlavorAllowed());
             if (ret == null) {
                 return null;
             }
@@ -601,7 +601,7 @@ public class ClipboardMonitoring {
                 sb.append(ret.getContentText());
                 sb.append(">");
             }
-            if (isHtmlFlavorAllowed() && StringUtils.isNotEmpty(ret.getContentHtml())) {
+            if (StringUtils.isNotEmpty(ret.getContentHtml())) {
                 if (sb.length() > 0) {
                     sb.append("\r\n");
                 }

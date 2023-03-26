@@ -505,7 +505,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         input.setTransferHandler(new DragAndDropDelegater(input));
         this.getDialog().addWindowListener(new WindowListener() {
             public void windowOpened(WindowEvent e) {
-                new Thread() {
+                final Thread thread = new Thread() {
                     {
                         setDaemon(true);
                         setName(getClass().getName());
@@ -515,33 +515,25 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     public void run() {
                         inform();
                         String textAuto = config.getPresetDebugLinks();
-                        String textOnlyText = null;
-                        String browserURL = null;
-                        if (textAuto == null && (config.isAutoFillAddLinksDialogWithClipboardContentEnabled() || config.isAddLinksPreParserEnabled())) {
+                        ClipboardContent clipboardContent = null;
+                        if (StringUtils.isEmpty(textAuto) && (config.isAutoFillAddLinksDialogWithClipboardContentEnabled())) {
                             final ClipboardMonitoring clp = ClipboardMonitoring.getINSTANCE();
-                            final ClipboardContent contentAuto = clp.getCurrentContent();
-                            if (contentAuto != null) {
-                                if (config.isAutoFillAddLinksDialogWithClipboardContentEnabled()) {
-                                    textAuto = preprocessFind(contentAuto.getContent());
-                                } else {
-                                    textAuto = contentAuto.getContent();
-                                }
-                                browserURL = contentAuto.getBrowserURL();
+                            clipboardContent = clp.getCurrentContent();
+                            if (clipboardContent != null) {
+                                textAuto = clipboardContent.getContent();
                             }
-                            textOnlyText = contentAuto.getContentText();
                         }
-                        if (config.isAddLinksPreParserEnabled()) {
-                            new EDTRunner() {
-                                @Override
-                                protected void runInEDT() {
-                                    input.setEditable(false);
-                                    input.setText(_GUI.T.AddLinksDialog_ParsingClipboard());
-                                };
+                        new EDTRunner() {
+                            @Override
+                            protected void runInEDT() {
+                                input.setEditable(false);
+                                input.setText(_GUI.T.AddLinksDialog_ParsingClipboard());
                             };
-                            asyncAnalyse(textAuto, textOnlyText, browserURL);
-                        }
+                        };
+                        asyncAnalyse(textAuto, clipboardContent);
                     }
-                }.start();
+                };
+                thread.start();
                 getDialog().removeWindowListener(this);
             }
 
@@ -731,26 +723,12 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private final AtomicReference<Thread> asyncImportThread = new AtomicReference<Thread>();
 
-    protected void asyncAnalyse(final String textAuto, final String textOnlyText, final String base) {
+    protected void asyncAnalyse(final String textAuto, final ClipboardContent clipboardContent) {
         final Thread thread = new Thread() {
             private Thread thisThread = null;
             {
                 setDaemon(true);
                 setName(getClass().getName());
-            }
-
-            private final String list(String[] links) {
-                if (links == null || links.length == 0) {
-                    return "";
-                }
-                final StringBuilder ret = new StringBuilder();
-                for (final String element : links) {
-                    if (ret.length() > 0) {
-                        ret.append("\r\n");
-                    }
-                    ret.append(element.trim());
-                }
-                return ret.toString();
             }
 
             public void run() {
@@ -761,8 +739,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                         if (config.isAddLinksPreParserAutoExtractionPasswordSearchEnabled()) {
                             /* Look for passwords in pasted text if wished by the user. */
                             /* First look for passwords only in text. If no passwords are found, check auto text for passwords. */
-                            HashSet<String> passwords = PasswordUtils.getPasswords(textOnlyText);
-                            if (passwords.isEmpty()) {
+                            HashSet<String> passwords = PasswordUtils.getPasswords(clipboardContent != null ? clipboardContent.getContentText() : null);
+                            if (passwords != null && passwords.isEmpty()) {
                                 /* Look for passwords in auto generated text / html. */
                                 passwords = PasswordUtils.getPasswords(textAuto);
                             }
@@ -784,38 +762,44 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                 }
                             };
                         }
-                        String[] result = HTMLParser.getHttpLinks(textAuto, base, new HtmlParserResultSet() {
-                            @Override
-                            public boolean add(HtmlParserCharSequence e) {
-                                if (thisThread != asyncImportThread.get()) {
-                                    throw new RuntimeException("abort");
+                        if (!config.isAddLinksPreParserEnabled()) {
+                            resultText = textAuto;
+                        } else {
+                            final String parseTextAuto = preprocessFind(textAuto);
+                            final String base = clipboardContent != null ? clipboardContent.getBrowserURL() : null;
+                            String[] result = HTMLParser.getHttpLinks(parseTextAuto, base, new HtmlParserResultSet() {
+                                @Override
+                                public boolean add(HtmlParserCharSequence e) {
+                                    if (thisThread != asyncImportThread.get()) {
+                                        throw new RuntimeException("abort");
+                                    }
+                                    return super.add(e);
                                 }
-                                return super.add(e);
+                            });
+                            if (result.length == 0) {
+                                result = HTMLParser.getHttpLinks(parseTextAuto.replace("www.", "http://www."), base, new HtmlParserResultSet() {
+                                    @Override
+                                    public boolean add(HtmlParserCharSequence e) {
+                                        if (thisThread != asyncImportThread.get()) {
+                                            throw new RuntimeException("abort");
+                                        }
+                                        return super.add(e);
+                                    }
+                                });
+                                if (result.length == 0) {
+                                    result = HTMLParser.getHttpLinks("http://" + parseTextAuto, base, new HtmlParserResultSet() {
+                                        @Override
+                                        public boolean add(HtmlParserCharSequence e) {
+                                            if (thisThread != asyncImportThread.get()) {
+                                                throw new RuntimeException("abort");
+                                            }
+                                            return super.add(e);
+                                        }
+                                    });
+                                }
                             }
-                        });
-                        if (result.length == 0) {
-                            result = HTMLParser.getHttpLinks(textAuto.replace("www.", "http://www."), base, new HtmlParserResultSet() {
-                                @Override
-                                public boolean add(HtmlParserCharSequence e) {
-                                    if (thisThread != asyncImportThread.get()) {
-                                        throw new RuntimeException("abort");
-                                    }
-                                    return super.add(e);
-                                }
-                            });
+                            resultText = StringUtils.join(result, "\r\n");
                         }
-                        if (result.length == 0) {
-                            result = HTMLParser.getHttpLinks("http://" + textAuto, base, new HtmlParserResultSet() {
-                                @Override
-                                public boolean add(HtmlParserCharSequence e) {
-                                    if (thisThread != asyncImportThread.get()) {
-                                        throw new RuntimeException("abort");
-                                    }
-                                    return super.add(e);
-                                }
-                            });
-                        }
-                        resultText = list(result);
                     } else {
                         resultText = "";
                     }

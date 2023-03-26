@@ -1482,23 +1482,32 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
 
                     @Override
                     public boolean isResumedDownload() {
-                        final ChunkRange firstChunkRange = segments.get(0).getChunkRange();
-                        final boolean ret = firstChunkRange.isRangeRequested() && firstChunkRange.getFrom() > 0;
+                        final Segment firstSegment = segments.get(0);
+                        final ChunkRange firstChunkRange = firstSegment.getChunkRange();
+                        boolean ret = firstChunkRange.isRangeRequested() && firstChunkRange.getFrom() > 0;
+                        if (!ret) {
+                            final String rangeStart = new Regex(firstSegment.getUrl(), "range=(\\d+)").getMatch(0);
+                            if (rangeStart != null && Long.parseLong(rangeStart) > 0) {
+                                ret = true;
+                            }
+                        }
                         return ret;
                     }
 
                     @Override
                     protected long onSegmentStart(RandomAccessFile outputStream, Segment segment, URLConnectionAdapter con) throws IOException {
-                        final long ret;
+                        final long position;
                         if (segment.getChunkRange() != null && segment.getChunkRange().getFrom() > 0) {
-                            ret = super.onSegmentStart(outputStream, segment, con);
+                            position = super.onSegmentStart(outputStream, segment, con);
                         } else {
                             final String rangeStart = new Regex(segment.getUrl(), "range=(\\d+)").getMatch(0);
-                            ret = Long.parseLong(rangeStart);
+                            position = Long.parseLong(rangeStart);
+                            outputStream.seek(position);
+                            bytesWritten = position;
                         }
                         outputStream.getChannel().force(true);
-                        dashDownloadable.setChunksProgress(new long[] { ret });
-                        return ret;
+                        dashDownloadable.setChunksProgress(new long[] { position });
+                        return position;
                     }
 
                     @Override

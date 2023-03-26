@@ -212,6 +212,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
+    @DescriptionForConfigEntry("If true, The 'Add Links' dialog in Linkgrabber will be filled with current clipboard content")
     boolean isAutoFillAddLinksDialogWithClipboardContentEnabled();
 
     void setAutoFillAddLinksDialogWithClipboardContentEnabled(boolean b);
