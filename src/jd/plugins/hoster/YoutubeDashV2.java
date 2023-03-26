@@ -1395,6 +1395,8 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 @Override
                 protected Request createSegmentRequest(Segment seg) throws IOException {
                     final Request ret = super.createSegmentRequest(seg);
+                    ret.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://www.youtube.com"));
+                    ret.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://www.youtube.com/"));
                     ret.getHeaders().put(new HTTPHeader("Connection", "close"));
                     return ret;
                 }
@@ -1430,7 +1432,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                 }
             };
         } else {
-            final int maxChunkSize = 1024 * 1024 * 10;// large(r?) requests cause connection to be throttled
+            final int maxChunkSize = 1024 * 1024 * 5;// large(r?) requests cause connection to be throttled
             if (streamData.getContentLength() > 0 && streamData.getContentLength() > maxChunkSize) {
                 final List<Segment> segments = new ArrayList<Segment>();
                 long position = 0;
@@ -1476,8 +1478,16 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
                     @Override
                     protected Request createSegmentRequest(Segment seg) throws IOException {
                         final Request ret = super.createSegmentRequest(seg);
-                        ret.getHeaders().put(new HTTPHeader("Connection", "close"));
-                        return ret;
+                        ret.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://www.youtube.com"));
+                        ret.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://www.youtube.com/"));
+                        if (true) {
+                            ret.getHeaders().put(new HTTPHeader("Connection", "close"));
+                            return ret;
+                        } else {
+                            jd.http.requests.PostRequest pret = new jd.http.requests.PostRequest(ret);
+                            pret.setPostBytes(new byte[] { 120, 0 });
+                            return pret;
+                        }
                     }
 
                     @Override
