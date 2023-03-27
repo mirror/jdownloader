@@ -85,7 +85,7 @@ public class StandaloneLauncher {
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(final String[] args) throws Exception {
         LOGGER = LogController.getInstance().getLogger(StandaloneLauncher.class.getName());
         try {
             /* blacklist github.com/jaymoulin/docker-jdownloader and github.com/antlafarge/jdownloader env variables */
@@ -147,10 +147,10 @@ public class StandaloneLauncher {
         } catch (Throwable e) {
             e.printStackTrace();
         }
+        JDClassLoaderLauncher.updateClassPath();
+        org.jdownloader.startup.Main.main(args);
         if (singleInstance != null) {
             singleInstance.setListener(org.jdownloader.startup.Main.PARAMETER_HANDLER);
         }
-        JDClassLoaderLauncher.updateClassPath();
-        org.jdownloader.startup.Main.main(args);
     }
 }

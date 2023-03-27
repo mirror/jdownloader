@@ -20,12 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -39,6 +33,12 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FastShareCz extends antiDDoSForHost {
@@ -79,7 +79,7 @@ public class FastShareCz extends antiDDoSForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(\\d+)/[^<>\"#]+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(\\d+|[a-f0-9]{32,})/?[^<>\"#]*");
         }
         return ret.toArray(new String[0]);
     }
@@ -121,9 +121,12 @@ public class FastShareCz extends antiDDoSForHost {
         if (br.containsHTML("(<title>FastShare\\.cz</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?) \\| FastShare\\.cz</title>").getMatch(0);
+        String filename = br.getRegex("<h1\\s*title\\s*=\\s*\"(.*?)\\s*\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h2><b><span style=color:black;>([^<>\"]*?)</b></h2>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>([^<>\"]*?)\\s*\\|\\s*FastShare\\.cz\\s*</title>").getMatch(0);
+            }
         }
         String filesize = br.getRegex("<tr><td>(Velikost|Size): </td><td style=font\\-weight:bold>([^<>\"]*?)</td></tr>").getMatch(1);
         if (filesize == null) {
