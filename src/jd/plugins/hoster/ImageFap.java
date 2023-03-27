@@ -674,7 +674,7 @@ public class ImageFap extends PluginForHost {
                                                       put("LABEL_FILENAME", "Define custom filename for pictures:");
                                                       put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'\r\n*photoID* = id of the image\r\n*galleryID* = id of the gallery");
                                                       put("SETTING_LABEL_ADVANCED_SETTINGS", "Advanced Settings");
-                                                      put("SETTING_REQUEST_LIMIT_MILLISECONDS", "Request limit for 'imagefap.com' in milliseconds");
+                                                      put("SETTING_REQUEST_LIMIT_MILLISECONDS", "[Requires JD restart] Request limit for 'imagefap.com' in milliseconds");
                                                       put("SETTING_ENABLE_START_DOWNLOADS_SEQUENTIALLY", "Start downloads sequentially?");
                                                   }
                                               };
@@ -684,7 +684,7 @@ public class ImageFap extends PluginForHost {
                                                       put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
                                                       put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'\r\n*photoID* = id des Bildes\r\n*galleryID* = id der Gallery");
                                                       put("SETTING_LABEL_ADVANCED_SETTINGS", "Erweiterte Einstellungen");
-                                                      put("SETTING_REQUEST_LIMIT_MILLISECONDS", "Request Limit für 'imagefap.com' in Millisekunden");
+                                                      put("SETTING_REQUEST_LIMIT_MILLISECONDS", "[JD Neustart benötigt] Request Limit für 'imagefap.com' in Millisekunden");
                                                       put("SETTING_ENABLE_START_DOWNLOADS_SEQUENTIALLY", "Downloads nacheinander starten?");
                                                   }
                                               };
