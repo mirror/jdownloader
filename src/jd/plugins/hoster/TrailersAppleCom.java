@@ -80,11 +80,11 @@ public class TrailersAppleCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
         br.setFollowRedirects(true);
-        String referer = downloadLink.getStringProperty("Referer"); // backward compatibility
+        String referer = link.getStringProperty("Referer"); // backward compatibility
         if (referer == null) {
-            referer = downloadLink.getReferrerUrl();
+            referer = link.getReferrerUrl();
         }
         br.getHeaders().put("User-Agent", "QuickTime/7.2 (qtver=7.2;os=Windows NT 5.1Service Pack 3)");
         br.getHeaders().put("Referer", referer);
@@ -93,8 +93,8 @@ public class TrailersAppleCom extends PluginForHost {
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("Pragma", null);
         br.getHeaders().put("Connection", null);
-        String dllink = downloadLink.getDownloadURL();
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 0);
+        String dllink = link.getDownloadURL();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
         long test = dl.getConnection().getLongContentLength();
         if (test < 51200) {
             br.followConnection();
@@ -107,7 +107,7 @@ public class TrailersAppleCom extends PluginForHost {
                 }
             }
             if (dllink2 != null) {
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink2, true, 0);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink2, true, 0);
                 test = dl.getConnection().getLongContentLength();
                 if (dl.getConnection().getContentType().contains("video/quicktime") && test < 51200) {
                     br.followConnection();
