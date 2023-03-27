@@ -57,12 +57,6 @@ public class AdulttimeCom extends EvilangelCore {
     }
 
     @Override
-    protected boolean allowCookieLoginOnly() {
-        /* 2021-09-01: At this moment, only cookie login is working. */
-        return true;
-    }
-
-    @Override
     public void reset() {
     }
 
