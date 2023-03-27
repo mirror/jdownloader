@@ -50,7 +50,7 @@ import jd.plugins.hoster.DirectHTTP;
 /**
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trailers.apple.com" }, urls = { "https?://[\\w\\.]*?apple\\.com/(trailers/[A-Za-z0-9\\-]+/([a-zA-Z0-9_\\-]+)/|[a-z0-9\\-]+/movie/[a-z0-9\\-]+/id\\d+.*)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trailers.apple.com" }, urls = { "https?://[\\w\\.]*?apple\\.com/(trailers/[\\w\\-]+/([\\w\\-]+)/|[a-z0-9\\-]+/movie/[a-z0-9\\-]+/id\\d+.*)" })
 public class AppleTrailer extends PluginForDecrypt {
     public AppleTrailer(PluginWrapper wrapper) {
         super(wrapper);
@@ -158,98 +158,99 @@ public class AppleTrailer extends PluginForDecrypt {
         // }
         // }
         // }
-        if (ret.isEmpty()) {
-            final Browser brc = br.cloneBrowser();
-            final String filmID = br.getRegex("var FilmId\\s*=\\s*'?(\\d+)'?;").getMatch(0);
-            if (filmID != null) {
-                /* 2023-01-27 */
-                /* Example: https://trailers.apple.com/trailers/newline/shazam-fury-of-the-gods/ */
-                brc.getPage("/trailers/feeds/data/" + filmID + ".json");
-                final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
-                /* One movie can have multiple trailers. */
-                final List<Map<String, Object>> clips = (List<Map<String, Object>>) entries.get("clips");
-                for (final Map<String, Object> clip : clips) {
-                    final String title = clip.get("title").toString();
-                    final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(title);
-                    final ArrayList<DownloadLink> tmplist = new ArrayList<DownloadLink>();
-                    final Map<String, Object> sizes = (Map<String, Object>) JavaScriptEngineFactory.walkJson(clip, "versions/enus/sizes");
-                    final Iterator<Entry<String, Object>> iterator = sizes.entrySet().iterator();
-                    while (iterator.hasNext()) {
-                        final Entry<String, Object> entry = iterator.next();
-                        // final String sizeName = entry.getKey();
-                        final Map<String, Object> sizemap = (Map<String, Object>) entry.getValue();
-                        final List<String> directlinks = new ArrayList<String>();
-                        final String src = sizemap.get("src").toString();
-                        directlinks.add(src);
+        if (!ret.isEmpty()) {
+            /* Do nothing */
+            return;
+        }
+        final Browser brc = br.cloneBrowser();
+        final String filmID = br.getRegex("var FilmId\\s*=\\s*'?(\\d+)'?;").getMatch(0);
+        if (filmID != null) {
+            /* 2023-01-27 */
+            /* Example: https://trailers.apple.com/trailers/newline/shazam-fury-of-the-gods/ */
+            brc.getPage("/trailers/feeds/data/" + filmID + ".json");
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            /* One movie can have multiple trailers. */
+            final List<Map<String, Object>> clips = (List<Map<String, Object>>) entries.get("clips");
+            for (final Map<String, Object> clip : clips) {
+                final String title = clip.get("title").toString();
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(title);
+                final ArrayList<DownloadLink> tmplist = new ArrayList<DownloadLink>();
+                final Map<String, Object> sizes = (Map<String, Object>) JavaScriptEngineFactory.walkJson(clip, "versions/enus/sizes");
+                final Iterator<Entry<String, Object>> iterator = sizes.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Entry<String, Object> entry = iterator.next();
+                    // final String sizeName = entry.getKey();
+                    final Map<String, Object> sizemap = (Map<String, Object>) entry.getValue();
+                    final List<String> directlinks = new ArrayList<String>();
+                    final String src = sizemap.get("src").toString();
+                    directlinks.add(src);
+                    /* 2023-03-27: Only add secondary source if primary source is not a .mov video. */
+                    if (!src.endsWith(".mov")) {
                         final String srcAlt = (String) sizemap.get("srcAlt");
                         if (!StringUtils.isEmpty(srcAlt)) {
                             directlinks.add(srcAlt);
                         }
-                        final Object heightO = sizemap.get("height");
-                        for (final String directlink : directlinks) {
-                            final DownloadLink video = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(directlink));
-                            video.setProperty(PROPERTY_WIDTH, sizemap.get("width"));
-                            if (heightO != null) {
-                                if (heightO instanceof String) {
-                                    video.setProperty(PROPERTY_HEIGHT, heightO);
-                                } else {
-                                    video.setProperty(PROPERTY_HEIGHT, heightO);
-                                }
-                            }
-                            video.setAvailable(true);
-                            video._setFilePackage(fp);
-                            tmplist.add(video);
-                        }
                     }
-                    ret.addAll(this.analyseUserSettings(tmplist));
-                }
-            } else {
-                /* Example: http://trailers.apple.com/trailers/fox/avatar/ */
-                brc.getPage(br.getURL() + "&isWebExpV2=true&dataOnly=true");
-                final ArrayList<DownloadLink> tmplist = new ArrayList<DownloadLink>();
-                final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
-                final Map<String, Object> result0 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "storePlatformData/product-dv/results");
-                Map<String, Object> result = null;
-                for (final Entry<String, Object> entry : result0.entrySet()) {
-                    /* Get first item */
-                    result = (Map<String, Object>) entry.getValue();
-                    break;
-                }
-                final String title = result.get("nameSortValue").toString();
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(title);
-                final List<Map<String, Object>> movieClips = (List<Map<String, Object>>) result.get("movieClips");
-                for (final Map<String, Object> movieClip : movieClips) {
-                    final List<Map<String, Object>> clipAssets = (List<Map<String, Object>>) movieClip.get("clipAssets");
-                    for (final Map<String, Object> clipAsset : clipAssets) {
-                        final String videourl = clipAsset.get("url").toString();
-                        final DownloadLink video = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(videourl));
-                        /* Video resolution is not given as a field -> Look for these values inside URL */
-                        final Regex videoResolutionRegex = new Regex(videourl, "(\\d{3,})x(\\d{3,})");
-                        if (videoResolutionRegex.matches()) {
-                            video.setProperty(PROPERTY_WIDTH, videoResolutionRegex.getMatch(0));
-                            video.setProperty(PROPERTY_HEIGHT, videoResolutionRegex.getMatch(1));
+                    final Object heightO = sizemap.get("height");
+                    for (final String directlink : directlinks) {
+                        final DownloadLink video = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(directlink));
+                        video.setProperty(PROPERTY_WIDTH, sizemap.get("width"));
+                        if (heightO != null) {
+                            video.setProperty(PROPERTY_HEIGHT, heightO);
                         }
                         video.setAvailable(true);
                         video._setFilePackage(fp);
                         tmplist.add(video);
                     }
                 }
-                // final Map<String, Object> lockupResults = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries,
-                // "storePlatformData/lockup/results");
-                // for (final Entry<String, Object> entry : lockupResults.entrySet()) {
-                // final Map<String, Object> item = (Map<String, Object>) entry.getValue();
-                // final List<Map<String, Object>> offers = (List<Map<String, Object>>)item.get("offers");
-                // for(final Map<String, Object>offer:offers) {
-                // final List<Map<String, Object>> assets = (List<Map<String, Object>>)offer.get("assets");
-                // for(final Map<String, Object> asset:assets) {
-                //
-                // }
-                // }
-                // }
                 ret.addAll(this.analyseUserSettings(tmplist));
             }
+        } else {
+            /* Example: http://trailers.apple.com/trailers/fox/avatar/ */
+            brc.getPage(br.getURL() + "&isWebExpV2=true&dataOnly=true");
+            final ArrayList<DownloadLink> tmplist = new ArrayList<DownloadLink>();
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> result0 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "storePlatformData/product-dv/results");
+            Map<String, Object> result = null;
+            for (final Entry<String, Object> entry : result0.entrySet()) {
+                /* Get first item */
+                result = (Map<String, Object>) entry.getValue();
+                break;
+            }
+            final String title = result.get("nameSortValue").toString();
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            final List<Map<String, Object>> movieClips = (List<Map<String, Object>>) result.get("movieClips");
+            for (final Map<String, Object> movieClip : movieClips) {
+                final List<Map<String, Object>> clipAssets = (List<Map<String, Object>>) movieClip.get("clipAssets");
+                for (final Map<String, Object> clipAsset : clipAssets) {
+                    final String videourl = clipAsset.get("url").toString();
+                    final DownloadLink video = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(videourl));
+                    /* Video resolution is not given as a field -> Look for these values inside URL */
+                    final Regex videoResolutionRegex = new Regex(videourl, "(\\d{3,})x(\\d{3,})");
+                    if (videoResolutionRegex.matches()) {
+                        video.setProperty(PROPERTY_WIDTH, videoResolutionRegex.getMatch(0));
+                        video.setProperty(PROPERTY_HEIGHT, videoResolutionRegex.getMatch(1));
+                    }
+                    video.setAvailable(true);
+                    video._setFilePackage(fp);
+                    tmplist.add(video);
+                }
+            }
+            // final Map<String, Object> lockupResults = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries,
+            // "storePlatformData/lockup/results");
+            // for (final Entry<String, Object> entry : lockupResults.entrySet()) {
+            // final Map<String, Object> item = (Map<String, Object>) entry.getValue();
+            // final List<Map<String, Object>> offers = (List<Map<String, Object>>)item.get("offers");
+            // for(final Map<String, Object>offer:offers) {
+            // final List<Map<String, Object>> assets = (List<Map<String, Object>>)offer.get("assets");
+            // for(final Map<String, Object> asset:assets) {
+            //
+            // }
+            // }
+            // }
+            ret.addAll(this.analyseUserSettings(tmplist));
         }
     }
 
