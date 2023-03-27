@@ -403,7 +403,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 }
             }
             /* Offline errorhandling */
-            if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
+            if (isOfflineWebsiteInfoPage(br, link)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             parseAndSetYetiShareVersion(this.br, account);
@@ -1548,6 +1548,15 @@ public abstract class YetiShareCore extends antiDDoSForHost {
 
     private void exception429TooManyConnections() throws PluginException {
         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 too many requests", 5 * 60 * 1000l);
+    }
+
+    /* Returns true if file under url /<fileID>~i is offline. */
+    protected boolean isOfflineWebsiteInfoPage(final Browser br, final DownloadLink link) throws Exception {
+        if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**

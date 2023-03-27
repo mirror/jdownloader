@@ -27,6 +27,13 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -50,19 +57,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" })
 public class ImageFap extends PluginForHost {
     public ImageFap(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        // this.setStartIntervall(500l);
     }
 
     @Override
@@ -70,11 +69,22 @@ public class ImageFap extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    private static final String               CUSTOM_FILENAME              = "CUSTOM_FILENAME";
-    private static final String               FORCE_RECONNECT_ON_RATELIMIT = "FORCE_RECONNECT_ON_RATELIMIT";
-    protected static Object                   LOCK                         = new Object();
-    protected static HashMap<String, Cookies> sessionCookies               = new HashMap<String, Cookies>();
-    private static AtomicInteger              maxFree                      = new AtomicInteger(1);
+    public static void setRequestIntervalLimitGlobal() {
+        final int limit = SubConfiguration.getConfig(STATIC_HOST).getIntegerProperty(SETTING_REQUEST_LIMIT_MILLISECONDS, defaultSETTING_REQUEST_LIMIT_MILLISECONDS);
+        if (limit > 0) {
+            Browser.setRequestIntervalLimitGlobal(STATIC_HOST, limit);
+        }
+    }
+
+    public static final String                STATIC_HOST                                 = "imagefap.com";
+    /** Properties for plugin settings */
+    private static final String               CUSTOM_FILENAME                             = "CUSTOM_FILENAME";
+    private static final String               FORCE_RECONNECT_ON_RATELIMIT                = "FORCE_RECONNECT_ON_RATELIMIT";
+    private static final String               SETTING_REQUEST_LIMIT_MILLISECONDS          = "REQUEST_LIMIT_MILLISECONDS";
+    private static final String               SETTING_ENABLE_START_DOWNLOADS_SEQUENTIALLY = "ENABLE_START_DOWNLOADS_SEQUENTIALLY";
+    protected static Object                   LOCK                                        = new Object();
+    protected static HashMap<String, Cookies> sessionCookies                              = new HashMap<String, Cookies>();
+    private static AtomicInteger              maxFreeDownloadsForSequentialMode           = new AtomicInteger(1);
 
     private void loadSessionCookies(final Browser prepBr, final String host) {
         synchronized (sessionCookies) {
@@ -253,7 +263,13 @@ public class ImageFap extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return maxFree.get();
+        if (SubConfiguration.getConfig(STATIC_HOST).getBooleanProperty(SETTING_ENABLE_START_DOWNLOADS_SEQUENTIALLY, defaultSETTING_ENABLE_START_DOWNLOADS_SEQUENTIALLY)) {
+            /* Start free downloads sequentially. */
+            return maxFreeDownloadsForSequentialMode.get();
+        } else {
+            /* No limit && allow parallel download-starts. */
+            return -1;
+        }
     }
 
     @Override
@@ -502,19 +518,15 @@ public class ImageFap extends PluginForHost {
 
     private void controlSlot(final int num) {
         synchronized (CTRLLOCK) {
-            final int was = maxFree.get();
-            maxFree.set(was + num);
-            logger.info("maxFree was = " + was + " && maxFree now = " + maxFree.get());
+            final int was = maxFreeDownloadsForSequentialMode.get();
+            maxFreeDownloadsForSequentialMode.set(was + num);
+            logger.info("maxFree was = " + was + " && maxFree now = " + maxFreeDownloadsForSequentialMode.get());
         }
     }
 
     @Override
     public void init() {
-        try {
-            // Browser.setRequestIntervalLimitGlobal(getHost(), 750, 100, 60000);
-            Browser.setRequestIntervalLimitGlobal(getHost(), 750);
-        } catch (final Throwable ignore) {
-        }
+        setRequestIntervalLimitGlobal();
     }
 
     public static Request getRequest(final Plugin plugin, final Browser br, Request request) throws Exception {
@@ -537,7 +549,7 @@ public class ImageFap extends PluginForHost {
                  * 2020-10-14: Captcha required. Solving it will remove the rate limit FOR THIS BROWSER SESSION! All other browser sessions
                  * (including new sessions) with the current IP will still be rate-limited until one captcha is solved.
                  */
-                if (SubConfiguration.getConfig("imagefap.com").getBooleanProperty(FORCE_RECONNECT_ON_RATELIMIT, defaultFORCE_RECONNECT_ON_RATELIMIT)) {
+                if (SubConfiguration.getConfig(STATIC_HOST).getBooleanProperty(FORCE_RECONNECT_ON_RATELIMIT, defaultFORCE_RECONNECT_ON_RATELIMIT)) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Rate limit reached user prefers reconnect over captcha solving", 5 * 60 * 1000l);
                 }
                 Form captchaform = null;
@@ -609,7 +621,7 @@ public class ImageFap extends PluginForHost {
     /** Returns either the original server filename or one that is very similar to the original */
     @SuppressWarnings("deprecation")
     public static String getFormattedFilename(final DownloadLink link) throws ParseException {
-        final SubConfiguration cfg = SubConfiguration.getConfig("imagefap.com");
+        final SubConfiguration cfg = SubConfiguration.getConfig(STATIC_HOST);
         final String username = link.getStringProperty("directusername", "-");
         String filename = link.getStringProperty("original_filename", null);
         if (filename == null) {
@@ -657,19 +669,25 @@ public class ImageFap extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Reconnect if rate limit is reached and captcha is required?");
-            put("LABEL_FILENAME", "Define custom filename for pictures:");
-            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'\r\n*photoID* = id of the image\r\n*galleryID* = id of the gallery");
-        }
-    };
+                                                  {
+                                                      put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Reconnect if rate limit is reached and captcha is required?");
+                                                      put("LABEL_FILENAME", "Define custom filename for pictures:");
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'\r\n*photoID* = id of the image\r\n*galleryID* = id of the gallery");
+                                                      put("SETTING_LABEL_ADVANCED_SETTINGS", "Advanced Settings");
+                                                      put("SETTING_REQUEST_LIMIT_MILLISECONDS", "Request limit for 'imagefap.com' in milliseconds");
+                                                      put("SETTING_ENABLE_START_DOWNLOADS_SEQUENTIALLY", "Start downloads sequentially?");
+                                                  }
+                                              };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Führe einen Reconnect durch, wenn das Rate-Limit erreicht ist und ein Captcha benötigt wird?");
-            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
-            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'\r\n*photoID* = id des Bildes\r\n*galleryID* = id der Gallery");
-        }
-    };
+                                                  {
+                                                      put("SETTING_FORCE_RECONNECT_ON_RATELIMIT", "Führe einen Reconnect durch, wenn das Rate-Limit erreicht ist und ein Captcha benötigt wird?");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'\r\n*photoID* = id des Bildes\r\n*galleryID* = id der Gallery");
+                                                      put("SETTING_LABEL_ADVANCED_SETTINGS", "Erweiterte Einstellungen");
+                                                      put("SETTING_REQUEST_LIMIT_MILLISECONDS", "Request Limit für 'imagefap.com' in Millisekunden");
+                                                      put("SETTING_ENABLE_START_DOWNLOADS_SEQUENTIALLY", "Downloads nacheinander starten?");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
@@ -683,8 +701,9 @@ public class ImageFap extends PluginForHost {
             return phrasesDE.get(key);
         } else if (phrasesEN.containsKey(key)) {
             return phrasesEN.get(key);
+        } else {
+            return "Translation not found!";
         }
-        return "Translation not found!";
     }
 
     @Override
@@ -692,13 +711,19 @@ public class ImageFap extends PluginForHost {
         return "JDownloader's imagefap.com plugin helps downloading videos and images from ImageFap. JDownloader provides settings for custom filenames.";
     }
 
-    private static final String  defaultCustomFilename               = "*username* - *galleryname* - *orderid**title*";
-    private static final boolean defaultFORCE_RECONNECT_ON_RATELIMIT = false;
+    private static final String  defaultCustomFilename                              = "*username* - *galleryname* - *orderid**title*";
+    private static final boolean defaultFORCE_RECONNECT_ON_RATELIMIT                = false;
+    private static final int     defaultSETTING_REQUEST_LIMIT_MILLISECONDS          = 750;
+    private static final boolean defaultSETTING_ENABLE_START_DOWNLOADS_SEQUENTIALLY = true;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORCE_RECONNECT_ON_RATELIMIT, getPhrase("SETTING_FORCE_RECONNECT_ON_RATELIMIT")).setDefaultValue(defaultFORCE_RECONNECT_ON_RATELIMIT));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, getPhrase("LABEL_FILENAME")).setDefaultValue(defaultCustomFilename));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_TAGS")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_LABEL_ADVANCED_SETTINGS")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SETTING_REQUEST_LIMIT_MILLISECONDS, getPhrase("SETTING_REQUEST_LIMIT_MILLISECONDS"), 0, 2000, 50).setDefaultValue(defaultSETTING_REQUEST_LIMIT_MILLISECONDS));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ENABLE_START_DOWNLOADS_SEQUENTIALLY, getPhrase("SETTING_ENABLE_START_DOWNLOADS_SEQUENTIALLY")).setDefaultValue(defaultSETTING_ENABLE_START_DOWNLOADS_SEQUENTIALLY));
     }
 
     @Override

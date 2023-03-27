@@ -42,14 +42,14 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ImageFap;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "https?://(?:www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" })
-public class MgfpCm extends PluginForDecrypt {
-    public MgfpCm(PluginWrapper wrapper) {
+public class ImageFapCrawler extends PluginForDecrypt {
+    public ImageFapCrawler(PluginWrapper wrapper) {
         super(wrapper);
-        try {
-            // Browser.setRequestIntervalLimitGlobal(getHost(), 600, 100, 60000);
-            Browser.setRequestIntervalLimitGlobal(getHost(), 750);
-        } catch (final Throwable e) {
-        }
+    }
+
+    @Override
+    public void init() {
+        ImageFap.setRequestIntervalLimitGlobal();
     }
 
     @Override
@@ -69,7 +69,7 @@ public class MgfpCm extends PluginForDecrypt {
     }
 
     private String getPage(final Browser br, final String url) throws Exception {
-        jd.plugins.hoster.ImageFap.getRequest(this, br, br.createGetRequest(url));
+        ImageFap.getRequest(this, br, br.createGetRequest(url));
         return br.toString();
     }
 
@@ -77,7 +77,7 @@ public class MgfpCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        jd.plugins.hoster.ImageFap.prepBR(this.br);
+        ImageFap.prepBR(this.br);
         String parameter = param.toString();
         final Set<String> dupes = new HashSet<String>();
         final String oid = new Regex(parameter, "(?:organizer)/(\\d+)").getMatch(0);
@@ -274,7 +274,7 @@ public class MgfpCm extends PluginForDecrypt {
                             }
                             link.setProperty("galleryname", galleryName);
                             link.setProperty("directusername", authorsName);
-                            link.setName(jd.plugins.hoster.ImageFap.getFormattedFilename(link));
+                            link.setName(ImageFap.getFormattedFilename(link));
                             link.setAvailable(true);
                             ret.add(link);
                             distribute(link);

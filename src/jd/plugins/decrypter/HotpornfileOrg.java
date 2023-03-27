@@ -68,6 +68,7 @@ public class HotpornfileOrg extends PluginForDecrypt {
         logger.info("Failed to re-use previous recaptchaV2Response");
         int attempt = 0;
         Map<String, Object> entries = null;
+        String src = null;
         do {
             final String recaptchaV2Response;
             if (lastRecaptchaV2Response != null) {
@@ -86,7 +87,8 @@ public class HotpornfileOrg extends PluginForDecrypt {
             query.add("challenge", Encoding.urlEncode(recaptchaV2Response));
             br.postPage("/wp-admin/admin-ajax.php", query);
             entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            if (Boolean.FALSE.equals(entries.get("error"))) {
+            src = (String) entries.get("links");
+            if (Boolean.FALSE.equals(entries.get("error")) && src != null) {
                 logger.info("Stopping because: Current attempt was successful");
                 break;
             } else if (lastRecaptchaV2Response == null) {
@@ -102,7 +104,6 @@ public class HotpornfileOrg extends PluginForDecrypt {
                 br.clearCookies(null);
             }
         } while (true);
-        String src = (String) entries.get("links");
         if (StringUtils.isEmpty(src)) {
             /* Fallback */
             src = br.getRequest().getHtmlCode();

@@ -13,8 +13,9 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "filecrypt.cc", type = Type.CRAWLER)
 public interface FileCryptConfig extends PluginConfigInterface {
-    final String text_MaxCutCaptchaAvoidanceRetries = "Max number of retries used to try to avoid cutcaptcha";
-    final String text_CrawlMode                     = "Crawl mode";
+    final String                    text_MaxCutCaptchaAvoidanceRetries = "Max number of retries used to try to avoid cutcaptcha";
+    final String                    text_CrawlMode                     = "Crawl mode";
+    public static final TRANSLATION TRANSLATION                        = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getMaxCutCaptchaAvoidanceRetries_label() {
