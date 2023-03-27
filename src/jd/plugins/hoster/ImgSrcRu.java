@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -128,6 +127,7 @@ public class ImgSrcRu extends PluginForHost {
                 /* 2023-02-03: HEAD request is not supported anymore (will return error 404)! */
                 con = brc.openGetConnection(dllink);
                 if (!this.looksLikeDownloadableContent(con)) {
+                    brc.followConnection();
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     String filename = getFileNameFromHeader(con);
@@ -216,17 +216,13 @@ public class ImgSrcRu extends PluginForHost {
         br.setFollowRedirects(true);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    public static boolean isPasswordProtected(Browser br) {
+    public static boolean isPasswordProtected(final Browser br) {
         return br.containsHTML("this album requires password\\s*<") || br.containsHTML(">\\s*Album owner\\s*(</a>)?\\s*has protected it from unauthorized access") || br.containsHTML(">\\s*Album owner\\s*(</a>)?\\s*has protected his work from unauthorized access") || br.containsHTML("enter password to continue:");
     }
 
