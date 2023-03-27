@@ -122,7 +122,10 @@ public class StandaloneLauncher {
                     }
                 }, args.length == 0 ? new String[] { "--focus" } : args);
             } catch (final AnotherInstanceRunningException e) {
+                LOGGER.log(e);
+                System.exit(1);
             } catch (final ErrorReadingResponseException e) {
+                LOGGER.log(e);
             } catch (final Exception e) {
                 LOGGER.log(e);
                 LOGGER.info("Instance Handling not possible!");
