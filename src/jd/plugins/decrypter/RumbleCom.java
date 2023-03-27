@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -136,6 +137,7 @@ public class RumbleCom extends PluginForDecrypt {
         DownloadLink best = null;
         int worstQualityHeight = 10000;
         DownloadLink worst = null;
+        final HashSet<Integer> widthDupes = new HashSet<Integer>();
         final int preferredHeight = getUserPreferredqualityHeight();
         DownloadLink selectedQuality = null;
         while (streamingTypeIterator.hasNext()) {
@@ -165,12 +167,12 @@ public class RumbleCom extends PluginForDecrypt {
                 final int height;
                 final int width;
                 if (thisQualityHeight == 0) {
-                    /* Rare case: For unplayable videos or videos with only one quality. */
-                    height = thisQualityHeight;
-                    width = thisQualityWidth;
-                } else {
+                    /* Fallback: Rare case: For unplayable videos or videos with only one quality. */
                     height = generalHeight;
                     width = generalWidth;
+                } else {
+                    height = thisQualityHeight;
+                    width = thisQualityWidth;
                 }
                 final DownloadLink dl = this.createDownloadlink(url);
                 /* Set this so when user copies URL of any video quality he'll get the URL to the main video. */
@@ -199,8 +201,9 @@ public class RumbleCom extends PluginForDecrypt {
                 if (height == preferredHeight) {
                     selectedQuality = dl;
                 }
-                ret.add(dl);
-                break;
+                if (widthDupes.add(width)) {
+                    ret.add(dl);
+                }
             }
         }
         if (mode == QualitySelectionMode.WORST && worst != null) {
