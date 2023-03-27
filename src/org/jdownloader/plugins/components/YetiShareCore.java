@@ -1274,7 +1274,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             throw new AccountRequiredException(errorMsgURL);
         } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum permitted downloads in")) {
             ipBlockedOrAccountLimit(link, account, errorMsgURL, 3 * 60 * 60 * 1001l);
-        } else if (StringUtils.containsIgnoreCase(errorMsgURL, "File not found") || StringUtils.containsIgnoreCase(errorMsgURL, "File has been removed")) {
+        } else if (StringUtils.containsIgnoreCase(errorMsgURL, "File not found") || StringUtils.containsIgnoreCase(errorMsgURL, "File has been removed") || StringUtils.containsIgnoreCase(errorMsgURL, "Dosya kaldırıldı")) {
             /* 2020-01-08: letsupload.io */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (errorMsgURL != null && new Regex(errorMsgURL, Pattern.compile(".*(You must wait |Você deve esperar).*", Pattern.CASE_INSENSITIVE)).matches()) {

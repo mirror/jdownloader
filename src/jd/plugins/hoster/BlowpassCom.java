@@ -19,23 +19,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfigAdulttime;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfigBlowpass;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class AdulttimeCom extends EvilangelCore {
-    public AdulttimeCom(PluginWrapper wrapper) {
+public class BlowpassCom extends EvilangelCore {
+    public BlowpassCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.adulttime.com/en/join");
+        this.enablePremium("https://www.blowpass.com/en/join");
     }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "adulttime.com" });
+        ret.add(new String[] { "blowpass.com" });
         return ret;
     }
 
@@ -66,6 +66,6 @@ public class AdulttimeCom extends EvilangelCore {
 
     @Override
     public Class<? extends EvilangelCoreConfig> getConfigInterface() {
-        return EvilangelCoreConfigAdulttime.class;
+        return EvilangelCoreConfigBlowpass.class;
     }
 }

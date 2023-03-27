@@ -13,11 +13,24 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "filecrypt.cc", type = Type.CRAWLER)
 public interface FileCryptConfig extends PluginConfigInterface {
+    final String text_MaxCutCaptchaAvoidanceRetries = "Max number of retries used to try to avoid cutcaptcha";
+    final String text_CrawlMode                     = "Crawl mode";
+
+    public static class TRANSLATION {
+        public String getMaxCutCaptchaAvoidanceRetries_label() {
+            return text_MaxCutCaptchaAvoidanceRetries;
+        }
+
+        public String getCrawlMode_label() {
+            return text_CrawlMode;
+        }
+    }
+
     @AboutConfig
     @DefaultIntValue(0)
     @SpinnerValidator(min = 0, max = 6, step = 1)
     @Order(10)
-    @DescriptionForConfigEntry("Define max number of retries to avoid cutcaptcha")
+    @DescriptionForConfigEntry(text_MaxCutCaptchaAvoidanceRetries)
     int getMaxCutCaptchaAvoidanceRetries();
 
     void setMaxCutCaptchaAvoidanceRetries(int maxretries);
@@ -26,7 +39,7 @@ public interface FileCryptConfig extends PluginConfigInterface {
         PREFER_GIVEN_MIRROR_ID {
             @Override
             public String getLabel() {
-                return "Crawl pre-selected mirror only (if given)";
+                return "Crawl pre-selected mirror only (crawl all if no pre-selected is available)";
             }
         },
         CRAWL_ALL_AVAILABLE_MIRRORS {
@@ -40,7 +53,7 @@ public interface FileCryptConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("CRAWL_ALL_AVAILABLE_MIRRORS")
     @Order(20)
-    @DescriptionForConfigEntry("Select preferred crawl mode")
+    @DescriptionForConfigEntry(text_CrawlMode)
     CrawlMode getCrawlMode();
 
     void setCrawlMode(CrawlMode cm);

@@ -90,18 +90,17 @@ public abstract class EvilangelCore extends PluginForHost {
         return "http://www.famesupport.com/";
     }
 
-    private String              dllink                                 = null;
+    private String              dllink                          = null;
     @Deprecated
-    private static final String URL_EVILANGEL_FILM                     = "https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
+    private static final String URL_EVILANGEL_FILM              = "https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
     @Deprecated
-    private static final String URL_EVILANGEL_FREE_TRAILER             = "https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
-    private static final String URL_VIDEO                              = "https?://members\\.[^/]+/[a-z]{2}/(?:video|movie)/([^/]+)(?:/([A-Za-z0-9\\-_]+))?/(\\d+)";
-    private static final String PROPERTY_ACTORS                        = "actors";
-    private static final String PROPERTY_DATE                          = "date";
-    private static final String PROPERTY_QUALITY                       = "quality";
-    private static final String PROPERTY_TITLE                         = "title";
-    private static final String PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN = "has_used_cookie_login";
-    private static final String PROPERTY_ACCOUNT_CONTENT_SOURCE        = "content_source";
+    private static final String URL_EVILANGEL_FREE_TRAILER      = "https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
+    private static final String URL_VIDEO                       = "https?://members\\.[^/]+/[a-z]{2}/(?:video|movie)/([A-Za-z0-9\\-_]+)(?:/([A-Za-z0-9\\-_]+))?/(\\d+)";
+    private static final String PROPERTY_ACTORS                 = "actors";
+    private static final String PROPERTY_DATE                   = "date";
+    private static final String PROPERTY_QUALITY                = "quality";
+    private static final String PROPERTY_TITLE                  = "title";
+    private static final String PROPERTY_ACCOUNT_CONTENT_SOURCE = "content_source";
 
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
@@ -626,7 +625,7 @@ public abstract class EvilangelCore extends PluginForHost {
     public void login(final Account account, final boolean verifyCookies) throws Exception {
         synchronized (account) {
             try {
-                final String host_account = account.getHoster();
+                final String host = this.getHost();
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
                 if (allowCookieLoginOnly() && userCookies == null) {
@@ -644,7 +643,6 @@ public abstract class EvilangelCore extends PluginForHost {
                     if (verifyCookies(account, userCookies)) {
                         /* Cookie login successful */
                         logger.info("User cookie login successful");
-                        account.setProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN, true);
                         return;
                     } else {
                         if (account.hasEverBeenValid()) {
@@ -654,9 +652,8 @@ public abstract class EvilangelCore extends PluginForHost {
                         }
                     }
                 }
-                account.removeProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN);
                 if (cookies != null) {
-                    br.setCookies(host_account, cookies);
+                    br.setCookies(host, cookies);
                     if (!verifyCookies) {
                         /* Do not verify cookies */
                         return;
@@ -665,7 +662,7 @@ public abstract class EvilangelCore extends PluginForHost {
                         /* Cookie login successful */
                         logger.info("Cookie login successful");
                         /* Update cookies */
-                        account.saveCookies(br.getCookies(host_account), "");
+                        account.saveCookies(br.getCookies(host), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
@@ -742,8 +739,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 if (!isLoggedIn(br)) {
                     throw new AccountInvalidException();
                 }
-                account.removeProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN);
-                account.saveCookies(br.getCookies(host_account), "");
+                account.saveCookies(br.getCookies(host), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -766,7 +762,13 @@ public abstract class EvilangelCore extends PluginForHost {
     }
 
     protected boolean hasUsedCookieLogin(final Account account) {
-        return this.allowCookieLoginOnly() || account.getBooleanProperty(PROPERTY_ACCOUNT_HAS_USED_COOKIE_LOGIN, false);
+        if (this.allowCookieLoginOnly()) {
+            return true;
+        } else if (account.loadUserCookies() != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /** TODO: Add functionality. */
@@ -811,21 +813,25 @@ public abstract class EvilangelCore extends PluginForHost {
             account.setProperty(PROPERTY_ACCOUNT_CONTENT_SOURCE, contentSources.get(contentSources.size() - 1));
         }
         final Map<String, Object> user = (Map<String, Object>) root.get("user");
-        /* TODO: Add support for "expirationDate" along with "scheduledCancelDate" whenever a test account with such a date is available. */
-        if ((Boolean) user.get("isExpired")) {
-            ai.setExpired(true);
-            account.setType(AccountType.FREE);
-        } else {
-            ai.setUnlimitedTraffic();
-            account.setType(AccountType.PREMIUM);
-        }
-        /* Try to set unique string as username when cookie login was used */
+        /* Try to set unique string as username when cookie login was used. */
         final String email = (String) user.get("email");
         final String username = (String) user.get("username");
         if (hasUsedCookieLogin(account) && !StringUtils.isEmpty(email) && account.getUser().contains("@")) {
             account.setUser(email);
         } else if (hasUsedCookieLogin(account) && !StringUtils.isEmpty(username)) {
             account.setUser(username);
+        }
+        /**
+         * TODO: Add support for "expirationDate" along with "scheduledCancelDate" whenever a test account with such a date is available.
+         * </br>
+         * "scheduledCancelDate" can also be a Boolean!
+         */
+        if (Boolean.TRUE.equals(user.get("isExpired"))) {
+            ai.setExpired(true);
+            account.setType(AccountType.FREE);
+        } else {
+            ai.setUnlimitedTraffic();
+            account.setType(AccountType.PREMIUM);
         }
         return ai;
     }

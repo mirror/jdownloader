@@ -328,7 +328,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         return false;
     }
 
-    /** Checks whether current html code contains embed code for current fuid which would indicate that we have a videohost. */
+    /**
+     * Checks whether current html code contains embed code for current fuid which would indicate that we have a videohost. </br>
+     * </b> Attention! Browser can be null! </b>
+     */
     protected boolean isVideohosterEmbedHTML(final Browser br) {
         if (br == null) {
             return false;
