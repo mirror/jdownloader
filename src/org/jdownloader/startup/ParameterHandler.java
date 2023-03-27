@@ -5,11 +5,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import jd.SecondLevelLaunch;
+
 import org.appwork.app.launcher.parameterparser.CommandSwitch;
 import org.appwork.app.launcher.parameterparser.ParameterParser;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.singleapp.IncommingMessageListener;
+import org.appwork.utils.singleapp.InstanceMessageListener;
 import org.appwork.utils.singleapp.Response;
 import org.appwork.utils.singleapp.ResponseSender;
 import org.jdownloader.logging.LogController;
@@ -31,9 +33,7 @@ import org.jdownloader.startup.commands.SetConfigCommand;
 import org.jdownloader.startup.commands.ThreadDump;
 import org.jdownloader.updatev2.RestartController;
 
-import jd.SecondLevelLaunch;
-
-public class ParameterHandler implements IncommingMessageListener {
+public class ParameterHandler implements InstanceMessageListener {
     private HashMap<String, StartupCommand> commandMap;
     private LogSource                       logger;
     private ArrayList<StartupCommand>       commands;
@@ -89,6 +89,15 @@ public class ParameterHandler implements IncommingMessageListener {
             commandMap.put(s, helpCommand);
         }
         commands.add(helpCommand);
+    }
+
+    @Override
+    @Deprecated
+    public void parseMessage(String[] args) {
+        logger.info("Sent: " + Arrays.toString(args));
+        ParameterParser pp = new ParameterParser(args);
+        pp.parse(null);
+        execute(pp, false);
     }
 
     protected void execute(ParameterParser pp, boolean startup) {
