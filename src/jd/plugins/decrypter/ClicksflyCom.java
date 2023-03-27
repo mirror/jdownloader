@@ -18,15 +18,16 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ClicksflyCom extends MightyScriptAdLinkFly {
@@ -71,27 +72,31 @@ public class ClicksflyCom extends MightyScriptAdLinkFly {
         Form form = br.getForm(0);
         form.setAction(Encoding.urlDecode(form.getInputField("url").getValue(), true));
         submitForm(form);
-        Form aliasForm = br.getFormbyKey("alias");
+        Form aliasForm = getAliasForm(br);
         if (aliasForm != null) {
             /* Ads + captcha */
             logger.info("alias form detected");
             final String hcaptchaResponse = new CaptchaHelperCrawlerPluginHCaptcha(this, br).getToken();
             aliasForm.put("h-captcha-response", Encoding.urlEncode(hcaptchaResponse));
             br.submitForm(aliasForm);
-            aliasForm = br.getFormbyKey("alias");
+            aliasForm = getAliasForm(br);
             if (aliasForm != null) {
                 /* Back to original website -> Wait time -> Final link */
-                logger.info("alias form detected again");
+                logger.info("alias form detected again, this time without captcha");
                 br.submitForm(aliasForm);
-                aliasForm = br.getFormbyKey("alias");
+                aliasForm = getAliasForm(br);
                 if (aliasForm != null) {
-                    logger.info("alias form detected again?!");
+                    logger.info("alias form detected again?! Possible plugin failure!");
                 }
             }
         }
         br.setFollowRedirects(followRedirectsOld);
         return ret;
         // return super.handlePreCrawlProcess(param);
+    }
+
+    private Form getAliasForm(final Browser br) {
+        return br.getFormbyKey("alias");
     }
 
     @Override
