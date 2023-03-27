@@ -74,7 +74,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_USER  = "https?://[^/]+/users/([^/]+)(/videos)?";
+    private static final String TYPE_USER  = "https?://[^/]+/(?:users|profile)/([^/]+)(/videos)?";
     private static final String TYPE_VIDEO = "https?://[^/]+/videos?/[A-Za-z0-9]+";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {

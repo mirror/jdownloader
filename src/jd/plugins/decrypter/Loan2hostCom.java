@@ -37,7 +37,7 @@ public class Loan2hostCom extends MightyScriptAdLinkFly {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "tei.ai", "loan2host.com", "tii.ai", "wishes2.com", "ckk.ai" });
+        ret.add(new String[] { "tei.ai", "loan2host.com", "tii.ai", "tii.la", "wishes2.com", "ckk.ai" });
         return ret;
     }
 
@@ -63,7 +63,7 @@ public class Loan2hostCom extends MightyScriptAdLinkFly {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         /* Default handling */
         return super.decryptIt(param, progress);
     }
@@ -77,7 +77,7 @@ public class Loan2hostCom extends MightyScriptAdLinkFly {
         Form ret = null;
         final Form[] forms = br.getForms();
         for (final Form search : forms) {
-            if (search.containsHTML("(?i)Generating Link...")) {
+            if (search.containsHTML("(?i)Generating Link\\.\\.\\.")) {
                 ret = search;
                 break;
             }

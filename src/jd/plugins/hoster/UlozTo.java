@@ -865,19 +865,16 @@ public class UlozTo extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai;
         if (use_login_api) {
-            ai = fetchAccountInfoAPI(account);
+            return fetchAccountInfoAPI(account);
         } else {
-            ai = fetchAccountInfoWebsite(account);
+            return fetchAccountInfoWebsite(account);
         }
-        return ai;
     }
 
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         loginAPI(account, ai);
-        ai.setStatus("Premium Account");
         account.setType(AccountType.PREMIUM);
         return ai;
     }
@@ -898,10 +895,8 @@ public class UlozTo extends PluginForHost {
             ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
         }
         if (ai.getTrafficLeft() > 0) {
-            ai.setStatus("Premium Account");
             account.setType(AccountType.PREMIUM);
         } else {
-            ai.setStatus("Free Account");
             account.setType(AccountType.FREE);
         }
         return ai;
