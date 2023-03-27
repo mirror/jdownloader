@@ -26,7 +26,6 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -36,7 +35,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotpornfile.org" }, urls = { "https?://(?:www\\.)?hotpornfile\\.org/(?!page)([^/]+)/(\\d+)" })
 public class HotpornfileOrg extends PluginForDecrypt {
@@ -65,40 +63,49 @@ public class HotpornfileOrg extends PluginForDecrypt {
         }
         /* 2019-07-18: Stream URLs may expire which is why we don't grab them for now. */
         // br.postPage("https://www." + this.getHost() + "/wp-admin/admin-ajax.php", "action=get_stream&postId=" + fid);
-        /* 2019-07-18: reCaptchaKey hardcoded */
-        String recaptchaV2Response = this.getPluginConfig().getStringProperty(PROPERTY_recaptcha_response);
-        String json_type = null;
-        boolean accessMainLinkAgain = false;
-        if (recaptchaV2Response != null) {
-            logger.info("Re-using last recaptchaV2Response: " + recaptchaV2Response);
-            try {
-                br.postPage("/wp-admin/admin-ajax.php", "action=bypass_captcha&postId=" + postID + "&challenge=" + Encoding.urlEncode(recaptchaV2Response));
-                json_type = PluginJSonUtils.getJson(br, "type");
-                accessMainLinkAgain = true;
-            } catch (final BrowserException ignore) {
-            }
-        }
-        if (recaptchaV2Response == null || !StringUtils.equalsIgnoreCase(json_type, "success")) {
-            logger.info("Failed to re-use previous recaptchaV2Response");
-            if (accessMainLinkAgain) {
+        String lastRecaptchaV2Response = this.getPluginConfig().getStringProperty(PROPERTY_recaptcha_response);
+        String freshReCaptchaV2Response = null;
+        logger.info("Failed to re-use previous recaptchaV2Response");
+        int attempt = 0;
+        Map<String, Object> entries = null;
+        do {
+            final String recaptchaV2Response;
+            if (lastRecaptchaV2Response != null) {
+                logger.info("Trying to re-use lase reCaptchaV2Response: " + lastRecaptchaV2Response);
+                br.setCookie(this.getHost(), "cPass", lastRecaptchaV2Response);
+                recaptchaV2Response = lastRecaptchaV2Response;
+            } else {
                 br.getPage(parameter);
+                recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Lf1jhYUAAAAAN8kNxOBBEUu3qBPcy4UNu4roO5K").getToken();
+                freshReCaptchaV2Response = recaptchaV2Response;
             }
-            recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Lf1jhYUAAAAAN8kNxOBBEUu3qBPcy4UNu4roO5K").getToken();
             final UrlQuery query = new UrlQuery();
             query.add("action", "get_links");
             query.add("postId", postID);
-            query.add("challenge", Encoding.urlEncode(recaptchaV2Response));
             query.add("cid", "null");
+            query.add("challenge", Encoding.urlEncode(recaptchaV2Response));
             br.postPage("/wp-admin/admin-ajax.php", query);
-            json_type = PluginJSonUtils.getJson(br, "type");
-        } else {
-            logger.info("Successfully re-used previous recaptchaV2Response");
-        }
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            if (Boolean.FALSE.equals(entries.get("error"))) {
+                logger.info("Stopping because: Current attempt was successful");
+                break;
+            } else if (lastRecaptchaV2Response == null) {
+                logger.info("Stopping because: Tried real captcha attempt in this loop");
+                break;
+            } else if (attempt > 0) {
+                logger.info("Stopping because: Tried two times");
+                break;
+            } else {
+                attempt++;
+                logger.info("Retrying captcha");
+                lastRecaptchaV2Response = null;
+                br.clearCookies(null);
+            }
+        } while (true);
         String src = (String) entries.get("links");
         if (StringUtils.isEmpty(src)) {
             /* Fallback */
-            src = br.toString();
+            src = br.getRequest().getHtmlCode();
         }
         final String[] links = new Regex(src, "\"(https?://[^\"]+)").getColumn(0);
         if (links == null || links.length == 0) {
@@ -112,10 +119,17 @@ public class HotpornfileOrg extends PluginForDecrypt {
             fp.setName(Encoding.htmlDecode(fpName).trim());
             fp.addLinks(ret);
         }
-        if (ret.size() > 0) {
+        if (ret.size() > 0 && freshReCaptchaV2Response != null) {
             /* Save reCaptchaV2 response as we might be able to use it multiple times! */
-            this.getPluginConfig().setProperty(PROPERTY_recaptcha_response, recaptchaV2Response);
+            logger.info("Saving reCaptchaV2Response for next time: " + freshReCaptchaV2Response);
+            this.getPluginConfig().setProperty(PROPERTY_recaptcha_response, freshReCaptchaV2Response);
         }
         return ret;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2023-03-27: Attempt to avoid captchas. */
+        return 1;
     }
 }

@@ -173,7 +173,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                 } else {
                     break;
                 }
-            } else if (count >= limit) {
+            } else if (count < limit) {
                 logger.info("Stopping because: Reached last page: " + page);
                 break;
             } else {
