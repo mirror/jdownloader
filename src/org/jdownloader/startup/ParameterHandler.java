@@ -9,7 +9,9 @@ import org.appwork.app.launcher.parameterparser.CommandSwitch;
 import org.appwork.app.launcher.parameterparser.ParameterParser;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.singleapp.InstanceMessageListener;
+import org.appwork.utils.singleapp.IncommingMessageListener;
+import org.appwork.utils.singleapp.Response;
+import org.appwork.utils.singleapp.ResponseSender;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.startup.commands.AbstractStartupCommand;
 import org.jdownloader.startup.commands.AddContainerCommand;
@@ -31,7 +33,7 @@ import org.jdownloader.updatev2.RestartController;
 
 import jd.SecondLevelLaunch;
 
-public class ParameterHandler implements InstanceMessageListener {
+public class ParameterHandler implements IncommingMessageListener {
     private HashMap<String, StartupCommand> commandMap;
     private LogSource                       logger;
     private ArrayList<StartupCommand>       commands;
@@ -89,14 +91,6 @@ public class ParameterHandler implements InstanceMessageListener {
         commands.add(helpCommand);
     }
 
-    @Override
-    public void parseMessage(String[] args) {
-        logger.info("Sent: " + Arrays.toString(args));
-        ParameterParser pp = new ParameterParser(args);
-        pp.parse(null);
-        execute(pp, false);
-    }
-
     protected void execute(ParameterParser pp, boolean startup) {
         for (CommandSwitch cmd : pp.getList()) {
             StartupCommand command = commandMap.get(cmd.getSwitchCommand());
@@ -121,5 +115,14 @@ public class ParameterHandler implements InstanceMessageListener {
             logger.info("Remove ConsoleHandler");
             LogController.getInstance().removeConsoleHandler();
         }
+    }
+
+    @Override
+    public void onIncommingMessage(ResponseSender callback, String[] message) {
+        logger.info("Sent: " + Arrays.toString(message));
+        ParameterParser pp = new ParameterParser(message);
+        pp.parse(null);
+        execute(pp, false);
+        callback.sendResponse(new Response("PONG", "Received Message"));
     }
 }

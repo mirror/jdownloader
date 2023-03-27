@@ -30,7 +30,10 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.LogSourceRedirector;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.singleapp.AnotherInstanceRunningException;
+import org.appwork.utils.singleapp.Response;
+import org.appwork.utils.singleapp.ResponseListener;
 import org.appwork.utils.singleapp.SingleAppInstance;
+import org.appwork.utils.singleapp.SingleAppInstance.ErrorReadingResponseException;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.JDClassLoaderLauncher;
 import org.jdownloader.updatev2.RestartController;
@@ -103,18 +106,23 @@ public class StandaloneLauncher {
         LOGGER.info("Single Instance Controller");
         SingleAppInstance singleInstance = null;
         if (!pp.hasCommandSwitch("n")) {
-            singleInstance = new SingleAppInstance("JD2", Application.getTemp().getParentFile());
+            singleInstance = new SingleAppInstance("JD2", Application.getTemp().getParentFile(), null);
+            singleInstance.setForwardMessageDirectIfNoOtherInstanceIsFound(false);
             try {
-                singleInstance.start();
+                singleInstance.start(new ResponseListener() {
+                    @Override
+                    public void onReceivedResponse(Response r) {
+                        LOGGER.info("Received Response from existing instance: " + r);
+                    }
+
+                    @Override
+                    public void onConnected(String[] message) {
+                        LOGGER.info("existing jD instance found!");
+                        LOGGER.info("Send parameters to existing jD instance and exit: " + Arrays.toString(args));
+                    }
+                }, args.length == 0 ? new String[] { "--focus" } : args);
             } catch (final AnotherInstanceRunningException e) {
-                LOGGER.info("existing jD instance found!");
-                if (args.length == 0) {
-                    args = new String[] { "--focus" };
-                }
-                LOGGER.info("Send parameters to existing jD instance and exit: " + Arrays.toString(args));
-                if (singleInstance.sendToRunningInstance(args)) {
-                    System.exit(1);
-                }
+            } catch (final ErrorReadingResponseException e) {
             } catch (final Exception e) {
                 LOGGER.log(e);
                 LOGGER.info("Instance Handling not possible!");
@@ -139,10 +147,10 @@ public class StandaloneLauncher {
         } catch (Throwable e) {
             e.printStackTrace();
         }
+        if (singleInstance != null) {
+            singleInstance.setListener(org.jdownloader.startup.Main.PARAMETER_HANDLER);
+        }
         JDClassLoaderLauncher.updateClassPath();
         org.jdownloader.startup.Main.main(args);
-        if (singleInstance != null) {
-            singleInstance.setInstanceMessageListener(org.jdownloader.startup.Main.PARAMETER_HANDLER);
-        }
     }
 }
