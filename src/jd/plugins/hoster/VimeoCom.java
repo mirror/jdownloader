@@ -26,6 +26,24 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.JVMVersion;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -54,24 +72,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.JVMVersion;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
@@ -209,15 +209,12 @@ public class VimeoCom extends PluginForHost {
                     link.setFinalFileName(getFormattedFilename(link));
                     return AvailableStatus.TRUE;
                 } else {
-                    try {
-                        brc.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
                     if (VIMEO_URL_TYPE.PLAY.equals(type) && responseCode == 410) {
                         // expired
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else if (StringUtils.containsIgnoreCase(contentType, "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1") || StringUtils.contains(con.getURL().toString(), "cold_request=1")) {
+                    }
+                    br.followConnection(true);
+                    if (StringUtils.containsIgnoreCase(contentType, "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1") || StringUtils.contains(con.getURL().toString(), "cold_request=1")) {
                         // defrosting, fetching from cold storage
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Defrosting download, please wait", 30 * 60 * 1000l);
                     } else {
@@ -353,17 +350,14 @@ public class VimeoCom extends PluginForHost {
                         }
                         link.setProperty("directURL", finalURL);
                     } else {
-                        try {
-                            brc.followConnection(true);
-                        } catch (final IOException e) {
-                            logger.log(e);
+                        if (con.getResponseCode() == 500) {
+                            /* 2020-07-06: E.g. "Original" version of video is officially available but download is broken serverside. */
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");
                         }
+                        brc.followConnection(true);
                         if (StringUtils.containsIgnoreCase(con.getContentType(), "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1") || StringUtils.contains(con.getURL().toString(), "cold_request=1")) {
                             // defrosting, fetching from cold storage
                             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Defrosting download, please wait", 30 * 60 * 1000l);
-                        } else if (con.getResponseCode() == 500) {
-                            /* 2020-07-06: E.g. "Original" version of video is officially available but download is broken serverside. */
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
@@ -721,15 +715,12 @@ public class VimeoCom extends PluginForHost {
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, finalURL, true, 0);
                 if (!dl.getConnection().isOK() || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "html") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json")) {
                     logger.warning("The final dllink seems not to be a file!");
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
                     if (VIMEO_URL_TYPE.PLAY.equals(type) && br.getHttpConnection().getResponseCode() == 410) {
                         // expired
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1") || StringUtils.contains(br.getURL().toString(), "cold_request=1")) {
+                    }
+                    br.followConnection(true);
+                    if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json") || StringUtils.containsIgnoreCase(finalURL, "cold_request=1") || StringUtils.contains(br.getURL().toString(), "cold_request=1")) {
                         // defrosting, fetching from cold storage
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Defrosting download, please wait", 30 * 60 * 1000l);
                     } else {

@@ -15,10 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -29,9 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vdisk.weibo.com" }, urls = { "http://(?:www\\.)?vdisk\\.weibo\\.com/s/([A-Za-z0-9]+)" })
 public class VdiskWeiboCom extends PluginForHost {
@@ -140,11 +139,7 @@ public class VdiskWeiboCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());

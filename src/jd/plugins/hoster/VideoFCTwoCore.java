@@ -502,21 +502,14 @@ public abstract class VideoFCTwoCore extends PluginForHost {
         } else {
             /* http download */
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.httpDownloadurl, true, -4);
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && requestHeadersHasKeyNValueContains(br, "server", "nginx")) {
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Service unavailable. Try again later.", 5 * 60 * 1000l);
-            } else if (!looksLikeDownloadableContent(dl.getConnection())) {
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
+                br.followConnection(true);
+                if (br.getHttpConnection().getResponseCode() == 503 && requestHeadersHasKeyNValueContains(br, "server", "nginx")) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Service unavailable. Try again later.", 5 * 60 * 1000l);
+                } else {
+                    checkErrorsNoFileLastResort(br.getHttpConnection());
                 }
-                checkErrorsNoFileLastResort(br.getHttpConnection());
             }
             dl.startDownload();
         }

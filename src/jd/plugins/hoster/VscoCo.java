@@ -168,17 +168,14 @@ public class VscoCo extends PluginForHost {
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), free_resume, free_maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
                 }
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             }
             dl.startDownload();
         }

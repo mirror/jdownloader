@@ -1,7 +1,5 @@
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
@@ -61,15 +59,12 @@ public class VideoGoogle extends PluginForHost {
         requestFileInformation(link);
         dl = new jd.plugins.BrowserAdapter().openDownload(this.br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            if (br.getRequest().toString().length() < 100) {
+            br.followConnection(true);
+            if (br.getRequest().getHtmlCode().length() < 100) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This media item is temporary unavailable!", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

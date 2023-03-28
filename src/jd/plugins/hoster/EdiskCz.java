@@ -15,8 +15,12 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -31,20 +35,44 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "https?://(?:www\\.)?edisk\\.(?:cz|sk|eu)/(?:[a-z]{2}/)?(?:stahni|download)/[0-9]+/.+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class EdiskCz extends PluginForHost {
-    private static final String MAINPAGE = "https://www.edisk.eu/";
-
     public EdiskCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.edisk.eu/credit/");
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        final String linkpart = new Regex(link.getDownloadURL(), "(stahni|download)/(.+)").getMatch(1);
-        link.setUrlDownload("https://www.edisk.eu/download/" + linkpart);
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "edisk.cz", "edisk.sk", "edisk.eu" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:[a-z]{2}/)?(?:stahni|download|stiahni)/([0-9]+)/.+\\.html");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private String getContentURL(final DownloadLink link) {
+        final String linkpart = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(?:[a-z]{2}/)?[^/]+/(.+)").getMatch(0);
+        return "https://www." + this.getHost() + "/download/" + linkpart;
     }
 
     @Override
@@ -63,13 +91,26 @@ public class EdiskCz extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setCustomCharset("UTF-8");
         prepBr();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(getContentURL(link));
         br.setFollowRedirects(false);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error_msg\"|>Tento soubor již neexistuje|>This file does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -97,8 +138,8 @@ public class EdiskCz extends PluginForHost {
 
     /* TODO: Implement English(and missing) errormessages */
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         br.setFollowRedirects(false);
         final String url_download = br.getURL();
         final String fid = br.getRegex("data\\.filesId\\s*?=\\s*?(\\d+);").getMatch(0);
@@ -114,7 +155,7 @@ public class EdiskCz extends PluginForHost {
         if (captchaurl == null || captchaurl.equals("")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String code = this.getCaptchaCode(captchaurl, downloadLink);
+        final String code = this.getCaptchaCode(captchaurl, link);
         br.postPageRaw(url_download, "{\"triplussest\":\"devÄt\",\"captcha_id\":\"/files/downloadslow/" + fid + "/\",\"captcha\":\"" + code + "\"}");
         String dllink = PluginJSonUtils.getJsonValue(br, "redirect");
         final String redirect_because_of_invalid_captcha = PluginJSonUtils.getJsonValue(br, "msg");
@@ -127,9 +168,10 @@ public class EdiskCz extends PluginForHost {
         if (!dllink.startsWith("http") && !dllink.startsWith("/")) {
             dllink = "/" + dllink;
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, -2);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, -2);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection(true);
             if (br.getHttpConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultaneous downloads", 10 * 60 * 1000l);
             } else if (br.containsHTML("Pomalu je možné stáhnout pouze 1 soubor") || br.getURL().contains("/kredit")) {
@@ -146,7 +188,7 @@ public class EdiskCz extends PluginForHost {
 
     /* 2016-11-24: This might be broken as website has ben renewed! */
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, null);
         if (account.getType() == AccountType.FREE) {
             requestFileInformation(link);
@@ -154,10 +196,10 @@ public class EdiskCz extends PluginForHost {
         } else {
             requestFileInformation(link);
             br.setFollowRedirects(true);
-            br.getPage(link.getDownloadURL());
+            br.getPage(getContentURL(link));
             String dllink = br.getRegex("href\\s*=\\s*\"(/download-fast/\\d+[^\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                String fileID = new Regex(link.getDownloadURL(), "/(\\d+)/[^/]+\\.html$").getMatch(0);
+                String fileID = this.getFID(link);
                 String premiumPage = br.getRegex("\"(x-premium/\\d+)\"").getMatch(0);
                 if (fileID == null || premiumPage == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -177,9 +219,9 @@ public class EdiskCz extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -198,7 +240,6 @@ public class EdiskCz extends PluginForHost {
         if (ia == null) {
             ai = account.getAccountInfo();
         }
-        br = new Browser();
         prepBr();
         br.setFollowRedirects(true);
         br.getPage("https://www.edisk.eu/account/login");
@@ -208,8 +249,7 @@ public class EdiskCz extends PluginForHost {
         br.submitForm(login);
         if (br.getURL().contains("/account/login/")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        if (!br.getURL().endsWith("/account/stats/")) {
+        } else if (!br.getURL().endsWith("/account/stats/")) {
             br.getPage("/account/stats/");
         }
         String availabletraffic = br.getRegex("\\(Credit:\\s*([0-9\\.]+\\s*[TGMB]*)\\)\\s*</strong>").getMatch(0);
@@ -221,7 +261,6 @@ public class EdiskCz extends PluginForHost {
         }
         if (traffic > 0) {
             ai.setTrafficLeft(traffic);
-            account.setValid(true);
             account.setType(AccountType.PREMIUM);
             if (ia == null) {
                 account.setAccountInfo(ai);
@@ -229,7 +268,6 @@ public class EdiskCz extends PluginForHost {
         } else {
             /* Check if credit = zero == free account - till now there is no better way to verify this!. */
             /* 20170102 If revert is needed, revert to revision: 35520 */
-            account.setValid(true);
             account.setType(AccountType.FREE);
             // can free accounts download? handlePremium would indicate yes
             ai.setUnlimitedTraffic();

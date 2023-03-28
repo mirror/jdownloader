@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -32,6 +31,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -61,7 +61,7 @@ public class AbbyWintersCom extends PluginForHost {
         return "https://www.abbywinters.com/about/termsandconditions";
     }
 
-    private static List<String[]> getPluginDomains() {
+    public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "abbywinters.com" });
@@ -85,7 +85,8 @@ public class AbbyWintersCom extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    private static final String PICTURELINK        = "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/images/stills/[a-z0-9\\-_]+";
+    private final String        PATTERN_IMAGE      = "https?://[^/]+/shoot/[a-z0-9\\-_]+/images/stills/[a-z0-9\\-_]+";
+    private static final String PATTERN_VIDEO      = "https?://[^/]+/.+/video/\\w+";
     // private static final String VIDEOLINK = "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/videos/video/clip";
     private final String        PROPERTY_DIRECTURL = "directurl";
 
@@ -98,44 +99,65 @@ public class AbbyWintersCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        // This shouldn't happen
         if (account == null) {
             link.getLinkStatus().setStatusText("Only downlodable/checkable via account!");
             return AvailableStatus.UNCHECKABLE;
         }
         login(account, false);
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)404 Page not found")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         String filename = null;
-        final String videoDataResources = br.getRegex("data-sources=\"([^\"]+)").getMatch(0);
-        if (videoDataResources != null) {
-            final List<Object> ressourcelist = JSonStorage.restoreFromString(Encoding.htmlDecode(videoDataResources), TypeRef.LIST);
-            final Map<String, Object> bestVideo = (Map<String, Object>) ressourcelist.get(ressourcelist.size() - 1);
-            final String directurl = bestVideo.get("src").toString();
-            link.setProperty(PROPERTY_DIRECTURL, directurl);
-            filename = Plugin.getFileNameFromURL(new URL(directurl));
-        } else {
-            // old code
-            if (link.getPluginPatternMatcher().matches(PICTURELINK)) {
-                final Regex fInfo = br.getRegex("<title>([^<>\"]*?)\\| Image (\\d+) of \\d+</title>");
-                if (fInfo.getMatches().length != 1) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final DecimalFormat df = new DecimalFormat("0000");
-                filename = Encoding.htmlDecode(fInfo.getMatch(0).trim()) + "_" + df.format(Integer.parseInt(fInfo.getMatch(1))) + ".jpg";
+        if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO)) {
+            br.getPage(link.getPluginPatternMatcher());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("(?i)404 Page not found")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String videoDataResources = br.getRegex("data-sources=\"([^\"]+)").getMatch(0);
+            if (videoDataResources != null) {
+                final List<Object> ressourcelist = JSonStorage.restoreFromString(Encoding.htmlDecode(videoDataResources), TypeRef.LIST);
+                final Map<String, Object> bestVideo = (Map<String, Object>) ressourcelist.get(ressourcelist.size() - 1);
+                final String directurl = bestVideo.get("src").toString();
+                link.setProperty(PROPERTY_DIRECTURL, directurl);
+                filename = Plugin.getFileNameFromURL(new URL(directurl));
             } else {
-                String username = br.getRegex("title=\"View profile: ([^<>\"]*?)\"").getMatch(0);
-                if (username == null) {
-                    username = br.getRegex("</span>([^<>\"]*?)<span class=\"icon_videoclip\">").getMatch(0);
+                // old code
+                if (link.getPluginPatternMatcher().matches(PATTERN_IMAGE)) {
+                    final Regex fInfo = br.getRegex("<title>([^<>\"]*?)\\| Image (\\d+) of \\d+</title>");
+                    if (fInfo.getMatches().length != 1) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final DecimalFormat df = new DecimalFormat("0000");
+                    filename = Encoding.htmlDecode(fInfo.getMatch(0).trim()) + "_" + df.format(Integer.parseInt(fInfo.getMatch(1))) + ".jpg";
+                } else {
+                    String username = br.getRegex("title=\"View profile: ([^<>\"]*?)\"").getMatch(0);
+                    if (username == null) {
+                        username = br.getRegex("</span>([^<>\"]*?)<span class=\"icon_videoclip\">").getMatch(0);
+                    }
+                    final String videoName = br.getRegex("<title>([^<>\"]*?)Video: .*?</title>").getMatch(0);
+                    if (username != null && videoName != null) {
+                        filename = Encoding.htmlDecode(username) + " - " + Encoding.htmlDecode(videoName) + ".mp4";
+                    }
                 }
-                final String videoName = br.getRegex("<title>([^<>\"]*?)Video: .*?</title>").getMatch(0);
-                if (username != null && videoName != null) {
-                    filename = Encoding.htmlDecode(username) + " - " + Encoding.htmlDecode(videoName) + ".mp4";
+            }
+        } else {
+            /* Should be directurl */
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(link.getPluginPatternMatcher());
+                if (!this.looksLikeDownloadableContent(con)) {
+                    br.followConnection();
+                    /* Directurl needs to be refreshed or it is offline */
+                    // TODO: Refresh directurl
+                } else {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
                 }
             }
         }
@@ -154,7 +176,6 @@ public class AbbyWintersCom extends PluginForHost {
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                // Load cookies
                 br.setCookiesExclusive(true);
                 br.setCookie(this.getHost(), "ageverify", "1");
                 br.setFollowRedirects(true);
@@ -238,7 +259,7 @@ public class AbbyWintersCom extends PluginForHost {
         String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         if (dllink == null) {
             /* Old code */
-            if (link.getDownloadURL().matches(PICTURELINK)) {
+            if (link.getDownloadURL().matches(PATTERN_IMAGE)) {
                 dllink = br.getRegex("\"(http://[^<>\"]*?)\" class=\"viewXLarge\"").getMatch(0);
             } else {
                 dllink = br.getRegex("class=\"download_icon_ok\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
@@ -250,12 +271,8 @@ public class AbbyWintersCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

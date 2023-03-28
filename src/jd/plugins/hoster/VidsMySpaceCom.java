@@ -15,8 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -124,11 +122,7 @@ public class VidsMySpaceCom extends PluginForHost {
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlurl, true, 0);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (IOException ignore) {
-                    logger.log(ignore);
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             dl.startDownload();

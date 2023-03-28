@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,8 +30,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BesargajiCom extends PluginForDecrypt {
@@ -82,7 +82,7 @@ public class BesargajiCom extends PluginForDecrypt {
         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
         form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         // see: https://besargaji.com/wp-content/plugins/akismet/_inc/akismet-frontend.js?ver=1669965005
-        form.getInputField("captcha").setDisabled(false);
+        form.getInputField("captcha").setDisabled(false); // make sure this field gets sent
         form.put("ak_bib", "");
         form.put("ak_bfs", Long.toString(System.currentTimeMillis()));
         form.put("ak_bkpc", "0");

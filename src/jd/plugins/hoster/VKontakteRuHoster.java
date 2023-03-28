@@ -648,11 +648,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.info("vk.com: Plugin broken after download-try");
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
