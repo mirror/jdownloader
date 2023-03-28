@@ -16,10 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,6 +25,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkz.ge" }, urls = { "https?://(?:www\\.)?linkz\\.ge/file/\\d+/(?:[^<>\"/]+\\.html)?" })
 public class LinkzGe extends PluginForHost {
@@ -133,15 +132,12 @@ public class LinkzGe extends PluginForHost {
         sleep(wait * 1001l, link);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalLink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (br.containsHTML(">\\s*AccessKey is expired, please request")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error, waittime skipped?");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

@@ -212,11 +212,7 @@ public class OnstcloudsCom extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 /* Limit waittime / time needed until start of more downloads is allowed. */
                 final String waitSecsStr = br.getRegex("var seconds?_left\\s*=\\s*(\\d+)\\s*;").getMatch(0);
                 if (waitSecsStr != null) {

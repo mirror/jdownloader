@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -280,11 +279,7 @@ public class NewgroundsCom extends antiDDoSForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, chunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException ignore) {
-                logger.log(ignore);
-            }
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 429) {
                 errorRateLimited();
             } else if (dl.getConnection().getResponseCode() == 403) {

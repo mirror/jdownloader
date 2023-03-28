@@ -24,21 +24,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.NitroflareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -60,6 +45,21 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.NitroflareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NitroFlareCom extends antiDDoSForHost {
@@ -130,8 +130,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     /**
      * Use website or API: https://nitroflare.com/member?s=api </br>
      *
-     * @return true: Use API for account login and premium downloading </br>
-     *         false: Use website for everything (except linkcheck)
+     * @return true: Use API for account login and premium downloading </br> false: Use website for everything (except linkcheck)
      */
     private boolean useAPIAccountMode() {
         return PluginJsonConfig.get(NitroflareConfig.class).isUsePremiumAPIEnabled();
@@ -146,8 +145,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     private static AtomicReference<String> BASE_DOMAIN = new AtomicReference<String>(null);
 
     /**
-     * Finds valid base domain. </br>
-     * In some countries some nitroflare domains may be blocked by some ISPs.
+     * Finds valid base domain. </br> In some countries some nitroflare domains may be blocked by some ISPs.
      */
     public static String getBaseDomain(final Plugin plugin, final Browser br) throws PluginException {
         synchronized (BASE_DOMAIN) {
@@ -735,11 +733,11 @@ public class NitroFlareCom extends antiDDoSForHost {
             } else if (inValidate(user) || !user.matches(".+@.+")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else
-            // check to see if the user added the email username with caps.. this can make login incorrect
-            if (!user.equals(account.getUser())) {
-                logger.info("Corrected username: Old: " + account.getUser() + " | New: " + user);
-                account.setUser(user);
-            }
+                // check to see if the user added the email username with caps.. this can make login incorrect
+                if (!user.equals(account.getUser())) {
+                    logger.info("Corrected username: Old: " + account.getUser() + " | New: " + user);
+                    account.setUser(user);
+                }
             // urlencode required!
             return "user=" + Encoding.urlEncode(user) + "&premiumKey=" + Encoding.urlEncode(pass);
         }
@@ -1126,11 +1124,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     private final void handleDownloadErrors(final Account account, final DownloadLink downloadLink, final boolean lastChance) throws PluginException, IOException {
-        try {
-            br.followConnection(true);
-        } catch (IOException e) {
-            logger.log(e);
-        }
+        br.followConnection(true);
         final String err1 = "ERROR: Wrong IP. If you are using proxy, please turn it off / Or buy premium key to remove the limitation";
         if (br.containsHTML(err1)) {
             // I don't see why this would happening logs contain no proxy!

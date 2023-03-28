@@ -15,12 +15,9 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +30,8 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.LiveDriveComFolder;
+
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { LiveDriveComFolder.class })
@@ -134,11 +133,7 @@ public class LiveDriveCom extends PluginForHost {
         final String dllink = "https://public.livedrive.com/webservice/accounts/-1/sharing/withme/" + this.getUserSlug(link) + "/content/file/" + this.getFIDDecoded(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
         }
         dl.startDownload();

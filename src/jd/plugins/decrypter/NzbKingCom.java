@@ -1,10 +1,7 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-
-import org.jdownloader.container.NZB;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -24,6 +21,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.NZBSAXHandler;
+
+import org.jdownloader.container.NZB;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nzbking.com" }, urls = { "https?://(?:www\\.)?nzbking\\.com/details(?::|%3a)[a-f0-9]{24}" })
 public class NzbKingCom extends PluginForDecrypt {
@@ -61,11 +60,7 @@ public class NzbKingCom extends PluginForDecrypt {
             br.setLoadLimit(Integer.MAX_VALUE);
             con = br.openRequestConnection(request);
             if (!con.isOK()) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             ret.addAll(NZBSAXHandler.parseNZB(con.getInputStream()));

@@ -1410,11 +1410,7 @@ public class FileFactory extends PluginForHost {
                     continue;
                 } else if (!this.looksLikeDownloadableContent(con)) {
                     // error final destination/html
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     if (con.getRequestMethod() == RequestMethod.HEAD) {
                         br.getPage(url);
                     }

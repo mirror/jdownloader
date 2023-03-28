@@ -206,11 +206,7 @@ public class MyMailRu extends PluginForHost {
                     br2.setFollowRedirects(true);
                     con = br2.openGetConnection(DLLINK);
                     if (con.getResponseCode() == 500) {
-                        try {
-                            br2.followConnection(true);
-                        } catch (final IOException e) {
-                            logger.log(e);
-                        }
+                        br2.followConnection(true);
                         logger.info("High quality link is invalid, using normal link...");
                         DLLINK = null;
                         continue;
@@ -222,11 +218,7 @@ public class MyMailRu extends PluginForHost {
                         link.setFinalFileName(fid + link.getStringProperty("ext", null));
                         break;
                     } else {
-                        try {
-                            br2.followConnection(true);
-                        } catch (final IOException e) {
-                            logger.log(e);
-                        }
+                        br2.followConnection(true);
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                 } finally {
@@ -262,11 +254,7 @@ public class MyMailRu extends PluginForHost {
         // pictures here
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, resume, maxChunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 416) {
                 if (link.getBooleanProperty("noresume", false)) {
                     link.setProperty("noresume", Boolean.valueOf(false));
@@ -355,11 +343,7 @@ public class MyMailRu extends PluginForHost {
         // pictures here
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, false, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fixFilename(link);

@@ -18,14 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.NaughtyamericaConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -48,6 +40,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.NaughtyamericaComCrawler;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.NaughtyamericaConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "http://naughtyamericadecrypted.+" })
 public class NaughtyamericaCom extends PluginForHost {
@@ -339,8 +339,7 @@ public class NaughtyamericaCom extends PluginForHost {
 
     /***
      * 2022-03-17: Not much account information for us to crawl. User purchases can be found on website but expire-date or next bill date is
-     * nowhere to be found: </br>
-     * https://members.naughtyamerica.com/account/purchases
+     * nowhere to be found: </br> https://members.naughtyamerica.com/account/purchases
      */
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -367,11 +366,7 @@ public class NaughtyamericaCom extends PluginForHost {
         }
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             errorNoFile();
         }
         dl.startDownload();

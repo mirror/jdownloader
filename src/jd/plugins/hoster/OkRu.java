@@ -354,12 +354,8 @@ public class OkRu extends PluginForHost {
             dl.startDownload();
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (!dl.getConnection().isOK() || !dl.getConnection().isContentDisposition()) {
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
             dl.startDownload();

@@ -1007,19 +1007,11 @@ public class MegaConz extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (dl.getConnection().getResponseCode() == 503) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 5 * 60 * 1000l);
                 }
                 if (dl.getConnection().getResponseCode() == 509 || StringUtils.containsIgnoreCase(dl.getConnection().getResponseMessage(), "Bandwidth Limit Exceeded")) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     final String timeLeftString = dl.getConnection().getHeaderField("X-MEGA-Time-Left");
                     final long minTimeLeft = 30 * 60 * 1000l;
                     final long timeLeft;
@@ -1032,11 +1024,7 @@ public class MegaConz extends PluginForHost {
                     this.fileOrIPDownloadlimitReached(account, "509 Bandwidth Limit Exceeded", Math.max(minTimeLeft, timeLeft));
                 }
                 if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "html")) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (dl.startDownload()) {

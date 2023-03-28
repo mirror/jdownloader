@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -252,11 +251,7 @@ public class NicoVideoJp extends PluginForHost {
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, streamURL, RESUME, MAXCHUNKS);
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                     logger.warning("The final dllink seems not to be a file!");
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String final_filename = getFormattedFilename(link);

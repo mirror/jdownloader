@@ -20,8 +20,6 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n-tv.de" }, urls = { "https?://(?:www\\.)?n\\-tv\\.de/mediathek/(?:videos|sendungen)/([^/]+/[^/]+)\\.html" })
 public class NtvDe extends PluginForHost {
@@ -143,11 +143,7 @@ public class NtvDe extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (IOException ignore) {
-                    logger.log(ignore);
-                }
+                br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Geo blocked!");
                 } else if (dl.getConnection().getResponseCode() == 404) {

@@ -87,11 +87,7 @@ public class OpenSubtitlesOrg extends PluginForHost {
         // test
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, "https://dl.opensubtitles.org/en/download/sub/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0), false, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

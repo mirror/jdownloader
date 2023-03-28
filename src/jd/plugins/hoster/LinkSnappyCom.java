@@ -150,13 +150,9 @@ public class LinkSnappyCom extends PluginForHost {
      * Only call this for download-requests of files, hosted on linksnappy!! Do not call this in any handling which is taking care of other
      * filehoster downloads! Do not use this in handleMultihost!
      */
-    private void handleConnectionErrors(final Browser br, final DownloadLink link, final URLConnectionAdapter con) throws PluginException {
+    private void handleConnectionErrors(final Browser br, final DownloadLink link, final URLConnectionAdapter con) throws Exception {
         if (!this.looksLikeDownloadableContent(con)) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.getURL().contains(this.getFID(link))) {
@@ -566,11 +562,7 @@ public class LinkSnappyCom extends PluginForHost {
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 this.handleDownloadErrors(link, account);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
             }

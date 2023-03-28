@@ -418,13 +418,9 @@ public class MassengeschmackTv extends PluginForHost {
             /* More chunks work but download will stop at random point! */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
                 handleKnownServerResponsecodes(dl.getConnection().getResponseCode());
                 logger.warning("The final dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler", 30 * 60 * 1000l);
             }
             dl.startDownload();
@@ -458,11 +454,7 @@ public class MassengeschmackTv extends PluginForHost {
             handleKnownServerResponsecodes(dl.getConnection().getResponseCode());
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Serverfehler", 30 * 60 * 1000l);
             }
             dl.startDownload();

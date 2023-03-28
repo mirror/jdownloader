@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -30,6 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 //Links come from a decrypter plugin
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moddb.com" }, urls = { "https?://(www\\.)?moddbdecrypted\\.com/(games|mods|engines|groups)/.*?/(addons|downloads)/[0-9a-z-]+" })
@@ -231,11 +231,7 @@ public class ModDbCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.info("invalid final downloadlink (dllink) ?!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

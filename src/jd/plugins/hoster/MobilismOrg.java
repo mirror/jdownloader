@@ -15,19 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -44,6 +36,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mobilism.org" }, urls = { "" })
 public class MobilismOrg extends antiDDoSForHost {
@@ -124,11 +122,7 @@ public class MobilismOrg extends antiDDoSForHost {
             link.setProperty(MobilismOrg.NORESUME, Boolean.valueOf(true));
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             mhm.handleErrorGeneric(account, link, "unknowndlerror", 10, 5 * 60 * 1000l);
         }
         link.setProperty(this.getHost() + "directlink", dl.getConnection().getURL().toString());
@@ -219,8 +213,8 @@ public class MobilismOrg extends antiDDoSForHost {
     }
 
     /**
-     * 2021-03-04: Free Accounts are not supported as downloading is impossible with them. </br>
-     * Expired premium -> Account will be permanently disabled!
+     * 2021-03-04: Free Accounts are not supported as downloading is impossible with them. </br> Expired premium -> Account will be
+     * permanently disabled!
      */
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {

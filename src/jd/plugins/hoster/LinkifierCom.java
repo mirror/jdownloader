@@ -1,6 +1,5 @@
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +26,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkifier.com" }, urls = { "" })
 public class LinkifierCom extends PluginForHost {
@@ -168,11 +166,7 @@ public class LinkifierCom extends PluginForHost {
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
                 if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "json") || StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "text")) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     String errorMessage = new Regex(br.getRequest().getUrl(), "\\!%20Error%20Code:([^\\&]+)").getMatch(0);
                     String errDesc = "Unknown error";
                     try {
@@ -211,11 +205,7 @@ public class LinkifierCom extends PluginForHost {
                     }
                 }
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                    try {
-                        br.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     mhm.handleErrorGeneric(account, this.getDownloadLink(), "dllinknofile12", 50, 5 * 60 * 1000l);
                 }
                 dl.startDownload();

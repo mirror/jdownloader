@@ -59,7 +59,6 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.config.TakeValueFromSubconfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "offcloud.com" }, urls = { "" })
@@ -277,11 +276,7 @@ public class OffCloudCom extends UseNet {
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 416) {
                     logger.info("Resume impossible, disabling it for the next try");
                     link.setChunksProgress(null);
@@ -297,8 +292,8 @@ public class OffCloudCom extends UseNet {
                 handleAPIErrors(this.br);
                 mhm.handleErrorGeneric(this.currAcc, this.currDownloadLink, "unknowndlerror", 50, 5 * 60 * 1000l);
             }
+            controlSlot(+1);
             try {
-                controlSlot(+1);
                 if (!this.dl.startDownload()) {
                     try {
                         if (dl.externalDownloadStop()) {
@@ -948,7 +943,7 @@ public class OffCloudCom extends UseNet {
             case 15:
                 /*
                  * Current host is only supported via cloud downloading --> Add to Cloud-Array and try again
-                 *
+                 * 
                  * This should only happen if e.g. a user starts JD and starts downloads right away before the cloudOnlyHosts array gets
                  * updated. This cann be considered as a small workaround.
                  */
@@ -958,7 +953,7 @@ public class OffCloudCom extends UseNet {
             case 16:
                 /*
                  * Current host is only supported via cloud downloading --> Add to Cloud-Array and try again
-                 *
+                 * 
                  * This should only happen if e.g. a user starts JD and starts downloads right away before the cloudOnlyHosts array gets
                  * updated. This extra errorhandling can be considered as a small workaround.
                  */

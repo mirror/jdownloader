@@ -20,18 +20,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.RFC2047;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
@@ -59,6 +47,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.RFC2047;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
@@ -471,8 +471,8 @@ public abstract class K2SApi extends PluginForHost {
                             if (StringUtils.equals((String) root.get("message"), "Invalid request params")) {
                                 /**
                                  * 2022-02-25: Workaround for when checking only one <b>invalid</b> fileID e.g.
-                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br>
-                                 * This may also happen when there are multiple fileIDs to check and all of them are invalid.
+                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br> This may also happen when there are multiple
+                                 * fileIDs to check and all of them are invalid.
                                  */
                                 for (final DownloadLink dl : links) {
                                     dl.setAvailable(false);
@@ -633,11 +633,7 @@ public abstract class K2SApi extends PluginForHost {
             this.dl = new jd.plugins.BrowserAdapter().openDownload(obr, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
             if (!isValidDownloadConnection(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                try {
-                    obr.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
+                obr.followConnection(true);
                 /*
                  * 2019-11-26: Outdated downloadurls will return precise errors (only text) e.g. "This link assigned with other IP address"
                  * or
@@ -808,11 +804,7 @@ public abstract class K2SApi extends PluginForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumable, maxChunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 handleGeneralServerErrors(br, dl, account, link);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

@@ -19,10 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,6 +35,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "https?://[\\w\\.]*?multishare\\.cz/((?:[a-z]{2}/)?stahnout/[0-9]+/|html/mms_process\\.php\\?(&?u_ID=\\d+|&?u_hash=[a-f0-9]+|(&?link=https?%3A%2F%2F[^&\\?]+|&?fid=\\d+)){3})" })
 public class MultiShareCz extends antiDDoSForHost {
@@ -143,11 +143,7 @@ public class MultiShareCz extends antiDDoSForHost {
         String dllink = "https://www." + this.getHost() + "/html/download_free.php?ID=" + getFuid(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             int timesFailed = link.getIntegerProperty("timesfailedmultisharecz_unknowndlerrorfree", 0);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
@@ -177,11 +173,7 @@ public class MultiShareCz extends antiDDoSForHost {
         String dllink = "https://www." + account.getHoster() + "/html/download_premium.php?ID=" + getFuid(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (br.containsHTML("Soubor na zdrojovém serveru pravděpodobně neexistuje")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -223,11 +215,7 @@ public class MultiShareCz extends antiDDoSForHost {
                 link.setAvailable(true);
                 return AvailableStatus.TRUE;
             } else {
-                try {
-                    brc.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 link.setAvailable(false);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -277,11 +265,7 @@ public class MultiShareCz extends antiDDoSForHost {
             /*
              * download is not contentdisposition, so remove this host from premiumHosts list
              */
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (br.getURL().contains("typ=nedostatecny-kredit")) {
                 logger.info("No traffic available -> Temporarily disabling account");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);

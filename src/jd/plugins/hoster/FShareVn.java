@@ -375,12 +375,8 @@ public class FShareVn extends PluginForHost {
             }
             return;
         } else {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-                dllink = null;
-            }
+            br.followConnection(true);
+            dllink = null;
         }
         final String directlinkproperty;
         if (acc != null) {

@@ -20,8 +20,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -36,6 +34,8 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.MajorgeeksComCrawler;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { MajorgeeksComCrawler.class })
@@ -134,8 +134,8 @@ public class MajorgeeksCom extends PluginForHost {
         if (dllink == null) {
             if (link.getPluginPatternMatcher().matches(PATTERN_LEGACY)) {
                 /**
-                 * There can be multiple versions available (multiple OS and 32/64 bit). </br>
-                 * Download first version of software from website.
+                 * There can be multiple versions available (multiple OS and 32/64 bit). </br> Download first version of software from
+                 * website.
                  */
                 final String continue_url = br.getRegex("(?i)\"/?(mg/get/[^,]*,\\d+\\.html)\"[^>]*><strong>Download").getMatch(0);
                 if (continue_url == null) {
@@ -164,17 +164,12 @@ public class MajorgeeksCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            if (downloadFromExternalSite) {
+            } else if (downloadFromExternalSite) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Downloading from external sources is impossible");
             } else {
                 /* 2020-01-29: Some downloads are just broken */
