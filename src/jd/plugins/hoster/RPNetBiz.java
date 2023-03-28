@@ -353,11 +353,7 @@ public class RPNetBiz extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, true, maxChunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
             }
             link.setProperty("cachedDllink", generatedLink);

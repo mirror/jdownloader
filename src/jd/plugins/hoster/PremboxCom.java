@@ -231,11 +231,7 @@ public class PremboxCom extends PluginForHost {
             link.setProperty(this.getHost() + "directlink", dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumable(link), getMaxChunks(link));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 handleErrors(this.br, account);
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "unknowndlerror", 50);
             }

@@ -361,11 +361,7 @@ public class RealDebridCom extends PluginForHost {
                     }
                 }
             } else {
-                try {
-                    br2.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br2.followConnection(true);
                 this.br = br2;// required for error handling outside this method
                 if (br.containsHTML("(?i)An error occurred while generating a premium link")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says 'An error occurred while generating a premium link'", 3 * 60 * 1000l);
@@ -878,11 +874,7 @@ public class RealDebridCom extends PluginForHost {
                     link.setAvailable(true);
                     return AvailableStatus.TRUE;
                 } else {
-                    try {
-                        brc.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
+                    brc.followConnection(true);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } catch (final PluginException e) {

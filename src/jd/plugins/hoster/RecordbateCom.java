@@ -19,10 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -39,6 +35,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RecordbateCom extends PluginForHost {
@@ -120,8 +120,8 @@ public class RecordbateCom extends PluginForHost {
         }
         if (!isDownload) {
             /**
-             * Every accessing of this URL will count toward their download-limit. </br>
-             * This is a measure to avoid this because we can expect those links to be online.
+             * Every accessing of this URL will count toward their download-limit. </br> This is a measure to avoid this because we can
+             * expect those links to be online.
              */
             return AvailableStatus.TRUE;
         }
@@ -212,19 +212,16 @@ public class RecordbateCom extends PluginForHost {
         }
     }
 
-    private void handleConnectionErrors(final URLConnectionAdapter con) throws PluginException {
+    private void handleConnectionErrors(final URLConnectionAdapter con) throws Exception {
         if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
             if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
         }
     }
 

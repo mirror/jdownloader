@@ -637,11 +637,7 @@ public class ProLeechLink extends antiDDoSForHost {
                     /* 2019-11-11: E.g. "Link expired! Please leech again." */
                     logger.info("Saved downloadurl did not work");
                     link.removeProperty(directurlproperty);
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                 } else {
                     dllink = generatedDownloadURL;
                 }
@@ -737,11 +733,7 @@ public class ProLeechLink extends antiDDoSForHost {
         }
         final String server_filename = getFileNameFromDispositionHeader(dl.getConnection());
         if (!isDownloadConnection(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             mhm.handleErrorGeneric(account, link, "unknowndlerror", 50, 2 * 60 * 1000l);
         }
         link.setProperty(directurlproperty, dllink);

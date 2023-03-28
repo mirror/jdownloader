@@ -24,9 +24,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -42,6 +39,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RarbgTo extends PluginForHost {
@@ -248,8 +248,8 @@ public class RarbgTo extends PluginForHost {
                         /* This request will either complete the challenge or ask for a captcha. */
                         br.getPage("/threat_defence.php?defence=2&sk=" + sk + "&cid=" + cid + "&i=" + i + "&ref_cookie=rarbg.to&r=" + r2);
                         /**
-                         * The following may happen on first attempt if no cookies are present at all: </br>
-                         * "<b>There is something wrong with your browser!</b><br/>
+                         * The following may happen on first attempt if no cookies are present at all: </br> "<b>There is something wrong
+                         * with your browser!</b><br/>
                          * Most likely you dont have javascript or cookies enabled<br/>
                          * <a href="/threat_defence.php?defence=1">Click here</a> to retry verifying your browser"
                          */
@@ -392,22 +392,18 @@ public class RarbgTo extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                }
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                /* 2021-08-31: Max. 100 torrents per IP per 24 hours. */
-                if (br.containsHTML("Your ip .* downloaded over \\d+ torrents in the past 24 hours")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached");
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                } else
+                    /* 2021-08-31: Max. 100 torrents per IP per 24 hours. */
+                    if (br.containsHTML("Your ip .* downloaded over \\d+ torrents in the past 24 hours")) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached");
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
             }
             link.setProperty(PROPERTY_DIRECTLINK, dl.getConnection().getURL().toString());
         }

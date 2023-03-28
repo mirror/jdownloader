@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,6 +27,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rec-tube.com" }, urls = { "https?://(?:www\\.)?rec\\-tube\\.com/watch/(\\d+)/" })
 public class RecTubeCom extends antiDDoSForHost {
@@ -116,17 +116,12 @@ public class RecTubeCom extends antiDDoSForHost {
         this.br.getHeaders().put("Referer", "https://" + this.getHost() + "/embed/" + this.getFID(link) + "/");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            if (this.br.getURL().contains("/limit/")) {
+            } else if (this.br.getURL().contains("/limit/")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

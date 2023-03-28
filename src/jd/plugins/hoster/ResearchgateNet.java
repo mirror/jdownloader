@@ -135,11 +135,7 @@ public class ResearchgateNet extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, false, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 429) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Server error 429", 10 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 403) {
@@ -165,11 +161,7 @@ public class ResearchgateNet extends PluginForHost {
                 if (looksLikeDownloadableContent(con)) {
                     return dllink;
                 } else {
-                    try {
-                        br2.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
+                    br2.followConnection(true);
                     throw new IOException();
                 }
             } catch (final Exception e) {

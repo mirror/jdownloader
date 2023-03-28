@@ -147,11 +147,7 @@ public class PCloudCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, resume, maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directLinkID, downloadURL);
@@ -408,7 +404,7 @@ public class PCloudCom extends PluginForHost {
             if (!isCompleteFolder(link) && StringUtils.equals(account_api, getAPIDomain(link)) && this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, defaultMOVE_FILES_TO_ACCOUNT)) {
                 /*
                  * only possible to copy files on same data center region!
-                 * 
+                 *
                  * not yet implemented for complete folder(zip)
                  */
                 /* tofolderid --> 0 = root */

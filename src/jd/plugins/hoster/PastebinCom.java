@@ -15,8 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.CryptedLink;
@@ -83,11 +81,7 @@ public class PastebinCom extends AbstractPastebinHoster {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.getDirectDownloadURL(link), false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

@@ -21,14 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -44,6 +36,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidb.it" }, urls = { "" })
 public class RapidbIt extends PluginForHost {
     private final String                 API_BASE                    = "https://rapidb.it/api";
@@ -55,8 +55,7 @@ public class RapidbIt extends PluginForHost {
 
     /**
      * 2022-07-19: While their API docs state all possible errormessages, their API does not return any errormessage - only error-codes.
-     * </br>
-     * This is where this static mapping comes into play.
+     * </br> This is where this static mapping comes into play.
      */
     private Map<Integer, String> getErrorCodeMap() {
         final Map<Integer, String> ret = new HashMap<Integer, String>();
@@ -182,11 +181,7 @@ public class RapidbIt extends PluginForHost {
             link.setProperty(this.getPropertyKey("directlink"), dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
             }
         }

@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcwelt.de" }, urls = { "https?://(www\\.)?pcwelt\\.de/downloads/[^<>\"]+\\-\\d+\\.html" })
 public class PcWeltDe extends PluginForHost {
@@ -99,11 +99,7 @@ public class PcWeltDe extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             /* Check for redirect to external website */
             if (!br.getHost().contains(this.getHost())) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Nicht downloadbar: externe Downloadquelle");
