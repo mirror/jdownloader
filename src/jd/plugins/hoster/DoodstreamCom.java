@@ -418,8 +418,8 @@ public class DoodstreamCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected String getFallbackFilename(DownloadLink dl) {
-        String fallBack = super.getFallbackFilename(dl);
+    protected String getFallbackFilename(final DownloadLink link, final Browser br) {
+        String fallBack = super.getFallbackFilename(link, br);
         if (!StringUtils.endsWithCaseInsensitive(fallBack, ".mp4")) {
             fallBack += ".mp4";
         }
@@ -489,7 +489,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
                     }
                 }
                 if (StringUtils.isEmpty(filename)) {
-                    link.setName(this.getFallbackFilename(link));
+                    link.setName(this.getFallbackFilename(link, br));
                 } else {
                     if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
                         filename += ".mp4";
@@ -502,7 +502,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
                     filename = new Regex(getCorrectBR(br), "videoInfo\\s*:\\s*\\{\\s*title\\s*:\\s*\"(.*?)\"").getMatch(0);
                 }
                 if (StringUtils.isEmpty(filename)) {
-                    link.setName(this.getFallbackFilename(link));
+                    link.setName(this.getFallbackFilename(link, br));
                 } else {
                     if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
                         filename += ".mp4";
