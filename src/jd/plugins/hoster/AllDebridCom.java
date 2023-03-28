@@ -756,11 +756,7 @@ public class AllDebridCom extends antiDDoSForHost {
                 if (looksLikeDownloadableContent(con)) {
                     return dllink;
                 } else {
-                    try {
-                        br2.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br2.followConnection(true);
                     checkRateLimit(br2, con, account, link);
                     throw new IOException();
                 }

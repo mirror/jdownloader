@@ -439,11 +439,7 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
             final String url = variation.getUrl();
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -5);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 if (hasCache && i == 0) {
                     clearDownloadCache(link);
                     hasCache = false;

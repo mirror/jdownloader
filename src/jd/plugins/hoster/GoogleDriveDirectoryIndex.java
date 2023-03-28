@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -115,18 +114,10 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
         try {
             con = openAntiDDoSRequestConnection(br, br.createGetRequest(link.getPluginPatternMatcher()));
             if (con.getResponseCode() == 401) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 throw new AccountRequiredException();
             } else if (!con.isContentDisposition()) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 if (con.getCompleteContentLength() > 0) {
@@ -156,11 +147,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), resumable, maxchunks);
         if (!dl.getConnection().isContentDisposition()) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 401) {
                 /* Account required or existent account is missing rights to access that content! */
                 throw new AccountRequiredException();

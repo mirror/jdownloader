@@ -413,11 +413,7 @@ public class IcerBoxCom extends antiDDoSForHost {
     }
 
     private final void handleDownloadErrors(final Account account, final DownloadLink downloadLink, final boolean lastChance) throws PluginException, IOException {
-        try {
-            br.followConnection(true);
-        } catch (final IOException e) {
-            logger.log(e);
-        }
+        br.followConnection(true);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {

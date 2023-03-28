@@ -204,11 +204,7 @@ public class DeepbridCom extends antiDDoSForHost {
         logger.info("Max. allowed chunks: " + maxchunks);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             handleKnownErrors(this.br, account, link);
             mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
         }

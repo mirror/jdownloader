@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlshare.ro" }, urls = { "https?://[\\w\\.]*?girlshare\\.ro/([0-9\\.]+)" })
 public class GirlShareRo extends PluginForHost {
@@ -109,20 +109,18 @@ public class GirlShareRo extends PluginForHost {
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, false, 1);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
                 // website often opens ads on the first click.
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, false, 1);
             }
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             if (!br.getURL().contains("girlshare.ro")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1001l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

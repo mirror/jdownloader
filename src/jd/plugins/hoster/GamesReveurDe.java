@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "games.reveur.de" }, urls = { "https?://(?:www\\.)?games\\.reveur\\.de/(?:en|de)/[a-z0-9\\-]+/addons/[a-z0-9\\-]+/[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+/[A-Za-z0-9\\-]+\\.html" })
 public class GamesReveurDe extends PluginForHost {
@@ -107,11 +107,7 @@ public class GamesReveurDe extends PluginForHost {
         final String dllink = "https://games.reveur.de/Download.php?intDlId=" + dlid + "&strDlType=" + dltype + "&strFileType=zip&intGameId=" + gameid + "&strGameShort=" + gameshort + "&strTicket=" + ticket;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

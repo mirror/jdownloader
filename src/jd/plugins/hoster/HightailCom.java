@@ -78,11 +78,7 @@ public class HightailCom extends PluginForHost {
         jd.plugins.decrypter.HighTailComDecrypter.getSessionID(this.br);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
         }
         dl.startDownload();

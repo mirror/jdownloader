@@ -117,11 +117,7 @@ public class GrooveSharingCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadRequest, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (br.containsHTML("(?i)>\\s*AccessKey is expired, please request")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error, waittime skipped?");
             } else {

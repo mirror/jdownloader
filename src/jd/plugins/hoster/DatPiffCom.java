@@ -281,11 +281,7 @@ public class DatPiffCom extends PluginForHost {
                 if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
                 } else {
-                    try {
-                        br2.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
+                    br2.followConnection(true);
                     throw new IOException();
                 }
             } catch (final Exception e) {

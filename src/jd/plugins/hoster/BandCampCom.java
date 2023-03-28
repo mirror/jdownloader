@@ -128,11 +128,7 @@ public class BandCampCom extends PluginForHost {
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 return AvailableStatus.TRUE;
             } else {
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
             }
         } catch (final Exception e) {
             logger.log(e);
@@ -210,11 +206,7 @@ public class BandCampCom extends PluginForHost {
                 }
                 return AvailableStatus.TRUE;
             } else {
-                try {
-                    br2.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
+                br2.followConnection(true);
                 /*
                  * 2020-04-23: Chances are high that the track cannot be downloaded because user needs to purchase it first. There is no
                  * errormessage or anything on their website.

@@ -101,11 +101,7 @@ public class CloudMailRu extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } else {
-                    try {
-                        br2.followConnection(true);
-                    } catch (IOException ignore) {
-                        logger.log(ignore);
-                    }
+                    br2.followConnection(true);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } finally {
