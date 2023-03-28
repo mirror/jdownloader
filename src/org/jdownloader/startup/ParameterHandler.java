@@ -34,10 +34,9 @@ import org.jdownloader.startup.commands.ThreadDump;
 import org.jdownloader.updatev2.RestartController;
 
 public class ParameterHandler implements InstanceMessageListener {
-    private HashMap<String, StartupCommand> commandMap;
-    private LogSource                       logger;
-    private ArrayList<StartupCommand>       commands;
-    private ParameterParser                 startupParameters;
+    private final HashMap<String, StartupCommand> commandMap;
+    private final LogSource                       logger;
+    private final ArrayList<StartupCommand>       commands;
 
     public ParameterHandler() {
         logger = LogController.getInstance().getLogger("StartupParameterHandler");
@@ -115,7 +114,7 @@ public class ParameterHandler implements InstanceMessageListener {
 
     public void onStartup(String[] args) {
         logger.info("Startup: " + Arrays.toString(args));
-        startupParameters = RestartController.getInstance().getParameterParser(args);
+        ParameterParser startupParameters = RestartController.getInstance().getParameterParser(args);
         startupParameters.parse(null);
         execute(startupParameters, true);
         if (!startupParameters.hasCommandSwitch("console") && Application.isJared(SecondLevelLaunch.class)) {
@@ -131,7 +130,11 @@ public class ParameterHandler implements InstanceMessageListener {
         pp.parse(null);
         execute(pp, false);
         if (callback != null) {
-            callback.sendResponse(new Response("PONG", "Received Message"));
+            try {
+                callback.sendResponse(new Response("PONG", "Received Message"));
+            } catch (Exception e) {
+                logger.log(e);
+            }
         }
     }
 }
