@@ -1,6 +1,5 @@
 package org.jdownloader.plugins.components;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -229,11 +228,7 @@ public abstract class FlexShareCore extends antiDDoSForHost {
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             handleGeneralServerErrors(dl.getConnection());
             handleErrors(link, account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -428,11 +423,7 @@ public abstract class FlexShareCore extends antiDDoSForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download", isResumeable(link, account), this.getMaxChunks(account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 handleGeneralServerErrors(dl.getConnection());
                 handleErrors(link, account);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

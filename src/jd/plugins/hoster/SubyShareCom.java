@@ -339,11 +339,7 @@ public class SubyShareCom extends XFileSharingProBasic {
                     handleDownload(link, account, dllink, formCon.getRequest());
                     return;
                 } else {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     this.correctBR(br);
                     try {
                         formCon.disconnect();

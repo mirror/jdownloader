@@ -16,13 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -46,6 +40,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "https?://(www\\.)?(beta\\.)?sendspace\\.com/(file|pro/dl)/[0-9a-zA-Z]+" })
 public class SendspaceCom extends PluginForHost {
@@ -382,11 +381,7 @@ public class SendspaceCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 1);
             final URLConnectionAdapter con = dl.getConnection();
             if (!this.looksLikeDownloadableContent(con)) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 handleErrors(true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (con.getResponseCode() == 416) {
@@ -402,11 +397,7 @@ public class SendspaceCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
             final URLConnectionAdapter con = dl.getConnection();
             if (!this.looksLikeDownloadableContent(con)) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 handleErrors(true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

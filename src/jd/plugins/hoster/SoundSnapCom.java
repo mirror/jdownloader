@@ -15,11 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -30,6 +25,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 //Links come from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundsnap.com" }, urls = { "https?://(?:www\\.)?soundsnap\\.com/node/(\\d+)" })
@@ -77,11 +75,7 @@ public class SoundSnapCom extends PluginForHost {
         br.setFollowRedirects(true);
         final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
         if (!looksLikeDownloadableContent(con)) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             String slug = br._getURL().getPath();
             if (slug != null) {
                 /* Remove slash from the beginning */
@@ -112,11 +106,7 @@ public class SoundSnapCom extends PluginForHost {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

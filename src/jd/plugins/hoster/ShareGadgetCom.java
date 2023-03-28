@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -28,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharegadget.com" }, urls = { "https?://[\\w\\.]*?(?:sharegadget\\.com|leteckaposta\\.cz)/[0-9]+" })
 public class ShareGadgetCom extends PluginForHost {
@@ -61,11 +61,7 @@ public class ShareGadgetCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("Final dllink is no file...");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

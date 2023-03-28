@@ -19,10 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.SolidFilesComConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -38,6 +34,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.SolidFilesComConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SolidFilesCom extends PluginForHost {
@@ -188,13 +188,9 @@ public class SolidFilesCom extends PluginForHost {
             // inal long downloadCurrentRaw = link.getDownloadCurrentRaw();
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 503) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 - use less connections and try again", 10 * 60 * 1000l);
-                }
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
                 }
                 isOffline(true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

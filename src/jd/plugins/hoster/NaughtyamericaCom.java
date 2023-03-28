@@ -144,6 +144,7 @@ public class NaughtyamericaCom extends PluginForHost {
                 brc = br.cloneBrowser();
                 con = brc.openHeadConnection(directURL);
                 if (!looksLikeDownloadableContent(con)) {
+                    brc.followConnection(true);
                     errorNoFile();
                 }
                 /* Save new directURL for next usage. */

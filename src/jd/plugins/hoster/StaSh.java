@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -34,6 +32,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "https?://(?:www\\.)?sta\\.sh/(zip/)?([a-z0-9]+)" })
 public class StaSh extends PluginForHost {
@@ -299,13 +299,13 @@ public class StaSh extends PluginForHost {
         final boolean resume = !isZip(link);
         // Disable chunks as we only download pictures or small files
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, 1);
-        if (dl.getConnection().getContentType().contains("html") && !this.HTMLALLOWED) {
-            try {
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            if (dl.getConnection().getContentType().contains("html") && !this.HTMLALLOWED) {
+                // okay
+            } else {
                 br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

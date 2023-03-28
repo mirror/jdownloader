@@ -20,9 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -32,6 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SharezwebCom extends PluginForHost {
@@ -74,13 +74,13 @@ public class SharezwebCom extends PluginForHost {
     private final int          FREE_MAXCHUNKS          = 0;
     private final int          FREE_MAXDOWNLOADS       = -1;
     public static final String PROPERTY_FREE_DIRECTURL = "free_directlink";
+
     // private final boolean ACCOUNT_FREE_RESUME = true;
     // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private final int ACCOUNT_FREE_MAXDOWNLOADS = -1;
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -141,11 +141,7 @@ public class SharezwebCom extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 if (dl.getConnection().getCompleteContentLength() == 0) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Corrupt or empty file");
                 } else if (dl.getConnection().getResponseCode() == 403) {

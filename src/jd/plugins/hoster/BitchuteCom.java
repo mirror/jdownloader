@@ -123,11 +123,7 @@ public class BitchuteCom extends antiDDoSForHost {
                 con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
                 if (!this.looksLikeDownloadableContent(con)) {
                     server_issues = true;
-                    try {
-                        brc.followConnection(true);
-                    } catch (final Throwable e) {
-                        logger.log(e);
-                    }
+                    brc.followConnection(true);
                 } else {
                     if (con.getCompleteContentLength() > 0) {
                         link.setDownloadSize(con.getCompleteContentLength());

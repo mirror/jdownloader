@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -17,6 +15,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ImgShotCore extends antiDDoSForHost {
@@ -100,19 +100,16 @@ public class ImgShotCore extends antiDDoSForHost {
     }
 
     /**
-     * Override to disable filesize-check! </br>
-     * default = true
+     * Override to disable filesize-check! </br> default = true
      */
     protected boolean checkFilesize() {
         return true;
     }
 
     /**
-     * Enforce official download via "dlimg.php"? </br>
-     * A lot of hosts have it enabled although they do not display a download button on their website! </br>
-     * default = true </br>
-     * Example official download supported but broken serverside: imagedecode.com, imageteam.org </br>
-     * Example official download working fine: imgwallet.com, imgadult.com
+     * Enforce official download via "dlimg.php"? </br> A lot of hosts have it enabled although they do not display a download button on
+     * their website! </br> default = true </br> Example official download supported but broken serverside: imagedecode.com, imageteam.org
+     * </br> Example official download working fine: imgwallet.com, imgadult.com
      */
     protected boolean enforceOfficialDownloadURL() {
         return true;
@@ -319,16 +316,8 @@ public class ImgShotCore extends antiDDoSForHost {
         }
         connectionErrorhandling(dl.getConnection());
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             connectionErrorhandling(dl.getConnection());
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

@@ -159,11 +159,7 @@ public class PorndoeCom extends PluginForHost {
                     }
                     link.setProperty("directlink", dllink);
                 } else {
-                    try {
-                        brc.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    brc.followConnection(true);
                     server_issues = true;
                 }
             } finally {

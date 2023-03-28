@@ -1,7 +1,6 @@
 package jd.plugins.hoster;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,7 +44,6 @@ import org.appwork.utils.net.Base64OutputStream;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "smoozed.com" }, urls = { "" })
@@ -353,19 +351,11 @@ public class SmoozedCom extends antiDDoSForHost {
         URLConnectionAdapter con = openAntiDDoSRequestConnection(br, br.createPostRequest(getAPI() + "/api/download", postParam));
         Request request = null;
         if (StringUtils.contains(con.getHeaderField("Content-Type"), "application/json") || con.getRequest().getLocation() == null) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             errorHandling(br.getRequest(), account, session_Key, "/api/download", link);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             request = br.createRedirectFollowingRequest(br.getRequest());
         }
         // subquent requests are to download servers, these are not hosted via cloudflare. -raztoki20160118
@@ -378,11 +368,7 @@ public class SmoozedCom extends antiDDoSForHost {
                     br.setFollowRedirects(true);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, con.getRequest().getUrl(), maxChunks > 0, maxChunks >= 1 ? -maxChunks : 1);
                     if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                        try {
-                            br.followConnection(true);
-                        } catch (IOException e) {
-                            logger.log(e);
-                        }
+                        br.followConnection(true);
                         errorHandling(br.getRequest(), account, session_Key, "/api/download", link);
                         mhm.handleErrorGeneric(account, link, "Final downloadurl did not lead to downloadable content", 50);
                     } else {
@@ -390,20 +376,12 @@ public class SmoozedCom extends antiDDoSForHost {
                         return;
                     }
                 } else {
-                    try {
-                        br.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     errorHandling(br.getRequest(), account, session_Key, "/api/download", link);
                     mhm.handleErrorGeneric(account, link, "Final downloadurl did not lead to downloadable content", 50);
                 }
             }
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             request = br.createRedirectFollowingRequest(request);
         }
         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server-Error:Redirectloop");

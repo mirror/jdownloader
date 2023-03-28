@@ -6,22 +6,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.swing.dialog.LoginDialog;
-import org.appwork.utils.swing.dialog.LoginDialogInterface;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.translate._JDT;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -45,6 +29,22 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.swing.dialog.LoginDialog;
+import org.appwork.utils.swing.dialog.LoginDialogInterface;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.translate._JDT;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkcrawlerdeephelper" }, urls = { "" })
 public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCrawlerDeepHelperInterface {
@@ -139,11 +139,7 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
             });
             authLoop: for (AuthenticationFactory authenticationFactory : authenticationFactories) {
                 if (connection != null) {
-                    try {
-                        br.followConnection(true);
-                    } catch (IOException e) {
-                        getLogger().log(e);
-                    }
+                    br.followConnection(true);
                 }
                 br.setCustomAuthenticationFactory(authenticationFactory);
                 connection = openAntiDDoSRequestConnection(br, request);
@@ -161,11 +157,7 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
             }
             final String location = request.getLocation();
             if (location != null) {
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    getLogger().log(e);
-                }
+                br.followConnection(true);
                 if (loopAvoid.add(location) == false) {
                     return openCrawlDeeperConnection(source, br, connection, round);
                 } else {

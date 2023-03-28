@@ -1,9 +1,5 @@
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -11,6 +7,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "soundgasm.net" }, urls = { "https?://(?:www\\.)?soundgasm\\.net/u/[^/]+/[^/]+" })
 public class SoundGasmNet extends PluginForHost {
@@ -59,11 +57,7 @@ public class SoundGasmNet extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

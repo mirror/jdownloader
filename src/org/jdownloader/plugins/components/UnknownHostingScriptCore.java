@@ -1,6 +1,5 @@
 package org.jdownloader.plugins.components;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -439,11 +438,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
          */
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             checkErrors(link, account);
             checkResponseCodeErrors(dl.getConnection());
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");

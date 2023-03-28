@@ -15,12 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
-import org.appwork.utils.Regex;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,6 +25,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendvid.com" }, urls = { "https?://(?:www\\.)?sendvid\\.com/(?:embed/)?([A-Za-z0-9]+)" })
 public class SendvidCom extends PluginForHost {
@@ -76,8 +74,8 @@ public class SendvidCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         /**
-         * 2021-03-15: This API request is really only there to reliably determine the offline status. </br>
-         * It doesn't return any other useful information.
+         * 2021-03-15: This API request is really only there to reliably determine the offline status. </br> It doesn't return any other
+         * useful information.
          */
         br.getPage("https://" + this.getHost() + "/api/v1/videos/" + this.getFID(link) + "/status.json");
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -146,21 +144,14 @@ public class SendvidCom extends PluginForHost {
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         }

@@ -1,6 +1,5 @@
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -177,11 +176,7 @@ public class SproutVideoCom extends PluginForHost {
             /* Official download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.dl.startDownload();
