@@ -1066,8 +1066,8 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     }
 
     /**
-     * In some cases, URL may contain filename which can be used as fallback e.g. 'https://host.tld/<fuid>/<filename>'. Example host which
-     * has URLs that contain filenames: freefile.me, letsupload.co
+     * In some cases, URL may contain filename which can be used as fallback e.g. 'https://host.tld/<fuid>/<filename>'. </br>
+     * Example host which has URLs that contain filenames: freefile.me, letsupload.co
      */
     public String getFilenameFromURL(final DownloadLink link) {
         if (link == null || link.getPluginPatternMatcher() == null) {
