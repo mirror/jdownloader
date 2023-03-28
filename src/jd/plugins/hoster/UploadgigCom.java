@@ -25,13 +25,6 @@ import java.util.Locale;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -51,6 +44,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/([A-Za-z0-9]+)(/[A-Za-z0-9%\\.\\-_]+)?" })
 public class UploadgigCom extends antiDDoSForHost {
@@ -317,16 +317,12 @@ public class UploadgigCom extends antiDDoSForHost {
             brc.setFollowRedirects(true);
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, this.getDownloadLink(), dllink, resumes, chunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    brc.followConnection(true);
-                } catch (final IOException e) {
-                    /**/
-                    logger.log(e);
-                }
+                brc.followConnection(true);
                 if (brc.getHttpConnection().getResponseCode() == 403 && brc.toString().startsWith("Blocked!<br>If you are using VPN or proxy, disable your proxy and try again")) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked connection!");
+                } else {
+                    return false;
                 }
-                return false;
             } else {
                 return true;
             }

@@ -135,11 +135,7 @@ public class SegmentDownloader extends DownloadInterface {
             final Request request = createSegmentRequest(segment);
             final URLConnectionAdapter ret = segment.open(br, request);
             if (!isSegmentConnectionValid(segment, ret)) {
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 if (retrySegmentConnection(br, segment, segmentRetryCounter)) {
                     segmentRetryCounter++;
                 } else {

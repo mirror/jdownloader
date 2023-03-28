@@ -133,22 +133,14 @@ public class SourceForgeNet extends PluginForHost {
                         con = brc.openHeadConnection(finallink);
                         if (con.getContentType().contains("text")) {
                             logger.info("finallink is no file, continuing...");
-                            try {
-                                brc.followConnection(true);
-                            } catch (IOException e) {
-                                logger.log(e);
-                            }
+                            brc.followConnection(true);
                             continue;
                         } else if (con.getResponseCode() == 200) {
                             dllink = finallink;
                             link.setDownloadSize(con.getCompleteContentLength());
                             break;
                         } else {
-                            try {
-                                brc.followConnection(true);
-                            } catch (IOException e) {
-                                logger.log(e);
-                            }
+                            brc.followConnection(true);
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                     }
@@ -191,11 +183,7 @@ public class SourceForgeNet extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {

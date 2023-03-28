@@ -474,33 +474,17 @@ public class RapidGatorNet extends antiDDoSForHost {
             }
             final URLConnectionAdapter con1 = openAntiDDoSRequestConnection(br, br.createGetRequest("/download/captcha"));
             if (con1.getResponseCode() == 302) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerIssue", 5 * 60 * 1000l);
             } else if (con1.getResponseCode() == 403) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
             } else if (con1.getResponseCode() == 500) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Downloading is not possible at the moment", FREE_RECONNECTWAIT_OTHERS);
             }
             // wasn't needed for raz, but psp said something about a redirect)
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             final long timeBeforeCaptchaInput = System.currentTimeMillis();
             Form captcha = null;
             if (br.containsHTML("data-sitekey")) {
@@ -619,11 +603,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         }
         /* 2020-03-17: Content-Disposition should always be given */
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             final URLConnectionAdapter con = dl.getConnection();
             final int responsecode = con.getResponseCode();
             if (responsecode == 404) {
@@ -745,12 +725,8 @@ public class RapidGatorNet extends antiDDoSForHost {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, resume, maxchunks);
                 con = dl.getConnection();
                 if (!looksLikeDownloadableContent(con)) {
-                    try {
-                        br2.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
                     link.setProperty(directlinkproperty, Property.NULL);
+                    br2.followConnection(true);
                     return null;
                 } else {
                     valid = true;
@@ -1404,11 +1380,7 @@ public class RapidGatorNet extends antiDDoSForHost {
         dl.setFilenameFix(FIX_FILENAMES);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             handleErrors_api(session_id, link, account, dl.getConnection());
             // so we can see errors maybe proxy errors etc.
             /* Try that errorhandling but it might not help! */
@@ -1613,11 +1585,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             dl.setFilenameFix(FIX_FILENAMES);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 handleErrors_api(null, link, account, dl.getConnection());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

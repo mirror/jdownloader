@@ -218,26 +218,14 @@ public class DropboxCom extends PluginForHost {
                         }
                     }
                 } else if (con.getResponseCode() == 404) {
-                    try {
-                        brc.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
+                    brc.followConnection(true);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (con.getResponseCode() == 460) {
-                    try {
-                        brc.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
+                    brc.followConnection(true);
                     /* Restricted Content: This file is no longer available. For additional information contact Dropbox Support. */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (con.getResponseCode() == 509) {
-                    try {
-                        brc.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
+                    brc.followConnection(true);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
                 } else if (this.looksLikeDownloadableContent(con)) {
                     // this.dllink = con.getURL().toString();

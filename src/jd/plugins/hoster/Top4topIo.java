@@ -131,11 +131,7 @@ public class Top4topIo extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -159,6 +155,7 @@ public class Top4topIo extends PluginForHost {
                 if (this.looksLikeDownloadableContent(con)) {
                     return dllink;
                 } else {
+                    br2.followConnection(true);
                     throw new IOException();
                 }
             } catch (final Exception e) {

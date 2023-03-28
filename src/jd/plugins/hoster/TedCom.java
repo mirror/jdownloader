@@ -85,38 +85,31 @@ public class TedCom extends PluginForHost {
     private static final String                   GRAB_SUBTITLE_UKRAINIAN            = "GRAB_SUBTITLE_UKRAINIAN";
     private static final String                   GRAB_SUBTITLE_VIETNAMESE           = "GRAB_SUBTITLE_VIETNAMESE";
     public static LinkedHashMap<String, String[]> formats                            = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                         {
-                                                                                                                                                                                                  /*
-                                                                                                                                                                                                   * Format
-                                                                                                                                                                                                   * -
-                                                                                                                                                                                                   * name
-                                                                                                                                                                                                   * :
-                                                                                                                                                                                                   * videoCodec,
-                                                                                                                                                                                                   * videoBitrate,
-                                                                                                                                                                                                   * videoResolution,
-                                                                                                                                                                                                   * audioCodec,
-                                                                                                                                                                                                   * audioBitrate
-                                                                                                                                                                                                   */
-                                                                                             put("64k", new String[] { "AVC", "40", "320x180", "AAC LC", "24" });
-                                                                                             // put("podcast-light", new String[] { "AVC",
-                                                                                             // "40", "320x180", "AAC LC", "24" });
-                                                                                             put("180k", new String[] { "AVC", "145", "512x288", "AAC LC", "36" });
-                                                                                             // put("podcast-low-en", new String[] { "AVC",
-                                                                                             // "852", "854x480", "AAC LC", "96" });
-                                                                                             put("320k", new String[] { "AVC", "282", "512x288", "AAC LC", "40" });
-                                                                                             put("450k", new String[] { "AVC", "404", "512x288", "AAC LC", "48" });
-                                                                                             // put("podcast-regular", new String[] { "AVC",
-                                                                                             // "404", "512x288", "AAC LC", "48" });
-                                                                                             put("600k", new String[] { "AVC", "540", "640x360", "AAC LC", "64" });
-                                                                                             put("950k", new String[] { "AVC", "852", "854x480", "AAC LC", "96" });
-                                                                                             // put("podcast-high", new String[] { "AVC",
-                                                                                             // "852", "854x480", "AAC LC", "96" });
-                                                                                             // put("podcast-high-en", new String[] { "AVC",
-                                                                                             // "852", "854x480", "AAC LC", "96" });
-                                                                                             put("1500k", new String[] { "AVC", "1350", "1280x720", "AAC LC", "128" });
-                                                                                             put("2500k", new String[] { "AVC", "2373", "1920x1080", "AAC LC", "128" });
-                                                                                         }
-                                                                                     });
+        {
+                                                                                             /*
+                                                                                              * Format - name : videoCodec, videoBitrate,
+                                                                                              * videoResolution, audioCodec, audioBitrate
+                                                                                              */
+            put("64k", new String[] { "AVC", "40", "320x180", "AAC LC", "24" });
+            // put("podcast-light", new String[] { "AVC",
+            // "40", "320x180", "AAC LC", "24" });
+            put("180k", new String[] { "AVC", "145", "512x288", "AAC LC", "36" });
+            // put("podcast-low-en", new String[] { "AVC",
+            // "852", "854x480", "AAC LC", "96" });
+            put("320k", new String[] { "AVC", "282", "512x288", "AAC LC", "40" });
+            put("450k", new String[] { "AVC", "404", "512x288", "AAC LC", "48" });
+            // put("podcast-regular", new String[] { "AVC",
+            // "404", "512x288", "AAC LC", "48" });
+            put("600k", new String[] { "AVC", "540", "640x360", "AAC LC", "64" });
+            put("950k", new String[] { "AVC", "852", "854x480", "AAC LC", "96" });
+            // put("podcast-high", new String[] { "AVC",
+            // "852", "854x480", "AAC LC", "96" });
+            // put("podcast-high-en", new String[] { "AVC",
+            // "852", "854x480", "AAC LC", "96" });
+            put("1500k", new String[] { "AVC", "1350", "1280x720", "AAC LC", "128" });
+            put("2500k", new String[] { "AVC", "2373", "1920x1080", "AAC LC", "128" });
+        }
+    });
 
     public TedCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -171,11 +164,7 @@ public class TedCom extends PluginForHost {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, maxChunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();

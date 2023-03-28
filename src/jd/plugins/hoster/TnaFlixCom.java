@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -325,17 +324,14 @@ public class TnaFlixCom extends PluginForHost {
         con.disconnect();
         link.setVerifiedFileSize(fileSize);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
-        if (dl.getConnection().getResponseCode() == 416) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 30 * 60 * 1000l);
-        }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
+            br.followConnection(true);
+            if (dl.getConnection().getResponseCode() == 416) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 30 * 60 * 1000l);
+            } else {
+                /* 403 error usually means we've tried to download an official downloadurl which may only be available for loggedin users! */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
-            /* 403 error usually means we've tried to download an official downloadurl which may only be available for loggedin users! */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         dl.startDownload();
     }
