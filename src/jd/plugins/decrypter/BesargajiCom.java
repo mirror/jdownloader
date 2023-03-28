@@ -29,7 +29,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.DebugMode;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -60,11 +59,8 @@ public class BesargajiCom extends PluginForDecrypt {
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            // See ticket: https://svn.jdownloader.org/issues/90348
-            for (final String[] domains : pluginDomains) {
-                ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)");
-            }
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9\\-]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -73,41 +69,43 @@ public class BesargajiCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
+        final Form form = br.getFormbyProperty("id", "slu-form");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.canHandle(br.getURL())) {
             /* E.g. redirect to mainpage or random advertisement page. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Form form = br.getFormbyProperty("id", "slu-form");
-        if (form == null) {
+        } else if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.sleep(7 * 1000, param);
         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
         form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-        // TODO see: https://besargaji.com/wp-content/plugins/akismet/_inc/akismet-frontend.js?ver=1669965005
+        // see: https://besargaji.com/wp-content/plugins/akismet/_inc/akismet-frontend.js?ver=1669965005
+        form.getInputField("captcha").setDisabled(false);
         form.put("ak_bib", "");
-        form.put("ak_bfs", Long.toString(System.currentTimeMillis() / 1000));
+        form.put("ak_bfs", Long.toString(System.currentTimeMillis()));
         form.put("ak_bkpc", "0");
         form.put("ak_bkp", "");
-        form.put("ak_bmc", ""); // TODO
-        form.put("ak_bmcc", "2");
+        form.put("ak_bmc", "39");
+        form.put("ak_bmcc", "1");
         form.put("ak_bmk", "");
         form.put("ak_bck", "");
-        form.put("ak_bmmc", "4");
+        form.put("ak_bmmc", "11");
         form.put("ak_btmc", "0");
-        form.put("ak_bsc", "1");
+        form.put("ak_bsc", "2");
         form.put("ak_bte", "");
         form.put("ak_btec", "0");
-        form.put("ak_bmm", ""); // TODO
+        form.put("ak_bmm", "0");
         br.setCookie(br.getHost(), "next", "1");
+        br.getHeaders().put("Origin", "https://besargaji.com");
         br.submitForm(form);
         final String finallink = this.br.getRegex("document\\.getElementById\\(\"slu-link\"\\)\\.setAttribute\\(\"href\", \"(http[^\"]+)\"").getMatch(0);
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            ret.add(createDownloadlink(finallink));
+            return ret;
         }
-        ret.add(createDownloadlink(finallink));
-        return ret;
     }
 }
