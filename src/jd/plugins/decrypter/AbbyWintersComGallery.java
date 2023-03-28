@@ -18,11 +18,14 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
@@ -41,6 +44,11 @@ import jd.plugins.hoster.AbbyWintersCom;
 public class AbbyWintersComGallery extends PluginForDecrypt {
     public AbbyWintersComGallery(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.XXX };
     }
 
     public static List<String[]> getPluginDomains() {
@@ -63,18 +71,21 @@ public class AbbyWintersComGallery extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([\\w\\-]+)/([\\w\\-]+)/([\\w\\-]+)/images/stills");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([\\w\\-]+/[\\w\\-]+/[\\w\\-]+/images/stills|[\\w\\-]+/[\\w\\-]+/[\\w\\-]+)$");
         }
         return ret.toArray(new String[0]);
     }
 
     private final String TYPE_IMAGES = "https?://[^/]+/([\\w\\-]+)/([\\w\\-]+)/([\\w\\-]+)/images/stills";
-    private final String TYPE_MIXED  = "https?://[^/]+/[\\w\\-]+/[\\w\\-]+/[\\w\\-]+$";
+    private final String TYPE_MIXED  = "https?://[^/]+/([\\w\\-]+)/([\\w\\-]+)/([\\w\\-]+)$";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return decryptIt(param, account);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final Account account) throws Exception {
         if (account == null) {
             throw new AccountRequiredException();
         }
@@ -83,6 +94,7 @@ public class AbbyWintersComGallery extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex imageUrlRegex = new Regex(param.getCryptedUrl(), TYPE_IMAGES);
         if (imageUrlRegex.matches()) {
             final String fpName = (imageUrlRegex.getMatch(0) + " - " + imageUrlRegex.getMatch(1) + " - " + imageUrlRegex.getMatch(2)).replace("_", " ");
@@ -92,15 +104,34 @@ public class AbbyWintersComGallery extends PluginForDecrypt {
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName).trim());
+            int position = 0;
             for (String imageurl : imgurls) {
                 imageurl = Encoding.htmlDecode(imageurl);
                 final DownloadLink link = new DownloadLink(hosterPlugin, Plugin.getFileNameFromURL(imageurl), this.getHost(), imageurl, true);
                 link._setFilePackage(fp);
                 link.setAvailable(true);
+                link.setLinkID(this.getHost() + "://image/" + br._getURL().getPath() + position);
+                link.setProperty(AbbyWintersCom.PROPERTY_MAINLINK, param.getCryptedUrl());
+                link.setProperty(AbbyWintersCom.PROPERTY_IMAGE_POSITION, position);
                 ret.add(link);
+                position++;
             }
         } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+            for (final String url : urls) {
+                final Regex videoRegex = new Regex(url, AbbyWintersCom.PATTERN_VIDEO);
+                if (videoRegex.matches()) {
+                    final DownloadLink video = this.createDownloadlink(url);
+                    video.setName((videoRegex.getMatch(0) + " - " + videoRegex.getMatch(1) + " - " + videoRegex.getMatch(2)).replace("_", " ") + ".mp4");
+                    video.setAvailable(true);
+                    ret.add(video);
+                } else if (url.matches(TYPE_IMAGES)) {
+                    ret.add(this.createDownloadlink(url));
+                }
+            }
+            if (ret.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         return ret;
     }

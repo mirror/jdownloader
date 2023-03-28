@@ -25,11 +25,18 @@ import java.util.Locale;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -44,13 +51,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/([A-Za-z0-9]+)(/[A-Za-z0-9%\\.\\-_]+)?" })
 public class UploadgigCom extends antiDDoSForHost {
@@ -234,13 +234,9 @@ public class UploadgigCom extends antiDDoSForHost {
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
             // ok browser set by another method is now lost.
             br = dl.getDownloadable().getContextBrowser();
+            br.followConnection(true);
             /* E.g. "The download link has expired, please buy premium account or start download file from the beginning." */
             errorhandlingGeneral(this.br);
             if (dl.getConnection().getResponseCode() == 403) {
@@ -324,6 +320,7 @@ public class UploadgigCom extends antiDDoSForHost {
                 try {
                     brc.followConnection(true);
                 } catch (final IOException e) {
+                    /**/
                     logger.log(e);
                 }
                 if (brc.getHttpConnection().getResponseCode() == 403 && brc.toString().startsWith("Blocked!<br>If you are using VPN or proxy, disable your proxy and try again")) {
@@ -352,12 +349,39 @@ public class UploadgigCom extends antiDDoSForHost {
     private String checkDirectLink(final DownloadLink link, final String property) throws Exception {
         String dllink = link.getStringProperty(property);
         if (dllink != null) {
-            if (!testLink(dllink, false)) {
-                link.setProperty(property, Property.NULL);
+            boolean throwException = false;
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    br2.followConnection(true);
+                    if (br2.getHttpConnection().getResponseCode() == 403 && br2.toString().startsWith("Blocked!<br>If you are using VPN or proxy, disable your proxy and try again")) {
+                        throwException = true;
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked connection!");
+                    }
+                    throw new IOException();
+                }
+            } catch (final Exception e) {
+                if (throwException) {
+                    throw e;
+                }
+                link.removeProperty(property);
+                logger.log(e);
                 return null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
@@ -545,12 +569,8 @@ public class UploadgigCom extends antiDDoSForHost {
             }
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
                 br = dl.getDownloadable().getContextBrowser();
+                br.followConnection(true);
                 if (br.containsHTML("Your \\d+Gb daily download traffic has been used\\.")) {
                     account.setNextDayAsTempTimeout(br);
                 }

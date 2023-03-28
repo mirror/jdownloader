@@ -23,8 +23,10 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -39,6 +41,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -46,12 +49,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.AbbyWintersComGallery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AbbyWintersCom extends PluginForHost {
     public AbbyWintersCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.abbywinters.com/tour");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     @Override
@@ -83,10 +92,10 @@ public class AbbyWintersCom extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    private final String        PATTERN_IMAGE      = "https?://[^/]+/shoot/[a-z0-9\\-_]+/images/stills/[a-z0-9\\-_]+";
-    private static final String PATTERN_VIDEO      = "https?://[^/]+/.+/video/\\w+";
-    // private static final String VIDEOLINK = "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/videos/video/clip";
-    private final String        PROPERTY_DIRECTURL = "directurl";
+    public static final String PATTERN_VIDEO           = "https?://[^/]+/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/video/\\w+";
+    public static final String PROPERTY_MAINLINK       = "mainlink";
+    public static final String PROPERTY_IMAGE_POSITION = "image_position";
+    private final String       PROPERTY_DIRECTURL      = "directurl";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -114,6 +123,19 @@ public class AbbyWintersCom extends PluginForHost {
             if (videoDataResources == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final String[] roughFilesizes = br.getRegex("<small>(\\d+(\\.\\d+)?M) \\| \\d+x\\d+ | \\d+ Kbps</small>").getColumn(0);
+            if (roughFilesizes != null && roughFilesizes.length > 0) {
+                long biggestEstimatedFilesize = -1;
+                for (final String roughFilesize : roughFilesizes) {
+                    final long filesizeTmp = SizeFormatter.getSize(roughFilesize + "b");
+                    if (filesizeTmp > biggestEstimatedFilesize) {
+                        biggestEstimatedFilesize = filesizeTmp;
+                    }
+                }
+                link.setDownloadSize(biggestEstimatedFilesize);
+            } else {
+                logger.warning("Failed to find any estimated filesize");
+            }
             final List<Object> ressourcelist = JSonStorage.restoreFromString(Encoding.htmlDecode(videoDataResources), TypeRef.LIST);
             /* Last item = Best video quality */
             final Map<String, Object> bestVideo = (Map<String, Object>) ressourcelist.get(ressourcelist.size() - 1);
@@ -127,14 +149,36 @@ public class AbbyWintersCom extends PluginForHost {
             try {
                 con = br.openHeadConnection(link.getPluginPatternMatcher());
                 if (!this.looksLikeDownloadableContent(con)) {
-                    br.followConnection();
-                    /* Directurl needs to be refreshed or it is offline */
-                    // TODO: Refresh directurl
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Directurl expired");
-                } else {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    br.followConnection(true);
+                    logger.info("Trying to refresh directurl");
+                    final String mainlink = link.getStringProperty(PROPERTY_MAINLINK);
+                    final int targetPage = link.getIntegerProperty(PROPERTY_IMAGE_POSITION, -1);
+                    if (mainlink == null || targetPage == -1) {
+                        /* This should never happen! */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
+                    final AbbyWintersComGallery decrypterPlugin = (AbbyWintersComGallery) this.getNewPluginForDecryptInstance(this.getHost());
+                    final ArrayList<DownloadLink> results = decrypterPlugin.decryptIt(new CryptedLink(mainlink), account);
+                    DownloadLink newDownloadlink = null;
+                    for (final DownloadLink result : results) {
+                        if (result.getIntegerProperty(PROPERTY_IMAGE_POSITION, -1) == targetPage) {
+                            newDownloadlink = result;
+                            break;
+                        }
+                    }
+                    if (newDownloadlink == null) {
+                        /* This should never happen! */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    link.setPluginPatternMatcher(newDownloadlink.getPluginPatternMatcher());
+                    con = br.openHeadConnection(newDownloadlink.getPluginPatternMatcher());
+                    if (!this.looksLikeDownloadableContent(con)) {
+                        /* This should never happen! */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
+                    }
+                }
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -155,13 +199,13 @@ public class AbbyWintersCom extends PluginForHost {
         throw new AccountRequiredException();
     }
 
-    public void login(final Account account, final String loginURLStr, final boolean force) throws Exception {
+    public void login(final Account account, final String loginCheckURLStr, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 br.setCookie(this.getHost(), "ageverify", "1");
                 br.setFollowRedirects(true);
-                final URL loginURL = new URL(loginURLStr);
+                final URL loginURL = new URL(loginCheckURLStr);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(cookies);
@@ -171,7 +215,7 @@ public class AbbyWintersCom extends PluginForHost {
                     }
                     br.getPage(loginURL);
                     if (this.isLoggedInHTML(br)) {
-                        logger.info("Cookie login successful");
+                        logger.info("Cookie login successful via URL: " + loginCheckURLStr);
                         account.saveCookies(br.getCookies(br.getHost()), "");
                         return;
                     } else {

@@ -489,11 +489,7 @@ public class UlozTo extends PluginForHost {
                         captcha_failed = false;
                         break;
                     } else {
-                        try {
-                            br.followConnection(true);
-                        } catch (final IOException e) {
-                            logger.log(e);
-                        }
+                        br.followConnection(true);
                         if (account != null) {
                             if (br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
                                 throw new AccountUnavailableException("Not enough premium traffic available", 1 * 60 * 60 * 1000l);
@@ -522,11 +518,7 @@ public class UlozTo extends PluginForHost {
                                 captcha_failed = false;
                                 break;
                             } else {
-                                try {
-                                    br.followConnection(true);
-                                } catch (final IOException e) {
-                                    logger.log(e);
-                                }
+                                br.followConnection(true);
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
                         }
