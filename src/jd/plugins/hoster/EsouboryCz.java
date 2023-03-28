@@ -19,6 +19,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -41,12 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "esoubory.cz" }, urls = { "https?://(?:www\\.)?esoubory\\.cz/(?:[a-z]{2}/)?(?:file|soubor|redir)/[a-f0-9]{8}/[a-z0-9\\-]+(?:/?|\\.html)" })
 public class EsouboryCz extends PluginForHost {
@@ -90,6 +90,16 @@ public class EsouboryCz extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "/([a-f0-9]{8}/[a-z0-9\\-]+)(?:/?|\\.html)").getMatch(0);
     }
 
+    private String getContentURL(final DownloadLink link) {
+        final String linkpart = getLinkpart(link);
+        if (linkpart != null) {
+            /* Prefer English language. */
+            return "https://www." + this.getHost() + "/en/file/" + linkpart;
+        } else {
+            return link.getPluginPatternMatcher();
+        }
+    }
+
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
     }
@@ -108,7 +118,6 @@ public class EsouboryCz extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "(?:file|soubor|redir)/([a-f0-9]{8})").getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, Exception {
         final Account aa = AccountController.getInstance().getValidAccount(this);
@@ -118,7 +127,7 @@ public class EsouboryCz extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, Exception {
         br.setFollowRedirects(true);
         final String name_url = new Regex(link.getPluginPatternMatcher(), "(?:file|soubor|redir)/[a-f0-9]{8}/([a-z0-9\\-]+)").getMatch(0);
-        if (name_url != null) {
+        if (name_url != null && !link.isNameSet()) {
             link.setName(name_url);
         }
         String filename;
@@ -136,8 +145,11 @@ public class EsouboryCz extends PluginForHost {
             link.setFinalFileName(filename);
         } else {
             /* Website */
-            br.getPage(link.getPluginPatternMatcher());
-            if (br.getURL().contains("/search/") || br.getHttpConnection().getResponseCode() == 404) {
+            br.getPage(getContentURL(link));
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("<h1>\\s*404 error - page not found")) {
+                /* Error 404 without responsecode 404 */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (!this.canHandle(br.getURL())) {
                 /* E.g. redirect to https://www.esoubory.cz/search/blabla.html */
@@ -185,7 +197,8 @@ public class EsouboryCz extends PluginForHost {
 
     private void handleDL(final DownloadLink link, final Account account) throws Exception {
         String finallink = checkDirectLink(link, "esouborydirectlink");
-        final boolean isSelfhostedContent = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).matches();
+        final String contentURL = getContentURL(link);
+        final boolean isSelfhostedContent = new Regex(contentURL, this.getSupportedLinks()).matches();
         if (finallink == null) {
             if (isSelfhostedContent && !USE_API_FOR_SELFHOSTED_CONTENT) {
                 /* 2018-12-27: API Support broken for selfhosted content! */
@@ -194,7 +207,7 @@ public class EsouboryCz extends PluginForHost {
                 requestFileInformation(link, account);
                 br.setFollowRedirects(true);
                 /* Downloadlink has to be accessed otherwise we're not able to download via 'finallink' below! */
-                br.getPage(link.getPluginPatternMatcher());
+                br.getPage(contentURL);
                 finallink = "https://www." + this.getHost() + "/redir/" + getLinkpart(link) + ".html";
                 // br.setFollowRedirects(false);
                 // final String continue_url = "https://www.esoubory.cz/redir/" + new Regex(link.getPluginPatternMatcher(),

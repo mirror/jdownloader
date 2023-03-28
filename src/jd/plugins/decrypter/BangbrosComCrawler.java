@@ -30,10 +30,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.hoster.BangbrosCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com", "mygf.com" }, urls = { "https?://members\\.bangbros\\.com/product/\\d+/movie/\\d+|https?://(?:bangbrothers\\.(?:com|net)|bangbros\\.com)/video\\d+/[a-z0-9\\-]+", "https?://members\\.mygf\\.com/product/\\d+/movie/\\d+" })
 public class BangbrosComCrawler extends PluginForDecrypt {
@@ -48,11 +48,14 @@ public class BangbrosComCrawler extends PluginForDecrypt {
         final String hostpart = this.getHost().split("\\.")[0];
         url = url.replaceAll("https?://", hostpart + "decrypted://");
         final DownloadLink dl = super.createDownloadlink(url, true);
-        dl.setProperty("fid", fid);
+        dl.setProperty(BangbrosCom.PROPERTY_FID, fid);
         if (quality != null) {
-            dl.setProperty("quality", quality);
+            dl.setProperty(BangbrosCom.PROPERTY_QUALITY, quality);
         }
-        dl.setProperty("mainlink", br.getURL());
+        if (productid != null) {
+            dl.setProperty(BangbrosCom.PROPERTY_PRODUCT_ID, productid);
+        }
+        dl.setProperty(BangbrosCom.PROPERTY_MAINLINK, br.getURL());
         return dl;
     }
 
@@ -60,22 +63,26 @@ public class BangbrosComCrawler extends PluginForDecrypt {
         return createDownloadlink(url, fid, null, null);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return decryptIt(param, account, SubConfiguration.getConfig(this.getHost()));
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final Account account, final SubConfiguration cfg) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("bangbrothers.com", "bangbros.com");
         final String fid;
-        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        final boolean is_logged_in = getUserLogin(false);
+        final BangbrosCom hostPlugin = (BangbrosCom) this.getNewPluginForHostInstance(this.getHost());
         final boolean loginRequired = requiresAccount(parameter);
-        if (!is_logged_in && loginRequired) {
-            logger.info("Account required");
+        if (loginRequired && account == null) {
             throw new AccountRequiredException();
+        }
+        if (account != null) {
+            hostPlugin.login(this.br, account, false);
         }
         br.getPage(parameter);
         if (isOffline(this.br, parameter)) {
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            ret.add(offline);
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = null;
         String cast_comma_separated = null;
@@ -94,9 +101,10 @@ public class BangbrosComCrawler extends PluginForDecrypt {
             }
         }
         if (parameter.matches(type_userinput_video_couldbe_trailer)) {
+            // TODO: Check if this is still needed
             final String url_name = new Regex(parameter, "([a-z0-9\\-]+$)").getMatch(0);
             fid = new Regex(parameter, "/video(\\d+)").getMatch(0);
-            if (!is_logged_in) {
+            if (account == null) {
                 /* Trailer / MOCH download */
                 title = br.getRegex("<div class=\"ps\\-vdoHdd\"><h1>([^<>\"]+)</h1>").getMatch(0);
                 if (title == null) {
@@ -139,26 +147,26 @@ public class BangbrosComCrawler extends PluginForDecrypt {
             }
             /* 2019-01-29: Content-Servers are very slow */
             final boolean fast_linkcheck = true;
-            final String[] htmls_videourls = getVideourls(this.br);
-            for (final String html_videourl : htmls_videourls) {
-                String videourl = getVideourlFromHtml(html_videourl);
-                if (videourl == null) {
-                    continue;
-                }
+            final String[] videourls = br.getRegex("(/product/\\d+/movie/\\d+/\\d+p)").getColumn(0);
+            for (String videourl : videourls) {
                 videourl = br.getURL(videourl).toString();
-                final String quality_url = new Regex(videourl, "(\\d+p)").getMatch(0);
-                if (quality_url == null || !cfg.getBooleanProperty("GRAB_" + quality_url, true)) {
+                final String qualityIdentifier = new Regex(videourl, "(\\d+p)").getMatch(0);
+                if (cfg != null && !cfg.getBooleanProperty("GRAB_" + qualityIdentifier, true)) {
                     continue;
                 }
+                final String streamingURL = regexStreamingURL(br, qualityIdentifier);
                 final String ext = ".mp4";
-                final DownloadLink dl = this.createDownloadlink(videourl, fid, productid, quality_url);
-                dl.setForcedFileName(title + "_" + quality_url + ext);
-                if (fast_linkcheck) {
-                    dl.setAvailable(true);
+                final DownloadLink video = this.createDownloadlink(videourl, fid, productid, qualityIdentifier);
+                if (streamingURL != null) {
+                    video.setProperty(BangbrosCom.PROPERTY_STREAMING_DIRECTURL, streamingURL);
                 }
-                ret.add(dl);
+                video.setForcedFileName(title + "_" + qualityIdentifier + ext);
+                if (fast_linkcheck) {
+                    video.setAvailable(true);
+                }
+                ret.add(video);
             }
-            if (cfg.getBooleanProperty("GRAB_photos", false) && directurl_photos != null) {
+            if (cfg == null || cfg.getBooleanProperty("GRAB_photos", false) && directurl_photos != null) {
                 final String quality = "pictures";
                 final DownloadLink dl = this.createDownloadlink(directurl_photos, fid, productid, quality);
                 dl.setForcedFileName(title + "_" + quality + ".zip");
@@ -167,7 +175,7 @@ public class BangbrosComCrawler extends PluginForDecrypt {
                 }
                 ret.add(dl);
             }
-            if (cfg.getBooleanProperty("GRAB_screencaps", false) && directurl_screencaps != null) {
+            if (cfg == null || cfg.getBooleanProperty("GRAB_screencaps", false) && directurl_screencaps != null) {
                 final String quality = "screencaps";
                 final DownloadLink dl = this.createDownloadlink(directurl_screencaps, fid, productid, quality);
                 dl.setForcedFileName(title + "_" + quality + ".zip");
@@ -183,17 +191,8 @@ public class BangbrosComCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    public static String[] getVideourls(final Browser br) {
-        final String html_urltable = br.getRegex("class=\"dropM\">\\s*?<ul>(.*?)</ul>").getMatch(0);
-        return html_urltable.split("<li>");
-    }
-
-    public static String getVideourlFromHtml(final String html) {
-        String videourl = new Regex(html, "\"((https?:|//)[^<>\"]+)\"").getMatch(0);
-        if (videourl != null) {
-            videourl = Encoding.htmlDecode(videourl);
-        }
-        return videourl;
+    public static String regexStreamingURL(final Browser br, final String qualityIdentifier) {
+        return br.getRegex("<source src=\"(https?://[^\"]+" + qualityIdentifier + "\\.mp4[^\"]*)\" type='video/mp4'").getMatch(0);
     }
 
     public static String regexZipUrl(final Browser br, final String key) {
@@ -204,26 +203,9 @@ public class BangbrosComCrawler extends PluginForDecrypt {
         return zipurl;
     }
 
-    /**
-     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
-     */
+    @Override
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
-    }
-
-    private boolean getUserLogin(final boolean force) throws Exception {
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost(this.getHost());
-        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
-        if (aa == null) {
-            logger.warning("There is no account available, stopping...");
-            return false;
-        }
-        try {
-            ((jd.plugins.hoster.BangbrosCom) hostPlugin).login(this.br, aa, force);
-        } catch (final PluginException e) {
-            return false;
-        }
-        return true;
     }
 
     public static boolean requiresAccount(final String url) {

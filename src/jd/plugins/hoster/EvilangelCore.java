@@ -21,6 +21,19 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -42,19 +55,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class EvilangelCore extends PluginForHost {
@@ -232,56 +232,83 @@ public abstract class EvilangelCore extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 // final String htmlVideoJson2 = br.getRegex(">dataLayer\\s*=\\s*\\[(\\{.*?\\})\\];</script>").getMatch(0);
-                if (htmlVideoJson != null) {
+                findVideo1: if (htmlVideoJson != null) {
                     final Map<String, Object> entries = JSonStorage.restoreFromString(htmlVideoJson, TypeRef.HASHMAP);
                     final Map<String, Object> videoInfo = (Map<String, Object>) entries.get(this.getFID(getDownloadLink()));
                     final Object qualityMapO = videoInfo.get("videos");
-                    if (qualityMapO instanceof List) {
-                        /*
-                         * Empty list --> User is not allowed to watch this full video -> Trailer only but we do not (yet) have a handling
-                         * to find the trailer streams -> Throw Exception instead
-                         */
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Only trailer available");
-                    }
-                    final Map<String, String> qualityMap = (Map<String, String>) videoInfo.get("videos");
-                    if (qualityMap.isEmpty()) {
-                        /* This should never happen */
+                    if (qualityMapO == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    boolean foundSelectedquality = false;
                     String chosenQualityStr = null;
-                    final String[] knownQualities = { "2160p", "1080p", "720p", "540p", "480p", "360p", "240p", "160p" };
-                    for (final String knownQuality : knownQualities) {
-                        if (qualityMap.containsKey(knownQuality)) {
-                            dllink = qualityMap.get(knownQuality);
-                            chosenQualityStr = knownQuality;
-                            if (preferredQualityStr == null) {
-                                /* User prefers BEST quality. BEST = first item */
-                                foundSelectedquality = true;
-                                break;
-                            } else if (knownQuality.equals(preferredQualityStr)) {
-                                foundSelectedquality = true;
-                                logger.info("Found user selected quality: " + preferredQualityStr);
-                                break;
-                            }
+                    if (qualityMapO instanceof List) {
+                        final List<Map<String, Object>> qualitiesList = (List<Map<String, Object>>) qualityMapO;
+                        if (qualitiesList.isEmpty()) {
+                            /*
+                             * Empty list --> User is not allowed to watch this full video -> Trailer only but we do not (yet) have a
+                             * handling to find the trailer streams -> Throw Exception instead
+                             */
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Only trailer available");
                         }
-                    }
-                    if (!StringUtils.isEmpty(dllink)) {
-                        if (foundSelectedquality && preferredQualityStr == null) {
-                            logger.info("Found user selected quality: best");
-                            link.setProperty(PROPERTY_QUALITY, chosenQualityStr);
-                        } else if (foundSelectedquality) {
-                            logger.info("Found user selected quality: " + preferredQualityStr);
-                            link.setProperty(PROPERTY_QUALITY, preferredQualityStr);
-                        } else {
-                            logger.info("Failed to find user selected quality --> Using fallback (best):" + chosenQualityStr);
-                            link.setProperty(PROPERTY_QUALITY, chosenQualityStr);
+                        String fallbackDirecturl = null;
+                        String fallbackFormat = null;
+                        for (final Map<String, Object> videoMap : qualitiesList) {
+                            final String format = videoMap.get("format").toString();
+                            if (format.equals("auto")) {
+                                continue;
+                            }
+                            final String url = videoMap.get("url").toString();
+                            if (format.equalsIgnoreCase(preferredQualityStr)) {
+                                chosenQualityStr = format;
+                                this.dllink = url;
+                            }
+                            fallbackDirecturl = url;
+                            fallbackFormat = format;
+                        }
+                        if (StringUtils.isEmpty(this.dllink)) {
+                            logger.info("Failed to find user selected format -> Fallback to: " + fallbackFormat);
+                            chosenQualityStr = fallbackFormat;
+                            this.dllink = fallbackDirecturl;
                         }
                     } else {
-                        logger.warning("Failed to find any known quality --> Selecting unknown quality");
-                        for (final String value : qualityMap.values()) {
-                            this.dllink = value;
-                            break;
+                        final Map<String, String> qualityMap = (Map<String, String>) qualityMapO;
+                        if (qualityMap.isEmpty()) {
+                            /* This should never happen */
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        boolean foundSelectedquality = false;
+                        final String[] knownQualities = { "2160p", "1080p", "720p", "540p", "480p", "360p", "240p", "160p" };
+                        for (final String knownQuality : knownQualities) {
+                            if (qualityMap.containsKey(knownQuality)) {
+                                dllink = qualityMap.get(knownQuality);
+                                chosenQualityStr = knownQuality;
+                                if (preferredQualityStr == null) {
+                                    /* User prefers BEST quality. BEST = first item */
+                                    foundSelectedquality = true;
+                                    break;
+                                } else if (knownQuality.equals(preferredQualityStr)) {
+                                    foundSelectedquality = true;
+                                    logger.info("Found user selected quality: " + preferredQualityStr);
+                                    break;
+                                }
+                            }
+                        }
+                        if (!StringUtils.isEmpty(dllink)) {
+                            if (foundSelectedquality && preferredQualityStr == null) {
+                                logger.info("Found user selected quality: best");
+                                link.setProperty(PROPERTY_QUALITY, chosenQualityStr);
+                            } else if (foundSelectedquality) {
+                                logger.info("Found user selected quality: " + preferredQualityStr);
+                                link.setProperty(PROPERTY_QUALITY, preferredQualityStr);
+                            } else {
+                                logger.info("Failed to find user selected quality --> Using fallback (best):" + chosenQualityStr);
+                                link.setProperty(PROPERTY_QUALITY, chosenQualityStr);
+                            }
+                        } else {
+                            logger.warning("Failed to find any known quality --> Selecting unknown/random quality");
+                            for (final String value : qualityMap.values()) {
+                                this.dllink = value;
+                                break;
+                            }
                         }
                     }
                 }
@@ -306,8 +333,8 @@ public abstract class EvilangelCore extends PluginForHost {
                         }
                     }
                     /**
-                     * A scene can also contain DVD-information. </br> --> Ensure to set the correct information which is later used for
-                     * filenames.
+                     * A scene can also contain DVD-information. </br>
+                     * --> Ensure to set the correct information which is later used for filenames.
                      */
                     final Map<String, Object> movieInfos = (Map<String, Object>) root.get("movieInfos");
                     if (movieInfos != null) {
@@ -705,8 +732,8 @@ public abstract class EvilangelCore extends PluginForHost {
                 }
                 login.remove("submit");
                 /**
-                 * 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! </br> Only add
-                 * "rememberme": "1" if that is not already present in our form.
+                 * 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! </br>
+                 * Only add "rememberme": "1" if that is not already present in our form.
                  */
                 final String remembermeCookieKey = "rememberme";
                 boolean containsRemembermeFieldWithValue1 = false;
@@ -814,7 +841,8 @@ public abstract class EvilangelCore extends PluginForHost {
         }
         /**
          * TODO: Add support for "expirationDate" along with "scheduledCancelDate" whenever a test account with such a date is available.
-         * </br> "scheduledCancelDate" can also be a Boolean!
+         * </br>
+         * "scheduledCancelDate" can also be a Boolean!
          */
         if (Boolean.TRUE.equals(user.get("isExpired"))) {
             ai.setExpired(true);

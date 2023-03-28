@@ -35,6 +35,7 @@ public class BlowpassCom extends EvilangelCore {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        // also known as "throated.com"
         ret.add(new String[] { "blowpass.com" });
         return ret;
     }

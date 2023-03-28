@@ -68,4 +68,9 @@ public class AdulttimeCom extends EvilangelCore {
     public Class<? extends EvilangelCoreConfig> getConfigInterface() {
         return EvilangelCoreConfigAdulttime.class;
     }
+
+    @Override
+    protected boolean allowCookieLoginOnly() {
+        return true;
+    }
 }
