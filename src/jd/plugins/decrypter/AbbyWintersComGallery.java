@@ -19,14 +19,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -64,34 +68,39 @@ public class AbbyWintersComGallery extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_IMAGES = "https?://[^/]+/[\\w\\-]+/[\\w\\-]+/[\\w\\-]+/images/stills";
+    private final String TYPE_IMAGES = "https?://[^/]+/([\\w\\-]+)/([\\w\\-]+)/([\\w\\-]+)/images/stills";
     private final String TYPE_MIXED  = "https?://[^/]+/[\\w\\-]+/[\\w\\-]+/[\\w\\-]+$";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account == null) {
+            throw new AccountRequiredException();
+        }
         final AbbyWintersCom hosterPlugin = (AbbyWintersCom) this.getNewPluginForHostInstance(this.getHost());
-        final Regex imageUrl = new Regex(param.getCryptedUrl(), TYPE_IMAGES);
-        if (imageUrl.matches()) {
-            br.getPage(param.getCryptedUrl());
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String fpName = br.getRegex("").getMatch(0);
-            final String[] imgurls = br.getRegex("class=\"lazyload\" data-src=\"(https?://[^\"]+)").getColumn(0);
+        hosterPlugin.login(account, param.getCryptedUrl(), true);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Regex imageUrlRegex = new Regex(param.getCryptedUrl(), TYPE_IMAGES);
+        if (imageUrlRegex.matches()) {
+            final String fpName = (imageUrlRegex.getMatch(0) + " - " + imageUrlRegex.getMatch(1) + " - " + imageUrlRegex.getMatch(2)).replace("_", " ");
+            final String[] imgurls = br.getRegex("class=\"card-thumb clearfix\" href=\"(https?://[^\"]+)").getColumn(0);
             if (imgurls == null || imgurls.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            for (final String imageurl : imgurls) {
-                final DownloadLink link = createDownloadlink(imageurl);
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            for (String imageurl : imgurls) {
+                imageurl = Encoding.htmlDecode(imageurl);
+                final DownloadLink link = new DownloadLink(hosterPlugin, Plugin.getFileNameFromURL(imageurl), this.getHost(), imageurl, true);
+                link._setFilePackage(fp);
                 link.setAvailable(true);
                 ret.add(link);
             }
-            if (fpName != null) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName).trim());
-                fp.addLinks(ret);
-            }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return ret;
     }

@@ -29,6 +29,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -59,16 +69,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@:\\!]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -1653,12 +1653,12 @@ public class VKontakteRu extends PluginForDecrypt {
                 htmlBeforeReplies = br.getRequest().getHtmlCode();
             }
             /* Grab media inside users' post */
-            ret.addAll(websiteCrawlContent(wall_post_ID, htmlBeforeReplies, fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.photos_store_picture_directurls));
+            ret.addAll(websiteCrawlContent(param.getCryptedUrl(), htmlBeforeReplies, fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.photos_store_picture_directurls));
             /* Open RegEx: Just grab all html starting from comments section until end */
             final String htmlReplies = br.getRegex("<div class=\"replies\"(.+)").getMatch(0);
             if (htmlReplies != null && this.vkwall_comments_grab_comments) {
                 /* Grab media inside replies/comments to users' post if wished by user. */
-                ret.addAll(websiteCrawlContent(wall_post_ID, br.toString(), fp, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, false, this.vkwall_comment_grablink, this.photos_store_picture_directurls));
+                ret.addAll(websiteCrawlContent(param.getCryptedUrl(), br.toString(), fp, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, false, this.vkwall_comment_grablink, this.photos_store_picture_directurls));
             }
             final int numberofItemsAddedThisLoop = ret.size() - numberofFoundItemsOld;
             logger.info("Offset " + offset + " contained " + numberofItemsAddedThisLoop + " items in total so far (including inside replies)");
@@ -2384,7 +2384,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlVideos(final Browser br, final FilePackage fp) {
-        final String[] videoHTMLs = br.getRegex("showVideo\\(([^\\)]+)\\)").getColumn(0);
+        /* showInlineVideo = clips -> Short videos but internally both are the same */
+        final String[] videoHTMLs = br.getRegex("(?:showVideo|showInlineVideo)\\(([^\\)]+)\\)").getColumn(0);
         final ArrayList<DownloadLink> ret = this.getReturnArray();
         for (String videoHTML : videoHTMLs) {
             if (Encoding.isHtmlEntityCoded(videoHTML)) {
@@ -2868,8 +2869,9 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Basic preparations on user-added links.</br> Make sure to remove unneeded things so that in the end, our links match the desired
-     * linktypes.</br> This is especially important because we get required IDs out of these urls or even access them directly without API.
+     * Basic preparations on user-added links.</br>
+     * Make sure to remove unneeded things so that in the end, our links match the desired linktypes.</br>
+     * This is especially important because we get required IDs out of these urls or even access them directly without API.
      *
      * @param a
      *

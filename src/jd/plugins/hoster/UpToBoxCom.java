@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -23,23 +22,6 @@ import java.util.Map;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
@@ -58,6 +40,23 @@ import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuali
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends antiDDoSForHost {
@@ -397,11 +396,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         dllink = correctProtocolOfFinalDownloadURL(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(null));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (!isFreshDirecturl) {
                 link.removeProperty(directlinkproperty);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Old directurl expired");
@@ -657,11 +652,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         dllink = correctProtocolOfFinalDownloadURL(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, getMaxChunks(account));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (!isFreshDirecturl) {
                 link.removeProperty(directlinkproperty);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Old directurl expired");

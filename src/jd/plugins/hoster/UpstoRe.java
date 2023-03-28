@@ -312,11 +312,8 @@ public class UpstoRe extends antiDDoSForHost {
              */
             setDownloadStarted(link, 0);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection(true);
                 handleErrorsHTML(this.br);
                 handleServerErrors(this.br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -633,11 +630,7 @@ public class UpstoRe extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             handleErrorsHTML(this.br);
             this.handleServerErrors(this.br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

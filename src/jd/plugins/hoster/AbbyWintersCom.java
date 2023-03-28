@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.net.URL;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -33,7 +32,6 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
@@ -103,45 +101,28 @@ public class AbbyWintersCom extends PluginForHost {
             link.getLinkStatus().setStatusText("Only downlodable/checkable via account!");
             return AvailableStatus.UNCHECKABLE;
         }
-        login(account, false);
-        br.setFollowRedirects(true);
         String filename = null;
         if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO)) {
-            br.getPage(link.getPluginPatternMatcher());
+            login(account, link.getPluginPatternMatcher(), true);
+            br.setFollowRedirects(true);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("(?i)404 Page not found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String videoDataResources = br.getRegex("data-sources=\"([^\"]+)").getMatch(0);
-            if (videoDataResources != null) {
-                final List<Object> ressourcelist = JSonStorage.restoreFromString(Encoding.htmlDecode(videoDataResources), TypeRef.LIST);
-                final Map<String, Object> bestVideo = (Map<String, Object>) ressourcelist.get(ressourcelist.size() - 1);
-                final String directurl = bestVideo.get("src").toString();
-                link.setProperty(PROPERTY_DIRECTURL, directurl);
-                filename = Plugin.getFileNameFromURL(new URL(directurl));
-            } else {
-                // old code
-                if (link.getPluginPatternMatcher().matches(PATTERN_IMAGE)) {
-                    final Regex fInfo = br.getRegex("<title>([^<>\"]*?)\\| Image (\\d+) of \\d+</title>");
-                    if (fInfo.getMatches().length != 1) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final DecimalFormat df = new DecimalFormat("0000");
-                    filename = Encoding.htmlDecode(fInfo.getMatch(0).trim()) + "_" + df.format(Integer.parseInt(fInfo.getMatch(1))) + ".jpg";
-                } else {
-                    String username = br.getRegex("title=\"View profile: ([^<>\"]*?)\"").getMatch(0);
-                    if (username == null) {
-                        username = br.getRegex("</span>([^<>\"]*?)<span class=\"icon_videoclip\">").getMatch(0);
-                    }
-                    final String videoName = br.getRegex("<title>([^<>\"]*?)Video: .*?</title>").getMatch(0);
-                    if (username != null && videoName != null) {
-                        filename = Encoding.htmlDecode(username) + " - " + Encoding.htmlDecode(videoName) + ".mp4";
-                    }
-                }
+            if (videoDataResources == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final List<Object> ressourcelist = JSonStorage.restoreFromString(Encoding.htmlDecode(videoDataResources), TypeRef.LIST);
+            /* Last item = Best video quality */
+            final Map<String, Object> bestVideo = (Map<String, Object>) ressourcelist.get(ressourcelist.size() - 1);
+            final String directurl = bestVideo.get("src").toString();
+            link.setProperty(PROPERTY_DIRECTURL, directurl);
+            filename = Plugin.getFileNameFromURL(new URL(directurl));
         } else {
             /* Should be directurl */
+            login(account, "https://www." + this.getHost() + "/", false);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(link.getPluginPatternMatcher());
@@ -149,6 +130,7 @@ public class AbbyWintersCom extends PluginForHost {
                     br.followConnection();
                     /* Directurl needs to be refreshed or it is offline */
                     // TODO: Refresh directurl
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Directurl expired");
                 } else {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -173,12 +155,13 @@ public class AbbyWintersCom extends PluginForHost {
         throw new AccountRequiredException();
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final String loginURLStr, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
                 br.setCookie(this.getHost(), "ageverify", "1");
                 br.setFollowRedirects(true);
+                final URL loginURL = new URL(loginURLStr);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(cookies);
@@ -186,7 +169,7 @@ public class AbbyWintersCom extends PluginForHost {
                         /* Do not validate cookies */
                         return;
                     }
-                    br.getPage("https://www." + this.getHost() + "/members");
+                    br.getPage(loginURL);
                     if (this.isLoggedInHTML(br)) {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(br.getHost()), "");
@@ -223,6 +206,10 @@ public class AbbyWintersCom extends PluginForHost {
                     throw new AccountInvalidException();
                 }
                 account.saveCookies(br2.getCookies(br2.getHost()), "");
+                /* Ensure that we've accessed our target-URL. */
+                if (!br._getURL().getPath().endsWith(loginURL.getPath())) {
+                    br.getPage(loginURL);
+                }
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -237,10 +224,7 @@ public class AbbyWintersCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
-        if (!br.getURL().endsWith("/myaccount/subscriptions")) {
-            br.getPage("/myaccount/subscriptions");
-        }
+        login(account, "https://www." + this.getHost() + "/myaccount/subscriptions", true);
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("(?i)<th>\\s*Rebill date\\s*:?\\s*</th>\\s*<td>([^<]+)</td>").getMatch(0);
         if (expire == null) {
@@ -256,14 +240,11 @@ public class AbbyWintersCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account);
-        String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
-        if (dllink == null) {
-            /* Old code */
-            if (link.getDownloadURL().matches(PATTERN_IMAGE)) {
-                dllink = br.getRegex("\"(http://[^<>\"]*?)\" class=\"viewXLarge\"").getMatch(0);
-            } else {
-                dllink = br.getRegex("class=\"download_icon_ok\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            }
+        String dllink = null;
+        if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO)) {
+            dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+        } else {
+            dllink = link.getPluginPatternMatcher();
         }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -273,7 +254,7 @@ public class AbbyWintersCom extends PluginForHost {
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             logger.warning("The final dllink seems not to be a file!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken media file?");
         }
         dl.startDownload();
     }
