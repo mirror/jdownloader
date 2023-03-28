@@ -198,11 +198,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink.trim()), true, chunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             mhm.handleErrorGeneric(account, link, "Final downloadurl does not lead to file", 50);
         }
         if (link.getFinalFileName() == null) {

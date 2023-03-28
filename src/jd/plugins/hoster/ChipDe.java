@@ -21,14 +21,6 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.ChipDeConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -41,6 +33,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.ChipDeConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "https?://(?:www\\.)?(?:chip\\.de/downloads|download\\.chip\\.(?:eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html|https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html" })
 public class ChipDe extends PluginForHost {
@@ -69,9 +69,8 @@ public class ChipDe extends PluginForHost {
 
     /**
      * <b>Information for file (software)-downloads:</b> <br />
-     * <b>Example URL:</b>
-     * <a href="http://www.chip.de/downloads/Firefox-32-Bit_13014344.html">http://www.chip.de/downloads/Firefox-32-Bit_13014344.html</a>
-     * <br />
+     * <b>Example URL:</b> <a
+     * href="http://www.chip.de/downloads/Firefox-32-Bit_13014344.html">http://www.chip.de/downloads/Firefox-32-Bit_13014344.html</a> <br />
      * <b>1.</b> Links are language dependant. Unfortunately we cannot just force a specified language as content is different for each
      * country. <br />
      * That means we have to make RegExes that can handle all languages. <br />
@@ -79,8 +78,8 @@ public class ChipDe extends PluginForHost {
      * installers (usually without any adware). <br />
      *
      * <b>Information for video downloads:</b> <br />
-     * <b>Example URL:</b>
-     * <a href="http://www.chip.de/video/DSLR-fuer-die-Hosentasche-DxO-One-im-Test-Video_85225530.html">http://www.chip.de
+     * <b>Example URL:</b> <a
+     * href="http://www.chip.de/video/DSLR-fuer-die-Hosentasche-DxO-One-im-Test-Video_85225530.html">http://www.chip.de
      * /video/DSLR-fuer-die-Hosentasche-DxO-One-im-Test-Video_85225530.html</a> <br />
      * <b>Videoid or how they call it "containerIdBeitrag": 85225530</b><br />
      *
@@ -287,12 +286,8 @@ public class ChipDe extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
                 handleServerErrors();
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
                 if (!this.br.getHost().contains("chip")) {
                     errorExternalDownloadImpossible();
                 }
@@ -347,12 +342,8 @@ public class ChipDe extends PluginForHost {
                     }
                 }
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    br.followConnection(true);
                     handleServerErrors();
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
                     if (!this.br.getHost().contains("chip")) {
                         /*
                          * Happens for software whos manufactors do not allow direct mirrors from chip servers e.g.

@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,6 +30,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ah-me.com" }, urls = { "https?://((?:www\\.)?ah-me\\.com/videos/\\d+|embeds\\.ah\\-me\\.com/embed/\\d+)" })
 public class AhMeCom extends PluginForHost {
     private String dllink = null;
@@ -44,9 +44,9 @@ public class AhMeCom extends PluginForHost {
     public AhMeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     /* DEV NOTES */
     /* Porn_plugin */
-
     @Override
     public String getAGBLink() {
         return "http://www.ah-me.com/pages/terms.html";
@@ -117,11 +117,7 @@ public class AhMeCom extends PluginForHost {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

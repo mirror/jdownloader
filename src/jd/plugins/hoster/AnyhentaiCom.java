@@ -17,10 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,6 +26,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anyhentai.com" }, urls = { "https?://\\w+\\.anyhentai\\.com/([^/]+)\\.mp4(?:\\?.*)?" })
 public class AnyhentaiCom extends PluginForHost {
@@ -113,7 +112,7 @@ public class AnyhentaiCom extends PluginForHost {
         this.dl.startDownload();
     }
 
-    private void connectionErrorhandling(final Browser br, final URLConnectionAdapter con) throws PluginException {
+    private void connectionErrorhandling(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
         if (con.getResponseCode() == 503) {
             /*
              * 2021-08-26: Users commonly get these directURLs via VideoDownloadHelper but this website has a very strict connection limit
@@ -121,11 +120,7 @@ public class AnyhentaiCom extends PluginForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections: Close the video player in your browser to be able to download this item", 3 * 60 * 1000l);
         } else if (!this.looksLikeDownloadableContent(con)) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             /* Typically error 404. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

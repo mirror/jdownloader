@@ -93,11 +93,9 @@ public class ParameterHandler implements InstanceMessageListener {
 
     @Override
     @Deprecated
+    /**kept to avoid  JDownloader.jar <-> Core.jar update compatibility issues. can be removed in future**/
     public void parseMessage(String[] args) {
-        logger.info("Sent: " + Arrays.toString(args));
-        ParameterParser pp = new ParameterParser(args);
-        pp.parse(null);
-        execute(pp, false);
+        onIncommingMessage(null, args);
     }
 
     protected void execute(ParameterParser pp, boolean startup) {
@@ -128,10 +126,12 @@ public class ParameterHandler implements InstanceMessageListener {
 
     @Override
     public void onIncommingMessage(ResponseSender callback, String[] message) {
-        logger.info("Sent: " + Arrays.toString(message));
-        ParameterParser pp = new ParameterParser(message);
+        logger.info("Incomming Message: " + Arrays.toString(message));
+        final ParameterParser pp = new ParameterParser(message);
         pp.parse(null);
         execute(pp, false);
-        callback.sendResponse(new Response("PONG", "Received Message"));
+        if (callback != null) {
+            callback.sendResponse(new Response("PONG", "Received Message"));
+        }
     }
 }

@@ -32,13 +32,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -67,6 +60,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DepositFiles extends antiDDoSForHost {
@@ -386,11 +386,7 @@ public class DepositFiles extends antiDDoSForHost {
                 // handling for txt file downloadlinks, dunno why they made a completely different page for txt files
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, downloadURL, true, 1);
                 if (!looksLikeDownloadableContent(dl.getConnection())) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     handleDownloadError(br, dl.getConnection(), link);
                 }
                 handleDownload(dl.getConnection(), link, "finallink", downloadURL);
@@ -500,11 +496,7 @@ public class DepositFiles extends antiDDoSForHost {
         finallink = fixLinkSSL(finallink);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finallink, true, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             handleDownloadError(br, dl.getConnection(), link);
         }
         handleDownload(dl.getConnection(), link, "finallink", finallink);
@@ -819,11 +811,7 @@ public class DepositFiles extends antiDDoSForHost {
             url = fixLinkSSL(url);
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, true, 0);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 handleDownloadError(br, dl.getConnection(), link);
             }
             handleDownload(dl.getConnection(), link, null, url);
@@ -1110,11 +1098,7 @@ public class DepositFiles extends antiDDoSForHost {
         downloadURL = fixLinkSSL(downloadURL);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, downloadURL, apiResumes, apiChunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             handleDownloadError(br, dl.getConnection(), link);
         }
         handleDownload(dl.getConnection(), link, "finallink", downloadURL);

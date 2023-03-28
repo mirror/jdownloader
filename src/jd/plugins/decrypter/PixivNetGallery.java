@@ -388,6 +388,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                 } while (numberofitems_found_on_current_page >= max_numbeofitems_per_page && maxitemsperpage != -1 && !this.isAbort());
             }
         } catch (final AccountRequiredException ar) {
+            logger.log(ar);
             if (account != null) {
                 /* Session expired mid-crawling e.g. user logged out in browser while he was using the same cookies in JD. */
                 account.setError(AccountError.TEMP_DISABLED, 5 * 60 * 1000l, "Session expired");

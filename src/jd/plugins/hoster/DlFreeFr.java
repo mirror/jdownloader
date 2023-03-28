@@ -228,11 +228,7 @@ public class DlFreeFr extends PluginForHost {
          */
         String passCode = link.getDownloadPassword();
         if (!dl.getConnection().isContentDisposition() && br.getHttpConnection().getResponseCode() == 401) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             logger.info("Password required");
             if (passCode == null) {
                 passCode = getUserInput("Password?", link);
@@ -242,11 +238,7 @@ public class DlFreeFr extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl.getConnection().getURL().toString(), true, 1);
         }
         if (!dl.getConnection().isContentDisposition()) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (br.getHttpConnection().getResponseCode() == 401) {
                 link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");

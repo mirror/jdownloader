@@ -19,17 +19,6 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.components.config.DanbooruDonmaiUsConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -49,6 +38,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.components.config.DanbooruDonmaiUsConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "danbooru.donmai.us" }, urls = { "https?://(?:www\\.)?danbooru\\.donmai\\.us/posts/(\\d+)" })
 public class DanbooruDonmaiUs extends PluginForHost {
@@ -332,8 +332,8 @@ public class DanbooruDonmaiUs extends PluginForHost {
     }
 
     /**
-     * Using API: https://danbooru.donmai.us/wiki_pages/help:api </br>
-     * Account types and associated API limits: https://danbooru.donmai.us/wiki_pages/help%3Ausers
+     * Using API: https://danbooru.donmai.us/wiki_pages/help:api </br> Account types and associated API limits:
+     * https://danbooru.donmai.us/wiki_pages/help%3Ausers
      */
     public boolean loginAPI(final Account account, final boolean force) throws Exception {
         synchronized (account) {
@@ -469,8 +469,8 @@ public class DanbooruDonmaiUs extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /**
-         * 2021-04-19: Account benefits are only used in crawler and not required for downloading single items! </br>
-         * Also, website is used for downloading and API is only used for crawling.
+         * 2021-04-19: Account benefits are only used in crawler and not required for downloading single items! </br> Also, website is used
+         * for downloading and API is only used for crawling.
          */
         if (!attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL, resume, maxchunks)) {
             requestFileInformationAPI(link, account, true);
@@ -480,15 +480,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: No downloadable content");
             }
         }

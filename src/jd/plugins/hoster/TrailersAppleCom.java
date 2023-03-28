@@ -93,27 +93,23 @@ public class TrailersAppleCom extends PluginForHost {
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("Pragma", null);
         br.getHeaders().put("Connection", null);
-        String dllink = link.getDownloadURL();
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
-        long test = dl.getConnection().getLongContentLength();
-        if (test < 51200) {
+        final String downloadURL = link.getDownloadURL();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, downloadURL, true, 0);
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection();
-            String dllink2 = br.getRegex("(https?://[^\r\n\\s]+\\.mov)").getMatch(0);
+            String newDownloadURL = br.getRegex("(https?://[^\r\n\\s]+\\.mov)").getMatch(0);
             // required for poster 'SD' movies aka non p results
-            if (dllink2 == null) {
-                String tmp = br.getRegex("!(.*\\.mov)").getMatch(0);
-                if (tmp != null) {
-                    dllink2 = dllink.replaceFirst("/[^/]+$", "/" + tmp);
-                }
-            }
-            if (dllink2 != null) {
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink2, true, 0);
-                test = dl.getConnection().getLongContentLength();
-                if (dl.getConnection().getContentType().contains("video/quicktime") && test < 51200) {
-                    br.followConnection();
+            if (newDownloadURL == null) {
+                newDownloadURL = br.getRegex("!(.*\\.mov)").getMatch(0);
+                if (newDownloadURL != null) {
+                    newDownloadURL = downloadURL.replaceFirst("/[^/]+$", "/" + newDownloadURL);
+                } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            } else {
+            }
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, newDownloadURL, true, 0);
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }

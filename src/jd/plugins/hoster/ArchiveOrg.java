@@ -300,11 +300,7 @@ public class ArchiveOrg extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, account), getMaxChunks(link, account));
         connectionErrorhandling(br.getHttpConnection(), link, account, lendingInfoForBeforeDownload);
         if (!this.looksLikeDownloadableContent(dl.getConnection(), link)) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
         }
         if (dl.startDownload()) {

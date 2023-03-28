@@ -20,15 +20,6 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -44,6 +35,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "https?://(?:www\\.)?data.hu/get/(\\d+)/([^<>\"/%]+)" })
 public class DataHu extends antiDDoSForHost {
@@ -276,18 +276,15 @@ public class DataHu extends antiDDoSForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The finallink doesn't seem to be a file...");
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 handleServerErrors();
                 handleErrorsWebsite(br);
                 if (br.getURL().contains("/only_premium.php")) {
                     link.setProperty(PROPERTY_PREMIUMONLY, true);
                     throw new AccountRequiredException();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty(directlinkproperty, dllink);
         }
@@ -310,11 +307,7 @@ public class DataHu extends antiDDoSForHost {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, -2);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The finallink doesn't seem to be a file...");
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 handleServerErrors();
                 handleErrorsWebsite(br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +29,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.DebugMode;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BesargajiCom extends PluginForDecrypt {
     public BesargajiCom(PluginWrapper wrapper) {
@@ -41,10 +41,7 @@ public class BesargajiCom extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            // See ticket: https://svn.jdownloader.org/issues/90348
-            ret.add(new String[] { "ponselharian.com", "besargaji.com" });
-        }
+        ret.add(new String[] { "ponselharian.com", "besargaji.com" });
         return ret;
     }
 
@@ -63,8 +60,11 @@ public class BesargajiCom extends PluginForDecrypt {
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)");
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            // See ticket: https://svn.jdownloader.org/issues/90348
+            for (final String[] domains : pluginDomains) {
+                ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)");
+            }
         }
         return ret.toArray(new String[0]);
     }
