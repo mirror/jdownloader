@@ -1160,13 +1160,26 @@ public class LinkCrawler {
 
     public DownloadLink createDirectHTTPDownloadLink(final Request sourceRequest, URLConnectionAdapter con) {
         final Request request = con.getRequest();
+        Request redirectOrigin = request.getRedirectOrigin();
+        while (redirectOrigin != null) {
+            final Request nextRedirectOrigin = redirectOrigin.getRedirectOrigin();
+            if (nextRedirectOrigin != null) {
+                redirectOrigin = nextRedirectOrigin;
+            } else {
+                break;
+            }
+        }
         final String startURL;
-        if (sourceRequest == null || (request instanceof PostRequest)) {
+        if (request instanceof PostRequest) {
             startURL = request.getURL().toString();
-        } else {
+        } else if (sourceRequest != null) {
             // previous URL is leading/redirecting to this download, so let's use this URL instead
             // for example the current URL might expire
             startURL = sourceRequest.getURL().toString();
+        } else if (redirectOrigin != null) {
+            startURL = redirectOrigin.getURL().toString();
+        } else {
+            startURL = request.getURL().toString();
         }
         final DownloadLink link = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + startURL, true);
         final String cookie = con.getRequestProperty("Cookie");
