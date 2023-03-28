@@ -1,6 +1,5 @@
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -161,11 +160,7 @@ public class EroScriptsCom extends antiDDoSForHost {
         // no account required?
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, link.getDownloadURL());
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

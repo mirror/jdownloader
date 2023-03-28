@@ -17,13 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.EpornerComConfig;
-import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -42,6 +35,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.EpornerComConfig;
+import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:\\w+\\.)?eporner\\.com/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?" })
 public class EPornerCom extends PluginForHost {
@@ -205,7 +205,7 @@ public class EPornerCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account) throws PluginException {
+    private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account) throws PluginException, IOException {
         /* E.g. https://static.eporner.com/na.mp4 */
         if (isBadDirecturl(con.getURL().toString())) {
             errorBrokenVideo();
@@ -216,11 +216,7 @@ public class EPornerCom extends PluginForHost {
             errorBrokenVideo();
         }
         if (!this.looksLikeDownloadableContent(con)) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             /* 2020-05-26: Limit = 100 videos per day for unregistered users, no limit for registered users */
             if (br.containsHTML("(?i)>\\s*You have downloaded more than|>\\s*Please try again tomorrow or register for free to unlock unlimited")) {
                 if (account != null) {

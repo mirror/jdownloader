@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -180,11 +179,7 @@ public class FivehundretPxCom extends PluginForHost {
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, false, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {

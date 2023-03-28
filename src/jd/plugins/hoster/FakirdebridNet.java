@@ -24,24 +24,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
@@ -59,6 +41,23 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakirdebrid.net" }, urls = { "" })
 public class FakirdebridNet extends PluginForHost {
@@ -189,8 +188,7 @@ public class FakirdebridNet extends PluginForHost {
                 for (final String url : urls) {
                     try {
                         /**
-                         * E.g. server2.turkleech.com/TransLoad/?id=bla </br>
-                         * Such URLs will also work fine without login cookies
+                         * E.g. server2.turkleech.com/TransLoad/?id=bla </br> Such URLs will also work fine without login cookies
                          */
                         br.getPage(url);
                         transloadURL = url;
@@ -216,11 +214,7 @@ public class FakirdebridNet extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxChunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 mhm.handleErrorGeneric(account, link, "Final downloadurl did not lead to file", 10, 5 * 60 * 1000l);
             }
             link.setProperty(this.getHost() + "directlink", dl.getConnection().getURL().toString());
@@ -343,24 +337,17 @@ public class FakirdebridNet extends PluginForHost {
     }
 
     /**
-     * 'PIN_Required' => 'PIN Required', </br>
-     * 'URL_Required' => 'You did not add URL data', </br>
-     * 'PIN_Invalid' => 'Invalid PIN',</br>
-     * 'NOT_Supported' => 'This service is not supported or not supported by API.',</br>
-     * 'Limit_Error_Transfer' => 'You have exhausted all transfer limits of your account, You need to purchase a new package.',</br>
-     * 'Limit_Error_Premium' => 'You have filled the daily limits of your account. Please try again after the limits are reset.',</br>
-     * 'Link_Error_Browser' => 'This link can only be downloaded via the browser.',</br>
-     * 'Link_Error' => 'An unknown error occurred while creating the link.',</br>
-     * 'File_not_found' => 'File not found',</br>
-     * 'Password_Required' => 'This file is protected by password. Please add link Password.',</br>
-     * 'Wrong_Password' => 'Wrong Password, Please try again.',</br>
-     * 'File_Unavailable' => 'This link is currently unavailable. Please try again later.',</br>
+     * 'PIN_Required' => 'PIN Required', </br> 'URL_Required' => 'You did not add URL data', </br> 'PIN_Invalid' => 'Invalid PIN',</br>
+     * 'NOT_Supported' => 'This service is not supported or not supported by API.',</br> 'Limit_Error_Transfer' => 'You have exhausted all
+     * transfer limits of your account, You need to purchase a new package.',</br> 'Limit_Error_Premium' => 'You have filled the daily
+     * limits of your account. Please try again after the limits are reset.',</br> 'Link_Error_Browser' => 'This link can only be downloaded
+     * via the browser.',</br> 'Link_Error' => 'An unknown error occurred while creating the link.',</br> 'File_not_found' => 'File not
+     * found',</br> 'Password_Required' => 'This file is protected by password. Please add link Password.',</br> 'Wrong_Password' => 'Wrong
+     * Password, Please try again.',</br> 'File_Unavailable' => 'This link is currently unavailable. Please try again later.',</br>
      * 'Price_File' => 'This link cannot be downloaded with premium account, You can download it by purchasing this link only.',</br>
-     * 'Download_Server_Error' => 'Download server with your file is temporarily unavailable.',</br>
-     * 'OVH_Yangin' => 'This file seems to have been affected by the fire in the OVH datacenter.',</br>
-     * 'Size_Error' => 'The premium download link for this file is not working.',</br>
-     * 'Banned_Account' => 'Banned Account',</br>
-     * 'Free_Account' => 'Not supported for free members.',
+     * 'Download_Server_Error' => 'Download server with your file is temporarily unavailable.',</br> 'OVH_Yangin' => 'This file seems to
+     * have been affected by the fire in the OVH datacenter.',</br> 'Size_Error' => 'The premium download link for this file is not
+     * working.',</br> 'Banned_Account' => 'Banned Account',</br> 'Free_Account' => 'Not supported for free members.',
      */
     private void handleErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
         final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);

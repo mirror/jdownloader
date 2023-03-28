@@ -15,12 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -28,6 +24,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "https?://(?:www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+|view\\.gif\\.php\\?id=\\d+)" })
 public class EfuktCom extends antiDDoSForHost {
@@ -82,7 +81,7 @@ public class EfuktCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(dllink);
-                handleConnectionErrors(con);
+                handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
@@ -103,17 +102,13 @@ public class EfuktCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        handleConnectionErrors(dl.getConnection());
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
-    private void handleConnectionErrors(final URLConnectionAdapter con) throws PluginException {
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws Exception {
         if (!this.looksLikeDownloadableContent(con)) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (con.getResponseCode() == 404) {

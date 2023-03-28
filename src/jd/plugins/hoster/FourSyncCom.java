@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
@@ -29,6 +27,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4sync.com" }, urls = { "https?://(?:www\\.)?4sync\\.com/(?:file|rar|video|web/directDownload)/[A-Za-z0-9\\_\\-]+" })
 public class FourSyncCom extends PluginForHost {
@@ -101,15 +101,12 @@ public class FourSyncCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (br.getURL().contains("errorMaxSessions=MAX_IP")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

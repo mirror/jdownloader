@@ -15,13 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.Locale;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -39,6 +33,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4share.vn" }, urls = { "https?://(?:www\\.)?(?:up\\.)?4share\\.vn/f/([a-f0-9]{16})" })
 public class FourShareVn extends PluginForHost {
@@ -126,11 +125,11 @@ public class FourShareVn extends PluginForHost {
             getPage("/member");
             /*
              * TODO
-             *
+             * 
              * Ngày đăng ký: 2012-xx-xx 10:10:10 Ngày hết hạn: 2012-xx-xx 10:10:10 , còn 59 ngày sử dụng - Gold còn lại: 293 (293 - TKC + 0
              * - TKP ) Gold TKC - Tài khoản Chính, là loại gold nạp tiền trực tiếp; Gold TKP - Tài khoản Phụ, là loại Gold được thưởng Gold
              * đã dùng: 607 (607 + 0) Gold đã nạp: 900 (900 + ) Bạn đã download từ 4Share hôm nay : 91.01 GB [Tất cả: 1.34 TB]
-             *
+             * 
              * Feedback from customer: My account pays a monthly fee. Looks like there's a limit to it, I'm not sure how many GB it is. Gold
              * = Monthly renew
              */
@@ -221,11 +220,7 @@ public class FourShareVn extends PluginForHost {
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             handleErrorsGeneral();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -256,11 +251,7 @@ public class FourShareVn extends PluginForHost {
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             handleErrorsGeneral();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

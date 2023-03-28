@@ -19,9 +19,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +30,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileim.com" }, urls = { "https?://(?:www\\.)?fileim\\.com/file/([a-z0-9]+)\\.html" })
 public class FileImCom extends PluginForHost {
@@ -154,11 +154,7 @@ public class FileImCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: Empty file", 5 * 60 * 1000l);
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             final String errorcodeStr = br.getRegex("\\[(\\d+)\\]：").getMatch(0);
             if (errorcodeStr != null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error " + errorcodeStr);

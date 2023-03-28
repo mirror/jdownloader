@@ -137,11 +137,7 @@ public class FileHippoCom extends PluginForHost {
             /* 2020-11-12 */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 if (StringUtils.containsIgnoreCase(br.getHost(), "filehippo")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
@@ -184,11 +180,7 @@ public class FileHippoCom extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 if (!br.getURL().contains("filehippo.com")) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Download impossible - download-url points to external site");
                 } else {

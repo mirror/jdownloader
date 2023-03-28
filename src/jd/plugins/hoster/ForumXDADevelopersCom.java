@@ -1,10 +1,5 @@
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -12,6 +7,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forum.xda-developers.com" }, urls = { "https?://forum\\.xda-developers\\.com/devdb/project/dl/\\?id=(\\d+)" })
 public class ForumXDADevelopersCom extends antiDDoSForHost {
@@ -76,11 +74,7 @@ public class ForumXDADevelopersCom extends antiDDoSForHost {
         this.br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher() + "&task=get", true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (canHandle(br.getURL()) || dl.getConnection().getResponseCode() == 410) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download/Rate limit reached", 10 * 60 * 1000l);
             } else {

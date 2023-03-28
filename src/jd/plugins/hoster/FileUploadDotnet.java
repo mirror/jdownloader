@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -144,11 +143,7 @@ public class FileUploadDotnet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

@@ -17,9 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,6 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileskachat.com" }, urls = { "https?://(?:www\\.)?fileskachat\\.com/file/\\d+_[A-Fa-f0-9]{32}\\.html" })
 public class FileskachatCom extends PluginForHost {
@@ -49,13 +49,13 @@ public class FileskachatCom extends PluginForHost {
     private final boolean FREE_RESUME       = true;
     private final int     FREE_MAXCHUNKS    = 0;
     private final int     FREE_MAXDOWNLOADS = 20;
+
     // private final boolean ACCOUNT_FREE_RESUME = true;
     // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
     // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
@@ -91,17 +91,14 @@ public class FileskachatCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
@@ -135,6 +132,7 @@ public class FileskachatCom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
     }
+
     // private static Object LOCK = new Object();
     //
     // private void login(final Account account, final boolean force) throws Exception {
@@ -254,7 +252,6 @@ public class FileskachatCom extends PluginForHost {
     // public int getMaxSimultanPremiumDownloadNum() {
     // return ACCOUNT_FREE_MAXDOWNLOADS;
     // }
-
     @Override
     public void reset() {
     }

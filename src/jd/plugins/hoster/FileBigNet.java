@@ -90,11 +90,7 @@ public class FileBigNet extends PluginForHost {
         dllink = "http://www.filebig.net/files/" + new Regex(link.getDownloadURL(), "filebig\\.net/files/(.+)").getMatch(0) + "?t=" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

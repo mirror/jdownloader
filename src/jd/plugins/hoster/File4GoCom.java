@@ -132,11 +132,7 @@ public class File4GoCom extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, directLink, true, -2);
         /* resume no longer supported */
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (br.containsHTML("BAIXE SIMULTANEAMENTE COM VELOCIDADE MÁXIMA")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
             } else {
@@ -281,11 +277,7 @@ public class File4GoCom extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

@@ -15,13 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.EightMusesComConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -40,6 +35,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.EightMusesComConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(?:www\\.|comics\\.)?8muses\\.com/(?:(comics/)?picture/([^/]+/){1,}\\d+|forum/(?:data/)?attachments/.+)" })
 public class EightMusesCom extends antiDDoSForHost {
@@ -209,23 +208,16 @@ public class EightMusesCom extends antiDDoSForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 /* 2020-05-14: Typically this means a URL is only downloadable via account */
                 // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 throw new AccountRequiredException();
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         }
         dl.startDownload();
     }

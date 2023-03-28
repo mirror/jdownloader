@@ -109,11 +109,7 @@ public class FiletransferIo extends PluginForHost {
         final String dllink = "https://" + br.getHost() + "/data-package/" + this.getFID(link) + "/download";
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (br.getURL().contains("/premium") || br.getURL().contains("/pricelist")) {
                 throw new AccountRequiredException();
             } else if (dl.getConnection().getResponseCode() == 403) {

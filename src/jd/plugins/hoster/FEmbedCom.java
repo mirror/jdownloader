@@ -132,11 +132,7 @@ public class FEmbedCom extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, resume, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }

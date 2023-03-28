@@ -19,13 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.FlashfilesComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,6 +37,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FlashfilesComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FlashfilesCom extends PluginForHost {
@@ -228,11 +228,7 @@ public class FlashfilesCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadFileForm, resumable, maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -426,11 +422,7 @@ public class FlashfilesCom extends PluginForHost {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
                 if (!looksLikeDownloadableContent(dl.getConnection())) {
                     logger.warning("The final dllink seems not to be a file!");
-                    try {
-                        br.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     if (dl.getConnection().getResponseCode() == 403) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                     } else if (dl.getConnection().getResponseCode() == 404) {

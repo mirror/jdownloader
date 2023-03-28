@@ -181,6 +181,7 @@ public class EasyuploadIo extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -188,13 +189,9 @@ public class EasyuploadIo extends PluginForHost {
             } else if (dl.getConnection().getResponseCode() != 200) {
                 /* 2020-01-07: Will often return Cloudflare error 521 Origin Down */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error " + dl.getConnection().getResponseCode());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();

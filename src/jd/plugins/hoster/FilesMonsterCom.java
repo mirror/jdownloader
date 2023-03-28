@@ -19,13 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,6 +41,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download\\.php\\?id=|dl/.*?/free/2/).+" })
 public class FilesMonsterCom extends PluginForHost {
@@ -369,11 +369,7 @@ public class FilesMonsterCom extends PluginForHost {
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The downloadlink doesn't seem to refer to a file, following the connection...");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setFilenameFix(true);
@@ -601,11 +597,7 @@ public class FilesMonsterCom extends PluginForHost {
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The downloadlink doesn't seem to refer to a file, following the connection...");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

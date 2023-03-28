@@ -17,10 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -38,6 +34,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyfiles.net" }, urls = { "https?://(?:www\\.)?flyfiles\\.net/([a-z0-9]{10})" })
 public class FlyFilesNet extends PluginForHost {
@@ -144,11 +144,7 @@ public class FlyFilesNet extends PluginForHost {
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             /* 2022-05-30: Assume that content is only downloadable with premium account */
             throw new AccountRequiredException();
         }
@@ -287,11 +283,7 @@ public class FlyFilesNet extends PluginForHost {
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, maxChunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premlink", dllink);

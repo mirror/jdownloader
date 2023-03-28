@@ -19,12 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -47,6 +41,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "esoubory.cz" }, urls = { "https?://(?:www\\.)?esoubory\\.cz/(?:[a-z]{2}/)?(?:file|soubor|redir)/[a-f0-9]{8}/[a-z0-9\\-]+(?:/?|\\.html)" })
 public class EsouboryCz extends PluginForHost {
@@ -222,11 +222,7 @@ public class EsouboryCz extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -2);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (isSelfhostedContent) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {

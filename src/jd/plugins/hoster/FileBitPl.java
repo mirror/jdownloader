@@ -127,11 +127,7 @@ public class FileBitPl extends PluginForHost {
         link.setProperty("filebitpldirectlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 mhm.handleErrorGeneric(account, link, "403dlerror", 20);
             }

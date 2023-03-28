@@ -30,17 +30,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.loggingv3.NullLogger;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -66,6 +55,17 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
+
+import org.appwork.loggingv3.NullLogger;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FileFactory extends PluginForHost {
@@ -576,8 +576,7 @@ public class FileFactory extends PluginForHost {
                 isPremium = true;
             }
             /**
-             * Other possible values: </br>
-             * "expired" -> Free Account
+             * Other possible values: </br> "expired" -> Free Account
              */
         }
         if (!isPremium && !isPremiumLifetime) {
@@ -810,11 +809,7 @@ public class FileFactory extends PluginForHost {
             }
             // Prüft ob content disposition header da sind
             if (!dl.getConnection().isContentDisposition()) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 checkErrorsWebsite(true, true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -899,11 +894,7 @@ public class FileFactory extends PluginForHost {
                 br.setFollowRedirects(true);
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finallink, true, 0);
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException ignore) {
-                        logger.log(ignore);
-                    }
+                    br.followConnection(true);
                     checkErrorsWebsite(false, true);
                     String red = br.getRegex("\"(https?://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
                     if (red == null) {
@@ -921,11 +912,7 @@ public class FileFactory extends PluginForHost {
                     logger.finer("Indirect download");
                     dl = new jd.plugins.BrowserAdapter().openDownload(br, link, red, true, 0);
                     if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                        try {
-                            br.followConnection(true);
-                        } catch (final IOException ignore) {
-                            logger.log(ignore);
-                        }
+                        br.followConnection(true);
                         checkErrorsWebsite(false, true);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -959,11 +946,7 @@ public class FileFactory extends PluginForHost {
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalLink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             checkErrorsWebsite(isFree, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -1458,11 +1441,7 @@ public class FileFactory extends PluginForHost {
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             // this shouldn't happen anymore!
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             checkErrorsWebsite(isFree, true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

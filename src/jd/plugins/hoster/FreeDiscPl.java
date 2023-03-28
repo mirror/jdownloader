@@ -27,22 +27,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
-import org.jdownloader.plugins.components.config.FreeDiscPlConfig.StreamDownloadMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -66,6 +50,22 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
+import org.jdownloader.plugins.components.config.FreeDiscPlConfig.StreamDownloadMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FreeDiscPl extends PluginForHost {
@@ -647,18 +647,14 @@ public class FreeDiscPl extends PluginForHost {
                 }
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     if (this.br.containsHTML("Ten plik jest chwilowo niedos")) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-                    }
-                    if (br.getURL().contains("freedisc.pl/pierrw,f-")) {
+                    } else if (br.getURL().contains("freedisc.pl/pierrw,f-")) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 link.setProperty(getDirecturlproperty(account), dllink);
             }
@@ -942,8 +938,7 @@ public class FreeDiscPl extends PluginForHost {
                 } else if (errMsg.equalsIgnoreCase("Jeden użytkownik, jedno konto! Pozostałe konta zostały czasowo zablokowane!")) {
                     /**
                      * 2022-03-22: Account is temp. banned under current IP. This can happen when trying to login with two accounts under
-                     * the same IP. </br>
-                     * Solution: Wait and retry later or delete cookies, change IP and try again.
+                     * the same IP. </br> Solution: Wait and retry later or delete cookies, change IP and try again.
                      */
                     throw new AccountUnavailableException(errMsg, 5 * 60 * 1000l);
                 } else {

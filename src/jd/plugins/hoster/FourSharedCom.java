@@ -337,11 +337,7 @@ public class FourSharedCom extends PluginForHost {
             }
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (link.getBooleanProperty("streamDownloadDisabled", false)) {
                 link.setProperty("streamDownloadDisabled", true);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -502,15 +498,12 @@ public class FourSharedCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, error);
             }
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (pass != null) {
                 link.setDownloadPassword(pass);

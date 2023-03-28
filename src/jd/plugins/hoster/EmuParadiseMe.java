@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.awt.Color;
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -319,6 +318,7 @@ public class EmuParadiseMe extends PluginForHost {
         br.getHeaders().put("Referer", br.getURL());
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             final long responsecode = dl.getConnection().getResponseCode();
             if (responsecode == 400) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 400", 2 * 60 * 1000l);
@@ -326,13 +326,9 @@ public class EmuParadiseMe extends PluginForHost {
                 /* Too many connections --> Happy hour is definitly not active --> Only allow 1 simultaneous download. */
                 maxFree.set(1);
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 - Too many concurrent connections - wait before starting new downloads", 1 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dllink);
         link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())).trim());

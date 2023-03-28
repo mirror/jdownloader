@@ -15,25 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -56,6 +42,19 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class EvilangelCore extends PluginForHost {
@@ -172,11 +171,7 @@ public abstract class EvilangelCore extends PluginForHost {
                         }
                         link.setFinalFileName(filename);
                     } else {
-                        try {
-                            brc.followConnection(true);
-                        } catch (final IOException e) {
-                            logger.log(e);
-                        }
+                        brc.followConnection(true);
                         handleErrorsAfterDirecturlAccess(link, account, brc, true);
                     }
                 } finally {
@@ -311,8 +306,8 @@ public abstract class EvilangelCore extends PluginForHost {
                         }
                     }
                     /**
-                     * A scene can also contain DVD-information. </br>
-                     * --> Ensure to set the correct information which is later used for filenames.
+                     * A scene can also contain DVD-information. </br> --> Ensure to set the correct information which is later used for
+                     * filenames.
                      */
                     final Map<String, Object> movieInfos = (Map<String, Object>) root.get("movieInfos");
                     if (movieInfos != null) {
@@ -470,11 +465,7 @@ public abstract class EvilangelCore extends PluginForHost {
                             link.setFinalFileName(serverFilename);
                         }
                     } else {
-                        try {
-                            brc.followConnection(true);
-                        } catch (final IOException e) {
-                            logger.log(e);
-                        }
+                        brc.followConnection(true);
                         handleErrorsAfterDirecturlAccess(link, account, brc, true);
                     }
                 } finally {
@@ -714,8 +705,8 @@ public abstract class EvilangelCore extends PluginForHost {
                 }
                 login.remove("submit");
                 /**
-                 * 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! </br>
-                 * Only add "rememberme": "1" if that is not already present in our form.
+                 * 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! </br> Only add
+                 * "rememberme": "1" if that is not already present in our form.
                  */
                 final String remembermeCookieKey = "rememberme";
                 boolean containsRemembermeFieldWithValue1 = false;
@@ -823,8 +814,7 @@ public abstract class EvilangelCore extends PluginForHost {
         }
         /**
          * TODO: Add support for "expirationDate" along with "scheduledCancelDate" whenever a test account with such a date is available.
-         * </br>
-         * "scheduledCancelDate" can also be a Boolean!
+         * </br> "scheduledCancelDate" can also be a Boolean!
          */
         if (Boolean.TRUE.equals(user.get("isExpired"))) {
             ai.setExpired(true);
@@ -853,11 +843,7 @@ public abstract class EvilangelCore extends PluginForHost {
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {

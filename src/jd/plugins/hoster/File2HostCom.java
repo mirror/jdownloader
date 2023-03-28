@@ -15,10 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -30,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 //IMPORTANT: The name of the plugin is CORRECT!
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "f2h.io" }, urls = { "https?://(?:www\\.)?(?:f2h(?:\\.nana\\d+)?\\.co\\.il|f2h\\.io)/((he/)?[a-z0-9]+|[0-9]+)" })
@@ -127,11 +125,7 @@ public class File2HostCom extends PluginForHost {
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

@@ -15,14 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -31,6 +28,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FypttTo extends PluginForHost {
@@ -111,7 +111,7 @@ public class FypttTo extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(this.dllink);
-                handleConnectionErrors(con);
+                handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
@@ -132,25 +132,22 @@ public class FypttTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        handleConnectionErrors(dl.getConnection());
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
-    private void handleConnectionErrors(final URLConnectionAdapter con) throws PluginException {
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws Exception {
         if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
             if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else if (con.getResponseCode() == 428) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 428 too many connections", 30 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
         }
     }
 

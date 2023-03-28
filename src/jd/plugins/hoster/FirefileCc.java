@@ -382,26 +382,14 @@ public class FirefileCc extends PluginForHost {
                 /* firefile does not like much connections! */
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);
                 if (dl.getConnection().getResponseCode() == 503) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 5 * 60 * 1000l);
                 }
                 if (dl.getConnection().getResponseCode() == 509) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                 }
                 if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "html")) {
-                    try {
-                        br.followConnection(true);
-                    } catch (final IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (dl.startDownload()) {

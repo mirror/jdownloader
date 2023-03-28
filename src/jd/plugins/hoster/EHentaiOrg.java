@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
@@ -544,11 +543,7 @@ public class EHentaiOrg extends antiDDoSForHost {
             expectedFilesize -= 1000;
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             final String errorNotEnoughGP = "Downloading original files during peak hours requires GP, and you do not have enough.";
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -571,7 +566,7 @@ public class EHentaiOrg extends antiDDoSForHost {
             }
         } else if (dl.getConnection().getResponseCode() != 206 && dl.getConnection().getCompleteContentLength() > 0 && expectedFilesize > 0 && dl.getConnection().getCompleteContentLength() < expectedFilesize) {
             /* Don't jump into this for response code 206 Partial Content (when download is resumed). */
-            dl.getConnection().disconnect();
+            br.followConnection(true);
             /* Rare error: E.g. "403 picture" is smaller than 1 KB but is still downloaded content (picture). */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - file is too small:" + dl.getConnection().getCompleteContentLength(), 2 * 60 * 1000l);
         } else if (requiresAccount(dl.getConnection().getURL().toString())) {

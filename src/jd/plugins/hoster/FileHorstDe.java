@@ -113,18 +113,13 @@ public class FileHorstDe extends PluginForHost {
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
         /* Should never happen */
-        if (dl.getConnection().getResponseCode() == 503) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
-        }
         // filenames can be .html so using this if statement will be a automatic false positive
         // re: https://svn.jdownloader.org/issues/82929
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
-            if (br.containsHTML("Dein Download konnte nicht gefunden werden")) {
+            br.followConnection(true);
+            if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
+            } else if (br.containsHTML("Dein Download konnte nicht gefunden werden")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -15,15 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -43,6 +38,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FeimaoyunCom extends PluginForHost {
@@ -209,18 +208,14 @@ public class FeimaoyunCom extends PluginForHost {
         link.setProperty(directlinkproperty, dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -255,11 +250,10 @@ public class FeimaoyunCom extends PluginForHost {
 
     /**
      * @param validateCookies
-     *            true = check cookies for validity, perform full login if necessary </br>
-     *            false = Just set cookies and return false if cookies are younger than 300000l
+     *            true = check cookies for validity, perform full login if necessary </br> false = Just set cookies and return false if
+     *            cookies are younger than 300000l
      *
-     * @return true = Cookies are validated </br>
-     *         false = Cookies are not validated (only set on current Browser instance)
+     * @return true = Cookies are validated </br> false = Cookies are not validated (only set on current Browser instance)
      */
     @SuppressWarnings("deprecation")
     private boolean login(final Account account, final boolean validateCookies) throws Exception {
@@ -388,11 +382,7 @@ public class FeimaoyunCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty("premium_directlink", dllink);

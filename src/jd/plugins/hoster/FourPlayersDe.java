@@ -17,8 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,6 +26,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4players.de" }, urls = { "https?://(?:www\\.)?4players\\.de/4players\\.php/download_info/Downloads/Download/(\\d+)/([^<>\"]*?)\\.html" })
 public class FourPlayersDe extends PluginForHost {
@@ -79,11 +79,7 @@ public class FourPlayersDe extends PluginForHost {
         final String dllink = "https://www.4players.de/services/downloadmanager/download.php?action=start_now&DOWNLOADID=" + getFID(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

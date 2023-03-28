@@ -21,14 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,6 +33,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EvoloadIo extends PluginForHost {
@@ -222,8 +222,8 @@ public class EvoloadIo extends PluginForHost {
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
         Map<String, Object> entries;
         /**
-         * 2021-03-09: Stream doesn't always work but they got backup-streams -> Collect all and pick the first working one. </br>
-         * For original file download there are also two versions available.
+         * 2021-03-09: Stream doesn't always work but they got backup-streams -> Collect all and pick the first working one. </br> For
+         * original file download there are also two versions available.
          */
         final ArrayList<String> downloadCandidates = new ArrayList<String>();
         if (link.getBooleanProperty(PROPERTY_PREFER_FILE_DOWNLOAD, false)) {
@@ -246,8 +246,7 @@ public class EvoloadIo extends PluginForHost {
                 downloadCandidates.add((String) entries.get("original_src"));
             }
             /**
-             * This version is never used by their website. </br>
-             * 2021-04-15: URL did not work (404) but let's att it anyways as a fallback.
+             * This version is never used by their website. </br> 2021-04-15: URL did not work (404) but let's att it anyways as a fallback.
              */
             if (entries.containsKey("encoded_src")) {
                 downloadCandidates.add((String) entries.get("encoded_src"));
@@ -324,11 +323,7 @@ public class EvoloadIo extends PluginForHost {
         }
         if (fail) {
             logger.warning("All download candidates failed");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {

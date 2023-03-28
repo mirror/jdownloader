@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -197,11 +196,7 @@ public class FastShareCz extends antiDDoSForHost {
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (br.containsHTML("No htmlCode read")) {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
@@ -337,11 +332,7 @@ public class FastShareCz extends antiDDoSForHost {
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 checkErrors(br, link, account);
                 logger.warning("The final dllink seems not to be a file!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
