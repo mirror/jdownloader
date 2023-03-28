@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -41,12 +40,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
-import jd.plugins.components.UserAgents.BrowserName;
+import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.SpankBangComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { SpankBangComCrawler.class })
-public class SpankBangCom extends antiDDoSForHost {
+public class SpankBangCom extends PluginForHost {
     public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
@@ -107,11 +106,6 @@ public class SpankBangCom extends antiDDoSForHost {
     public static final String  PROPERTY_MAINLINK       = "mainlink";
 
     @Override
-    protected boolean useRUA() {
-        return true;
-    }
-
-    @Override
     public void init() {
         super.init();
         /** 2021-07-27: Important else we'll run into Cloudflare Rate-Limit prohibition after about 250 requests! */
@@ -125,16 +119,6 @@ public class SpankBangCom extends antiDDoSForHost {
         } else {
             return super.getMirrorID(link);
         }
-    }
-
-    @Override
-    protected BrowserName setBrowserName() {
-        return BrowserName.Chrome;
-    }
-
-    @Override
-    public void getPage(String page) throws Exception {
-        super.getPage(page);
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -162,7 +146,7 @@ public class SpankBangCom extends antiDDoSForHost {
                 /* Missing property - this should not happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            getPage(mainlink);
+            br.getPage(mainlink);
             if (SpankBangComCrawler.isOffline(this.br)) {
                 /* Main videolink offline --> Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -272,7 +256,7 @@ public class SpankBangCom extends antiDDoSForHost {
                         /* Don't validate cookies */
                         return false;
                     }
-                    getPage("https://www." + this.getHost() + "/");
+                    br.getPage("https://www." + this.getHost() + "/");
                     if (this.isLoggedin(br)) {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
@@ -283,7 +267,7 @@ public class SpankBangCom extends antiDDoSForHost {
                     }
                 }
                 logger.info("Performing full login");
-                getPage("https://www." + this.getHost() + "/users/auth?ajax=1&login=1&_=" + System.currentTimeMillis());
+                br.getPage("https://www." + this.getHost() + "/users/auth?ajax=1&login=1&_=" + System.currentTimeMillis());
                 final Form loginform = br.getFormbyProperty("id", "auth_login_form");
                 if (loginform == null) {
                     logger.warning("Failed to find loginform");
@@ -291,10 +275,10 @@ public class SpankBangCom extends antiDDoSForHost {
                 }
                 loginform.put("l_username", Encoding.urlEncode(account.getUser()));
                 loginform.put("l_password", Encoding.urlEncode(account.getPass()));
-                submitForm(loginform);
+                br.submitForm(loginform);
                 if (StringUtils.equalsIgnoreCase(br.getRequest().getHtmlCode(), "OK")) {
                     logger.info("Looks like login was successful");
-                    getPage("/");
+                    br.getPage("/");
                 } else {
                     logger.info("Looks like login failed");
                 }

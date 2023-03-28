@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,8 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DownloadGg extends PluginForHost {
@@ -98,6 +98,10 @@ public class DownloadGg extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            /* Fallback */
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(getContentURL(link));
@@ -114,9 +118,6 @@ public class DownloadGg extends PluginForHost {
             filename = Encoding.htmlDecode(filename).trim();
             /* 2020-10-29: Hoster is tagging filenames --> Try to avoid this */
             link.setFinalFileName(filename);
-        } else if (!link.isNameSet()) {
-            /* Fallback */
-            link.setName(this.getFID(link));
         }
         if (filesize != null) {
             /*

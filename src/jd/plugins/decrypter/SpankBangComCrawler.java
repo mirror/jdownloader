@@ -22,6 +22,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -44,13 +51,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.SpankBangCom;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SpankBangComCrawler extends PluginForDecrypt {
@@ -107,10 +107,6 @@ public class SpankBangComCrawler extends PluginForDecrypt {
         br.setCookie("spankbang.com", "language", "www");
         br.getHeaders().put("Accept-Language", "en");
         return br;
-    }
-
-    private void getPage(final String page) throws Exception {
-        plugin.getPage(page);
     }
 
     private void prepCrawlerplugin() throws PluginException {
@@ -198,7 +194,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
     /** Crawls single videos and single videos that are parts of a playlist. */
     private ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param) throws Exception {
         br.setAllowedResponseCodes(new int[] { 503 });
-        getPage(param.getCryptedUrl().replace("/embed/", "/video/"));
+        br.getPage(param.getCryptedUrl().replace("/embed/", "/video/"));
         return parseCrawlSingleVideo(br);
     }
 
