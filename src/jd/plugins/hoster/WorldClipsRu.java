@@ -170,11 +170,7 @@ public class WorldClipsRu extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getURL(), "download_clip_id=" + clipID + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100), true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

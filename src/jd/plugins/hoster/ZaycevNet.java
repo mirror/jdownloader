@@ -127,15 +127,12 @@ public class ZaycevNet extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                if (br.containsHTML(">In this country site zaycev\\.net is not")) {
+                br.followConnection(true);
+                if (br.containsHTML(">\\s*In this country site zaycev\\.net is not")) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // id3 and packagename can be tag due to directlink imports
             // downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()).replaceAll("_?\\(zaycev\\.net\\)", ""));

@@ -155,11 +155,7 @@ public class WebShareCz extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             checkErrorsAPI(br);
             if (br.containsHTML("(?i)(>\\s*Požadovaný soubor nebyl nalezen|>\\s*Requested file not found)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -319,11 +315,7 @@ public class WebShareCz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isPremium, isPremium ? 0 : 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             checkErrorsAPI(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

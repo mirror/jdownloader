@@ -93,11 +93,7 @@ public class ZMagsCom extends PluginForHost {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://viewer.zmags.com/services/DownloadPDF", "publicationID=" + new Regex(link.getDownloadURL(), "zmags\\.com/publication/(.+)").getMatch(0) + "&selectedPages=all", false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Previously set name might not contain a file-extension --> Correct that if possible */

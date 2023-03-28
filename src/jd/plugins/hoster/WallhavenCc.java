@@ -249,16 +249,16 @@ public class WallhavenCc extends PluginForHost {
         }
     }
 
-    /** Checks for some http responsecodes and throws an exception if given URLConnectionAdapter does not lead to a downloadable file. */
-    private void errorHandling(final Browser br, final DownloadInterface dl) throws PluginException {
+    /**
+     * Checks for some http responsecodes and throws an exception if given URLConnectionAdapter does not lead to a downloadable file.
+     *
+     * @throws IOException
+     */
+    private void errorHandling(final Browser br, final DownloadInterface dl) throws PluginException, IOException {
         final URLConnectionAdapter con = dl != null ? dl.getConnection() : null;
         if (con != null) {
             if (!this.looksLikeDownloadableContent(con)) {
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 errorHandling(br, con);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
             }

@@ -72,11 +72,7 @@ public class WikiFortioCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), "act=download&fid=" + new Regex(link.getDownloadURL(), "(\\d+)/$").getMatch(0) + "&fileName=" + Encoding.urlEncode(link.getName()), true, -2);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

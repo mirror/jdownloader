@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +24,6 @@ import org.jdownloader.plugins.components.config.YouJizzComConfig;
 import org.jdownloader.plugins.components.config.YouJizzComConfig.PreferredStreamQuality;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -185,16 +183,12 @@ public class YouJizzCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
-            if (con.isOK() && !con.getContentType().contains("html")) {
+            if (this.looksLikeDownloadableContent(con)) {
                 String ext = getFileNameFromHeader(con).substring(getFileNameFromHeader(con).lastIndexOf("."));
                 link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
                 link.setDownloadSize(con.getLongContentLength());
             } else {
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
@@ -210,12 +204,8 @@ public class YouJizzCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("text")) {
-            try {
-                br.followConnection(true);
-            } catch (IOException e) {
-                logger.log(e);
-            }
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
