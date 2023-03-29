@@ -16,31 +16,23 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -56,6 +48,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ArchiveOrg;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
 public class ArchiveOrgCrawler extends PluginForDecrypt {
@@ -82,7 +88,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final Regex typeDownload = new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD);
         if (typeDownload.matches()) {
             final String path = typeDownload.getMatch(0);
-            return crawlXML(br, path);
+            return crawlXML(param, br, path);
         } else {
             /*
              * 2020-08-26: Login might sometimes be required for book downloads.
@@ -183,7 +189,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (titleSlug == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return crawlXML(br, subfolderPathURLEncoded);
+        return crawlXML(param, br, subfolderPathURLEncoded);
     }
 
     private ArrayList<DownloadLink> crawlDetails(final CryptedLink param) throws Exception {
@@ -194,7 +200,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final String downloadurl = br.getURL("/download/" + titleSlug).toString();
         if (br.containsHTML("id=\"gamepadtext\"")) {
             /* 2020-09-29: Rare case: Download browser emulated games */
-            return this.crawlXML(br, titleSlug);
+            return this.crawlXML(param, br, titleSlug);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String videoJson = br.getRegex("class=\"js-tv3-init\"[^>]*value='(\\{.*?\\})").getMatch(0);
@@ -408,8 +414,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     dl.setProperty(ArchiveOrg.PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP, System.currentTimeMillis() + loanedSecondsLeft * 1000);
                 }
                 /**
-                 * Mark pages that are not viewable in browser as offline. </br>
-                 * If we have borrowed this book, this field will not exist at all.
+                 * Mark pages that are not viewable in browser as offline. </br> If we have borrowed this book, this field will not exist at
+                 * all.
                  */
                 final Object viewable = bookpage.get("viewable");
                 if (Boolean.FALSE.equals(viewable)) {
@@ -446,7 +452,32 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         return br.getRegex("(?i)(?:\\'|\")([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)").getMatch(0);
     }
 
-    private ArrayList<DownloadLink> crawlXML(final Browser xmlbr, final String path) throws IOException, PluginException, DecrypterRetryException {
+    private static HashMap<String, AtomicInteger> LOCKS = new HashMap<String, AtomicInteger>();
+
+    private Object requestLock(String name) {
+        synchronized (LOCKS) {
+            AtomicInteger lock = LOCKS.get(name);
+            if (lock == null) {
+                lock = new AtomicInteger(0);
+                LOCKS.put(name, lock);
+            }
+            lock.incrementAndGet();
+            return lock;
+        }
+    }
+
+    private synchronized void unLock(String name) {
+        synchronized (LOCKS) {
+            final AtomicInteger lock = LOCKS.get(name);
+            if (lock != null) {
+                if (lock.decrementAndGet() == 0) {
+                    LOCKS.remove(name);
+                }
+            }
+        }
+    }
+
+    private ArrayList<DownloadLink> crawlXML(final CryptedLink param, final Browser xmlbr, final String path) throws IOException, PluginException, DecrypterRetryException {
         if (xmlbr == null || path == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -467,25 +498,48 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         } else {
             titleSlug = path;
         }
+        String xmlResponse = null;
         final String xmlurl = "https://archive.org/download/" + titleSlug + "/" + titleSlug + "_files.xml";
-        xmlbr.setFollowRedirects(true);
-        final int previousLoadLimit = xmlbr.getLoadLimit();
+        final String cacheKey = xmlurl;
+        final Object lock = requestLock(cacheKey);
         try {
-            xmlbr.setLoadLimit(Integer.MAX_VALUE);
-            xmlbr.getPage(xmlurl);
-            if (xmlbr.getHttpConnection().getResponseCode() == 404) {
-                /* Should be a super rare case. */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            synchronized (lock) {
+                LinkCrawler crawler = getCrawler();
+                if (crawler != null) {
+                    crawler = crawler.getRoot();
+                }
+                if (crawler != null) {
+                    final Reference<String> reference = (Reference<String>) crawler.getCrawlerCache(cacheKey);
+                    xmlResponse = reference != null ? reference.get() : null;
+                }
+                if (StringUtils.isEmpty(xmlResponse)) {
+                    xmlbr.setFollowRedirects(true);
+                    final int previousLoadLimit = xmlbr.getLoadLimit();
+                    try {
+                        xmlbr.setLoadLimit(Integer.MAX_VALUE);
+                        xmlbr.getPage(xmlurl);
+                        if (xmlbr.getHttpConnection().getResponseCode() == 404) {
+                            /* Should be a super rare case. */
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                        xmlResponse = xmlbr.getRequest().getHtmlCode();
+                        if (crawler != null && StringUtils.isNotEmpty(xmlResponse)) {
+                            crawler.putCrawlerCache(cacheKey, new SoftReference<String>(xmlResponse));
+                        }
+                    } finally {
+                        xmlbr.setLoadLimit(previousLoadLimit);
+                    }
+                }
             }
         } finally {
-            xmlbr.setLoadLimit(previousLoadLimit);
+            unLock(cacheKey);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
         final boolean crawlOriginalFilesOnly = cfg.isFileCrawlerCrawlOnlyOriginalVersions();
         final boolean crawlArchiveView = cfg.isFileCrawlerCrawlArchiveView();
         final boolean crawlMetadataFiles = cfg.isFileCrawlerCrawlMetadataFiles();
-        final String[] items = new Regex(xmlbr.getRequest().getHtmlCode(), "<file\\s*(.*?)\\s*</file>").getColumn(0);
+        final String[] items = new Regex(xmlResponse, "<file\\s*(.*?)\\s*</file>").getColumn(0);
         if (items == null || items.length == 0) {
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, path);
         }
@@ -586,6 +640,25 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (skippedItems.size() > 0) {
             logger.info("Skipped items:");
             logger.info(skippedItems.toString());
+        }
+        if (desiredSubpathDecoded != null && ret.size() == 1) {
+            final Regex typeDownload = new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD);
+            if (typeDownload.matches() && StringUtils.equalsIgnoreCase(ret.get(0).getPluginPatternMatcher(), param.getCryptedUrl())) {
+                CrawledLink source = getCurrentLink().getSourceLink();
+                boolean crawlerSource = false;
+                while (source != null) {
+                    if (canHandle(source.getURL())) {
+                        crawlerSource = true;
+                        break;
+                    } else {
+                        source = source.getSourceLink();
+                    }
+                }
+                if (!crawlerSource) {
+                    logger.info("remove filePackage from direct added download link:" + path);
+                    ret.get(0)._setFilePackage(null);
+                }
+            }
         }
         return ret;
     }
