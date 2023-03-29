@@ -19,24 +19,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfigBlowpass;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfigZerotolerancefilms;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class BlowpassCom extends EvilangelCore {
-    public BlowpassCom(PluginWrapper wrapper) {
+public class ZerotolerancefilmsCom extends EvilangelCore {
+    public ZerotolerancefilmsCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.blowpass.com/en/join");
+        this.enablePremium("https://www.zerotolerancefilms.com/en/join");
     }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         // also known as "throated.com"
-        ret.add(new String[] { "blowpass.com" });
+        ret.add(new String[] { "zerotolerancefilms.com" });
         return ret;
     }
 
@@ -63,6 +63,6 @@ public class BlowpassCom extends EvilangelCore {
 
     @Override
     public Class<? extends EvilangelCoreConfig> getConfigInterface() {
-        return EvilangelCoreConfigBlowpass.class;
+        return EvilangelCoreConfigZerotolerancefilms.class;
     }
 }

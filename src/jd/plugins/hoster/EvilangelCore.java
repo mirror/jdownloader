@@ -16,10 +16,14 @@
 package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -100,6 +104,15 @@ public abstract class EvilangelCore extends PluginForHost {
     private static final String PROPERTY_QUALITY                = "quality";
     private static final String PROPERTY_TITLE                  = "title";
     private static final String PROPERTY_ACCOUNT_CONTENT_SOURCE = "content_source";
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            /* Default regex for most of all supported websites. */
+            ret.add("https?://(?:(?:www|members)\\.)?" + buildHostsPatternPart(domains) + "/[a-z]{2}/(?:movie|video)/[A-Za-z0-9\\-_]+(?:/[A-Za-z0-9\\-_]+)?/\\d+");
+        }
+        return ret.toArray(new String[0]);
+    }
 
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
@@ -232,14 +245,14 @@ public abstract class EvilangelCore extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 // final String htmlVideoJson2 = br.getRegex(">dataLayer\\s*=\\s*\\[(\\{.*?\\})\\];</script>").getMatch(0);
-                findVideo1: if (htmlVideoJson != null) {
+                if (htmlVideoJson != null) {
                     final Map<String, Object> entries = JSonStorage.restoreFromString(htmlVideoJson, TypeRef.HASHMAP);
                     final Map<String, Object> videoInfo = (Map<String, Object>) entries.get(this.getFID(getDownloadLink()));
                     final Object qualityMapO = videoInfo.get("videos");
                     if (qualityMapO == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    String chosenQualityStr = null;
+                    final Map<String, String> qualityMap;
                     if (qualityMapO instanceof List) {
                         final List<Map<String, Object>> qualitiesList = (List<Map<String, Object>>) qualityMapO;
                         if (qualitiesList.isEmpty()) {
@@ -249,68 +262,51 @@ public abstract class EvilangelCore extends PluginForHost {
                              */
                             throw new PluginException(LinkStatus.ERROR_FATAL, "Only trailer available");
                         }
-                        String fallbackDirecturl = null;
-                        String fallbackFormat = null;
-                        for (final Map<String, Object> videoMap : qualitiesList) {
-                            final String format = videoMap.get("format").toString();
-                            if (format.equals("auto")) {
-                                continue;
-                            }
-                            final String url = videoMap.get("url").toString();
-                            if (format.equalsIgnoreCase(preferredQualityStr)) {
-                                chosenQualityStr = format;
-                                this.dllink = url;
-                            }
-                            fallbackDirecturl = url;
-                            fallbackFormat = format;
-                        }
-                        if (StringUtils.isEmpty(this.dllink)) {
-                            logger.info("Failed to find user selected format -> Fallback to: " + fallbackFormat);
-                            chosenQualityStr = fallbackFormat;
-                            this.dllink = fallbackDirecturl;
+                        /* Make map out of list */
+                        qualityMap = new HashMap<String, String>();
+                        for (final Map<String, Object> map : qualitiesList) {
+                            final String format = map.get("format").toString();
+                            final String url = map.get("url").toString();
+                            qualityMap.put(format, url);
                         }
                     } else {
-                        final Map<String, String> qualityMap = (Map<String, String>) qualityMapO;
+                        qualityMap = (Map<String, String>) qualityMapO;
                         if (qualityMap.isEmpty()) {
                             /* This should never happen */
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        boolean foundSelectedquality = false;
-                        final String[] knownQualities = { "2160p", "1080p", "720p", "540p", "480p", "360p", "240p", "160p" };
-                        for (final String knownQuality : knownQualities) {
-                            if (qualityMap.containsKey(knownQuality)) {
-                                dllink = qualityMap.get(knownQuality);
-                                chosenQualityStr = knownQuality;
-                                if (preferredQualityStr == null) {
-                                    /* User prefers BEST quality. BEST = first item */
-                                    foundSelectedquality = true;
-                                    break;
-                                } else if (knownQuality.equals(preferredQualityStr)) {
-                                    foundSelectedquality = true;
-                                    logger.info("Found user selected quality: " + preferredQualityStr);
-                                    break;
-                                }
-                            }
+                    }
+                    String chosenQualityStr = null;
+                    String fallbackDirecturl = null;
+                    String fallbackFormat = null;
+                    int bestHeight = -1;
+                    final Iterator<Entry<String, String>> iterator = qualityMap.entrySet().iterator();
+                    while (iterator.hasNext()) {
+                        final Entry<String, String> entry = iterator.next();
+                        final String format = entry.getKey();
+                        final String url = entry.getValue();
+                        final Regex heightRegex = new Regex(format, "(?i)(\\d+)p");
+                        if (!format.matches("(?i)\\d+p")) {
+                            continue;
                         }
-                        if (!StringUtils.isEmpty(dllink)) {
-                            if (foundSelectedquality && preferredQualityStr == null) {
-                                logger.info("Found user selected quality: best");
-                                link.setProperty(PROPERTY_QUALITY, chosenQualityStr);
-                            } else if (foundSelectedquality) {
-                                logger.info("Found user selected quality: " + preferredQualityStr);
-                                link.setProperty(PROPERTY_QUALITY, preferredQualityStr);
-                            } else {
-                                logger.info("Failed to find user selected quality --> Using fallback (best):" + chosenQualityStr);
-                                link.setProperty(PROPERTY_QUALITY, chosenQualityStr);
-                            }
-                        } else {
-                            logger.warning("Failed to find any known quality --> Selecting unknown/random quality");
-                            for (final String value : qualityMap.values()) {
-                                this.dllink = value;
-                                break;
-                            }
+                        final int height = Integer.parseInt(heightRegex.getMatch(0));
+                        final String heightNormalizedStr = this.getNormalizedHeight(height) + "p";
+                        if (heightNormalizedStr.equalsIgnoreCase(preferredQualityStr)) {
+                            chosenQualityStr = format;
+                            this.dllink = url;
+                        }
+                        if (fallbackDirecturl == null || height > bestHeight) {
+                            fallbackDirecturl = url;
+                            fallbackFormat = format;
+                            bestHeight = height;
                         }
                     }
+                    if (StringUtils.isEmpty(this.dllink)) {
+                        logger.info("Failed to find user selected format -> Fallback to: " + fallbackFormat);
+                        chosenQualityStr = fallbackFormat;
+                        this.dllink = fallbackDirecturl;
+                    }
+                    logger.info("Chosen quality: " + chosenQualityStr);
                 }
                 if (htmlVideoJson2 != null) {
                     /* 2022-01-14: For some wicked.com URLs e.g. https://members.wicked.com/en/movie/bla-bla/123456 */
@@ -504,6 +500,29 @@ public abstract class EvilangelCore extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    /** E.g. 288(p) -> 240(p) */
+    private int getNormalizedHeight(final int height) {
+        if (height <= 200) {
+            return 160;
+        } else if (height > 200 && height <= 300) {
+            return 240;
+        } else if (height > 300 && height <= 400) {
+            return 360;
+        } else if (height > 400 && height <= 510) {
+            return 480;
+        } else if (height > 510 && height <= 600) {
+            return 540;
+        } else if (height > 600 && height <= 900) {
+            return 720;
+        } else if (height > 900 && height <= 1500) {
+            return 1080;
+        } else if (height > 1500 && height <= 2500) {
+            return 2160;
+        } else {
+            return height;
+        }
     }
 
     private void handleErrorsAfterDirecturlAccess(final DownloadLink link, final Account account, final Browser br, final boolean lastChance) throws PluginException {
@@ -708,13 +727,12 @@ public abstract class EvilangelCore extends PluginForHost {
                     sd = new SimpleDateFormat("k:mm");
                     final String time = sd.format(d);
                     final String timedatestring = date + " " + time;
-                    br.setCookie(this.getHost(), "mDateTime", Encoding.urlEncode(timedatestring));
-                    br.setCookie(this.getHost(), "mOffset", "2");
-                    br.setCookie(this.getHost(), "origin", "promo");
-                    br.setCookie(this.getHost(), "timestamp", Long.toString(System.currentTimeMillis()));
+                    br.setCookie(br.getHost(), "mDateTime", Encoding.urlEncode(timedatestring));
+                    br.setCookie(br.getHost(), "mOffset", "2");
+                    br.setCookie(br.getHost(), "timestamp", Long.toString(System.currentTimeMillis()));
                     /* 2021-09-01: Some tests for adulttime.com */
-                    br.setCookie(this.getHost(), "loginLander", "/en");
-                    br.setCookie(this.getHost(), "_hjIncludedInSessionSample", "0");
+                    br.setCookie(br.getHost(), "loginLander", "/en");
+                    br.setCookie(br.getHost(), "_hjIncludedInSessionSample", "0");
                 } else {
                 }
                 // login.setAction("/en/login");

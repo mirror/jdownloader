@@ -52,11 +52,7 @@ public class WickedCom extends EvilangelCore {
     }
 
     public static String[] getAnnotationUrls() {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://members\\." + buildHostsPatternPart(domains) + "/[a-z]{2}/(?:video/([^/]+)(?:/[A-Za-z0-9\\-_]+)?/\\d+|movie/[A-Za-z0-9\\-_]+/\\d+)");
-        }
-        return ret.toArray(new String[0]);
+        return EvilangelCore.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override
