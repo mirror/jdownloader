@@ -1,10 +1,11 @@
 package jd.controlling.downloadcontroller;
 
-import org.jdownloader.plugins.ConditionalSkipReason;
-import org.jdownloader.plugins.SkipReason;
-
+import jd.http.Browser.BrowserException;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.ConditionalSkipReason;
+import org.jdownloader.plugins.SkipReason;
 
 public class DownloadLinkCandidateResult {
     public static enum RESULT {
@@ -202,6 +203,10 @@ public class DownloadLinkCandidateResult {
         this.lastPluginHost = lastPluginHost;
         this.conditionalSkip = conditionalSkip;
         this.throwable = throwable;
+        if (throwable instanceof BrowserException) {
+            // remove Request reference
+            ((BrowserException) throwable).removeRequest();
+        }
         this.reachedDownloadInterface = reachedDownloadInterface;
     }
 

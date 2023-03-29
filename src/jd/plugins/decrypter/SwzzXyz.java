@@ -21,9 +21,6 @@ import java.util.List;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -34,6 +31,9 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SwzzXyz extends MightyScriptAdLinkFly {
@@ -64,17 +64,26 @@ public class SwzzXyz extends MightyScriptAdLinkFly {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:link/)?[A-Za-z0-9]+/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:(link|t)/)?[A-Za-z0-9]+/?");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String url = param.getCryptedUrl();
         if (url.matches("https?://[^/]+/[A-Za-z0-9]+/?$")) {
-            return super.decryptIt(param, progress);
+            final ArrayList<DownloadLink> ret = super.decryptIt(param, progress);
+            if (ret.size() == 1) {
+                // debug to see what response looks like
+                final String debugURL = ret.get(0).getPluginPatternMatcher();
+                if (canHandle(debugURL)) {
+                    getPage(debugURL);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            return ret;
         } else {
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             br.setFollowRedirects(true);
             getPage(url);
             if (br.getHttpConnection().getResponseCode() == 404) {
