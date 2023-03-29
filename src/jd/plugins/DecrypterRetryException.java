@@ -16,7 +16,8 @@ public class DecrypterRetryException extends Exception {
         HOST_RATE_LIMIT(_JDT.T.plugins_errors_hosterproblem_rate_limit()),
         GEO(_JDT.T.decrypter_unavailable_geo()),
         IP(_JDT.T.decrypter_unavailable_ip()),
-        UNSUPPORTED_LIVESTREAM(_JDT.T.decrypter_unavailable_unsupported_livestream());
+        UNSUPPORTED_LIVESTREAM(_JDT.T.decrypter_unavailable_unsupported_livestream()),
+        BLOCKED_BY_ANTI_DDOS(_JDT.T.decrypter_unavailable_blocked_by_anti_ddos());
 
         private final String exp;
 
