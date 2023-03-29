@@ -442,7 +442,11 @@ public class DirectHTTP extends antiDDoSForHost {
                     throw e;
                 }
             }
-            if (this.dl.getConnection().getResponseCode() == 403 && dl.getConnection().getRequestProperty(HTTPConstants.HEADER_REQUEST_RANGE) != null) {
+            if (this.dl.getConnection().getResponseCode() == 416 && dl.getConnection().getRequestProperty(HTTPConstants.HEADER_REQUEST_RANGE) != null) {
+                followURLConnection(br, dl.getConnection());
+                downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.TRUE);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (this.dl.getConnection().getResponseCode() == 403 && dl.getConnection().getRequestProperty(HTTPConstants.HEADER_REQUEST_RANGE) != null) {
                 followURLConnection(br, dl.getConnection());
                 downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.TRUE);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -1159,6 +1163,10 @@ public class DirectHTTP extends antiDDoSForHost {
                 }
             } else {
                 downloadLink.setProperty(PROPERTY_REQUEST_TYPE, requestMethod.name());
+            }
+            final String acceptRanges = urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES);
+            if (StringUtils.containsIgnoreCase(acceptRanges, "none")) {
+                downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.TRUE);
             }
             return status;
         } catch (final PluginException e2) {
