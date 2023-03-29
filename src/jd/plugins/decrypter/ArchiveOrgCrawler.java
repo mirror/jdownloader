@@ -48,6 +48,8 @@ import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -444,7 +446,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         return br.getRegex("(?i)(?:\\'|\")([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)").getMatch(0);
     }
 
-    private ArrayList<DownloadLink> crawlXML(final Browser xmlbr, final String path) throws IOException, PluginException {
+    private ArrayList<DownloadLink> crawlXML(final Browser xmlbr, final String path) throws IOException, PluginException, DecrypterRetryException {
         if (xmlbr == null || path == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -484,6 +486,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final boolean crawlArchiveView = cfg.isFileCrawlerCrawlArchiveView();
         final boolean crawlMetadataFiles = cfg.isFileCrawlerCrawlMetadataFiles();
         final String[] items = new Regex(xmlbr.getRequest().getHtmlCode(), "<file\\s*(.*?)\\s*</file>").getColumn(0);
+        if (items == null || items.length == 0) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, path);
+        }
         logger.info("Crawling all files below path: " + path);
         final String basePath = "https://archive.org/download/" + titleSlug;
         final List<String> skippedItems = new ArrayList<String>();
@@ -520,7 +525,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 pathWithFilename = Encoding.htmlOnlyDecode(pathWithFilename);
             }
             if (desiredSubpathDecoded != null && !pathWithFilename.startsWith(desiredSubpathDecoded)) {
-                /* Skip elements which do not match the sub-path we're trying to find items in. */
+                /** Skip elements which do not match the sub-path we're trying to find items in or single file desired by user. */
                 skippedItems.add(pathWithFilename);
                 continue;
             }
@@ -573,6 +578,10 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 final DownloadLink archiveViewURL = createDownloadlink(url + "/");
                 ret.add(archiveViewURL);
             }
+        }
+        if (desiredSubpathDecoded != null && ret.isEmpty()) {
+            /* Users' desired subfolder or file was not found -> Throw exception to provide feedback to user. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (skippedItems.size() > 0) {
             logger.info("Skipped items:");
