@@ -5995,7 +5995,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Limit the 'Best' Algorithm to 1080p" })
     String YoutubeDashConfigPanel_allowedtypoes_best_limitation();
 
-    @Default(lngs = { "en" }, values = { "This new Captcha type requires a real browser.\r\nPlease solve the Captcha Challenge in your browser." })
+    @Default(lngs = { "en" }, values = { "This Captcha type requires a real browser.\r\nPlease solve the Captcha Challenge in your browser." })
     String BrowserCaptchaDialog_layoutDialogContent_explain_();
 
     @Default(lngs = { "en" }, values = { "Auto click the checkbox" })

@@ -371,7 +371,12 @@ public abstract class PluginForDecrypt extends Plugin {
                         name = getHost();
                     }
                 }
-                final DownloadLink ret = new DownloadLink(plugin.getPrototype(null), retryException.getReason().getExplanation(this) + "!" + name, plugin.getHost(), link.getURL(), true);
+                final String explanation = retryException.getReason().getExplanation(this);
+                String nameForDownloadLink = explanation + "!";
+                if (!StringUtils.equals(explanation, name)) {
+                    nameForDownloadLink += name;
+                }
+                final DownloadLink ret = new DownloadLink(plugin.getPrototype(null), nameForDownloadLink, plugin.getHost(), link.getURL(), true);
                 if (StringUtils.isNotEmpty(retryException.getComment())) {
                     ret.setComment(retryException.getComment());
                 }
@@ -479,7 +484,7 @@ public abstract class PluginForDecrypt extends Plugin {
                         throw (DecrypterRetryException) e;
                     } else if (e instanceof BlockedByAntiDDosException) {
                         final BlockedByAntiDDosException ba = (BlockedByAntiDDosException) e;
-                        throw new DecrypterRetryException(RetryReason.BLOCKED_BY_ANTI_DDOS, ba.getBlockedBy().getLabel(), null, e);
+                        throw new DecrypterRetryException(RetryReason.BLOCKED_BY_ANTI_DDOS, ba.getSuperMessage(), null, e);
                     } else if (e instanceof BrowserException || e instanceof UnknownHostException) {
                         throw new DecrypterRetryException(RetryReason.HOST, null, null, e);
                     } else if (processCaptchaException(e)) {
