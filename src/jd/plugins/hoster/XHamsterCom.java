@@ -24,6 +24,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,19 +60,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
@@ -1152,6 +1152,7 @@ public class XHamsterCom extends PluginForHost {
         final String success = PluginJSonUtils.getJson(br, "success");
         if ("true".equalsIgnoreCase(success) && !StringUtils.isEmpty(userId)) {
             logger.info("Premium login successful");
+            account.saveCookies(br.getCookies(domain_premium), "premium");
             return true;
         } else {
             logger.info("Premium login failed");
@@ -1170,9 +1171,10 @@ public class XHamsterCom extends PluginForHost {
         } else {
             br.getPage(api_base_premium + "/subscription/get");
             /**
-             * Returns "null" if cookies are valid but this is not a premium account. </br> Redirects to mainpage if cookies are invalid.
-             * </br> Return json if cookies are valid. </br> Can also return json along with http responsecode 400 for valid cookies but
-             * user is non-premium.
+             * Returns "null" if cookies are valid but this is not a premium account. </br>
+             * Redirects to mainpage if cookies are invalid. </br>
+             * Return json if cookies are valid. </br>
+             * Can also return json along with http responsecode 400 for valid cookies but user is non-premium.
              */
             if (br.getHttpConnection().getContentType().contains("json") && (br.getRequest().getHtmlCode().startsWith("{") || br.toString().equals("null"))) {
                 logger.info("Premium domain cookies seem to be VALID");
@@ -1244,7 +1246,7 @@ public class XHamsterCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, null, true);
         ai.setUnlimitedTraffic();
-        if (this.checkLoginPremium(br, account, null)) {
+        if (this.checkLoginPremium(br, account, null) && br.getRequest().getHtmlCode().startsWith("{")) {
             /* Premium domain cookies are valid and we can expect json */
             /*
              * E.g. error 400 for free users:
@@ -1272,7 +1274,7 @@ public class XHamsterCom extends PluginForHost {
                 account.setType(AccountType.FREE);
             }
         } else {
-            /* Premium cookies are not given -> Must be a free account */
+            /* Premium cookies are not given (or no json to check for premium) -> Must be a free account */
             account.setType(AccountType.FREE);
         }
         return ai;
@@ -1286,7 +1288,8 @@ public class XHamsterCom extends PluginForHost {
         /**
          * 2022-07-22: Workaround for possible serverside bug: In some countries, xhamster seems to redirect users to xhamster2.com. If
          * those users send an Accept-Language header of "de,en-gb;q=0.7,en;q=0.3" they can get stuck in a redirect-loop between
-         * deu.xhamster3.com and deu.xhamster3.com. </br> See initial report: https://board.jdownloader.org/showthread.php?t=91170
+         * deu.xhamster3.com and deu.xhamster3.com. </br>
+         * See initial report: https://board.jdownloader.org/showthread.php?t=91170
          */
         final String acceptLanguage = "en-gb;q=0.7,en;q=0.3";
         br.setAcceptLanguage(acceptLanguage);
