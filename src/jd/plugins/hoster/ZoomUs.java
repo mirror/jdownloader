@@ -173,9 +173,6 @@ public class ZoomUs extends PluginForHost {
                     }
                     return AvailableStatus.TRUE;
                 }
-                if (meetingID == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
                 String passCode = link.getDownloadPassword();
                 if (passCode == null) {
                     passCode = getUserInput("Password?", link);

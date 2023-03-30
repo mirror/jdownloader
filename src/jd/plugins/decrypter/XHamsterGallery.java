@@ -41,7 +41,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.XHamsterCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -124,10 +123,10 @@ public class XHamsterGallery extends PluginForDecrypt {
         br.addAllowedResponseCodes(452);
         XHamsterCom.prepBr(this, br);
         // Login if possible
-        final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
+        final XHamsterCom hostPlugin = (XHamsterCom) this.getNewPluginForHostInstance(this.getHost());
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
-            ((jd.plugins.hoster.XHamsterCom) hostPlugin).login(account, false);
+            hostPlugin.login(account, null, false);
         }
         br.setFollowRedirects(true);
         if (param.getCryptedUrl().matches(TYPE_VIDEOS_OF_USER)) {
