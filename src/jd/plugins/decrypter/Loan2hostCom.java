@@ -28,6 +28,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.encoding.URLEncode;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Loan2hostCom extends MightyScriptAdLinkFly {
     public Loan2hostCom(PluginWrapper wrapper) {
@@ -83,12 +85,16 @@ public class Loan2hostCom extends MightyScriptAdLinkFly {
             }
         }
         if (ret == null) {
-            final String getlink = br.getRegex("document\\.getElementById\\(\"getlink\"\\)\\.href\\s*=\\s*'(.*?)'").getMatch(0);
-            if (getlink != null && form != null) {
+            final String getLink = br.getRegex("document\\.getElementById\\(\"getlink\"\\)\\.href\\s*=\\s*'(.*?)'").getMatch(0);
+            if (form != null) {
                 // loan2host
                 ret = new Form();
                 ret.setMethod(MethodType.POST);
-                ret.setAction(getlink);
+                if (getLink != null) {
+                    ret.setAction(getLink);
+                } else {
+                    ret.setAction(URLEncode.decodeURIComponent(form.getInputField("url").getValue()));
+                }
                 final InputField token = form.getInputField("token");
                 if (token != null) {
                     ret.put("token", token.getValue());
