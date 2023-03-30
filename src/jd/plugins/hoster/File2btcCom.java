@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -28,15 +31,13 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class File2btcCom extends PluginForHost {
@@ -163,6 +164,8 @@ public class File2btcCom extends PluginForHost {
         final String limitWaitMinutesStr = br.getRegex("(?i)>\\s?You have to wait\\s*<b>(\\d+)</b>\\s*minutes?").getMatch(0);
         if (limitWaitMinutesStr != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(limitWaitMinutesStr) * 60 * 1001l);
+        } else if (br.containsHTML("color='orange'><b>\\s*Premium Only\\s*</b>")) {
+            throw new AccountRequiredException();
         }
         if (account != null) {
             dllink = br.getRegex("<a href=\"(https?://[^\"]+)\" download>").getMatch(0);
