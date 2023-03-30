@@ -169,12 +169,21 @@ public class AppleTrailer extends PluginForDecrypt {
             /* Example: https://trailers.apple.com/trailers/newline/shazam-fury-of-the-gods/ */
             brc.getPage("/trailers/feeds/data/" + filmID + ".json");
             final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String movieTitle = (String) JavaScriptEngineFactory.walkJson(entries, "page/movie_title");
+            FilePackage movieFP = null;
+            if (movieTitle != null) {
+                movieFP = FilePackage.getInstance();
+                movieFP.setName(movieTitle.replaceAll("\\s*:\\s*", "-"));
+            }
             /* One movie can have multiple trailers. */
             final List<Map<String, Object>> clips = (List<Map<String, Object>>) entries.get("clips");
             for (final Map<String, Object> clip : clips) {
                 final String title = clip.get("title").toString();
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(title);
+                FilePackage fp = movieFP;
+                if (fp == null) {
+                    fp = FilePackage.getInstance();
+                    fp.setName(title);
+                }
                 final ArrayList<DownloadLink> tmplist = new ArrayList<DownloadLink>();
                 final Map<String, Object> sizes = (Map<String, Object>) JavaScriptEngineFactory.walkJson(clip, "versions/enus/sizes");
                 final Iterator<Entry<String, Object>> iterator = sizes.entrySet().iterator();
