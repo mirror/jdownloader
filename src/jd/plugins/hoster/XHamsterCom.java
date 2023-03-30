@@ -1002,9 +1002,9 @@ public class XHamsterCom extends PluginForHost {
                     /* Custom check-URL given -> Only check free or premium login depending on the link -> Speeds things upp. */
                     if (this.isPremiumURL(customCheckURLStr)) {
                         forceLogincheckFree = false;
-                        forceLogincheckPremium = true;
+                        // forceLogincheckPremium = true;
                     } else {
-                        forceLogincheckFree = true;
+                        // forceLogincheckFree = true;
                         forceLogincheckPremium = false;
                     }
                 }
@@ -1026,32 +1026,6 @@ public class XHamsterCom extends PluginForHost {
                 br.setFollowRedirects(frd);
             }
         }
-    }
-
-    @Deprecated
-    private void oldLoginHandling(final Account account) throws IOException, PluginException, InterruptedException {
-        this.loginPremium(br, account, null, true, true);
-        /* Store premium domain cookies */
-        account.saveCookies(br.getCookies(br.getURL()), "premium");
-        br.getPage(api_base_premium + "/auth/endpoints");
-        String xhamsterComLoginURL = PluginJSonUtils.getJson(this.br, "https://xhamster.com/premium/in");
-        if (StringUtils.isEmpty(xhamsterComLoginURL)) {
-            /* Fallback */
-            xhamsterComLoginURL = br.getRegex("(https?://[^/]+/premium/in\\?[^<>\"]+)").getMatch(0);
-        }
-        if (StringUtils.isEmpty(xhamsterComLoginURL)) {
-            logger.warning("Looks like this is a free account");
-        } else {
-            logger.info("Looks like this is a premium account");
-            /* Now we should also be logged in as free- user! */
-            br.getPage(xhamsterComLoginURL);
-        }
-        if (!isLoggedinHTMLAndCookiesFree(br)) {
-            logger.info("Free login failed!");
-            throw new AccountInvalidException();
-        }
-        account.saveCookies(br.getCookies(br.getHost()), "");
-        account.setProperty(PROPERTY_ACCOUNT_LAST_USED_FREE_DOMAIN, br.getHost());
     }
 
     private void loginFree(final Browser br, final Account account, final String customCheckURL, final boolean validateCookies) throws IOException, PluginException, InterruptedException {
@@ -1209,6 +1183,32 @@ public class XHamsterCom extends PluginForHost {
                 return false;
             }
         }
+    }
+
+    @Deprecated
+    private void oldLoginHandling(final Account account) throws IOException, PluginException, InterruptedException {
+        this.loginPremium(br, account, null, true, true);
+        /* Store premium domain cookies */
+        account.saveCookies(br.getCookies(br.getURL()), "premium");
+        br.getPage(api_base_premium + "/auth/endpoints");
+        String xhamsterComLoginURL = PluginJSonUtils.getJson(this.br, "https://xhamster.com/premium/in");
+        if (StringUtils.isEmpty(xhamsterComLoginURL)) {
+            /* Fallback */
+            xhamsterComLoginURL = br.getRegex("(https?://[^/]+/premium/in\\?[^<>\"]+)").getMatch(0);
+        }
+        if (StringUtils.isEmpty(xhamsterComLoginURL)) {
+            logger.warning("Looks like this is a free account");
+        } else {
+            logger.info("Looks like this is a premium account");
+            /* Now we should also be logged in as free- user! */
+            br.getPage(xhamsterComLoginURL);
+        }
+        if (!isLoggedinHTMLAndCookiesFree(br)) {
+            logger.info("Free login failed!");
+            throw new AccountInvalidException();
+        }
+        account.saveCookies(br.getCookies(br.getHost()), "");
+        account.setProperty(PROPERTY_ACCOUNT_LAST_USED_FREE_DOMAIN, br.getHost());
     }
 
     protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2Invisible(PluginForHost plugin, Browser br, final String key) throws PluginException {
