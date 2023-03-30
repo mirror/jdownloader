@@ -132,8 +132,8 @@ public class AboutDialog extends AbstractDialog<Integer> {
     }
 
     public static void main(String[] args) throws Exception {
-        Application.setApplication(".jd_home");
-        showNonBlocking().join();
+        // Application.setApplication(".jd_home");
+        // showNonBlocking().join();
     }
 
     private static String JNA_VERSION_STRING = null;
