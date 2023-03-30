@@ -60,7 +60,20 @@ public class LockmyLink extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Browser brc = this.br.cloneBrowser();
-        brc.postPage("/api/ajax.php", "url=[\"" + param.getCryptedUrl() + "\"]");
+        while (true) {
+            if (isAbort()) {
+                return decryptedLinks;
+            } else {
+                final String response = brc.postPage("/api/ajax.php", "url=[\"" + param.getCryptedUrl() + "\"]");
+                if (response.matches("^\\d+$")) {
+                    /* 2023-03-30: wait time required & checked */
+                    sleep(1000, param);
+                    continue;
+                } else {
+                    break;
+                }
+            }
+        }
         /* "Workaround" for json response */
         brc.getRequest().setHtmlCode(PluginJSonUtils.unescape(brc.getRequest().getHtmlCode()));
         String[] results = brc.getRegex("target=\"_blank\" href=\"(https?[^\"]+)").getColumn(0);

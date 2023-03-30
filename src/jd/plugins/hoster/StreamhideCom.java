@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -29,6 +26,9 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamhideCom extends XFileSharingProBasic {
@@ -47,7 +47,7 @@ public class StreamhideCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamhide.to", "streamhide.com" });
+        ret.add(new String[] { "streamhide.to", "streamhide.com", "guccihide.com", "streamhide.com" });
         return ret;
     }
 
@@ -144,7 +144,7 @@ public class StreamhideCom extends XFileSharingProBasic {
     @Override
     public String[] scanInfo(final String html, final String[] fileInfo) {
         super.scanInfo(html, fileInfo);
-        final String betterFilename = new Regex(html, ">\\s*Download ([^<]+)</h2>").getMatch(0);
+        final String betterFilename = new Regex(html, ">\\s*Download\\s*([^<]*?)\\s*</h\\d+>").getMatch(0);
         if (betterFilename != null) {
             fileInfo[0] = betterFilename;
         }
@@ -159,10 +159,16 @@ public class StreamhideCom extends XFileSharingProBasic {
         } else {
             logger.info("[DownloadMode] Trying to find official video downloads");
         }
-        final String continueURL = br.getRegex("\"(/d/[a-z0-9]{12}_o)\"").getMatch(0);
+        String continueURL = br.getRegex("\"(/d/[a-z0-9]{12}_o)\"").getMatch(0);
         if (continueURL != null) {
-            logger.info("Looks like official video download [original] is possible");
+            logger.info("Looks like official video download [original] is possible:" + continueURL);
             this.getPage(br, continueURL);
+        } else {
+            continueURL = br.getRegex("\"(/d/[a-z0-9]{12}_[a-z])\"").getMatch(0);
+            if (continueURL != null) {
+                logger.info("Looks like video download is possible:" + continueURL);
+                this.getPage(br, continueURL);
+            }
         }
         String dllink = null;
         final Form download1 = br.getFormByInputFieldKeyValue("op", "download_orig");
@@ -180,7 +186,7 @@ public class StreamhideCom extends XFileSharingProBasic {
             /*
              * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
              */
-            dllink = br.getRegex("<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
+            dllink = br.getRegex("<a href\\s*=\\s*\"(https?[^\"]+)\"[^>]*>\\s*Direct Download Link\\s*</a>").getMatch(0);
         }
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find dllink via official video download");

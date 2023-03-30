@@ -23,6 +23,23 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -40,23 +57,6 @@ import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuali
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends antiDDoSForHost {
@@ -322,6 +322,17 @@ public class UpToBoxCom extends antiDDoSForHost {
         return true;
     }
 
+    private Form getWaitingTokenForm(Browser br) {
+        Form dlform = null;
+        for (Form form : br.getForms()) {
+            if (form.containsHTML("waitingToken")) {
+                dlform = form;
+                break;
+            }
+        }
+        return dlform;
+    }
+
     /** Website handling */
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
@@ -345,13 +356,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             dllink = this.getDllinkWebsite(br);
             if (dllink == null) {
                 String passCode = null;
-                Form dlform = null;
-                for (Form form : br.getForms()) {
-                    if (form.containsHTML("waitingToken")) {
-                        dlform = form;
-                        break;
-                    }
-                }
+                Form dlform = getWaitingTokenForm(br);
                 if (dlform != null) {
                     if (dlform.hasInputFieldByName("file-password")) {
                         link.setPasswordProtected(true);
@@ -363,16 +368,33 @@ public class UpToBoxCom extends antiDDoSForHost {
                     } else {
                         link.setPasswordProtected(false);
                     }
-                    final int waittime = regexPreDownloadWaittimeWebsite(br);
+                    int waittime = regexPreDownloadWaittimeWebsite(br);
                     if (waittime > 0) {
-                        logger.info("Found pre-download-waittime: " + waittime);
-                        this.sleep(waittime * 1001l, link);
+                        logger.info("Found pre-download-waittime(1): " + waittime);
+                        this.sleep((waittime + 5) * 1001l, link);
                     } else {
-                        logger.info("ZERO pre-download waittime");
+                        logger.info("ZERO pre-download waittime(1)");
                     }
                     this.submitForm(dlform);
                     checkErrorsWebsite(br, link, null);
                     dllink = getDllinkWebsite(br);
+                    dlform = getWaitingTokenForm(br);
+                    if (dllink == null && dlform != null) {
+                        waittime = regexPreDownloadWaittimeWebsite(br);
+                        if (waittime > 0) {
+                            logger.info("Found pre-download-waittime(2): " + waittime);
+                            this.sleep((waittime + 5) * 1001l, link);
+                        } else {
+                            logger.info("ZERO pre-download waittime(2)");
+                        }
+                        this.submitForm(dlform);
+                        checkErrorsWebsite(br, link, null);
+                        dllink = getDllinkWebsite(br);
+                        dlform = getWaitingTokenForm(br);
+                        if (dllink == null && dlform != null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    }
                     /* Save correctly entered password. */
                     if (passCode != null) {
                         link.setDownloadPassword(passCode);
@@ -493,7 +515,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (waittimeSecondsStr != null) {
             return Integer.parseInt(waittimeSecondsStr);
         } else {
-            return 0;
+            return -1;
         }
     }
 

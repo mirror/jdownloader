@@ -25,23 +25,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.config.FileCryptConfig;
-import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -66,6 +49,23 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+import org.jdownloader.captcha.v2.challenge.cutcaptcha.CaptchaHelperCrawlerPluginCutCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.config.FileCryptConfig;
+import org.jdownloader.plugins.components.config.FileCryptConfig.CrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.(?:cc|co)/Container/([A-Z0-9]{10,16})(\\.html\\?mirror=\\d+)?" })
 public class FileCryptCc extends PluginForDecrypt {
@@ -122,9 +122,8 @@ public class FileCryptCc extends PluginForDecrypt {
                 final HashSet<String> usedPasswords = new HashSet<String>();
                 final String lastUsedPassword = this.getPluginConfig().getStringProperty(PROPERTY_PLUGIN_LAST_USED_PASSWORD);
                 /**
-                 * Magic auto passwords: </br>
-                 * Creators can set custom logos on each folder. Each logo has a unique ID. This way we can try specific passwords first
-                 * that are typically associated with folders published by those sources.
+                 * Magic auto passwords: </br> Creators can set custom logos on each folder. Each logo has a unique ID. This way we can try
+                 * specific passwords first that are typically associated with folders published by those sources.
                  */
                 final String customLogoID = br.getRegex("custom/([a-z0-9]+)\\.png").getMatch(0);
                 if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID)) {
@@ -395,7 +394,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     if (dlc_id != null) {
                         logger.info("DLC found - trying to add it");
                         final ArrayList<DownloadLink> dlcResults = loadcontainer(br.getURL("/DLC/" + dlc_id + ".dlc").toExternalForm());
-                        if (dlcResults.isEmpty()) {
+                        if (dlcResults == null || dlcResults.isEmpty()) {
                             logger.warning("DLC for current mirror is empty or something is broken!");
                             continue;
                         } else {
@@ -416,11 +415,15 @@ public class FileCryptCc extends PluginForDecrypt {
             logger.info("Trying single link handling");
             String[] links = br.getRegex("openLink\\('([^<>\"]*?)'").getColumn(0);
             if (links == null || links.length == 0) {
-                /* 2023-02-03 */
-                links = br.getRegex("onclick=\"openLink[^\\(\"\\']*\\('([^<>\"\\']+)'").getColumn(0);
+                /* 2023-03-30 */
+                links = br.getRegex("onclick=\"[^\\(\"\\']*\\('([^<>\"\\']+)'").getColumn(0);
                 if (links == null || links.length == 0) {
-                    /* 2023-02-13 */
-                    links = br.getRegex("'([^\"']+)', this\\);\" class=\"download\"[^>]*target=\"_blank\"").getColumn(0);
+                    /* 2023-02-03 */
+                    links = br.getRegex("onclick=\"openLink[^\\(\"\\']*\\('([^<>\"\\']+)'").getColumn(0);
+                    if (links == null || links.length == 0) {
+                        /* 2023-02-13 */
+                        links = br.getRegex("'([^\"']+)', this\\);\" class=\"download\"[^>]*target=\"_blank\"").getColumn(0);
+                    }
                 }
             }
             if (links == null || links.length == 0) {
