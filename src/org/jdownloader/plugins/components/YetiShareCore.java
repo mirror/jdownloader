@@ -118,7 +118,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     // return this.rewriteHost(getPluginDomains(), host);
     // }
     public static final String getDefaultAnnotationPatternPart() {
-        return "/(?!folder|shared)[A-Za-z0-9]+(?:/[^/<>]+)?";
+        return "/(?!folder|shared|account|upgrade|faq|register)[A-Za-z0-9]+(?:/[^/<>]+)?";
     }
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {

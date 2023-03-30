@@ -18,7 +18,7 @@ public class LinkCrawlerRule {
 
     protected boolean        enabled       = true;
     protected List<String[]> cookies       = null;
-    protected boolean        updateCookies = true;
+    protected boolean        updateCookies = false;
     protected boolean        logging       = false;
 
     public boolean isLogging() {

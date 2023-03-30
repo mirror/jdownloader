@@ -3687,7 +3687,7 @@ public class LinkCrawler {
                         final String[] hits = new Regex(nextURL, plugin.getSupportedLinks()).getColumn(-1);
                         if (hits != null) {
                             try {
-                                if (hits.length == 1 && hits[0] != null && !StringUtils.equals(pluginURL, hits[0]) && new URL(hits[0]).getPath().length() > 1) {
+                                if (hits.length == 1 && hits[0] != null && plugin.isValidURL(hits[0]) && !StringUtils.equals(pluginURL, hits[0]) && new URL(hits[0]).getPath().length() > 1) {
                                     return hits[0];
                                 } else {
                                     return null;
