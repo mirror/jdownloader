@@ -1344,7 +1344,25 @@ public class DirectHTTP extends antiDDoSForHost {
             if (linkCrawlerRuleCookies != null && linkCrawlerRuleCookies.size() > 0) {
                 final String url = getDownloadURL(downloadLink);
                 for (final String cookie[] : linkCrawlerRuleCookies) {
-                    br.setCookie(url, cookie[0], cookie[1]);
+                    switch (cookie.length) {
+                    case 1:
+                        br.setCookie(url, cookie[0], null);
+                        break;
+                    case 2:
+                        br.setCookie(url, cookie[0], cookie[1]);
+                        break;
+                    case 3:
+                        try {
+                            if (url.matches(cookie[0])) {
+                                br.setCookie(url, cookie[1], cookie[2]);
+                            }
+                        } catch (Exception e) {
+                            logger.log(e);
+                        }
+                        break;
+                    default:
+                        break;
+                    }
                 }
             }
         }

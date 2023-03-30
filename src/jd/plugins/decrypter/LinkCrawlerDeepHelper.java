@@ -60,27 +60,43 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
     @Override
     public URLConnectionAdapter openConnection(LinkCrawlerRule matchingRule, Browser br, CrawledLink source) throws Exception {
         br.addAllowedResponseCodes(500);
+        final String sourceURL = source.getURL();
         final List<String[]> setCookies = matchingRule != null ? LinkCrawler.getLinkCrawlerRuleCookies(matchingRule.getId()) : null;
         if (setCookies != null) {
             for (final String cookie[] : setCookies) {
                 if (cookie != null) {
-                    if (cookie.length == 1) {
-                        br.setCookie(source.getURL(), cookie[0], null);
-                    } else if (cookie.length > 1) {
-                        br.setCookie(source.getURL(), cookie[0], cookie[1]);
+                    switch (cookie.length) {
+                    case 1:
+                        br.setCookie(sourceURL, cookie[0], null);
+                        break;
+                    case 2:
+                        br.setCookie(sourceURL, cookie[0], cookie[1]);
+                        break;
+                    case 3:
+                        try {
+                            if (sourceURL.matches(cookie[0])) {
+                                br.setCookie(sourceURL, cookie[1], cookie[2]);
+                            }
+                        } catch (Exception e) {
+                            logger.log(e);
+                        }
+                        break;
+                    default:
+                        break;
                     }
                 }
             }
         }
         final URLConnectionAdapter ret = openCrawlDeeperConnection(br, source, 0);
         if (matchingRule != null && matchingRule.isUpdateCookies()) {
-            final Cookies cookies = br.getCookies(source.getURL());
+            final Cookies cookies = br.getCookies(sourceURL);
             final List<String[]> currentCookies = new ArrayList<String[]>();
             for (final Cookie cookie : cookies.getCookies()) {
                 if (!cookie.isExpired()) {
                     currentCookies.add(new String[] { cookie.getKey(), cookie.getValue() });
                 }
             }
+            // TODO: add support for length==3, url pattern matching support
             getCrawler().setLinkCrawlerRuleCookies(matchingRule.getId(), currentCookies);
         }
         return ret;

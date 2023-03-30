@@ -2146,10 +2146,24 @@ public class LinkCrawler {
                                         if (rule != null && rule.getCookies() != null) {
                                             final StringBuilder sb = new StringBuilder();
                                             for (String[] cookie : rule.getCookies()) {
-                                                if (cookie.length == 1) {
+                                                switch (cookie.length) {
+                                                case 1:
                                                     sb.append(cookie[0]).append("=;");
-                                                } else if (cookie.length > 1) {
+                                                    break;
+                                                case 2:
                                                     sb.append(cookie[0]).append("=").append(cookie[1]).append(";");
+                                                    break;
+                                                case 3:
+                                                    try {
+                                                        if (url.matches(cookie[0])) {
+                                                            sb.append(cookie[1]).append("=").append(cookie[2]).append(";");
+                                                        }
+                                                    } catch (Exception e) {
+                                                        LogController.CL().log(e);
+                                                    }
+                                                    break;
+                                                default:
+                                                    break;
                                                 }
                                             }
                                             link.setProperty(DirectHTTP.PROPERTY_COOKIES, sb.toString());
