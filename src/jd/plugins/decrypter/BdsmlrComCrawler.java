@@ -175,9 +175,10 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
                         logger.info("Skipping dupe: " + postID);
                         numberofSkippedDuplicates++;
                         continue;
+                    } else {
+                        ret.add(result);
+                        numberofNewItems++;
                     }
-                    ret.add(result);
-                    numberofNewItems++;
                 }
             }
             logger.info("Crawled page " + page + " | Index: " + index + " | New crawled items on this page: " + numberofNewItems + " | Crawled supported items total: " + ret.size() + " | lastPostID: " + lastPostID);
