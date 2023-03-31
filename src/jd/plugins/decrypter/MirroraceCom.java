@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mirrorace.com" }, urls = { "https?://(?:www\\.)?mirrorace\\.com/m/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mirrorace.com" }, urls = { "https?://(?:www\\.)?mirrorace\\.(org|com)/m/[A-Za-z0-9]+" })
 public class MirroraceCom extends antiDDoSForDecrypt {
     public MirroraceCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,7 +69,7 @@ public class MirroraceCom extends antiDDoSForDecrypt {
             fp.setName(Encoding.htmlDecode(fpName.trim()));
         }
         /* 2019-11-26: They are possibly changing their website against us! */
-        final String[] links = br.getRegex("\"(https?://mirrorace\\.com/m/[A-Za-z0-9]+/\\d+\\?t=[^<>\"]*?)\"").getColumn(0);
+        final String[] links = br.getRegex("\"(https?://mirrorace\\.(?:com|org)/m/[A-Za-z0-9]+/\\d+\\?t=[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -90,7 +90,7 @@ public class MirroraceCom extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final DownloadLink dl;
-            if (finallink.contains("mirrorace.com")) {
+            if (finallink.contains("mirrorace.com")||finallink.contains("mirrorace.org")) {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(false);
                 brc.getPage(finallink);
