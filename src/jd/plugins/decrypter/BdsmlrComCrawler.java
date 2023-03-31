@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -38,11 +43,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.BdsmlrCom;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { BdsmlrCom.class })
@@ -114,7 +114,7 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
             /* Developer mistake! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -124,8 +124,8 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
         /* First check if there is already some downloadable content in the html of the current page. */
-        decryptedLinks.addAll(crawlPosts(br, fp));
-        if (decryptedLinks.isEmpty()) {
+        ret.addAll(crawlPosts(br, fp));
+        if (ret.isEmpty()) {
             logger.info("Didn't find anything in HTML ");
         }
         final String csrftoken = br.getRegex("name=\"csrf-token\" content=\"([^\"]+)\"").getMatch(0);
@@ -138,8 +138,8 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
         }
         final String infinitescrollDate = br.getRegex("class=\"infinitescroll\" data-time=\"(\\d{4}[^\"]+)\"").getMatch(0);
         if (infinitescrollDate == null) {
-            logger.info("Stopping because: Pagination not available");
-            return decryptedLinks;
+            logger.info("Stopping because: Pagination parameter 'infinitescroll' is not available");
+            return ret;
         }
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -147,7 +147,7 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
         br.getHeaders().put("Referer", "https://" + username + "." + this.getHost() + "/");
         br.getHeaders().put("X-CSRF-TOKEN", csrftoken);
         br.postPage("/loadfirst", "scroll=5&timenow=" + Encoding.urlEncode(infinitescrollDate));
-        decryptedLinks.addAll(crawlPosts(br, fp));
+        ret.addAll(crawlPosts(br, fp));
         final HashSet<String> dupes = new HashSet<String>();
         final int maxItemsPerPage = 20;
         int index = 0;
@@ -160,44 +160,55 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
             br.postPage("/infinitepb2/" + username, query);
             final ArrayList<DownloadLink> results = crawlPosts(br, fp);
             int numberofNewItems = 0;
+            int numberofSkippedDuplicates = 0;
             if (results.isEmpty()) {
                 logger.info("Failed to find any results on current page -> Probably it only contains offline items or text content");
             } else {
                 for (final DownloadLink result : results) {
                     final String postID = result.getStringProperty(PROPERTY_POST_ID);
                     if (!dupes.add(postID)) {
-                        /* Fail-safe! This should never happen! */
-                        logger.info("Stopping because: Found dupe: " + postID);
-                        break profileLoop;
+                        /**
+                         * 2023-03-31: This should never happen but it looks like it can happen. </br>
+                         * As long as the current page we're crawling contains at least one new item, the crawler will continue even if
+                         * there were some dupes.
+                         */
+                        logger.info("Skipping dupe: " + postID);
+                        numberofSkippedDuplicates++;
+                        continue;
                     }
-                    decryptedLinks.add(result);
+                    ret.add(result);
                     numberofNewItems++;
                 }
             }
-            logger.info("Crawled page " + page + " | Index: " + index + " | New crawled items on this page: " + numberofNewItems + " | Crawled supported items total: " + decryptedLinks.size() + " | lastPostID: " + lastPostID);
+            logger.info("Crawled page " + page + " | Index: " + index + " | New crawled items on this page: " + numberofNewItems + " | Crawled supported items total: " + ret.size() + " | lastPostID: " + lastPostID);
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
-            }
-            if (lastPostID == null) {
+            } else if (lastPostID == null) {
                 logger.info("Stopping because: lastPostID is null");
                 break profileLoop;
             } else if (numberofNewItems == 0) {
-                logger.info("Current page contained ONLY deleted posts or unsupported posts which have been skipped: " + lastNumberofPosts);
+                if (numberofSkippedDuplicates > 0) {
+                    logger.info("Stopping because: Current page contained ONLY duplicates");
+                    break profileLoop;
+                } else {
+                    logger.info("Current page contained ONLY deleted posts or unsupported posts which have been skipped: " + lastNumberofPosts);
+                }
             }
             index += maxItemsPerPage;
             page++;
         } while (true);
-        return decryptedLinks;
+        return ret;
     }
 
-    private String lastPostID        = null;
-    private int    lastNumberofPosts = 0;
+    private String            lastPostID        = null;
+    private int               lastNumberofPosts = 0;
+    private ArrayList<String> lastPostIDList    = new ArrayList<String>();
 
     private ArrayList<DownloadLink> crawlPosts(final Browser br, final FilePackage fp) throws PluginException, IOException {
         lastPostID = null;
         lastNumberofPosts = 0;
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String[] posts = br.getRegex("(<div class=\"wrap-post del\\d+\\s*(?:pubvideo|typeimage|pubimage|typetext)\\s*\">.*?class=\"countinf\")").getColumn(0);
         for (final String post : posts) {
             final Regex postInfo = new Regex(post, "(https?://([\\w\\-]+)\\.[^/]+/post/(\\d+))");
@@ -256,12 +267,17 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
                     }
                     dl.setAvailable(true);
                     dl.setProperty(PROPERTY_POST_ID, postID);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                 }
             }
         }
         lastNumberofPosts = posts.length;
-        return decryptedLinks;
+        lastPostIDList.add(this.lastPostID);
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* 2023-03-31: Debug statement to easily compare pagination IDs of plugin vs. browser. */
+            logger.info("lastPostIDList: " + lastPostIDList);
+        }
+        return ret;
     }
 }

@@ -23,6 +23,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -30,22 +31,22 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.MegaDpUa;
 import jd.plugins.hoster.YoutubeDashV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { MegaDpUa.class })
 public class MegaDpUaFolder extends PluginForDecrypt {
     public MegaDpUaFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "mega.dp.ua" });
-        return ret;
+        return MegaDpUa.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -75,23 +76,23 @@ public class MegaDpUaFolder extends PluginForDecrypt {
     private static final String TYPE_VIDEO = "https?://video\\.[^/]+/\\?video=([A-Za-z0-9\\-_]+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex video = new Regex(param.getCryptedUrl(), TYPE_VIDEO);
         if (video.matches()) {
             final String videoID = video.getMatch(0);
-            decryptedLinks.add(this.createDownloadlink(YoutubeDashV2.generateContentURL(videoID)));
+            ret.add(this.createDownloadlink(YoutubeDashV2.generateContentURL(videoID)));
         } else {
             br.getPage(param.getCryptedUrl());
             if (jd.plugins.hoster.MegaDpUa.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String passCode = null;
-            if (this.getPasswordProtectedForm() != null) {
-                final Form pwform = this.getPasswordProtectedForm();
+            if (this.getPasswordProtectedForm(br) != null) {
+                final Form pwform = this.getPasswordProtectedForm(br);
                 passCode = getUserInput("Password?", param);
                 pwform.put("pass", Encoding.urlEncode(passCode));
                 br.submitForm(pwform);
-                if (this.getPasswordProtectedForm() != null) {
+                if (this.getPasswordProtectedForm(br) != null) {
                     throw new DecrypterException(DecrypterException.PASSWORD);
                 }
             }
@@ -106,7 +107,11 @@ public class MegaDpUaFolder extends PluginForDecrypt {
                     /* Skip invalid items */
                     continue;
                 }
+                final String md5hash = new Regex(url, "([a-f0-9]{32})").getMatch(0);
                 final DownloadLink dl = this.createDownloadlink(url);
+                if (md5hash != null) {
+                    dl.setMD5Hash(md5hash);
+                }
                 if (filename != null) {
                     /* 2021-02-26: They're tagging their filenames -> Prefer the ones we find here */
                     dl.setFinalFileName(Encoding.htmlDecode(filename).trim());
@@ -122,13 +127,13 @@ public class MegaDpUaFolder extends PluginForDecrypt {
                 if (directurl != null) {
                     dl.setProperty("free_directlink", directurl);
                 }
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
-    private Form getPasswordProtectedForm() {
+    private Form getPasswordProtectedForm(final Browser br) {
         return br.getFormbyKey("pass");
     }
 }

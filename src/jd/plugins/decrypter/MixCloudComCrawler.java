@@ -39,6 +39,8 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -47,8 +49,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://(?:www\\.)?mixcloud\\.com/(widget/iframe/\\?.+|[^/]+/?([^/]+/)?)" })
-public class MixCloudCom extends antiDDoSForDecrypt {
-    public MixCloudCom(final PluginWrapper wrapper) {
+public class MixCloudComCrawler extends antiDDoSForDecrypt {
+    public MixCloudComCrawler(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -68,10 +70,9 @@ public class MixCloudCom extends antiDDoSForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (param.getCryptedUrl().matches("https?://[^/]+/((developers|categories|media|competitions|tag|discover)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)")) {
-            decryptedLinks.add(createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (param.getCryptedUrl().matches(TYPE_SINGLE_AUDIO_IFRAME_)) {
             /* Correct URL leading to embedded content --> Normal URL */
             final UrlQuery query = new UrlQuery().parse(param.getCryptedUrl());
@@ -102,7 +103,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         } else {
             logger.info("Unsupported URL: " + param.getCryptedUrl());
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            return decryptedLinks;
+            return ret;
         }
     }
 
@@ -116,8 +117,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String csrftoken = br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
         if (csrftoken == null) {
@@ -140,8 +140,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         final int totalItems = ((Number) JavaScriptEngineFactory.walkJson(entries, "uploads/totalCount")).intValue();
         if (totalItems <= 0) {
             logger.info("This user does not own any uploads");
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+            throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
         } else if (StringUtils.isEmpty(userIDb64)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -167,7 +166,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user/uploads");
             final Map<String, Object> pageInfo = (Map<String, Object>) entries.get("pageInfo");
             final List<Object> audioObjects = (List<Object>) entries.get("edges");
-            this.crawlAudioObjects(decryptedLinks, audioObjects, fp, dupes);
+            this.processAudioObjects(decryptedLinks, audioObjects, fp, dupes);
             final String lastCursor = (String) ((Map<String, Object>) audioObjects.get(audioObjects.size() - 1)).get("cursor");
             if (audioObjects.size() < maxItemsPerPage) {
                 logger.info("Stopping because current page contains less than " + maxItemsPerPage + " items");
@@ -186,8 +185,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlSingleAudio(final CryptedLink param, final String parameter) throws Exception {
-        final ArrayList<String> tempLinks = new ArrayList<String>();
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         getPage(parameter);
         if (br.getRedirectLocation() != null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -205,7 +203,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         if (Encoding.isUrlCoded(slug)) {
             slug = Encoding.urlDecode(slug, false);
         }
-        String theName = slug;
+        String title = slug;
         final String csrftoken = br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
         if (csrftoken == null || username == null || slug == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -222,14 +220,15 @@ public class MixCloudCom extends antiDDoSForDecrypt {
         boolean hasMore = false;
         final ArrayList<String> dupes = new ArrayList<String>();
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(theName));
+        fp.setName(Encoding.htmlDecode(title).trim());
+        int totalNumberofDetectedAudioObjects = 0;
         do {
             /* Find Array with stream-objects */
             Map<String, Object> entries = null;
             List<Object> audioObjects = new ArrayList<Object>();
             /* Find correct json ArrayList */
             if (page == 0) {
-                String json = br.toString();
+                String json = br.getRequest().getHtmlCode();
                 // json = Encoding.htmlOnlyDecode(json);
                 final Object jsonO = JavaScriptEngineFactory.jsonToJavaObject(json);
                 if (jsonO instanceof Map) {
@@ -237,8 +236,7 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                     entries = (Map<String, Object>) jsonO;
                     final Object cloudcastLookupO = JavaScriptEngineFactory.walkJson(entries, "data/cloudcastLookup");
                     if (cloudcastLookupO == null) {
-                        decryptedLinks.add(this.createOfflinelink(parameter));
-                        return decryptedLinks;
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
                         audioObjects.add(cloudcastLookupO);
                     }
@@ -347,28 +345,29 @@ public class MixCloudCom extends antiDDoSForDecrypt {
                 /* Only set this boolean if we at least found our array */
                 hasMore = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "pageInfo/hasNextPage")).booleanValue();
             }
-            crawlAudioObjects(decryptedLinks, audioObjects, fp, dupes);
+            processAudioObjects(ret, audioObjects, fp, dupes);
+            totalNumberofDetectedAudioObjects += audioObjects.size();
             page++;
         } while (hasMore);
         /* Add thumbnail if possible. */
         if (!StringUtils.isEmpty(url_thumbnail)) {
             final DownloadLink dlink = createDownloadlink(url_thumbnail);
-            dlink.setFinalFileName(theName + ".jpeg");
+            dlink.setFinalFileName(title + ".jpeg");
             dlink._setFilePackage(fp);
-            decryptedLinks.add(dlink);
+            ret.add(dlink);
         }
-        if ((decryptedLinks == null || decryptedLinks.size() == 0) && tempLinks.size() > 0) {
-            logger.info("Found urls but all of them were offline");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
-        } else if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        if ((ret == null || ret.size() == 0) && totalNumberofDetectedAudioObjects > 0) {
+            /* E.g. all streams display error "Sorry, this stream is currently unavailable" */
+            logger.info("Found audio streams but all of them were offline | Number of streams: " + totalNumberofDetectedAudioObjects);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (ret == null || ret.size() == 0) {
             logger.warning("Decrypter out of date for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return decryptedLinks;
+        return ret;
     }
 
-    private void crawlAudioObjects(final ArrayList<DownloadLink> decryptedLinks, final List<Object> audio_objects, final FilePackage fp, final ArrayList<String> dupes) {
+    private void processAudioObjects(final ArrayList<DownloadLink> decryptedLinks, final List<Object> audio_objects, final FilePackage fp, final ArrayList<String> dupes) {
         Map<String, Object> entries;
         for (final Object edgeO : audio_objects) {
             entries = (Map<String, Object>) edgeO;
@@ -376,10 +375,6 @@ public class MixCloudCom extends antiDDoSForDecrypt {
             if (node != null && node instanceof Map) {
                 /* E.g. decryption of multiple items (all items of user) */
                 entries = (Map<String, Object>) node;
-            }
-            if (entries == null) {
-                /* Skip invalid objects */
-                continue;
             }
             final String description = (String) entries.get("description");
             final Map<String, Object> ownerInfo = (Map<String, Object>) entries.get("owner");

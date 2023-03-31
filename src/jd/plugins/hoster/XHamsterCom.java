@@ -329,7 +329,6 @@ public class XHamsterCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         prepBr(this, br);
-        /* quick fix to force old player */
         String title = null;
         if (account != null) {
             login(account, link.getPluginPatternMatcher(), true);
@@ -1344,39 +1343,7 @@ public class XHamsterCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        // final AccountInfo ai = new AccountInfo();
         login(account, null, true);
-        // if (this.checkLoginPremium(br, account, null) && br.getRequest().getHtmlCode().startsWith("{")) {
-        // /* Premium domain cookies are valid and we can expect json */
-        // /*
-        // * E.g. error 400 for free users:
-        // * {"errors":{"_global":["Payment system temporary unavailable. Please try later."]},"userId":1234567}
-        // */
-        // final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        // long expireTimestamp = 0;
-        // final String expireStr = (String) entries.get("expiredAt");
-        // final Boolean isTrial = (Boolean) entries.get("isTrial");
-        // final Boolean hasGoldSubscription = (Boolean) entries.get("hasGoldSubscription");
-        // if (!StringUtils.isEmpty(expireStr)) {
-        // expireTimestamp = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-        // }
-        // if (Boolean.TRUE.equals(hasGoldSubscription) || Boolean.TRUE.equals(isTrial) || expireTimestamp > System.currentTimeMillis()) {
-        // account.setType(AccountType.PREMIUM);
-        // if (Boolean.TRUE.equals(isTrial)) {
-        // /* Trial account */
-        // ai.setStatus(AccountType.PREMIUM.getLabel() + " [Trial]");
-        // }
-        // if (expireTimestamp > System.currentTimeMillis()) {
-        // ai.setValidUntil(expireTimestamp, br);
-        // }
-        // } else {
-        // /* Expired premium or free account */
-        // account.setType(AccountType.FREE);
-        // }
-        // } else {
-        // /* Premium cookies are not given (or no json to check for premium) -> Must be a free account */
-        // account.setType(AccountType.FREE);
-        // }
         return account.getAccountInfo();
     }
 

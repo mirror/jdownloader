@@ -16,6 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,17 +34,43 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega.dp.ua" }, urls = { "https?://(?:www\\.)?mega\\.dp\\.ua/(?:[a-z]{2}/)?f/(\\d+)/([a-f0-9]{32})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MegaDpUa extends PluginForHost {
     public MegaDpUa(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "mega.dp.ua", "mega2.dp.ua" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:[a-z]{2}/)?f/(\\d+)/([a-f0-9]{32})");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     @Override
     public String getAGBLink() {
-        return "http://mega.dp.ua/";
+        return "https://mega.dp.ua/";
     }
 
     @Override
@@ -64,7 +94,7 @@ public class MegaDpUa extends PluginForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME       = false;
     private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final int     FREE_MAXDOWNLOADS = -1;
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -75,7 +105,7 @@ public class MegaDpUa extends PluginForHost {
     //
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
-    private Form getPasswordProtectedForm() {
+    private Form getPasswordProtectedForm(final Browser br) {
         return br.getFormbyKey("pass");
     }
 
@@ -87,7 +117,7 @@ public class MegaDpUa extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (getPasswordProtectedForm() != null) {
+        } else if (getPasswordProtectedForm(br) != null) {
             /* Don't ask for password during linkcheck */
             return AvailableStatus.TRUE;
         }
@@ -113,15 +143,15 @@ public class MegaDpUa extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            if (this.getPasswordProtectedForm() != null) {
-                final Form pwform = this.getPasswordProtectedForm();
+            if (this.getPasswordProtectedForm(br) != null) {
+                final Form pwform = this.getPasswordProtectedForm(br);
                 String passCode = link.getDownloadPassword();
                 if (passCode == null) {
                     passCode = getUserInput("Password?", link);
                 }
                 pwform.put("pass", Encoding.urlEncode(passCode));
                 br.submitForm(pwform);
-                if (this.getPasswordProtectedForm() != null) {
+                if (this.getPasswordProtectedForm(br) != null) {
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 } else {
