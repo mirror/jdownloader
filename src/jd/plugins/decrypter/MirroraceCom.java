@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
@@ -32,10 +33,38 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mirrorace.com" }, urls = { "https?://(?:www\\.)?mirrorace\\.(org|com)/m/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MirroraceCom extends antiDDoSForDecrypt {
     public MirroraceCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "mirrorace.com", "mirrorace.org" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/m/[A-Za-z0-9]+");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -43,14 +72,13 @@ public class MirroraceCom extends antiDDoSForDecrypt {
         return 1;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Links Unavailable<")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*Links Unavailable\\s*<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         {
             /* 2020-04-14: New */
@@ -73,7 +101,16 @@ public class MirroraceCom extends antiDDoSForDecrypt {
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final ArrayList<String> domains = new ArrayList<String>();
+        for (final String[] dmns : getPluginDomains()) {
+            for (final String dmn : dmns) {
+                domains.add(dmn);
+            }
+        }
+        int prgress = 0;
         for (final String singleLink : links) {
+            prgress++;
+            logger.info("Crawling item " + prgress + "/" + links.length);
             final Browser br = this.br.cloneBrowser();
             getPage(br, singleLink);
             {
@@ -90,7 +127,8 @@ public class MirroraceCom extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final DownloadLink dl;
-            if (finallink.contains("mirrorace.com")||finallink.contains("mirrorace.org")) {
+            final String domain = Browser.getHost(finallink);
+            if (domains.contains(domain)) {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(false);
                 brc.getPage(finallink);
@@ -102,15 +140,15 @@ public class MirroraceCom extends antiDDoSForDecrypt {
             } else {
                 dl = createDownloadlink(finallink);
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
             if (fp != null) {
                 fp.add(dl);
             }
             distribute(dl);
             if (this.isAbort()) {
-                return decryptedLinks;
+                return ret;
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 }
