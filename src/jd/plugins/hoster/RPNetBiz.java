@@ -22,6 +22,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -37,16 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "" })
 public class RPNetBiz extends PluginForHost {
@@ -340,17 +340,6 @@ public class RPNetBiz extends PluginForHost {
             link.setProperty(PROPERTY_max_connections, (long) maxChunks);
         }
         try {
-            /*
-             * 2020-04-27: According to admin, should use this for zippyshare ONLY.
-             */
-            if (!StringUtils.isEmpty(filename) && link.getHost().equalsIgnoreCase("zippyshare.com")) {
-                /* 2020-04-24: E.g. sometimes "Testfile.rar" (With "" --> WTF, remove that) */
-                filename = filename.replace("\"", "");
-                logger.info("Using final filename given by API: " + filename);
-                link.setFinalFileName(filename);
-            } else {
-                logger.info("Using final filename from Content-Disposition Header");
-            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, true, maxChunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);

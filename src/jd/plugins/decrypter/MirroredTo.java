@@ -246,7 +246,6 @@ public class MirroredTo extends PluginForDecrypt {
                     fp.add(dl);
                     dl.setName(fp.getName());
                 }
-                /* 2020-01-21: Good for e.g. offline services or GEO-blocked such as Zippyshare. */
                 if (filesize != null) {
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
