@@ -1031,7 +1031,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
         if (url != null) {
             if (isImagehoster() && url.matches("(?i)^https?://[^/]+/(?:th|i)/\\d+/([a-z0-9]{12}).*")) {
                 return URL_TYPE.IMAGE;
-            } else if (url.matches("(?i)^https?://[^/]+/d/([a-z0-9]+).*") && this.supportsShortURLs()) {
+            } else if (this.supportsShortURLs() && url.matches("(?i)^https?://[^/]+/d/([a-z0-9]+).*")) {
                 return URL_TYPE.SHORT;
             } else if (url.matches("(?i)^https?://[^/]+/([a-z0-9]{12}).*")) {
                 return URL_TYPE.NORMAL;
