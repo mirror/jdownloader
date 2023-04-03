@@ -35,7 +35,6 @@ import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.parser.html.HTMLSearch;
 import jd.plugins.Account;
@@ -179,11 +178,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 }
             }
         }
-        if (ret.isEmpty() && skippedLivestreams > 0) {
+        if (ret.isEmpty() && this.skippedLivestreams > 0) {
             logger.info("Livestreams are not supported");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (numberofJsonsFound == 0) {
+        } else if (numberofJsonsFound == 0) {
             logger.info("Failed to find any jsons --> Probably unsupported URL");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -278,7 +276,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             ret.clear();
             ret.addAll(resultsForOneDesiredVideo);
         }
-        /* Finally set filenames and packagenames */
+        /* Set filenames and package names. */
         final Map<String, FilePackage> packages = new HashMap<String, FilePackage>();
         for (final DownloadLink result : ret) {
             FaceBookComVideos.setFilename(result);
@@ -502,21 +500,22 @@ public class FaceBookComGallery extends PluginForDecrypt {
             final Map<String, Object> map = (Map<String, Object>) o;
             for (final Map.Entry<String, Object> entry : map.entrySet()) {
                 final String key = entry.getKey();
-                final Object value = entry.getValue();
-                if (key.equals("id") && value instanceof String) {
+                final Object ifThisIsAPhotoThisIsThePhotoID = entry.getValue();
+                if (key.equals("id") && ifThisIsAPhotoThisIsThePhotoID instanceof String) {
                     if (map.containsKey("__isMedia") && map.containsKey("image")) {
                         final String directurl = JavaScriptEngineFactory.walkJson(map, "image/uri").toString();
-                        final DownloadLink link = this.createDownloadlink(directurl);
-                        link.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_PHOTO);
-                        link.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LAST, directurl);
-                        link.setAvailable(true);
-                        results.add(link);
+                        final DownloadLink photo = this.createDownloadlink(directurl);
+                        photo.setProperty(FaceBookComVideos.PROPERTY_CONTENT_ID, ifThisIsAPhotoThisIsThePhotoID);
+                        photo.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_PHOTO);
+                        photo.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LAST, directurl);
+                        photo.setAvailable(true);
+                        results.add(photo);
                         break;
                     } else {
                         continue;
                     }
-                } else if (value instanceof List || value instanceof Map) {
-                    crawlPhotos(value, results);
+                } else if (ifThisIsAPhotoThisIsThePhotoID instanceof List || ifThisIsAPhotoThisIsThePhotoID instanceof Map) {
+                    crawlPhotos(ifThisIsAPhotoThisIsThePhotoID, results);
                 }
             }
             return;
@@ -533,6 +532,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
     }
 
+    @Deprecated
     private String getProfileID() {
         String profileid = br.getRegex("data-gt=\"\\&#123;\\&quot;profile_owner\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
         if (profileid == null) {
@@ -547,29 +547,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         return profileid;
     }
 
-    private String getajaxpipeToken() {
-        final String ajaxpipe = br.getRegex("\"ajaxpipe_token\":\"([^<>\"]*?)\"").getMatch(0);
-        return ajaxpipe;
-    }
-
-    private String getPageTitle() {
-        String pageTitle = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
-        if (pageTitle != null) {
-            pageTitle = HTMLEntities.unhtmlentities(pageTitle);
-            pageTitle = pageTitle.trim().replaceFirst("\\s*\\|\\s*Facebook$", "");
-        }
-        return pageTitle;
-    }
-
-    private String getPageAlbumTitle() {
-        String albumTitle = br.getRegex("<h1 class=\"fbPhotoAlbumTitle\">([^<>]*?)<").getMatch(0);
-        if (albumTitle != null) {
-            albumTitle = HTMLEntities.unhtmlentities(albumTitle);
-            albumTitle = albumTitle.trim();
-        }
-        return albumTitle;
-    }
-
     public static String getDyn() {
         return "7xeXxmdwgp8fqwOyax68xfLFwgoqwgEoyUnwgU6C7QdwPwDyUG4UeUuwh8eUny8lwIwHwJwr9U";
     }
@@ -577,20 +554,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
     public static String get_fb_dtsg(final Browser br) {
         final String fb_dtsg = br.getRegex("name=\\\\\"fb_dtsg\\\\\" value=\\\\\"([^<>\"]*?)\\\\\"").getMatch(0);
         return fb_dtsg;
-    }
-
-    private String getLastFBID() {
-        String currentLastFbid = br.getRegex("\"last_fbid\\\\\":\\\\\"(\\d+)\\\\\\\"").getMatch(0);
-        if (currentLastFbid == null) {
-            currentLastFbid = br.getRegex("\"last_fbid\\\\\":(\\d+)").getMatch(0);
-        }
-        if (currentLastFbid == null) {
-            currentLastFbid = br.getRegex("\"last_fbid\":(\\d+)").getMatch(0);
-        }
-        if (currentLastFbid == null) {
-            currentLastFbid = br.getRegex("\"last_fbid\":\"(\\d+)\"").getMatch(0);
-        }
-        return currentLastFbid;
     }
 
     public static String getUser(final Browser br) {
