@@ -83,6 +83,6 @@ public class JDDefaultLookAndFeel extends SyntheticaLookAndFeel {
 
     // return the LAF name - readable for humans
     public String getName() {
-        return "SyntheticaJDVisionLookAndFeel Custom Look and Feel";
+        return "Synthetica JDVision Custom Look and Feel";
     }
 }

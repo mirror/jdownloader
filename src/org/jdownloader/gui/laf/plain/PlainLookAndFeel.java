@@ -18,7 +18,6 @@ import de.javasoft.plaf.synthetica.SyntheticaLookAndFeel;
 import de.javasoft.util.OS;
 
 public class PlainLookAndFeel extends SyntheticaLookAndFeel {
-
     private static final long serialVersionUID = -6728461590292436336L;
     private boolean           initDone         = false;
 
@@ -107,7 +106,6 @@ public class PlainLookAndFeel extends SyntheticaLookAndFeel {
 
     // return the LAF name - readable for humans
     public String getName() {
-        return "SyntheticaJDPlainLookAndFeel Custom Look and Feel";
+        return "Synthetica JDPlain Custom Look and Feel";
     }
-
 }
