@@ -1176,14 +1176,14 @@ public class XHamsterCom extends PluginForHost {
                 br.clearCookies(domain_premium);
             }
         }
-        final String premiumLoginURL = account.getStringProperty(PROPERTY_ACCOUNT_PREMIUM_LOGIN_URL);
-        if (premiumLoginURL == null) {
+        final String magicPremiumLoginURL = getMagicPremiumLoginURL(account);
+        if (magicPremiumLoginURL == null) {
             logger.info("Looks like this is not a premium account -> Do not attempt premium login (full login would require captcha)");
             return;
         }
         /* Magic link from xhamster.com which will redirect to faphouse.com and should grant us premium login cookies. */
         logger.info("Attempting premium login via magic link");
-        br.getPage(premiumLoginURL);
+        br.getPage(magicPremiumLoginURL);
         final String redirecturl = br.getRegex("http-equiv=\"refresh\" content=\"\\d+; url=(https?://[^\"]+)").getMatch(0);
         if (redirecturl != null) {
             br.getPage(redirecturl);
@@ -1231,6 +1231,11 @@ public class XHamsterCom extends PluginForHost {
         }
     }
 
+    /** Typically returns https://xy.xhamster.com/faphouse/out?xhMedium=button */
+    private String getMagicPremiumLoginURL(final Account account) {
+        return account.getStringProperty(PROPERTY_ACCOUNT_PREMIUM_LOGIN_URL);
+    }
+
     /** Checks premium login status and sets AccountInfo */
     private boolean checkLoginPremium(final Browser br, final Account account, final String customCheckURL) throws IOException {
         if (customCheckURL != null && this.isPremiumURL(customCheckURL)) {
@@ -1262,15 +1267,25 @@ public class XHamsterCom extends PluginForHost {
                     final String expireStr = (String) entries.get("expiredAt");
                     final Boolean isTrial = (Boolean) entries.get("isTrial");
                     final Boolean hasGoldSubscription = (Boolean) entries.get("hasGoldSubscription");
+                    final Boolean isRebillEnabled = (Boolean) entries.get("isRebillEnabled");
                     if (!StringUtils.isEmpty(expireStr)) {
                         expireTimestamp = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
                     }
                     if (Boolean.TRUE.equals(hasGoldSubscription) || Boolean.TRUE.equals(isTrial) || expireTimestamp > System.currentTimeMillis()) {
                         account.setType(AccountType.PREMIUM);
+                        String accountStatusText;
                         if (Boolean.TRUE.equals(isTrial)) {
                             /* Trial account */
-                            ai.setStatus(AccountType.PREMIUM.getLabel() + " [Trial]");
+                            accountStatusText = "Trial Account";
+                        } else {
+                            accountStatusText = AccountType.PREMIUM.getLabel();
                         }
+                        if (Boolean.TRUE.equals(isRebillEnabled)) {
+                            accountStatusText += " | Rebill: Yes";
+                        } else {
+                            accountStatusText += " | Rebill: No";
+                        }
+                        ai.setStatus(accountStatusText);
                         if (expireTimestamp > System.currentTimeMillis()) {
                             ai.setValidUntil(expireTimestamp, br);
                         }
