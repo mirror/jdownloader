@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.Open3dlabComConfig;
+import org.jdownloader.plugins.components.config.Open3dlabComConfigSmutbaSe;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,8 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Open3dlabCom extends PluginForHost {
@@ -221,5 +224,14 @@ public class Open3dlabCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        if (this.getHost().equals("open3dlab.com")) {
+            return Open3dlabComConfig.class;
+        } else {
+            return Open3dlabComConfigSmutbaSe.class;
+        }
     }
 }

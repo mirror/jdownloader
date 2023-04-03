@@ -16,9 +16,17 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Random;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.Open3dlabComConfig;
+import org.jdownloader.plugins.components.config.Open3dlabComConfig.MirrorFallbackMode;
+import org.jdownloader.plugins.components.config.Open3dlabComConfigSmutbaSe;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -87,6 +95,19 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
         } else {
             fp.setName(projectID);
         }
+        final Open3dlabComConfig cfg;
+        if (this.getHost().equals("open3dlab.com")) {
+            cfg = PluginJsonConfig.get(Open3dlabComConfig.class);
+        } else {
+            cfg = PluginJsonConfig.get(Open3dlabComConfigSmutbaSe.class);
+        }
+        String[] mirrorPrioList = null;
+        String userHosterMirrorListStr = cfg.getMirrorPriorityString();
+        if (userHosterMirrorListStr != null) {
+            userHosterMirrorListStr = userHosterMirrorListStr.replace(" ", "").toLowerCase(Locale.ENGLISH);
+            mirrorPrioList = userHosterMirrorListStr.split(",");
+        }
+        final MirrorFallbackMode fallbackMode = cfg.getMirrorFallbackMode();
         final String[] dlHTMLs = br.getRegex("<td class=\"text-wrap-word js-edit-input\"(.*?)</div>\\s*</div>\\s*</td>\\s*</tr>").getColumn(0);
         if (dlHTMLs == null || dlHTMLs.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -106,19 +127,49 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
                 filesize = SizeFormatter.getSize(filesizeStr);
             }
             final String[] urls = HTMLParser.getHttpLinks(dlHTML, br.getURL());
+            final HashSet<String> mirrorURLs = new HashSet<String>();
             for (final String url : urls) {
                 if (hosterplugin.canHandle(url)) {
-                    final DownloadLink dl = this.createDownloadlink(url);
-                    dl._setFilePackage(fp);
-                    dl.setAvailable(true);
-                    if (filename != null) {
-                        dl.setName(filename);
-                    }
-                    if (filesize != -1) {
-                        dl.setDownloadSize(filesize);
-                    }
-                    ret.add(dl);
+                    mirrorURLs.add(url);
                 }
+            }
+            if (mirrorURLs.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final HashMap<String, DownloadLink> mirrorMap = new HashMap<String, DownloadLink>();
+            for (final String mirrorURL : mirrorURLs) {
+                final DownloadLink dl = this.createDownloadlink(mirrorURL);
+                dl._setFilePackage(fp);
+                dl.setAvailable(true);
+                if (filename != null) {
+                    dl.setName(filename);
+                }
+                if (filesize != -1) {
+                    dl.setDownloadSize(filesize);
+                }
+                final String mirrorStr = new Regex(mirrorURL, "/\\d+/([^/]+)/?$").getMatch(0);
+                if (mirrorStr != null) {
+                    mirrorMap.put(mirrorStr, dl);
+                }
+            }
+            DownloadLink preferredMirror = null;
+            if (mirrorPrioList != null && mirrorPrioList.length > 0) {
+                for (final String mirrorStr : mirrorPrioList) {
+                    preferredMirror = mirrorMap.get(mirrorStr);
+                    if (preferredMirror != null) {
+                        break;
+                    }
+                }
+            }
+            if (preferredMirror != null) {
+                ret.add(preferredMirror);
+            } else if (fallbackMode == MirrorFallbackMode.ONE) {
+                logger.info("Failed to find desired mirror: Returning random mirror as fallback");
+                final List<DownloadLink> mirrors = new ArrayList<DownloadLink>(mirrorMap.values());
+                ret.add(mirrors.get(new Random().nextInt(mirrors.size())));
+            } else {
+                logger.info("Failed to find desired mirror: Returning all mirrors as fallback");
+                ret.addAll(mirrorMap.values());
             }
         }
         return ret;
