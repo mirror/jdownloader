@@ -1354,8 +1354,8 @@ public class DirectHTTP extends antiDDoSForHost {
                         break;
                     case 3:
                         try {
-                            if (url.matches(cookie[0])) {
-                                br.setCookie(url, cookie[1], cookie[2]);
+                            if (cookie[2] != null && url.matches(cookie[2])) {
+                                br.setCookie(url, cookie[0], cookie[1]);
                             }
                         } catch (Exception e) {
                             logger.log(e);

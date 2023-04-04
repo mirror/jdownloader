@@ -74,8 +74,8 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
                         break;
                     case 3:
                         try {
-                            if (sourceURL.matches(cookie[0])) {
-                                br.setCookie(sourceURL, cookie[1], cookie[2]);
+                            if (cookie[2] != null && sourceURL.matches(cookie[2])) {
+                                br.setCookie(sourceURL, cookie[0], cookie[1]);
                             }
                         } catch (Exception e) {
                             logger.log(e);

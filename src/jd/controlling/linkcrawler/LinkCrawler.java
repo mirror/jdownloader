@@ -2155,8 +2155,8 @@ public class LinkCrawler {
                                                     break;
                                                 case 3:
                                                     try {
-                                                        if (url.matches(cookie[0])) {
-                                                            sb.append(cookie[1]).append("=").append(cookie[2]).append(";");
+                                                        if (cookie[2] != null && url.matches(cookie[2])) {
+                                                            sb.append(cookie[0]).append("=").append(cookie[1]).append(";");
                                                         }
                                                     } catch (Exception e) {
                                                         LogController.CL().log(e);
