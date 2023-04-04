@@ -415,12 +415,12 @@ public class AboutDialog extends AbstractDialog<Integer> {
             if (StringUtils.containsIgnoreCase(laf.getID(), "FlatLaf")) {
                 stats.add(createLink(laf.getName(), "https://www.formdev.com/flatlaf/"));
             } else if (StringUtils.containsIgnoreCase(laf.getID(), "Synthetica")) {
-                String version = null;
+                stats.add(createLink(laf.getName(), "https://www.jyloo.com/synthetica/"));
                 try {
-                    version = ReflectionUtils.invoke(laf.getClass(), "getSyntheticaVersion", laf, Class.forName("de.javasoft.util.IVersion")).toString();
+                    final String version = ReflectionUtils.invoke(laf.getClass(), "getSyntheticaVersion", laf, Class.forName("de.javasoft.util.IVersion")).toString();
+                    stats.add(createLink(version, "https://www.jyloo.com/synthetica/changelog/"), "skip");
                 } catch (Throwable ignore) {
                 }
-                stats.add(createLink(laf.getName() + (StringUtils.isEmpty(version) ? "" : " - " + version), "https://www.jyloo.com/synthetica/"));
                 try {
                     final Object info = UIManager.get("Synthetica.license.info");
                     if (info instanceof String[]) {
