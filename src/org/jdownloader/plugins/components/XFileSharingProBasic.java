@@ -1890,7 +1890,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
             /* Match on line - safe attempt but this may not include filesize! */
             videoQualityHTMLs = br.getRegex("download_video\\([^\r\t\n]+").getColumn(-1);
         }
-        if (videoQualityHTMLs.length == 0) {
+        if (videoQualityHTMLs == null || videoQualityHTMLs.length == 0) {
             logger.info("Failed to find any official video downloads");
             return null;
         }

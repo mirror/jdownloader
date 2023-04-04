@@ -7,9 +7,24 @@ import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.Order;
 
 public interface XFSConfigVideo extends XFSConfig {
-    final String text_PreferredStreamQuality   = "If your preferred stream quality is not found, best quality will be downloaded instead.";
-    final String text_PreferredDownloadQuality = "If your preferred download quality is not found, best quality will be downloaded instead.";
-    final String text_PreferredDownloadMode    = "Select preferred download mode";
+    final String                    text_PreferredStreamQuality   = "Preferred stream download quality";
+    final String                    text_PreferredDownloadQuality = "Preferred download quality";
+    final String                    text_PreferredDownloadMode    = "Preferred download mode";
+    public static final TRANSLATION TRANSLATION                   = new TRANSLATION();
+
+    public static class TRANSLATION {
+        public String getPreferredStreamQuality_label() {
+            return text_PreferredStreamQuality;
+        }
+
+        public String getPreferredDownloadQuality_label() {
+            return text_PreferredDownloadQuality;
+        }
+
+        public String getPreferredDownloadMode_label() {
+            return text_PreferredDownloadMode;
+        }
+    }
 
     public static enum PreferredStreamQuality implements LabelInterface {
         BEST {
@@ -97,13 +112,13 @@ public interface XFSConfigVideo extends XFSConfig {
         ORIGINAL {
             @Override
             public String getLabel() {
-                return "Original";
+                return "Prefer original";
             }
         },
         STREAM {
             @Override
             public String getLabel() {
-                return "Stream";
+                return "Prefer stream";
             }
         };
     }

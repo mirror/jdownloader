@@ -71,11 +71,7 @@ public class NexusmodsCom extends antiDDoSForHost {
     }
 
     /* Connection stuff */
-    private final boolean      FREE_RESUME                  = true;
-    private final int          FREE_MAXCHUNKS               = 0;
     private final int          FREE_MAXDOWNLOADS            = -1;
-    private final boolean      ACCOUNT_FREE_RESUME          = true;
-    private final int          ACCOUNT_FREE_MAXCHUNKS       = 0;
     private static final int   ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
     /* API documentation: https://app.swaggerhub.com/apis-docs/NexusMods/nexus-mods_public_api_params_in_form_data/1.0 */
     public static final String API_BASE                     = "https://api.nexusmods.com/v1";
@@ -134,7 +130,7 @@ public class NexusmodsCom extends antiDDoSForHost {
     }
 
     public static boolean isOfflineWebsite(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No files have been uploaded yet|>File not found<|>Not found<|/noimage-1.png");
+        return br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)No files have been uploaded yet|>File not found<|>Not found<|/noimage-1.png");
     }
 
     @Override
@@ -153,7 +149,7 @@ public class NexusmodsCom extends antiDDoSForHost {
 
     /** Account is either required because the files are 'too large' or also for 'adult files', or for 'no reason at all'. */
     public boolean isLoginRequired(final Browser br) {
-        if (br.containsHTML("<h1>Error</h1>") && br.containsHTML("<h2>Adult-only content</h2>")) {
+        if (br.containsHTML("(?i)<h1>\\s*Error\\s*</h1>") && br.containsHTML("(?i)<h2>\\s*Adult-only content\\s*</h2>")) {
             // adult only content.
             return true;
         } else if (br.containsHTML("(?i)You need to be a member and logged in to download files larger")) {
@@ -166,7 +162,7 @@ public class NexusmodsCom extends antiDDoSForHost {
         }
     }
 
-    /** URLs added <= rev. 41547 are missing properties which are required to do download & linkcheck via API! */
+    /** URLs added <= rev. 41547 are missing properties which are required to do download & linkcheck via API. */
     private boolean linkIsAPICompatible(final DownloadLink link) {
         final String game_domain_name = link.getStringProperty(PROPERTY_game_domain_name);
         final String mod_id = link.getStringProperty(PROPERTY_mod_id);
@@ -213,14 +209,12 @@ public class NexusmodsCom extends antiDDoSForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            {
-                String loadBox = br.getRegex("loadBox\\('(https?://.*?)'").getMatch(0);
+            String loadBox = br.getRegex("loadBox\\('(https?://.*?)'").getMatch(0);
+            if (loadBox != null) {
+                getPage(loadBox);
+                loadBox = br.getRegex("loadBox\\('(https?://.*?skipdonate)'").getMatch(0);
                 if (loadBox != null) {
                     getPage(loadBox);
-                    loadBox = br.getRegex("loadBox\\('(https?://.*?skipdonate)'").getMatch(0);
-                    if (loadBox != null) {
-                        getPage(loadBox);
-                    }
                 }
             }
             dllink = br.getRegex("window\\.location\\.href\\s*=\\s*\"(http[^<>\"]+)\";").getMatch(0);
@@ -265,7 +259,7 @@ public class NexusmodsCom extends antiDDoSForHost {
         }
         getPage(API_BASE + String.format("/games/%s/mods/%s/files/%s", game_domain_name, mod_id, file_id));
         handleErrorsAPI(br);
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         return setFileInformationAPI(link, entries, game_domain_name, mod_id, file_id);
     }
 
@@ -302,10 +296,10 @@ public class NexusmodsCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, null, FREE_RESUME, FREE_MAXCHUNKS);
+        handleDownload(link, null);
     }
 
-    private void doFree(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         if (StringUtils.isEmpty(dllink)) {
             if (this.isLoginRequired(br)) {
                 if (account == null) {
@@ -320,7 +314,7 @@ public class NexusmodsCom extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumable, maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), getMaxChunks(account));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (this.isSpecialNexusModmanagerDownloadURL(link)) {
@@ -337,11 +331,20 @@ public class NexusmodsCom extends antiDDoSForHost {
             } else {
                 final String filename = new Regex(dl.getConnection().getURL().toString(), "/([^/]+)\\?").getMatch(0);
                 if (filename != null) {
-                    link.setFinalFileName(Encoding.htmlDecode(filename));
+                    link.setFinalFileName(Encoding.htmlDecode(filename).trim());
                 }
             }
         }
         dl.startDownload();
+    }
+
+    public int getMaxChunks(final Account account) {
+        return 0;
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
     }
 
     @Override
@@ -349,12 +352,13 @@ public class NexusmodsCom extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
+    @Deprecated
     public void loginWebsite(final Account account) throws Exception {
         synchronized (account) {
             try {
                 if (isAPIOnlyMode()) {
                     /* This should never happen */
-                    throw new AccountInvalidException("Only API accounts are supported");
+                    throw new AccountInvalidException("Login with username + password is not supported!");
                 }
                 prepBRGeneral(br);
                 br.setCookiesExclusive(true);
@@ -634,7 +638,7 @@ public class NexusmodsCom extends antiDDoSForHost {
             requestFileInformation(link);
         }
         /* Free- and premium download handling is the same. */
-        doFree(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
+        handleDownload(link, account);
     }
 
     private static boolean isAPIKey(final String str) {
@@ -648,7 +652,7 @@ public class NexusmodsCom extends antiDDoSForHost {
     }
 
     @Override
-    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+    public AccountBuilderInterface getAccountFactory(final InputChangedCallbackInterface callback) {
         if (isAPIOnlyMode()) {
             /* API login */
             return new NexusmodsAccountFactory(callback);
@@ -764,28 +768,6 @@ public class NexusmodsCom extends antiDDoSForHost {
         return true;
     }
 
-    // @Override
-    // public Class<? extends PluginConfigInterface> getConfigInterface() {
-    // return NexusmodsConfigInterface.class;
-    // }
-    //
-    // public static interface NexusmodsConfigInterface extends PluginConfigInterface {
-    // public static class TRANSLATION {
-    // public String getEnableWebsiteMode_label() {
-    // return "Enable website mode (this way you are able to use free accounts for downloading)? Do NOT enable this if you own a premium
-    // account!";
-    // }
-    // }
-    //
-    // public static final TRANSLATION TRANSLATION = new TRANSLATION();
-    //
-    // @AboutConfig
-    // @DefaultBooleanValue(false)
-    // @Order(5)
-    // boolean isEnableWebsiteMode();
-    //
-    // void setEnableWebsiteMode(boolean b);
-    // }
     @Override
     public void reset() {
     }
