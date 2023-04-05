@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -40,7 +41,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "getcomics.info" }, urls = { "https?://(?:www\\.)?getcomics\\.info/(share/uploads/\\d+/\\d+/[a-zA-Z0-9\\_\\-]+\\.txt|(?!share/|page/)[^/]+/.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GetComicsInfo extends antiDDoSForDecrypt {
     private final String DOWNLOAD_SINGLE_PAGES = "DOWNLOAD_SINGLE_PAGES";
 
@@ -53,6 +54,34 @@ public class GetComicsInfo extends antiDDoSForDecrypt {
     public void init() {
         super.init();
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "getcomics.org", "getcomics.info" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(share/uploads/\\d+/\\d+/[a-zA-Z0-9\\_\\-]+\\.txt|(?!share/|page/)[^/]+/.+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -76,7 +105,9 @@ public class GetComicsInfo extends antiDDoSForDecrypt {
             final GetRequest request = br.createGetRequest(addedurl);
             URLConnectionAdapter con = openAntiDDoSRequestConnection(br, request);
             try {
-                while (true) {
+                int attempts = 0;
+                do {
+                    attempts++;
                     if (this.looksLikeDownloadableContent(con)) {
                         final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(request, con);
                         ret.add(direct.getDownloadLink());
@@ -96,7 +127,7 @@ public class GetComicsInfo extends antiDDoSForDecrypt {
                             break;
                         }
                     }
-                }
+                } while (attempts <= 10);
             } finally {
                 con.disconnect();
             }
