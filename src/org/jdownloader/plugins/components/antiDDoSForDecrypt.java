@@ -528,6 +528,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     }
 
     private void processCloudflare(final Object lockObject, final Browser ibr, final Request request, final Cookies cookies) throws Exception {
+        if (true) {
+            /* Code down below doesn't work anymore as of middle/end of 2022. */
+            return;
+        }
         final int responseCode = ibr.getHttpConnection().getResponseCode();
         // all cloudflare events are behind text/html
         if (StringUtils.startsWithCaseInsensitive(ibr.getHttpConnection().getContentType(), "text/html")) {

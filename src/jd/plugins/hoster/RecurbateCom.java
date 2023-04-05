@@ -22,6 +22,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.RecurbateComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -37,18 +45,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.RecurbateComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class RecurbateCom extends antiDDoSForHost {
+public class RecurbateCom extends PluginForHost {
     public RecurbateCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://recurbate.com/signup");
@@ -122,10 +122,11 @@ public class RecurbateCom extends antiDDoSForHost {
             link.setName(fid + ".mp4");
         }
         if (account != null) {
-            this.login(account, false);
+            this.login(account, link.getPluginPatternMatcher(), true);
+        } else {
+            br.setFollowRedirects(true);
+            br.getPage(link.getPluginPatternMatcher());
         }
-        br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -217,7 +218,8 @@ public class RecurbateCom extends antiDDoSForHost {
                 if (streamLink == null) {
                     if (StringUtils.containsIgnoreCase(brc.toString(), "shall_signin")) {
                         /**
-                         * Free users can watch one video per IP per X time. </br> This error should only happen in logged-out state.
+                         * Free users can watch one video per IP per X time. </br>
+                         * This error should only happen in logged-out state.
                          */
                         errorDailyDownloadlimitReached(account);
                     } else if (StringUtils.containsIgnoreCase(brc.toString(), "shall_subscribe")) {
@@ -282,7 +284,7 @@ public class RecurbateCom extends antiDDoSForHost {
         }
     }
 
-    private boolean login(final Account account, final boolean force) throws Exception {
+    private boolean login(final Account account, final String checkURL, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
@@ -290,8 +292,8 @@ public class RecurbateCom extends antiDDoSForHost {
                 final Cookies userCookies = account.loadUserCookies();
                 if (userCookies == null) {
                     /**
-                     * 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment.</br> Login
-                     * page: https://recurbate.com/signin
+                     * 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment.</br>
+                     * Login page: https://recurbate.com/signin
                      */
                     /* Only display cookie login instructions on first login attempt */
                     if (!account.hasEverBeenValid()) {
@@ -305,7 +307,7 @@ public class RecurbateCom extends antiDDoSForHost {
                     /* Do not validate cookies */
                     return false;
                 }
-                br.getPage("https://" + this.getHost() + "/account.php");
+                br.getPage(checkURL);
                 checkForIPBlocked(br, null, account);
                 if (this.isLoggedin(br)) {
                     logger.info("User cookie login successful");
@@ -338,7 +340,7 @@ public class RecurbateCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        login(account, "https://" + this.getHost() + "/account.php", true);
         ai.setUnlimitedTraffic();
         final String nickname = br.getRegex("(?i)Nickname\\s*</div>\\s*<div class=\"col-sm-8\">\\s*([^<>\"]+)").getMatch(0);
         if (nickname != null) {
