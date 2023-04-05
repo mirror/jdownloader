@@ -259,6 +259,7 @@ decrypter_invalidaccount=Nenhuma conta válida encontrada
 decrypter_plugindefect=Detectar plugin
 decrypter_pluginsettings=Verificar Configurações do Plugin
 decrypter_pluginsettings_description=Verifique as congifurações deste plugin, parece que você configurou ele de uma maneira que a captura de links não consegue retornar nenhum resultado.
+decrypter_unavailable_blocked_by=Bloqueado por
 decrypter_unavailable_geo=Não disponível para a geolocalização atual
 decrypter_unavailable_geo_description=Não disponível para geolocalização atual. Altere seu IP para poder capturar este conteúdo.
 decrypter_unavailable_ip=Não disponível para o IP atual
