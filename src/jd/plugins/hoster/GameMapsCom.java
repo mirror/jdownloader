@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,12 +32,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class GameMapsCom extends antiDDoSForHost {
+public class GameMapsCom extends PluginForHost {
     private String         dllink            = null;
     private final String   cacheLinkProperty = "cacheLink";
     private final String[] servers           = new String[] { "USA", "LONDON" };
@@ -88,15 +88,15 @@ public class GameMapsCom extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.gamemaps.com/terms-of-use";
+        return "https://www.gamemaps.com/terms-of-use";
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return false;
     }
 
-    // do not add @Override here to keep 0.* compatibility
+    @Override
     public boolean hasAutoCaptcha() {
         return false;
     }
@@ -105,7 +105,7 @@ public class GameMapsCom extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -143,11 +143,13 @@ public class GameMapsCom extends antiDDoSForHost {
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
-            link.setProperty(cacheLinkProperty, br.getURL());
-            dl.startDownload();
         }
+        final String filenameFromHeader = getFileNameFromHeader(dl.getConnection());
+        if (filenameFromHeader != null) {
+            link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader));
+        }
+        link.setProperty(cacheLinkProperty, br.getURL());
+        dl.startDownload();
     }
 
     private String prefsLocation() {
