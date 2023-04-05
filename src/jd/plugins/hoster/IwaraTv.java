@@ -23,6 +23,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.IwaraTvConfig;
+import org.jdownloader.plugins.components.config.IwaraTvConfig.FilenameScheme;
+import org.jdownloader.plugins.components.config.IwaraTvConfig.FilenameSchemeType;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -43,18 +55,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.IwaraTvCrawler;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.IwaraTvConfig;
-import org.jdownloader.plugins.components.config.IwaraTvConfig.FilenameScheme;
-import org.jdownloader.plugins.components.config.IwaraTvConfig.FilenameSchemeType;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { IwaraTvCrawler.class })
@@ -259,7 +259,7 @@ public class IwaraTv extends PluginForHost {
         if (user != null) {
             link.setProperty(PROPERTY_USER, user.get("name"));
         }
-        link.setProperty(PROPERTY_TITLE, entries.get("title"));
+        link.setProperty(PROPERTY_TITLE, entries.get("title").toString().trim());
         if (Boolean.TRUE.equals(entries.get("private")) || StringUtils.equalsIgnoreCase(message, "errors.privateVideo")) {
             link.setProperty(PROPERTY_IS_PRIVATE, true);
         } else {

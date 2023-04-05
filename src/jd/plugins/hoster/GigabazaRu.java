@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -28,8 +30,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigabaza.ru" }, urls = { "https?://(?:www\\.)?gigabaza\\.ru/download/(\\d+)\\.html" })
 public class GigabazaRu extends PluginForHost {
@@ -58,14 +58,16 @@ public class GigabazaRu extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        /* 2020-12-04: All files are .zip files(?) */
+        if (!link.isNameSet()) {
+            link.setName(getFID(link) + ".zip");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* 2020-12-04: All files are .zip files(?) */
-        link.setName(getFID(link) + ".zip");
         return AvailableStatus.TRUE;
     }
 
@@ -86,8 +88,10 @@ public class GigabazaRu extends PluginForHost {
             /* Select docx as our default format. */
             dlform.put("doc_type", "docx");
         }
-        final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-        dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(dlform)) {
+            final String recaptchaV2Response = getCaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
@@ -98,6 +102,7 @@ public class GigabazaRu extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
