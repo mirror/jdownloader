@@ -168,7 +168,6 @@ public class GigafileNu extends PluginForHost {
             }
             // final String dllink = "/dl_zip.php?file=" + fileiidFromURL;
             final String dllink = "/download.php?file=" + fileIDForDownload;
-            // https://90.gigafile.nu/download.php?file=0406-pb0f2b234b407e354dea93a09f7705eb5
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
