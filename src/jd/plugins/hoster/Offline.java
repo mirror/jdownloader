@@ -17,11 +17,12 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -44,9 +45,23 @@ import jd.plugins.PluginForHost;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Offline extends PluginForHost {
-    /* 1st domain = current domain! */
-    private static String[] getDomains() {
-        return new String[] { "datafile.com", "noco.tv", "upload.zone", "fflares.com", "fileflares.com", "filescdn.com", "filescdn.net", "mixstep.co", "vip.belle.la", "aniteca.zlx.com.br", "streaminporn.xyz", "upload2win.com", "top4upload.com", "stream.moe", "ezfiles.net", "cloudupload.co", "axfiles.net", "xdrive.cc", "omerta.is", "borfos.com", "xshare.eu", "xeupload.com", "nodefiles.com", "gwshare.com", "upasias.com", "upload4earn.com", "downgb.com", "fenixfile.com", "flexydrive.com", "indoshares.com", "yousaved.it", "rapidturk.com", "diskokosmiko.mx", "linestorage.org", "uploadbits.com", "uploadbits.net", "uploadburst.com", "filecloud.io", "ezfile.ch", "we4load.com", "xfilesharing.us", "host.hackerbox.org", "ulozisko.sk", "teramixer.com", "imgspot.org", "uploadadz.com", "bdnupload.com", "catshare.net", "videobash.com", "ultimatedown.com", "d-h.st", "tenlua.vn", "5azn.net",
+    /**
+     *
+     * @param wrapper
+     */
+    public Offline(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.INTERNAL };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "datafile.com", "noco.tv", "upload.zone", "fflares.com", "fileflares.com", "filescdn.com", "filescdn.net", "mixstep.co", "vip.belle.la", "aniteca.zlx.com.br", "streaminporn.xyz", "upload2win.com", "top4upload.com", "stream.moe", "ezfiles.net", "cloudupload.co", "axfiles.net", "xdrive.cc", "omerta.is", "borfos.com", "xshare.eu", "xeupload.com", "nodefiles.com", "gwshare.com", "upasias.com", "upload4earn.com", "downgb.com", "fenixfile.com", "flexydrive.com", "indoshares.com", "yousaved.it", "rapidturk.com", "diskokosmiko.mx", "linestorage.org", "uploadbits.com", "uploadbits.net", "uploadburst.com", "filecloud.io", "ezfile.ch", "we4load.com", "xfilesharing.us", "host.hackerbox.org", "ulozisko.sk", "teramixer.com", "imgspot.org", "uploadadz.com", "bdnupload.com", "catshare.net", "videobash.com", "ultimatedown.com", "d-h.st", "tenlua.vn", "5azn.net",
                 "rapidpaid.com", "iranupload.com", "bytewhale.com", "filecyber.com", "putfiles.in", "fileud.com", "tempfile.ru", "cloud.directupload.net", "streammania.com", "brapid.sk", "watchers.to", "movdivx.com", "megadrive.tv", "megadrive.co", "swoopshare.com", "supershare.pl", "uptodo.net", "rawabbet.com", "zorofiles.com", "arivoweb.com", "hippohosted.com", "rabidfiles.com", "animefiles.online", "uploads.to", "uplod.it", "photo.qip.ru", "file.qip.ru", "uploadable.ch", "bigfile.to", "imgzen.com", "imgdragon.com", "coreimg.net", "pic-maniac.com", "filemack.com", "filemac.com", "filekom.com", "file.oboz.ua", "protect-url.net", "p-u.in", "speedshare.eu", "magic4up.com", "uploadkadeh.com", "megafiles.us", "fileproject.com.br", "fileinstant.com", "uploadx.org", "uploadx.co", "uploadz.org", "uploadz.co", "uploadz.click", "uploaduj.net", "uploads.ws", "upl.me", "herosh.com",
                 "avatarshare.com", "sju.wang", "uploadkadeh.ir", "uploading.site", "miravideos.net", "1000eb.com", "upload.mn", "upload.af", "sharehost.eu", "linkzhost.com", "files.com", "imgcandy.net", "failai.lt", "loadgator.com", "megafileupload.com", "megafirez.com", "megawatch.net", "dj97.com", "lacoqui.net", "vodlock.co", "vodlocker.city", "wizupload.com", "ziifile.com", "foxyimg.link", "chronos.to", "minhateca.com.br", "datasbit.com", "tubeq.xxx", "superupload.com", "disk.tom.ru", "mygirlfriendvids.net", "kingvid.tv", "faphub.xxx", "funonly.net", "bemywife.cc", "noslocker.com", "nosvideo.com", "hotamateurs.xxx", "bezvadata.cz", "anafile.com", "imgtiger.org", "minup.net", "jumbload.com", "media4up.com", "x3xtube.com", "basicupload.com", "jeodrive.com", "coolbytez.com", "keepshare.net", "superbshare.com", "levinpic.org", "imggold.org", "gavitex.com", "filesflash.com",
                 "share.vnn.vn", "filebebo.cc", "imgdiamond.com", "imgswift.com", "arabloads.net", "filesisland.com", "share.az", "gigasize.com", "tuberealm.com", "nudeflix.com", "grifthost.com", "xvidstage.com", "up07.net", "wastedamateurs.com", "filedais.com", "streamin.to", "myimg.club", "depfile.com", "mangatraders.biz", "vid.me", "uploadrocket.net", "faplust.com", "unlimitzone.com", "copiapop.com", "partagora.com", "filespace.io", "kingfiles.net", "uber-sha.re", "obscuredfiles.com", "uploadlw.com", "ulnow.com", "nashdisk.ru", "partage-facile.com", "ourupload.com", "glbupload.com", "imgve.com", "drfile.net", "bitload.org", "megafile.co", "gulf4up.com", "mydrive.com", "uplea.com", "letwatch.us", "onemillionfiles.com", "unlimit.co.il", "ul-instant.pw", "goear.com", "exfile.ru", "extradj.com", "exashare.com", "ecostream.tv", "karadownloads.com", "dropjar.com", "zstream.to", "ulshare.se",
@@ -86,40 +101,39 @@ public class Offline extends PluginForHost {
                 "xshare.club", "creampiewomen.com", "cougarfuckclub.com", "oneload.xyz", "oneload.co", "ero-tik.com", "pornsharing.com", "fastshare.org", "dropcanvas.com", "come2store.com", "imgtiger.com", "imgdino.com", "fileflyer.com", "akatsuki-subs.net", "mega-otr.de", "pornsexwank.com", "allnetcorp.com", "nofile.io", "prochan.com", "freepornvideo.me", "upload2.com", "xxxkingtube.com", "qiannao.com", "uploadocean.com", "tunescoop.com", "udrop.net", "upload-earn.com", "uberupload.net", "xfiles.io", "void.cat", "idtbox.com", "easyfilecloud.com", "dramafever.com", "netdisk.sk", "tu.tv", "trilulilu.ro", "picsee.net", "uplod.ws", "uplod.org", "uploadshub.com", "upload.so", "fxpan.com", "linx.li", "upload.cd", "xfig.net", "vidtome.co", "vidtome.stream", "vidto.me", "vidto.se", "imgant.com", "sendvid.net", "vev.io", "thevideo.me", "thevideo.cc", "vev.red", "vidup.io", "vidup.me",
                 "vidup.tv", "vidop.icu", "upwap.ru", "snowfiles.com", "oboom.com", "nzblord.com", "fileshark.pl", "depofile.info", "dbupload.co", "dbupload.in", "luckfile.com", "boostfiles.net", "liveleak.com", "backin.net", "imagezilla.net", "filemia.co", "xtube.com", "imageteam.org", "imgstudio.org", "ge.tt", "datafilehost.com", "easylinkz.net", "jetload.net", "uploadship.com", "inclouddrive.com", "speed-down.org", "4downfiles.co", "4downfile.org", "4downfiles.org", "4downfiles.com", "4downfiles.net", "lunaticfiles.com", "dbree.co", "koofile.com", "up.media1fire.com", "fileup.cc", "sfiles.org", "share-online.to", "ozofiles.com", "public.upera.co", "proxy.nsanedown.com", "rapidu.net", "vidcloud.ru", "vcstream.to", "vidcloud.ru", "pornyeah.com", "vidlox.me", "vidlox.tv", "vivo.sx", "vivo.st", "dateiload.com", "streamon.to", "yunpan.cn", "file-space.org", "freefile.me", "damimage.com",
                 "imagedecode.com", "dimtus.com", "go-upload.com", "pieshare.me", "oxycloud.com", "overthumbs.com", "saruch.co", "uploadit.eu", "uploadbox.co", "vinload.com", "freaktab.org", "freshfile.pl", "intoupload.net", "duckstream.co", "share2win.xyz", "turbogb.com", "saikocloud.ml", "storex.cc", "sufile.com", "up-myfiles.com", "uploads.mobi", "uploadproper.com", "uploadproper.net", "viperfile.com", "filepup.net", "down4files.com", "faststore.org", "mon-partage.fr", "doraupload.com", "fastix.ru", "play.fm", "fastdrive.io", "imgbabes.com", "vpornvideos.com", "anavidz.com", "anavids.com", "imgflare.com", "imgbabes.com", "vupload.com", "vup.to", "filecad.com", "pornwild.to", "pornwild.com", "pornwild.su", "evilhub.com", "datoporn.com", "dato.porn", "dbree.org", "filebit.net", "file4.net", "sexzindian.com", "bin.ge", "datator.cz", "dosyashare.com", "dosya.tv", "downster.net",
-                "dunshare.com", "dropdoc.ru", "dropmyfiles.com", "dropupload.com", "easyupload.net", "anzfile.net", "eyesfile.ca", "upvideo.to", "fakirdebrid.com", "fakirserver.info", "2file.win", "filelox.com", "filezip.cc", "filetitle.com", "zippyshare.com", "hellspy.cz", "hellspy.sk", "hellspy.com", "stiahnito.sk", "hellshare.com", "hellshare.sk", "hellshare.hu", "hellshare.de", "hellshare.cz", "hellshare.pl", "flashx.net", "flashx.tv", "flash-x.tv", "flashx.pw", "flashx.co", "flashx.cc", "flashx.to" };
+                "dunshare.com", "dropdoc.ru", "dropmyfiles.com", "dropupload.com", "easyupload.net", "anzfile.net", "eyesfile.ca", "upvideo.to", "fakirdebrid.com", "fakirserver.info", "2file.win", "filelox.com", "filezip.cc", "filetitle.com", "zippyshare.com", "hellspy.cz", "hellspy.sk", "hellspy.com", "stiahnito.sk", "hellshare.com", "hellshare.sk", "hellshare.hu", "hellshare.de", "hellshare.cz", "hellshare.pl", "flashx.net", "flashx.tv", "flash-x.tv", "flashx.pw", "flashx.co", "flashx.cc", "flashx.to" });
+        return ret;
     }
 
     public static String[] getAnnotationNames() {
-        return getDomains();
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
     }
 
     public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
-        for (final String name : getDomains()) {
-            ret.add("https?://(?:[A-Za-z0-9\\-]+\\.)?" + "(?:" + Pattern.quote(name) + ").+");
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:[A-Za-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/.+");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
-    public String[] siteSupportedNames() {
-        return getDomains();
-    }
-
-    /**
-     *
-     * @param wrapper
-     */
-    public Offline(PluginWrapper wrapper) {
-        super(wrapper);
-    }
-
-    @Override
-    public boolean checkLinks(DownloadLink[] urls) {
-        if (urls != null) {
-            for (final DownloadLink link : urls) {
+    public boolean checkLinks(final DownloadLink[] items) {
+        if (items != null) {
+            for (final DownloadLink link : items) {
                 link.setAvailable(false);
-                link.setComment(getErrorMessage());
+                if (StringUtils.isEmpty(link.getComment())) {
+                    link.setComment(getErrorMessage(link, null));
+                }
             }
         }
         return true;
@@ -130,13 +144,24 @@ public class Offline extends PluginForHost {
         return false;
     }
 
-    private String getErrorMessage() {
-        return "Permanently Offline: " + getHost() + " provider no longer exists";
+    private String getErrorMessage(final DownloadLink link, final Account account) {
+        return "Permanently Offline: Website " + getHost(link, account, true) + " no longer exists!";
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, getErrorMessage(), PluginException.VALUE_ID_PREMIUM_DISABLE);
+    public String getHost(final DownloadLink link, final Account account, boolean includeSubdomain) {
+        if (link != null) {
+            return Browser.getHost(link.getPluginPatternMatcher(), includeSubdomain);
+        } else if (account != null) {
+            return account.getHoster();
+        } else {
+            return super.getHost(link, account, includeSubdomain);
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, getErrorMessage(null, account), PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
@@ -150,22 +175,17 @@ public class Offline extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, getErrorMessage());
+    public void handleFree(final DownloadLink link) throws Exception {
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, getErrorMessage(link, null));
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, getErrorMessage());
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, getErrorMessage(link, null));
     }
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.INTERNAL };
     }
 
     @Override

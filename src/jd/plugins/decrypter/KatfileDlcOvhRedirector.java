@@ -70,7 +70,7 @@ public class KatfileDlcOvhRedirector extends PluginForDecrypt {
         }
         String finallink = br.getRedirectLocation();
         if (finallink == null) {
-            finallink = br.getRegex("http-equiv=\"refresh\" content=\"\\d+; url=(https?://[^<>\"]+)\">").getMatch(0);
+            finallink = br.getRegex("(?i)http-equiv=\"refresh\" content=\"\\d+; url=(https?://[^<>\"]+)\">").getMatch(0);
         }
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
