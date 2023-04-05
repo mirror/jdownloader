@@ -63,7 +63,7 @@ public class Offline extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         List<String[]> ret = null;
         final Map<String, Object> cache = HostPluginController.PLUGIN_UPDATE_CACHE.get();
-        final String cacheID = Offline.class.getName() + "/PluginDomains";
+        final String cacheID = Offline.class.getName() + "-PluginDomains";
         if (cache != null && (ret = (List<String[]>) cache.get(cacheID)) != null) {
             return ret;
         }
