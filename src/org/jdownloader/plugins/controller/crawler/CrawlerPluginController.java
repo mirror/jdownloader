@@ -91,6 +91,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         list = null;
     }
 
+    public static final ThreadLocal<Map<String, Object>> PLUGIN_UPDATE_CACHE = new ThreadLocal<Map<String, Object>>();
+
     public List<LazyCrawlerPlugin> init() {
         synchronized (INSTANCELOCK) {
             final LogSource logger = LogController.CL(false);
@@ -120,6 +122,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                         List<LazyCrawlerPlugin> plugins = null;
                         timeStamp = System.currentTimeMillis();
                         try {
+                            PLUGIN_UPDATE_CACHE.set(new HashMap<String, Object>());
                             /* do a fresh scan */
                             plugins = update(logger, updateCache, lastModification);
                         } catch (Throwable e) {
@@ -127,6 +130,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             logger.log(e);
                             logger.severe("@CrawlerPluginController: update failed!");
                         } finally {
+                            PLUGIN_UPDATE_CACHE.set(null);
                             if (plugins != null && plugins.size() > 0) {
                                 logger.info("@CrawlerPluginController: update took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size() + "|LastModified:" + lastModification.get());
                             }
@@ -317,7 +321,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /*
      * returns the list of available plugins
-     * 
+     *
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {

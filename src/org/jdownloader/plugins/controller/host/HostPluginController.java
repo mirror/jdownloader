@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -95,6 +96,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
         });
     }
 
+    public static final ThreadLocal<Map<String, Object>> PLUGIN_UPDATE_CACHE = new ThreadLocal<Map<String, Object>>();
+
     public synchronized Map<String, LazyHostPlugin> init() {
         return new NonInterruptibleRunnable<Map<String, LazyHostPlugin>, RuntimeException>() {
             @Override
@@ -124,6 +127,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                     List<LazyHostPlugin> plugins = null;
                     timeStamp = System.currentTimeMillis();
                     try {
+                        PLUGIN_UPDATE_CACHE.set(new HashMap<String, Object>());
                         /* do a fresh scan */
                         plugins = update(logger, lastKnownPlugins, lastModification);
                     } catch (Throwable e) {
@@ -131,6 +135,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         logger.log(e);
                         logger.severe("@HostPluginController: update failed!");
                     } finally {
+                        PLUGIN_UPDATE_CACHE.set(null);
                         if (plugins != null && plugins.size() > 0) {
                             logger.info("@HostPluginController: update took " + (System.currentTimeMillis() - timeStamp) + "ms for " + plugins.size() + "|LastModified:" + lastModification.get());
                         }

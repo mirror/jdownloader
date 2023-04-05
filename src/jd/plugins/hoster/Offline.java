@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,6 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 
 /**
  * The idea behind this is to speed up linkchecking for host providers that go permanently offline. URLs tend to stay cached/archived on the
@@ -59,7 +61,13 @@ public class Offline extends PluginForHost {
     }
 
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
+        List<String[]> ret = null;
+        final Map<String, Object> cache = HostPluginController.PLUGIN_UPDATE_CACHE.get();
+        final String cacheID = Offline.class.getName() + "/PluginDomains";
+        if (cache != null && (ret = (List<String[]>) cache.get(cacheID)) != null) {
+            return ret;
+        }
+        ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         final String[] singleDomainHosts = new String[] { "datafile.com", "noco.tv", "upload.zone", "fflares.com", "fileflares.com", "filescdn.com", "filescdn.net", "mixstep.co", "vip.belle.la", "aniteca.zlx.com.br", "streaminporn.xyz", "upload2win.com", "top4upload.com", "stream.moe", "ezfiles.net", "cloudupload.co", "axfiles.net", "xdrive.cc", "omerta.is", "borfos.com", "xshare.eu", "xeupload.com", "nodefiles.com", "gwshare.com", "upasias.com", "upload4earn.com", "downgb.com", "fenixfile.com", "flexydrive.com", "indoshares.com", "yousaved.it", "rapidturk.com", "diskokosmiko.mx", "linestorage.org", "uploadbits.com", "uploadbits.net", "uploadburst.com", "filecloud.io", "ezfile.ch", "we4load.com", "xfilesharing.us", "host.hackerbox.org", "ulozisko.sk", "teramixer.com", "imgspot.org", "uploadadz.com", "bdnupload.com", "catshare.net", "videobash.com", "ultimatedown.com", "d-h.st",
                 "tenlua.vn", "5azn.net", "rapidpaid.com", "iranupload.com", "bytewhale.com", "filecyber.com", "putfiles.in", "fileud.com", "tempfile.ru", "cloud.directupload.net", "streammania.com", "brapid.sk", "watchers.to", "movdivx.com", "megadrive.tv", "megadrive.co", "swoopshare.com", "supershare.pl", "uptodo.net", "rawabbet.com", "zorofiles.com", "arivoweb.com", "hippohosted.com", "rabidfiles.com", "animefiles.online", "uploads.to", "uplod.it", "photo.qip.ru", "file.qip.ru", "uploadable.ch", "bigfile.to", "imgzen.com", "imgdragon.com", "coreimg.net", "pic-maniac.com", "filemack.com", "filemac.com", "filekom.com", "file.oboz.ua", "protect-url.net", "p-u.in", "speedshare.eu", "magic4up.com", "uploadkadeh.com", "megafiles.us", "fileproject.com.br", "fileinstant.com", "uploadx.org", "uploadx.co", "uploadz.org", "uploadz.co", "uploadz.click", "uploaduj.net", "uploads.ws", "upl.me",
@@ -106,6 +114,9 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "flashx.net", "flashx.tv", "flash-x.tv", "flashx.pw", "flashx.co", "flashx.cc", "flashx.to" });
         ret.add(new String[] { "hellspy.cz", "hellspy.sk", "hellspy.com" });
         ret.add(new String[] { "hellshare.com", "hellshare.sk", "hellshare.hu", "hellshare.de", "hellshare.cz", "hellshare.pl" });
+        if (cache != null) {
+            cache.put(cacheID, ret);
+        }
         return ret;
     }
 
