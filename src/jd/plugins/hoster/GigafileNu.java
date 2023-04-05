@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,9 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GigafileNu extends PluginForHost {
@@ -70,9 +73,8 @@ public class GigafileNu extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME    = true;
+    private static final int     FREE_MAXCHUNKS = 0;
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -96,6 +98,7 @@ public class GigafileNu extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
             /* Fallback */
             link.setName(this.getFID(link));
@@ -105,43 +108,67 @@ public class GigafileNu extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.containsHTML("download\\('" + this.getFID(link))) {
+        } else if (!br.containsHTML("download\\('" + fid) && !br.containsHTML("var file = \"" + fid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String[] nonZipFiles = br.getRegex("alt=\"スキャン中\" style=\"height: 18px;\">\\s*</span>\\s*<span class=\"\">([^<]+)</span>").getColumn(0);
         String filename = br.getRegex("<span>([^<>\"]+\\.zip)</span>").getMatch(0);
         if (filename == null) {
             /* 2022-02-15 */
             filename = br.getRegex("onclick=\"download\\([^\\)]+\\);\">([^<>\"]+)</p>").getMatch(0);
         }
-        String filesize = br.getRegex("<span style=\"font-size: 12px;\">（(.*?)）</span>").getMatch(0);
-        if (filesize == null) {
+        String filesizeStr = br.getRegex("<span style=\"font-size: 12px;\">（(.*?)）</span>").getMatch(0);
+        if (filesizeStr == null) {
             /* 2022-02-15 */
-            filesize = br.getRegex("class=\"dl_size\"[^>]*>([^<>\"]+)<").getMatch(0);
+            filesizeStr = br.getRegex("class=\"dl_size\"[^>]*>([^<>\"]+)<").getMatch(0);
+        }
+        final String filesizeBytesStr = br.getRegex("var size = (\\d+);").getMatch(0);
+        if (nonZipFiles != null && nonZipFiles.length == 1) {
+            /* We only got one file -> Do not attempt .zip download and set name of that file right away. */
+            filename = nonZipFiles[0];
         }
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
         }
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesizeBytesStr != null) {
+            /* Prefer precise filesize. */
+            link.setDownloadSize(Long.parseLong(filesizeBytesStr));
+        } else if (filesizeStr != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
-            final String fileiidFromURL = new Regex(br.getURL(), "https?://[^/]+/(.+)").getMatch(0);
-            if (fileiidFromURL == null) {
+            requestFileInformation(link);
+            final String mainFileID = br.getRegex("var file = \"([^\"]+)").getMatch(0);
+            final String filesJson = br.getRegex("var files = (\\[.*?\\]);").getMatch(0);
+            String fileIDForDownload = null;
+            if (filesJson != null) {
+                final List<Object> ressourcelist = JSonStorage.restoreFromString(filesJson, TypeRef.LIST);
+                if (ressourcelist.size() == 1) {
+                    /* Single file -> Download that, else .zip of all files. */
+                    final Map<String, Object> filemap = (Map<String, Object>) ressourcelist.get(0);
+                    fileIDForDownload = filemap.get("file").toString();
+                }
+            }
+            if (fileIDForDownload == null) {
+                fileIDForDownload = mainFileID;
+            }
+            // final String fileiidFromURL = new Regex(br.getURL(), "https?://[^/]+/(.+)").getMatch(0);
+            if (fileIDForDownload == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // final String dllink = "/dl_zip.php?file=" + fileiidFromURL;
-            final String dllink = "/download.php?file=" + fileiidFromURL;
+            final String dllink = "/download.php?file=" + fileIDForDownload;
+            // https://90.gigafile.nu/download.php?file=0406-pb0f2b234b407e354dea93a09f7705eb5
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
@@ -191,7 +218,7 @@ public class GigafileNu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     @Override
