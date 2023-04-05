@@ -39,7 +39,7 @@ import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
 import jd.controlling.linkcrawler.LinkCrawlerDistributer;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
-import jd.http.Browser.BlockedByAntiDDosException;
+import jd.http.Browser.BlockedByException;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DecrypterRetryException.RetryReason;
@@ -481,8 +481,8 @@ public abstract class PluginForDecrypt extends Plugin {
                         return results;
                     } else if (e instanceof DecrypterRetryException) {
                         throw (DecrypterRetryException) e;
-                    } else if (e instanceof BlockedByAntiDDosException) {
-                        final BlockedByAntiDDosException ba = (BlockedByAntiDDosException) e;
+                    } else if (e instanceof BlockedByException) {
+                        final BlockedByException ba = (BlockedByException) e;
                         throw new DecrypterRetryException(RetryReason.BLOCKED_BY_ANTI_DDOS, ba.getSuperMessage(), null, e);
                     } else if (e instanceof BrowserException || e instanceof UnknownHostException) {
                         throw new DecrypterRetryException(RetryReason.HOST, null, null, e);

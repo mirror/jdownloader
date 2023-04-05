@@ -44,7 +44,7 @@ import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Authentication;
 import jd.http.AuthenticationFactory;
 import jd.http.Browser;
-import jd.http.Browser.BlockedByAntiDDosException;
+import jd.http.Browser.BlockedByException;
 import jd.http.CallbackAuthenticationFactory;
 import jd.http.Cookies;
 import jd.http.DefaultAuthenticanFactory;
@@ -690,7 +690,7 @@ public class DirectHTTP extends antiDDoSForHost {
         if (urlConnection != null) {
             try {
                 br.followConnection(true);
-            } catch (BlockedByAntiDDosException e) {
+            } catch (BlockedByException e) {
                 logger.log(e);
                 throw e;
             } catch (final IOException e) {
