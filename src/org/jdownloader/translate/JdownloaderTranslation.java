@@ -176,8 +176,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Livestreams are not supported." })
     String decrypter_unavailable_unsupported_livestream();
 
-    @Default(lngs = { "en" }, values = { "Blocked by AntiDDoS provider" })
-    String decrypter_unavailable_blocked_by_anti_ddos();
+    @Default(lngs = { "en" }, values = { "Blocked by" })
+    String decrypter_unavailable_blocked_by();
 
     @Default(lngs = { "en" }, values = { "A limit on your current IP address makes crawling this item impossible. Change your IP address or try again later." })
     String decrypter_unavailable_ip_description();

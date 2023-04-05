@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -30,8 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehorst.de" }, urls = { "https?://(?:www\\.)?filehorst\\.de/(?:d/|download\\.php\\?file=)([A-Za-z0-9]+)" })
 public class FileHorstDe extends PluginForHost {
     public FileHorstDe(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class FileHorstDe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://filehorst.de/agb.php";
+        return "https://filehorst.de/agb.php";
     }
 
     @Override
@@ -67,12 +67,14 @@ public class FileHorstDe extends PluginForHost {
         br.setFollowRedirects(true);
         /* 2016-08-31: New linkformat - directly access new url to avoid redirect --> It's a bit faster */
         br.getPage(Request.getLocation("/download.php?file=" + fid, br.createGetRequest(link.getPluginPatternMatcher())));
-        if (br.containsHTML("(?i)Fehler:\\s*Die angegebene Datei wurde nicht gefunden") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)Fehler:\\s*Die angegebene Datei wurde nicht gefunden")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<td>Dateiname:\\s*</td><td>([^<>\"]*?)</td></tr>").getMatch(0);
-        String filesize = br.getRegex("<td>Dateigröße:\\s*</td><td>([^<>\"]*?)</td></tr>").getMatch(0);
-        final String md5 = br.getRegex("<td>MD5:\\s*</td><td>([^<>\"]*?)</td></tr>").getMatch(0);
+        String filename = br.getRegex("<td>\\s*Dateiname:\\s*</td><td>([^<]*?)<").getMatch(0);
+        String filesize = br.getRegex("<td>\\s*Dateigröße:\\s*</td><td>([^<>\"]*?)<").getMatch(0);
+        final String md5 = br.getRegex("<td>\\s*MD5:\\s*</td><td>([^<]*?)<").getMatch(0);
         /* Server sometimes sends crippled/encoded filenames */
         if (filename != null) {
             link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename).trim()));
@@ -91,7 +93,7 @@ public class FileHorstDe extends PluginForHost {
         requestFileInformation(link);
         String dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
-            final Regex wait_id = br.getRegex(">downloadWait\\((\\d+), \"([^\"]+)");
+            final Regex wait_id = br.getRegex(">\\s*downloadWait\\((\\d+), \"([^\"]+)");
             final String waittime = wait_id.getMatch(0);
             final String id = wait_id.getMatch(1);
             if (waittime == null || id == null) {

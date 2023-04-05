@@ -17,7 +17,7 @@ public class DecrypterRetryException extends Exception {
         GEO(_JDT.T.decrypter_unavailable_geo()),
         IP(_JDT.T.decrypter_unavailable_ip()),
         UNSUPPORTED_LIVESTREAM(_JDT.T.decrypter_unavailable_unsupported_livestream()),
-        BLOCKED_BY_ANTI_DDOS(_JDT.T.decrypter_unavailable_blocked_by_anti_ddos());
+        BLOCKED_BY(_JDT.T.decrypter_unavailable_blocked_by());
 
         private final String exp;
 

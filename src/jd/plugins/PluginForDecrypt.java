@@ -483,7 +483,7 @@ public abstract class PluginForDecrypt extends Plugin {
                         throw (DecrypterRetryException) e;
                     } else if (e instanceof BlockedByException) {
                         final BlockedByException ba = (BlockedByException) e;
-                        throw new DecrypterRetryException(RetryReason.BLOCKED_BY_ANTI_DDOS, ba.getSuperMessage(), null, e);
+                        throw new DecrypterRetryException(RetryReason.BLOCKED_BY, ba.getSuperMessage(), null, e);
                     } else if (e instanceof BrowserException || e instanceof UnknownHostException) {
                         throw new DecrypterRetryException(RetryReason.HOST, null, null, e);
                     } else if (processCaptchaException(e)) {
