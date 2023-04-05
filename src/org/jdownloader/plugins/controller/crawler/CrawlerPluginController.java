@@ -158,7 +158,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                         logger.close();
                         if (llist != null) {
                             final AtomicLong lastModification = new AtomicLong(CrawlerPluginController.this.lastModification.get());
-                            Thread saveThread = new Thread("@CrawlerPluginController:save") {
+                            Thread saveThread = new Thread("@CrawlerPluginController: save") {
                                 public void run() {
                                     save(llist, lastModification);
                                 };
@@ -321,7 +321,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /*
      * returns the list of available plugins
-     *
+     * 
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {
