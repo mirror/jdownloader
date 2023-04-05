@@ -259,7 +259,10 @@ public class IwaraTv extends PluginForHost {
         if (user != null) {
             link.setProperty(PROPERTY_USER, user.get("name"));
         }
-        link.setProperty(PROPERTY_TITLE, entries.get("title").toString().trim());
+        final String title = (String) entries.get("title");
+        if (title != null) {
+            link.setProperty(PROPERTY_TITLE, title.trim());
+        }
         if (Boolean.TRUE.equals(entries.get("private")) || StringUtils.equalsIgnoreCase(message, "errors.privateVideo")) {
             link.setProperty(PROPERTY_IS_PRIVATE, true);
         } else {
