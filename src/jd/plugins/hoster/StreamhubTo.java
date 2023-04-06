@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -88,6 +89,22 @@ public class StreamhubTo extends XFileSharingProBasic {
             /* Free(anonymous) and unknown account type */
             return 1;
         }
+    }
+
+    @Override
+    protected boolean isVideohosterEmbedHTML(final Browser br) {
+        if (br.containsHTML("(?i)This video can be watched as embed only\\s*</div>")) {
+            return true;
+        } else {
+            return super.isVideohosterEmbedHTML(br);
+        }
+    }
+
+    @Override
+    protected String requestFileInformationVideoEmbed(final Browser br, final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
+        /* Small hack: Remove referer or we will get response "Video embed restricted for this domain". */
+        br.setCurrentURL("");
+        return super.requestFileInformationVideoEmbed(br, link, account, findFilesize);
     }
 
     @Override
