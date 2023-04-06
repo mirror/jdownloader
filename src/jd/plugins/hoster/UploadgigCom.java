@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -475,17 +476,33 @@ public class UploadgigCom extends antiDDoSForHost {
         final Regex trafficregex = br.getRegex("<dt>Daily traffic usage:?</dt>\\s*<dd>\\s*([0-9\\,\\.]+)\\s*/\\s*([0-9\\,\\.]+)\\s*MB");
         final String traffic_used_str = trafficregex.getMatch(0);
         final String traffic_max_str = trafficregex.getMatch(1);
-        String expire = br.getRegex("Package expire date:</dt>\\s*<dd>(\\d{4}/\\d{2}/\\d{2})").getMatch(0);
+        final String timeLeft = br.getRegex(">\\s*\\(([a-z0-9\\s]*)left\\s*\\)\\s*</").getMatch(0);
+        Long timeStamp = null;
+        String expire = br.getRegex("Package expire date:</dt>\\s*<dd>\\s*(\\d{4}/\\d{2}/\\d{2})").getMatch(0);
         if (expire == null) {
-            expire = br.getRegex(">(\\d{4}/\\d{2}/\\d{2})<").getMatch(0);
+            expire = br.getRegex(">\\s*(\\d{4}/\\d{2}/\\d{2})<").getMatch(0);
         }
-        if (expire == null) {
+        if (expire != null) {
+            timeStamp = TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd", Locale.ENGLISH);
+            final String months = new Regex(timeLeft, "(\\d+) months?").getMatch(0);
+            final String days = new Regex(timeLeft, "(\\d+) days?").getMatch(0);
+            final String hours = new Regex(timeLeft, "(\\d+) hours?").getMatch(0);
+            final String minutes = new Regex(timeLeft, "(\\d+) minutes?").getMatch(0);
+            if (hours != null) {
+                timeStamp += TimeUnit.HOURS.toMillis(Integer.parseInt(hours));
+            }
+            if (minutes != null) {
+                timeStamp += TimeUnit.MINUTES.toMillis(Integer.parseInt(minutes));
+            }
+            ai.setValidUntil(timeStamp);
+        }
+        if (timeStamp == null || ai.isExpired()) {
+            ai.setValidUntil(-1);
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
             account.setMaxSimultanDownloads(1);
             account.setConcurrentUsePossible(false);
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd", Locale.ENGLISH));
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
