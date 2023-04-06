@@ -49,7 +49,7 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flimmit.com" }, urls = { "https?://flimmit\\.at/([a-z0-9\\-]+)/assets/(\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flimmit.com" }, urls = { "https?://flimmit\\.(?:at|com)/([a-z0-9\\-]+)/assets/(\\d+)" })
 public class FlimmitComCrawler extends PluginForDecrypt {
     public FlimmitComCrawler(PluginWrapper wrapper) {
         super(wrapper);

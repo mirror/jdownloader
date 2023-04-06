@@ -18,12 +18,6 @@ package jd.plugins.hoster;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.FlimmitComConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,6 +30,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.FlimmitComConfig;
 
 /**
  *
@@ -56,6 +56,11 @@ public class FlimmitCom extends PluginForHost {
 
     public static String getInternalBaseURL() {
         return "https://flimmit.at/";
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "flimmit.at", "flimmit.com" };
     }
 
     /* Connection stuff */
