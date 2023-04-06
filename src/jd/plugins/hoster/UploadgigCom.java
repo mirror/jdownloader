@@ -16,10 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
 
 import javax.script.ScriptEngine;
@@ -117,7 +113,7 @@ public class UploadgigCom extends antiDDoSForHost {
             chunks = 0; // 2021-10-20
             resumes = true;
             acctype = "Premium Account";
-            directlinkproperty = "premlink";
+            directlinkproperty = "premium_directlink";
         }
     }
 
@@ -179,7 +175,10 @@ public class UploadgigCom extends antiDDoSForHost {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        String dllink = checkDirectLink(link, directlinkproperty);
+        String dllink = this.checkDirectLink(br, link, directlinkproperty);
+        if (dllink != null && !testLink(br, link, dllink, false)) {
+            dllink = null;
+        }
         if (dllink == null) {
             if (account != null) {
                 // login method might have validated cookies
@@ -225,20 +224,19 @@ public class UploadgigCom extends antiDDoSForHost {
             final String directurl = url + "id=" + id + "&" + params;
             // directurl = directurl.replace("/start/", "/s/");
             this.sleep(Integer.parseInt(waittime_str) * 1001l, link);
-            this.testLink(directurl, true);
+            testLink(br, link, dllink, true);
             // they use javascript to determine finallink...
             // getDllink(br2);
         }
         if (dl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        } else if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             // ok browser set by another method is now lost.
-            br = dl.getDownloadable().getContextBrowser();
-            br.followConnection(true);
+            final Browser dlBr = dl.getDownloadable().getContextBrowser();
+            dlBr.followConnection(true);
             /* E.g. "The download link has expired, please buy premium account or start download file from the beginning." */
-            errorhandlingGeneral(this.br);
+            errorhandlingGeneral(dlBr);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -246,9 +244,11 @@ public class UploadgigCom extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        } else {
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+            dl.setFilenameFix(true);
+            dl.startDownload();
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        dl.startDownload();
     }
 
     protected long calc(Browser br) throws Exception {
@@ -267,62 +267,15 @@ public class UploadgigCom extends antiDDoSForHost {
         }
     }
 
-    private boolean getDllink(final Browser br) throws Exception {
-        final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
-        // newest 20170808
+    private boolean testLink(final Browser br, final DownloadLink downloadLink, final String dllink, boolean throwException) throws Exception {
         try {
-            String href = this.br.getRegex("\\$\\('#countdownContainer'\\)\\.html\\('<a class=\"btn btn-success btn-lg\" href=\"(.*?\\+pres\\['\\w+'\\].*?)\">Download now</a>'\\);").getMatch(0);
-            if (href != null) {
-                final String[][] pres = new Regex(href, "(pres\\['(\\w+)'\\])").getMatches();
-                for (final String[] p : pres) {
-                    final String d = PluginJSonUtils.getJson(br, p[1]);
-                    if (d != null) {
-                        href = href.replace(p[0], d);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
-                href = href.replace("'", "").replace("+", "");
-                if (dupe.add(href) && testLink(href, true)) {
-                    return true;
-                }
-            }
-        } catch (final NullPointerException e) {
-        }
-        // old
-        final String js = this.br.getRegex("\\$\\('#countdownContainer'\\)\\.html\\('<a class=\"btn btn-success btn-lg\" href=\"'\\+pres\\['(\\w+)'\\]+\\+?'\">Download now</a>'\\);").getMatch(0);
-        if (js != null) {
-            String dllink = PluginJSonUtils.getJsonValue(br, js);
-            if (dupe.add(dllink) && testLink(dllink, true)) {
-                return true;
-            }
-        }
-        // fail over
-        final String[] jokesonyou = br.getRegex("https?://[a-zA-Z0-9_\\-.]*uploadgig\\.com/dl/[a-zA-Z0-9]+/dlfile").getColumn(-1);
-        if (jokesonyou != null) {
-            final List<String> list = Arrays.asList(jokesonyou);
-            Collections.shuffle(list);
-            for (final String link : list) {
-                if (dupe.add(link) && testLink(link, true)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean testLink(final String dllink, boolean throwException) throws Exception {
-        try {
-            final Browser brc = this.br.cloneBrowser();
+            final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(true);
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, this.getDownloadLink(), dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, downloadLink, dllink, resumes, chunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 brc.followConnection(true);
-                if (brc.getHttpConnection().getResponseCode() == 403 && brc.toString().startsWith("Blocked!<br>If you are using VPN or proxy, disable your proxy and try again")) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked connection!");
-                } else {
-                    return false;
-                }
+                errorhandlingGeneral(brc);
+                return false;
             } else {
                 return true;
             }
@@ -342,35 +295,40 @@ public class UploadgigCom extends antiDDoSForHost {
         }
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) throws Exception {
-        String dllink = link.getStringProperty(property);
+    private String checkDirectLink(final Browser br, final DownloadLink link, final String property) throws Exception {
+        final String dllink = link.getStringProperty(property);
         if (dllink != null) {
             boolean throwException = false;
             URLConnectionAdapter con = null;
             try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                con = brc.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     return dllink;
                 } else {
-                    br2.followConnection(true);
-                    if (br2.getHttpConnection().getResponseCode() == 403 && br2.toString().startsWith("Blocked!<br>If you are using VPN or proxy, disable your proxy and try again")) {
-                        throwException = true;
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked connection!");
+                    brc.followConnection(true);
+                    try {
+                        errorhandlingGeneral(brc);
+                    } catch (PluginException e) {
+                        if (e.getLinkStatus() == LinkStatus.ERROR_FATAL) {
+                            throwException = true;
+                        }
+                        throw e;
                     }
                     throw new IOException();
                 }
             } catch (final Exception e) {
                 if (throwException) {
                     throw e;
+                } else {
+                    link.removeProperty(property);
+                    logger.log(e);
+                    return null;
                 }
-                link.removeProperty(property);
-                logger.log(e);
-                return null;
             } finally {
                 if (con != null) {
                     con.disconnect();
@@ -410,6 +368,8 @@ public class UploadgigCom extends antiDDoSForHost {
         } else if (br.containsHTML("Sorry, this server is under maintenance|>please try to download other files, other servers are")) {
             /* 2020-12-04 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server under maintenance", 5 * 60 * 1000l);
+        } else if (br.getHttpConnection().getResponseCode() == 403 && br.containsHTML("Blocked!\\s*<br>\\s*If you are using VPN or proxy, disable your proxy and try again")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked connection!");
         }
         checkAccountErrors(this.br);
     }
@@ -550,7 +510,10 @@ public class UploadgigCom extends antiDDoSForHost {
             doFree(account, link);
         } else {
             br.setFollowRedirects(false);
-            String dllink = this.checkDirectLink(link, "premium_directlink");
+            String dllink = this.checkDirectLink(br, link, directlinkproperty);
+            if (dllink != null && !testLink(br, link, dllink, false)) {
+                dllink = null;
+            }
             if (dllink == null) {
                 // can be redirect
                 getPage(link.getPluginPatternMatcher());
@@ -558,19 +521,18 @@ public class UploadgigCom extends antiDDoSForHost {
                 if (dllink == null) {
                     dllink = link.getPluginPatternMatcher();
                 }
-                testLink(dllink, true);
+                testLink(br, link, dllink, false);
             }
             if (dl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            } else if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                br = dl.getDownloadable().getContextBrowser();
-                br.followConnection(true);
-                if (br.containsHTML("Your \\d+Gb daily download traffic has been used\\.")) {
-                    account.setNextDayAsTempTimeout(br);
+                final Browser dlBr = dl.getDownloadable().getContextBrowser();
+                dlBr.followConnection(true);
+                if (dlBr.containsHTML("Your \\d+Gb daily download traffic has been used\\.")) {
+                    account.setNextDayAsTempTimeout(dlBr);
                 }
-                errorhandlingGeneral(this.br);
+                errorhandlingGeneral(dlBr);
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
@@ -578,10 +540,11 @@ public class UploadgigCom extends antiDDoSForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+            } else {
+                link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+                dl.setFilenameFix(true);
+                dl.startDownload();
             }
-            link.setProperty("premium_directlink", dl.getConnection().getURL().toString());
-            dl.setFilenameFix(true);
-            dl.startDownload();
         }
     }
 
