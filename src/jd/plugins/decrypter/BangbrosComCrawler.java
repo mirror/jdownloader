@@ -16,6 +16,10 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Map;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -70,8 +74,7 @@ public class BangbrosComCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final Account account, final SubConfiguration cfg) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("bangbrothers.com", "bangbros.com");
-        final String fid;
+        final String parameter = param.getCryptedUrl().replaceFirst("bangbrothers\\.com", "bangbros.com");
         final BangbrosCom hostPlugin = (BangbrosCom) this.getNewPluginForHostInstance(this.getHost());
         final boolean loginRequired = requiresAccount(parameter);
         if (loginRequired && account == null) {
@@ -86,6 +89,7 @@ public class BangbrosComCrawler extends PluginForDecrypt {
         }
         String title = null;
         String cast_comma_separated = null;
+        String description = null;
         final String cast_html = br.getRegex("<span class=\"tag\">Cast:(.*?)</span>").getMatch(0);
         if (cast_html != null) {
             final String[] castMembers = new Regex(cast_html, "class=\"tagB\">([^<]*)<").getColumn(0);
@@ -100,60 +104,50 @@ public class BangbrosComCrawler extends PluginForDecrypt {
                 }
             }
         }
-        if (parameter.matches(type_userinput_video_couldbe_trailer)) {
-            // TODO: Check if this is still needed
-            final String url_name = new Regex(parameter, "([a-z0-9\\-]+$)").getMatch(0);
-            fid = new Regex(parameter, "/video(\\d+)").getMatch(0);
-            if (account == null) {
-                /* Trailer / MOCH download */
-                title = br.getRegex("<div class=\"ps\\-vdoHdd\"><h1>([^<>\"]+)</h1>").getMatch(0);
-                if (title == null) {
-                    title = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
-                }
-                if (title == null) {
-                    /* Final fallback */
-                    title = url_name;
-                }
-                title = Encoding.htmlDecode(title).trim();
-                title = fid + "_" + title + ".mp4";
-                final DownloadLink dl = createDownloadlink(parameter, fid);
-                dl.setProperty("decryptername", title);
-                ret.add(dl);
-            } else {
-                /* TODO */
+        final Regex finfo = new Regex(parameter, "product/(\\d+)/movie/(\\d+)");
+        final String productid = finfo.getMatch(0);
+        String fid = finfo.getMatch(1);
+        final String directurl_photos = regexZipUrl(this.br, "pictures");
+        String directurl_screencaps = regexZipUrl(this.br, "screencaps");
+        if (directurl_screencaps != null) {
+            /* Protocol might sometimes be missing! */
+            directurl_screencaps = br.getURL(directurl_screencaps).toString();
+        }
+        title = this.br.getRegex("class=\"vdo\\-hdd1\">([^<>\"]+)<").getMatch(0);
+        if (title == null) {
+            title = this.br.getRegex("class=\"desTxt\\-hed\">([^<>\"]+)<").getMatch(0);
+        }
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            if (cast_comma_separated != null) {
+                title = cast_comma_separated + "_" + title;
             }
         } else {
-            final Regex finfo = new Regex(parameter, "product/(\\d+)/movie/(\\d+)");
-            final String productid = finfo.getMatch(0);
-            fid = finfo.getMatch(1);
-            final String directurl_photos = regexZipUrl(this.br, "pictures");
-            String directurl_screencaps = regexZipUrl(this.br, "screencaps");
-            if (directurl_screencaps != null) {
-                /* Protocol might sometimes be missing! */
-                directurl_screencaps = br.getURL(directurl_screencaps).toString();
-            }
-            title = this.br.getRegex("class=\"vdo\\-hdd1\">([^<>\"]+)<").getMatch(0);
+            /* Fallback to id from inside url */
+            title = fid;
+        }
+        final String trailerJsonEncoded = br.getRegex("class=\"pBtn overlay-trailer-opener\" data-shoot=\"(\\{[^\"]+)").getMatch(0);
+        DownloadLink trailer = null;
+        if (trailerJsonEncoded != null) {
+            final Map<String, Object> entries = restoreFromString(Encoding.htmlDecode(trailerJsonEncoded), TypeRef.MAP);
+            trailer = this.createDownloadlink(entries.get("trailer").toString());
             if (title == null) {
-                title = this.br.getRegex("class=\"desTxt\\-hed\">([^<>\"]+)<").getMatch(0);
+                title = entries.get("title").toString();
             }
-            if (title != null) {
-                title = Encoding.htmlDecode(title);
-                if (cast_comma_separated != null) {
-                    title = cast_comma_separated + "_" + title;
-                }
-            } else {
-                /* Fallback to id from inside url */
-                title = fid;
-            }
-            /* 2019-01-29: Content-Servers are very slow */
-            final boolean fast_linkcheck = true;
-            final String[] videourls = br.getRegex("(/product/\\d+/movie/\\d+/\\d+p)").getColumn(0);
+            description = (String) entries.get("description");
+        }
+        /* 2019-01-29: Content-Servers are very slow */
+        final boolean fast_linkcheck = true;
+        final String[] videourls = br.getRegex("(/product/\\d+/movie/\\d+/\\d+p)").getColumn(0);
+        int numberOfAddedVideos = 0;
+        if (videourls != null && videourls.length > 0) {
+            int heightMax = -1;
+            DownloadLink best = null;
             for (String videourl : videourls) {
                 videourl = br.getURL(videourl).toString();
-                final String qualityIdentifier = new Regex(videourl, "(\\d+p)").getMatch(0);
-                if (cfg != null && !cfg.getBooleanProperty("GRAB_" + qualityIdentifier, true)) {
-                    continue;
-                }
+                final String qualityHeightStr = new Regex(videourl, "(\\d+)p").getMatch(0);
+                final int qualityHeight = Integer.parseInt(qualityHeightStr);
+                final String qualityIdentifier = qualityHeightStr + "p";
                 final String streamingURL = regexStreamingURL(br, qualityIdentifier);
                 final String ext = ".mp4";
                 final DownloadLink video = this.createDownloadlink(videourl, fid, productid, qualityIdentifier);
@@ -164,29 +158,68 @@ public class BangbrosComCrawler extends PluginForDecrypt {
                 if (fast_linkcheck) {
                     video.setAvailable(true);
                 }
+                /* Collect best */
+                if (best == null || qualityHeight > heightMax) {
+                    heightMax = qualityHeight;
+                    best = video;
+                }
+                if (cfg != null && !cfg.getBooleanProperty("GRAB_" + qualityIdentifier, true)) {
+                    continue;
+                }
                 ret.add(video);
             }
-            if (cfg == null || cfg.getBooleanProperty("GRAB_photos", false) && directurl_photos != null) {
-                final String quality = "pictures";
-                final DownloadLink dl = this.createDownloadlink(directurl_photos, fid, productid, quality);
-                dl.setForcedFileName(title + "_" + quality + ".zip");
-                if (fast_linkcheck) {
-                    dl.setAvailable(true);
-                }
-                ret.add(dl);
+            if (cfg.getBooleanProperty(BangbrosCom.SETTING_BEST_ONLY, BangbrosCom.default_SETTING_BEST_ONLY)) {
+                ret.clear();
+                ret.add(best);
             }
-            if (cfg == null || cfg.getBooleanProperty("GRAB_screencaps", false) && directurl_screencaps != null) {
-                final String quality = "screencaps";
-                final DownloadLink dl = this.createDownloadlink(directurl_screencaps, fid, productid, quality);
-                dl.setForcedFileName(title + "_" + quality + ".zip");
-                if (fast_linkcheck) {
-                    dl.setAvailable(true);
-                }
-                ret.add(dl);
+            numberOfAddedVideos = ret.size();
+        }
+        if (cfg == null || cfg.getBooleanProperty("GRAB_photos", false) && directurl_photos != null) {
+            final String quality = "pictures";
+            final DownloadLink dl = this.createDownloadlink(directurl_photos, fid, productid, quality);
+            dl.setForcedFileName(title + "_" + quality + ".zip");
+            if (fast_linkcheck) {
+                dl.setAvailable(true);
             }
+            ret.add(dl);
+        }
+        if (cfg == null || cfg.getBooleanProperty("GRAB_screencaps", false) && directurl_screencaps != null) {
+            final String quality = "screencaps";
+            final DownloadLink dl = this.createDownloadlink(directurl_screencaps, fid, productid, quality);
+            dl.setForcedFileName(title + "_" + quality + ".zip");
+            if (fast_linkcheck) {
+                dl.setAvailable(true);
+            }
+            ret.add(dl);
+        }
+        if (ret.isEmpty()) {
+            /* Nothing found -> Check why or return trailer. */
+            if (trailer == null) {
+                /* Dead end */
+                if (br.containsHTML("(?i)<div>\\s*Unlock Video Now")) {
+                    /* This can even happen with premium account. Some items need to be bought separately. */
+                    throw new AccountRequiredException();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } else {
+                if (account == null) {
+                    logger.info("Returning trailer because: No account available");
+                } else {
+                    logger.info("Returning trailer because: Failed to find any other items");
+                }
+                ret.add(trailer);
+            }
+        } else if (numberOfAddedVideos == 0 && trailer != null) {
+            /* No video items found so far -> Return trailer. */
+            logger.info("Returning trailer because: Failed to find any other video items");
+            ret.add(trailer);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
+        if (!StringUtils.isEmpty(description)) {
+            fp.setComment(description);
+        }
         fp.addLinks(ret);
         return ret;
     }
