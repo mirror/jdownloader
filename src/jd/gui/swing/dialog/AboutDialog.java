@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.gui.swing.dialog;
 
+import java.awt.Color;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -246,7 +247,21 @@ public class AboutDialog extends AbstractDialog<Integer> {
                 stats.add(new JLabel("OS:"), "");
                 stats.add(createLink(CrossSystem.getOSFamily() + "(" + CrossSystem.getOS() + ")" + (CrossSystem.is64BitOperatingSystem() ? "(64bit)" : "(32bit)")));
                 stats.add(new JLabel("Memory:"), "");
-                stats.add(comp = createLink("Usage: " + SizeFormatter.formatBytes(memory.getUsed()) + " - Allocated: " + SizeFormatter.formatBytes(memory.getCommitted()) + " - Max: " + SizeFormatter.formatBytes(memory.getMax())));
+                final long used = memory.getUsed();
+                final long committed = memory.getCommitted();
+                final long max = memory.getMax();
+                final long minimumWarningLevel = max / 100 * 20;// less than 20% free, warning
+                if (max - used < minimumWarningLevel) {
+                    stats.add(comp = createLink("Usage: " + SizeFormatter.formatBytes(used) + " - Allocated: " + SizeFormatter.formatBytes(committed) + " - Max: " + SizeFormatter.formatBytes(max), "https://support.jdownloader.org/Knowledgebase/Article/View/troubleshooting-jdownloader-is-slow"));
+                    final long minimumRedWarning = max / 100 * 10;// less than 10% free, warning
+                    if (max - used < minimumRedWarning) {
+                        comp.setForeground(Color.RED);
+                    } else {
+                        comp.setForeground(Color.ORANGE.darker());
+                    }
+                } else {
+                    stats.add(comp = createLink("Usage: " + SizeFormatter.formatBytes(used) + " - Allocated: " + SizeFormatter.formatBytes(committed) + " - Max: " + SizeFormatter.formatBytes(max), "https://support.jdownloader.org/Knowledgebase/Article/View/vmoptions-file"));
+                }
                 try {
                     final List<MemoryPoolMXBean> memoryPoolMXBeans = java.lang.management.ManagementFactory.getMemoryPoolMXBeans();
                     final StringBuilder sb = new StringBuilder();

@@ -24,6 +24,8 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
+import jd.SecondLevelLaunch;
+
 import org.appwork.loggingv3.LogV3;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -51,8 +53,6 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
 import org.jdownloader.updatev2.gui.LookAndFeelType;
-
-import jd.SecondLevelLaunch;
 
 public class LookAndFeelController implements LAFManagerInterface {
     private static final LookAndFeelController INSTANCE = new LookAndFeelController();
@@ -185,12 +185,16 @@ public class LookAndFeelController implements LAFManagerInterface {
                 //
                 String liz = null;
                 try {
-                    if (!Application.isJared(LookAndFeelController.class)) {
+                    URL url = Application.getRessourceURL("cfg/synthetica-license.key");
+                    if (url != null) {
+                        liz = IO.readURLToString(url);
+                    }
+                    if (liz == null && !Application.isJared(LookAndFeelController.class)) {
                         // enable the synthetica dev license for people working on our offical repo at svn.jdownloader.org
                         // for all other mirror repos: please do not use our license
-                        URL url = Application.getRessourceURL("");
-                        File bin = new File(url.toURI());
-                        File db = new File(bin.getParent(), ".svn/wc.db");
+                        url = Application.getRessourceURL("");
+                        final File bin = new File(url.toURI());
+                        final File db = new File(bin.getParent(), ".svn/wc.db");
                         if (db.isFile()) {
                             String str = IO.readFileToString(db);
                             if (str.contains("svn://svn.jdownloader.org/jdownloader") || str.contains("SQLite format")) {
@@ -231,10 +235,6 @@ public class LookAndFeelController implements LAFManagerInterface {
                 }
                 LAFOptions.init(laf);
                 if (Application.isHeadless()) {
-                    final URL url = Application.getRessourceURL("cfg/synthetica-license.key");
-                    if (url != null) {
-                        liz = IO.readURLToString(url);
-                    }
                     new SyntheticaHelper(LAFOptions.getInstance().getCfg()).setLicense(liz);
                 } else {
                     new SyntheticaHelper(LAFOptions.getInstance().getCfg()).load(laf, liz);
