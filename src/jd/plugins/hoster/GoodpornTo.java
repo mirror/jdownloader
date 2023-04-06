@@ -19,14 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.config.KVSConfig;
-import org.jdownloader.plugins.components.config.KVSConfigRule34videoCom;
+import org.jdownloader.plugins.components.config.KVSConfigGoodpornTo;
 
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class Rule34videoCom extends KernelVideoSharingComV2 {
-    public Rule34videoCom(final PluginWrapper wrapper) {
+public class GoodpornTo extends KernelVideoSharingComV2 {
+    public GoodpornTo(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -34,7 +34,7 @@ public class Rule34videoCom extends KernelVideoSharingComV2 {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "rule34video.com", "rule34video.party" });
+        ret.add(new String[] { "goodporn.to" });
         return ret;
     }
 
@@ -52,12 +52,12 @@ public class Rule34videoCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
-        return generateContentURLDefaultVideosPattern(host, fuid, urlSlug);
+    protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlTitle);
     }
 
     @Override
     public Class<? extends KVSConfig> getConfigInterface() {
-        return KVSConfigRule34videoCom.class;
+        return KVSConfigGoodpornTo.class;
     }
 }

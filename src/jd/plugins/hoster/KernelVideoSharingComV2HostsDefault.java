@@ -118,8 +118,6 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "xgroovy.com" });
         /* 2022-04-08 */
         ret.add(new String[] { "moviesand.com" });
-        /* 2022-04-19 */
-        ret.add(new String[] { "goodporn.to" });
         /* 2022-05-02 */
         ret.add(new String[] { "heavyfetish.com" });
         /* 2022-06-05 */
