@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -32,6 +33,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -200,7 +202,7 @@ public class RecurbateCom extends PluginForHost {
             if (officialDownloadlink != null) {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, officialDownloadlink, RESUMABLE, MAXCHUNKS);
             } else {
-                final String token = br.getRegex("data-token\\s*=\\s*\"([a-f0-9]{64})\"").getMatch(0);
+                final String token = br.getRegex("data-token\\s*=\\s*\"([a-f0-9]{32,})\"\\s*data-video-id").getMatch(0);
                 if (token == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -359,7 +361,7 @@ public class RecurbateCom extends PluginForHost {
                 final String expire = br.getRegex("(?i)Expire on\\s*</div>\\s*<div class=\"col-sm-8\">\\s*([A-Za-z]+ \\d{1,2}, \\d{4})").getMatch(0);
                 if (expire != null) {
                     /* Allow premium accounts without expire-date although all premium accounts should have an expire-date. */
-                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMM dd, yyyy", Locale.ENGLISH));
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMM dd, yyyy", Locale.ENGLISH), br);
                 } else {
                     logger.warning("Failed to find expire-date for premium account!");
                 }
@@ -372,6 +374,15 @@ public class RecurbateCom extends PluginForHost {
         } else {
             /* This should never happen */
             account.setType(AccountType.UNKNOWN);
+        }
+        /* 2023-04-06: Some debug stuff down below. */
+        final boolean devSetCookieExpiredateAsAccountExpiredate = false;
+        final Cookie loginCookie = br.getCookies(br.getHost()).get("akey");
+        if (loginCookie == null) {
+            logger.warning("Failed to find cookie with key 'akey'");
+        } else if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && devSetCookieExpiredateAsAccountExpiredate) {
+            logger.info("!Developer: Setting cookie expiredate as account expiredate!");
+            ai.setValidUntil(loginCookie.getExpireDate(), br);
         }
         checkErrors(br, null, account);
         return ai;
