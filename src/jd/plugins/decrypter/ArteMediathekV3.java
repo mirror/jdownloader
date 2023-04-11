@@ -23,21 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.FilenameSchemeType;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.LanguageSelectionMode;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.PackagenameSchemeType;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionFallbackMode;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionMode;
-import org.jdownloader.plugins.components.config.ArteMediathekConfig.ThumbnailFilenameMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -51,6 +36,20 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ArteTv;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.FilenameSchemeType;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.LanguageSelectionMode;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.PackagenameSchemeType;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionFallbackMode;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySelectionMode;
+import org.jdownloader.plugins.components.config.ArteMediathekConfig.ThumbnailFilenameMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 public class ArteMediathekV3 extends PluginForDecrypt {
@@ -94,17 +93,17 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     private final String        PROPERTY_DATE               = "date";
     private final String        PROPERTY_ORIGINAL_FILENAME  = "original_filename";
     private final String        PROPERTY_AUDIO_CODE         = "audio_code";                                                             // ex
-                                                                                                                                        // versionCode
-                                                                                                                                        // e.g.
-                                                                                                                                        // VF,
-                                                                                                                                        // VF-STA,
-                                                                                                                                        // VA
+                                                                                                                                         // versionCode
+                                                                                                                                         // e.g.
+                                                                                                                                         // VF,
+                                                                                                                                         // VF-STA,
+                                                                                                                                         // VA
     private final String        PROPERTY_AUDIO_SHORT_LABEL  = "audioShortLabel";                                                        // e.g.
-                                                                                                                                        // DE,
-                                                                                                                                        // FR
+                                                                                                                                         // DE,
+                                                                                                                                         // FR
     private final String        PROPERTY_AUDIO_LABEL        = "audioLabel";                                                             // e.g.
-                                                                                                                                        // Deutsch,
-                                                                                                                                        // Französisch
+                                                                                                                                         // Deutsch,
+                                                                                                                                         // Französisch
     private final String        PROPERTY_WIDTH              = "width";
     private final String        PROPERTY_HEIGHT             = "height";
     private final String        PROPERTY_BITRATE            = "bitrate";
@@ -138,7 +137,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Object errorsO = entries.get("errors");
         if (errorsO != null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -220,7 +219,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         }
         prepBRAPI(br);
         br.getPage(videoStreamsAPIURL);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final List<Map<String, Object>> videoStreams = (List<Map<String, Object>>) entries.get("videoStreams");
         if (videoStreams == null || videoStreams.isEmpty()) {
             /* This should never happen */
@@ -676,7 +675,6 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         FULL,
         PARTIAL,
         HEARING_IMPAIRED;
-
         private static SubtitleType parse(final String apiosCode) {
             if (apiosCode.matches(".*?AUD.*?")) {
                 /* E.g. "VFAUD" or "VAAUD" */
@@ -704,7 +702,6 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         NON_ORIGINAL_FRANCAIS,
         NON_ORIGINAL_GERMAN,
         FOREIGN;
-
         private static VersionType parse(final String apiosCode) {
             if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOF")) {
                 return ORIGINAL_FRANCAIS;
