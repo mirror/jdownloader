@@ -176,11 +176,11 @@ public class UploadgigCom extends antiDDoSForHost {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
-        String dllink = this.checkDirectLink(br, link, directlinkproperty);
-        if (dllink != null && !testLink(br, link, dllink, false)) {
-            dllink = null;
+        String directurl = this.checkDirectLink(br, link, directlinkproperty);
+        if (directurl != null && !testLink(br, link, directurl, false)) {
+            directurl = null;
         }
-        if (dllink == null) {
+        if (directurl == null) {
             if (account != null) {
                 // login method might have validated cookies
                 getPage(link.getPluginPatternMatcher());
@@ -222,10 +222,10 @@ public class UploadgigCom extends antiDDoSForHost {
             }
             final long substraction_value = calc(br);
             final long id = Long.parseLong(idStr) - substraction_value;
-            final String directurl = url + "id=" + id + "&" + params;
+            directurl = url + "id=" + id + "&" + params;
             // directurl = directurl.replace("/start/", "/s/");
             this.sleep(Integer.parseInt(waittime_str) * 1001l, link);
-            testLink(br, link, dllink, true);
+            testLink(br, link, directurl, true);
             // they use javascript to determine finallink...
             // getDllink(br2);
         }
@@ -527,18 +527,18 @@ public class UploadgigCom extends antiDDoSForHost {
             doFree(account, link);
         } else {
             br.setFollowRedirects(false);
-            String dllink = this.checkDirectLink(br, link, directlinkproperty);
-            if (dllink != null && !testLink(br, link, dllink, false)) {
-                dllink = null;
+            String directurl = this.checkDirectLink(br, link, directlinkproperty);
+            if (directurl != null && !testLink(br, link, directurl, false)) {
+                directurl = null;
             }
-            if (dllink == null) {
+            if (directurl == null) {
                 // can be redirect
                 getPage(link.getPluginPatternMatcher());
-                dllink = br.getRedirectLocation();
-                if (dllink == null) {
-                    dllink = link.getPluginPatternMatcher();
+                directurl = br.getRedirectLocation();
+                if (directurl == null) {
+                    directurl = link.getPluginPatternMatcher();
                 }
-                testLink(br, link, dllink, false);
+                testLink(br, link, directurl, false);
             }
             if (dl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
