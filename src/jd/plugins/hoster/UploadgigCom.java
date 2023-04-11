@@ -494,6 +494,15 @@ public class UploadgigCom extends antiDDoSForHost {
             if (minutes != null) {
                 timeStamp += TimeUnit.MINUTES.toMillis(Integer.parseInt(minutes));
             }
+            if (months == null && days == null && (hours != null || minutes != null)) {
+                timeStamp = System.currentTimeMillis();
+                if (hours != null) {
+                    timeStamp += TimeUnit.HOURS.toMillis(Integer.parseInt(hours));
+                }
+                if (minutes != null) {
+                    timeStamp += TimeUnit.MINUTES.toMillis(Integer.parseInt(minutes));
+                }
+            }
             ai.setValidUntil(timeStamp);
         }
         if (timeStamp == null || ai.isExpired()) {
