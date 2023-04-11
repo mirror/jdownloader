@@ -2702,7 +2702,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
      * @param br
      *            TODO
      */
-    protected String getDllinkVideohost(DownloadLink link, Account account, Browser br, final String src) {
+    protected String getDllinkVideohost(final DownloadLink link, final Account account, final Browser br, final String src) {
         String dllink = null;
         /* RegExes for videohosts */
         String jssource = new Regex(src, "\"?sources\"?\\s*:\\s*(\\[[^\\]]+\\])").getMatch(0);
@@ -4669,7 +4669,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost {
     }
 
     /** Returns user selected streaming quality. Returns BEST by default / no selection. */
-    private String handleQualitySelectionHLS(final Browser br, final String hlsMaster) throws Exception {
+    protected String handleQualitySelectionHLS(final Browser br, final String hlsMaster) throws Exception {
         if (StringUtils.isEmpty(hlsMaster)) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
