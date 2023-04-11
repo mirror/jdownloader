@@ -19,11 +19,15 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
+
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,8 +35,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LibGenInfo extends PluginForHost {
@@ -163,14 +165,22 @@ public class LibGenInfo extends PluginForHost {
 
     public static void parseFileInfo(final DownloadLink link, final Browser br) throws MalformedURLException {
         final String md5 = UrlQuery.parse(link.getPluginPatternMatcher()).get("md5");
-        String filesizeBytesStr = null;
-        filesizeBytesStr = br.getRegex("\\((\\d+) B\\)").getMatch(0);
-        String filename = br.getRegex("ed2k://\\|file\\|([^\\|]+)\\|\\d+\\|").getMatch(0);
-        if (filename == null && br.getURL().matches(TYPE_ADS)) {
-            final String title = br.getRegex("series\\s*=\\s*\\{([^\\}]+)\\}").getMatch(0);
-            if (title != null) {
-                filename = Encoding.htmlDecode(title).trim() + ".pdf";
-            }
+        final String filesizeBytesStr = br.getRegex("\\((\\d+) B\\)").getMatch(0);
+        final String author = br.getRegex("author\\s*=\\s*\\{([^\\}]+)\\}").getMatch(0);
+        final String title = br.getRegex("title\\s*=\\s*\\{([^\\}]+)\\}").getMatch(0);
+        final String series = br.getRegex("series\\s*=\\s*\\{([^\\}]+)\\}").getMatch(0);
+        // final String publisher = br.getRegex("publisher\\s*=\\s*\\{([^\\}]+)\\}").getMatch(0);
+        String filename = null;
+        final String defaultExt = ".pdf";
+        if (author != null && series != null && title != null) {
+            filename = Encoding.htmlDecode(author).trim() + " - " + Encoding.htmlDecode(series).trim() + " - " + Encoding.htmlDecode(title).trim() + defaultExt;
+        } else if (author != null && title != null) {
+            filename = Encoding.htmlDecode(author).trim() + " - " + Encoding.htmlDecode(title).trim() + defaultExt;
+        } else if (title != null) {
+            filename = Encoding.htmlDecode(title).trim() + defaultExt;
+        }
+        if (filename == null) {
+            filename = br.getRegex("ed2k://\\|file\\|([^\\|]+)\\|\\d+\\|").getMatch(0);
         }
         if (filename != null) {
             link.setName(filename);
@@ -214,6 +224,16 @@ public class LibGenInfo extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to a file");
+        }
+        final String headerFilename = Plugin.getFileNameFromHeader(dl.getConnection());
+        if (headerFilename != null) {
+            /* Do some corrections */
+            String finalFilename = Encoding.htmlDecode(headerFilename);
+            final String removeMe = new Regex(finalFilename, "(?i)( - libgen\\.[a-z0-9]+)\\.(epub|pdf)$").getMatch(0);
+            if (removeMe != null) {
+                finalFilename = finalFilename.replaceFirst(Pattern.quote(removeMe), "");
+            }
+            link.setFinalFileName(finalFilename);
         }
         dl.startDownload();
     }
