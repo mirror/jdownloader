@@ -31,6 +31,7 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
@@ -70,20 +71,56 @@ public class BangComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/([\\w\\-]+)/([a-z0-9\\-]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:dvd|video)/[\\w\\-]+/[a-z0-9\\-]+");
         }
         return ret.toArray(new String[0]);
     }
 
+    private final String PATTERN_VIDEO          = "https?://[^/]+/video/([\\w\\-]+)/([a-z0-9\\-]+)";
+    private final String PATTERN_VIDEO_DOWNLOAD = "https?://[^/]+/video/download/([a-z0-9\\-]+)";
+    private final String PATTERN_SET            = "https?://[^/]+/dvd/([\\w\\-]+)/([a-z0-9\\-]+)";
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        return crawlVideo(param.getCryptedUrl(), account, PluginJsonConfig.get(BangComConfig.class));
+        if (param.getCryptedUrl().matches(PATTERN_SET)) {
+            return crawlSet(param.getCryptedUrl(), account);
+        } else {
+            return crawlVideo(param.getCryptedUrl(), account, PluginJsonConfig.get(BangComConfig.class));
+        }
     }
 
-    public <QualitySelectionMode> ArrayList<DownloadLink> crawlVideo(final String url, final Account account, final BangComConfig cfg) throws Exception {
+    /** Crawls set of multiple videos. */
+    public <QualitySelectionMode> ArrayList<DownloadLink> crawlSet(final String url, final Account account) throws Exception {
+        final BangComConfig cfg = PluginJsonConfig.get(BangComConfig.class);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        if (userHasDisabledCrawler(account, cfg)) {
+            logger.info("Returning nothing because user has deselected all qualities -> Disabled crawler");
+            return ret;
+        }
+        if (account != null) {
+            final BangCom plg = (BangCom) this.getNewPluginForHostInstance(this.getHost());
+            plg.login(account, true, url);
+        } else {
+            br.getPage(url);
+        }
+        final String[] videourls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        for (final String videourl : videourls) {
+            if (videourl.matches(PATTERN_VIDEO)) {
+                ret.add(this.createDownloadlink(videourl));
+            }
+        }
+        return ret;
+    }
+
+    public <QualitySelectionMode> ArrayList<DownloadLink> crawlVideo(String url, final Account account, final BangComConfig cfg) throws Exception {
         if (StringUtils.isEmpty(url)) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Small workaround */
+        final String videoidIfURLMatchesSpecialPattern = new Regex(url, PATTERN_VIDEO_DOWNLOAD).getMatch(0);
+        if (videoidIfURLMatchesSpecialPattern != null) {
+            url = "https://www." + this.getHost() + "/video/" + videoidIfURLMatchesSpecialPattern;
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final List<String> knownVideoQualities = Arrays.asList(new String[] { "2160p", "1080p", "720p", "540p", "480p", "360p" });
@@ -91,6 +128,10 @@ public class BangComCrawler extends PluginForDecrypt {
         if (cfg == null) {
             selectedVideoQualities.addAll(knownVideoQualities);
         } else {
+            if (userHasDisabledCrawler(account, cfg)) {
+                logger.info("Returning nothing because user has deselected all qualities -> Disabled crawler");
+                return ret;
+            }
             if (cfg.isCrawl2160p()) {
                 selectedVideoQualities.add(knownVideoQualities.get(0));
             }
@@ -108,10 +149,6 @@ public class BangComCrawler extends PluginForDecrypt {
             }
             if (cfg.isCrawl360p()) {
                 selectedVideoQualities.add(knownVideoQualities.get(5));
-            }
-            if (!cfg.isGrabPreviewVideo() && !cfg.isGrabThumbnail()) {
-                logger.info("Returning nothing because user has deselected all qualities -> Disabled crawler");
-                return ret;
             }
         }
         br.setFollowRedirects(true);
@@ -143,7 +180,7 @@ public class BangComCrawler extends PluginForDecrypt {
         final String thumbnailUrl = videoObject.get("thumbnailUrl").toString(); // always available
         final String previewURL = videoObject.get("contentUrl").toString(); // always available
         final String description = (String) videoObject.get("description");
-        final String photosAsZipURL = br.getRegex("\"(https?://photos\\.[^/]+/\\.zip[^\"]+)\"").getMatch(0); // not always available
+        final String photosAsZipURL = br.getRegex("\"(https?://photos\\.[^/]+/[^\"]*\\.zip[^\"]+)\"").getMatch(0); // not always available
         if (StringUtils.isEmpty(previewURL) || StringUtils.isEmpty(thumbnailUrl)) {
             /* Both thumbnail and preview-video should always be available. */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -171,7 +208,7 @@ public class BangComCrawler extends PluginForDecrypt {
             ret.add(preview);
         }
         if (photosAsZipURL != null && (cfg == null || cfg.isGrabPhotosZipArchive())) {
-            final DownloadLink zip = new DownloadLink(plg, null, this.getHost(), photosAsZipURL, true);
+            final DownloadLink zip = new DownloadLink(plg, null, this.getHost(), Encoding.htmlDecode(photosAsZipURL), true);
             zip.setProperty(BangCom.PROPERTY_QUALITY_IDENTIFIER, "ZIP");
             ret.add(zip);
         }
@@ -257,13 +294,49 @@ public class BangComCrawler extends PluginForDecrypt {
         }
         /* Set additional properties. */
         for (final DownloadLink result : ret) {
+            result._setFilePackage(fp);
             result.setContainerUrl(br.getURL());
             result.setProperty(BangCom.PROPERTY_MAINLINK, br.getURL());
             result.setProperty(BangCom.PROPERTY_CONTENT_ID, contentID);
             result.setProperty(BangCom.PROPERTY_TITLE, title);
             result.setAvailable(true);
         }
-        fp.addLinks(ret);
         return ret;
+    }
+
+    private boolean userHasDisabledCrawler(final Account account, final BangComConfig cfg) {
+        if (cfg == null) {
+            return false;
+        }
+        if (account != null) {
+            int numberofSelectedVideoQualities = 0;
+            if (cfg.isCrawl2160p()) {
+                numberofSelectedVideoQualities++;
+            }
+            if (cfg.isCrawl1080p()) {
+                numberofSelectedVideoQualities++;
+            }
+            if (cfg.isCrawl720p()) {
+                numberofSelectedVideoQualities++;
+            }
+            if (cfg.isCrawl540p()) {
+                numberofSelectedVideoQualities++;
+            }
+            if (cfg.isCrawl480p()) {
+                numberofSelectedVideoQualities++;
+            }
+            if (cfg.isCrawl360p()) {
+                numberofSelectedVideoQualities++;
+            }
+            if (!cfg.isGrabPreviewVideo() && !cfg.isGrabThumbnail() && !cfg.isGrabPhotosZipArchive() && numberofSelectedVideoQualities == 0) {
+                return true;
+            }
+        } else {
+            /* No account available -> Ignore selected video qualities because users can only crawl preview/thumbnail anyways. */
+            if (!cfg.isGrabPreviewVideo() && !cfg.isGrabThumbnail()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

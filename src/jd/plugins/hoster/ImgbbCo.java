@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,14 +35,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImgbbCo extends PluginForHost {
     public ImgbbCo(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
@@ -73,14 +73,8 @@ public class ImgbbCo extends PluginForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final int     FREE_MAXDOWNLOADS = -1;
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -97,16 +91,17 @@ public class ImgbbCo extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
             /* Fallback */
-            link.setName(this.getFID(link) + ".jpg");
+            link.setName(fid + ".jpg");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.containsHTML("class=\"viewer-title\"")) {
+        } else if (!br.containsHTML(Pattern.quote(fid))) {
             /* E.g. https://imgbb.com/login or https://imgbb.com/upload */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -129,12 +124,12 @@ public class ImgbbCo extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
+            requestFileInformation(link);
             String dllink = br.getRegex("href\\s*=\\s*\"(https?://[^\"]+)\"[^>]*download\\s*=").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
@@ -148,7 +143,7 @@ public class ImgbbCo extends PluginForHost {
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken image?");
                 }
             }
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
