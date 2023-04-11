@@ -46,11 +46,16 @@ public class HornOxeComCrawler extends PluginForDecrypt {
         }
         br.getPage(parameter);
         if (!this.canHandle(br.getURL())) {
-            // covers redirects, may or may not be supported content.
+            /* E.g. redirect to unsupported link / mainpage. */
             ret.add(createDownloadlink(br.getURL()));
             return ret;
-        }
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getRequest().getHtmlCode().length() <= 100) {
+            /* Empty page */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getHttpConnection().getContentType().contains("html")) {
+            /* E.g. https://www.hornoxe.com/wp-json/ */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String pageName = br.getRegex("og:title\" content=\"(.*?)\" />").getMatch(0);

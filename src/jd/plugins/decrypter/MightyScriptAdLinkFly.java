@@ -413,11 +413,8 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (getSpecialReferer() != null) {
             br.getHeaders().put("Referer", getSpecialReferer());
-            /* Do not expect direct redirects to our target-URL. */
-            br.setFollowRedirects(true);
-        } else {
-            br.setFollowRedirects(false);
         }
+        br.setFollowRedirects(false);
         getPage(param.getCryptedUrl());
         // 2019-11-13: http->https->different domain(https)
         // 2019-11-13: http->https->different domain(http)->different domain(https)

@@ -161,8 +161,8 @@ public class RecurbateCom extends PluginForHost {
     }
 
     public static void setFilename(DownloadLink link, final String fid) {
-        final String performer = link.getStringProperty(PROPERTY_USER, null);
-        final String dateStr = link.getStringProperty(PROPERTY_DATE, null);
+        final String performer = link.getStringProperty(PROPERTY_USER);
+        final String dateStr = link.getStringProperty(PROPERTY_DATE);
         if (dateStr != null && performer != null) {
             link.setFinalFileName(dateStr + "_" + performer + "_" + fid + ".mp4");
         } else if (performer != null) {

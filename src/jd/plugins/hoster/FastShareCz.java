@@ -19,6 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -32,12 +38,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FastShareCz extends antiDDoSForHost {
@@ -58,8 +58,14 @@ public class FastShareCz extends antiDDoSForHost {
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "fastshare.cz", "fastshare.pl", "netshare.cz", "dinoshare.cz" });
+        ret.add(new String[] { "fastshare.live", "fastshare.cz", "fastshare.pl", "netshare.cz", "dinoshare.cz" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2023-04-11: Main domain has changed from fastshare.cz to fastshare.live. */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
@@ -98,25 +104,23 @@ public class FastShareCz extends antiDDoSForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, null);
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
-        correctDownloadLink(link);
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "lang", "cs");
         br.setCustomCharset("utf-8");
         if (account != null) {
             this.login(account, false);
         }
-        getPage(link.getPluginPatternMatcher());
+        br.setFollowRedirects(true);
+        getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
+        final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+; url=(https?://[^\"]+)").getMatch(0);
+        if (redirect != null) {
+            getPage(redirect);
+        }
         if (br.containsHTML("(<title>FastShare\\.cz</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
