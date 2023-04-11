@@ -117,7 +117,7 @@ public class FastShareCz extends antiDDoSForHost {
         }
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
-        final String redirect = br.getRegex("http-equiv=\"refresh\" content=\"\\d+; url=(https?://[^\"]+)").getMatch(0);
+        final String redirect = br.getRequest().getHTMLRefresh();
         if (redirect != null) {
             getPage(redirect);
         }

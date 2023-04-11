@@ -108,9 +108,6 @@ public class MediaCm extends XFileSharingProBasic {
         } else {
             logger.info("[DownloadMode] Trying to find official video downloads");
         }
-        /* Info in table. E.g. xvideosharing.com, watchvideo.us */
-        // For "/[a-z0-9]{12}" page: <a href=\"(https?://[^\"])\" class=\"dropdown-item\">\\s*<i
-        // data-feather=\"download\"></i><strong>[^<]+</strong> <small>&nbsp;\\[([^\\]>]+)\\]</small></a>
         final String[][] videoInfo = br.getRegex("<a href=\"(https?://[^\"]+)\"[^>]*>\\s*<i data-feather=\"download\"></i> <strong>[^<]*</strong>[^<]*<strong class=\"tx-white tx-bold\">([^<]+)</strong>").getMatches();
         if (videoInfo == null || videoInfo.length == 0) {
             logger.info("Failed to find any official video downloads");
