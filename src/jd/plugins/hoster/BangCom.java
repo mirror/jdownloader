@@ -20,6 +20,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.BangComConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -39,13 +46,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.BangComCrawler;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.BangComConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BangCom extends PluginForHost {
@@ -92,6 +92,7 @@ public class BangCom extends PluginForHost {
     public static final String PROPERTY_MAINLINK            = "mainlink";
     public static final String PROPERTY_CONTENT_ID          = "content_id";
     public static final String PROPERTY_QUALITY_IDENTIFIER  = "quality";
+    public static final String PROPERTY_TITLE               = "title";
 
     @Override
     public String getLinkID(final DownloadLink link) {

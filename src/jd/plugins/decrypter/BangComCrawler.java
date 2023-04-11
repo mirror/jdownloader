@@ -139,7 +139,7 @@ public class BangComCrawler extends PluginForDecrypt {
         }
         final String contentID = videoObject.get("@id").toString();
         String title = videoObject.get("name").toString();
-        title = Encoding.htmlDecode(title);
+        title = Encoding.htmlDecode(title).trim();
         final String thumbnailUrl = videoObject.get("thumbnailUrl").toString(); // always available
         final String previewURL = videoObject.get("contentUrl").toString(); // always available
         final String description = (String) videoObject.get("description");
@@ -255,10 +255,12 @@ public class BangComCrawler extends PluginForDecrypt {
         if (!StringUtils.isEmpty(description)) {
             fp.setComment(description);
         }
+        /* Set additional properties. */
         for (final DownloadLink result : ret) {
             result.setContainerUrl(br.getURL());
             result.setProperty(BangCom.PROPERTY_MAINLINK, br.getURL());
             result.setProperty(BangCom.PROPERTY_CONTENT_ID, contentID);
+            result.setProperty(BangCom.PROPERTY_TITLE, title);
             result.setAvailable(true);
         }
         fp.addLinks(ret);
