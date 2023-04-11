@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Cookie;
@@ -32,11 +34,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imageshack.com" }, urls = { "https?://(?:www\\.)?imageshack\\.(?:com|us)/(?:user|a)/[A-Za-z0-9\\-_]+" })
-public class ImagesHackCom extends PluginForDecrypt {
-    public ImagesHackCom(PluginWrapper wrapper) {
+public class ImagesHackComCrawler extends PluginForDecrypt {
+    public ImagesHackComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -63,8 +63,8 @@ public class ImagesHackCom extends PluginForDecrypt {
             /*
              * Get user information - count private images as well. TODO: Check if it actually returns IDs of private images - if not, we do
              * not even have to count them!
-             * 
-             * 
+             *
+             *
              * There are API calls to get all albums of a user but then the album objects only always contain 5 images meaning we'd have to
              * decrypt the album URLs and return them back into the decrypter. Instead we'll just decrypt all images, find their
              * corresponding album names (if existant) and set the correct packagenames.
