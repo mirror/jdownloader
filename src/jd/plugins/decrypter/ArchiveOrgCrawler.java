@@ -28,6 +28,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -47,21 +61,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
 import jd.plugins.hoster.ArchiveOrg;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
 public class ArchiveOrgCrawler extends PluginForDecrypt {
@@ -87,6 +89,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         param.setCryptedUrl(param.getCryptedUrl().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/"));
         final Regex typeDownload = new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD);
         if (typeDownload.matches()) {
+            /* Only crawl XML --> Fastest way */
             final String path = typeDownload.getMatch(0);
             return crawlXML(param, br, path);
         } else {
@@ -203,26 +206,71 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             return this.crawlXML(param, br, titleSlug);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
+        final boolean userWantsMoreDataWhichIsOnlyInDownloadXML = cfg.isFileCrawlerCrawlArchiveView() || cfg.isFileCrawlerCrawlMetadataFiles();
         final String videoJson = br.getRegex("class=\"js-tv3-init\"[^>]*value='(\\{.*?\\})").getMatch(0);
         if (videoJson != null) {
             /* 2022-10-31: Example: https://archive.org/details/MSNBCW_20211108_030000_Four_Seasons_Total_Documentary */
             final Map<String, Object> entries = JSonStorage.restoreFromString(videoJson, TypeRef.MAP);
             final String slug = entries.get("TV3.identifier").toString();
             final List<String> urls = (List<String>) entries.get("TV3.clipstream_clips");
-            final int padLength = StringUtils.getPadLength(urls.size());
             int position = 1;
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(slug);
             for (final String url : urls) {
                 final DownloadLink video = this.createDownloadlink(url);
-                video.setFinalFileName(slug + "_" + StringUtils.formatByPadLength(padLength, position) + ".mp4");
+                video.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, position);
+                video.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, urls.size());
+                ArchiveOrg.setFinalFilename(video, slug + ".mp4");
                 video.setAvailable(true);
                 video._setFilePackage(fp);
                 ret.add(video);
                 position++;
             }
-            /* Do not stop here maybe we will find some more downloadable items. */
-            // return ret;
+        }
+        final String audioPlaylistJson = br.getRegex("class=\"js-play8-playlist\"[^>]*value='(\\[.*?\\])'/>").getMatch(0);
+        final String metadataJson = br.getRegex("class=\"js-ia-metadata\"[^>]*value='(\\{.*?\\})'/>").getMatch(0);
+        if (audioPlaylistJson != null) {
+            /* 2022-10-31: Example: https://archive.org/details/MSNBCW_20211108_030000_Four_Seasons_Total_Documentary */
+            if (metadataJson != null) {
+                /* Prefer this way as this source contains way more metadata. */
+                ret.addAll(this.crawlMetadataJson(metadataJson, true));
+            } else {
+                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JSonStorage.restoreFromString(audioPlaylistJson, TypeRef.OBJECT);
+                int position = 1;
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(titleSlug);
+                for (final Map<String, Object> audiomap : ressourcelist) {
+                    final List<Map<String, Object>> sources = (List<Map<String, Object>>) audiomap.get("sources");
+                    if (sources.size() > 1) {
+                        logger.info("Found item with multiple sources: " + audiomap);
+                    }
+                    final Map<String, Object> source0 = sources.get(0);
+                    final DownloadLink audio = this.createDownloadlink(br.getURL(source0.get("file").toString()).toString());
+                    audio.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, position);
+                    audio.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, ressourcelist.size());
+                    audio.setProperty(ArchiveOrg.PROPERTY_ARTIST, audiomap.get("artist"));
+                    String filename = (String) audiomap.get("orig");
+                    if (StringUtils.isEmpty(filename)) {
+                        filename = audiomap.get("title").toString();
+                    }
+                    ArchiveOrg.setFinalFilename(audio, filename);
+                    audio.setAvailable(true);
+                    audio._setFilePackage(fp);
+                    ret.add(audio);
+                    position++;
+                }
+                /* Do not stop here maybe we will find some more downloadable items. */
+                return ret;
+            }
+        }
+        if (ret.size() > 0) {
+            if (!userWantsMoreDataWhichIsOnlyInDownloadXML) {
+                logger.info("Returning streaming items ONLY");
+                return ret;
+            } else {
+                logger.info("Found " + ret.size() + " streaming items but user wants to have stuff which can only be found in XML -> Trying to crawl XML");
+            }
         }
         final String showAll = br.getRegex("(?i)href=\"(/download/[^\"]*?)\">SHOW ALL").getMatch(0);
         if (showAll != null) {
@@ -244,8 +292,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final String pageIndex = new Regex(url.getQuery(), "(?:\\?|&)page=(\\d+)").getMatch(0);
         int page = pageIndex != null ? Integer.parseInt(pageIndex) : 1;
         do {
-            // TODO: Review this
-            if (br.containsHTML("This item is only available to logged in Internet Archive users")) {
+            // TODO: Review this: Is this check still needed?
+            if (br.containsHTML("(?i)This item is only available to logged in Internet Archive users")) {
                 ret.add(createDownloadlink(param.getCryptedUrl().replace("/details/", "/download/")));
                 break;
             }
@@ -275,6 +323,99 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 break;
             }
         } while (!this.isAbort());
+        return ret;
+    }
+
+    /** Crawls json which can sometimes be found in html of such URLs: "/details/<identifier>" */
+    private ArrayList<DownloadLink> crawlMetadataJson(final String json, final boolean crawlAudioOnly) throws Exception {
+        final Map<String, Object> metamap_root = JSonStorage.restoreFromString(json, TypeRef.MAP);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<Map<String, Object>> skippedItems = new ArrayList<Map<String, Object>>();
+        final Map<String, Object> metadata = (Map<String, Object>) metamap_root.get("metadata");
+        String title = (String) metadata.get("title");
+        if (title == null) {
+            /* Fallback */
+            title = metadata.get("identifier").toString();
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        /* There is different servers to choose from e.g. see also fields "d1", "d2" and "workable_servers". */
+        final String server = metamap_root.get("server").toString();
+        final String dir = metamap_root.get("dir").toString();
+        final List<Map<String, Object>> filemaps = (List<Map<String, Object>>) metamap_root.get("files");
+        if (filemaps == null || filemaps.isEmpty()) {
+            /* This should never happen. */
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, title);
+        }
+        String filenameHelperProperty = "crawlerFilenameTmp";
+        int playlistSize = -1;
+        for (final Map<String, Object> filemap : filemaps) {
+            final String md5 = (String) filemap.get("md5");
+            final String crc32 = (String) filemap.get("crc32");
+            final String sha1 = (String) filemap.get("sha1");
+            final String audioTrackPositionStr = (String) filemap.get("track");
+            String filename = (String) filemap.get("orig");
+            final Object sizeO = filemap.get("size");
+            if (StringUtils.isEmpty(filename)) {
+                filename = (String) filemap.get("original");
+                if (StringUtils.isEmpty(filename)) {
+                    filename = (String) filemap.get("name");
+                    if (StringUtils.isEmpty(filename)) {
+                        /* This one may not contain a file-extension! */
+                        filename = (String) filemap.get("title");
+                    }
+                }
+            }
+            if (StringUtils.isEmpty(filename)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (crawlAudioOnly && audioTrackPositionStr == null) {
+                skippedItems.add(filemap);
+                continue;
+            }
+            final String directurl = "https://" + server + dir + "/" + URLEncode.encodeURIComponent(filename);
+            final DownloadLink file = new DownloadLink(hostPlugin, null, "archive.org", directurl, true);
+            file.setProperty(filenameHelperProperty, filename);
+            if (audioTrackPositionStr != null) {
+                final int audioTrackPosition = Integer.parseInt(audioTrackPositionStr);
+                if (audioTrackPosition > playlistSize) {
+                    /* Determine size of playlist */
+                    playlistSize = audioTrackPosition;
+                }
+                file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, audioTrackPosition);
+            }
+            if (sizeO != null) {
+                if (sizeO instanceof Number) {
+                    file.setVerifiedFileSize(((Number) sizeO).longValue());
+                } else {
+                    file.setVerifiedFileSize(Long.parseLong(sizeO.toString()));
+                }
+            }
+            if (md5 != null) {
+                file.setMD5Hash(md5);
+            }
+            if (crc32 != null) {
+                file.setHashInfo(HashInfo.newInstanceSafe(crc32, TYPE.CRC32));
+            }
+            if (sha1 != null) {
+                file.setSha1Hash(sha1);
+            }
+            ret.add(file);
+        }
+        /* Add some properties. */
+        for (final DownloadLink link : ret) {
+            link._setFilePackage(fp);
+            link.setAvailable(true);
+            if (playlistSize != -1) {
+                link.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, playlistSize);
+            }
+            final String filenameTmp = link.getStringProperty(filenameHelperProperty);
+            ArchiveOrg.setFinalFilename(link, filenameTmp);
+            link.removeProperty(filenameHelperProperty);
+        }
+        if (ret.isEmpty() && skippedItems.size() > 0) {
+            logger.warning("Returning no results because all possible results were skipped | Number of skipped items: " + skippedItems.size());
+        }
         return ret;
     }
 
@@ -414,8 +555,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     dl.setProperty(ArchiveOrg.PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP, System.currentTimeMillis() + loanedSecondsLeft * 1000);
                 }
                 /**
-                 * Mark pages that are not viewable in browser as offline. </br> If we have borrowed this book, this field will not exist at
-                 * all.
+                 * Mark pages that are not viewable in browser as offline. </br>
+                 * If we have borrowed this book, this field will not exist at all.
                  */
                 final Object viewable = bookpage.get("viewable");
                 if (Boolean.FALSE.equals(viewable)) {
@@ -612,7 +753,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             final DownloadLink downloadURL = createDownloadlink(url);
             downloadURL.setVerifiedFileSize(SizeFormatter.getSize(filesizeBytesStr));
             downloadURL.setAvailable(true);
-            downloadURL.setFinalFileName(filename);
+            ArchiveOrg.setFinalFilename(downloadURL, filename);
             String thisPath = new Regex(url, "download/(.+)/[^/]+$").getMatch(0);
             if (Encoding.isUrlCoded(thisPath)) {
                 thisPath = Encoding.htmlDecode(thisPath);

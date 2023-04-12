@@ -22,6 +22,18 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgLendingInfo;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -42,18 +54,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.ArchiveOrgCrawler;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgLendingInfo;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "archive.org" }, urls = { "https?://(?:[\\w\\.]+)?archive\\.org/download/[^/]+/[^/]+(/.+)?" })
 public class ArchiveOrg extends PluginForHost {
@@ -91,6 +91,9 @@ public class ArchiveOrg extends PluginForHost {
     public static final String                            PROPERTY_IS_LENDING_REQUIRED                    = "is_lending_required";
     public static final String                            PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE = "is_free_downloadable_book_preview_page";
     public static final String                            PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP            = "is_borrowed_until_timestamp";
+    public static final String                            PROPERTY_PLAYLIST_POSITION                      = "position";
+    public static final String                            PROPERTY_PLAYLIST_SIZE                          = "playlist_size";
+    public static final String                            PROPERTY_ARTIST                                 = "artist";
     private final String                                  PROPERTY_ACCOUNT_TIMESTAMP_BORROW_LIMIT_REACHED = "timestamp_borrow_limit_reached";
     private static HashMap<String, ArchiveOrgLendingInfo> bookBorrowSessions                              = new HashMap<String, ArchiveOrgLendingInfo>();
 
@@ -124,7 +127,7 @@ public class ArchiveOrg extends PluginForHost {
                 connectionErrorhandling(con, link, account, null);
                 final String filenameFromHeader = getFileNameFromHeader(con);
                 if (filenameFromHeader != null) {
-                    link.setFinalFileName(filenameFromHeader);
+                    setFinalFilename(link, filenameFromHeader);
                 }
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -137,6 +140,34 @@ public class ArchiveOrg extends PluginForHost {
             }
         }
         return AvailableStatus.UNCHECKABLE;
+    }
+
+    /**
+     * Use this whenever you wnt to set a filename especially if there is a chance that the item is part of an audio playlist or a video
+     * streaming item.
+     */
+    public static void setFinalFilename(final DownloadLink link, final String rawFilename) {
+        if (StringUtils.isEmpty(rawFilename)) {
+            return;
+        }
+        final int playlistPosition = link.getIntegerProperty(PROPERTY_PLAYLIST_POSITION, -1);
+        final boolean isAudio = rawFilename.endsWith(".mp3");
+        // final boolean isVideo = rawFilename.endsWith(".mp4");
+        if (playlistPosition != -1) {
+            final int playlistSize = link.getIntegerProperty(PROPERTY_PLAYLIST_SIZE, -1);
+            final int padLength = StringUtils.getPadLength(playlistSize);
+            final String positionFormatted = StringUtils.formatByPadLength(padLength, playlistPosition);
+            if (isAudio) {
+                /* File is part of audio playlist. Format: <positionFormatted>.<rawFilename> */
+                link.setFinalFileName(positionFormatted + "." + rawFilename);
+            } else {
+                /* Video streaming file. Format: <rawFilenameWithoutExt>_<positionFormatted>.mp4 */
+                final String filenameWithoutExt = rawFilename.substring(0, rawFilename.lastIndexOf("."));
+                link.setFinalFileName(filenameWithoutExt + "_" + positionFormatted + ".mp4");
+            }
+        } else {
+            link.setFinalFileName(rawFilename);
+        }
     }
 
     private boolean isFreeDownloadableBookPreviewPage(final DownloadLink link) {
@@ -167,8 +198,9 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /**
-     * Returns true if this book page is borrowed at this moment. </br> This information is only useful with the combination of the
-     * borrow-cookies and can become invalid at any point of time if e.g. the user returns the book manually via browser.
+     * Returns true if this book page is borrowed at this moment. </br>
+     * This information is only useful with the combination of the borrow-cookies and can become invalid at any point of time if e.g. the
+     * user returns the book manually via browser.
      */
     private boolean isLendAtThisMoment(final DownloadLink link) {
         final long borrowedUntilTimestamp = link.getLongProperty(PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP, -1);
@@ -202,8 +234,8 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /**
-     * A special string that is the same as the bookID but different for multi volume books. </br> ...thus only relevant for multi volume
-     * books.
+     * A special string that is the same as the bookID but different for multi volume books. </br>
+     * ...thus only relevant for multi volume books.
      */
     private String getBookSubPrefix(final DownloadLink link) {
         return link.getStringProperty(PROPERTY_BOOK_SUB_PREFIX);
@@ -501,7 +533,8 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /**
-     * Borrows given bookID which gives us a token we can use to download all pages of that book. </br> It is typically valid for one hour.
+     * Borrows given bookID which gives us a token we can use to download all pages of that book. </br>
+     * It is typically valid for one hour.
      */
     private void borrowBook(final Browser br, final Account account, final String bookID, final boolean skipAllExceptLastStep) throws Exception {
         if (account == null) {
@@ -535,9 +568,9 @@ public class ArchiveOrg extends PluginForHost {
                     if (StringUtils.equalsIgnoreCase(error, "This book is not available to borrow at this time. Please try again later.")) {
                         /**
                          * Happens if you try to borrow a book that can't be borrowed or if you try to borrow a book while too many
-                         * (2022-08-31: max 10) books per hour have already been borrowed with the current account. </br> With setting this
-                         * timestamp we can ensure not to waste more http requests on trying to borrow books but simply set error status on
-                         * all future links [for the next 60 minutes].
+                         * (2022-08-31: max 10) books per hour have already been borrowed with the current account. </br>
+                         * With setting this timestamp we can ensure not to waste more http requests on trying to borrow books but simply
+                         * set error status on all future links [for the next 60 minutes].
                          */
                         account.setProperty(PROPERTY_ACCOUNT_TIMESTAMP_BORROW_LIMIT_REACHED, Time.systemIndependentCurrentJVMTimeMillis());
                         /*
