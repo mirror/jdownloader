@@ -231,7 +231,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final String audioPlaylistJson = br.getRegex("class=\"js-play8-playlist\"[^>]*value='(\\[.*?\\])'/>").getMatch(0);
         final String metadataJson = br.getRegex("class=\"js-ia-metadata\"[^>]*value='(\\{.*?\\})'/>").getMatch(0);
         if (audioPlaylistJson != null) {
-            /* 2022-10-31: Example: https://archive.org/details/MSNBCW_20211108_030000_Four_Seasons_Total_Documentary */
             if (metadataJson != null) {
                 /* Prefer this way as this source contains way more metadata. */
                 ret.addAll(this.crawlMetadataJson(metadataJson, true));
