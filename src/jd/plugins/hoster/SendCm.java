@@ -187,7 +187,7 @@ public class SendCm extends XFileSharingProBasic {
     public String[] scanInfo(final String html, final String[] fileInfo) {
         super.scanInfo(html, fileInfo);
         String betterFilename = br.getRegex("class=\"modal-title\" id=\"qr\"[^>]*>([^<]+)</h6>").getMatch(0);
-        if (betterFilename == null || true) {
+        if (betterFilename == null) {
             betterFilename = br.getRegex("data-feather=\"file\"[^>]*></i>([^<]+)</h6>").getMatch(0);
         }
         if (betterFilename == null) {
