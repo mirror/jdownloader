@@ -20,12 +20,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.BangComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -43,6 +37,11 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BangCom;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.BangComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { BangCom.class })
@@ -230,7 +229,7 @@ public class BangComCrawler extends PluginForDecrypt {
             int pixelHeightBest = -1;
             DownloadLink bestVideoOfSelection = null;
             int pixelHeightBestOfSelection = -1;
-            final Map<String, Object> entries = JSonStorage.restoreFromString(videodownloadsJson, TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(videodownloadsJson, TypeRef.MAP);
             final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
             // final String[] videoQualityLabels = br.getRegex("</svg>([^<]+)</span>").getColumn(0);
             for (final Map<String, Object> file : files) {

@@ -20,10 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -37,6 +33,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DoodriveCom extends PluginForHost {
@@ -161,14 +161,14 @@ public class DoodriveCom extends PluginForHost {
         }
         String filename = br.getRegex("<h1 class=\"uk-h4 uk-margin-small uk-text-truncate\"[^>]*>([^<>\"]+)<").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex(">Name:</strong><span[^>]*>([^<>\"]+)<").getMatch(0);
+            filename = br.getRegex(">\\s*Name:\\s*</strong>\\s*<span[^>]*>\\s*([^<>\"]+)\\s*<").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("readonly>\\[url=https?://[^/]+/f/[a-z0-9]+\\](.*?)\\[/url\\]").getMatch(0);
+                filename = br.getRegex("readonly\\s*>\\s*\\[url\\s*=\\s*https?://[^/]+/f/[a-z0-9]+\\s*\\]\\s*(.*?)\\s*\\[/url\\]").getMatch(0);
             }
         }
         String filesize = br.getRegex("Download\\s*\\((\\d+(?:\\.\\d+) [A-Za-z]+)\\)").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("File size:</strong><span[^>]*>([^<]+)<").getMatch(0);
+            filesize = br.getRegex("File size:\\s*</strong>\\s*<span[^>]*>\\s*([^<]+)\\s*<").getMatch(0);
         }
         if (filename != null) {
             link.setName(filename);

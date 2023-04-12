@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.html.Form;
@@ -31,6 +29,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SendCm extends XFileSharingProBasic {
@@ -120,14 +120,11 @@ public class SendCm extends XFileSharingProBasic {
     @Override
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final AvailableStatus status = super.requestFileInformationWebsite(link, account, isDownload);
-        final String sha256hash = br.getRegex("(?i)SHA-256\\s*:\\s*</b>\\s*([a-f0-9]{64})\\s*</span>").getMatch(0);
-        if (sha256hash != null) {
-            link.setSha256Hash(sha256hash);
+        // 2023-04-12: MD5 seems to be base64 encoded but doesn't match, maybe just fake info?!*/
+        final String sha256 = br.getRegex("(?i)SHA-256\\s*:\\s*</b>\\s*([a-f0-9]{64})\\s*</span>").getMatch(0);
+        if (sha256 != null) {
+            link.setSha256Hash(sha256);
         }
-        // final String md5hash = br.getRegex("(?i)MD5\\s*:\\s*</b>\\s*([a-f0-9]{32})\\s*</span>").getMatch(0);
-        // if (md5hash != null) {
-        // link.setMD5Hash(md5hash);
-        // }
         return status;
     }
 
@@ -184,14 +181,14 @@ public class SendCm extends XFileSharingProBasic {
     }
 
     @Override
-    public String[] scanInfo(final String html, final String[] fileInfo) {
-        super.scanInfo(html, fileInfo);
-        String betterFilename = br.getRegex("class=\"modal-title\" id=\"qr\"[^>]*>([^<]+)</h6>").getMatch(0);
+    public String[] scanInfo(final String html, String[] fileInfo) {
+        fileInfo = super.scanInfo(html, fileInfo);
+        String betterFilename = br.getRegex("class\\s*=\\s*\"modal-title\"\\s*id=\"qr\"[^>]*>\\s*([^<]*?)\\s*</h\\d+>").getMatch(0);
         if (betterFilename == null) {
-            betterFilename = br.getRegex("data-feather=\"file\"[^>]*></i>([^<]+)</h6>").getMatch(0);
-        }
-        if (betterFilename == null) {
-            betterFilename = br.getRegex("(?i)\\&text=([^\"]+)\" target=\"_blank\">\\s*Share on Telegram").getMatch(0);
+            betterFilename = br.getRegex("data-feather\\s*=\\s*\"file\"[^>]*>\\s*</i>\\s*([^<]*?)\\s*</h\\d+>").getMatch(0);
+            if (betterFilename == null) {
+                betterFilename = br.getRegex("(?i)\\&text=([^\"]+)\" target=\"_blank\">\\s*Share on Telegram").getMatch(0);
+            }
         }
         if (betterFilename != null) {
             fileInfo[0] = betterFilename;
