@@ -28,20 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -62,8 +48,21 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.download.HashInfo;
-import jd.plugins.download.HashInfo.TYPE;
 import jd.plugins.hoster.ArchiveOrg;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
 public class ArchiveOrgCrawler extends PluginForDecrypt {
@@ -211,7 +210,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final String videoJson = br.getRegex("class=\"js-tv3-init\"[^>]*value='(\\{.*?\\})").getMatch(0);
         if (videoJson != null) {
             /* 2022-10-31: Example: https://archive.org/details/MSNBCW_20211108_030000_Four_Seasons_Total_Documentary */
-            final Map<String, Object> entries = JSonStorage.restoreFromString(videoJson, TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(videoJson, TypeRef.MAP);
             final String slug = entries.get("TV3.identifier").toString();
             final List<String> urls = (List<String>) entries.get("TV3.clipstream_clips");
             int position = 1;
@@ -327,7 +326,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
 
     /** Crawls json which can sometimes be found in html of such URLs: "/details/<identifier>" */
     private ArrayList<DownloadLink> crawlMetadataJson(final String json, final boolean crawlAudioOnly) throws Exception {
-        final Map<String, Object> metamap_root = JSonStorage.restoreFromString(json, TypeRef.MAP);
+        final Map<String, Object> metamap_root = restoreFromString(json, TypeRef.MAP);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final ArrayList<Map<String, Object>> skippedItems = new ArrayList<Map<String, Object>>();
         final Map<String, Object> metadata = (Map<String, Object>) metamap_root.get("metadata");
@@ -367,8 +366,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
             if (StringUtils.isEmpty(filename)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (crawlAudioOnly && audioTrackPositionStr == null) {
+            } else if (crawlAudioOnly && audioTrackPositionStr == null) {
                 skippedItems.add(filemap);
                 continue;
             }
@@ -390,11 +388,11 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     file.setVerifiedFileSize(Long.parseLong(sizeO.toString()));
                 }
             }
+            if (crc32 != null) {
+                file.setHashInfo(HashInfo.parse(crc32));
+            }
             if (md5 != null) {
                 file.setMD5Hash(md5);
-            }
-            if (crc32 != null) {
-                file.setHashInfo(HashInfo.newInstanceSafe(crc32, TYPE.CRC32));
             }
             if (sha1 != null) {
                 file.setSha1Hash(sha1);
@@ -554,8 +552,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     dl.setProperty(ArchiveOrg.PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP, System.currentTimeMillis() + loanedSecondsLeft * 1000);
                 }
                 /**
-                 * Mark pages that are not viewable in browser as offline. </br>
-                 * If we have borrowed this book, this field will not exist at all.
+                 * Mark pages that are not viewable in browser as offline. </br> If we have borrowed this book, this field will not exist at
+                 * all.
                  */
                 final Object viewable = bookpage.get("viewable");
                 if (Boolean.FALSE.equals(viewable)) {
