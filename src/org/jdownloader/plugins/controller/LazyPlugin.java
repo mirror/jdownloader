@@ -376,7 +376,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     }
 
     @SuppressWarnings("unchecked")
-    protected synchronized Class<T> getPluginClass(PluginClassLoaderChild classLoader) {
+    public synchronized Class<T> getPluginClass(PluginClassLoaderChild classLoader) {
         if (classLoader != null && classLoader != getClassLoader(false)) {
             /* load class with custom classLoader because it's not default one */
             try {

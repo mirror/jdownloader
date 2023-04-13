@@ -66,6 +66,7 @@ import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
 
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
@@ -86,7 +87,7 @@ import org.jdownloader.plugins.controller.host.PluginFinder;
  * TODO: remove after next big update of core to use the public static methods!
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+",
-        "https?(viajd)?://[^/]+/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
+"https?(viajd)?://[^/]+/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
 public class DirectHTTP extends antiDDoSForHost {
     public static final String  ENDINGS                  = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|ape|bin|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nfs|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}(?=\\?|$|#|\"|\r|\n|;))";
     public static final String  NORESUME                 = "nochunkload";
@@ -703,6 +704,13 @@ public class DirectHTTP extends antiDDoSForHost {
 
     private boolean retryConnection(final DownloadLink downloadLink, final URLConnectionAdapter con) {
         switch (con.getResponseCode()) {
+        case 200:
+            /*
+             * for example HTTP/1.1 200 OK, Content-Disposition: inline; filename=error.html
+             *
+             * we retry without HEAD in order to get full html response
+             */
+            return RequestMethod.HEAD.equals(con.getRequest().getRequestMethod()) && con.isContentDisposition() && !looksLikeDownloadableContent(con);
         case 400:// Bad Request
         case 401:// Unauthorized
         case 403:// Forbidden
@@ -867,7 +875,8 @@ public class DirectHTTP extends antiDDoSForHost {
                 urlConnection = handleRateLimit(downloadLink, optionSet, this.br, urlConnection);
                 logger.info("looksLikeDownloadableContent result(" + retry + ",1):" + looksLikeDownloadableContent(urlConnection));
                 if (isCustomOffline(urlConnection)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    followURLConnection(br, urlConnection);
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, urlConnection.getResponseCode() + "-" + urlConnection.getResponseMessage());
                 }
                 final String server = urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_SERVER);
                 if (server != null && server.matches("(?i).*Apache/2.2.22.*")) {
@@ -892,7 +901,8 @@ public class DirectHTTP extends antiDDoSForHost {
                         urlConnection = handleRateLimit(downloadLink, optionSet, this.br, urlConnection);
                         logger.info("looksLikeDownloadableContent result(" + retry + ",2):" + looksLikeDownloadableContent(urlConnection));
                         if (isCustomOffline(urlConnection)) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            followURLConnection(br, urlConnection);
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, urlConnection.getResponseCode() + "-" + urlConnection.getResponseMessage());
                         }
                     }
                 }
@@ -900,18 +910,33 @@ public class DirectHTTP extends antiDDoSForHost {
                     followURLConnection(br, urlConnection);
                     if (urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) == null) {
                         /* no basic auth */
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, urlConnection.getResponseCode() + "-" + urlConnection.getResponseMessage());
                     }
                 } else {
                     break;
                 }
             }
-            if (urlConnection.getResponseCode() == 503 || urlConnection.getResponseCode() == 504 || urlConnection.getResponseCode() == 521) {
+            final ResponseCode responseCode = ResponseCode.get(urlConnection.getResponseCode());
+            if (responseCode != null) {
+                switch (responseCode) {
+                case SERVERERROR_SERVICE_UNAVAILABLE:
+                case GATEWAY_TIMEOUT:
+                    followURLConnection(br, urlConnection);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, urlConnection.getResponseCode() + "-" + urlConnection.getResponseMessage(), 15 * 60 * 1000l);
+                case SUCCESS_OK:
+                    if (urlConnection.isContentDisposition() && !looksLikeDownloadableContent(urlConnection)) {
+                        followURLConnection(br, urlConnection);
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, urlConnection.getResponseCode() + "-" + urlConnection.getResponseMessage());
+                    } else {
+                        break;
+                    }
+                default:
+                    followURLConnection(br, urlConnection);
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, urlConnection.getResponseCode() + "-" + urlConnection.getResponseMessage());
+                }
+            } else {
                 followURLConnection(br, urlConnection);
-                return AvailableStatus.UNCHECKABLE;
-            } else if (urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 451 || urlConnection.getResponseCode() == 410 || !urlConnection.isOK()) {
-                followURLConnection(br, urlConnection);
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, urlConnection.getResponseCode() + "-" + urlConnection.getResponseMessage());
             }
             final String contentType = urlConnection.getContentType();
             if (contentType != null) {

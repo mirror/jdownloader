@@ -2,14 +2,22 @@ package jd.controlling.linkcrawler;
 
 import java.util.List;
 
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.DownloadConnectionVerifier;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 public abstract class LinkCrawlerDeepInspector {
     /**
@@ -19,6 +27,8 @@ public abstract class LinkCrawlerDeepInspector {
      * @return
      */
     public boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        Boolean verified = null;
+        boolean looksLike = false;
         if (urlConnection.getResponseCode() == 200 || urlConnection.getResponseCode() == 206) {
             final long completeContentLength = urlConnection.getCompleteContentLength();
             final String contentType = urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE);
@@ -40,39 +50,40 @@ public abstract class LinkCrawlerDeepInspector {
                 final String contentDispositionFileName = HTTPConnectionUtils.getFileNameFromDispositionHeader(contentDispositionHeader);
                 final boolean inlineFlag = contentDispositionHeader.matches("(?i)^\\s*inline\\s*;?.*");
                 if (inlineFlag && (contentDispositionFileName != null && contentDispositionFileName.matches("(?i)^.*\\.html?$") || (hasContentType && isTextContent(urlConnection)))) {
+                    // HTTP/1.1 200 OK
                     // Content-Type: text/html;
                     // Content-Disposition: inline; filename=error.html
-                    return false;
+                    looksLike = false;
                 } else {
-                    return true;
+                    looksLike = true;
                 }
             } else if (completeContentLength == 0) {
                 return false;
             } else if (hasContentType && (!isTextContent(urlConnection) && contentType.matches("(?i)^(application|audio|video|image)/.+"))) {
                 if (isOtherTextContent(urlConnection)) {
-                    return false;
+                    looksLike = false;
                 } else if (looksLikeMpegURL(urlConnection)) {
-                    return false;
+                    looksLike = false;
                 } else {
-                    return true;
+                    looksLike = true;
                 }
             } else if (hasContentType && (!isTextContent(urlConnection) && contentType.matches("(?i)^binary/octet-stream"))) {
-                return true;
+                looksLike = true;
             } else if (hasContentType && !isTextContent(urlConnection) && completeContentLength > 0) {
-                return true;
+                looksLike = true;
             } else if (!hasContentType && completeContentLength > 0 && hasStrongEtag) {
-                return true;
+                looksLike = true;
             } else if (!hasContentType && completeContentLength > 0 && allowsByteRanges) {
                 // HTTP/1.1 200 OK
                 // Content-Length: 1156000
                 // Accept-Ranges: bytes
-                return true;
+                looksLike = true;
             } else if (completeContentLength > sizeDownloadableContent && (!hasContentType || !isTextContent(urlConnection))) {
-                return true;
+                looksLike = true;
             } else if (completeContentLength > sizeDownloadableContent && (allowsByteRanges || (urlConnection.getResponseCode() == 206 && urlConnection.getRange() != null))) {
-                return true;
+                looksLike = true;
             } else if (filePathName != null && filePathName.matches("(?i).+\\.epub") && isPlainTextContent(urlConnection) && (!hasContentLength || completeContentLength > sizeDownloadableContent)) {
-                return true;
+                looksLike = true;
             } else if (filePathName != null && filePathName.matches("(?i).+\\.srt") && isPlainTextContent(urlConnection) && (!hasContentLength || completeContentLength > 512 || hasEtag)) {
                 /*
                  * Accept-Ranges: bytes
@@ -83,10 +94,35 @@ public abstract class LinkCrawlerDeepInspector {
                  *
                  * Content-Length: 28...
                  */
-                return true;
+                looksLike = true;
             }
         }
-        return false;
+        if (looksLike) {
+            try {
+                final Plugin currentActivePlugin = Plugin.getCurrentActivePlugin();
+                if (currentActivePlugin instanceof DownloadConnectionVerifier) {
+                    verified = ((DownloadConnectionVerifier) currentActivePlugin).verifyDownloadableContent(urlConnection);
+                }
+                if (verified == null) {
+                    final String host = Browser.getHost(urlConnection.getURL());
+                    final LazyHostPlugin lazyHostPlugin = new PluginFinder()._assignHost(host);
+                    if (lazyHostPlugin != null) {
+                        final PluginClassLoaderChild pluginClassLoaderChild = PluginClassLoader.getThreadPluginClassLoaderChild();
+                        final PluginForHost plugin = Plugin.getNewPluginInstance(currentActivePlugin, lazyHostPlugin, pluginClassLoaderChild);
+                        if (plugin instanceof DownloadConnectionVerifier) {
+                            verified = ((DownloadConnectionVerifier) plugin).verifyDownloadableContent(urlConnection);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                LogController.CL().log(e);
+            }
+        }
+        if (verified != null) {
+            return verified.booleanValue();
+        } else {
+            return looksLike;
+        }
     }
 
     /** Use this to check for HLS/.m3u8 content. */
