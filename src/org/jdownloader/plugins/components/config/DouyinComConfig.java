@@ -11,7 +11,7 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "douyin.com", type = Type.HOSTER)
 public interface DouyinComConfig extends PluginConfigInterface {
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Use API instead of website? With this disabled, you may get videos without watermark.")
     @Order(30)
     boolean isUseAPI();
