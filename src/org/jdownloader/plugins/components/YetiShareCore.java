@@ -1240,6 +1240,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     private static final String error_you_must_wait_between_downloads                                       = "error_you_must_wait_between_downloads";
 
     /**
+     * Checks for errormessages inside the current browsers' URL and also for errors based on the current browsers' URL structure. </br>
      * It was intended to replace this with checkErrorsLanguageIndependant but this doesn't work out as different templates/versions of
      * YetiShare are using different errors and not all have their full language keys available. </br>
      * Newer versions of YetiShare don't provide any language keys at all but provide mostly English errors inside URLs ("?e=...").
