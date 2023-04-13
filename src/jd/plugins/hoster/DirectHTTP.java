@@ -54,6 +54,7 @@ import jd.http.URLUserInfoAuthentication;
 import jd.nutils.SimpleFTP;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.DownloadConnectionVerifier;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
@@ -80,6 +81,8 @@ import org.jdownloader.auth.Login;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
@@ -88,7 +91,7 @@ import org.jdownloader.plugins.controller.host.PluginFinder;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+",
 "https?(viajd)?://[^/]+/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|bin|ape|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nsf|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|#|\"|\r|\n|;))" })
-public class DirectHTTP extends antiDDoSForHost {
+public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVerifier {
     public static final String  ENDINGS                  = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|ace|aiff|aifc|aif|ai|au|avi|avif|appimage|apk|azw3|azw|adf|asc|ape|bin|ass|bmp|bat|bz2|cbr|csv|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|c\\d{2,4}|chd|dta|deb|diz|divx|djvu|dlc|dmg|dms|doc|docx|dot|dx2|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|hqx|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|jp2|load|lha|lzh|m2ts|m4v|m4a|md5|midi?|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|nfs|oga|ogg|ogm|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pdb|pot|psd|ps|qt|rmvb|rm|rar|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sig|sub|srt|snd|sfv|sfx|swf|swc|sid|sit|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|webp|wav|wad|wmv|wma|wpt|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_?[_a-z]{2}|\\d{1,4}(?=\\?|$|#|\"|\r|\n|;))";
     public static final String  NORESUME                 = "nochunkload";
     public static final String  NOCHUNKS                 = "nochunk";
@@ -702,6 +705,24 @@ public class DirectHTTP extends antiDDoSForHost {
         }
     }
 
+    @Override
+    public Boolean verifyDownloadableContent(URLConnectionAdapter urlConnection) {
+        final String host = Browser.getHost(urlConnection.getURL());
+        final LazyHostPlugin lazyHostPlugin = new PluginFinder()._assignHost(host);
+        if (lazyHostPlugin != null) {
+            try {
+                final PluginClassLoaderChild pluginClassLoaderChild = PluginClassLoader.getThreadPluginClassLoaderChild();
+                final PluginForHost plugin = Plugin.getNewPluginInstance(this, lazyHostPlugin, pluginClassLoaderChild);
+                if (plugin instanceof DownloadConnectionVerifier) {
+                    return ((DownloadConnectionVerifier) plugin).verifyDownloadableContent(urlConnection);
+                }
+            } catch (PluginException e) {
+                getLogger().log(e);
+            }
+        }
+        return null;
+    }
+
     private boolean retryConnection(final DownloadLink downloadLink, final URLConnectionAdapter con) {
         switch (con.getResponseCode()) {
         case 200:
@@ -710,7 +731,7 @@ public class DirectHTTP extends antiDDoSForHost {
              *
              * we retry without HEAD in order to get full html response
              */
-            return RequestMethod.HEAD.equals(con.getRequest().getRequestMethod()) && con.isContentDisposition() && !looksLikeDownloadableContent(con);
+            return RequestMethod.HEAD.equals(con.getRequest().getRequestMethod()) && Boolean.FALSE.equals(verifyDownloadableContent(con));
         case 400:// Bad Request
         case 401:// Unauthorized
         case 403:// Forbidden
@@ -924,7 +945,7 @@ public class DirectHTTP extends antiDDoSForHost {
                     followURLConnection(br, urlConnection);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, urlConnection.getResponseCode() + "-" + urlConnection.getResponseMessage(), 15 * 60 * 1000l);
                 case SUCCESS_OK:
-                    if (urlConnection.isContentDisposition() && !looksLikeDownloadableContent(urlConnection)) {
+                    if (Boolean.FALSE.equals(verifyDownloadableContent(urlConnection))) {
                         followURLConnection(br, urlConnection);
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, urlConnection.getResponseCode() + "-" + urlConnection.getResponseMessage());
                     } else {

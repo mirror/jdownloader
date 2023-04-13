@@ -5466,7 +5466,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             // Content-Type: application/octet-stream
             // Content-Length: 7
             // ETag: "48ae7c8c-7"
-            // Response: EXPIRED = 7 length
+            // Response: Expired = 7 length
             return Boolean.FALSE;
         }
         if (urlConnection.isContentDisposition()) {
