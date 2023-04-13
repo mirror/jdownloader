@@ -5439,7 +5439,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      * any other/special domain! </br> Example test working & API available: https://fastfile.cc/api/account/info </br> Example not working
      * but API available: https://api-v2.ddownload.com/api/account/info </br> Example API not available (= XFS API Mod not installed): </br>
      */
-    private boolean test_supports_api() throws IOException {
+    private boolean test_looks_like_supports_api() throws IOException {
         br.getPage(this.getAPIBase() + "/account/info");
         /* 2020-05-29: Answer we'd expect if API is available: {"msg":"Invalid key","server_time":"2020-05-29 17:16:36","status":400} */
         final String msg = PluginJSonUtils.getJson(br, "msg");

@@ -79,7 +79,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     }
 
     protected URL_TYPE getURLType(final String url) {
-        if (url != null && url.matches("(?i)https?://[^/]*nfile\\.cc/([A-Za-z0-9]+)")) {
+        if (url != null && url.matches("(?i)https?://[^/]*nfile\\.cc/([A-Za-z0-9]+)$")) {
             return URL_TYPE.SHORT;
         } else {
             return super.getURLType(url);
