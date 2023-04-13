@@ -29,6 +29,21 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -49,21 +64,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.TiktokComCrawler;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/((@[^/]+)/video/|embed/)(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
 public class TiktokCom extends PluginForHost {
@@ -217,10 +217,17 @@ public class TiktokCom extends PluginForHost {
             if (dllink == null) {
                 final TiktokComCrawler crawler = (TiktokComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
                 final ArrayList<DownloadLink> results = crawler.crawlSingleMedia(new CryptedLink(link.getPluginPatternMatcher()), account);
+                final String storedType = link.getStringProperty(PROPERTY_TYPE);
+                boolean mediaTypeWorkaroundActive = false;
                 DownloadLink result = null;
+                final String currentFilename = link.getName();
                 for (final DownloadLink thisresult : results) {
-                    if (this.getLinkID(thisresult).equals(this.getLinkID(link))) {
+                    if (StringUtils.equals(this.getLinkID(thisresult), this.getLinkID(link))) {
                         result = thisresult;
+                        break;
+                    } else if (storedType == null && StringUtils.equals(getType(thisresult), TYPE_AUDIO) && StringUtils.endsWithCaseInsensitive(currentFilename, ".mp4")) {
+                        result = thisresult;
+                        mediaTypeWorkaroundActive = true;
                         break;
                     }
                 }
@@ -229,6 +236,15 @@ public class TiktokCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 dllink = getStoredDirecturl(link);
+                link.setProperties(result.getProperties());
+                if (mediaTypeWorkaroundActive) {
+                    /*
+                     * Workaround for audio-only items which were not downloadable with old handling as this could only download videos ->
+                     * Use audio download for those.
+                     */
+                    logger.info("Media type of this item was changed from null to " + TYPE_AUDIO);
+                    setFilename(link);
+                }
             }
         } else {
             if (useAPI(link)) {
@@ -422,6 +438,7 @@ public class TiktokCom extends PluginForHost {
         return link.getStringProperty(getStoredDirecturlProperty(link));
     }
 
+    @Deprecated
     public void checkAvailablestatusWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (account != null) {
             this.login(account, false);
@@ -469,8 +486,8 @@ public class TiktokCom extends PluginForHost {
             String description = null;
             final boolean useWebsiteEmbed = true;
             /**
-             * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br> When using an account and
-             * potentially downloading private videos however, we can't use the embed way.
+             * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br>
+             * When using an account and potentially downloading private videos however, we can't use the embed way.
              */
             String dllink = null;
             if (account != null) {
@@ -666,6 +683,7 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
+    @Deprecated
     public void checkAvailablestatusAPI(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         prepBRAPI(br);
         final UrlQuery query = getAPIQuery();
@@ -734,9 +752,9 @@ public class TiktokCom extends PluginForHost {
              * https://github.com/yt-dlp/yt-dlp/issues/4138#issuecomment-1217380819
              */
             /**
-             * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br> This is also possible using modified URLs in
-             * e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any "uri_list" which contains the "video_id"
-             * parameter which also typically matches play_addr/uri
+             * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br>
+             * This is also possible using modified URLs in e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any
+             * "uri_list" which contains the "video_id" parameter which also typically matches play_addr/uri
              */
             link.setProperty(PROPERTY_DIRECTURL_API, String.format("https://api.tiktokv.com/aweme/v1/play/?video_id=%s&line=0&watermark=0&source=AWEME_DETAIL&is_play_url=1&ratio=default&improve_bitrate=1", play_addr.get("uri").toString()));
             /*
@@ -760,8 +778,8 @@ public class TiktokCom extends PluginForHost {
                 link.setProperty(PROPERTY_DIRECTURL_API, directurl);
                 if (data_size != null) {
                     /**
-                     * Set filesize of download-version because streaming- and download-version are nearly identical. </br> If a video is
-                     * watermarked and downloads are prohibited both versions should be identical.
+                     * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
+                     * If a video is watermarked and downloads are prohibited both versions should be identical.
                      */
                     link.setDownloadSize(data_size.longValue());
                 }
@@ -1028,7 +1046,7 @@ public class TiktokCom extends PluginForHost {
             logger.info("Using stored directurl for downloading");
         } else {
             requestFileInformation(link, account, true);
-            final String dllink = this.getStoredDirecturl(link);
+            final String dllink = getStoredDirecturl(link);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

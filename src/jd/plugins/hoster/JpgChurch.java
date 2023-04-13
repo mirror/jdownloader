@@ -20,6 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -36,13 +43,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.decrypter.JpgChurchCrawler;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class JpgChurch extends PluginForHost {
@@ -67,7 +67,7 @@ public class JpgChurch extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "jpg.fish", "jpg.church" });
+        ret.add(new String[] { "jpg.fishing", "jpg.fish", "jpg.church" });
         return ret;
     }
 
@@ -123,6 +123,10 @@ public class JpgChurch extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private String getContentURL(final DownloadLink link) {
+        return "https://" + this.getHost() + "/img/" + this.getFID(link);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
@@ -144,12 +148,13 @@ public class JpgChurch extends PluginForHost {
         if (passwordSessionPhpsessid != null) {
             br.setCookie(this.getHost(), "PHPSESSID", passwordSessionPhpsessid);
         }
+        final String contentURL = getContentURL(link);
         boolean useWebsite = false;
         if (link.isPasswordProtected()) {
             useWebsite = true;
         } else {
             final UrlQuery query = new UrlQuery();
-            query.add("url", URLEncode.encodeURIComponent(link.getPluginPatternMatcher()));
+            query.add("url", URLEncode.encodeURIComponent(contentURL));
             query.add("format", "json");
             br.getPage("https://" + this.getHost() + "/oembed/?" + query.toString());
             if (br.getHttpConnection().getResponseCode() == 403) {
@@ -185,10 +190,11 @@ public class JpgChurch extends PluginForHost {
             if (author != null) {
                 link.setProperty(PROPERTY_USER, author);
             }
-            br.setCurrentURL(link.getPluginPatternMatcher());
+            /* Set correct Referer header. */
+            br.setCurrentURL(contentURL);
         }
         if (useWebsite) {
-            br.getPage(link.getPluginPatternMatcher());
+            br.getPage(contentURL);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

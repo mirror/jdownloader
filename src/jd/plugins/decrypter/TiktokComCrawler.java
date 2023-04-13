@@ -93,12 +93,12 @@ public class TiktokComCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_REDIRECT       = "https?://vm\\.[^/]+/([A-Za-z0-9]+).*";
-    private final String TYPE_APP            = "https?://[^/]+/t/([A-Za-z0-9]+).*";
-    private final String TYPE_USER_USERNAME  = "https?://[^/]+/@([^\\?/]+).*";
-    private final String TYPE_USER_USER_ID   = "https?://[^/]+/share/user/(\\d+).*";
-    private final String TYPE_PLAYLIST_TAG   = "https?://[^/]+/tag/([^/]+)";
-    private final String TYPE_PLAYLIST_MUSIC = "https?://[^/]+/music/([a-z0-9\\-]+)-(\\d+)";
+    private final String TYPE_REDIRECT       = "(?i)https?://vm\\.[^/]+/([A-Za-z0-9]+).*";
+    private final String TYPE_APP            = "(?i)https?://[^/]+/t/([A-Za-z0-9]+).*";
+    private final String TYPE_USER_USERNAME  = "(?i)https?://[^/]+/@([^\\?/]+).*";
+    private final String TYPE_USER_USER_ID   = "(?i)https?://[^/]+/share/user/(\\d+).*";
+    private final String TYPE_PLAYLIST_TAG   = "(?i)https?://[^/]+/tag/([^/]+)";
+    private final String TYPE_PLAYLIST_MUSIC = "(?i)https?://[^/]+/music/([a-z0-9\\-]+)-(\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final PluginForHost hosterPlugin = this.getNewPluginForHostInstance(this.getHost());
@@ -112,19 +112,28 @@ public class TiktokComCrawler extends PluginForDecrypt {
             do {
                 br.getPage(redirect);
                 redirect = br.getRedirectLocation();
-                if (redirect != null && hosterPlugin.canHandle(redirect)) {
+                if (redirect == null) {
                     break;
-                } else if (br.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (hosterPlugin.canHandle(redirect)) {
+                    break;
                 } else if (loops >= 5) {
                     logger.info("Redirectloop -> URL must be offline");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (this.isAbort()) {
+                    /* Aborted by user */
+                    throw new InterruptedException();
                 } else {
                     loops++;
                 }
             } while (true);
-            if (redirect == null || !hosterPlugin.canHandle(redirect)) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (redirect == null) {
+                logger.info("Failed to find redirect -> Looks like content is offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!hosterPlugin.canHandle(redirect)) {
                 /* E.g. redirect to mainpage */
+                logger.info("Redirect did not lead to supported URL -> Looks like content is offline");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             logger.info("Old URL: " + initialURL + " | New URL: " + redirect);
