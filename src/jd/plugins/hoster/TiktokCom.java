@@ -119,10 +119,15 @@ public class TiktokCom extends PluginForHost {
         return "https://www.tiktok.com/";
     }
 
-    /* Connection stuff */
-    private final boolean RESUME    = true;
-    /* 2019-07-10: More chunks possible but that would not be such a good idea! */
-    private final int     MAXCHUNKS = 1;
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final Account account) {
+        /* 2019-07-10: More chunks possible but that would not be such a good idea! */
+        return 1;
+    }
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -197,6 +202,7 @@ public class TiktokCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (account != null) {
+            /* Login whenever possible. */
             this.login(account, false);
         }
         final String fid = getContentID(link);
@@ -272,7 +278,7 @@ public class TiktokCom extends PluginForHost {
             try {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
-                if (link.getBooleanProperty(PROPERTY_ALLOW_HEAD_REQUEST, false)) {
+                if (allowsHeadRequest(link)) {
                     con = brc.openHeadConnection(dllink);
                 } else {
                     con = brc.openGetConnection(dllink);
@@ -293,6 +299,10 @@ public class TiktokCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private boolean allowsHeadRequest(final DownloadLink link) {
+        return link.getBooleanProperty(PROPERTY_ALLOW_HEAD_REQUEST, false);
     }
 
     /**
@@ -799,9 +809,9 @@ public class TiktokCom extends PluginForHost {
         setPlayCount(link, (Number) statistics.get("play_count"));
         setShareCount(link, (Number) statistics.get("share_count"));
         setCommentCount(link, (Number) statistics.get("comment_count"));
+        link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
         link.setAvailable(true);
         setFilename(link);
-        link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
     }
 
     public static void accessAPI(final Browser br, final String path, final UrlQuery query) throws IOException {
@@ -908,11 +918,15 @@ public class TiktokCom extends PluginForHost {
 
     public static String getUsername(final DownloadLink link) {
         if (link.hasProperty(PROPERTY_USERNAME)) {
+            /* Stored username value. */
             return TiktokComCrawler.sanitizeUsername(link.getStringProperty(PROPERTY_USERNAME));
-        } else if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO)) {
-            return TiktokComCrawler.sanitizeUsername(new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO).getMatch(0));
         } else {
-            return null;
+            final String usernameFromURL = new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO).getMatch(0);
+            if (usernameFromURL != null) {
+                return TiktokComCrawler.sanitizeUsername(usernameFromURL);
+            } else {
+                return null;
+            }
         }
     }
 
@@ -1072,7 +1086,7 @@ public class TiktokCom extends PluginForHost {
         try {
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Referer", "https://www." + this.getHost() + "/");
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, RESUME, MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, null), this.getMaxChunks(null));
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 missingDateFilenameLastResortHandling(link, dl.getConnection());
                 return true;
