@@ -268,6 +268,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                  * In the end we should get the best of both worlds: All tracks with track numbers, metadata and file hashes for CRC
                  * checking.
                  */
+                logger.info("Looking for more detailed audio metadata");
                 audioPlaylistItemsDetailed.addAll(this.crawlMetadataJson(metadataJson, filenameToTrackPositionMapping));
             }
             if (audioPlaylistItemsDetailed.size() > 0) {
@@ -362,7 +363,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         String filenameHelperProperty = "crawlerFilenameTmp";
         int playlistSize = filenameToTrackPositionMapping != null ? filenameToTrackPositionMapping.size() : null;
         for (final Map<String, Object> filemap : filemaps) {
-            // final String source = filemap.get("source").toString(); // "original" or "derivative"
+            final String source = filemap.get("source").toString(); // "original" or "derivative"
             final String md5 = (String) filemap.get("md5");
             final String crc32 = (String) filemap.get("crc32");
             final String sha1 = (String) filemap.get("sha1");
@@ -390,7 +391,11 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 /* Get track position from mapping. */
                 audioTrackPosition = filenameToTrackPositionMapping.get(filename);
             }
-            if (filenameToTrackPositionMapping != null && audioTrackPosition == -1) {
+            if (audioTrackPosition == 15) {
+                logger.warning("WTF");
+            }
+            if (filenameToTrackPositionMapping != null && (audioTrackPosition == -1 || !source.equalsIgnoreCase("original"))) {
+                /* Skip non audio and non-original files if a filenameToTrackPositionMapping is available. */
                 skippedItems.add(filemap);
                 continue;
             }

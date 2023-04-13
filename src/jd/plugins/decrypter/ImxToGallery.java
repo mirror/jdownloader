@@ -26,6 +26,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -51,24 +53,34 @@ public class ImxToGallery extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String galleryID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String galleryFilesize = br.getRegex("(?i)Size\\s*<span [^>]*>([^<]+)</span>").getMatch(0);
+        final String galleryFilesizeStr = br.getRegex("(?i)Size\\s*<span [^>]*>([^<]+)</span>").getMatch(0);
+        long galleryFilesize = -1;
+        if (galleryFilesizeStr != null) {
+            galleryFilesize = SizeFormatter.getSize(galleryFilesizeStr);
+        }
         String fpName = br.getRegex("<title>IMX\\.to / ([^<>\"]+)</title>").getMatch(0);
         if (fpName == null) {
+            /* Fallback */
             fpName = galleryID;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
         final String[] imageIDs = br.getRegex("imx\\.to/i/([a-z0-9]+)").getColumn(0);
         if (imageIDs == null || imageIDs.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (galleryFilesize == 0) {
+                /* Empty gallery */
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, fpName);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         for (final String imageID : imageIDs) {
             final DownloadLink dl = createDownloadlink("https://imx.to/i/" + imageID);
             dl._setFilePackage(fp);
             dl.setName(imageID + ".jpg");
-            if (imageIDs.length == 1 && galleryFilesize != null) {
+            if (imageIDs.length == 1 && galleryFilesize != -1) {
                 /* Single image in gallery -> Set filesize of gallery as size of single item. */
-                dl.setDownloadSize(SizeFormatter.getSize(galleryFilesize));
+                dl.setDownloadSize(galleryFilesize);
             }
             dl.setAvailable(true);
             ret.add(dl);
