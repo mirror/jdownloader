@@ -28,6 +28,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -49,20 +63,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.download.HashInfo;
 import jd.plugins.hoster.ArchiveOrg;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
 public class ArchiveOrgCrawler extends PluginForDecrypt {
@@ -230,36 +230,52 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final String audioPlaylistJson = br.getRegex("class=\"js-play8-playlist\"[^>]*value='(\\[.*?\\])'/>").getMatch(0);
         final String metadataJson = br.getRegex("class=\"js-ia-metadata\"[^>]*value='(\\{.*?\\})'/>").getMatch(0);
         if (audioPlaylistJson != null) {
-            if (metadataJson != null) {
-                /* Prefer this way as this source contains way more metadata. */
-                ret.addAll(this.crawlMetadataJson(metadataJson, true));
-            } else {
-                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JSonStorage.restoreFromString(audioPlaylistJson, TypeRef.OBJECT);
-                int position = 1;
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(titleSlug);
-                for (final Map<String, Object> audiomap : ressourcelist) {
-                    final List<Map<String, Object>> sources = (List<Map<String, Object>>) audiomap.get("sources");
-                    if (sources.size() > 1) {
-                        logger.info("Found item with multiple sources: " + audiomap);
-                    }
-                    final Map<String, Object> source0 = sources.get(0);
-                    final DownloadLink audio = this.createDownloadlink(br.getURL(source0.get("file").toString()).toString());
-                    audio.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, position);
-                    audio.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, ressourcelist.size());
-                    audio.setProperty(ArchiveOrg.PROPERTY_ARTIST, audiomap.get("artist"));
-                    String filename = (String) audiomap.get("orig");
-                    if (StringUtils.isEmpty(filename)) {
-                        filename = audiomap.get("title").toString();
-                    }
-                    ArchiveOrg.setFinalFilename(audio, filename);
-                    audio.setAvailable(true);
-                    audio._setFilePackage(fp);
-                    ret.add(audio);
-                    position++;
+            final ArrayList<DownloadLink> audioPlaylistItemsSimple = new ArrayList<DownloadLink>();
+            final Map<String, Integer> filenameToTrackPositionMapping = new HashMap<String, Integer>();
+            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JSonStorage.restoreFromString(audioPlaylistJson, TypeRef.OBJECT);
+            if (ressourcelist.isEmpty()) {
+                /* This should never happen. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            int position = 1;
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(titleSlug);
+            for (final Map<String, Object> audiomap : ressourcelist) {
+                final List<Map<String, Object>> sources = (List<Map<String, Object>>) audiomap.get("sources");
+                if (sources.size() > 1) {
+                    logger.info("Found item with multiple sources: " + audiomap);
                 }
-                /* Do not stop here maybe we will find some more downloadable items. */
-                return ret;
+                final Map<String, Object> source0 = sources.get(0);
+                final DownloadLink audio = this.createDownloadlink(br.getURL(source0.get("file").toString()).toString());
+                audio.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, position);
+                audio.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, ressourcelist.size());
+                audio.setProperty(ArchiveOrg.PROPERTY_ARTIST, audiomap.get("artist"));
+                String filename = (String) audiomap.get("orig");
+                if (StringUtils.isEmpty(filename)) {
+                    filename = audiomap.get("title").toString();
+                }
+                ArchiveOrg.setFinalFilename(audio, filename);
+                audio.setAvailable(true);
+                audio._setFilePackage(fp);
+                audioPlaylistItemsSimple.add(audio);
+                filenameToTrackPositionMapping.put(filename, position);
+                position++;
+            }
+            final ArrayList<DownloadLink> audioPlaylistItemsDetailed = new ArrayList<DownloadLink>();
+            if (metadataJson != null) {
+                /**
+                 * Try to find more metadata to the results we already have and combine them with the track-position-data we know. </br>
+                 * In the end we should get the best of both worlds: All tracks with track numbers, metadata and file hashes for CRC
+                 * checking.
+                 */
+                audioPlaylistItemsDetailed.addAll(this.crawlMetadataJson(metadataJson, filenameToTrackPositionMapping));
+            }
+            if (audioPlaylistItemsDetailed.size() > 0) {
+                logger.info("Found detailed audio information");
+                ret.addAll(audioPlaylistItemsDetailed);
+            } else {
+                logger.info("Failed to obtain detailed audio information");
+                ret.addAll(audioPlaylistItemsSimple);
             }
         }
         if (ret.size() > 0) {
@@ -325,7 +341,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     /** Crawls json which can sometimes be found in html of such URLs: "/details/<identifier>" */
-    private ArrayList<DownloadLink> crawlMetadataJson(final String json, final boolean crawlAudioOnly) throws Exception {
+    private ArrayList<DownloadLink> crawlMetadataJson(final String json, final Map<String, Integer> filenameToTrackPositionMapping) throws Exception {
         final Map<String, Object> metamap_root = restoreFromString(json, TypeRef.MAP);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final ArrayList<Map<String, Object>> skippedItems = new ArrayList<Map<String, Object>>();
@@ -335,8 +351,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* Fallback */
             title = metadata.get("identifier").toString();
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(title);
         /* There is different servers to choose from e.g. see also fields "d1", "d2" and "workable_servers". */
         final String server = metamap_root.get("server").toString();
         final String dir = metamap_root.get("dir").toString();
@@ -346,8 +360,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, title);
         }
         String filenameHelperProperty = "crawlerFilenameTmp";
-        int playlistSize = -1;
+        int playlistSize = filenameToTrackPositionMapping != null ? filenameToTrackPositionMapping.size() : null;
         for (final Map<String, Object> filemap : filemaps) {
+            // final String source = filemap.get("source").toString(); // "original" or "derivative"
             final String md5 = (String) filemap.get("md5");
             final String crc32 = (String) filemap.get("crc32");
             final String sha1 = (String) filemap.get("sha1");
@@ -365,18 +380,26 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 }
             }
             if (StringUtils.isEmpty(filename)) {
+                /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (crawlAudioOnly && audioTrackPositionStr == null) {
+            }
+            int audioTrackPosition = -1;
+            if (audioTrackPositionStr != null) {
+                audioTrackPosition = Integer.parseInt(audioTrackPositionStr);
+            } else if (filenameToTrackPositionMapping != null && filenameToTrackPositionMapping.containsKey(filename)) {
+                /* Get track position from mapping. */
+                audioTrackPosition = filenameToTrackPositionMapping.get(filename);
+            }
+            if (filenameToTrackPositionMapping != null && audioTrackPosition == -1) {
                 skippedItems.add(filemap);
                 continue;
             }
             final String directurl = "https://" + server + dir + "/" + URLEncode.encodeURIComponent(filename);
             final DownloadLink file = new DownloadLink(hostPlugin, null, "archive.org", directurl, true);
             file.setProperty(filenameHelperProperty, filename);
-            if (audioTrackPositionStr != null) {
-                final int audioTrackPosition = Integer.parseInt(audioTrackPositionStr);
+            if (audioTrackPosition != -1) {
                 if (audioTrackPosition > playlistSize) {
-                    /* Determine size of playlist */
+                    /* Determine size of playlist as it must not be pre-given. */
                     playlistSize = audioTrackPosition;
                 }
                 file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, audioTrackPosition);
@@ -400,6 +423,12 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             ret.add(file);
         }
         /* Add some properties. */
+        final String description = (String) metadata.get("description");
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        if (!StringUtils.isEmpty(description)) {
+            fp.setComment(description);
+        }
         for (final DownloadLink link : ret) {
             link._setFilePackage(fp);
             link.setAvailable(true);
@@ -552,8 +581,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     dl.setProperty(ArchiveOrg.PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP, System.currentTimeMillis() + loanedSecondsLeft * 1000);
                 }
                 /**
-                 * Mark pages that are not viewable in browser as offline. </br> If we have borrowed this book, this field will not exist at
-                 * all.
+                 * Mark pages that are not viewable in browser as offline. </br>
+                 * If we have borrowed this book, this field will not exist at all.
                  */
                 final Object viewable = bookpage.get("viewable");
                 if (Boolean.FALSE.equals(viewable)) {
