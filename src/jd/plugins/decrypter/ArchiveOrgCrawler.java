@@ -262,6 +262,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 position++;
             }
             final ArrayList<DownloadLink> audioPlaylistItemsDetailed = new ArrayList<DownloadLink>();
+            boolean returnDetailedItems = false;
             if (metadataJson != null) {
                 /**
                  * Try to find more metadata to the results we already have and combine them with the track-position-data we know. </br>
@@ -270,9 +271,18 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                  */
                 logger.info("Looking for more detailed audio metadata");
                 audioPlaylistItemsDetailed.addAll(this.crawlMetadataJson(metadataJson, filenameToTrackPositionMapping));
+                if (audioPlaylistItemsDetailed.size() == ressourcelist.size()) {
+                    returnDetailedItems = true;
+                } else {
+                    /*
+                     * Most likely we found less items than in our playlist. Prefer returning the full playlist with less information vs.
+                     * incomplete number of items with more metadata.
+                     */
+                    logger.warning("Failed to find all audio items in detailed handling - can't make use of detailed items!");
+                }
             }
-            if (audioPlaylistItemsDetailed.size() > 0) {
-                logger.info("Found detailed audio information");
+            if (returnDetailedItems) {
+                logger.info("Found valid detailed audio information");
                 ret.addAll(audioPlaylistItemsDetailed);
             } else {
                 logger.info("Failed to obtain detailed audio information");
@@ -390,9 +400,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             } else if (filenameToTrackPositionMapping != null && filenameToTrackPositionMapping.containsKey(filename)) {
                 /* Get track position from mapping. */
                 audioTrackPosition = filenameToTrackPositionMapping.get(filename);
-            }
-            if (audioTrackPosition == 15) {
-                logger.warning("WTF");
             }
             if (filenameToTrackPositionMapping != null && (audioTrackPosition == -1 || !source.equalsIgnoreCase("original"))) {
                 /* Skip non audio and non-original files if a filenameToTrackPositionMapping is available. */
