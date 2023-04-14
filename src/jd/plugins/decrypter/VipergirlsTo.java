@@ -38,16 +38,15 @@ public class VipergirlsTo extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         final String fid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Generate fresh links by refreshing the source page")) {
             /* 2020-01-21: "Invalid or expired cypher. Generate fresh links by refreshing the source page." */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String captchaURL = "https://" + this.getHost() + "/secure/";
         final File captcha = this.getLocalCaptchaFile(".gif");
@@ -102,8 +101,8 @@ public class VipergirlsTo extends antiDDoSForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 
     @Override

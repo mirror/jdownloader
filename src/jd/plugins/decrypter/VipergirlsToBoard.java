@@ -52,8 +52,8 @@ public class VipergirlsToBoard extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(result));
             }
             if (title != null) {
-                title = title.replaceAll("(<img.*>)", "").trim();
-                title = Encoding.htmlDecode(title);
+                title = title.replaceAll("(<img.*>)", "");
+                title = Encoding.htmlDecode(title).trim();
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(title);
                 fp.addLinks(decryptedLinks);

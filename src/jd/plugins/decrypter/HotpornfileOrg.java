@@ -18,6 +18,12 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -29,12 +35,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotpornfile.org" }, urls = { "https?://(?:www\\.)?hotpornfile\\.org/(?!page)([^/]+)/(\\d+)" })
 public class HotpornfileOrg extends PluginForDecrypt {
@@ -66,7 +66,8 @@ public class HotpornfileOrg extends PluginForDecrypt {
         String lastRecaptchaV2Response = this.getPluginConfig().getStringProperty(PROPERTY_recaptcha_response);
         String freshReCaptchaV2Response = null;
         logger.info("Failed to re-use previous recaptchaV2Response");
-        int attempt = -1;
+        /* round=0-> challenge, then it's ash or else branch, both increasing attempt counter */
+        int attempt = 0;
         Map<String, Object> entries = null;
         String src = null;
         do {
