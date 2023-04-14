@@ -26,6 +26,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.dimensor.RememberLastDialogDimension;
+import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
@@ -45,6 +47,8 @@ public class RenameDialog extends AbstractDialog<Object> {
 
     public RenameDialog(final SelectionInfo<? extends AbstractPackageNode, ? extends AbstractPackageChildrenNode> selection) {
         super(0, "", new AbstractIcon(IconKey.ICON_EDIT, 32), _GUI.T.lit_continue(), null);
+        setLocator(new RememberAbsoluteDialogLocator(getClass().getName()));
+        setDimensor(new RememberLastDialogDimension(getClass().getName()));
         if (selection.isPackageContext()) {
             setTitle(_GUI.T.RenameDialog_RenameDialog_Packages(selection.getPackageViews().size()));
             for (final PackageView<? extends AbstractPackageNode, ? extends AbstractPackageChildrenNode> packageView : selection.getPackageViews()) {
