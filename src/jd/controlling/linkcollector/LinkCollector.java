@@ -1002,16 +1002,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     equals++;
                                 }
                                 if (equals > 0) {
-                                    HashMap<CrawledPackageMappingID, CrawledPackage> mappings = bestMappings.get(new Integer(equals));
+                                    final Integer eq = Integer.valueOf(equals);
+                                    HashMap<CrawledPackageMappingID, CrawledPackage> mappings = bestMappings.get(eq);
                                     if (mappings == null) {
                                         mappings = new HashMap<CrawledPackageMappingID, CrawledPackage>();
-                                        bestMappings.put(new Integer(equals), mappings);
+                                        bestMappings.put(eq, mappings);
                                     }
                                     mappings.put(chance.getKey(), chance.getValue());
                                 }
                             }
                             for (int x = 2; x > 0; x--) {
-                                HashMap<CrawledPackageMappingID, CrawledPackage> mappings = bestMappings.get(new Integer(x));
+                                HashMap<CrawledPackageMappingID, CrawledPackage> mappings = bestMappings.get(Integer.valueOf(x));
                                 if (mappings != null) {
                                     for (final Entry<CrawledPackageMappingID, CrawledPackage> mapping : mappings.entrySet()) {
                                         final CrawledPackage pkg = mapping.getValue();
@@ -1441,9 +1442,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, List<CrawledLink> plinks) {

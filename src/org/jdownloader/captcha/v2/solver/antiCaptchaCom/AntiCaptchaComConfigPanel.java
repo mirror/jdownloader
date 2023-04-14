@@ -76,7 +76,7 @@ public final class AntiCaptchaComConfigPanel extends AbstractCaptchaSolverConfig
                         dataMap.put("clientKey", apiKey.getText());
                         String json = br.postPageRaw("https://api.anti-captcha.com/getBalance", JSonStorage.serializeToJson(dataMap));
                         HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-                        if (new Integer(0).equals(response.get("errorId"))) {
+                        if (Integer.valueOf(0).equals(response.get("errorId"))) {
                             jd.gui.UserIO.getInstance().requestMessageDialog("anti-captcha.com message ", "Account OK\n Balance: $" + response.get("balance"));
                         } else {
                             jd.gui.UserIO.getInstance().requestMessageDialog("anti-captcha.com Error", "Account error\n" + response.get("errorDescription"));

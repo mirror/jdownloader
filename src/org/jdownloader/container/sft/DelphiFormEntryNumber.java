@@ -1,7 +1,6 @@
 package org.jdownloader.container.sft;
 
 public class DelphiFormEntryNumber extends DelphiFormEntry {
-
     protected long propertyValue;
 
     public DelphiFormEntryNumber(DelphiFormEntry parent, String itemName, long propertyValue, int type) {
@@ -11,7 +10,7 @@ public class DelphiFormEntryNumber extends DelphiFormEntry {
     }
 
     public String getValue() {
-        return new Long(propertyValue).toString();
+        return Long.toString(propertyValue);
     }
 
     public void buildString(StringBuilder builder, String prepend) {
@@ -21,5 +20,4 @@ public class DelphiFormEntryNumber extends DelphiFormEntry {
         builder.append(this.getValue());
         builder.append("\n");
     }
-
 }

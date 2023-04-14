@@ -64,12 +64,12 @@ public class EventSandbox {
 
     public EventSandbox() {
         final Map<String, Object> data = new HashMap<String, Object>();
-        data.put("int", new Integer(1));
-        data.put("long", new Long(1));
+        data.put("int", Integer.valueOf(1));
+        data.put("long", Long.valueOf(1));
         data.put("string", "test");
         data.put("boolean", Boolean.TRUE);
-        data.put("double", new Double(1));
-        data.put("float", new Float(1));
+        data.put("double", Double.valueOf(1d));
+        data.put("float", Float.valueOf(1f));
         data.put("list", new ArrayList<Object>(0));
         data.put("set", new HashSet<Object>(0));
         data.put("array", new Object[0]);

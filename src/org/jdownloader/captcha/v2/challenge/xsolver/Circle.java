@@ -17,7 +17,6 @@ import jd.nutils.Colors;
 class Circle {
     int                       inBorder        = 4;
     int                       outBorder       = 2;
-
     int                       minArea         = 170;
     private Captcha           captcha;
     int                       backgroundColor = 0xffffff;
@@ -33,8 +32,7 @@ class Circle {
      * is the color a color of the element 1=true 0=false
      */
     Comparator<Integer> isElementColor = new Comparator<Integer>() {
-
-                                           public int compare(Integer o1, Integer o2) {
+        public int compare(Integer o1, Integer o2) {
                                                int c = o1;
                                                int c2 = o2;
                                                if (isBackground(o1) || isBackground(o2)) {
@@ -49,8 +47,7 @@ class Circle {
                                                // Is it a typo? Was a different comparison meant in the second place?
                                                return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
                                            }
-
-                                       };
+    };
 
     private boolean equalElements(int c, int c2) {
         return isElementColor.compare(c, c2) == 1;
@@ -95,11 +92,9 @@ class Circle {
             ret += plot8points(cx, cy, x, y, n);
             ret += plot8points(cx - 1, cy, x, y, n);
             ret += plot8points(cx, cy - 1, x, y, n);
-
             error += y;
             ++y;
             error += y;
-
             if (error >= 0) {
                 --x;
                 error -= x;
@@ -154,30 +149,22 @@ class Circle {
             if ((ratio > 95 && ratio < 105) || equalElements(let.getGrid()[r][0], let.getGrid()[0][r]) || equalElements(let.getGrid()[r][let.getWidth() - 1], let.getGrid()[0][r]) || equalElements(let.getGrid()[r][0], let.getGrid()[let.getWidth() - 1][r]) || equalElements(let.getGrid()[r][let.getWidth() - 1], let.getGrid()[let.getWidth() - 1][r])) {
                 return new int[] { let.getLocation()[0] + r, let.getLocation()[1] + let.getWidth() };
             }
-
         } catch (Exception e) {
         }
         java.util.List<int[]> best = new ArrayList<int[]>();
         int h = let.getLocation()[1] + let.getHeight();
-
         for (int x = let.getLocation()[0]; x < let.getLocation()[0] + let.getWidth(); x++) {
             int y = let.getLocation()[1];
             int c = captcha.grid[x][y];
-
             if (!isBackground(c)) {
-
                 y++;
-
                 for (; y < h; y++) {
-
                     if (isBackground(captcha.grid[x][y])) {
                         break;
                     }
                 }
-
                 // if (oldy == y || h < y) continue;
                 int oldy = y;
-
                 for (; y < h; y++) {
                     if (!isBackground(captcha.grid[x][y]) && equalElements(c, captcha.grid[x][y])) {
                         break;
@@ -187,13 +174,11 @@ class Circle {
                     continue;
                 }
                 oldy = y;
-
                 for (; y < h; y++) {
                     if (isBackground(captcha.grid[x][y])) {
                         break;
                     }
                 }
-
                 if (oldy == y) {
                     continue;
                 }
@@ -231,9 +216,7 @@ class Circle {
         int r = 0;
         if (bounds != null) {
             r = (bounds[1] - pixelObject.getLocation()[1]) / 2;
-
             PixelObject object = getCircle(bounds[0], bounds[1] - r, r);
-
             if (object != null) {
                 int ratio = object.getHeight() * 100 / object.getWidth();
                 if (ratio > 90 && ratio < 110) {
@@ -242,7 +225,6 @@ class Circle {
                 }
             }
         }
-
     }
 
     private static BufferedImage copyImage(BufferedImage image) {
@@ -335,16 +317,13 @@ class Circle {
      * @return longest missing part
      */
     private int getLongestOff(BufferedImage img, int r) {
-        int xc = (int) (new Double(img.getWidth()) / 2.0d);
-        int yc = (int) (new Double(img.getHeight()) / 2.0d);
-
+        int xc = (int) (img.getWidth() / 2.0d);
+        int yc = (int) (img.getHeight() / 2.0d);
         int longestOff = 0;
         int tmp = 0;
-
         for (Double theta = 0.0d; theta < 3 * Math.PI; theta += 0.1d) {
             double x = r * Math.cos(theta) + xc;
             double y = r * Math.sin(theta) + yc;
-
             int color = img.getRGB((int) x, (int) y);
             if (Colors.getCMYKColorDifference1(Color.white.getRGB(), color) > 5) {
                 tmp = 0;
@@ -355,10 +334,8 @@ class Circle {
                     longestOff = tmp;
                 }
             }
-
         }
         return longestOff;
-
     }
 
     /**
@@ -375,8 +352,7 @@ class Circle {
         int maxLongestOff = Integer.MIN_VALUE;
         for (PixelObject pixelObject : objectArray) {
             Letter let = pixelObject.toColoredLetter();
-
-            int tmp = getLongestOff(expandImage(let.getImage()), (int) (new Double(Math.min(let.getHeight(), let.getWidth())) / 2.0d) - 2);
+            int tmp = getLongestOff(expandImage(let.getImage()), (int) (Math.min(let.getHeight(), let.getWidth()) / 2.0d) - 2);
             if (tmp > maxLongestOff) {
                 maxLongestOff = tmp;
                 best = let;

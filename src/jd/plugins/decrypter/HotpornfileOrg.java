@@ -18,12 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -35,6 +29,12 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotpornfile.org" }, urls = { "https?://(?:www\\.)?hotpornfile\\.org/(?!page)([^/]+)/(\\d+)" })
 public class HotpornfileOrg extends PluginForDecrypt {
@@ -87,23 +87,38 @@ public class HotpornfileOrg extends PluginForDecrypt {
             query.add("challenge", Encoding.urlEncode(recaptchaV2Response));
             br.postPage("/wp-admin/admin-ajax.php", query);
             entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String next = (String) entries.get("next");
+            final Object error = entries.get("error");
             src = (String) entries.get("links");
-            if (Boolean.FALSE.equals(entries.get("error")) && src != null) {
-                logger.info("Stopping because: Current attempt was successful");
+            if ("links".equalsIgnoreCase(next) && src != null) {
+                logger.info("Stopping because: next=links and links not empty. error=" + error);
                 break;
-            } else if (lastRecaptchaV2Response == null) {
-                logger.info("Stopping because: Tried real captcha attempt in this loop");
+            } else if ("ash".equalsIgnoreCase(next)) {
+                attempt++;
+                logger.info("Continue because: next=ash");
+                lastRecaptchaV2Response = recaptchaV2Response;
+                continue;
+            } else if ("challenge".equalsIgnoreCase(next)) {
+                logger.info("Continue because: next=challenge");
+                lastRecaptchaV2Response = null;
+                continue;
+            } else if (Boolean.FALSE.equals(error)) {
+                logger.info("Stopping because: error=" + error);
                 break;
             } else if (attempt > 0) {
-                logger.info("Stopping because: Tried two times");
+                logger.info("Stopping because: attempt=" + attempt);
                 break;
             } else {
                 attempt++;
                 logger.info("Retrying captcha");
                 lastRecaptchaV2Response = null;
                 br.clearCookies(null);
+                continue;
             }
-        } while (true);
+        } while (!isAbort());
+        if (isAbort()) {
+            return ret;
+        }
         if (StringUtils.isEmpty(src)) {
             /* Fallback */
             src = br.getRequest().getHtmlCode();

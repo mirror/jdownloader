@@ -22,6 +22,7 @@ import org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.JScrollPopupMenu;
+import org.appwork.utils.CompareUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -29,21 +30,17 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class PseudoMultiCombo<Type> extends ExtButton {
-
     protected HashSet<Type> selectedItems = new HashSet<Type>();
-
     private List<Type>      values        = new ArrayList<Type>();
     private boolean         popDown       = true;
 
     public PseudoMultiCombo(List<Type> values) {
         super();
         this.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 onPopup();
             }
         });
-
         this.setHorizontalAlignment(SwingConstants.LEFT);
         Insets m = getMargin();
         if (m == null) {
@@ -53,22 +50,17 @@ public class PseudoMultiCombo<Type> extends ExtButton {
         m.left = 1;
         setMargin(m);
         setValues(values);
-
     }
 
     public PseudoMultiCombo(Type[] values) {
         this(Arrays.asList(values));
-
     }
 
     public void setValues(List<Type> values) {
         this.values.clear();
-
         for (Type v : values) {
             this.values.add(v);
-
         }
-
         updateLabel();
     }
 
@@ -92,10 +84,8 @@ public class PseudoMultiCombo<Type> extends ExtButton {
                 return NewTheme.I().getIcon(IconKey.ICON_POPUPLARGE, -1);
             } else {
                 return NewTheme.I().getIcon(IconKey.ICON_POPDOWNLARGE, -1);
-
             }
         }
-
     }
 
     public boolean isPopDown() {
@@ -111,23 +101,18 @@ public class PseudoMultiCombo<Type> extends ExtButton {
     }
 
     private long    lastHide = 0;
-
     private boolean closed   = true;
-
     private String  orgText;
 
     public ExtRealCheckBoxMenuItem createMenuItem(final Type sc, BasicAction appAction) {
-
         return new ExtRealCheckBoxMenuItem(appAction) {
             @Override
             protected void updateIcon() {
-
                 Icon icon = PseudoMultiCombo.this.getIcon(sc);
                 if (icon == null) {
                     super.updateIcon();
                 } else {
                     if (isSelected()) {
-
                         setIcon(new MergedIcon(selIcon, icon));
                     } else {
                         setIcon(new MergedIcon(unselIcon, icon));
@@ -142,11 +127,8 @@ public class PseudoMultiCombo<Type> extends ExtButton {
         if (timeSinceLastHide < 250) {
             //
             return;
-
         }
-
         JScrollPopupMenu popup = new JScrollPopupMenu() {
-
             @Override
             public void setVisible(boolean b) {
                 if (!b) {
@@ -156,19 +138,14 @@ public class PseudoMultiCombo<Type> extends ExtButton {
                 closed = true;
                 PseudoMultiCombo.this.repaint();
             }
-
         };
         final AtomicInteger integer = new AtomicInteger(0);
         for (final Type sc : values) {
             ExtRealCheckBoxMenuItem mi;
-
             popup.add(mi = createMenuItem(sc, new AppAction() {
                 private Type value;
-
                 {
-
                     value = sc;
-
                     setName(getLabel(integer.get(), sc));
                     setSmallIcon(PseudoMultiCombo.this.getIcon(integer.get(), sc));
                     setSelected(isItemSelected(sc));
@@ -177,21 +154,17 @@ public class PseudoMultiCombo<Type> extends ExtButton {
 
                 public void setSelected(final boolean selected) {
                     super.setSelected(selected);
-
                 }
 
                 public void actionPerformed(ActionEvent e) {
                     setSelected(isSelected());
                     System.out.println(isSelected());
                     setItemSelected(value, isSelected());
-
                 }
             }));
             mi.setHideOnClick(false);
-
         }
         Insets insets = LAFOptions.getInstance().getExtension().customizePopupBorderInsets();
-
         Dimension pref = popup.getPreferredSize();
         // pref.width = positionComp.getWidth() + ((Component)
         // e.getSource()).getWidth() + insets[1] + insets[3];
@@ -199,10 +172,8 @@ public class PseudoMultiCombo<Type> extends ExtButton {
         // PseudoCombo.this.repaint();
         if (isPopDown()) {
             popup.show(this, -insets.left, getHeight() + insets.top);
-
         } else {
             popup.show(this, -insets.left, -popup.getPreferredSize().height + insets.bottom);
-
         }
         closed = false;
     }
@@ -251,50 +222,38 @@ public class PseudoMultiCombo<Type> extends ExtButton {
             icon = org.jdownloader.images.NewTheme.I().getDisabledIcon(icon);
         }
         icon.paintIcon(this, g, getWidth() - icon.getIconWidth() - 5, (getHeight() - icon.getIconHeight()) / 2);
-
     }
 
     public void setSelectedItems(Type... value) {
-
         selectedItems.clear();
         if (value != null) {
             for (Type t : value) {
                 selectedItems.add(t);
-
             }
         }
-
         onChanged();
-
         updateLabel();
     }
 
     public void setSelectedItems(List<Type> value) {
-
         selectedItems.clear();
         if (value != null) {
             for (Type t : value) {
                 selectedItems.add(t);
             }
         }
-
         onChanged();
-
         updateLabel();
-
     }
 
     public void setText(String text) {
-
         String oldValue = this.orgText;
         this.orgText = text;
         firePropertyChange(TEXT_CHANGED_PROPERTY, oldValue, text);
-
         if (text == null || oldValue == null || !text.equals(oldValue)) {
             revalidate();
             repaint();
         }
-
     }
 
     @Override
@@ -310,14 +269,11 @@ public class PseudoMultiCombo<Type> extends ExtButton {
             return null;
         }
         return SwingUtilities2Wrapper.clipStringIfNecessary(this, this.getFontMetrics(this.getFont()), orgText, getWidth() - getMargin().left - getMargin().right - 10);
-
     }
 
     private void updateLabel() {
-
         List<Type> list = new ArrayList<Type>(selectedItems);
         Collections.sort(list, getComparator());
-
         setText(getLabel(list));
         setIcon(getIcon(list));
         setToolTipText(getToolTip(list));
@@ -361,12 +317,10 @@ public class PseudoMultiCombo<Type> extends ExtButton {
 
     private Comparator<? super Type> getComparator() {
         return new Comparator<Type>() {
-
             @Override
             public int compare(Type o1, Type o2) {
                 // sort based in the order of values. this is probably not the fastest solution
-                return new Integer(values.indexOf(o1)).compareTo(values.indexOf(o2));
-
+                return CompareUtils.compare(values.indexOf(o1), values.indexOf(o2));
             }
         };
     }
@@ -379,5 +333,4 @@ public class PseudoMultiCombo<Type> extends ExtButton {
         Collections.sort(ret, getComparator());
         return ret;
     }
-
 }

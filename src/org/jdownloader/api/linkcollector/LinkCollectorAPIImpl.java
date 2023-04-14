@@ -25,15 +25,12 @@ import org.jdownloader.settings.GeneralSettings;
 
 @Deprecated
 public class LinkCollectorAPIImpl implements LinkCollectorAPI {
-
     @Override
     public List<CrawledPackageAPIStorable> queryPackages(APIQuery queryParams) {
         List<CrawledPackageAPIStorable> result = new ArrayList<CrawledPackageAPIStorable>();
         LinkCollector lc = LinkCollector.getInstance();
-
         int startWith = queryParams._getStartAt();
         int maxResults = queryParams._getMaxResults();
-
         // filter out packages, if specific packageUUIDs given, else return all packages
         List<CrawledPackage> packages = lc.getPackagesCopy();
         if (!queryParams._getQueryParam("packageUUIDs", ArrayList.class, new ArrayList<Long>()).isEmpty()) {
@@ -48,7 +45,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             }
             packages = toKeep;
         }
-
         if (startWith > packages.size() - 1) {
             return result;
         }
@@ -58,9 +54,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         if (maxResults < 0) {
             maxResults = packages.size();
         }
-
         for (int i = startWith; i < startWith + maxResults; i++) {
-
             final CrawledPackage pkg = packages.get(i);
             boolean readL = pkg.getModifyLock().readLock();
             try {
@@ -120,9 +114,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                     infomap.put("enabled", enabled);
                 }
                 cps.setInfoMap(infomap);
-
                 result.add(cps);
-
                 if (i == packages.size() - 1) {
                     break;
                 }
@@ -130,7 +122,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 pkg.getModifyLock().readUnlock(readL);
             }
         }
-
         return result;
     }
 
@@ -139,7 +130,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     public List<CrawledLinkAPIStorable> queryLinks(APIQuery queryParams) {
         List<CrawledLinkAPIStorable> result = new ArrayList<CrawledLinkAPIStorable>();
         LinkCollector lc = LinkCollector.getInstance();
-
         final HashSet<Long> packageUUIDs = new HashSet<Long>();
         if (!queryParams._getQueryParam("packageUUIDs", List.class, new ArrayList()).isEmpty()) {
             List uuidsFromQuery = queryParams._getQueryParam("packageUUIDs", List.class, new ArrayList());
@@ -151,7 +141,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 }
             }
         }
-
         // if no specific uuids are specified collect all packages
         final List<CrawledPackage> matched;
         if (packageUUIDs.isEmpty()) {
@@ -172,7 +161,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 lc.readUnlock(b);
             }
         }
-
         // collect children of the selected packages and convert to storables for response
         List<CrawledLink> links = new ArrayList<CrawledLink>();
         for (CrawledPackage pkg : matched) {
@@ -183,14 +171,11 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 pkg.getModifyLock().readUnlock(readL);
             }
         }
-
         if (links.isEmpty()) {
             return result;
         }
-
         int startWith = queryParams._getStartAt();
         int maxResults = queryParams._getMaxResults();
-
         if (startWith > links.size() - 1) {
             return result;
         }
@@ -200,14 +185,10 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         if (maxResults < 0) {
             maxResults = links.size();
         }
-
         for (int i = startWith; i < Math.min(startWith + maxResults, links.size()); i++) {
-
             CrawledLink cl = links.get(i);
             CrawledLinkAPIStorable cls = new CrawledLinkAPIStorable(cl);
-
             org.jdownloader.myjdownloader.client.json.JsonMap infomap = new org.jdownloader.myjdownloader.client.json.JsonMap();
-
             if (queryParams._getQueryParam("size", Boolean.class, false)) {
                 infomap.put("size", cl.getSize());
             }
@@ -224,11 +205,9 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 infomap.put("enabled", cl.isEnabled());
             }
             infomap.put("packageUUID", cl.getParentNode().getUniqueID().getID());
-
             cls.setInfoMap(infomap);
             result.add(cls);
         }
-
         return result;
     }
 
@@ -271,7 +250,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     // }
     // return false;
     // }
-
     @Override
     public Long getChildrenChanged(Long structureWatermark) {
         final LinkCollector lc = LinkCollector.getInstance();
@@ -402,7 +380,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     public boolean movePackages(APIQuery query) {
         List<Long> packageUUIDs = query._getQueryParam("packageUUIDs", List.class, new ArrayList<Long>());
         Long afterDestPackageUUID = query._getQueryParam("afterDestPackageUUID", Long.class, null);
-
         LinkCollector dlc = LinkCollector.getInstance();
         List<CrawledPackage> selectedPackages = new ArrayList<CrawledPackage>();
         CrawledPackage afterDestPackage = null;
@@ -419,7 +396,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         } finally {
             dlc.readUnlock(b);
         }
-
         dlc.move(selectedPackages, afterDestPackage);
         return true;
     }
@@ -428,11 +404,9 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     @SuppressWarnings("unchecked")
     public boolean moveLinks(APIQuery query) {
         List<Long> selectedUUIDs = query._getQueryParam("linkUUIDs", List.class, new ArrayList<Long>());
-        Long afterDestLinkUUID = query._getQueryParam("afterDestLinkUUID", Long.class, new Long(-1));
-        Long targetPackageUUID = query._getQueryParam("destPackageUUID", Long.class, new Long(-1));
-
+        Long afterDestLinkUUID = query._getQueryParam("afterDestLinkUUID", Long.class, Long.valueOf(-1));
+        Long targetPackageUUID = query._getQueryParam("destPackageUUID", Long.class, Long.valueOf(-1));
         LinkCollector dlc = LinkCollector.getInstance();
-
         List<CrawledLink> selectedLinks = new ArrayList<CrawledLink>();
         CrawledLink afterDestLink = null;
         CrawledPackage destPackage = null;
@@ -488,7 +462,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         }
         if (packageIds != null) {
             lc.visitNodes(new AbstractNodeVisitor<CrawledLink, CrawledPackage>() {
-
                 @Override
                 public Boolean visitPackageNode(CrawledPackage pkg) {
                     return packageIds.contains(pkg.getUniqueID().getID());

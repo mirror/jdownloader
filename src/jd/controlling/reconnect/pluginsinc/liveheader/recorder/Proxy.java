@@ -163,7 +163,7 @@ class ProxyThread extends Thread {
                         final String contentType = headers.get("content-type");
                         if (StringUtils.containsIgnoreCase(contentType, "x-www-form-urlencoded") || StringUtils.containsIgnoreCase(contentType, "text") || StringUtils.containsIgnoreCase(contentType, "json")) {
                             if (headers.containsKey("content-length")) {
-                                final int post_len = new Integer(headers.get("content-length"));
+                                final int post_len = Integer.parseInt(headers.get("content-length"));
                                 int post_len_toread = post_len;
                                 int post_len_read = 0;
                                 postData = new byte[post_len];

@@ -1,7 +1,6 @@
 package org.jdownloader.container.sft;
 
 public class DelphiFormEntryBoolean extends DelphiFormEntry {
-
     protected boolean propertyValue;
 
     public DelphiFormEntryBoolean(DelphiFormEntry parent, String itemName, boolean propertyValue) {
@@ -11,7 +10,7 @@ public class DelphiFormEntryBoolean extends DelphiFormEntry {
     }
 
     public String getValue() {
-        return new Boolean(propertyValue).toString();
+        return Boolean.toString(propertyValue);
     }
 
     public void buildString(StringBuilder builder, String prepend) {

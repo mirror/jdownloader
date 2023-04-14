@@ -20,6 +20,7 @@ import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.tooltips.BasicTooltipFactory;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.CompareUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
@@ -149,7 +150,7 @@ public class AutoDetectUpnpAction extends BasicAction {
                     }
                     Collections.sort(scripts, new Comparator<ReconnectResult>() {
                         public int compare(ReconnectResult o1, ReconnectResult o2) {
-                            return new Long(o2.getAverageSuccessDuration()).compareTo(new Long(o1.getAverageSuccessDuration()));
+                            return CompareUtils.compare(o2.getAverageSuccessDuration(), o1.getAverageSuccessDuration());
                         }
                     });
                     System.out.println("Scripts " + scripts);

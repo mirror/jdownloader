@@ -302,7 +302,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> {
             throw new IOException("Invalid server response");
         }
         final Map<String, Object> map = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
-        if (new Integer(255).equals(map.get("status"))) {
+        if (Integer.valueOf(255).equals(map.get("status"))) {
             throw new IOException(String.valueOf(map.get("error")));
         }
         return JSonStorage.restoreFromString(json, DBCGetUserResponse.TYPE);

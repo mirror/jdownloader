@@ -23,6 +23,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
+import org.appwork.utils.CompareUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -33,7 +34,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 
 public abstract class ReconnectFindDialog extends AbstractDialog<Object> implements IPControllListener {
-
     public void onIPForbidden(IPConnectionState parameter) {
     }
 
@@ -64,7 +64,6 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
     private JLabel                                    header;
     private JLabel                                    state;
     private JLabel                                    duration;
-
     private JLabel                                    newIP;
     private Thread                                    th;
     private Timer                                     updateTimer;
@@ -72,9 +71,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
     private java.util.List<? extends ReconnectResult> foundList;
 
     public ReconnectFindDialog() {
-
         super(Dialog.STYLE_HIDE_ICON, _GUI.T.AutoDetectAction_actionPerformed_d_title(), null, _GUI.T.ReconnectFindDialog_ReconnectFindDialog_ok(), null);
-
     }
 
     @Override
@@ -84,7 +81,6 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
 
     public void setBarText(final String txt) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 bar.setString(txt);
@@ -94,7 +90,6 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
 
     public void setBarProgress(final int prog) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 bar.setValue(prog);
@@ -117,7 +112,6 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         circle.setValueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_RECONNECT, 26), 1.0f));
         ((ImagePainter) circle.getValueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) circle.getValueClipPainter()).setForeground(Color.GREEN);
-
         circle.setNonvalueClipPainter(new ImagePainter(new AbstractIcon(IconKey.ICON_RECONNECT, 26), 0.5f));
         ((ImagePainter) circle.getNonvalueClipPainter()).setBackground(Color.WHITE);
         ((ImagePainter) circle.getNonvalueClipPainter()).setForeground(Color.GREEN);
@@ -131,17 +125,13 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         state.setHorizontalAlignment(SwingConstants.RIGHT);
         circle.setIndeterminate(true);
         sp.add(label(_GUI.T.ReconnectDialog_layoutDialogContent_duration()));
-
         sp.add(duration = new JLabel());
-
         state.setHorizontalAlignment(SwingConstants.RIGHT);
         sp.add(new JLabel(new AbstractIcon(IconKey.ICON_GO_NEXT, 18)));
         sp.add(label(_GUI.T.ReconnectDialog_layoutDialogContent_currentip()));
         sp.add(newIP = new JLabel(), "width 100!");
         newIP.setHorizontalAlignment(SwingConstants.RIGHT);
-
         p.add(sp);
-
         th = new Thread(getClass().getName()) {
             {
                 setDaemon(true);
@@ -168,10 +158,8 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         };
         startTime = System.currentTimeMillis();
         updateTimer = new Timer(1000, new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
-
             }
         });
         updateTimer.setRepeats(true);
@@ -199,14 +187,11 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
     protected void setReturnmask(boolean b) {
         if (b) {
             // interrupt scxanning and use best script found so far
-
             Collections.sort(foundList, new Comparator<ReconnectResult>() {
-
                 public int compare(ReconnectResult o1, ReconnectResult o2) {
-                    return new Long(o2.getAverageSuccessDuration()).compareTo(new Long(o1.getAverageSuccessDuration()));
+                    return CompareUtils.compare(o2.getAverageSuccessDuration(), o1.getAverageSuccessDuration());
                 }
             });
-
             foundList.get(0).getInvoker().getPlugin().setSetup(foundList.get(0));
         }
         super.setReturnmask(b);
@@ -215,16 +200,13 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
     public void setInterruptEnabled(java.util.List<? extends ReconnectResult> list) {
         this.foundList = list;
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 okButton.setEnabled(true);
                 okButton.setIcon(new AbstractIcon(IconKey.ICON_OK, 18));
                 okButton.setToolTipText(_GUI.T.ReconnectFindDialog_packed_interrupt_tooltip());
             }
-
         };
-
     }
 
     @Override
@@ -237,7 +219,6 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
 
     public void setSubStatusState(final String txt, final Icon imageIcon) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 state.setText(txt);
@@ -248,7 +229,6 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
 
     public void setNewIP(final String txt) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 newIP.setText(txt);
@@ -258,7 +238,6 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
 
     public void setSubStatusHeader(final String txt) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 header.setText(txt);

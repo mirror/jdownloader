@@ -28,6 +28,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.CompareUtils;
 import org.appwork.utils.IO;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
@@ -119,7 +120,7 @@ public class ReconnectPluginController {
         try {
             Collections.sort(scripts, new Comparator<ReconnectResult>() {
                 public int compare(ReconnectResult o1, ReconnectResult o2) {
-                    return new Long(o1.getAverageSuccessDuration()).compareTo(new Long(o2.getAverageSuccessDuration()));
+                    return CompareUtils.compare(o1.getAverageSuccessDuration(), o2.getAverageSuccessDuration());
                 }
             });
         } catch (final Throwable e) {

@@ -20,7 +20,6 @@ import org.jdownloader.settings.UrlDisplayType;
 
 @Deprecated
 public class DownloadsAPIImpl implements DownloadsAPI {
-
     public boolean start() {
         DownloadWatchDog.getInstance().startDownloads();
         return true;
@@ -43,14 +42,12 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
     @Deprecated
     public DownloadsAPIImpl() {
-
     }
 
     @Override
     public List<FilePackageAPIStorable> queryPackages(APIQuery queryParams) {
         DownloadController dlc = DownloadController.getInstance();
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
-
         // filter out packages, if specific packageUUIDs given, else return all packages
         List<FilePackage> packages = dlc.getPackagesCopy();
         if (!queryParams._getQueryParam("packageUUIDs", ArrayList.class, new ArrayList<Long>()).isEmpty()) {
@@ -65,7 +62,6 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             }
             packages = toKeep;
         }
-
         List<FilePackageAPIStorable> ret = new ArrayList<FilePackageAPIStorable>(dlc.size());
         int startWith = queryParams._getStartAt();
         int maxResults = queryParams._getMaxResults();
@@ -78,7 +74,6 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         if (maxResults < 0) {
             maxResults = packages.size();
         }
-
         for (int i = startWith; i < Math.min(startWith + maxResults, packages.size()); i++) {
             FilePackage fp = packages.get(i);
             boolean readL = fp.getModifyLock().readLock();
@@ -86,7 +81,6 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 DownloadLinkAggregator aggregate = new DownloadLinkAggregator(fp);
                 FilePackageAPIStorable fps = new FilePackageAPIStorable(fp);
                 org.jdownloader.myjdownloader.client.json.JsonMap infomap = new org.jdownloader.myjdownloader.client.json.JsonMap();
-
                 if (queryParams._getQueryParam("saveTo", Boolean.class, false)) {
                     infomap.put("saveTo", fp.getView().getDownloadDirectory());
                 }
@@ -145,7 +139,6 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 if (queryParams._getQueryParam("running", Boolean.class, false)) {
                     infomap.put("running", dwd.getRunningFilePackages().contains(fp));
                 }
-
                 fps.setInfoMap(infomap);
                 ret.add(fps);
             } finally {
@@ -159,10 +152,8 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     @Override
     public List<DownloadLinkAPIStorable> queryLinks(APIQuery queryParams) {
         List<DownloadLinkAPIStorable> result = new ArrayList<DownloadLinkAPIStorable>();
-
         DownloadController dlc = DownloadController.getInstance();
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
-
         // retrieve packageUUIDs from queryParams
         List<Long> packageUUIDs = new ArrayList<Long>();
         if (!queryParams._getQueryParam("packageUUIDs", List.class, new ArrayList()).isEmpty()) {
@@ -175,9 +166,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 }
             }
         }
-
         List<FilePackage> matched = new ArrayList<FilePackage>();
-
         // if no specific uuids are specified collect all packages
         if (packageUUIDs.isEmpty()) {
             matched = dlc.getPackagesCopy();
@@ -193,7 +182,6 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 dlc.readUnlock(b);
             }
         }
-
         // collect children of the selected packages and convert to storables for response
         List<DownloadLink> links = new ArrayList<DownloadLink>();
         for (FilePackage pkg : matched) {
@@ -204,14 +192,11 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 pkg.getModifyLock().readUnlock(b);
             }
         }
-
         if (links.isEmpty()) {
             return result;
         }
-
         int startWith = queryParams._getStartAt();
         int maxResults = queryParams._getMaxResults();
-
         if (startWith > links.size() - 1) {
             return result;
         }
@@ -221,14 +206,10 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         if (maxResults < 0) {
             maxResults = links.size();
         }
-
         for (int i = startWith; i < Math.min(startWith + maxResults, links.size()); i++) {
-
             DownloadLink dl = links.get(i);
             DownloadLinkAPIStorable dls = new DownloadLinkAPIStorable(dl);
-
             org.jdownloader.myjdownloader.client.json.JsonMap infomap = new org.jdownloader.myjdownloader.client.json.JsonMap();
-
             if (queryParams._getQueryParam("host", Boolean.class, false)) {
                 infomap.put("host", dl.getHost());
             }
@@ -268,13 +249,10 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                     infomap.put("extractionStatus", extractionStatus.name());
                 }
             }
-
             infomap.put("packageUUID", dl.getParentNode().getUniqueID().getID());
-
             dls.setInfoMap(infomap);
             result.add(dls);
         }
-
         return result;
     }
 
@@ -382,12 +360,9 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     public boolean movePackages(APIQuery query) {
         List<Long> packageUUIDs = query._getQueryParam("packageUUIDs", List.class, new ArrayList<Long>());
         Long afterDestPackageUUID = query._getQueryParam("afterDestPackageUUID", Long.class, null);
-
         DownloadController dlc = DownloadController.getInstance();
-
         List<FilePackage> selectedPackages = new ArrayList<FilePackage>();
         FilePackage afterDestPackage = null;
-
         boolean b = dlc.readLock();
         try {
             for (FilePackage fp : dlc.getPackages()) {
@@ -401,7 +376,6 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         } finally {
             dlc.readUnlock(b);
         }
-
         dlc.move(selectedPackages, afterDestPackage);
         return true;
     }
@@ -410,15 +384,12 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     @SuppressWarnings("unchecked")
     public boolean moveLinks(APIQuery query) {
         List<Long> selectedUUIDs = query._getQueryParam("linkUUIDs", List.class, new ArrayList<Long>());
-        Long afterDestLinkUUID = query._getQueryParam("afterDestLinkUUID", Long.class, new Long(-1));
-        Long targetPackageUUID = query._getQueryParam("destPackageUUID", Long.class, new Long(-1));
-
+        Long afterDestLinkUUID = query._getQueryParam("afterDestLinkUUID", Long.class, Long.valueOf(-1));
+        Long targetPackageUUID = query._getQueryParam("destPackageUUID", Long.class, Long.valueOf(-1));
         DownloadController dlc = DownloadController.getInstance();
-
         List<DownloadLink> selectedLinks = new ArrayList<DownloadLink>();
         DownloadLink afterDestLink = null;
         FilePackage destPackage = null;
-
         boolean b = dlc.readLock();
         try {
             for (DownloadLink dl : dlc.getAllChildren()) {
@@ -438,7 +409,6 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         } finally {
             dlc.readUnlock(b);
         }
-
         dlc.move(selectedLinks, destPackage, afterDestLink);
         return true;
     }
@@ -470,7 +440,6 @@ public class DownloadsAPIImpl implements DownloadsAPI {
      */
     private List<DownloadLink> getAllTheLinks(final List<Long> linkIds, final List<Long> packageIds) {
         DownloadController dlc = DownloadController.getInstance();
-
         final List<DownloadLink> rmv = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
             @Override
             public int returnMaxResults() {
@@ -497,7 +466,6 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 }
             }
         }
-
         return rmv;
     }
 }
