@@ -267,6 +267,7 @@ public class RenameDialog extends AbstractDialog<Object> {
         String allRegex = null;
         String allReplace = null;
         int length = 0;
+        int lastRegexLength = -1;
         List<Object> lastExtensionTypes = null;
         for (final AbstractNode node : nodes) {
             if (node instanceof AbstractNode) {
@@ -289,8 +290,19 @@ public class RenameDialog extends AbstractDialog<Object> {
                 if (name != null) {
                     allRegex = merge(name, allRegex);
                     length = nodeName.length();
+                    if (lastRegexLength == -1) {
+                        lastRegexLength = allRegex.length();
+                    } else if (lastRegexLength != allRegex.length()) {
+                        allSameExtension = Boolean.FALSE;
+                        lastExtensionTypes = null;
+                    }
                 }
             }
+        }
+        if (lastExtensionTypes != null && lastExtensionTypes.size() > 0) {
+            allSameExtension = Boolean.TRUE;
+        } else {
+            allSameExtension = Boolean.FALSE;
         }
         final boolean regex = CFG_GUI.CFG.isRenameActionRegexEnabled();
         if (StringUtils.isEmpty(allRegex)) {
@@ -326,7 +338,7 @@ public class RenameDialog extends AbstractDialog<Object> {
         if (Boolean.FALSE.equals(allSameExtension)) {
             this.txtReplace.selectAll();
         } else {
-            final int matchIndex = txtReplace.getText().indexOf("$1");
+            final int matchIndex = Boolean.TRUE.equals(allSameExtension) ? txtReplace.getText().indexOf("$1") : -1;
             if (matchIndex != -1 && matchIndex > 0) {
                 txtReplace.select(0, matchIndex);
             } else {
