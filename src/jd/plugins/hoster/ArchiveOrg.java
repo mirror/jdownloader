@@ -96,6 +96,7 @@ public class ArchiveOrg extends PluginForHost {
     public static final String                            PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP            = "is_borrowed_until_timestamp";
     public static final String                            PROPERTY_PLAYLIST_POSITION                      = "position";
     public static final String                            PROPERTY_PLAYLIST_SIZE                          = "playlist_size";
+    public static final String                            PROPERTY_TITLE                                  = "title";
     public static final String                            PROPERTY_ARTIST                                 = "artist";
     private final String                                  PROPERTY_ACCOUNT_TIMESTAMP_BORROW_LIMIT_REACHED = "timestamp_borrow_limit_reached";
     private static HashMap<String, ArchiveOrgLendingInfo> bookBorrowSessions                              = new HashMap<String, ArchiveOrgLendingInfo>();

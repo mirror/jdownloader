@@ -249,7 +249,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 final DownloadLink audio = this.createDownloadlink(br.getURL(source0.get("file").toString()).toString());
                 audio.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, position);
                 audio.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, ressourcelist.size());
-                audio.setProperty(ArchiveOrg.PROPERTY_ARTIST, audiomap.get("artist"));
+                audio.setProperty(ArchiveOrg.PROPERTY_ARTIST, audiomap.get("artist")); // optional field
                 String filename = (String) audiomap.get("orig");
                 if (StringUtils.isEmpty(filename)) {
                     filename = audiomap.get("title").toString();
@@ -391,6 +391,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     }
                 }
             }
+            final String artist = (String) filemap.get("artist"); // Optional field
             if (StringUtils.isEmpty(filename)) {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -424,6 +425,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 }
                 file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, audioTrackPosition);
             }
+            file.setProperty(ArchiveOrg.PROPERTY_ARTIST, artist);
             if (sizeO != null) {
                 if (sizeO instanceof Number) {
                     file.setVerifiedFileSize(((Number) sizeO).longValue());
