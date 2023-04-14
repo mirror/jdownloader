@@ -5461,15 +5461,22 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     public Boolean verifyDownloadableContent(final URLConnectionAdapter urlConnection) {
-        if (urlConnection.getCompleteContentLength() >= 0 && urlConnection.getCompleteContentLength() < 100) {
+        if (urlConnection.getCompleteContentLength() == 7 && urlConnection.getContentType().matches("(?i)^.*application/octet-stream.*")) {
+            // filejoker
             // HTTP/1.1 200 OK
             // Content-Type: application/octet-stream
             // Content-Length: 7
             // ETag: "48ae7c8c-7"
             // Response: Expired = 7 length
             return Boolean.FALSE;
-        }
-        if (urlConnection.isContentDisposition()) {
+        } else if (urlConnection.getCompleteContentLength() == 7 && urlConnection.getContentType().matches("(?i)^.*text/html.*")) {
+            // normal
+            // HTTP/1.1 200 OK
+            // Content-Type: text/html
+            // Content-Length: 7
+            // Response: Expired = 7 length
+            return Boolean.FALSE;
+        } else if (urlConnection.isContentDisposition()) {
             // HTTP/1.1 200 OK
             // Content-Type: text/html; charset=UTF-8
             // Content-Disposition: inline; filename=error.html

@@ -1224,7 +1224,7 @@ public class LinkCrawler {
         }
         link.setAvailable(true);
         final String requestRef = request.getHeaders().getValue(HTTPConstants.HEADER_REQUEST_REFERER);
-        if (!StringUtils.equals(requestRef, startURL)) {
+        if (requestRef != null && !StringUtils.equals(requestRef, request.getURL().toString())) {
             link.setProperty(PROPERTY_AUTO_REFERER, requestRef);
         }
         if (request instanceof PostRequest) {
@@ -3920,10 +3920,10 @@ public class LinkCrawler {
                     br.setLoadLimit(limit);
                 }
                 final LinkCrawlerRule rule = link.getMatchingRule();
-                if (rule == null) {
+                if (rule == null && !urlConnection.isContentDisposition()) {
                     final boolean hasContentType = urlConnection.getHeaderField(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE) != null;
-                    if (urlConnection.getRequest().getLocation() == null && urlConnection.getResponseCode() == 200 && (urlConnection.isContentDisposition() || !isTextContent(urlConnection) || urlConnection.getCompleteContentLength() > limit)) {
-                        if (!hasContentType && !urlConnection.isContentDisposition()) {
+                    if (urlConnection.getRequest().getLocation() == null && urlConnection.getResponseCode() == 200 && !isTextContent(urlConnection) || urlConnection.getCompleteContentLength() > limit) {
+                        if (!hasContentType) {
                             try {
                                 br.followConnection();
                                 if (br.containsHTML("<!DOCTYPE html>") || (br.containsHTML("</html") && br.containsHTML("<html"))) {
