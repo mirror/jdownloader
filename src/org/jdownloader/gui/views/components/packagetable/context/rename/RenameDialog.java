@@ -43,7 +43,8 @@ public class RenameDialog extends AbstractDialog<Object> {
     private ExtTextField             txtSearch;
     private ExtTextField             txtReplace;
     private ExtCheckBox              cbRegex;
-    private final List<AbstractNode> nodes = new ArrayList<AbstractNode>();
+    private final List<AbstractNode> nodes            = new ArrayList<AbstractNode>();
+    private Boolean                  allSameExtension = null;
 
     public RenameDialog(final SelectionInfo<? extends AbstractPackageNode, ? extends AbstractPackageChildrenNode> selection) {
         super(0, "", new AbstractIcon(IconKey.ICON_EDIT, 32), _GUI.T.lit_continue(), null);
@@ -205,7 +206,12 @@ public class RenameDialog extends AbstractDialog<Object> {
         }
     }
 
+    @Deprecated
     public static String removeArchiveExtension(final AbstractNode node, final String name) {
+        return removeArchiveExtension(node, name, null);
+    }
+
+    public static String removeArchiveExtension(final AbstractNode node, final String name, List<Object> types) {
         if (node == null || node instanceof AbstractPackageChildrenNode) {
             String ret = name;
             boolean again = true;
@@ -221,6 +227,9 @@ public class RenameDialog extends AbstractDialog<Object> {
                     case ZIP_MULTI:
                     case ZIP_MULTI2:
                         if (archive.matches(ret)) {
+                            if (types != null) {
+                                types.add(archive);
+                            }
                             ret = archive.getMatches(ret)[0];
                             again = true;
                             continue removeLoop;
@@ -234,6 +243,9 @@ public class RenameDialog extends AbstractDialog<Object> {
                     switch (split) {
                     case XTREMSPLIT:
                         if (split.matches(ret)) {
+                            if (types != null) {
+                                types.add(split);
+                            }
                             ret = split.getMatches(ret)[0];
                             again = true;
                             continue removeLoop;
@@ -255,10 +267,25 @@ public class RenameDialog extends AbstractDialog<Object> {
         String allRegex = null;
         String allReplace = null;
         int length = 0;
+        List<Object> lastExtensionTypes = null;
         for (final AbstractNode node : nodes) {
             if (node instanceof AbstractNode) {
                 final String nodeName = node.getName();
-                final String name = removeArchiveExtension(node, nodeName);
+                final List<Object> extensionTypes;
+                if (Boolean.FALSE.equals(allSameExtension)) {
+                    extensionTypes = null;
+                } else {
+                    extensionTypes = new ArrayList<Object>();
+                }
+                final String name = removeArchiveExtension(node, nodeName, extensionTypes);
+                if (extensionTypes != null) {
+                    if (lastExtensionTypes == null) {
+                        lastExtensionTypes = extensionTypes;
+                    } else if (!lastExtensionTypes.equals(extensionTypes)) {
+                        allSameExtension = Boolean.FALSE;
+                        lastExtensionTypes = null;
+                    }
+                }
                 if (name != null) {
                     allRegex = merge(name, allRegex);
                     length = nodeName.length();
@@ -296,11 +323,15 @@ public class RenameDialog extends AbstractDialog<Object> {
 
     @Override
     protected void initFocus(JComponent focus) {
-        final int matchIndex = txtReplace.getText().indexOf("$1");
-        if (matchIndex != -1 && matchIndex > 0) {
-            txtReplace.select(0, matchIndex);
-        } else {
+        if (Boolean.FALSE.equals(allSameExtension)) {
             this.txtReplace.selectAll();
+        } else {
+            final int matchIndex = txtReplace.getText().indexOf("$1");
+            if (matchIndex != -1 && matchIndex > 0) {
+                txtReplace.select(0, matchIndex);
+            } else {
+                this.txtReplace.selectAll();
+            }
         }
         this.txtReplace.requestFocusInWindow();
     }
