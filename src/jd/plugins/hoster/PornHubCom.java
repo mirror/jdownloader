@@ -108,15 +108,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                            {
-                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-                                                                                            }
-                                                                                        });
+        {
+            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+        }
+    });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    CRAWL_VIDEO_HLS                       = "CRAWL_VIDEO_HLS";
@@ -920,9 +920,13 @@ public class PornHubCom extends PluginForHost {
                 /* viewkey should never be null! */
                 try {
                     final String viewkey = getViewkeyFromURL(br.getURL());
-                    if (viewkey != null) {
+                    if (viewkey != null && !StringUtils.contains(br.getURL(), "embed/" + viewkey)) {
                         final Browser brc = br.cloneBrowser();
                         getPage(brc, createPornhubVideoLinkEmbedFree(plugin.getHost(), brc, viewkey));
+                        final Map<String, Map<String, String>> ret = getVideoLinks(plugin, brc);
+                        if (ret != null && ret.size() > 0) {
+                            return ret;
+                        }
                         var_player_quality_dp = brc.getRegex("\"quality_(\\d+)p\"\\s*?:\\s*?\"(https?[^\"]+)\"").getMatches();
                         matchPlaces = new int[] { 0, 1 };
                     }
@@ -1521,16 +1525,18 @@ public class PornHubCom extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.8,de;q=0.6");
         br.getHeaders().put("Accept-Charset", null);
         for (String domain : domainsFree) {
-            br.setCookie(domain, "age_verified", "1");
             /* Mandatory since 2023-03-23 */
             br.setCookie(domain, "cookiesBannerSeen", "1");
             br.setCookie(domain, "accessAgeDisclaimerPH", "1");
+            /* 2023-04-14: STATE OF UTAH WARNING */
+            br.setCookie(domain, "accessPH", "1");
         }
         for (String domain : domainsPremium) {
-            br.setCookie(domain, "age_verified", "1");
             /* Mandatory since 2023-03-23 */
             br.setCookie(domain, "cookiesBannerSeen", "1");
             br.setCookie(domain, "accessAgeDisclaimerPH", "1");
+            /* 2023-04-14: STATE OF UTAH WARNING */
+            br.setCookie(domain, "accessPH", "1");
         }
         if (getUrlCrawlLanguageHandlingMode() == 0) {
             // make sure that english language will be used in this mode
