@@ -370,6 +370,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* This should never happen. */
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, title);
         }
+        final HashSet<Integer> usedTrackPositions = new HashSet<Integer>();
         String filenameHelperProperty = "crawlerFilenameTmp";
         int playlistSize = filenameToTrackPositionMapping != null ? filenameToTrackPositionMapping.size() : null;
         for (final Map<String, Object> filemap : filemaps) {
@@ -395,16 +396,23 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             int audioTrackPosition = -1;
-            if (audioTrackPositionStr != null) {
-                audioTrackPosition = Integer.parseInt(audioTrackPositionStr);
-            } else if (filenameToTrackPositionMapping != null && filenameToTrackPositionMapping.containsKey(filename)) {
-                /* Get track position from mapping. */
+            if (filenameToTrackPositionMapping != null && filenameToTrackPositionMapping.containsKey(filename)) {
+                /* Get track position from mapping. Trust this mapping more than "track" field in metadata. */
                 audioTrackPosition = filenameToTrackPositionMapping.get(filename);
+            } else if (audioTrackPositionStr != null) {
+                audioTrackPosition = Integer.parseInt(audioTrackPositionStr);
             }
             if (filenameToTrackPositionMapping != null && (audioTrackPosition == -1 || !source.equalsIgnoreCase("original"))) {
                 /* Skip non audio and non-original files if a filenameToTrackPositionMapping is available. */
                 skippedItems.add(filemap);
                 continue;
+            } else if (filenameToTrackPositionMapping != null && !usedTrackPositions.add(audioTrackPosition)) {
+                /*
+                 * Avoid assigning a track position twice. This can theoretically happen if a playlist contains two different songs with
+                 * identical filenames.
+                 */
+                skippedItems.add(filemap);
+                // continue;
             }
             final String directurl = "https://" + server + dir + "/" + URLEncode.encodeURIComponent(filename);
             final DownloadLink file = new DownloadLink(hostPlugin, null, "archive.org", directurl, true);
