@@ -217,11 +217,17 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     @Override
     public void onCleanedUp(final ExtractionController controller) {
         if (controller.isSuccessful()) {
+            final List<ExtractionController> controllers = controller.getExtension().getExtractionControllers(controller.getArchive().getFactory());
+            if (controllers.size() > 1 || (controllers.size() == 1 && controllers.get(0) != controller)) {
+                controller.getLogger().info("skip cleanup of " + getName() + " because there are other controllers sharing same archive files!");
+                return;
+            }
+            final CleanAfterDownloadAction cleanupCFG = CFG_GENERAL.CFG.getCleanupAfterDownloadAction();
             final CleanAfterDownloadAction cleanup;
             if (controller.getExtension().isRemoveDownloadLinksAfterExtractEnabled(controller.getArchive())) {
                 cleanup = CleanAfterDownloadAction.CLEANUP_IMMEDIATELY;
             } else {
-                cleanup = CFG_GENERAL.CFG.getCleanupAfterDownloadAction();
+                cleanup = cleanupCFG;
             }
             switch (cleanup) {
             case CLEANUP_IMMEDIATELY:
@@ -238,14 +244,14 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                             final List<DownloadLink> response = DownloadController.getInstance().askForRemoveVetos(controller, ask);
                             if (response.size() > 0) {
                                 for (final DownloadLink downloadLink : response) {
-                                    controller.getLogger().info(CFG_GENERAL.CFG.getCleanupAfterDownloadAction() + ":" + downloadLink.getView().getDisplayName() + "|" + downloadLink.getHost());
+                                    controller.getLogger().info(cleanup + ":" + cleanupCFG + ":" + downloadLink.getView().getDisplayName() + "|" + downloadLink.getHost());
                                 }
                                 DownloadController.getInstance().removeChildren(response);
                                 invalidateExists();
                             }
                             ask.removeAll(response);
                             for (final DownloadLink downloadLink : ask) {
-                                controller.getLogger().info(CFG_GENERAL.CFG.getCleanupAfterDownloadAction() + ":" + downloadLink.getView().getDisplayName() + "|" + downloadLink.getHost() + " failed because of removeVetos!");
+                                controller.getLogger().info(cleanup + ":" + cleanupCFG + ":" + downloadLink.getView().getDisplayName() + "|" + downloadLink.getHost() + " failed because of removeVetos!");
                             }
                         }
                         return null;
@@ -272,7 +278,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                 break;
             case CLEANUP_ONCE_AT_STARTUP:
             case NEVER:
-                controller.getLogger().info(CFG_GENERAL.CFG.getCleanupAfterDownloadAction() + ":" + getName());
+                controller.getLogger().info(cleanupCFG + ":" + getName());
             }
         }
     }
