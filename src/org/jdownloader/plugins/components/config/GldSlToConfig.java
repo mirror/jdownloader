@@ -7,7 +7,7 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
-@PluginHost(host = "goldesel.sx", type = Type.CRAWLER)
+@PluginHost(host = "goldesel.bz", type = Type.CRAWLER)
 public interface GldSlToConfig extends PluginConfigInterface {
     @AboutConfig
     // @DefaultStringValue("")

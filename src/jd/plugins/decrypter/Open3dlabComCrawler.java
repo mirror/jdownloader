@@ -95,6 +95,7 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
         } else {
             fp.setName(projectID);
         }
+        fp.setCleanupPackageName(false);
         final Open3dlabComConfig cfg;
         if (this.getHost().equals("open3dlab.com")) {
             cfg = PluginJsonConfig.get(Open3dlabComConfig.class);

@@ -53,7 +53,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "goldesel.sx", "goldesel.to", "saugen.to", "laden.to", "blockbuster.to" });
+        ret.add(new String[] { "goldesel.bz", "goldesel.sx", "goldesel.to", "saugen.to", "laden.to", "blockbuster.to" });
         return ret;
     }
 
