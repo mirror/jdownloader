@@ -33,6 +33,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.PlaylistFilenameScheme;
 import org.jdownloader.plugins.components.archiveorg.ArchiveOrgLendingInfo;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -150,13 +151,13 @@ public class ArchiveOrg extends PluginForHost {
      * Use this whenever you wnt to set a filename especially if there is a chance that the item is part of an audio playlist or a video
      * streaming item.
      */
-    public static void setFinalFilename(final DownloadLink link, final String rawFilename) {
-        if (StringUtils.isEmpty(rawFilename)) {
+    public static void setFinalFilename(final DownloadLink link, final String originalFilename) {
+        if (StringUtils.isEmpty(originalFilename)) {
             return;
         }
         final int playlistPosition = link.getIntegerProperty(PROPERTY_PLAYLIST_POSITION, -1);
-        final String extension = Files.getExtension(rawFilename);
-        final ExtensionsFilterInterface fileType = CompiledFiletypeFilter.getExtensionsFilterInterface(extension);
+        final String fileExtension = Files.getExtension(originalFilename);
+        final ExtensionsFilterInterface fileType = CompiledFiletypeFilter.getExtensionsFilterInterface(fileExtension);
         final boolean isAudio = CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(fileType);
         // final boolean isVideo = CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(fileType);
         if (playlistPosition != -1) {
@@ -165,14 +166,29 @@ public class ArchiveOrg extends PluginForHost {
             final String positionFormatted = StringUtils.formatByPadLength(padLength, playlistPosition);
             if (isAudio) {
                 /* File is part of audio playlist. Format: <positionFormatted>.<rawFilename> */
-                link.setFinalFileName(positionFormatted + "." + rawFilename);
+                String title = link.getStringProperty(PROPERTY_TITLE);
+                if (title == null) {
+                    /* Title is not always given. Use filename without extension as title */
+                    title = originalFilename.substring(0, originalFilename.lastIndexOf("."));
+                }
+                if (PluginJsonConfig.get(ArchiveOrgConfig.class).getPlaylistFilenameScheme() == PlaylistFilenameScheme.PLAYLIST_TITLE_WITH_TRACK_NUMBER && title != null) {
+                    final String artist = link.getStringProperty(PROPERTY_ARTIST);
+                    String playlistFilename = positionFormatted + "." + title;
+                    if (artist != null) {
+                        playlistFilename += " - " + artist;
+                    }
+                    playlistFilename += "." + fileExtension;
+                    link.setFinalFileName(playlistFilename);
+                } else {
+                    link.setFinalFileName(originalFilename);
+                }
             } else {
                 /* Video streaming file. Format: <rawFilenameWithoutExt>_<positionFormatted>.mp4 */
-                final String filenameWithoutExt = rawFilename.substring(0, rawFilename.lastIndexOf("."));
+                final String filenameWithoutExt = originalFilename.substring(0, originalFilename.lastIndexOf("."));
                 link.setFinalFileName(filenameWithoutExt + "_" + positionFormatted + ".mp4");
             }
         } else {
-            link.setFinalFileName(rawFilename);
+            link.setFinalFileName(originalFilename);
         }
     }
 

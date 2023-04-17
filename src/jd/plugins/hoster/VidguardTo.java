@@ -18,9 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -71,7 +74,7 @@ public class VidguardTo extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:d|v)/([A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:d|e|v)/([A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -151,8 +154,25 @@ public class VidguardTo extends PluginForHost {
                 /* 2023-04-14: This plugin hasn't been finished yet! Captcha still needs to be implemented. */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            // TODO: Add captcha handling and find best quality downloadurl in the end
             br.getPage(nextStepURL);
-            // TODO: Add captcha handling
+            final Browser brc = br.cloneBrowser();
+            brc.setAllowedResponseCodes(400);
+            brc.getPage("/captcha?v=" + System.currentTimeMillis());
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String captcha_key = entries.get("captcha_key").toString();
+            final String img_base64 = entries.get("img_base64").toString();
+            final UrlQuery query = new UrlQuery();
+            query.add("dots", "TODO");
+            query.add("key", Encoding.urlEncode(captcha_key));
+            query.add("v", Long.toString(System.currentTimeMillis()));
+            brc.postPage("/captcha", query);
+            if (brc.getHttpConnection().getResponseCode() == 400) {
+                /* Somes with json response: {"msg":"Verification failed"} */
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            br.getPage(nextStepURL);
+            final String[][] qualities = br.getRegex("\"(https?://[^\"]+=\"[^>]*>(\\d+)p</a>").getMatches();
             String dllink = br.getRegex("").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");

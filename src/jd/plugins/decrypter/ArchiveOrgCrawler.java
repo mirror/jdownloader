@@ -250,6 +250,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 audio.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, position);
                 audio.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, ressourcelist.size());
                 audio.setProperty(ArchiveOrg.PROPERTY_ARTIST, audiomap.get("artist")); // optional field
+                audio.setProperty(ArchiveOrg.PROPERTY_TITLE, audiomap.get("title"));
                 String filename = (String) audiomap.get("orig");
                 if (StringUtils.isEmpty(filename)) {
                     filename = audiomap.get("title").toString();
@@ -385,13 +386,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 filename = (String) filemap.get("original");
                 if (StringUtils.isEmpty(filename)) {
                     filename = (String) filemap.get("name");
-                    if (StringUtils.isEmpty(filename)) {
-                        /* This one may not contain a file-extension! */
-                        filename = (String) filemap.get("title");
-                    }
                 }
             }
-            final String artist = (String) filemap.get("artist"); // Optional field
             if (StringUtils.isEmpty(filename)) {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -425,7 +421,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 }
                 file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, audioTrackPosition);
             }
-            file.setProperty(ArchiveOrg.PROPERTY_ARTIST, artist);
+            file.setProperty(ArchiveOrg.PROPERTY_ARTIST, filemap.get("artist")); // Optional field
+            file.setProperty(ArchiveOrg.PROPERTY_TITLE, filemap.get("title")); // Optional field
             if (sizeO != null) {
                 if (sizeO instanceof Number) {
                     file.setVerifiedFileSize(((Number) sizeO).longValue());

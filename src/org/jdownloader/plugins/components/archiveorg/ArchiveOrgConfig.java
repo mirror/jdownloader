@@ -17,6 +17,7 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     final String                    text_FileCrawlerCrawlOnlyOriginalVersions                    = "File crawler: Download only original versions of files?";
     final String                    text_FileCrawlerCrawlArchiveView                             = "File crawler: Also crawl archive view?";
     final String                    text_FileCrawlerCrawlMetadataFiles                           = "File crawler: Also crawl metadata files (typically .xml, .sqlite files)?";
+    final String                    text_PlaylistFilenameScheme                                  = "Playlist filename scheme";
     final String                    text_BookImageQuality                                        = "Set book image quality (0 = highest, 10 = lowest)";
     final String                    text_BookCrawlMode                                           = "Set book crawl mode";
     final String                    text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable = "Mark non viewable book pages as offline if no account is available?";
@@ -33,6 +34,10 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
         public String getFileCrawlerCrawlMetadataFiles_label() {
             return text_FileCrawlerCrawlMetadataFiles;
+        }
+
+        public String getPlaylistFilenameScheme_label() {
+            return text_PlaylistFilenameScheme;
         }
 
         public String getBookImageQuality_label() {
@@ -71,6 +76,29 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     boolean isFileCrawlerCrawlMetadataFiles();
 
     void setFileCrawlerCrawlMetadataFiles(boolean b);
+
+    public static enum PlaylistFilenameScheme implements LabelInterface {
+        PLAYLIST_TITLE_WITH_TRACK_NUMBER {
+            @Override
+            public String getLabel() {
+                return "Like in playlist: <TrackNumber>.<title> - <artist>.<fileExt>";
+            }
+        },
+        ORIGINAL_FILENAME {
+            @Override
+            public String getLabel() {
+                return "Original / serverside filenames";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("PLAYLIST_TITLE_WITH_TRACK_NUMBER")
+    @Order(26)
+    @DescriptionForConfigEntry(text_BookCrawlMode)
+    PlaylistFilenameScheme getPlaylistFilenameScheme();
+
+    void setPlaylistFilenameScheme(final PlaylistFilenameScheme scheme);
 
     @AboutConfig
     @SpinnerValidator(min = 0, max = 10, step = 1)
