@@ -83,9 +83,6 @@ public class GldSlTo extends antiDDoSForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final String HTML_CAPTCHA       = "Klicke in den gestrichelten Kreis, der sich somit von den anderen unterscheidet";
-    private static final String HTML_LIMIT_REACHED = "class=\"captchaWait\"";
-
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String contenturl = param.getCryptedUrl();
@@ -224,7 +221,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
             /* IMPORTANT */
             br.setCookie(this.br.getHost(), "__utmt", "1");
             postPage("/res/links", "data=" + Encoding.urlEncode(decryptID));
-            if (br.containsHTML(HTML_CAPTCHA)) {
+            if (isCaptchaRequired(br)) {
                 for (int i = 1; i <= 3; i++) {
                     if (this.isAbort()) {
                         logger.info("Decryption aborted by user: " + contenturl);
@@ -249,7 +246,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     postPage("/res/links", "data=" + Encoding.urlEncode(decryptID) + "&xC=" + cp.getX() + "&yC=" + cp.getY());
-                    if (br.containsHTML(HTML_LIMIT_REACHED)) {
+                    if (this.isCaptchaLimitReached(br)) {
                         logger.info("We have to wait because the user entered too many wrong captchas...");
                         int wait = 60;
                         String waittime = br.getRegex("<strong>(\\d+) Sekunden</strong> warten\\.").getMatch(0);
@@ -263,7 +260,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
                         br.postPage("/res/links", "data=" + Encoding.urlEncode(decryptID));
                         continue;
                     }
-                    if (br.containsHTML(HTML_CAPTCHA)) {
+                    if (isCaptchaRequired(br)) {
                         captchafailed = true;
                         continue;
                     }
@@ -278,8 +275,8 @@ public class GldSlTo extends antiDDoSForDecrypt {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 postPage("/res/links", "data=" + Encoding.urlEncode(decryptID) + "&rcc=" + Encoding.urlEncode(recaptchaV2Response));
             }
-            if (br.containsHTML(HTML_LIMIT_REACHED)) {
-                throw new DecrypterRetryException(RetryReason.CAPTCHA, "HOURLY_LIMIT_REACHED", "Hourly limit has been reached! Try again later.", null);
+            if (this.isCaptchaLimitReached(br)) {
+                throw new DecrypterRetryException(RetryReason.CAPTCHA, "HOURLY_LIMIT_REACHED", "Hourly limit has been reached! Change your IP or try again later.", null);
             }
             final String[] finallinks = br.getRegex("url\\s*=\\s*\"(https?[^<>\"]*?)\"").getColumn(0);
             for (final String finallink : finallinks) {
@@ -302,6 +299,14 @@ public class GldSlTo extends antiDDoSForDecrypt {
         }
         fp.addLinks(ret);
         return ret;
+    }
+
+    private boolean isCaptchaRequired(final Browser br) {
+        return br.containsHTML("(?i)Klicke in den gestrichelten Kreis, der sich somit von den anderen unterscheidet");
+    }
+
+    private boolean isCaptchaLimitReached(final Browser br) {
+        return br.containsHTML("class=\"captchaWait\"");
     }
 
     /* Prevent confusion */

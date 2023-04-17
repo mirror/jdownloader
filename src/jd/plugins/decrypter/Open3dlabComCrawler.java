@@ -35,6 +35,8 @@ import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -70,13 +72,24 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/project/(\\d+)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:project|user)/\\d+/?");
         }
         return ret.toArray(new String[0]);
     }
 
+    private final String PATTERN_PROJECT = "https?://[^/]+/project/(\\d+)/?";
+    private final String PATTERN_PROFILE = "https?://[^/]+/user/(\\d+)/?";
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final String projectID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        if (param.getCryptedUrl().matches(PATTERN_PROJECT)) {
+            return crawlProject(param);
+        } else {
+            return this.crawlProfile(param);
+        }
+    }
+
+    public ArrayList<DownloadLink> crawlProject(final CryptedLink param) throws Exception {
+        final String projectID = new Regex(param.getCryptedUrl(), PATTERN_PROJECT).getMatch(0);
         if (projectID == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -172,6 +185,65 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
                 logger.info("Failed to find desired mirror: Returning all mirrors as fallback");
                 ret.addAll(mirrorMap.values());
             }
+        }
+        return ret;
+    }
+
+    public ArrayList<DownloadLink> crawlProfile(final CryptedLink param) throws Exception {
+        final String profileID = new Regex(param.getCryptedUrl(), PATTERN_PROFILE).getMatch(0);
+        if (profileID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String profilename = br.getRegex("profilename=\"([^\"]+)").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        if (profilename != null) {
+            fp.setName(Encoding.htmlDecode(profilename).trim());
+        } else {
+            fp.setName(profileID);
+        }
+        fp.setCleanupPackageName(false);
+        int page = 1;
+        do {
+            final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+            final HashSet<String> dupes = new HashSet<String>();
+            int numberofNewItems = 0;
+            for (final String url : urls) {
+                if (url.matches(PATTERN_PROJECT)) {
+                    if (dupes.add(url)) {
+                        numberofNewItems++;
+                        final DownloadLink result = this.createDownloadlink(url);
+                        result._setFilePackage(fp);
+                        ret.add(result);
+                        distribute(result);
+                    }
+                }
+            }
+            logger.info("Crawled page " + page + " | Total number of items so far: " + ret.size());
+            page++;
+            final String nextPageURL = br.getRegex("(/user/" + profileID + "/\\?page=" + page + ")").getMatch(0);
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (numberofNewItems == 0) {
+                logger.info("Stopping becaus: Failed to find any new items on current page");
+                break;
+            } else if (nextPageURL == null) {
+                logger.info("Stopping because: Failed to find next page -> Reached end?");
+                break;
+            } else {
+                br.getPage(nextPageURL);
+                continue;
+            }
+        } while (true);
+        if (ret.isEmpty()) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE, "EMPTY_PROFILE_" + profileID);
         }
         return ret;
     }

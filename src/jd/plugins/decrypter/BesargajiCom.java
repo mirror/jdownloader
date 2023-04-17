@@ -16,8 +16,14 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
@@ -66,46 +72,60 @@ public class BesargajiCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        final Form form = br.getFormbyProperty("id", "slu-form");
+        final Form formForOldHandling = br.getFormbyProperty("id", "slu-form");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.canHandle(br.getURL())) {
             /* E.g. redirect to mainpage or random advertisement page. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (form == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.sleep(7 * 1000, param);
-        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-        form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-        // see: https://besargaji.com/wp-content/plugins/akismet/_inc/akismet-frontend.js?ver=1669965005
-        form.getInputField("captcha").setDisabled(false); // make sure this field gets sent
-        form.put("ak_bib", "");
-        form.put("ak_bfs", Long.toString(System.currentTimeMillis()));
-        form.put("ak_bkpc", "0");
-        form.put("ak_bkp", "");
-        form.put("ak_bmc", "39");
-        form.put("ak_bmcc", "1");
-        form.put("ak_bmk", "");
-        form.put("ak_bck", "");
-        form.put("ak_bmmc", "11");
-        form.put("ak_btmc", "0");
-        form.put("ak_bsc", "2");
-        form.put("ak_bte", "");
-        form.put("ak_btec", "0");
-        form.put("ak_bmm", "0");
-        br.setCookie(br.getHost(), "next", "1");
-        br.getHeaders().put("Origin", "https://besargaji.com");
-        br.submitForm(form);
-        final String finallink = this.br.getRegex("document\\.getElementById\\(\"slu-link\"\\)\\.setAttribute\\(\"href\", \"(http[^\"]+)\"").getMatch(0);
-        if (finallink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String finallink;
+        if (br.containsHTML("/api/v1/verify") || formForOldHandling == null) {
+            /* 2023-04-17: New */
+            final Map<String, Object> postdata = new HashMap<String, Object>();
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6LdVaIkkAAAAACskGYlDD6U_7vmE1N_caLQ5-JGN").getToken();
+            postdata.put("g-recaptcha-response", recaptchaV2Response);
+            postdata.put("_a", true);
+            br.postPageRaw("/api/v1/verify", JSonStorage.serializeToJson(postdata));
+            final Map<String, Object> postdata2 = new HashMap<String, Object>();
+            /* Random values will work fine lol */
+            postdata2.put("key", new Random().nextInt(200));
+            postdata2.put("size", new Random().nextInt(200) + "." + new Random().nextInt(200));
+            br.postPageRaw("/api/v1/go", JSonStorage.serializeToJson(postdata2));
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            finallink = entries.get("url").toString();
         } else {
-            ret.add(createDownloadlink(finallink));
-            return ret;
+            this.sleep(7 * 1000, param);
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            formForOldHandling.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            // see: https://besargaji.com/wp-content/plugins/akismet/_inc/akismet-frontend.js?ver=1669965005
+            formForOldHandling.getInputField("captcha").setDisabled(false); // make sure this field gets sent
+            formForOldHandling.put("ak_bib", "");
+            formForOldHandling.put("ak_bfs", Long.toString(System.currentTimeMillis()));
+            formForOldHandling.put("ak_bkpc", "0");
+            formForOldHandling.put("ak_bkp", "");
+            formForOldHandling.put("ak_bmc", "39");
+            formForOldHandling.put("ak_bmcc", "1");
+            formForOldHandling.put("ak_bmk", "");
+            formForOldHandling.put("ak_bck", "");
+            formForOldHandling.put("ak_bmmc", "11");
+            formForOldHandling.put("ak_btmc", "0");
+            formForOldHandling.put("ak_bsc", "2");
+            formForOldHandling.put("ak_bte", "");
+            formForOldHandling.put("ak_btec", "0");
+            formForOldHandling.put("ak_bmm", "0");
+            br.setCookie(br.getHost(), "next", "1");
+            br.getHeaders().put("Origin", "https://besargaji.com");
+            br.submitForm(formForOldHandling);
+            finallink = this.br.getRegex("document\\.getElementById\\(\"slu-link\"\\)\\.setAttribute\\(\"href\", \"(http[^\"]+)\"").getMatch(0);
         }
+        if (StringUtils.isEmpty(finallink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 }
