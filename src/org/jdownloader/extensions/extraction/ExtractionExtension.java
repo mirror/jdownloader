@@ -165,6 +165,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * Adds an archive to the extraction queue.
      */
     public synchronized ExtractionController addToQueue(final Archive archive, boolean forceAskForUnknownPassword) {
+        if (archive == null) {
+            return null;
+        }
         // check if we have this archive already in queue.
         for (final ExtractionController ec : extractionQueue.getJobs()) {
             if (ec.isSameArchive(archive)) {
@@ -285,28 +288,32 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     public DummyArchive createDummyArchive(final Archive archive) throws CheckException {
-        final ArchiveFactory factory = archive.getFactory();
-        if (!Boolean.FALSE.equals(factory.isPartOfAnArchive())) {
-            final boolean deepInspection = !(factory instanceof CrawledLinkFactory);
-            for (IExtraction extractor : extractors) {
-                try {
-                    if (!Boolean.FALSE.equals(extractor.isSupported(factory, deepInspection))) {
-                        final DummyArchive dummyArchive = extractor.checkComplete(archive);
-                        if (dummyArchive != null) {
-                            return dummyArchive;
+        if (archive == null) {
+            return null;
+        } else {
+            final ArchiveFactory factory = archive.getFactory();
+            if (!Boolean.FALSE.equals(factory.isPartOfAnArchive())) {
+                final boolean deepInspection = !(factory instanceof CrawledLinkFactory);
+                for (IExtraction extractor : extractors) {
+                    try {
+                        if (!Boolean.FALSE.equals(extractor.isSupported(factory, deepInspection))) {
+                            final DummyArchive dummyArchive = extractor.checkComplete(archive);
+                            if (dummyArchive != null) {
+                                return dummyArchive;
+                            }
                         }
+                    } catch (final Throwable e) {
+                        logger.log(e);
                     }
-                } catch (final Throwable e) {
-                    logger.log(e);
                 }
             }
+            return null;
         }
-        return null;
     }
 
     public boolean isComplete(Archive archive) {
         try {
-            final DummyArchive ret = createDummyArchive(archive);
+            final DummyArchive ret = archive != null ? createDummyArchive(archive) : null;
             final boolean isComplete = ret != null && ret.isComplete();
             return isComplete;
         } catch (CheckException e) {

@@ -59,7 +59,7 @@ public class ExtractionAPIImpl implements ExtractionAPI {
                 for (final Archive archive : archives) {
                     try {
                         final DummyArchive da = extension.createDummyArchive(archive);
-                        if (da.isComplete()) {
+                        if (da != null && da.isComplete()) {
                             final ExtractionController controller = extension.addToQueue(archive, true);
                             ret.put(controller.getUniqueID().toString(), true);
                         }
