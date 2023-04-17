@@ -90,7 +90,7 @@ public class SiteType {
         KalturaVideoPlatform,
         /**
          * Very old filehosting script which is rarely used.<br />
-         * <b>Example website :</b> <a href="http:/linkz.ge/">linkz.ge</a><br />
+         * <b>Example website :</b> <a href="http:/grabitshare.com/">grabitshare.com</a><br />
          */
         MhfScriptBasic,
         /**

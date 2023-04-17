@@ -277,8 +277,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         logger.info("Crawling API tweet");
         prepareAPI(this.br, account);
-        final boolean useNewMethod = true; /* 2021-06-15 */
-        if (useNewMethod) {
+        final boolean tryNewMethod = true; /* 2021-06-15 */
+        boolean looksLikeOfflineError34 = false;
+        if (tryNewMethod) {
             br.getPage("https://api.twitter.com/1.1/statuses/show/" + tweetID + ".json?cards_platform=Web-12&include_reply_count=1&include_cards=1&include_user_entities=0&tweet_mode=extended");
             try {
                 handleErrorsAPI(this.br);
@@ -287,16 +288,26 @@ public class TwitterComCrawler extends PluginForDecrypt {
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"code\"\\s*:\\s*34")) {
                     logger.log(e);
+                    looksLikeOfflineError34 = true;
                 } else {
                     throw e;
                 }
             }
         }
         br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweetID + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
+        handleErrorsAPI(this.br);
         final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Map<String, Object> tweet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "globalObjects/tweets/" + tweetID);
         if (tweet == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (looksLikeOfflineError34) {
+                /**
+                 * We're missing the permissions to view this content. </br>
+                 * Most likely it is age restricted content and (age verified) account is required.
+                 */
+                throw new AccountRequiredException();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         } else {
             return crawlTweetMap(tweet);
         }
@@ -453,7 +464,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         int mediaIndex = 0;
         int videoIndex = 0;
         if (mediaLists.size() > 0) {
-            boolean skipVideo = false;
+            boolean foundVideo = false;
             for (final List<Map<String, Object>> mediaList : mediaLists) {
                 for (final Map<String, Object> media : mediaList) {
                     final String type = (String) media.get("type");
@@ -461,7 +472,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     String filename = null;
                     if (type.equals("video") || type.equals("animated_gif")) {
                         /* Find highest video quality */
-                        if (skipVideo) {
+                        if (foundVideo) {
                             continue;
                         }
                         /* animated_gif will usually only have one .mp4 version available with bitrate "0". */
@@ -504,6 +515,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         }
                         dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
                         videoIndex++;
+                        foundVideo = true;
                     } else if (type.equals("photo")) {
                         String photoURL = (String) media.get("media_url"); /* Also available as "media_url_https" */
                         if (StringUtils.isEmpty(photoURL)) {
@@ -536,8 +548,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     ret.add(dl);
                     mediaIndex += 1;
                 }
-                /* We only expect video items in the first media list. */
-                skipVideo = true;
             }
         }
         /* Check for fallback video source if no video item has been found until now. */
