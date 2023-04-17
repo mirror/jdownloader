@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -88,7 +89,13 @@ public class GldSlTo extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String contenturl = param.getCryptedUrl();
-        /* Make sure that old URLs keep working even if domain isdown otherwise don't touch added URL. */
+        /* Make sure that old URLs keep working even if domain is down otherwise don't touch added URL. */
+        final ArrayList<String> allDomainsFlatArray = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            for (final String domain : domains) {
+                allDomainsFlatArray.add(domain);
+            }
+        }
         final List<String> deadDomains = getDeadDomains();
         if (deadDomains != null) {
             /* Change domain in added URL if we know that the domain inside added URL is dead. */
@@ -97,12 +104,28 @@ public class GldSlTo extends antiDDoSForDecrypt {
                 contenturl = contenturl.replaceFirst(Pattern.quote(domain) + "/", this.getHost() + "/");
             }
         }
+        final String domainFromContentURL = Browser.getHost(contenturl);
         br.setFollowRedirects(true);
         getPage(contenturl);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fpName = br.getRegex(">Release\\s*:\\s*([^<>]+)<").getMatch(0);
+        if (!this.canHandle(br.getURL())) {
+            /**
+             * 2023-04-17: Workaround for them not configuring redirects properly:</br>
+             * When they are changing domains, old links may get redirected to main page on new domain instead of the URL to the content
+             * although the content is available. </br>
+             * Example: goldesel.sx/bla will redirect to "https://goldesel.bz" instead of to the full URL/content.
+             */
+            if (!domainFromContentURL.equals(this.getHost())) {
+                logger.info("Attempting domain redirect workaround | Old: " + domainFromContentURL + " | New: " + br.getHost());
+                /* Access relative URL so request is done with new/current domain. */
+                br.getPage(new URL(contenturl).getPath());
+            } else {
+                logger.warning("Redirect to unsupported URL -> Content is probably offline | URL: " + br.getURL());
+            }
+        }
+        String fpName = br.getRegex("(?i)>\\s*Release\\s*:\\s*([^<>]+)<").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>\\s*([^<>\"]*?)\\s*</title>").getMatch(0);
         }
