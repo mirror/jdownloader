@@ -19,11 +19,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.raf.FileBytesMap;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.resources.AWUTheme;
@@ -50,6 +45,11 @@ import org.jdownloader.controlling.ffmpeg.FFMpegException.ERROR;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.raf.FileBytesMap;
+
 public abstract class AbstractFFmpegBinary {
     public static enum FLAGTYPE {
         LIB,
@@ -64,6 +64,7 @@ public abstract class AbstractFFmpegBinary {
         WEBM(FLAGTYPE.FORMAT, "E\\s*(webm|matroska,webm)"), // mux
         DASH(FLAGTYPE.FORMAT, "E\\s*dash"), // mux
         HLS(FLAGTYPE.FORMAT, "D\\s*(hls|applehttp)");// demux
+
         private final Pattern  pattern;
         private final FLAGTYPE type;
 
@@ -976,13 +977,13 @@ public abstract class AbstractFFmpegBinary {
                     final boolean okay = exitCode == 0;
                     if (!okay) {
                         if (StringUtils.containsIgnoreCase(lastStderr, "No such file or directory") || StringUtils.containsIgnoreCase(lastStderr, "Invalid argument")) {
-                            throw new FFMpegException("FFmpeg Failed:path too long?", lastStdout, lastStderr, ERROR.PATH_LENGTH);
+                            throw new FFMpegException("FFmpeg Failed: path too long?", lastStdout, lastStderr, ERROR.PATH_LENGTH);
                         } else if (StringUtils.containsIgnoreCase(lastStderr, "Unrecognized option 'c:v'") || StringUtils.containsIgnoreCase(lastStderr, "Unrecognized option '-c:v'")) {
-                            throw new FFMpegException("FFmpeg Failed:version too old", lastStdout, lastStderr, ERROR.TOO_OLD);
+                            throw new FFMpegException("FFmpeg Failed: version too old", lastStdout, lastStderr, ERROR.TOO_OLD);
                         } else if (StringUtils.containsIgnoreCase(lastStderr, "No space left on device") && StringUtils.containsIgnoreCase(lastStderr, "Error writing")) {
-                            throw new FFMpegException("FFmpeg Failed:disk full", lastStdout, lastStderr, ERROR.DISK_FULL);
+                            throw new FFMpegException("FFmpeg Failed: disk full", lastStdout, lastStderr, ERROR.DISK_FULL);
                         } else if (StringUtils.containsIgnoreCase(lastStderr, ": Protocol not found'") || StringUtils.containsIgnoreCase(lastStderr, "Did you mean file:http")) {
-                            throw new FFMpegException("FFmpeg Failed:version does not support http protocol", lastStdout, lastStderr, ERROR.INCOMPATIBLE);
+                            throw new FFMpegException("FFmpeg Failed: version does not support http protocol", lastStdout, lastStderr, ERROR.INCOMPATIBLE);
                         } else {
                             throw new FFMpegException("FFmpeg Failed", lastStdout, lastStderr);
                         }
