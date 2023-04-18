@@ -2237,10 +2237,34 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         return request;
     }
 
-    /** Returns https?://host.tld */
+    /** Returns https?://(www.)?host.tld */
     protected String getMainPage() {
         final String[] hosts = this.siteSupportedNames();
         return ("http://" + hosts[0]).replaceFirst("(?i)https?://", this.supports_https() ? "https://" : "http://");
+    }
+
+    protected String getMainPage(final DownloadLink link) {
+        final String urlHost = Browser.getHost(link.getPluginPatternMatcher());
+        final List<String> deadDomains = this.getDeadDomains();
+        final String domainToUse;
+        if (deadDomains != null && deadDomains.contains(urlHost)) {
+            domainToUse = this.getHost();
+        } else {
+            domainToUse = urlHost;
+        }
+        final String protocol;
+        if (supports_https()) {
+            protocol = "https://";
+        } else {
+            protocol = "http://";
+        }
+        final String www;
+        if (this.requires_WWW()) {
+            www = "www.";
+        } else {
+            www = "";
+        }
+        return protocol + www + domainToUse;
     }
 
     /**
