@@ -23,6 +23,11 @@ import java.util.List;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.YetiShareCore;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -37,11 +42,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.YetiShareCore;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ShareplaceOrg extends YetiShareCore {
@@ -81,11 +81,15 @@ public class ShareplaceOrg extends YetiShareCore {
     private final String PATTERN_OLD = "https?://[^/]+/\\?(?:d=)?([\\w]+)(/.*?)?";
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        // they are switching to .org as main domain
-        super.correctDownloadLink(link);
-        if (isOldURL(link.getPluginPatternMatcher())) {
-            link.setUrlDownload(link.getPluginPatternMatcher().replaceFirst("Download", ""));
+    protected String getContentURL(final DownloadLink link) {
+        final String url = super.getContentURL(link);
+        if (url == null) {
+            return null;
+        }
+        if (isOldURL(url)) {
+            return url.replaceFirst("Download", "");
+        } else {
+            return url;
         }
     }
 
@@ -145,7 +149,7 @@ public class ShareplaceOrg extends YetiShareCore {
         br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
+        getPage(this.getContentURL(link));
         if (!this.br.getURL().contains(this.getFID(link))) {
             /* E.g. redirect to mainpage or errorpage. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

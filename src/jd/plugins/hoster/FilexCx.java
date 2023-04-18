@@ -76,11 +76,11 @@ public class FilexCx extends YetiShareCore {
         if (link == null || link.getPluginPatternMatcher() == null) {
             return;
         }
-        super.correctDownloadLink(link);
+        final String url = this.getContentURL(link);
         /* Change embed URLs -> Normal file-URLs. */
-        final Regex embed = new Regex(link.getPluginPatternMatcher(), PATTERN_EMBED);
+        final Regex embed = new Regex(url, PATTERN_EMBED);
         if (embed.matches()) {
-            final String host = Browser.getHost(link.getPluginPatternMatcher(), true);
+            final String host = Browser.getHost(url, true);
             final String filenameInsideURL = embed.getMatch(2);
             String newurl = "https://" + appendWWWIfRequired(host) + "/" + embed.getMatch(0);
             if (filenameInsideURL != null) {

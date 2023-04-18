@@ -193,7 +193,7 @@ public class BrfilesCom extends YetiShareCore {
             requestFileInformationWebsite(link, account, true);
             br.setFollowRedirects(false);
             if (supports_availablecheck_over_info_page(link)) {
-                getPage(link.getPluginPatternMatcher());
+                getPage(this.getContentURL(link));
             }
             handleDownloadWebsite(link, account);
         } else {
@@ -201,7 +201,7 @@ public class BrfilesCom extends YetiShareCore {
             loginWebsite(account, false);
             // requestFileInformation(link, account, true);
             br.setFollowRedirects(false);
-            br.getPage(link.getPluginPatternMatcher());
+            br.getPage(this.getContentURL(link));
             final String redirect = br.getRedirectLocation();
             if (redirect != null) {
                 final String fid = this.getFUID(link);
@@ -222,13 +222,12 @@ public class BrfilesCom extends YetiShareCore {
         if (br.getURL() == null || !br.getURL().contains("account_edit")) {
             getPage("/account_edit/");
         }
-        boolean isPremium = br.containsHTML(">Tipo de conta\\s*:\\s*</label>.*?<label[^>]+>Premium</label>");
+        boolean isPremium = br.containsHTML("(?i)>\\s*Tipo de conta\\s*:\\s*</label>.*?<label[^>]+>Premium</label>");
         if (!isPremium) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
             /* All accounts get the same (IP-based) downloadlimits --> Simultaneous free account usage makes no sense! */
             account.setConcurrentUsePossible(false);
-            ai.setStatus("Registered (free) account");
         } else {
             /* If the premium account is expired we'll simply accept it as a free account. */
             String expireStr = br.getRegex("Sua conta expira em (\\d{2}/\\d{2}/\\d{4})").getMatch(0);
@@ -254,12 +253,10 @@ public class BrfilesCom extends YetiShareCore {
                 account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
                 /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
                 account.setConcurrentUsePossible(false);
-                ai.setStatus("Registered (free) user");
             } else {
                 ai.setValidUntil(expire_milliseconds, this.br);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
-                ai.setStatus("Premium account");
             }
         }
         ai.setUnlimitedTraffic();

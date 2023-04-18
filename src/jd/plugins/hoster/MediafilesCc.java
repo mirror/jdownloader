@@ -18,16 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.YetiShareCore;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.YetiShareCore;
-import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MediafilesCc extends YetiShareCore {
@@ -52,24 +49,18 @@ public class MediafilesCc extends YetiShareCore {
     }
 
     @Override
-    public String rewriteHost(final String host) {
-        /* 2020-07-30: Domain has changed from mediafile.cloud to mediafiles.cc */
-        return this.rewriteHost(getPluginDomains(), host, new String[0]);
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("mediafiles.cc"); // 2023-04-18: SSL problems
+        deadDomains.add("mediafile.cloud");
+        deadDomains.add("mediafiles.club");
+        return deadDomains;
     }
 
     @Override
-    public PluginForHost assignPlugin(PluginFinder pluginFinder, final DownloadLink link) {
-        final PluginForHost ret = super.assignPlugin(pluginFinder, link);
-        if (ret != null) {
-            final boolean correctDownloadLink = !StringUtils.equals(link.getHost(), getHost());
-            if (correctDownloadLink) {
-                // old domains are no longer working
-                correctDownloadLink(link);
-            }
-            return ret;
-        } else {
-            return null;
-        }
+    public String rewriteHost(final String host) {
+        /* 2020-07-30: Domain has changed from mediafile.cloud to mediafiles.cc */
+        return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 
     public static String[] getAnnotationNames() {

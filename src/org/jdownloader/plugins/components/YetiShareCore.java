@@ -188,19 +188,19 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         return url.getHost();
     }
 
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        /* link cleanup, but respect users protocol choosing or forced protocol */
+    protected String getContentURL(final DownloadLink link) {
+        /* Link cleanup, but respect users protocol choosing or forced protocol */
         if (link == null || link.getPluginPatternMatcher() == null) {
-            return;
+            return null;
         }
+        final String originalURL = link.getPluginPatternMatcher();
         try {
-            final URL url = new URL(link.getPluginPatternMatcher());
+            final URL url = new URL(originalURL);
             final String urlHost = getCorrectHost(link, url);
             final List<String> deadDomains = this.getDeadDomains();
             if (deadDomains == null || !deadDomains.contains(urlHost)) {
                 /* Only correct domains if we know they're dead. */
-                return;
+                return originalURL;
             }
             final String protocolCorrected;
             if (supports_https()) {
@@ -222,10 +222,20 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 // only append www when no other subDomain is set
                 hostCorrected = "www." + hostCorrected;
             }
-            link.setPluginPatternMatcher(protocolCorrected + hostCorrected + url.getPath());
+            return protocolCorrected + hostCorrected + url.getPath();
         } catch (final MalformedURLException e) {
             LogController.getRebirthLogger(logger).log(e);
         }
+        return originalURL;
+    }
+
+    /**
+     * Raturns URL to alternative page from which content information can be obtained. </br>
+     * Structure: https://domain.tld/<fuid>~i
+     */
+    protected String getInfoPageURL(final DownloadLink link) {
+        final String url = this.getContentURL(link);
+        return new Regex(url, "(?i)(https?://[^/]+)").getMatch(0) + "/" + this.getFUID(link) + "~i";
     }
 
     /**
@@ -388,7 +398,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         prepBrowserWebsite(this.br);
         final String[] fileInfo = getFileInfoArray();
         if (supports_availablecheck_over_info_page(link)) {
-            getPage(this.getMainPage() + "/" + this.getFUID(link) + "~i");
+            getPage(getInfoPageURL(link));
             /* Offline check is unsafe which is why we need to check for other errors first! */
             try {
                 this.checkErrors(br, link, account);
@@ -422,7 +432,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
-            getPage(link.getPluginPatternMatcher());
+            getPage(getContentURL(link));
             /* Offline check is very unsafe which is why we need to check for other errors first! */
             try {
                 this.checkErrors(br, link, account);
@@ -610,7 +620,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             /* Access downloadurl */
             br.setFollowRedirects(false);
             prepBrowserWebsite(br);
-            getPage(link.getPluginPatternMatcher());
+            getPage(this.getContentURL(link));
             final boolean resume = this.isResumeable(link, account);
             final int maxchunks = this.getMaxChunks(account);
             /*
@@ -656,7 +666,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                         logger.warning("Possible login failure -> Trying again");
                         hasGoneThroughVerifiedLoginOnce = loginWebsite(account, true);
                         br.setFollowRedirects(false);
-                        getPage(link.getPluginPatternMatcher());
+                        getPage(this.getContentURL(link));
                         continue;
                     }
                 }
