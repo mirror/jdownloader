@@ -40,7 +40,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         return false;
     }
 
-    public String createExtractSubPath(String path, Archive archive) {
+    public String createExtractSubPath(String path, final Archive archive) {
         final DownloadLink link = getFirstDownloadLinkPart(archive);
         try {
             if (path.contains(PACKAGENAME)) {
@@ -68,13 +68,13 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 }
             }
             if (path.contains("$DATE:")) {
-                int start = path.indexOf("$DATE:");
+                final int start = path.indexOf("$DATE:");
                 int end = start + 6;
                 while (end < path.length() && path.charAt(end) != '$') {
                     end++;
                 }
                 try {
-                    SimpleDateFormat format = new SimpleDateFormat(path.substring(start + 6, end));
+                    final SimpleDateFormat format = new SimpleDateFormat(path.substring(start + 6, end));
                     path = path.replace(path.substring(start, end + 1), format.format(new Date()));
                 } catch (Throwable e) {
                     path = path.replace(path.substring(start, end + 1), "");
