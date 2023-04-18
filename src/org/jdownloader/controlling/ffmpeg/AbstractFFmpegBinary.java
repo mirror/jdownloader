@@ -981,6 +981,8 @@ public abstract class AbstractFFmpegBinary {
                             throw new FFMpegException("FFmpeg Failed:version too old", lastStdout, lastStderr, ERROR.TOO_OLD);
                         } else if (StringUtils.containsIgnoreCase(lastStderr, "No space left on device") && StringUtils.containsIgnoreCase(lastStderr, "Error writing")) {
                             throw new FFMpegException("FFmpeg Failed:disk full", lastStdout, lastStderr, ERROR.DISK_FULL);
+                        } else if (StringUtils.containsIgnoreCase(lastStderr, ": Protocol not found'") || StringUtils.containsIgnoreCase(lastStderr, "Did you mean file:http")) {
+                            throw new FFMpegException("FFmpeg Failed:version does not support http protocol", lastStdout, lastStderr, ERROR.INCOMPATIBLE);
                         } else {
                             throw new FFMpegException("FFmpeg Failed", lastStdout, lastStderr);
                         }

@@ -2,6 +2,7 @@ package org.jdownloader.controlling.ffmpeg;
 
 public class FFMpegException extends Exception {
     public static enum ERROR {
+        INCOMPATIBLE,
         TOO_OLD,
         PATH_LENGTH,
         UNKNOWN,

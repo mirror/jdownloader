@@ -18,10 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -38,6 +34,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilefoxCc extends XFileSharingProBasic {
@@ -141,7 +141,7 @@ public class FilefoxCc extends XFileSharingProBasic {
         /* 2019-06-06: Special */
         String waitStr = super.regexWaittime();
         if (StringUtils.isEmpty(waitStr)) {
-            waitStr = new Regex(correctedBR, "class=\"time\\-remain\">(\\d+)</span>").getMatch(0);
+            waitStr = new Regex(correctedBR, "class\\s*=\\s*(\"|')time-remain\\1\\s*>\\s*(\\d+)\\s*</").getMatch(1);
         }
         return waitStr;
     }
@@ -185,7 +185,7 @@ public class FilefoxCc extends XFileSharingProBasic {
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached the daily download limit", 1 * 60 * 60 * 1000l);
             }
-        } else if (new Regex(correctedBR, "class\\s*=\\s*\"paid-only\"").matches()) {
+        } else if (new Regex(correctedBR, "class\\s*=\\s*(\"|')paid-only(\"|')").matches()) {
             logger.info("Only downloadable via premium");
             throw new AccountRequiredException();
         } else if (new Regex(correctedBR, "You have reached your download limit per").matches()) {
@@ -205,13 +205,13 @@ public class FilefoxCc extends XFileSharingProBasic {
             logger.info("Premium account temporarily blocked because of too many IPs");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        final String reconnectWait = new Regex(correctedBR, "Wait [^<>\"]+ or <a href=\\'[^\"\\']+\\' id=\\'tariff\\-scroll\\'>buy Premium</a> and download now").getMatch(-1);
+        final String reconnectWait = new Regex(correctedBR, "Wait\\s*[^<>\"]+\\s*or\\s*<a href\\s*=\\s*(\"|')[^\"']*?\\1\\s*id\\s*=\\s*(\"|')tariff-scroll\\2\\s*>\\s*buy Premium\\s*</a>\\s*and download now").getMatch(-1);
         if (reconnectWait != null) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
-            String tmphrs = new Regex(reconnectWait, "\\s+(\\d+)\\s+hours?").getMatch(0);
-            String tmpmin = new Regex(reconnectWait, "\\s+(\\d+)\\s+minutes?").getMatch(0);
-            String tmpsec = new Regex(reconnectWait, "\\s+(\\d+)\\s+seconds?").getMatch(0);
-            String tmpdays = new Regex(reconnectWait, "\\s+(\\d+)\\s+days?").getMatch(0);
+            String tmphrs = new Regex(reconnectWait, "(?i)\\s+(\\d+)\\s+hours?").getMatch(0);
+            String tmpmin = new Regex(reconnectWait, "(?i)\\s+(\\d+)\\s+minutes?").getMatch(0);
+            String tmpsec = new Regex(reconnectWait, "(?i)\\s+(\\d+)\\s+seconds?").getMatch(0);
+            String tmpdays = new Regex(reconnectWait, "(?i)\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
                 logger.info("Waittime regexes seem to be broken");
                 if (account != null) {
@@ -238,8 +238,7 @@ public class FilefoxCc extends XFileSharingProBasic {
                 /* Not enough wait time to reconnect -> Wait short and retry */
                 if (waittime < 180000) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait until new downloads can be started", waittime);
-                }
-                if (account != null) {
+                } else if (account != null) {
                     throw new AccountUnavailableException("Download limit reached", waittime);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);

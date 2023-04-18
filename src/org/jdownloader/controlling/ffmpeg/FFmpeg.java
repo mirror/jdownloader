@@ -84,6 +84,7 @@ public abstract class FFmpeg extends AbstractFFmpegBinary {
             switch (e.getError()) {
             case DISK_FULL:
             case TOO_OLD:
+            case INCOMPATIBLE:
                 throw e;
             default:
                 break;

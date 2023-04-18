@@ -284,9 +284,9 @@ public class RemoteAPIController {
             public RemoteAPIRequest createRemoteAPIRequestObject(HttpRequest request, Object extractedData, final String methodName, InterfaceHandler<?> interfaceHandler, ParsedParameters parsedParameters) throws IOException, BasicRemoteAPIException {
                 if (request instanceof DeprecatedAPIRequestInterface) {
                     return new DeprecatedRemoteAPIRequest(interfaceHandler, methodName, parsedParameters.parameters.toArray(new String[] {}), (DeprecatedAPIRequestInterface) request, parsedParameters.jqueryCallback);
-                    //
+                } else {
+                    return new MyJDRemoteAPIRequest(interfaceHandler, methodName, parsedParameters.parameters.toArray(new String[] {}), (MyJDownloaderRequestInterface) request);
                 }
-                return new MyJDRemoteAPIRequest(interfaceHandler, methodName, parsedParameters.parameters.toArray(new String[] {}), (MyJDownloaderRequestInterface) request);
             }
 
             @Override

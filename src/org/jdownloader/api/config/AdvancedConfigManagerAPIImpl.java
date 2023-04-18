@@ -255,19 +255,23 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
 
     @Override
     public boolean reset(RemoteAPIRequest request, String interfaceName, String storage, String key) {
-        KeyHandler<Object> keyHandler = getKeyHandler(interfaceName, storage, key);
-        try {
-            final GenericConfigEventListener<Object> listener = createRestartRequiredConfigEventListener(request, keyHandler);
-            keyHandler.getEventSender().addListener(listener);
-            try {
-                keyHandler.setValue(keyHandler.getDefaultValue());
-            } finally {
-                keyHandler.getEventSender().removeListener(listener);
-            }
-        } catch (ValidationException e) {
+        final KeyHandler<Object> keyHandler = getKeyHandler(interfaceName, storage, key);
+        if (keyHandler == null) {
             return false;
+        } else {
+            try {
+                final GenericConfigEventListener<Object> listener = createRestartRequiredConfigEventListener(request, keyHandler);
+                keyHandler.getEventSender().addListener(listener);
+                try {
+                    keyHandler.setValue(keyHandler.getDefaultValue());
+                } finally {
+                    keyHandler.getEventSender().removeListener(listener);
+                }
+            } catch (ValidationException e) {
+                return false;
+            }
+            return true;
         }
-        return true;
     }
 
     public Object getDefault(String interfaceName, String storage, String key) {
