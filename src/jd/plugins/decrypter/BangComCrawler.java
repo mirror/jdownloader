@@ -20,6 +20,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.BangComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -37,11 +42,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BangCom;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.BangComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { BangCom.class })
@@ -90,6 +90,8 @@ public class BangComCrawler extends PluginForDecrypt {
 
     /** Crawls set of multiple videos. */
     public <QualitySelectionMode> ArrayList<DownloadLink> crawlSet(final String url, final Account account) throws Exception {
+        final Regex seturl = new Regex(url, PATTERN_SET);
+        final String setSlug = seturl.getMatch(1);
         final BangComConfig cfg = PluginJsonConfig.get(BangComConfig.class);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (userHasDisabledCrawler(account, cfg)) {
@@ -102,10 +104,22 @@ public class BangComCrawler extends PluginForDecrypt {
         } else {
             br.getPage(url);
         }
+        final String setTitle = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        if (setTitle != null) {
+            fp.setName(Encoding.htmlDecode(setTitle).trim());
+        } else {
+            /* Fallback */
+            fp.setName(setSlug);
+        }
+        /* Allow all items of this set to go into one package. */
+        fp.setAllowInheritance(true);
         final String[] videourls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
         for (final String videourl : videourls) {
             if (videourl.matches(PATTERN_VIDEO)) {
-                ret.add(this.createDownloadlink(videourl));
+                final DownloadLink video = this.createDownloadlink(videourl);
+                video._setFilePackage(fp);
+                ret.add(video);
             }
         }
         return ret;

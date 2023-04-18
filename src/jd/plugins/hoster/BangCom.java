@@ -141,19 +141,20 @@ public class BangCom extends PluginForHost {
                     }
                     final BangComCrawler crawler = (BangComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
                     final ArrayList<DownloadLink> results = crawler.crawlVideo(link.getStringProperty(PROPERTY_MAINLINK), account, null);
-                    DownloadLink hit = null;
+                    DownloadLink refreshedItem = null;
                     crawlLoop: for (final DownloadLink result : results) {
                         if (StringUtils.equals(getFID(link), getFID(result))) {
-                            hit = result;
+                            refreshedItem = result;
                             break crawlLoop;
                         }
                     }
-                    if (hit == null) {
+                    if (refreshedItem == null) {
                         logger.warning("Failed to refresh directurl");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     logger.info("Successfully refreshed directurl");
-                    link.setProperties(hit.getProperties());
+                    link.setProperties(refreshedItem.getProperties());
+                    link.setPluginPatternMatcher(refreshedItem.getPluginPatternMatcher());
                     hasAttemptedRefresh = true;
                 }
             } while (true);

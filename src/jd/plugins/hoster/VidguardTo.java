@@ -113,7 +113,7 @@ public class VidguardTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {
-            /* Fallback */
+            /* Set dummy filenames as fallback / weak filenames. */
             link.setName(this.getFID(link) + ".mp4");
         }
         this.setBrowserExclusive();
@@ -162,6 +162,7 @@ public class VidguardTo extends PluginForHost {
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final String captcha_key = entries.get("captcha_key").toString();
             final String img_base64 = entries.get("img_base64").toString();
+            /* TODO: Combine the preview image and click captcha image, get the clicked coordinates and send them. */
             final UrlQuery query = new UrlQuery();
             query.add("dots", "TODO");
             query.add("key", Encoding.urlEncode(captcha_key));

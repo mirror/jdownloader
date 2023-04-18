@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.encoding.URLEncode;
@@ -117,7 +116,9 @@ public class FromsmashComFolder extends PluginForDecrypt {
     }
 
     private String[] getDetails(final CryptedLink param, final Browser br) throws Exception {
-        final String folderName = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String path = new URL(param.getCryptedUrl()).getPath();
+        /* Folder name = path without slash and without parameters. */
+        final String folderName = path.substring(1, path.length());
         final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("Accept", "application/json, text/plain, */*");
         brc.getPage("https://link.fromsmash.co/target/fromsmash.com%2F" + URLEncode.encodeURIComponent(folderName) + "?version=10-2019");
