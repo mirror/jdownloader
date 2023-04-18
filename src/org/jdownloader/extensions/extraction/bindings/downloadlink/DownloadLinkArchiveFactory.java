@@ -17,7 +17,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -45,7 +44,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         final DownloadLink link = getFirstDownloadLinkPart(archive);
         try {
             if (path.contains(PACKAGENAME)) {
-                final String packageName = CrossSystem.alleviatePathParts(link.getLastValidFilePackage().getName());
+                final String packageName = link == null ? null : CrossSystem.alleviatePathParts(link.getLastValidFilePackage().getName());
                 if (!StringUtils.isEmpty(packageName)) {
                     path = path.replace(PACKAGENAME, packageName);
                 } else {
@@ -61,7 +60,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 }
             }
             if (path.contains(HOSTER)) {
-                final String hostName = CrossSystem.alleviatePathParts(link.getHost());
+                final String hostName = link == null ? null : CrossSystem.alleviatePathParts(link.getHost());
                 if (!StringUtils.isEmpty(hostName)) {
                     path = path.replace(HOSTER, hostName);
                 } else {
@@ -82,7 +81,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 }
             }
             if (path.contains(SUBFOLDER)) {
-                final String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(new File(link.getFileOutput(false, true)).getParent(), "");
+                final String dif = link == null ? null : new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(new File(link.getFileOutput(false, true)).getParent(), "");
                 if (StringUtils.isEmpty(dif) || new File(dif).isAbsolute()) {
                     path = path.replace(SUBFOLDER, "");
                 } else {
@@ -96,7 +95,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         return null;
     }
 
-    protected String modifyPartFilePattern(String pattern) {
+    private String modifyPartFilePattern(String pattern) {
         final HashSet<Character> unsafeChars = new HashSet<Character>();
         for (final DownloadLink downloadLink : getDownloadLinks()) {
             final PluginForHost defaultPlugin = downloadLink.getDefaultPlugin();
@@ -222,7 +221,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 return ((DownloadLinkArchiveFile) archiveFile).getDownloadLinks().get(0);
             }
         }
-        throw new WTFException("Archive should always have at least one link");
+        return null;
     }
 
     public String createDefaultExtractToPath(Archive archive) {

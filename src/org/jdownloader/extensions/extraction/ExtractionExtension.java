@@ -161,10 +161,14 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         extractor.setLogger(logger);
     }
 
+    public synchronized ExtractionController addToQueue(final Archive archive, boolean forceAskForUnknownPassword) {
+        return addToQueue(null, archive, forceAskForUnknownPassword);
+    }
+
     /**
      * Adds an archive to the extraction queue.
      */
-    public synchronized ExtractionController addToQueue(final Archive archive, boolean forceAskForUnknownPassword) {
+    public synchronized ExtractionController addToQueue(Object caller, final Archive archive, boolean forceAskForUnknownPassword) {
         if (archive == null) {
             return null;
         }
@@ -203,7 +207,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             logger.info("Unsupported Archive(" + archive.getArchiveID() + "):" + archive.getName());
             return null;
         } else {
-            logger.exception("Supported Archive(" + archive.getArchiveID() + "):" + dummyArchive.toString(), new Exception("Archive:" + archive.getArchiveID()));
+            if (caller != null) {
+                logger.info("Supported Archive(" + archive.getArchiveID() + "|" + caller + "):" + dummyArchive.toString());
+            } else {
+                logger.exception("Supported Archive(" + archive.getArchiveID() + "):" + dummyArchive.toString(), new Exception("Archive:" + archive.getArchiveID()));
+            }
         }
         archive.getFactory().fireArchiveAddedToQueue(archive);
         final ExtractionController controller = new ExtractionController(this, archive, extractor);
@@ -645,7 +653,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     if (getExtractionController(link) == null) {
                         final Archive archive = buildArchive(new DownloadLinkArchiveFactory(link));
                         if (archive != null) {
-                            addToQueue(archive, false);
+                            addToQueue(caller, archive, false);
                         }
                     }
                 } else if (caller instanceof ExtractionController) {
@@ -679,7 +687,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                                         newArchive.getSettings().setExtractPath(((FileArchiveFile) firstArchiveFile).getFile().getParent());
                                     }
                                     newArchive.getSettings().setPasswords(knownPasswords);
-                                    addToQueue(newArchive, false);
+                                    addToQueue(caller, newArchive, false);
                                 }
                             }
                         }
@@ -694,7 +702,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     final List<Archive> newArchives = ArchiveValidator.getArchivesFromPackageChildren(files);
                     for (Archive newArchive : newArchives) {
                         if (newArchive != null) {
-                            addToQueue(newArchive, false);
+                            addToQueue(caller, newArchive, false);
                         }
                     }
                 }
