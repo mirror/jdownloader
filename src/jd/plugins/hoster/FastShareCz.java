@@ -117,11 +117,21 @@ public class FastShareCz extends antiDDoSForHost {
         }
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
-        final String redirect = br.getRequest().getHTMLRefresh();
-        if (redirect != null) {
-            getPage(redirect);
-        }
-        if (br.containsHTML("(<title>FastShare\\.cz</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
+        int numberofRedirects = 0;
+        do {
+            final String redirect = br.getRequest().getHTMLRefresh();
+            if (this.isAbort()) {
+                throw new InterruptedException();
+            } else if (redirect == null) {
+                break;
+            } else if (numberofRedirects >= 5) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                getPage(redirect);
+                numberofRedirects++;
+            }
+        } while (true);
+        if (br.containsHTML("(?i)(<title>FastShare\\.cz</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1\\s*title\\s*=\\s*\"(.*?)\\s*\"").getMatch(0);
@@ -131,11 +141,11 @@ public class FastShareCz extends antiDDoSForHost {
                 filename = br.getRegex("<title>([^<>\"]*?)\\s*\\|\\s*FastShare\\.cz\\s*</title>").getMatch(0);
             }
         }
-        String filesize = br.getRegex("<tr><td>(Velikost|Size): </td><td style=font\\-weight:bold>([^<>\"]*?)</td></tr>").getMatch(1);
+        String filesize = br.getRegex("(?i)<tr><td>\\s*(Velikost|Size): </td><td style=font\\-weight:bold>([^<>\"]*?)</td></tr>").getMatch(1);
         if (filesize == null) {
             filesize = br.getRegex("(Velikost|Size): ([0-9]+ .*?),").getMatch(1);
             if (filesize == null) {
-                filesize = br.getRegex("<strong>(Velikost|Size) :</strong>([^<>\"]*?)<").getMatch(1);
+                filesize = br.getRegex("(?i)<strong>\\s*(Velikost|Size) :</strong>([^<>\"]*?)<").getMatch(1);
                 if (filesize == null) {
                     filesize = br.getRegex("class\\s*=\\s*\"footer-video-size\"\\s*>\\s*(<i.*?</i>\\s*)?([0-9\\.,]+\\s*(?:&nbsp;)?[MBTKG]+)\\s*<").getMatch(1);
                 }
@@ -195,13 +205,14 @@ public class FastShareCz extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error #1", 30 * 60 * 1000l);
             } else if (br.containsHTML("No htmlCode read")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error #2", 30 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
-            if (br.containsHTML("No htmlCode read")) {
+            if (br.getRequest().getHtmlCode().length() <= 100) {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

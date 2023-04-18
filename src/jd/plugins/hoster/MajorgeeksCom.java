@@ -20,6 +20,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -34,8 +36,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.MajorgeeksComCrawler;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { MajorgeeksComCrawler.class })
@@ -119,6 +119,7 @@ public class MajorgeeksCom extends PluginForHost {
         } else if (getFinalRedirectURL(br) == null && !br.containsHTML("alt=\"restore download\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* Do not set any filename/size information here as this is typically done in the crawler sister-plugin. */
         return AvailableStatus.TRUE;
     }
 
@@ -134,8 +135,8 @@ public class MajorgeeksCom extends PluginForHost {
         if (dllink == null) {
             if (link.getPluginPatternMatcher().matches(PATTERN_LEGACY)) {
                 /**
-                 * There can be multiple versions available (multiple OS and 32/64 bit). </br> Download first version of software from
-                 * website.
+                 * There can be multiple versions available (multiple OS and 32/64 bit). </br>
+                 * Download first version of software from website.
                  */
                 final String continue_url = br.getRegex("(?i)\"/?(mg/get/[^,]*,\\d+\\.html)\"[^>]*><strong>Download").getMatch(0);
                 if (continue_url == null) {

@@ -23,6 +23,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -76,10 +77,17 @@ public class MajorgeeksComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String titleSlug = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String titleFromHTML = br.getRegex("<strong>([^<]+)</strong>\\s*<\\!-- Template: files_details_nav_next -->").getMatch(0);
+        final String title;
+        if (titleFromHTML != null) {
+            title = Encoding.htmlDecode(titleFromHTML).trim();
+        } else {
+            title = titleSlug;
+        }
         final String filesizeStr = br.getRegex("itemprop=\"fileSize\" content=\"([^<>\"]+)\"").getMatch(0);
         final Long filesize = filesizeStr != null ? SizeFormatter.getSize(filesizeStr) : null;
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(titleSlug);
+        fp.setName(title);
         final String[] links = br.getRegex("(mg/(?:get|getmirror)/[^\",]+,\\d+\\.html)").getColumn(0);
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -98,9 +106,9 @@ public class MajorgeeksComCrawler extends PluginForDecrypt {
             final DownloadLink link = createDownloadlink(fullURL);
             final String slug = singleLink.substring(singleLink.lastIndexOf("/")).replace("-html", "");
             if (thisSoftwareVariantTitle != null) {
-                link.setName(slug + "_" + thisSoftwareVariantTitle);
+                link.setName(title + "_" + slug + "_" + thisSoftwareVariantTitle);
             } else {
-                link.setName(slug);
+                link.setName(title + "_" + slug);
             }
             if (filesize != null) {
                 link.setDownloadSize(filesize.longValue());

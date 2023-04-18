@@ -34,7 +34,7 @@ public class MambahuyambaCom extends KernelVideoSharingComV2 {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "web.mambahuyamba.com", "sx.mambahuyamba.com", "deep.mambahuyamba.com", "most.mambahuyamba.com", "huyamba.info", "pornogovno.me" });
+        ret.add(new String[] { "lx.mambahuyamba.com", "web.mambahuyamba.com", "sx.mambahuyamba.com", "deep.mambahuyamba.com", "most.mambahuyamba.com", "huyamba.info", "pornogovno.me" });
         return ret;
     }
 
