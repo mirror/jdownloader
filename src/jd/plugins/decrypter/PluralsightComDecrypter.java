@@ -10,6 +10,7 @@ import java.util.Set;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
@@ -34,6 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.PluralsightCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(?:app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+|https://app\\.pluralsight\\.com/course-player\\?(clipId|courseId)=[a-f0-9\\-]+" })
@@ -124,7 +126,7 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                 totalNumberofClips++;
                 final String title = (String) clip.get("title");
                 final String type = StringUtils.valueOfOrNull(clip.get("type"));
-                final String id = StringUtils.valueOfOrNull(clip.get("id"));
+                final String clipID = StringUtils.valueOfOrNull(clip.get("id"));
                 final DownloadLink link;
                 final String extension;
                 if (StringUtils.equalsIgnoreCase(type, "link")) {
@@ -136,7 +138,7 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                         extension = Plugin.getFileNameExtensionFromURL(url, ".pdf");
                     }
                 } else if (StringUtils.equalsIgnoreCase(type, "clip")) {
-                    link = new DownloadLink(null, null, this.getHost(), createContentURL(id), true);
+                    link = new DownloadLink(null, null, this.getHost(), createContentURL(clipID), true);
                     extension = ".mp4";
                     final Number durationSeconds = (Number) clip.get("duration");
                     if (durationSeconds != null) {
@@ -145,11 +147,11 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown item type:" + type);
                 }
-                final String version = (String) clip.get("version");
+                final String clipVersion = (String) clip.get("version");
                 link.setAvailable(true);
-                link.setProperty(PluralsightCom.PROPERTY_CLIP_ID, id);
-                if (version != null) {
-                    link.setProperty(PluralsightCom.PROPERTY_CLIP_VERSION, version);
+                link.setProperty(PluralsightCom.PROPERTY_CLIP_ID, clipID);
+                if (clipVersion != null) {
+                    link.setProperty(PluralsightCom.PROPERTY_CLIP_VERSION, clipVersion);
                 }
                 link.setProperty(PluralsightCom.PROPERTY_MODULE_ORDER_ID, moduleIndex + 1);
                 link.setProperty(PluralsightCom.PROPERTY_MODULE_TITLE, moduleTitle);
@@ -160,6 +162,13 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                 link.setFinalFileName(fullName + extension);
                 link.setProperty(PluralsightCom.PROPERTY_TYPE, extension.substring(1));
                 ret.add(link);
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    final String subtitleURL = "https://app.pluralsight.com/transcript/api/v1/caption/webvtt/" + clipID + "/" + clipVersion + "/en/";
+                    final DownloadLink subtitle = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(subtitleURL));
+                    subtitle.setFinalFileName(fullName + ".webvtt");
+                    subtitle.setAvailable(true);
+                    ret.add(subtitle);
+                }
                 clipIndex++;
             }
             moduleIndex++;

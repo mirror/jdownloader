@@ -529,6 +529,7 @@ public class PluralsightCom extends antiDDoSForHost {
     }
 
     public static String correctFileName(String fileName) {
+        /* 2023-04-18: TODO: Check if this is still needed. */
         fileName = fileName.replaceAll("\n", "").replaceAll("\r", "").replaceAll("[\\\\/:*?\"<>|]", "");
         Matcher p = Pattern.compile(".*?(\\s?)_(\\s?).*?").matcher(fileName);
         while (p.find()) {

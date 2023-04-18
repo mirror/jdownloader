@@ -20,8 +20,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -39,6 +42,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -55,7 +59,6 @@ public class UlozTo extends PluginForHost {
     // private static final String CAPTCHA_TEXT = "CAPTCHA_TEXT";
     // private static final String CAPTCHA_ID = "CAPTCHA_ID";
     private static final String  QUICKDOWNLOAD                = "https?://[^/]+/quickDownload/\\d+";
-    private static final String  PREMIUMONLYUSERTEXT          = "Only downloadable for premium users!";
     /* 2017-01-02: login API seems to be broken --> Use website as workaround */
     private static final boolean use_login_api                = false;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
@@ -70,7 +73,7 @@ public class UlozTo extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         /* Always use current main domain! */
-        link.setUrlDownload(link.getDownloadURL().replaceAll("https?://[^/]+/", "https://" + this.getHost() + "/"));
+        link.setUrlDownload(link.getPluginPatternMatcher().replaceAll("https?://[^/]+/", "https://" + this.getHost() + "/"));
     }
 
     public static List<String[]> getPluginDomains() {
@@ -139,19 +142,17 @@ public class UlozTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         synchronized (freeRunning) {
-            return requestFileInformation(link, false);
+            return requestFileInformation(link, null, false);
         }
     }
 
-    @SuppressWarnings("deprecation")
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         correctDownloadLink(link);
         prepBR(this.br);
         br.setFollowRedirects(false);
-        if (link.getDownloadURL().matches(QUICKDOWNLOAD)) {
-            link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
+        if (link.getPluginPatternMatcher().matches(QUICKDOWNLOAD)) {
             return AvailableStatus.TRUE;
-        } else if (link.getDownloadURL().matches("(?i)https?://[^/]+/(podminky|tos)/[^/]+")) {
+        } else if (link.getPluginPatternMatcher().matches("(?i)https?://[^/]+/(podminky|tos)/[^/]+")) {
             return AvailableStatus.FALSE;
         }
         finalDirectDownloadURL = handleDownloadUrl(link, isDownload);
@@ -160,11 +161,10 @@ public class UlozTo extends PluginForHost {
         }
         checkGeoBlocked(br, null);
         handleAgeRestrictedRedirects();
-        if (br.containsHTML("The file is not available at this moment, please, try it later")) {
+        if (br.containsHTML("(?i)The file is not available at this moment, please, try it later")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
         }
-        // responseCode offline check
-        responseCodeOfflineCheck();
+        responseCodeOfflineCheck(br);
         // Wrong links show the mainpage so here we check if we got the mainpage or not
         if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 \\- Page not found</title>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -178,35 +178,31 @@ public class UlozTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* E.g. video with streaming: "filename.avi | on-line video | Ulož.to" */
-        String filename = br.getRegex("<title>\\s*(.*?)\\s*(\\| on-line video\\s+)?(?:\\|\\s*(PORNfile.cz|Ulož.to)\\s*)?</title>").getMatch(0);
-        if (passwordProtected) {
-            if (filename != null) {
-                link.setName(Encoding.htmlDecode(filename.trim()));
-            }
-            link.getLinkStatus().setStatusText("This link is password protected");
-        } else {
-            // For video links
-            String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("itemprop=\"name\" content=\"([^\"]+)").getMatch(0);
+        }
+        // For video links
+        String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
+        if (filesize == null) {
+            filesize = br.getRegex("id=\"fileVideo\".+class=\"fileSize\">\\d{2}:\\d{2} \\| ([^<>\"]*?)</span>").getMatch(0);
             if (filesize == null) {
-                filesize = br.getRegex("id=\"fileVideo\".+class=\"fileSize\">\\d{2}:\\d{2} \\| ([^<>\"]*?)</span>").getMatch(0);
+                filesize = br.getRegex("(?i)<span>\\s*Velikost\\s*</span>([^<>\"]+)<").getMatch(0);
+                // For file links
                 if (filesize == null) {
-                    filesize = br.getRegex("<span>Velikost</span>([^<>\"]+)<").getMatch(0);
-                    // For file links
+                    filesize = br.getRegex("<span id=\"fileSize\">.*?\\|([^<>]*?)</span>").getMatch(0); // 2015-08-08
                     if (filesize == null) {
-                        filesize = br.getRegex("<span id=\"fileSize\">.*?\\|([^<>]*?)</span>").getMatch(0); // 2015-08-08
-                        if (filesize == null) {
-                            filesize = br.getRegex("<span id=\"fileSize\">([^<>\"]*?)</span>").getMatch(0);
-                        }
+                        filesize = br.getRegex("<span id=\"fileSize\">([^<>\"]*?)</span>").getMatch(0);
                     }
                 }
             }
-            if (filename != null) {
-                // link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-                link.setName(Encoding.htmlDecode(filename.trim()));
-            }
-            if (filesize != null) {
-                link.setDownloadSize(SizeFormatter.getSize(filesize));
-            }
+        }
+        if (filename != null) {
+            // link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            link.setName(Encoding.htmlDecode(filename.trim()));
+        }
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
@@ -251,7 +247,7 @@ public class UlozTo extends PluginForHost {
 
     /** Accesses downloadurl and checks for content. */
     private String handleDownloadUrl(final DownloadLink link, final boolean isDownload) throws Exception {
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         int i = 0;
         while (br.getRedirectLocation() != null) {
             if (i == 10) {
@@ -275,7 +271,7 @@ public class UlozTo extends PluginForHost {
             handleLimitExceeded(link, br, isDownload);
             i++;
         }
-        responseCodeOfflineCheck();
+        responseCodeOfflineCheck(br);
         return null;
     }
 
@@ -302,7 +298,7 @@ public class UlozTo extends PluginForHost {
         }
     }
 
-    private void responseCodeOfflineCheck() throws PluginException {
+    private void responseCodeOfflineCheck(final Browser br) throws PluginException {
         final int responseCode = br.getHttpConnection().getResponseCode();
         if (responseCode == 400 || responseCode == 410 || responseCode == 451) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -328,9 +324,9 @@ public class UlozTo extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink link, final Account account) throws Exception {
-        AvailableStatus status = requestFileInformation(link);
-        if (link.getDownloadURL().matches(QUICKDOWNLOAD)) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        AvailableStatus status = requestFileInformation(link, account, true);
+        if (link.getPluginPatternMatcher().matches(QUICKDOWNLOAD)) {
+            throw new AccountRequiredException();
         }
         if (AvailableStatus.UNCHECKABLE.equals(status)) {
             /* TODO: 2020-08-28 Check if this is still required at this place */
@@ -682,26 +678,26 @@ public class UlozTo extends PluginForHost {
         return null;
     }
 
-    @SuppressWarnings("deprecation")
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        br = new Browser();
         login(account, false);
         if (account.getType() == AccountType.FREE) {
             /* Free Account */
             doFree(link, account);
         } else {
             /* Premium Account */
-            requestFileInformation(link, true);
+            requestFileInformation(link, null, true);
             String dllink = finalDirectDownloadURL;
             if (dllink == null) {
-                if (link.getDownloadURL().matches(QUICKDOWNLOAD)) {
-                    dllink = link.getDownloadURL();
+                if (link.getPluginPatternMatcher().matches(QUICKDOWNLOAD)) {
+                    dllink = link.getPluginPatternMatcher();
                 } else {
                     if (link.isPasswordProtected()) {
                         handlePassword(link);
                     }
-                    // dllink = br.getURL() + "?do=directDownload";
                     dllink = br.getRegex("(/quickDownload/[^<>\"\\']+)\"").getMatch(0);
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
@@ -740,7 +736,6 @@ public class UlozTo extends PluginForHost {
             try {
                 final AccountInfo ai = aa != null ? aa : account.getAccountInfo();
                 setBrowserExclusive();
-                final Browser br = new Browser();
                 br.setFollowRedirects(true);
                 prepBR(this.br);
                 br.getHeaders().put("Accept", "text/html, */*");
@@ -865,7 +860,7 @@ public class UlozTo extends PluginForHost {
     }
 
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         loginAPI(account, ai);
         account.setType(AccountType.PREMIUM);
         return ai;
@@ -874,24 +869,59 @@ public class UlozTo extends PluginForHost {
     public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
-        String trafficleft = br.getRegex("<em>[^<]+</em>\\s*?\\(([^<>\"\\']+)\\)\\s*?</span>").getMatch(0);
-        if (trafficleft == null) {
-            trafficleft = br.getRegex("\"fi fi-user\">\\s*</i>\\s*<em>.*?</em>\\s*\\((.*?)\\)\\s*<").getMatch(0);
-            if (trafficleft == null) {
-                final String span = br.getRegex("<span\\s*class\\s*=\\s*\"t-header-username\">\\s*(.*?)\\s*</span>").getMatch(0);
-                trafficleft = new Regex(span, ">\\s*\\(([0-9\\.,]+\\s*[BMTGK]+)\\)\\s*<").getMatch(0);
-            }
+        String trafficleftStr = br.getRegex("data-remaining-credit=\"([^\"]+)").getMatch(0);
+        if (trafficleftStr == null) {
+            trafficleftStr = br.getRegex("class=\"t-credit-amount\"[^>]*>([^<]+)").getMatch(0);
         }
         ai.setTrafficRefill(false);
-        if (trafficleft != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+        long trafficleft = -1;
+        if (trafficleftStr != null) {
+            trafficleft = SizeFormatter.getSize(trafficleftStr);
         }
-        if (ai.getTrafficLeft() > 0) {
+        this.setTrafficLeft(account, ai, trafficleft);
+        final Regex spaceMaxAndUsed = br.getRegex("class=\"t-space\" max=\"(\\d+)\" value=\"(\\d+)\"");
+        // final String spaceMaxBytesStr = spaceMaxAndUsed.getMatch(0);
+        final String spaceUsedBytesStr = spaceMaxAndUsed.getMatch(1);
+        if (spaceUsedBytesStr != null) {
+            /* Prefer precise values. */
+            ai.setUsedSpace(Long.parseLong(spaceUsedBytesStr));
+        } else {
+            final String usedSpaceStr = br.getRegex("class=\"t-disk-space-used\"[^>]*>([^<]+)<").getMatch(0);
+            if (usedSpaceStr != null) {
+                ai.setUsedSpace(SizeFormatter.getSize(usedSpaceStr));
+            }
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /**
+             * 2023-04-18: Debug test </br>
+             * This is their Web-API. It provides slightly less information than the website via html and the API key may change at any
+             * time.
+             */
+            br.getPage("/p-api/get-api-current-user-token");
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String token = entries.get("token").toString();
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("Accept", "application/json");
+            brc.getHeaders().put("x-auth-token", "}p^YyPpxkIT2MB)#!MHE"); // API key
+            brc.getHeaders().put("x-user-token", token);
+            brc.getPage("https://apis.uloz.to/v5/me");
+            final Map<String, Object> usermap = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> user = (Map<String, Object>) usermap.get("user");
+            final Number trafficleftO = (Number) user.get("credit");
+            this.setTrafficLeft(account, ai, trafficleftO.longValue() * 1024);
+        }
+        return ai;
+    }
+
+    private void setTrafficLeft(final Account account, final AccountInfo ai, final long trafficleft) {
+        if (trafficleft > 0) {
+            ai.setTrafficLeft(trafficleft);
             account.setType(AccountType.PREMIUM);
         } else {
             account.setType(AccountType.FREE);
+            /* Free Accounts should still be able to download but the limits can't be defined by a simple "traffic left" value. */
+            ai.setUnlimitedTraffic();
         }
-        return ai;
     }
 
     @Override
