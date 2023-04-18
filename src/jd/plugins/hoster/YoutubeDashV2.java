@@ -290,7 +290,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
 
     public YoutubeDashV2(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.youtube.com/");
+        this.enablePremium("https://www.youtube.com/");
     }
 
     @Override

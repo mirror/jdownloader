@@ -125,7 +125,7 @@ public class TbCmV2 extends PluginForDecrypt {
     }
 
     private String getVideoIDByUrl(String URL) {
-        final String videoIDPattern = "([A-Za-z0-9\\-_]+)";
+        final String videoIDPattern = "([A-Za-z0-9\\-_]{11})";
         String vuid = new Regex(URL, "v=" + videoIDPattern).getMatch(0);
         if (vuid == null) {
             vuid = new Regex(URL, "v/" + videoIDPattern).getMatch(0);
@@ -246,7 +246,7 @@ public class TbCmV2 extends PluginForDecrypt {
         watch_videos = new Regex(cleanedurl, "video_ids=([a-zA-Z0-9\\-_,]+)").getMatch(0);
         if (watch_videos != null) {
             // first uid in array is the video the user copy url on.
-            videoID = new Regex(watch_videos, "([a-zA-Z0-9\\-_]+)").getMatch(0);
+            videoID = new Regex(watch_videos, "([a-zA-Z0-9\\-_]{11})").getMatch(0);
         }
         helper = new YoutubeHelper(br, getLogger());
         if (helper.isConsentCookieRequired()) {
