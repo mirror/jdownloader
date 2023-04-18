@@ -114,7 +114,7 @@ public class MundofileCom extends YetiShareCore {
     }
 
     @Override
-    public boolean requires_WWW() {
+    public boolean requiresWWW() {
         /* 2020-03-02: Special */
         return false;
     }

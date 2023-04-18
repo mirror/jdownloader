@@ -113,7 +113,7 @@ public class SaikoanimesNet extends YetiShareCore {
     }
 
     @Override
-    public boolean requires_WWW() {
+    public boolean requiresWWW() {
         /* 2020-03-03: Special */
         return false;
     }

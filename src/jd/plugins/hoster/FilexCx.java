@@ -130,7 +130,7 @@ public class FilexCx extends YetiShareCore {
     }
 
     @Override
-    public boolean requires_WWW() {
+    public boolean requiresWWW() {
         return false;
     }
 }

@@ -104,7 +104,7 @@ public class FhscriptCom extends YetiShareCore {
     }
 
     @Override
-    public boolean requires_WWW() {
+    public boolean requiresWWW() {
         /* 2021-04-22: Special: Accessing the website with "www." will result in response 404! */
         return false;
     }

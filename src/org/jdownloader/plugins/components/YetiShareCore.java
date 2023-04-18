@@ -202,12 +202,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 /* Only correct domains if we know they're dead. */
                 return originalURL;
             }
-            final String protocolCorrected;
-            if (supports_https()) {
-                protocolCorrected = "https://";
-            } else {
-                protocolCorrected = "http://";
-            }
+            final String protocol = this.getProtocol();
             final String pluginHost = this.getHost();
             String hostCorrected;
             if (StringUtils.equalsIgnoreCase(urlHost, pluginHost)) {
@@ -218,7 +213,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 hostCorrected = urlHost.replaceFirst("(?i)" + Pattern.quote(Browser.getHost(url, false)) + "$", pluginHost);
             }
             hostCorrected = this.appendWWWIfRequired(hostCorrected);
-            return protocolCorrected + hostCorrected + url.getPath();
+            return protocol + hostCorrected + url.getPath();
         } catch (final MalformedURLException e) {
             LogController.getRebirthLogger(logger).log(e);
         }
@@ -227,7 +222,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
 
     /** Adds "www." to given host if it doesn't already contain that and if it doesn't contain any other subdomain. */
     protected String appendWWWIfRequired(final String host) {
-        if (!requires_WWW() || StringUtils.startsWithCaseInsensitive(host, "www.")) {
+        if (!requiresWWW() || StringUtils.startsWithCaseInsensitive(host, "www.")) {
             // do not modify host
             return host;
         } else {
@@ -349,7 +344,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
      *         false: Implies that website does NOT require 'www.' in all URLs. <br />
      *         default: true
      */
-    public boolean requires_WWW() {
+    protected boolean requiresWWW() {
         return true;
     }
 
@@ -2196,64 +2191,28 @@ public abstract class YetiShareCore extends antiDDoSForHost {
 
     @Override
     protected void sendRequest(Browser ibr, Request request) throws Exception {
-        request = correctProtocol(ibr, request);
         final URL before = request.getURL();
         super.sendRequest(ibr, request);
         final URL after = ibr._getURL();
         if (after != null) {
             if (StringUtils.equalsIgnoreCase(Browser.getHost(before, false), Browser.getHost(after, false))) {
                 if (!StringUtils.equals(before.getProtocol(), after.getProtocol())) {
+                    /* Nothing tragic but can be a useful information. */
                     logger.info("@Dev:check supports_https!before=" + before + "|after=" + after);
                 }
                 final String beforeSub = Browser.getSubdomain(before, true);
                 final String afterSub = Browser.getSubdomain(after, true);
                 if ((beforeSub == null && StringUtils.equalsIgnoreCase(afterSub, "www")) || (afterSub == null && StringUtils.equalsIgnoreCase(beforeSub, "www"))) {
+                    /* Nothing tragic but can be a useful information. */
                     logger.info("@Dev:check requires_WWW!before=" + before + "|after=" + after);
                 }
             }
         }
     }
 
-    protected Request correctProtocol(final Browser br, final Request request) throws IOException {
-        final String location = br.getSourceLocationForURL(request.getURL());
-        if (location != null && !location.matches("(?i)^https?://.+$")) {
-            // location was no full URI
-            return request;
-        }
-        switch (request.getRequestMethod()) {
-        case POST:
-        case PUT:
-            // redirect does not POST/PUT data again, do not alter request
-            return request;
-        default:
-            break;
-        }
-        final URL url = request.getURL();
-        final String orgUrlString = url.toString();
-        String urlString = orgUrlString;
-        if (supports_https()) {
-            /* Prefer https whenever possible */
-            urlString = urlString.replaceFirst("^(?i)http://", "https://");
-        } else {
-            urlString = urlString.replaceFirst("^(?i)https://", "http://");
-        }
-        final String subDomain = Browser.getSubdomain(url, true);
-        if (requires_WWW() && subDomain == null) {
-            urlString = urlString.replaceFirst("(?i)//" + Pattern.quote(url.getHost()), "//www." + url.getHost());
-        } else if (!this.requires_WWW() && StringUtils.equalsIgnoreCase(subDomain, "www")) {
-            urlString = urlString.replaceFirst("(?i)//www\\.", "//");
-        }
-        if (!StringUtils.equals(urlString, orgUrlString)) {
-            logger.info("correctProtocol:before=" + orgUrlString + "|after=" + urlString);
-            request.setURL(new URL(urlString));
-        }
-        return request;
-    }
-
     /** Returns https?://(www.)?host.tld */
     protected String getMainPage() {
-        final String[] hosts = this.siteSupportedNames();
-        return ("http://" + hosts[0]).replaceFirst("(?i)https?://", this.supports_https() ? "https://" : "http://");
+        return this.getProtocol() + this.appendWWWIfRequired(this.siteSupportedNames()[0]);
     }
 
     protected String getMainPage(final DownloadLink link) {

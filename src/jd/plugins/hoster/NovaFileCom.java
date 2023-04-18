@@ -107,13 +107,6 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
         return buildSupportedNames(getPluginDomains());
     }
 
-    @Override
-    public void correctDownloadLink(DownloadLink link) {
-        if (!isShortURL(link)) {
-            super.correctDownloadLink(link);
-        }
-    }
-
     public static String[] getAnnotationUrls() {
         return buildAnnotationUrls(getPluginDomains());
     }

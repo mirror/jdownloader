@@ -110,7 +110,7 @@ public class CnubisCom extends YetiShareCore {
     }
 
     @Override
-    public boolean requires_WWW() {
+    public boolean requiresWWW() {
         /* 2020-02-26: Special (override not necessarily required) */
         return false;
     }

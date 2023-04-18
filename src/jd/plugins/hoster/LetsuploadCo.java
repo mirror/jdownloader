@@ -69,7 +69,7 @@ public class LetsuploadCo extends YetiShareCore {
     }
 
     @Override
-    public boolean requires_WWW() {
+    public boolean requiresWWW() {
         // 07.11.2019, now redirects www. to normal domain. www domain is redirected to cloudhost.to
         return false;
     }

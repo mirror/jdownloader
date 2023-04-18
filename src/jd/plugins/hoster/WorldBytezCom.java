@@ -82,7 +82,6 @@ public class WorldBytezCom extends XFileSharingProBasic {
         if (special.matches()) {
             link.setPluginPatternMatcher("https://" + this.getHost() + super.buildNormalURLPath(link, special.getMatch(0)));
         }
-        super.correctDownloadLink(link);
     }
 
     @Override

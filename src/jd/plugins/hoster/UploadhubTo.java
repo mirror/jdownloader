@@ -103,7 +103,7 @@ public class UploadhubTo extends YetiShareCore {
     }
 
     @Override
-    public boolean requires_WWW() {
+    public boolean requiresWWW() {
         /* 2022-05-04 */
         return false;
     }

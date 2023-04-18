@@ -115,7 +115,7 @@ public class ShareplaceOrg extends YetiShareCore {
     }
 
     @Override
-    public boolean requires_WWW() {
+    public boolean requiresWWW() {
         return false;
     }
 

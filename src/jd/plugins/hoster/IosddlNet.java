@@ -118,7 +118,7 @@ public class IosddlNet extends YetiShareCore {
         return 1;
     }
 
-    public boolean requires_WWW() {
+    public boolean requiresWWW() {
         return false;
     }
 

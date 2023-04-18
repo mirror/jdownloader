@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -32,8 +34,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ExLoadCom extends XFileSharingProBasic {
@@ -93,8 +93,6 @@ public class ExLoadCom extends XFileSharingProBasic {
             } catch (final Throwable ignore) {
             }
         }
-        /* Let the upper handling do the rest */
-        super.correctDownloadLink(link);
     }
 
     @Override
