@@ -98,17 +98,8 @@ public class BrfilesCom extends YetiShareCore {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        /* 2020-03-10: Special */
-        final String fid = getFUID(link);
-        final String protocol;
-        if (supports_https()) {
-            protocol = "https";
-        } else {
-            protocol = "http";
-        }
-        link.setPluginPatternMatcher(String.format("%s://%s/f/%s", protocol, this.getHost(), fid));
-        link.setLinkID(this.getHost() + "://" + fid);
+    protected String getContentURL(final DownloadLink link) {
+        return this.getMainPage(link) + "/f/" + this.getFUID(link);
     }
 
     @Override

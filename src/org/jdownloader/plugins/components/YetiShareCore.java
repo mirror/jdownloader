@@ -217,16 +217,29 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 /* e.g. down.xx.com -> down.yy.com, keep subdomain(s) */
                 hostCorrected = urlHost.replaceFirst("(?i)" + Pattern.quote(Browser.getHost(url, false)) + "$", pluginHost);
             }
-            final String subDomain = Browser.getSubdomain(new URL("http://" + hostCorrected), true);
-            if (requires_WWW() && subDomain == null) {
-                // only append www when no other subDomain is set
-                hostCorrected = "www." + hostCorrected;
-            }
+            hostCorrected = this.appendWWWIfRequired(hostCorrected);
             return protocolCorrected + hostCorrected + url.getPath();
         } catch (final MalformedURLException e) {
             LogController.getRebirthLogger(logger).log(e);
         }
         return originalURL;
+    }
+
+    /** Adds "www." to given host if it doesn't already contain that and if it doesn't contain any other subdomain. */
+    protected String appendWWWIfRequired(final String host) {
+        if (!requires_WWW() || StringUtils.startsWithCaseInsensitive(host, "www.")) {
+            // do not modify host
+            return host;
+        } else {
+            final String hostTld = Browser.getHost(host, false);
+            if (!StringUtils.equalsIgnoreCase(host, hostTld)) {
+                // keep subdomain
+                return host;
+            } else {
+                // add www.
+                return "www." + host;
+            }
+        }
     }
 
     /**
@@ -2244,9 +2257,9 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     }
 
     protected String getMainPage(final DownloadLink link) {
-        final String urlHost = Browser.getHost(link.getPluginPatternMatcher());
+        final String urlHost = Browser.getHost(link.getPluginPatternMatcher(), true);
         final List<String> deadDomains = this.getDeadDomains();
-        final String domainToUse;
+        String domainToUse;
         if (deadDomains != null && deadDomains.contains(urlHost)) {
             domainToUse = this.getHost();
         } else {
@@ -2258,13 +2271,8 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         } else {
             protocol = "http://";
         }
-        final String www;
-        if (this.requires_WWW()) {
-            www = "www.";
-        } else {
-            www = "";
-        }
-        return protocol + www + domainToUse;
+        domainToUse = this.appendWWWIfRequired(domainToUse);
+        return protocol + domainToUse;
     }
 
     /**

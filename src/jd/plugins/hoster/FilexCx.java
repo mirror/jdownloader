@@ -18,11 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -71,38 +69,22 @@ public class FilexCx extends YetiShareCore {
     final String PATTERN_EMBED = "(?i)https?://[^/]+/video/embed/([A-Za-z0-9]+)(/\\d+x\\d+/([^/<>]+))?";
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        /* link cleanup, but respect users protocol choosing or forced protocol */
+    protected String getContentURL(final DownloadLink link) {
         if (link == null || link.getPluginPatternMatcher() == null) {
-            return;
+            return null;
         }
-        final String url = this.getContentURL(link);
         /* Change embed URLs -> Normal file-URLs. */
-        final Regex embed = new Regex(url, PATTERN_EMBED);
+        final Regex embed = new Regex(link.getPluginPatternMatcher(), PATTERN_EMBED);
         if (embed.matches()) {
-            final String host = Browser.getHost(url, true);
+            /* Make sure that upper handling can work with these links -> Return a fitting URL. */
             final String filenameInsideURL = embed.getMatch(2);
-            String newurl = "https://" + appendWWWIfRequired(host) + "/" + embed.getMatch(0);
+            String newurl = this.getMainPage(link) + "/" + embed.getMatch(0);
             if (filenameInsideURL != null) {
                 newurl += "/" + filenameInsideURL;
             }
-            link.setPluginPatternMatcher(newurl);
-        }
-    }
-
-    protected String appendWWWIfRequired(final String host) {
-        if (!requires_WWW() || StringUtils.startsWithCaseInsensitive(host, "www.")) {
-            // do not modify host
-            return host;
+            return newurl;
         } else {
-            final String hostTld = Browser.getHost(host, false);
-            if (!StringUtils.equalsIgnoreCase(host, hostTld)) {
-                // keep subdomain
-                return host;
-            } else {
-                // add www.
-                return "www." + host;
-            }
+            return super.getContentURL(link);
         }
     }
 
