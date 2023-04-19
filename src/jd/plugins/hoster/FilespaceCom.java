@@ -23,7 +23,6 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountUnavailableException;
@@ -89,16 +88,6 @@ public class FilespaceCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 10;
-    }
-
-    @Override
-    public void handleCaptcha(final DownloadLink link, final Browser br, final Form captchaForm) throws Exception {
-        /* 2019-04-29: Special */
-        final String md5hash = new Regex(correctedBR, "MD5 Checksum:\\s*([a-f0-9]{32})").getMatch(0);
-        if (md5hash != null) {
-            link.setMD5Hash(md5hash);
-        }
-        super.handleCaptcha(link, br, captchaForm);
     }
 
     @Override
