@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -77,7 +79,10 @@ public class ArdaudiothekDe extends PluginForDecrypt {
         FilePackage fp = null;
         String urlToAccess = param.getCryptedUrl();
         Map<String, Object> publicationService = null;
+        int page = 0;
+        final int maxItemsPerPage = 12;
         do {
+            page++;
             infiniteLoopPreventionCounter++;
             br.getPage(urlToAccess);
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -86,22 +91,38 @@ public class ArdaudiothekDe extends PluginForDecrypt {
             urlToAccess = null;
             final String json = br.getRegex("type=\"application/json\">([^<]+)<").getMatch(0);
             final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
-            final Map<String, Object> podcast = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/initialData/data/result");
-            final Map<String, Object> podcastEpisode = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/initialData/data/item");
-            if (podcast == null && podcastEpisode == null) {
+            final Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/initialData/data");
+            final Map<String, Object> result = (Map<String, Object>) data.get("result");
+            final Map<String, Object> podcastEpisode = (Map<String, Object>) data.get("item");
+            if (result == null && podcastEpisode == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (podcast != null) {
-                publicationService = (Map<String, Object>) podcast.get("publicationService");
-                final String podcastTitle = podcast.get("title").toString();
-                final String podcastDescription = (String) podcast.get("description");
-                fp = FilePackage.getInstance();
-                fp.setName(podcastTitle);
-                fp.setComment(podcastDescription);
-                fp.addLinks(ret);
-                final Map<String, Object> items = (Map<String, Object>) podcast.get("items");
+            if (result != null) {
+                /* This means we got a podcast with multiple episodes. */
+                final String podcastID = result.get("id").toString();
+                final Map<String, Object> pageInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(result, "items/pageInfo");
+                final int totalNumberofItems = ((Number) result.get("numberOfElements")).intValue();
+                publicationService = (Map<String, Object>) result.get("publicationService");
+                final String podcastTitle = result.get("title").toString();
+                final String podcastDescription = (String) result.get("description");
+                if (fp == null) {
+                    fp = FilePackage.getInstance();
+                    fp.setName(podcastTitle);
+                    fp.setComment(podcastDescription);
+                }
+                final Map<String, Object> items = (Map<String, Object>) result.get("items");
                 episodes = (List<Map<String, Object>>) items.get("nodes");
-                break;
+                final ArrayList<DownloadLink> results = this.processEpisodes(episodes, totalNumberofItems, episodeTargetID, 0);
+                fp.addLinks(results);
+                ret.addAll(results);
+                logger.info("Crawled page " + page + " | Found items: " + ret.size() + "/" + totalNumberofItems);
+                if (episodes.size() == maxItemsPerPage && Boolean.TRUE.equals(pageInfo.get("hasNextPage"))) {
+                    ret.addAll(this.crawlPagination(podcastID, maxItemsPerPage, maxItemsPerPage, totalNumberofItems, fp));
+                    break;
+                } else {
+                    logger.info("Stopping because: There is only one page");
+                    break;
+                }
             } else {
                 /* Single episode */
                 publicationService = (Map<String, Object>) podcastEpisode.get("publicationService");
@@ -113,21 +134,65 @@ public class ArdaudiothekDe extends PluginForDecrypt {
                      */
                     final Map<String, Object> programSet = (Map<String, Object>) podcastEpisode.get("programSet");
                     urlToAccess = programSet.get("path").toString();
-                    logger.info("Accessing main podcast URL: " + urlToAccess);
+                    logger.info("Accessing main podcast URL in order to find context of single wished episode: " + urlToAccess);
                     continue;
                 } else {
                     episodes = new ArrayList<Map<String, Object>>();
                     episodes.add(podcastEpisode);
+                    ret.addAll(processEpisodes(episodes, 1, episodeTargetID, 0));
                     break;
                 }
             }
-        } while (infiniteLoopPreventionCounter <= 1 && urlToAccess != null);
+        } while ((infiniteLoopPreventionCounter <= 1 && urlToAccess != null));
         // String tvRadioStationTitle = null;
         // if (publicationService != null) {
         // tvRadioStationTitle = publicationService.get("title").toString();
         // }
-        final int padLength = StringUtils.getPadLength(episodes.size());
-        int position = 1;
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlPagination(final String podcastID, final int maxItemsPerPage, int offset, final int totalNumberofItems, final FilePackage fp) throws IOException, PluginException {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final Browser brc = br.cloneBrowser();
+        brc.getHeaders().put("Accept", "*/*");
+        /* Starts from 2 as page 1 = website -> html code and gets crawled in beforehand. */
+        int page = 1;
+        do {
+            page++;
+            brc.getPage("https://api.ardaudiothek.de/graphql?query=query%20ProgramSetEpisodesQuery(%24id%3AID!%2C%24offset%3AInt!%2C%24count%3AInt!)%7Bresult%3AprogramSet(id%3A%24id)%7Bitems(offset%3A%24offset%20first%3A%24count%20orderBy%3APUBLISH_DATE_DESC%20filter%3A%7BisPublished%3A%7BequalTo%3Atrue%7D%7D)%7BpageInfo%7BhasNextPage%20endCursor%7Dnodes%7Bid%20title%20publishDate%20summary%20duration%20path%20image%7Burl%20url1X1%20description%20attribution%7DprogramSet%7Bid%20title%20path%20publicationService%7Btitle%20genre%20path%20organizationName%7D%7Daudios%7Burl%20downloadUrl%20allowDownload%7D%7D%7D%7D%7D&variables=%7B%22id%22%3A%22" + podcastID + "%22%2C%22offset%22%3A" + offset + "%2C%22count%22%3A" + maxItemsPerPage + "%7D");
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> items = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/result/items");
+            final Map<String, Object> pageInfo = (Map<String, Object>) items.get("pageInfo");
+            final List<Map<String, Object>> episodes = (List<Map<String, Object>>) items.get("nodes");
+            final ArrayList<DownloadLink> results = this.processEpisodes(episodes, totalNumberofItems, null, offset);
+            if (fp != null) {
+                fp.addLinks(results);
+            }
+            ret.addAll(results);
+            logger.info("Crawled page " + page + " | Found items: " + ret.size() + "/" + totalNumberofItems);
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (Boolean.FALSE.equals(pageInfo.get("hasNextPage"))) {
+                logger.info("Stopping because: Reached last page");
+                break;
+            } else if (episodes.size() < maxItemsPerPage) {
+                /* Double fail-safe */
+                logger.info("Stopping because: Current page contains less items than " + maxItemsPerPage);
+                break;
+            } else {
+                /* Access next page */
+                offset += episodes.size();
+                continue;
+            }
+        } while (true);
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> processEpisodes(final List<Map<String, Object>> episodes, final int totalNumberofEpisodes, final String episodeTargetID, final int offset) throws PluginException, IOException {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final int padLength = StringUtils.getPadLength(totalNumberofEpisodes);
+        int position = offset + 1;
         for (final Map<String, Object> episode : episodes) {
             final String episodeID = episode.get("id").toString();
             final String episodeSummary = (String) episode.get("summary");
@@ -154,9 +219,6 @@ public class ArdaudiothekDe extends PluginForDecrypt {
                 link.setFinalFileName(StringUtils.formatByPadLength(padLength, position) + " - " + episode.get("title") + ".mp3");
             }
             link.setAvailable(true);
-            if (fp != null) {
-                link._setFilePackage(fp);
-            }
             if (!StringUtils.isEmpty(episodeFullDescription)) {
                 link.setComment(episodeFullDescription);
             } else if (!StringUtils.isEmpty(episodeSummary)) {

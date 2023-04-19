@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2017  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -15,144 +15,82 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
+import jd.http.Browser;
 import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "milffox.com" }, urls = { "https?://(?:www\\.)?milffox.com/porn-movies/([A-Za-z0-9\\-]+)/" })
-public class MilffoxCom extends antiDDoSForHost {
-    public MilffoxCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class MilffoxCom extends KernelVideoSharingComV2 {
+    public MilffoxCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "milffox.com" });
+        return ret;
     }
 
-    /* DEV NOTES */
-    // Tags: Porn plugin
-    // other:
-    /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
-
-    @Override
-    public String getAGBLink() {
-        return "https://www.milffox.com/tos.html";
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
-    public String getLinkID(final DownloadLink link) {
-        final String linkid = getFID(link);
-        if (linkid != null) {
-            return this.getHost() + "://" + linkid;
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/porn-movies/([A-Za-z0-9\\-]+)/");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String getFUID(final DownloadLink link) {
+        return getURLTitle(link.getPluginPatternMatcher());
+    }
+
+    @Override
+    protected String getURLTitle(final String url) {
+        return new Regex(url, this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    protected String regexNormalTitleWebsite(final Browser br) {
+        String title = HTMLSearch.searchMetaTag(br, "og:title");
+        if (title != null) {
+            return title;
         } else {
-            return super.getLinkID(link);
+            /* Fallback to upper handling */
+            return super.regexNormalTitleWebsite(br);
         }
-    }
-
-    private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        dllink = null;
-        server_issues = false;
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
-        final String internalID = br.getRegex("get_player\\((\\d+)").getMatch(0);
-        if (br.getHttpConnection().getResponseCode() == 404 || internalID == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = this.getFID(link).replace("-", " ");
-        br.getPage("/player/config.php?id=" + internalID);
-        this.dllink = PluginJSonUtils.getJson(br, "video_url");
-        final String ext = ".mp4";
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename);
-            filename = filename.trim();
-            filename = encodeUnicode(filename);
-            if (!filename.endsWith(ext)) {
-                filename += ext;
-            }
-            link.setFinalFileName(filename);
+    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
+        return this.getProtocol() + this.appendWWWIfRequired(host) + "/porn-movies/" + fuid + "/";
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {
+        final String maybeHD_Directurl = br.getRegex("video_alt_url\\s*:\\s*'(https?://[^<>\"\\']+)'").getMatch(0);
+        if (maybeHD_Directurl != null && br.containsHTML("video_alt_url_hd\\s*:\\s*'1'")) {
+            return maybeHD_Directurl;
         } else {
-            /* Fallback */
-            link.setName(this.getFID(link) + ext);
+            return super.getDllink(link, br);
         }
-        if (!StringUtils.isEmpty(dllink)) {
-            URLConnectionAdapter con = null;
-            try {
-                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    server_issues = true;
-                } else {
-                    link.setDownloadSize(con.getCompleteContentLength());
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
-    }
-
-    @Override
-    public void reset() {
-    }
-
-    @Override
-    public void resetPluginGlobals() {
-    }
-
-    @Override
-    public void resetDownloadlink(DownloadLink link) {
     }
 }
