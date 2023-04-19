@@ -66,7 +66,6 @@ public class PluralsightCom extends antiDDoSForHost {
     public static final String                      PROPERTY_CLIP_VERSION                    = "version";
     public static final String                      PROPERTY_MODULE_ORDER_ID                 = "module";
     public static final String                      PROPERTY_CLIP_ORDER_ID                   = "module_clip_order_id";
-    public static final String                      PROPERTY_ORDERID_MAX                     = "orderid_max";
     @Deprecated
     public static final String                      PROPERTY_ORDERING                        = "ordering";
     @Deprecated

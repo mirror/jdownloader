@@ -104,6 +104,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     public static final String             PROPERTY_REPLY                                                   = "reply";
     public static final String             PROPERTY_RETWEET                                                 = "retweet";
     public static final String             PROPERTY_TWEET_ID                                                = "tweetid";
+    private final String                   API_BASE_v2                                                      = "https://api.twitter.com/2";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -294,7 +295,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 }
             }
         }
-        br.getPage("https://api.twitter.com/2/timeline/conversation/" + tweetID + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
+        br.getPage(API_BASE_v2 + "/timeline/conversation/" + tweetID + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
         handleErrorsAPI(this.br);
         final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Map<String, Object> tweet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "globalObjects/tweets/" + tweetID);
@@ -304,6 +305,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
                  * We're missing the permissions to view this content. </br>
                  * Most likely it is age restricted content and (age verified) account is required.
                  */
+                if (account == null) {
+                    logger.info("Looks like an account is required to crawl this thread");
+                } else {
+                    logger.info("Looks like given account is lacking permissions to view this tweet");
+                }
                 throw new AccountRequiredException();
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -788,7 +794,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             nextCursor = this.preGivenNextCursor;
         }
         final HashSet<String> cursorDupes = new HashSet<String>();
-        final String apiURL = "https://api.twitter.com/2/timeline/" + content_type + "/" + userID + ".json";
+        final String apiURL = API_BASE_v2 + "/timeline/" + content_type + "/" + userID + ".json";
         tweetTimeline: do {
             final UrlQuery thisquery = query;
             if (!StringUtils.isEmpty(nextCursor)) {
