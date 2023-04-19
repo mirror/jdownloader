@@ -45,11 +45,13 @@ public class ArchivosMe extends YetiShareCore {
      * captchatype-info: null<br />
      * other: <br />
      */
+    public static final String mainDownloadDomain = "212.162.153.174";
+
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         /* 2021-04-28: IP workaround is still required! */
-        ret.add(new String[] { "212.162.153.174", "95.215.205.103", "archivos.club", "archivos.me" });
+        ret.add(new String[] { "archivos.me", mainDownloadDomain, "95.215.205.103", "archivos.club" });
         return ret;
     }
 
@@ -62,7 +64,7 @@ public class ArchivosMe extends YetiShareCore {
     }
 
     @Override
-    public String rewriteHost(String host) {
+    public String rewriteHost(final String host) {
         /* 2020-02-26: archivos.club --> archivos.me */
         /* 2023-02-03: 95.215.205.103 -> 212.162.153.174 */
         return this.rewriteHost(getPluginDomains(), host, new String[0]);
@@ -143,9 +145,12 @@ public class ArchivosMe extends YetiShareCore {
         super.checkErrors(br, link, account);
     }
 
+    private boolean domainHackActive = false;
+
     @Override
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         /* 2020-01-18: Special */
+        domainHackActive = true;
         loginWebsite(account, true);
         if (br.getURL() == null || !br.getURL().contains("/account_edit.html")) {
             getPage("/account_edit.html");
@@ -161,12 +166,10 @@ public class ArchivosMe extends YetiShareCore {
                 account.setMaxSimultanDownloads(this.getMaxSimultaneousFreeAccountDownloads());
                 /* All accounts get the same (IP-based) downloadlimits --> Simultan free account usage makes no sense! */
                 account.setConcurrentUsePossible(false);
-                ai.setStatus("Registered (free) user");
             } else {
                 ai.setValidUntil(expire_milliseconds, this.br);
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
-                ai.setStatus("Premium account");
             }
             ai.setUnlimitedTraffic();
             return ai;
@@ -177,8 +180,32 @@ public class ArchivosMe extends YetiShareCore {
     }
 
     @Override
+    public boolean loginWebsite(final Account account, boolean force) throws Exception {
+        domainHackActive = true;
+        try {
+            return super.loginWebsite(account, true);
+        } finally {
+            domainHackActive = false;
+        }
+    }
+
+    @Override
+    public String getHost() {
+        if (domainHackActive) {
+            return mainDownloadDomain;
+        } else {
+            return super.getHost();
+        }
+    }
+
+    @Override
     public boolean supports_https() {
         /* 2020-03-04: Special */
+        return false;
+    }
+
+    @Override
+    protected boolean allowGetProtocolHttpsAutoHandling() {
         return false;
     }
 
@@ -186,5 +213,18 @@ public class ArchivosMe extends YetiShareCore {
     public boolean requiresWWW() {
         /* 2020-03-04: Special */
         return false;
+    }
+
+    /** Below there are some hacks to be able to internally use one domain but use another domain as plugin display-domain/main-domain. */
+    @Override
+    protected String getMainPage(final String url) {
+        return this.getProtocol(url) + this.appendWWWIfRequired(mainDownloadDomain);
+    }
+
+    @Override
+    protected String getMainPage(final DownloadLink link) {
+        final String protocol = getProtocol(link.getPluginPatternMatcher());
+        final String domainToUse = this.appendWWWIfRequired(mainDownloadDomain);
+        return protocol + domainToUse;
     }
 }
