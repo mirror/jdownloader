@@ -809,10 +809,17 @@ public class TwitterComCrawler extends PluginForDecrypt {
             tweetItemsLoop: while (iterator.hasNext()) {
                 final Map<String, Object> tweet = (Map<String, Object>) iterator.next().getValue();
                 final Map<String, Object> userWhoPostedThisTweet = (Map<String, Object>) users.get(tweet.get("user_id_str").toString());
-                ret.addAll(crawlTweetMap(tweet, userWhoPostedThisTweet, fp));
+                final List<DownloadLink> results = crawlTweetMap(tweet, userWhoPostedThisTweet, fp);
+                /* Count tweet as crawled either way. */
                 totalCrawledTweetsCount++;
+                if (results.size() > 0) {
+                    ret.addAll(results);
+                    lastCrawledTweetTimestamp = ret.get(ret.size() - 1).getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+                } else {
+                    /* E.g. tweet only consists of text and used has disabled crawling tweet texts. */
+                    logger.info("Found nothing for tweet: " + tweet);
+                }
                 lastCreatedAtDateStr = (String) tweet.get("created_at");
-                lastCrawledTweetTimestamp = ret.get(ret.size() - 1).getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
                 /*
                  * Set stop conditions here but don't break out of the main loop yet. The reason for this is that we want to have the
                  * important log statement that comes next to this loop!
@@ -991,7 +998,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
                             continue;
                         }
                     }
-                    final Long lastCrawledTweetTimestamp = ret.get(ret.size() - 1).getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+                    Long lastCrawledTweetTimestamp = null;
+                    if (ret.size() > 0) {
+                        lastCrawledTweetTimestamp = ret.get(ret.size() - 1).getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+                    }
                     if (this.maxTweetsToCrawl != null && totalCrawledTweetsCount >= this.maxTweetsToCrawl.intValue()) {
                         reachedUserDefinedMaxItemsLimit = true;
                         break timelineInstructionsLoop;
