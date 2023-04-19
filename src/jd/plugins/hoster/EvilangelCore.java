@@ -25,19 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -59,6 +46,19 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class EvilangelCore extends PluginForHost {
@@ -240,8 +240,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 List<Map<String, Object>> qualitiesList = null;
                 if (htmlVideoJson == null && htmlVideoJson2 == null) {
                     /**
-                     * 2023-04-19: New (tested with: evilangel.com) </br>
-                     * TODO: Test this with other supported websites such as wicked.com.
+                     * 2023-04-19: New (tested with: evilangel.com) </br> TODO: Test this with other supported websites such as wicked.com.
                      */
                     final Browser brc = br.cloneBrowser();
                     brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -254,7 +253,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 }
                 Map<String, String> qualityMap = null;
                 if (htmlVideoJson != null) {
-                    final Map<String, Object> entries = JSonStorage.restoreFromString(htmlVideoJson, TypeRef.HASHMAP);
+                    final Map<String, Object> entries = restoreFromString(htmlVideoJson, TypeRef.MAP);
                     final Map<String, Object> videoInfo = (Map<String, Object>) entries.get(this.getFID(getDownloadLink()));
                     final Object qualityMapO = videoInfo.get("videos");
                     if (qualityMapO == null) {
@@ -325,7 +324,7 @@ public abstract class EvilangelCore extends PluginForHost {
                     /*
                      * 2nd json with more information but no downloadlinks is also available in html as json see: dataLayer = [{"dvdDetails"
                      */
-                    final Map<String, Object> root = JSonStorage.restoreFromString(htmlVideoJson2, TypeRef.HASHMAP);
+                    final Map<String, Object> root = restoreFromString(htmlVideoJson2, TypeRef.MAP);
                     final Map<String, Object> sceneInfos = (Map<String, Object>) root.get("sceneInfos");
                     if (sceneInfos != null) {
                         final Object sceneIdO = sceneInfos.get("sceneId");
@@ -341,8 +340,8 @@ public abstract class EvilangelCore extends PluginForHost {
                         }
                     }
                     /**
-                     * A scene can also contain DVD-information. </br>
-                     * --> Ensure to set the correct information which is later used for filenames.
+                     * A scene can also contain DVD-information. </br> --> Ensure to set the correct information which is later used for
+                     * filenames.
                      */
                     final Map<String, Object> movieInfos = (Map<String, Object>) root.get("movieInfos");
                     if (movieInfos != null) {
@@ -424,7 +423,7 @@ public abstract class EvilangelCore extends PluginForHost {
                     logger.info("Looking for additional metadata...");
                     try {
                         final String jsonAPI = br.getRegex("window\\.env\\s*=\\s*(\\{.*?\\});").getMatch(0);
-                        Map<String, Object> entries = JSonStorage.restoreFromString(jsonAPI, TypeRef.HASHMAP);
+                        Map<String, Object> entries = restoreFromString(jsonAPI, TypeRef.MAP);
                         final Map<String, Object> algoliaAPI = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "api/algolia");
                         final String appID = algoliaAPI.get("applicationID").toString();
                         final Browser brc = br.cloneBrowser();
@@ -763,8 +762,8 @@ public abstract class EvilangelCore extends PluginForHost {
                 }
                 login.remove("submit");
                 /**
-                 * 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! </br>
-                 * Only add "rememberme": "1" if that is not already present in our form.
+                 * 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! </br> Only add
+                 * "rememberme": "1" if that is not already present in our form.
                  */
                 final String remembermeCookieKey = "rememberme";
                 boolean containsRemembermeFieldWithValue1 = false;
@@ -855,7 +854,7 @@ public abstract class EvilangelCore extends PluginForHost {
         final AccountInfo ai = account.getAccountInfo() != null ? account.getAccountInfo() : new AccountInfo();
         login(account, true);
         final String json = br.getRegex("window\\.context\\s*=\\s*(\\{.*?\\});\n").getMatch(0);
-        final Map<String, Object> root = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(json, TypeRef.MAP);
         final Map<String, Object> site = (Map<String, Object>) root.get("site");
         final List<String> contentSources = (List<String>) site.get("contentSource");
         if (!contentSources.isEmpty()) {
@@ -872,8 +871,7 @@ public abstract class EvilangelCore extends PluginForHost {
         }
         /**
          * TODO: Add support for "expirationDate" along with "scheduledCancelDate" whenever a test account with such a date is available.
-         * </br>
-         * "scheduledCancelDate" can also be a Boolean!
+         * </br> "scheduledCancelDate" can also be a Boolean!
          */
         if (Boolean.TRUE.equals(user.get("isExpired"))) {
             ai.setExpired(true);

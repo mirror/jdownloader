@@ -124,15 +124,16 @@ public class TbCmV2 extends PluginForDecrypt {
         return new Regex(originUrl, "list=([%A-Za-z0-9\\-_]+)").getMatch(0);
     }
 
+    public final static String VIDEO_ID_PATTERN = "([A-Za-z0-9\\-_]{11})";
+
     private String getVideoIDByUrl(String URL) {
-        final String videoIDPattern = "([A-Za-z0-9\\-_]{11})";
-        String vuid = new Regex(URL, "v=" + videoIDPattern).getMatch(0);
+        String vuid = new Regex(URL, "v=" + VIDEO_ID_PATTERN).getMatch(0);
         if (vuid == null) {
-            vuid = new Regex(URL, "v/" + videoIDPattern).getMatch(0);
+            vuid = new Regex(URL, "v/" + VIDEO_ID_PATTERN).getMatch(0);
             if (vuid == null) {
-                vuid = new Regex(URL, "shorts/" + videoIDPattern).getMatch(0);
+                vuid = new Regex(URL, "shorts/" + VIDEO_ID_PATTERN).getMatch(0);
                 if (vuid == null) {
-                    vuid = new Regex(URL, "embed/(?!videoseries\\?)" + videoIDPattern).getMatch(0);
+                    vuid = new Regex(URL, "embed/(?!videoseries\\?)" + VIDEO_ID_PATTERN).getMatch(0);
                 }
             }
         }
@@ -246,7 +247,7 @@ public class TbCmV2 extends PluginForDecrypt {
         watch_videos = new Regex(cleanedurl, "video_ids=([a-zA-Z0-9\\-_,]+)").getMatch(0);
         if (watch_videos != null) {
             // first uid in array is the video the user copy url on.
-            videoID = new Regex(watch_videos, "([a-zA-Z0-9\\-_]{11})").getMatch(0);
+            videoID = new Regex(watch_videos, "(" + VIDEO_ID_PATTERN + ")").getMatch(0);
         }
         helper = new YoutubeHelper(br, getLogger());
         if (helper.isConsentCookieRequired()) {
@@ -808,7 +809,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     }
                 }
                 if (ret.size() == 0) {
-                    videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Z0-9]+").getColumn(0);
+                    videos = br.getRegex("href=\"(/watch\\?v=" + VIDEO_ID_PATTERN + ")\\&amp;list=[A-Z0-9]+").getColumn(0);
                     if (videos != null) {
                         for (String relativeUrl : videos) {
                             final String id = getVideoIDByUrl(relativeUrl);
@@ -990,7 +991,7 @@ public class TbCmV2 extends PluginForDecrypt {
             String jsonPage = null, nextPage = null;
             checkErrors(pbr);
             // this will speed up searches. we know this wont be present..
-            final String[] videos = round > 0 && isJson ? null : pbr.getRegex("href=(\"|')(/watch\\?v=[A-Za-z0-9\\-_]+.*?)\\1").getColumn(1);
+            final String[] videos = round > 0 && isJson ? null : pbr.getRegex("href=(\"|')(/watch\\?v=" + VIDEO_ID_PATTERN + ".*?)\\1").getColumn(1);
             int before = playListDupes.size();
             if (videos != null && videos.length > 0) {
                 for (String relativeUrl : videos) {
@@ -1223,7 +1224,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     checkErrors(li);
                     content = Encoding.unicodeDecode(li.toString());
                 }
-                String[] videos = new Regex(content, "href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)").getColumn(0);
+                String[] videos = new Regex(content, "href=\"(/watch\\?v=" + VIDEO_ID_PATTERN + ")").getColumn(0);
                 if (videos != null) {
                     for (String relativeUrl : videos) {
                         final String id = getVideoIDByUrl(relativeUrl);
@@ -1289,7 +1290,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     checkErrors(li);
                     content = Encoding.unicodeDecode(li.toString());
                 }
-                String[] videos = new Regex(content, "href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)").getColumn(0);
+                String[] videos = new Regex(content, "href=\"(/watch\\?v=" + VIDEO_ID_PATTERN + ")").getColumn(0);
                 if (videos != null) {
                     for (String relativeUrl : videos) {
                         final String id = getVideoIDByUrl(relativeUrl);
@@ -1318,7 +1319,7 @@ public class TbCmV2 extends PluginForDecrypt {
         ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         int counter = 1;
         if (StringUtils.isNotEmpty(video_ids)) {
-            String[] videos = new Regex(video_ids, "([A-Za-z0-9\\-_]+)").getColumn(0);
+            String[] videos = new Regex(video_ids, "(" + VIDEO_ID_PATTERN + ")").getColumn(0);
             if (videos != null) {
                 for (String vid : videos) {
                     ret.add(new YoutubeClipData(vid, counter++));
