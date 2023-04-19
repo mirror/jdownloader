@@ -90,9 +90,9 @@ public class DdownloadCom extends XFileSharingProBasic {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "ddownload.com", "ddl.to", "api.ddl.to", "esimpurcuesc.ddownload.com",/*
-                                                                                                      * download cdn, dedicated to
-                                                                                                      * ddownload?
-                                                                                                      */"ucdn.to" });
+         * download cdn, dedicated to
+         * ddownload?
+         */"ucdn.to" });
         return ret;
     }
 
@@ -129,10 +129,12 @@ public class DdownloadCom extends XFileSharingProBasic {
     public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
         final String fid = getFUIDFromURL(link);
         if (fid != null) {
-            if (this.useHTTPS()) {
-                return "http://" + getHost() + "/" + fid;
-            } else {
+            if (StringUtils.startsWithCaseInsensitive(link.getPluginPatternMatcher(), "https:")) {
                 return "https://" + getHost() + "/" + fid;
+            } else if (this.useHTTPS()) {
+                return "https://" + getHost() + "/" + fid;
+            } else {
+                return "http://" + getHost() + "/" + fid;
             }
         } else {
             return super.buildExternalDownloadURL(link, buildForThisPlugin);
