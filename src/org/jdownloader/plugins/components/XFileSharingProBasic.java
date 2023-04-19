@@ -709,6 +709,11 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     @Override
+    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
+        return getContentURL(downloadLink);
+    }
+
+    @Override
     public Browser prepBrowser(final Browser prepBr, final String host) {
         if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);

@@ -54,6 +54,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
@@ -1898,6 +1899,11 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 throw e;
             }
         }
+    }
+
+    @Override
+    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
+        return getContentURL(downloadLink);
     }
 
     /** Sets given cookies and checks if we can login with them. */
