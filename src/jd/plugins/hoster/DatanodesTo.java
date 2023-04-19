@@ -120,7 +120,7 @@ public class DatanodesTo extends XFileSharingProBasic {
     public Browser prepBrowser(final Browser prepBr, final String host) {
         if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
             super.prepBrowser(prepBr, host);
-            /* 2023-02-21: Skips their simple "referer protection" */
+            /* 2023-02-21: Bypasses their simple "referer protection" */
             prepBr.getHeaders().put("Referer", "https://datanodes.to/users");
         }
         return prepBr;

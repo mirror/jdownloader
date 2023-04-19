@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
@@ -80,18 +79,13 @@ public class ExLoadCom extends XFileSharingProBasic {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        if (link == null || link.getPluginPatternMatcher() == null) {
-            return;
-        }
+    protected String getContentURL(final DownloadLink link) {
         final Regex special = new Regex(link.getPluginPatternMatcher(), TYPE_SPECIAL);
         if (special.matches()) {
-            /* Update to "normal" linktype */
-            try {
-                final URL oldURL = new URL(link.getPluginPatternMatcher());
-                link.setPluginPatternMatcher(oldURL.getProtocol() + "://" + oldURL.getHost() + "/" + special.getMatch(0));
-            } catch (final Throwable ignore) {
-            }
+            /* Return links for "normal" linktype */
+            return this.getMainPage(link) + "/" + special.getMatch(0);
+        } else {
+            return super.getContentURL(link);
         }
     }
 

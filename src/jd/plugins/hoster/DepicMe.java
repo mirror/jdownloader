@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,9 +32,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DepicMe extends XFileSharingProBasic {
@@ -164,7 +164,8 @@ public class DepicMe extends XFileSharingProBasic {
                 } else if (con.getCompleteContentLength() == 117707) {
                     /* Dummy image detection part 2 (lazier attempt). */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (con.getCompleteContentLength() > 0) {
+                }
+                if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {

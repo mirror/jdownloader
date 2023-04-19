@@ -320,10 +320,12 @@ public class DoodstreamCom extends XFileSharingProBasic {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
+    protected String getContentURL(final DownloadLink link) {
         final String linkpart = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0);
         if (linkpart != null) {
-            link.setPluginPatternMatcher(getMainPage() + "/" + linkpart);
+            return getMainPage(link) + "/" + linkpart;
+        } else {
+            return super.getContentURL(link);
         }
     }
 
@@ -452,7 +454,8 @@ public class DoodstreamCom extends XFileSharingProBasic {
             setWeakFilename(link, br);
         }
         this.br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
+        final String contentURL = getContentURL(link);
+        getPage(contentURL);
         /* Allow redirects to other content-IDs but files should be offline if there is e.g. a redirect to an unsupported URL format. */
         if (isOffline(link, this.br, getCorrectBR(br)) || !this.canHandle(this.br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -479,7 +482,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
             }
         }
         if (link.getFinalFileName() == null) {
-            if (link.getPluginPatternMatcher().matches(TYPE_STREAM)) {
+            if (contentURL.matches(TYPE_STREAM)) {
                 /* First try to get filename from Chromecast json */
                 String filename = new Regex(getCorrectBR(br), "<title>\\s*([^<>\"]*?)\\s*-\\s*DoodStream(?:\\.com)?\\s*</title>").getMatch(0);
                 if (filename == null) {
@@ -530,7 +533,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
         String dllink = checkDirectLink(link, account);
         if (StringUtils.isEmpty(dllink)) {
             requestFileInformationWebsite(link, account, true);
-            if (link.getPluginPatternMatcher().matches(TYPE_DOWNLOAD)) {
+            if (this.getContentURL(link).matches(TYPE_DOWNLOAD)) {
                 /* Basically the same as the other type but hides that via iFrame. */
                 final String embedURL = br.getRegex("<iframe[^>]*src=\"(/e/[a-z0-9]+)\"").getMatch(0);
                 if (embedURL == null) {

@@ -123,7 +123,7 @@ public class IndiShareMe extends XFileSharingProBasic {
     protected void runPostRequestTask(final Browser br) throws Exception {
         super.runPostRequestTask(br);
         /* Usually to "https://dl.indishare.cc/..." */
-        final String newURL = br.getRegex(">\\s*Site Moved to New Address\\s*<a href=\"(https?://[^/]+/[a-z0-9]{12})\"").getMatch(0);
+        final String newURL = br.getRegex("(?i)>\\s*Site Moved to New Address\\s*<a href=\"(https?://[^/]+/[a-z0-9]{12})\"").getMatch(0);
         if (!workaround1Done && newURL != null) {
             /* Cat mouse games */
             final boolean oldFollowRedirects = br.isFollowingRedirects();

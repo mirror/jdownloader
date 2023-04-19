@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -29,8 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FlorenfileCom extends XFileSharingProBasic {
@@ -175,7 +175,7 @@ public class FlorenfileCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean isLoggedin(Browser br) {
+    public boolean isLoggedin(final Browser br) {
         /* 2020-03-19: Special: jdlog://4986715302851/ */
         final Form loginform = this.findLoginform(br);
         return super.isLoggedin(br) && loginform == null;

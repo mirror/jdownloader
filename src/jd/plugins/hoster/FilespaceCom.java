@@ -15,6 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
@@ -45,7 +47,25 @@ public class FilespaceCom extends XFileSharingProBasic {
      * captchatype-info: 2019-04-29: solvemedia<br />
      * other:<br />
      */
-    private static String[] domains = new String[] { "filespace.com", "spaceforfiles.com" };
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "filespace.com", "spaceforfiles.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -152,39 +172,5 @@ public class FilespaceCom extends XFileSharingProBasic {
             wait = new Regex(correctedBR, "Please wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
         return wait;
-    }
-
-    public static String[] getAnnotationNames() {
-        return new String[] { domains[0] };
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return domains;
-    }
-
-    /**
-     * returns the annotation pattern array: 'https?://(?:www\\.)?(?:domain1|domain2)/(?:embed\\-)?[a-z0-9]{12}'
-     *
-     */
-    public static String[] getAnnotationUrls() {
-        // construct pattern
-        final String host = getHostsPattern();
-        return new String[] { host + "/(?:embed\\-)?[a-z0-9]{12}(?:/[^/]+\\.html)?" };
-    }
-
-    /** returns 'https?://(?:www\\.)?(?:domain1|domain2)' */
-    private static String getHostsPattern() {
-        final String hosts = "https?://(?:www\\.)?" + "(?:" + getHostsPatternPart() + ")";
-        return hosts;
-    }
-
-    /** Returns '(?:domain1|domain2)' */
-    public static String getHostsPatternPart() {
-        final StringBuilder pattern = new StringBuilder();
-        for (final String name : domains) {
-            pattern.append((pattern.length() > 0 ? "|" : "") + Pattern.quote(name));
-        }
-        return pattern.toString();
     }
 }
