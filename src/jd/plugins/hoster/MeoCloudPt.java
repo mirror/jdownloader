@@ -16,8 +16,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -27,8 +30,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.MeocloudPtFolder;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "meocloud.pt" }, urls = { "https?://(?:www\\.)?meocloud\\.pt/link/([a-z0-9\\-]+/[^<>\"]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MeoCloudPt extends PluginForHost {
     public MeoCloudPt(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,44 +43,91 @@ public class MeoCloudPt extends PluginForHost {
         return "https://meocloud.pt/";
     }
 
+    public static List<String[]> getPluginDomains() {
+        return MeocloudPtFolder.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (int i = 0; i < pluginDomains.size(); i++) {
+            /* Add dummy entries as all items get added via crawler -> No pattern needed here. */
+            ret.add("");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private final String PROPERTY_DIRECTURL = "directurl";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"error type404\"|class=\"no_link_available\"")) {
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getPluginPatternMatcher());
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                link.setProperty(PROPERTY_DIRECTURL, con.getURL().toString());
+            } else {
+                br.followConnection(true);
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        if (MeocloudPtFolder.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("/dl/zipdir/[a-z0-9\\-]+/.*?/([^<>\"/]*?)\\?(public|download)=").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"pick_file\" value=\"/([^<>\"]*?)\">").getMatch(0);
         }
-        if (filename == null) {
-            /* Fallback */
-            filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        final Form pwform = br.getFormbyKey("passwd");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        final Form pwform = MeocloudPtFolder.getPasswordProtectedForm(br);
         if (pwform != null) {
-            /* 2020-02-18: PW protected URLs are not yet supported */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "PW protected: Contact support and ask for implementation", 8 * 60 * 1000l);
+            /* 2020-02-18: PW protected URLs are not yet supported. */
+            link.setPasswordProtected(true);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not yet supported: Contact support and ask for implementation", 8 * 60 * 1000l);
+        } else {
+            link.setPasswordProtected(false);
         }
-        String dllink = br.getRegex("\"(https?://[a-z0-9\\.]+/dl/[^<>\"]*?)\"").getMatch(0);
+        String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         if (dllink == null) {
-            final String publ = new Regex(downloadLink.getDownloadURL(), "meocloud\\.pt/link/([a-z0-9\\-]+)/").getMatch(0);
-            dllink = "https://cld.pt/dl/download/" + publ + "/" + Encoding.urlEncode(downloadLink.getName()) + "?public=" + publ + "&download=true";
+            /* Backwards compatibility for items added before/until inclding revision 41776. */
+            dllink = br.getRegex("\"(https?://[a-z0-9\\.]+/dl/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                final String publ = new Regex(link.getDownloadURL(), "meocloud\\.pt/link/([a-z0-9\\-]+)/").getMatch(0);
+                dllink = "https://cld.pt/dl/download/" + publ + "/" + Encoding.urlEncode(link.getName()) + "?public=" + publ + "&download=true";
+            }
         }
-        // if (dllink == null) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
