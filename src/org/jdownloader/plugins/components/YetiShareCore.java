@@ -1647,7 +1647,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     }
 
     protected String getProtocol() {
-        if (StringUtils.startsWithCaseInsensitive(this.br.getURL(), "https://") || supports_https()) {
+        if (supports_https()) {
             return "https://";
         } else {
             return "http://";
@@ -2196,7 +2196,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         final URL after = ibr._getURL();
         if (after != null) {
             if (StringUtils.equalsIgnoreCase(Browser.getHost(before, false), Browser.getHost(after, false))) {
-                if (!StringUtils.equals(before.getProtocol(), after.getProtocol())) {
+                if (!StringUtils.equals(this.getProtocol(), after.getProtocol())) {
                     /* Nothing tragic but can be a useful information. */
                     logger.info("@Dev:check supports_https!before=" + before + "|after=" + after);
                 }

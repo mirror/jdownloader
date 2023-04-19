@@ -35,7 +35,7 @@ public class XtitsCom extends KernelVideoSharingComV2 {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xtits.com" });
+        ret.add(new String[] { "xtits.com", "xtits.xxx" });
         return ret;
     }
 

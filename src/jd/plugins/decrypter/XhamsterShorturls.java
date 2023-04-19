@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -26,8 +28,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XhamsterShorturls extends PluginForDecrypt {
@@ -63,22 +63,23 @@ public class XhamsterShorturls extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:e|p|v)/[A-Za-z0-9]+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[A-Za-z]/[A-Za-z0-9]+");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String url = param.getCryptedUrl().replaceFirst("http://", "https://");
         br.setFollowRedirects(false);
-        br.getPage(param.getCryptedUrl());
+        br.getPage(url);
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
+            /* Assume that the content is offline. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 }

@@ -50,7 +50,7 @@ public class MediasetplayMediasetIt extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "mediasetplay.mediaset.it" });
+        ret.add(new String[] { "mediasetplay.mediaset.it", "mediasetinfinity.mediaset.it" });
         return ret;
     }
 
@@ -106,7 +106,7 @@ public class MediasetplayMediasetIt extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
         final String description = (String) entries.get("description");
         String filename = (String) entries.get("title");
         this.mpdMaster = (String) JavaScriptEngineFactory.walkJson(entries, "media/{0}/publicUrl");
@@ -125,11 +125,11 @@ public class MediasetplayMediasetIt extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        requestFileInformation(link);
         if (StringUtils.isEmpty(this.mpdMaster)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {

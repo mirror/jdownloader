@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
 import org.appwork.utils.StringUtils;
@@ -57,23 +56,19 @@ public class GenericRedirectors extends antiDDoSForDecrypt {
      *
      */
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(false);
-        try {
-            getPage(parameter);
-            if (br.getRedirectLocation() != null && canHandle(br.getRedirectLocation())) {
-                getPage(br.getRedirectLocation());
-            }
-        } catch (final SocketTimeoutException e) {
-            logger.info("Link offline (server offline?): " + parameter);
-            return decryptedLinks;
+        getPage(parameter);
+        if (br.getRedirectLocation() != null && canHandle(br.getRedirectLocation())) {
+            /* Handle e.g. http -> https protocol redirect */
+            getPage(br.getRedirectLocation());
         }
         String declink = br.getRedirectLocation();
         if (declink == null) {
             declink = br.getRegex("<iframe frameborder=\"0\"\\s*src=\"(.*?)\"").getMatch(0);
             if (declink == null) {
-                declink = br.getRegex("<meta http-equiv=(\"|')refresh\\1\\s*content=(\"|')\\d+;\\s*url=(https?://[^<>\"]+)\\2[^>]*").getMatch(2);
+                declink = br.getRequest().getHTMLRefresh();
                 if (declink == null) {
                     declink = br.getRegex("<script type=(\"|')text/javascript\\1>\\s*window\\.location\\.href=(\"|')(https?.*?)\\2;</script>").getMatch(2);
                 }
@@ -95,9 +90,9 @@ public class GenericRedirectors extends antiDDoSForDecrypt {
         }
         // when empty it's not always an error, specially when we use lazy regex!
         if (declink != null) {
-            decryptedLinks.add(createDownloadlink(declink));
+            ret.add(createDownloadlink(declink));
         }
-        return decryptedLinks;
+        return ret;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
