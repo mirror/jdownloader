@@ -237,14 +237,22 @@ public abstract class EvilangelCore extends PluginForHost {
                  */
                 final String htmlVideoJson = br.getRegex("window\\.defaultStateScene\\s*=\\s*(\\{.+\\});").getMatch(0);
                 final String htmlVideoJson2 = br.getRegex("new Cms_Player\\((\\{.*?\\})\\);").getMatch(0);
+                List<Map<String, Object>> qualitiesList = null;
                 if (htmlVideoJson == null && htmlVideoJson2 == null) {
+                    /**
+                     * 2023-04-19: New (tested with: evilangel.com) </br>
+                     * TODO: Test this with other supported websites such as wicked.com.
+                     */
+                    final Browser brc = br.cloneBrowser();
+                    brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    brc.getPage("/media/streamingUrls/" + this.getFID(link));
                     /**
                      * No error-page but also no player --> Assume content is offline e.g. </br>
                      * https://members.wicked.com/en/movie/bla-bla/123456
                      */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    qualitiesList = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.OBJECT);
                 }
-                // final String htmlVideoJson2 = br.getRegex(">dataLayer\\s*=\\s*\\[(\\{.*?\\})\\];</script>").getMatch(0);
+                Map<String, String> qualityMap = null;
                 if (htmlVideoJson != null) {
                     final Map<String, Object> entries = JSonStorage.restoreFromString(htmlVideoJson, TypeRef.HASHMAP);
                     final Map<String, Object> videoInfo = (Map<String, Object>) entries.get(this.getFID(getDownloadLink()));
@@ -252,22 +260,14 @@ public abstract class EvilangelCore extends PluginForHost {
                     if (qualityMapO == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final Map<String, String> qualityMap;
                     if (qualityMapO instanceof List) {
-                        final List<Map<String, Object>> qualitiesList = (List<Map<String, Object>>) qualityMapO;
+                        qualitiesList = (List<Map<String, Object>>) qualityMapO;
                         if (qualitiesList.isEmpty()) {
                             /*
                              * Empty list --> User is not allowed to watch this full video -> Trailer only but we do not (yet) have a
                              * handling to find the trailer streams -> Throw Exception instead
                              */
                             throw new PluginException(LinkStatus.ERROR_FATAL, "Only trailer available");
-                        }
-                        /* Make map out of list */
-                        qualityMap = new HashMap<String, String>();
-                        for (final Map<String, Object> map : qualitiesList) {
-                            final String format = map.get("format").toString();
-                            final String url = map.get("url").toString();
-                            qualityMap.put(format, url);
                         }
                     } else {
                         qualityMap = (Map<String, String>) qualityMapO;
@@ -276,7 +276,18 @@ public abstract class EvilangelCore extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                     }
-                    String chosenQualityStr = null;
+                }
+                if (qualitiesList != null) {
+                    /* Make map out of list */
+                    qualityMap = new HashMap<String, String>();
+                    for (final Map<String, Object> map : qualitiesList) {
+                        final String format = map.get("format").toString();
+                        final String url = map.get("url").toString();
+                        qualityMap.put(format, url);
+                    }
+                }
+                if (qualityMap != null) {
+                    String chosenQualityLabel = null;
                     String fallbackDirecturl = null;
                     String fallbackFormat = null;
                     int bestHeight = -1;
@@ -292,7 +303,7 @@ public abstract class EvilangelCore extends PluginForHost {
                         final int height = Integer.parseInt(heightRegex.getMatch(0));
                         final String heightNormalizedStr = this.getNormalizedHeight(height) + "p";
                         if (heightNormalizedStr.equalsIgnoreCase(preferredQualityStr)) {
-                            chosenQualityStr = format;
+                            chosenQualityLabel = format;
                             this.dllink = url;
                         }
                         if (fallbackDirecturl == null || height > bestHeight) {
@@ -303,10 +314,11 @@ public abstract class EvilangelCore extends PluginForHost {
                     }
                     if (StringUtils.isEmpty(this.dllink)) {
                         logger.info("Failed to find user selected format -> Fallback to: " + fallbackFormat);
-                        chosenQualityStr = fallbackFormat;
+                        chosenQualityLabel = fallbackFormat;
                         this.dllink = fallbackDirecturl;
                     }
-                    logger.info("Chosen quality: " + chosenQualityStr);
+                    logger.info("Chosen quality: " + chosenQualityLabel);
+                    link.setProperty(PROPERTY_QUALITY, chosenQualityLabel);
                 }
                 if (htmlVideoJson2 != null) {
                     /* 2022-01-14: For some wicked.com URLs e.g. https://members.wicked.com/en/movie/bla-bla/123456 */
@@ -395,6 +407,7 @@ public abstract class EvilangelCore extends PluginForHost {
                     if (filesizeStr != null) {
                         filesize = SizeFormatter.getSize(filesizeStr);
                     }
+                    link.setProperty(PROPERTY_QUALITY, chosenQualityLabel);
                 }
                 if (dllink != null) {
                     final String quality = new Regex(dllink, "(\\d+p)").getMatch(0);
