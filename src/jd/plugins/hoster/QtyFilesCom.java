@@ -18,14 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class QtyFilesCom extends XFileSharingProBasic {
@@ -112,11 +112,5 @@ public class QtyFilesCom extends XFileSharingProBasic {
          */
         final boolean isPremiumonly = super.isPremiumOnly(br);
         return isPremiumonly || br.containsHTML("class=\"err\">\\s*<input type=\"submit\" name=\"method_premium\"");
-    }
-
-    @Override
-    public boolean websiteSupportsHTTPS() {
-        /* 2019-06-13: Special */
-        return false;
     }
 }

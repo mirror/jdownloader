@@ -104,10 +104,4 @@ public class AsmfileCom extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
-    @Override
-    protected boolean websiteSupportsHTTPS() {
-        /* 2020-05-06: Special */
-        return false;
-    }
 }

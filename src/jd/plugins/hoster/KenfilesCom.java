@@ -106,11 +106,6 @@ public class KenfilesCom extends XFileSharingProBasic {
         return -1;
     }
 
-    @Override
-    public boolean websiteSupportsHTTPS() {
-        return true;
-    }
-
     /** Function to find the final downloadlink. */
     @Override
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, final String src) {

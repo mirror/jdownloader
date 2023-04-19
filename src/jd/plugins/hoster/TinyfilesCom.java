@@ -122,7 +122,7 @@ public class TinyfilesCom extends XFileSharingProBasic {
         String urlname = super.getFilenameFromURL(dl);
         if (urlname == null) {
             try {
-                urlname = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/[a-f0-9]+/\\d+/(.+)/?$").getMatch(0);
+                urlname = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/[a-f0-9]+/\\d+/([^/]+)/?$").getMatch(0);
                 return urlname;
             } catch (MalformedURLException e) {
                 e.printStackTrace();

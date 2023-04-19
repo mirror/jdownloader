@@ -104,10 +104,4 @@ public class WipFilesNet extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
-    @Override
-    protected boolean websiteSupportsHTTPS() {
-        /* 2020-06-08: Special */
-        return false;
-    }
 }

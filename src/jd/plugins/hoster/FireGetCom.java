@@ -104,10 +104,4 @@ public class FireGetCom extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
-    @Override
-    protected boolean websiteSupportsHTTPS() {
-        /* 2020-06-11: Special */
-        return false;
-    }
 }

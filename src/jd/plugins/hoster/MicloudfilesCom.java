@@ -106,12 +106,6 @@ public class MicloudfilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean websiteSupportsHTTPS() {
-        /* 2020-06-02 */
-        return false;
-    }
-
-    @Override
     protected boolean supports_availablecheck_filesize_html() {
         /* 2020-06-02: Special */
         return false;

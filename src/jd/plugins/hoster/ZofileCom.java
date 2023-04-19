@@ -104,9 +104,4 @@ public class ZofileCom extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
-    @Override
-    protected boolean websiteSupportsHTTPS() {
-        return false;
-    }
 }

@@ -104,10 +104,4 @@ public class ObligaoCom extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
-    @Override
-    protected boolean websiteSupportsHTTPS() {
-        /* 2020-05-26: Special */
-        return false;
-    }
 }

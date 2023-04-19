@@ -102,10 +102,4 @@ public class TstorageInfo extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
-    @Override
-    protected boolean websiteSupportsHTTPS() {
-        /* 2020-04-08: Special */
-        return false;
-    }
 }

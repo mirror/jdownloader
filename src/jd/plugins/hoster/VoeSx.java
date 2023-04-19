@@ -19,6 +19,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -30,10 +34,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.decrypter.VoeSxCrawler;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { VoeSxCrawler.class })
@@ -180,7 +180,7 @@ public class VoeSx extends XFileSharingProBasic {
         /* 2021-03-09: Special: New browser required else they won't let us stream some videos at all! */
         final boolean embedOnly = br.containsHTML(">\\s*This video can be watched as embed only");
         br.setFollowRedirects(true);
-        br.getPage("https://" + this.getHost() + "/e/" + this.getFUIDFromURL(link));
+        br.getPage(this.getMainPage(link) + "/e/" + this.getFUIDFromURL(link));
         final String dllink = getDllinkVideohost(link, account, null, br.toString());
         if (StringUtils.isEmpty(dllink) && embedOnly) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");

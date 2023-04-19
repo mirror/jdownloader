@@ -54,6 +54,14 @@ public class ArchivosMe extends YetiShareCore {
     }
 
     @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("95.215.205.103");
+        deadDomains.add("archivos.club");
+        return deadDomains;
+    }
+
+    @Override
     public String rewriteHost(String host) {
         /* 2020-02-26: archivos.club --> archivos.me */
         /* 2023-02-03: 95.215.205.103 -> 212.162.153.174 */
@@ -78,10 +86,6 @@ public class ArchivosMe extends YetiShareCore {
         return ret.toArray(new String[0]);
     }
 
-    // @Override
-    // public String rewriteHost(String host) {
-    // return this.rewriteHost(getPluginDomains(), host, new String[0]);
-    // }
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {

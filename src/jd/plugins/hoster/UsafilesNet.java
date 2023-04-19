@@ -101,10 +101,4 @@ public class UsafilesNet extends YetiShareCore {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
-    @Override
-    public boolean supports_https() {
-        /* 2020-12-04: Special */
-        return false;
-    }
 }

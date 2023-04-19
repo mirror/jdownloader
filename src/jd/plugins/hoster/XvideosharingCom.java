@@ -83,12 +83,6 @@ public class XvideosharingCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean websiteSupportsHTTPS() {
-        /* 2019-07-11: Special */
-        return false;
-    }
-
-    @Override
     protected boolean supports_availablecheck_filesize_html() {
         /* 2019-07-10: Special */
         return false;

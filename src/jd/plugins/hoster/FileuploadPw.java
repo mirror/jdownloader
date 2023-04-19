@@ -104,10 +104,4 @@ public class FileuploadPw extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
-    @Override
-    protected boolean websiteSupportsHTTPS() {
-        /* 2020-05-27: Special */
-        return false;
-    }
 }

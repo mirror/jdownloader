@@ -103,12 +103,6 @@ public class VeeosyncCom extends YetiShareCore {
     }
 
     @Override
-    public boolean supports_https() {
-        /* 2020-03-03: Special */
-        return false;
-    }
-
-    @Override
     public boolean requiresWWW() {
         /* 2020-03-03: Special */
         return false;

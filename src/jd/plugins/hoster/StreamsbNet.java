@@ -47,6 +47,7 @@ public class StreamsbNet extends XFileSharingProBasic {
     protected String getContentURL(final DownloadLink link) {
         final Regex special = new Regex(link.getPluginPatternMatcher(), PATTERN_SPECIAL);
         if (special.matches()) {
+            /* Do not touch url structure. Only change domain if required. */
             return getMainPage(link) + "/" + special.getMatch(0);
         } else {
             return super.getContentURL(link);
@@ -94,10 +95,15 @@ public class StreamsbNet extends XFileSharingProBasic {
         if (contentURL.matches("https?://[^/]+/c/[a-z0-9]{12}.*") && Boolean.FALSE.equals(isOfficiallyDownloadable)) {
             return result;
         } else {
+            final String pluginpatternmatcherOld = link.getPluginPatternMatcher();
             try {
                 link.setPluginPatternMatcher("https://" + this.getHost() + "/d/" + this.getFUIDFromURL(link));
                 result = super.requestFileInformationWebsite(link, account, isDownload);
                 specialFilenameResult = br.getRegex("(?i)<h3>\\s*Download ([^<]+)</h3>").getMatch(0); // 2023-01-11
+                if (specialFilenameResult == null) {
+                    /* 2023-04-19 */
+                    specialFilenameResult = br.getRegex("(?i)<h1 class=\"h3 text-center mb-5\"[^>]*>Download ([^<]+)</h1>").getMatch(0);
+                }
                 final String officialDownloadFilesize = this.getDllinkViaOfficialVideoDownload(br, link, account, true);
                 if (officialDownloadFilesize != null) {
                     /* Do not change pluginpatternmatcher back */
@@ -108,8 +114,8 @@ public class StreamsbNet extends XFileSharingProBasic {
                     link.setPluginPatternMatcher(contentURL);
                     link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, false);
                 }
-            } catch (final Throwable e) {
-                link.setPluginPatternMatcher(contentURL);
+            } finally {
+                link.setPluginPatternMatcher(pluginpatternmatcherOld);
             }
         }
         if (br.getURL().matches("https?://[^/]+/d/[a-z0-9]{12}.*") && !link.hasProperty(EXTENDED_FILENAME_RESULT) && StringUtils.isEmpty(specialFilenameResult)) {
@@ -164,7 +170,7 @@ public class StreamsbNet extends XFileSharingProBasic {
         if (link == null || link.getPluginPatternMatcher() == null) {
             return null;
         } else if (link.getPluginPatternMatcher().matches(PATTERN_SPECIAL)) {
-            return new Regex(link.getPluginPatternMatcher(), PATTERN_SPECIAL).getMatch(0);
+            return new Regex(link.getPluginPatternMatcher(), PATTERN_SPECIAL).getMatch(2);
         } else {
             return super.getFUIDFromURL(link);
         }

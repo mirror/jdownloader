@@ -67,11 +67,6 @@ public class ImgbaronCom extends XFileSharingProBasic {
     }
 
     @Override
-    public boolean websiteSupportsHTTPS() {
-        return true;
-    }
-
-    @Override
     protected boolean supports_availablecheck_filesize_html() {
         return false;
     }
