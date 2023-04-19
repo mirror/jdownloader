@@ -44,11 +44,16 @@ public class StreamsbNet extends XFileSharingProBasic {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        // Do nothing (important)!
+    protected String getContentURL(final DownloadLink link) {
+        final Regex special = new Regex(link.getPluginPatternMatcher(), PATTERN_SPECIAL);
+        if (special.matches()) {
+            return getMainPage(link) + "/" + special.getMatch(0);
+        } else {
+            return super.getContentURL(link);
+        }
     }
 
-    private static final String TYPE_SPECIAL = "https://[^/]+/(?:d|e|c)/([a-z0-9]{12})";
+    private static final String PATTERN_SPECIAL = "https://[^/]+/((d|e|c)/([a-z0-9]{12}))";
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
@@ -82,10 +87,11 @@ public class StreamsbNet extends XFileSharingProBasic {
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         /* Beware! This is full of nasty workarounds! */
         AvailableStatus result = null;
-        String oldPluginPatternMatcher = link.getPluginPatternMatcher();
+        final String contentURL = this.getContentURL(link);
         result = super.requestFileInformationWebsite(link, account, isDownload);
         String specialFilenameResult = null;
-        if (link.getPluginPatternMatcher().matches("https?://[^/]+/c/[a-z0-9]{12}.*") && link.hasProperty(IS_OFFICIALLY_DOWNLOADABLE) && !link.getBooleanProperty(IS_OFFICIALLY_DOWNLOADABLE)) {
+        final Boolean isOfficiallyDownloadable = (Boolean) link.getProperty(IS_OFFICIALLY_DOWNLOADABLE);
+        if (contentURL.matches("https?://[^/]+/c/[a-z0-9]{12}.*") && Boolean.FALSE.equals(isOfficiallyDownloadable)) {
             return result;
         } else {
             try {
@@ -99,11 +105,11 @@ public class StreamsbNet extends XFileSharingProBasic {
                     link.setDownloadSize(SizeFormatter.getSize(officialDownloadFilesize));
                     link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, true);
                 } else {
-                    link.setPluginPatternMatcher(oldPluginPatternMatcher);
+                    link.setPluginPatternMatcher(contentURL);
                     link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, false);
                 }
             } catch (final Throwable e) {
-                link.setPluginPatternMatcher(oldPluginPatternMatcher);
+                link.setPluginPatternMatcher(contentURL);
             }
         }
         if (br.getURL().matches("https?://[^/]+/d/[a-z0-9]{12}.*") && !link.hasProperty(EXTENDED_FILENAME_RESULT) && StringUtils.isEmpty(specialFilenameResult)) {
@@ -157,8 +163,8 @@ public class StreamsbNet extends XFileSharingProBasic {
     public String getFUIDFromURL(final DownloadLink link) {
         if (link == null || link.getPluginPatternMatcher() == null) {
             return null;
-        } else if (link.getPluginPatternMatcher().matches(TYPE_SPECIAL)) {
-            return new Regex(link.getPluginPatternMatcher(), TYPE_SPECIAL).getMatch(0);
+        } else if (link.getPluginPatternMatcher().matches(PATTERN_SPECIAL)) {
+            return new Regex(link.getPluginPatternMatcher(), PATTERN_SPECIAL).getMatch(0);
         } else {
             return super.getFUIDFromURL(link);
         }

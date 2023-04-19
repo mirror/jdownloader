@@ -126,14 +126,14 @@ public class RockFileCo extends XFileSharingProBasic {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        /* 2020-03-02: Do not modify URLs at all anymore! */
+    protected String getContentURL(final DownloadLink link) {
         final String fuid = getFUIDFromURL(link);
-        if (fuid != null && link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[^/]+/[a-z0-9]{12}")) {
+        if (fuid != null && link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[^/]+/[a-z0-9]{12}$")) {
             /* 2019-07-02: Special: Some URLs require '.html' at the end!! */
-            final String url_with_html_ending = getMainPage() + "/" + fuid + ".html";
-            link.setPluginPatternMatcher(url_with_html_ending);
-            link.setContentUrl(url_with_html_ending);
+            final String url_with_html_ending = getMainPage(link) + "/" + fuid + ".html";
+            return url_with_html_ending;
+        } else {
+            return super.getContentURL(link);
         }
     }
 

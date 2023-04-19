@@ -122,7 +122,7 @@ public class StreamhideCom extends XFileSharingProBasic {
 
     @Override
     protected String getContentURL(final DownloadLink link) {
-        return "https://" + this.getHost() + "/d/" + this.getFUIDFromURL(link);
+        return this.getMainPage(link) + "/d/" + this.getFUIDFromURL(link);
     }
 
     protected String getFUID(final String url, URL_TYPE type) {

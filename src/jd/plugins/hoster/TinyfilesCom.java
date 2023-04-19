@@ -20,6 +20,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -32,9 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TinyfilesCom extends XFileSharingProBasic {
     public TinyfilesCom(final PluginWrapper wrapper) {
@@ -43,8 +43,9 @@ public class TinyfilesCom extends XFileSharingProBasic {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        /* 2019-06-27: Special: Do not correct URLs at all! */
+    protected String getContentURL(final DownloadLink link) {
+        final String path = new Regex(link.getPluginPatternMatcher(), "(?i)https?://[^/]+(/.+)").getMatch(0);
+        return this.getMainPage(link) + path;
     }
 
     /**
@@ -106,16 +107,14 @@ public class TinyfilesCom extends XFileSharingProBasic {
 
     @Override
     public String getFUIDFromURL(final DownloadLink dl) {
-        String fuid = super.getFUIDFromURL(dl);
-        if (fuid == null) {
-            try {
-                fuid = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/([a-f0-9]+)").getMatch(0);
-                return fuid;
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
+        try {
+            final String fuidSpecial = new Regex(new URL(dl.getPluginPatternMatcher()).getPath(), "/([a-f0-9]+)").getMatch(0);
+            return fuidSpecial;
+        } catch (final MalformedURLException e) {
+            /* This should never happen. */
+            e.printStackTrace();
+            return super.getFUIDFromURL(dl);
         }
-        return null;
     }
 
     @Override
