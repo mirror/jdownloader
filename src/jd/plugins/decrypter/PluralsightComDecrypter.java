@@ -18,6 +18,7 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.plugins.components.config.PluralsightComConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -35,7 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.PluralsightCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https?://(?:app|www)?\\.pluralsight\\.com(\\/library)?\\/courses\\/[^/]+|https://app\\.pluralsight\\.com/course-player\\?(clipId|courseId)=[a-f0-9\\-]+" })
@@ -66,12 +66,13 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
 
     private ArrayList<DownloadLink> newHandling(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Account account = AccountController.getInstance().getValidAccount(getHost());
-        if (true) {
+        final boolean accountRequiredForCrawling = false;
+        Account account = null;
+        final PluginForHost hosterPlugin = this.getNewPluginForHostInstance(this.getHost());
+        if (!accountRequiredForCrawling) {
             logger.info("No account used - not required");
-        } else if (account != null) {
-            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-            ((jd.plugins.hoster.PluralsightCom) plg).login(account, false);
+        } else if ((account = AccountController.getInstance().getValidAccount(getHost())) != null) {
+            ((jd.plugins.hoster.PluralsightCom) hosterPlugin).login(account, false);
             logger.info("Account - Mode:" + account.getUser());
         } else {
             logger.info("No account - Mode");
@@ -118,8 +119,9 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
         final List<Map<String, Object>> modules = (List<Map<String, Object>>) course.get("modules");
         int moduleIndex = 0;
         int totalNumberofClips = 0;
+        final PluralsightComConfig cfg = PluginJsonConfig.get(PluralsightComConfig.class);
         for (final Map<String, Object> module : modules) {
-            final String moduleTitle = PluralsightCom.correctFileName((String) module.get("title"));
+            final String moduleTitle = module.get("title").toString().trim();
             final List<Map<String, Object>> clips = (List<Map<String, Object>>) module.get("contentItems");
             int clipIndex = 0;
             for (final Map<String, Object> clip : clips) {
@@ -129,16 +131,17 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                 final String clipID = StringUtils.valueOfOrNull(clip.get("id"));
                 final DownloadLink link;
                 final String extension;
+                boolean isDirecthttpURL = false;
                 if (StringUtils.equalsIgnoreCase(type, "link")) {
                     final String url = (String) clip.get("url");
                     if (StringUtils.isEmpty(url)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        link = createDownloadlink("directhttp://" + url);
-                        extension = Plugin.getFileNameExtensionFromURL(url, ".pdf");
                     }
+                    link = createDownloadlink("directhttp://" + url);
+                    extension = Plugin.getFileNameExtensionFromURL(url, ".pdf");
+                    isDirecthttpURL = true;
                 } else if (StringUtils.equalsIgnoreCase(type, "clip")) {
-                    link = new DownloadLink(null, null, this.getHost(), createContentURL(clipID), true);
+                    link = new DownloadLink(hosterPlugin, null, this.getHost(), createContentURL(clipID), true);
                     extension = ".mp4";
                     final Number durationSeconds = (Number) clip.get("duration");
                     if (durationSeconds != null) {
@@ -147,27 +150,37 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown item type:" + type);
                 }
-                final String clipVersion = (String) clip.get("version");
-                link.setAvailable(true);
-                link.setProperty(PluralsightCom.PROPERTY_CLIP_ID, clipID);
-                if (clipVersion != null) {
-                    link.setProperty(PluralsightCom.PROPERTY_CLIP_VERSION, clipVersion);
-                }
-                link.setProperty(PluralsightCom.PROPERTY_MODULE_ORDER_ID, moduleIndex + 1);
-                link.setProperty(PluralsightCom.PROPERTY_MODULE_TITLE, moduleTitle);
-                link.setProperty(PluralsightCom.PROPERTY_MODULE_CLIP_TITLE, title);
-                link.setProperty(PluralsightCom.PROPERTY_CLIP_ORDER_ID, clipIndex + 1);
-                String fullName = String.format("%02d", moduleIndex + 1) + "-" + String.format("%02d", clipIndex + 1) + " - " + moduleTitle + " -- " + title;
-                fullName = PluralsightCom.correctFileName(fullName);
-                link.setFinalFileName(fullName + extension);
-                link.setProperty(PluralsightCom.PROPERTY_TYPE, extension.substring(1));
-                ret.add(link);
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    final String subtitleURL = "https://app.pluralsight.com/transcript/api/v1/caption/webvtt/" + clipID + "/" + clipVersion + "/en/";
-                    final DownloadLink subtitle = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(subtitleURL));
-                    subtitle.setFinalFileName(fullName + ".webvtt");
-                    subtitle.setAvailable(true);
-                    ret.add(subtitle);
+                if (isDirecthttpURL) {
+                    /* Misc files such as .pdf files. */
+                    // TODO: 2023-04-19: Check filenames of such items.
+                    link.setAvailable(true);
+                    ret.add(link);
+                } else {
+                    /* Video/Subtitle */
+                    final ArrayList<DownloadLink> results = new ArrayList<DownloadLink>();
+                    final String clipVersion = (String) clip.get("version");
+                    link.setProperty(PluralsightCom.PROPERTY_TYPE, extension.substring(1));
+                    results.add(link);
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && clipVersion != null && cfg.isCrawlSubtitles()) {
+                        final String subtitleURL = "https://app.pluralsight.com/transcript/api/v1/caption/webvtt/" + clipID + "/" + clipVersion + "/en/";
+                        final DownloadLink subtitle = new DownloadLink(hosterPlugin, null, this.getHost(), subtitleURL, true);
+                        subtitle.setProperty(PluralsightCom.PROPERTY_DIRECTURL, subtitleURL);
+                        subtitle.setProperty(PluralsightCom.PROPERTY_TYPE, PluralsightCom.TYPE_SUBTITLE);
+                        results.add(subtitle);
+                    }
+                    for (final DownloadLink result : results) {
+                        result.setAvailable(true);
+                        result.setProperty(PluralsightCom.PROPERTY_CLIP_ID, clipID);
+                        if (clipVersion != null) {
+                            result.setProperty(PluralsightCom.PROPERTY_CLIP_VERSION, clipVersion);
+                        }
+                        result.setProperty(PluralsightCom.PROPERTY_MODULE_ORDER_ID, moduleIndex + 1);
+                        result.setProperty(PluralsightCom.PROPERTY_MODULE_TITLE, moduleTitle);
+                        result.setProperty(PluralsightCom.PROPERTY_MODULE_CLIP_TITLE, title);
+                        result.setProperty(PluralsightCom.PROPERTY_CLIP_ORDER_ID, clipIndex + 1);
+                        PluralsightCom.setFinalFilename(result);
+                        ret.add(result);
+                    }
                 }
                 clipIndex++;
             }
@@ -175,7 +188,7 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
         }
         logger.info("Total number of clips found: " + totalNumberofClips);
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(PluralsightCom.correctFileName(courseTitle));
+        fp.setName(courseTitle);
         fp.addLinks(ret);
         ret.addAll(ret);
         return ret;
@@ -264,7 +277,6 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                     link.setProperty(PluralsightCom.PROPERTY_CLIP_ORDER_ID, orderingInt + 1);
                     if (StringUtils.isNotEmpty(title) && StringUtils.isNotEmpty(moduleTitle) && ordering != null) {
                         String fullName = String.format("%02d", moduleIndex) + "-" + String.format("%02d", orderingInt + 1) + " - " + moduleTitle + " -- " + title;
-                        fullName = PluralsightCom.correctFileName(fullName);
                         link.setFinalFileName(fullName + ".mp4");
                     }
                     link.setProperty(PluralsightCom.PROPERTY_TYPE, "mp4");
@@ -275,7 +287,7 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
         }
         logger.info("Total number of clips found: " + totalNumberofClips);
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(PluralsightCom.correctFileName(courseTitle));
+        fp.setName(courseTitle);
         fp.addLinks(ret);
         ret.addAll(ret);
         // TODO: add subtitles here, for each video add additional DownloadLink that represents subtitle, eg

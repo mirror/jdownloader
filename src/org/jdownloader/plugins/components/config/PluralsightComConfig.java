@@ -15,6 +15,7 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "pluralsight.com", type = Type.CRAWLER)
 public interface PluralsightComConfig extends PluginConfigInterface {
+    final String              text_CrawlSubtitles                               = "Crawl subtitles?";
     final String              text_UserAgent                                    = "Enter User-Agent which will be used for all website http requests:";
     final String              text_WaittimeBetweenDownloadsSeconds              = "Define wait time in seconds between downloads";
     final String              text_WaitMode                                     = "Wait between downloads mode";
@@ -24,16 +25,10 @@ public interface PluralsightComConfig extends PluginConfigInterface {
     public static TRANSLATION TRANSLATION                                       = new TRANSLATION();
 
     public static class TRANSLATION {
-        // public String isDownloadSubtitles_label() {
-        // return "Download Subtitles : ";
-        // }
-        // public String isDownloadSubtitles_label() {
-        // return _JDT.T.lit_add_subtitles();
-        // }
-        //
-        // public String getDownloadSubtitles_label() {
-        // return _JDT.T.lit_add_subtitles();
-        // }
+        public String getCrawlSubtitles_label() {
+            return "Crawl subtitles?";
+        }
+
         public String getUserAgent_label() {
             return text_UserAgent;
         }
@@ -54,17 +49,14 @@ public interface PluralsightComConfig extends PluginConfigInterface {
             return text_AdditionalWaittimeBetweenDownloadsMaxSeconds;
         }
     }
-    // @AboutConfig
-    // @DefaultBooleanValue(true)
-    // boolean isDownloadSubtitles();
-    //
-    // void setDownloadSubtitles(boolean b);
-    //
-    // @AboutConfig
-    // @DefaultBooleanValue(true)
-    // public boolean isFastLinkCheckEnabled();
-    //
-    // public void setFastLinkCheckEnabled(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_CrawlSubtitles)
+    @Order(5)
+    boolean isCrawlSubtitles();
+
+    void setCrawlSubtitles(boolean b);
 
     @AboutConfig
     @DefaultStringValue("JDDEFAULT")

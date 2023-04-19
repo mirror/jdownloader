@@ -12,8 +12,6 @@ import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -68,13 +66,15 @@ public class PluralsightCom extends antiDDoSForHost {
     public static final String                      PROPERTY_CLIP_VERSION                    = "version";
     public static final String                      PROPERTY_MODULE_ORDER_ID                 = "module";
     public static final String                      PROPERTY_CLIP_ORDER_ID                   = "module_clip_order_id";
+    public static final String                      PROPERTY_ORDERID_MAX                     = "orderid_max";
     @Deprecated
     public static final String                      PROPERTY_ORDERING                        = "ordering";
     @Deprecated
     public static final String                      PROPERTY_SUPPORTS_WIDESCREEN_FORMATS     = "supportsWideScreenVideoFormats";
     public static final String                      PROPERTY_TYPE                            = "type";
     public static final String                      PROPERTY_FORCED_RESOLUTION               = "forced_resolution";
-    private static final String                     PROPERTY_DIRECTURL                       = "directurl";
+    public static final String                      PROPERTY_DIRECTURL                       = "directurl";
+    public static final String                      TYPE_SUBTITLE                            = "subtitle";
     /* Packagizer properties */
     public static final String                      PROPERTY_MODULE_TITLE                    = "module_title";
     public static final String                      PROPERTY_MODULE_CLIP_TITLE               = "module_clip_title";
@@ -104,6 +104,15 @@ public class PluralsightCom extends antiDDoSForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        if (link == null) {
+            return null;
+        } else {
+            return "pluralsight://" + link.getStringProperty(PROPERTY_CLIP_ID) + "_" + link.getStringProperty(PROPERTY_CLIP_VERSION) + "_" + link.getStringProperty(PROPERTY_TYPE);
+        }
+    }
+
+    @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         login(account, true);
         if (!StringUtils.equals(br.getURL(), WEBSITE_BASE_APP + "/web-analytics/api/v1/users/current")) {
@@ -118,11 +127,13 @@ public class PluralsightCom extends antiDDoSForHost {
         if (subscriptions == null) {
             account.setType(AccountType.UNKNOWN);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Something went wrong with account verification type.");
-        } else if (subscriptions.size() == 0) {
+        }
+        if (subscriptions.size() == 0) {
             account.setType(AccountType.FREE);
         } else {
             boolean isPremium = false;
-            for (Map<String, Object> subscription : subscriptions) {
+            /* Check if this is a premium account by looking through all subscription packages. */
+            for (final Map<String, Object> subscription : subscriptions) {
                 final String expiresAt = subscription.get("expiresAt") != null ? (String) subscription.get("expiresAt") : null;
                 if (expiresAt != null) {
                     final long validUntil = TimeFormatter.getMilliSeconds(expiresAt.replace("Z", "+0000"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ", null);
@@ -315,6 +326,43 @@ public class PluralsightCom extends antiDDoSForHost {
         }
     }
 
+    public static String getFileExtension(final DownloadLink link) {
+        if (isSubtitle(link)) {
+            return ".webvtt";
+        } else {
+            return ".mp4";
+        }
+    }
+
+    public static boolean isSubtitle(final DownloadLink link) {
+        if (StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_TYPE), TYPE_SUBTITLE)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static void setFinalFilename(final DownloadLink link) {
+        final int modulePosition = link.getIntegerProperty(PROPERTY_MODULE_ORDER_ID, -1);
+        final int clipPosition = link.getIntegerProperty(PROPERTY_CLIP_ORDER_ID, -1);
+        final String moduleTitle = link.getStringProperty(PROPERTY_MODULE_TITLE);
+        final String title = link.getStringProperty(PROPERTY_MODULE_CLIP_TITLE);
+        String fullName = String.format("%02d", modulePosition) + "-" + String.format("%02d", clipPosition) + " - " + moduleTitle + " -- " + title;
+        link.setFinalFileName(fullName + getFileExtension(link));
+    }
+
+    private String getDirecturl(final Browser br, final DownloadLink link) throws Exception {
+        final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (storedDirecturl != null) {
+            return storedDirecturl;
+        } else if (!isSubtitle(link)) {
+            return this.getStreamURL(br, link, null);
+        } else {
+            return null;
+        }
+    }
+
+    /** Returns video streaming URL for downloading. */
     private String getStreamURL(final Browser br, final DownloadLink link, QUALITY quality) throws Exception {
         /* 2020-04-21: Try and error. Browser does the same lol */
         final String[] resolutions = new String[] { "1280x720", "1024x768" };
@@ -478,14 +526,14 @@ public class PluralsightCom extends antiDDoSForHost {
             final URLConnectionAdapter con = checkStream.getHttpConnection();
             try {
                 if (looksLikeDownloadableContent(con)) {
-                    logger.info("Availablecheck via stored directurl sccessful");
+                    logger.info("Availablecheck via stored directurl successful");
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     return AvailableStatus.TRUE;
                 } else {
                     logger.info("Availablecheck via stored directurl failed");
-                    link.removeProperty(PROPERTY_DIRECTURL);
+                    resetDirecturl(link);
                 }
             } finally {
                 con.disconnect();
@@ -495,16 +543,17 @@ public class PluralsightCom extends antiDDoSForHost {
             return AvailableStatus.UNCHECKABLE;
         } else if (link.getKnownDownloadSize() == -1) {
             /* Only check for filesize if none has been set yet. */
-            final String streamURL = getStreamURL(br, link, null);
-            if (!StringUtils.isEmpty(streamURL)) {
-                final Request checkStream = getRequest(br, this, br.createHeadRequest(streamURL));
-                final URLConnectionAdapter con = checkStream.getHttpConnection();
+            logger.info("Looking for filesize");
+            final String directurl = this.getDirecturl(br, link);
+            if (!StringUtils.isEmpty(directurl)) {
+                final Request req = getRequest(br, this, br.createHeadRequest(directurl));
+                final URLConnectionAdapter con = req.getHttpConnection();
                 try {
                     if (looksLikeDownloadableContent(con)) {
                         if (con.getCompleteContentLength() > 0) {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
-                        link.setProperty(PROPERTY_DIRECTURL, streamURL);
+                        link.setProperty(PROPERTY_DIRECTURL, directurl);
                         return AvailableStatus.TRUE;
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -519,6 +568,12 @@ public class PluralsightCom extends antiDDoSForHost {
         }
     }
 
+    private void resetDirecturl(final DownloadLink link) {
+        if (!isSubtitle(link)) {
+            link.removeProperty(PROPERTY_DIRECTURL);
+        }
+    }
+
     @Override
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
         if (super.looksLikeDownloadableContent(urlConnection) && urlConnection.getCompleteContentLength() > 0) {
@@ -526,25 +581,6 @@ public class PluralsightCom extends antiDDoSForHost {
         } else {
             return false;
         }
-    }
-
-    public static String correctFileName(String fileName) {
-        /* 2023-04-18: TODO: Check if this is still needed. */
-        fileName = fileName.replaceAll("\n", "").replaceAll("\r", "").replaceAll("[\\\\/:*?\"<>|]", "");
-        Matcher p = Pattern.compile(".*?(\\s?)_(\\s?).*?").matcher(fileName);
-        while (p.find()) {
-            int g1S = p.toMatchResult().start(1);
-            int g1E = p.toMatchResult().end(1);
-            int g2S = p.toMatchResult().start(2);
-            if (p.group(1).equals(" ") && p.group(2).equals(" ")) {
-                fileName = fileName.substring(0, g1S) + " " + fileName.substring(g2S + 1, fileName.length());
-            } else if (p.group(1).equals(" ")) {
-                fileName = fileName.substring(0, g1S + 1) + fileName.substring(g1E + 1, fileName.length());
-            } else if (p.group(2).equals(" ")) {
-                fileName = fileName.substring(0, g1S) + fileName.substring(g1E + 1, fileName.length());
-            }
-        }
-        return fileName;
     }
 
     @Override
@@ -584,14 +620,18 @@ public class PluralsightCom extends antiDDoSForHost {
         final int maxchunks = 1;
         if (!attemptStoredDownloadurlDownload(link, resume, maxchunks)) {
             logger.info("Generating fresh directurl");
+            if (isSubtitle(link)) {
+                /* Subtitle URLs are static -> Subtitle must have been deleted. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (account != null) {
                 login(account, false);
             }
             fetchFileInformation(link, account, true);
-            String streamURL = null;
-            if (StringUtils.isEmpty(streamURL)) {
-                streamURL = getStreamURL(br, link, null);
-                if (StringUtils.isEmpty(streamURL)) {
+            String directurl = null;
+            if (StringUtils.isEmpty(directurl)) {
+                directurl = getStreamURL(br, link, null);
+                if (StringUtils.isEmpty(directurl)) {
                     handleErrors(account);
                     if (account == null || !AccountType.PREMIUM.equals(account.getType())) {
                         throw new AccountRequiredException();
@@ -600,7 +640,7 @@ public class PluralsightCom extends antiDDoSForHost {
                     }
                 }
             }
-            dl = BrowserAdapter.openDownload(br, link, streamURL, resume, maxchunks);
+            dl = BrowserAdapter.openDownload(br, link, directurl, resume, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 try {
                     br.followConnection();
@@ -609,7 +649,7 @@ public class PluralsightCom extends antiDDoSForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setProperty(PROPERTY_DIRECTURL, streamURL);
+            link.setProperty(PROPERTY_DIRECTURL, directurl);
         } else {
             logger.info("Re-using existing directurl");
         }
