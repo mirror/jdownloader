@@ -69,6 +69,20 @@ public class UlozTo extends PluginForHost {
         this.enablePremium("https://uloz.to/kredit");
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     private String getContentURL(final DownloadLink link) {
         return link.getPluginPatternMatcher().replaceAll("https?://[^/]+/", "https://" + this.getHost() + "/");
     }
@@ -76,7 +90,12 @@ public class UlozTo extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        /* ulozto.net = the english version of the site */
+        /**
+         * ulozto.net = the English version of the site </br>
+         * Important: Each language version has it's own beginning URL-structure e.g.: </br>
+         * https://ulozto.net/file/<fid>/<slug> English website does not work with "/soubory/"! </br>
+         * * https://uloz.to/soubory/<fid>/<slug> </br>
+         */
         ret.add(new String[] { "uloz.to", "ulozto.sk", "ulozto.cz", "ulozto.net", "zachowajto.pl" });
         ret.add(new String[] { "pornfile.cz", "pornfile.ulozto.net" });
         return ret;
@@ -94,7 +113,7 @@ public class UlozTo extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?!soubory/)[\\!a-zA-Z0-9]+/[^\\?\\s]+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:file|soubory)/([\\!a-zA-Z0-9]+)(/([\\w\\-]+))?");
         }
         return ret.toArray(new String[0]);
     }
@@ -105,7 +124,7 @@ public class UlozTo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://img.uloz.to/podminky.pdf";
+        return "https://ulozto.net/tos/terms-of-service";
     }
 
     @Override
@@ -135,7 +154,26 @@ public class UlozTo extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        correctDownloadLink(link);
+        if (!link.isNameSet()) {
+            /* Set weak filename */
+            final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
+            final String fid = urlinfo.getMatch(0);
+            final String urlSlug = urlinfo.getMatch(2);
+            if (urlSlug != null) {
+                final String[] segments = urlSlug.split("-");
+                String weakFilename;
+                if (segments.length >= 2) {
+                    /* Assume that file extension is last part of slug. */
+                    weakFilename = urlSlug.substring(0, urlSlug.lastIndexOf("-")) + "." + segments[segments.length - 1];
+                } else {
+                    weakFilename = urlSlug;
+                }
+                weakFilename = weakFilename.replace("-", " ").trim();
+                link.setName(weakFilename);
+            } else {
+                link.setName(fid);
+            }
+        }
         prepBR(this.br);
         if (account != null) {
             login(account, false);
@@ -156,9 +194,6 @@ public class UlozTo extends PluginForHost {
         }
         checkErrors(br, link, account);
         handleAgeRestrictedRedirects();
-        if (br.containsHTML("(?i)The file is not available at this moment, please, try it later")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
-        }
         responseCodeOfflineCheck(br);
         // Wrong links show the mainpage so here we check if we got the mainpage or not
         if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 \\- Page not found</title>)")) {
@@ -172,7 +207,6 @@ public class UlozTo extends PluginForHost {
             /* Seems like whatever url the user added, it is not a downloadurl. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* E.g. video with streaming: "filename.avi | on-line video | Ulož.to" */
         String filename = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("itemprop=\"name\" content=\"([^\"]+)").getMatch(0);
@@ -193,8 +227,10 @@ public class UlozTo extends PluginForHost {
             }
         }
         if (filename != null) {
-            // link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            filename = Encoding.htmlDecode(filename).trim();
+            /* Remove some stuff that is present for streams such as " | on-line video | Ulož.to Disk" or " | on-line video". */
+            filename = filename.replaceFirst(" \\| on-line video.*", "");
+            link.setName(filename);
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -569,13 +605,13 @@ public class UlozTo extends PluginForHost {
         }
         dl.setFilenameFix(true);
         link.setProperty("directlink_free", dl.getConnection().getURL().toString());
+        /* Add a download slot */
+        controlMaxFreeDownloads(account, link, +1);
         try {
-            /* add a download slot */
-            controlMaxFreeDownloads(account, link, +1);
             /* start the dl */
             dl.startDownload();
         } finally {
-            /* remove download slot */
+            /* Remove download slot */
             controlMaxFreeDownloads(account, link, -1);
         }
     }
@@ -773,6 +809,9 @@ public class UlozTo extends PluginForHost {
             throw new AccountRequiredException();
         }
         this.checkGeoBlocked(br, account);
+        if (br.containsHTML("(?i)The file is not available at this moment, please, try it later")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
+        }
     }
 
     private void checkGeoBlocked(final Browser br, final Account account) throws PluginException {
