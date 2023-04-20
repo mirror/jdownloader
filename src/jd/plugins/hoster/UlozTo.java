@@ -260,7 +260,7 @@ public class UlozTo extends PluginForHost {
                 }
                 final String fileName = getFileNameFromDispositionHeader(con);
                 if (fileName != null) {
-                    link.setFinalFileName(Encoding.htmlDecode(fileName).trim());
+                    link.setFinalFileName(fileName);
                 }
                 link.setAvailable(true);
                 return con.getRequest().getUrl();

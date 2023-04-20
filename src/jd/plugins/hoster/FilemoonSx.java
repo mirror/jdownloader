@@ -217,6 +217,17 @@ public class FilemoonSx extends XFileSharingProBasic {
     }
 
     @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        /* 2023-04-20: New */
+        final String dllink = br.getRegex("(?i)>\\s*Your download link</div>\\s*<a href=\"(https?://[^\"]+)").getMatch(0);
+        if (dllink != null) {
+            return dllink;
+        } else {
+            return super.getDllink(link, account, br, src);
+        }
+    }
+
+    @Override
     protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         super.checkErrors(br, html, link, account, checkAll);
         /* 2022-11-04: Website failure after captcha on "/download/..." page */

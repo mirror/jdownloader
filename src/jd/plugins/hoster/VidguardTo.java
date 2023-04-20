@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -26,9 +27,9 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.parser.UrlQuery;
@@ -98,7 +99,7 @@ public class VidguardTo extends PluginForHost {
      * Override this function to set chunks settings!
      */
     public int getMaxChunks(final Account account) {
-        return 0;
+        return -5;
     }
 
     @Override
@@ -139,6 +140,8 @@ public class VidguardTo extends PluginForHost {
         String filesize = br.getRegex("Download\\s*<br />([^<]+)").getMatch(0);
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
+            /* Extension is not always given but we can be sure that this filehost is only hosting video content! */
+            filename = this.applyFilenameExtension(filename, ".mp4");
             link.setName(filename);
         }
         if (filesize != null) {
@@ -153,17 +156,20 @@ public class VidguardTo extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final String directlinkproperty) throws Exception, PluginException {
-        if (!attemptStoredDownloadurlDownload(link, directlinkproperty)) {
+        final String storedDirecturl = link.getStringProperty(directlinkproperty);
+        if (storedDirecturl != null) {
+            logger.info("Attempting to re-use stored directurl");
+            /* This header is very important. Without it server will return error 404. */
+            br.getHeaders().put("Referer", storedDirecturl);
+            /* Alternative which also works: */
+            // br.getHeaders().put("Referer", "https://" + this.getHost());
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, storedDirecturl, this.isResumeable(link, null), this.getMaxChunks(null));
+        } else {
             requestFileInformation(link);
             final String nextStepURL = "/d/" + this.getFID(link);
             if (!br.containsHTML(nextStepURL)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                /* 2023-04-14: This plugin hasn't been finished yet! Captcha still needs to be implemented. */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            // TODO: Add captcha handling and find best quality downloadurl in the end
             br.getPage(nextStepURL);
             final Browser brc = br.cloneBrowser();
             brc.setAllowedResponseCodes(400);
@@ -193,21 +199,44 @@ public class VidguardTo extends PluginForHost {
             final Graphics graphic = stichedImageBuffer.getGraphics();
             graphic.drawImage(exampleImage, 0, 0, null);
             graphic.drawImage(mainImage, 0, exampleImage.getHeight(), null);
+            final int fontSizeCaptchaDescription = 9;
+            graphic.setFont(new Font(ImageProvider.getDrawFontName(), Font.BOLD, fontSizeCaptchaDescription));
+            final String captchaExplanationText;
+            final String[] textRows;
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                captchaExplanationText = "Klicke auf alle Zeichen aus dem Beispielbild und bestätige durch Klick auf 'Senden'.";
+                textRows = new String[] { "Klicke die Zeichen aus dem", "Beispielbild der Reihenfolge", "nach an und bestätige mit Ok.", "<--- Beispielbild" };
+            } else {
+                captchaExplanationText = "Click the characters in order and confirm by clicking on 'Send'.";
+                textRows = new String[] { "Click on all characters you can", "see inside the example image", "in order. Hit Ok to confirm.", "<--- Example image" };
+            }
+            try {
+                int textRowPosition = 1;
+                for (final String textRow : textRows) {
+                    graphic.drawString(textRow, exampleImage.getWidth() + 1, fontSizeCaptchaDescription * textRowPosition);
+                    textRowPosition++;
+                }
+            } catch (final Throwable e) {
+                /* User doesn't have any fonts installed on OS. */
+            }
             final byte[] image = IconIO.toJpgBytes(stichedImageBuffer);
             if (image == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final File stitchedImageOutput = this.getLocalCaptchaFile(".png");
             IO.writeToFile(stitchedImageOutput, image);
-            final MultiClickedPoint c = this.getMultiCaptchaClickedPoint(stitchedImageOutput, link, "Click the characters in order and confirm.");
+            final MultiClickedPoint c = this.getMultiCaptchaClickedPoint(stitchedImageOutput, link, captchaExplanationText);
             final int[] x = c.getX();
             final int[] y = c.getY();
             logger.info("User has clicked " + x.length + " times");
             final StringBuilder sb = new StringBuilder();
             for (int index = 0; index < x.length; index++) {
-                // TODO: Correct Y coordinates which are wrong due to the example image we've merged with the main image.
                 final int coordX = x[index];
-                final int coordY = y[index];
+                final int coordY = y[index] - exampleImage.getHeight();
+                if (coordY < 0) {
+                    logger.info("Invalid answer: User clicked in area of example image. This answer cannot be correct!");
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 if (sb.length() > 0) {
                     sb.append(",");
                 }
@@ -215,81 +244,62 @@ public class VidguardTo extends PluginForHost {
                 sb.append(",");
                 sb.append(Integer.toString(coordY));
             }
-            if (true) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            // TODO
             final UrlQuery query = new UrlQuery();
             query.add("dots", Encoding.urlEncode(sb.toString()));
             query.add("key", Encoding.urlEncode(captcha_key));
             query.add("v", Long.toString(System.currentTimeMillis()));
             brc.postPage("/captcha", query);
             if (brc.getHttpConnection().getResponseCode() == 400) {
-                /* Somes with json response: {"msg":"Verification failed"} */
+                /* Comes with json response: {"msg":"Verification failed"} */
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
+            // Valid answer: {"token":"<hash[a-f]{32}>"}
             /* Access that same URL. Now we should get downloadable direct-urls. */
             br.getPage(nextStepURL);
-            final String[][] qualities = br.getRegex("\"(https?://[^\"]+=\"[^>]*>(\\d+)p</a>").getMatches();
-            String dllink = br.getRegex("").getMatch(0);
+            final String[][] qualities = br.getRegex("\"(https?://[^\"]+)\"[^>]*>(\\d+)p</a>").getMatches();
+            if (qualities == null || qualities.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String dllink = null;
+            int maxHeight = 0;
+            for (final String[] qualityInfo : qualities) {
+                final int height = Integer.parseInt(qualityInfo[1]);
+                if (dllink == null || height > maxHeight) {
+                    dllink = qualityInfo[0];
+                    maxHeight = height;
+                }
+            }
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            logger.info("Chosen qualily: " + maxHeight + "p");
+            dllink = Encoding.htmlOnlyDecode(dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(null));
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection(true);
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
+            if (storedDirecturl != null) {
+                link.removeProperty(directlinkproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Failed to re-use stored directurl");
+            }
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        } else if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
+        if (acc != null && acc.getType() == AccountType.PREMIUM) {
+            return false;
         } else {
-            /* Premium accounts do not have captchas */
-            return false;
-        }
-    }
-
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty) throws Exception {
-        final String url = link.getStringProperty(directlinkproperty);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, null), this.getMaxChunks(null));
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                return true;
-            } else {
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
-            return false;
+            return true;
         }
     }
 
