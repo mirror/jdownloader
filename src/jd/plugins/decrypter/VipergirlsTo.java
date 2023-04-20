@@ -62,7 +62,7 @@ public class VipergirlsTo extends antiDDoSForDecrypt {
         if (coords == null || coords.length < expectedNumberofClicks) {
             return null;
         }
-        final MultiClickedPoint c = getMultiCaptchaClickedPoint(getHost(), captcha, param, null, "Click on all 3 mentioned digits and confirm afterwards");
+        final MultiClickedPoint c = getMultiCaptchaClickedPoint(captcha, param, "Click on all 3 mentioned digits and confirm afterwards");
         String selectedLetterNumbers = "";
         final int[] x = c.getX();
         final int[] y = c.getY();

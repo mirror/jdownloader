@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -26,6 +27,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -64,7 +66,7 @@ public class MeocloudPtFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/link/([a-f0-9\\-]+)/(.+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/link/([a-f0-9\\-]+)/([^\\?]{2,})");
         }
         return ret.toArray(new String[0]);
     }
@@ -72,12 +74,15 @@ public class MeocloudPtFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
-        // final String folderID = urlinfo.getMatch(0);
-        final String folderPath = Encoding.htmlDecode(urlinfo.getMatch(1));
         br.getPage(param.getCryptedUrl());
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // final String folderID = urlinfo.getMatch(0);
+        final String folderPath = getPathFromURL(param.getCryptedUrl());
+        if (folderPath == null) {
+            /* Developer mistake! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Form pwform = MeocloudPtFolder.getPasswordProtectedForm(br);
         if (pwform != null) {
@@ -104,15 +109,54 @@ public class MeocloudPtFolder extends PluginForDecrypt {
                 fileIndex++;
             }
         }
-        // TODO: Add subfolder support
-        // final String[] subfolderURLs = br.getRegex("").getColumn(0);
-        // if (subfolderURLs == null || subfolderURLs.length == 0) {
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // for (final String singleLink : subfolderURLs) {
-        // ret.add(createDownloadlink(singleLink));
-        // }
+        logger.info("Number of files: " + ret.size());
+        /* Find subfolder URLs. */
+        int numberofSubfolders = 0;
+        final String linkPath = br.getRegex("name=\"link_path\" value=\"([a-f0-9\\-]+)").getMatch(0);
+        final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        for (final String url : urls) {
+            if (url.contains("?") || !this.canHandle(url)) {
+                /* Skip stuff we can't handle. */
+                continue;
+            }
+            final String subfolderPath = getPathFromURL(url);
+            if (subfolderPath == null) {
+                /* Skip unsupported URLs. */
+                continue;
+            } else if (subfolderPath.endsWith("/prev") || subfolderPath.endsWith("/next") || subfolderPath.endsWith("/0")) {
+                /* Skip invalid URLs. */
+                continue;
+            } else if (linkPath != null && subfolderPath.endsWith(linkPath)) {
+                /* Skip invalid URLs. */
+                continue;
+            } else if (!subfolderPath.matches(Pattern.quote(folderPath) + "/.+")) {
+                /* Skip URLs with seemingly invalid path. */
+                continue;
+            }
+            ret.add(this.createDownloadlink(url));
+            numberofSubfolders++;
+        }
+        logger.info("Number of subfolders: " + numberofSubfolders);
+        if (ret.isEmpty()) {
+            /* Empty folder or broken plugin. */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return ret;
+    }
+
+    private String getPathFromURL(final String url) {
+        final Regex urlinfo = new Regex(url, this.getSupportedLinks());
+        // final String folderID = urlinfo.getMatch(0);
+        String folderPath = urlinfo.getMatch(1);
+        if (folderPath == null) {
+            return null;
+        }
+        folderPath = Encoding.htmlDecode(folderPath);
+        if (folderPath.endsWith("/")) {
+            return folderPath.substring(0, folderPath.lastIndexOf("/"));
+        } else {
+            return folderPath;
+        }
     }
 
     public static Form getPasswordProtectedForm(final Browser br) {

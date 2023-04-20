@@ -15,15 +15,24 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
+
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.images.IconIO;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.multiclickcaptcha.MultiClickedPoint;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -147,10 +156,10 @@ public class VidguardTo extends PluginForHost {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty)) {
             requestFileInformation(link);
             final String nextStepURL = "/d/" + this.getFID(link);
-            if (br.containsHTML(nextStepURL)) {
+            if (!br.containsHTML(nextStepURL)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (true) {
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 /* 2023-04-14: This plugin hasn't been finished yet! Captcha still needs to be implemented. */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -159,12 +168,59 @@ public class VidguardTo extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             brc.setAllowedResponseCodes(400);
             brc.getPage("/captcha?v=" + System.currentTimeMillis());
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final String captcha_key = entries.get("captcha_key").toString();
             final String img_base64 = entries.get("img_base64").toString();
-            /* TODO: Combine the preview image and click captcha image, get the clicked coordinates and send them. */
+            final String thumb_base64 = entries.get("thumb_base64").toString();
+            final String imgBase64Regex = "(?i)data:image/([a-z]+);base64,(.+)";
+            final Regex imgBase64 = new Regex(img_base64, imgBase64Regex);
+            final Regex thumbBase64 = new Regex(thumb_base64, imgBase64Regex);
+            final String imgBase64Ext = imgBase64.getMatch(0);
+            final String imgBase64Str = imgBase64.getMatch(1);
+            final String thumbBase64Ext = thumbBase64.getMatch(0); // jpeg
+            final String thumbBase64Str = thumbBase64.getMatch(1); // png
+            if (imgBase64Str == null || thumbBase64Str == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final File exampleImageFile = getLocalCaptchaFile("." + thumbBase64Ext);
+            final File mainImageFile = getLocalCaptchaFile("." + imgBase64Ext);
+            IO.writeToFile(exampleImageFile, org.appwork.utils.encoding.Base64.decode(thumbBase64Str));
+            IO.writeToFile(mainImageFile, org.appwork.utils.encoding.Base64.decode(imgBase64Str));
+            final BufferedImage exampleImage = ImageIO.read(exampleImageFile);
+            final BufferedImage mainImage = ImageIO.read(mainImageFile);
+            /* Put both images together. */
+            final BufferedImage stichedImageBuffer = new BufferedImage(mainImage.getWidth(), mainImage.getHeight() + exampleImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+            final Graphics graphic = stichedImageBuffer.getGraphics();
+            graphic.drawImage(exampleImage, 0, 0, null);
+            graphic.drawImage(mainImage, 0, exampleImage.getHeight(), null);
+            final byte[] image = IconIO.toJpgBytes(stichedImageBuffer);
+            if (image == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final File stitchedImageOutput = this.getLocalCaptchaFile(".png");
+            IO.writeToFile(stitchedImageOutput, image);
+            final MultiClickedPoint c = this.getMultiCaptchaClickedPoint(stitchedImageOutput, link, "Click the characters in order and confirm.");
+            final int[] x = c.getX();
+            final int[] y = c.getY();
+            logger.info("User has clicked " + x.length + " times");
+            final StringBuilder sb = new StringBuilder();
+            for (int index = 0; index < x.length; index++) {
+                // TODO: Correct Y coordinates which are wrong due to the example image we've merged with the main image.
+                final int coordX = x[index];
+                final int coordY = y[index];
+                if (sb.length() > 0) {
+                    sb.append(",");
+                }
+                sb.append(Integer.toString(coordX));
+                sb.append(",");
+                sb.append(Integer.toString(coordY));
+            }
+            if (true) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // TODO
             final UrlQuery query = new UrlQuery();
-            query.add("dots", "TODO");
+            query.add("dots", Encoding.urlEncode(sb.toString()));
             query.add("key", Encoding.urlEncode(captcha_key));
             query.add("v", Long.toString(System.currentTimeMillis()));
             brc.postPage("/captcha", query);
@@ -172,6 +228,7 @@ public class VidguardTo extends PluginForHost {
                 /* Somes with json response: {"msg":"Verification failed"} */
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
+            /* Access that same URL. Now we should get downloadable direct-urls. */
             br.getPage(nextStepURL);
             final String[][] qualities = br.getRegex("\"(https?://[^\"]+=\"[^>]*>(\\d+)p</a>").getMatches();
             String dllink = br.getRegex("").getMatch(0);

@@ -40,7 +40,7 @@ public class LockmyLink extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String shortID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         br.getHeaders().put("Origin", "https://" + this.getHost());
         br.getHeaders().put("Accept", "*/*");
@@ -62,7 +62,7 @@ public class LockmyLink extends PluginForDecrypt {
         final Browser brc = this.br.cloneBrowser();
         while (true) {
             if (isAbort()) {
-                return decryptedLinks;
+                return ret;
             } else {
                 final String response = brc.postPage("/api/ajax.php", "url=[\"" + param.getCryptedUrl() + "\"]");
                 if (response.matches("^\\d+$")) {
@@ -114,9 +114,9 @@ public class LockmyLink extends PluginForDecrypt {
             logger.warning("Failed to find any results -> Offline, wrong captcha or plugin broken");
         } else {
             for (final String result : results) {
-                decryptedLinks.add(createDownloadlink(result));
+                ret.add(createDownloadlink(result));
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 }
