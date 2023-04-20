@@ -26,7 +26,7 @@ public interface PluralsightComConfig extends PluginConfigInterface {
 
     public static class TRANSLATION {
         public String getCrawlSubtitles_label() {
-            return "Crawl subtitles?";
+            return text_CrawlSubtitles;
         }
 
         public String getUserAgent_label() {
@@ -51,7 +51,7 @@ public interface PluralsightComConfig extends PluginConfigInterface {
     }
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry(text_CrawlSubtitles)
     @Order(5)
     boolean isCrawlSubtitles();

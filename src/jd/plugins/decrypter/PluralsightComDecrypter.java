@@ -10,7 +10,6 @@ import java.util.Set;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.URLHelper;
@@ -161,7 +160,7 @@ public class PluralsightComDecrypter extends antiDDoSForDecrypt {
                     final String clipVersion = (String) clip.get("version");
                     link.setProperty(PluralsightCom.PROPERTY_TYPE, extension.substring(1));
                     results.add(link);
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && clipVersion != null && cfg.isCrawlSubtitles()) {
+                    if (clipVersion != null && cfg.isCrawlSubtitles()) {
                         final String subtitleURL = "https://app.pluralsight.com/transcript/api/v1/caption/webvtt/" + clipID + "/" + clipVersion + "/en/";
                         final DownloadLink subtitle = new DownloadLink(hosterPlugin, null, this.getHost(), subtitleURL, true);
                         subtitle.setProperty(PluralsightCom.PROPERTY_DIRECTURL, subtitleURL);
