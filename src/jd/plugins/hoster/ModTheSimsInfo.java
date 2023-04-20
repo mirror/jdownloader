@@ -16,21 +16,21 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Cookie;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,11 +38,39 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "modthesims.info" }, urls = { "https?://[a-z0-9]+\\.modthesims2?\\.(?:com|info)/getfile\\.php\\?file=(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ModTheSimsInfo extends PluginForHost {
     public ModTheSimsInfo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "modthesims.info", "modthesims.com", "modthesims2.info", "modthesims2.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/getfile\\.php\\?file=(\\d+).*");
+        }
+        return ret.toArray(new String[0]);
     }
 
     private String dllink = null;
@@ -52,37 +80,47 @@ public class ModTheSimsInfo extends PluginForHost {
         return "http://www.modthesims.info/forumdisplay.php?f=24";
     }
 
+    private String getContentURL(final DownloadLink link) {
+        final String orighost = Browser.getHost(link.getPluginPatternMatcher());
+        return link.getPluginPatternMatcher().replace(orighost + "/", this.getHost() + "/");
+    }
+
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        final String orighost = new Regex(link.getPluginPatternMatcher(), "https?://[a-z0-9]+\\.([^/]+)/.+").getMatch(0);
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace(orighost + "/", this.getHost() + "/"));
+    public String getLinkID(final DownloadLink link) {
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        }
+        try {
+            final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
+            /* Parameter "v" does not always exist. */
+            return "modthesims://" + query.get("file") + "_" + query.get("v");
+        } catch (final Throwable e) {
+        }
+        return super.getLinkID(link);
     }
 
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = -5;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final int     FREE_MAXDOWNLOADS            = -1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        dllink = downloadLink.getDownloadURL();
-        dllink = Encoding.htmlDecode(dllink);
+        dllink = getContentURL(link);
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setFinalFileName(getFileNameFromHeader(con));
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -99,87 +137,40 @@ public class ModTheSimsInfo extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    private static final String MAINPAGE = "http://modthesims.info";
-    private static Object       LOCK     = new Object();
-
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            try {
-                // Load cookies
-                br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
-                    final Map<String, String> cookies = (Map<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
-                    }
-                }
-                br.setFollowRedirects(false);
-                final String pwhash = JDHash.getMD5(account.getPass());
-                br.postPage("http://www.modthesims.info/login.php", "cookieuser=1&vb_login_password=&s=&do=login&forceredirect=1&vb_login_username=" + Encoding.urlEncode(account.getUser()) + "&vb_login_md5password=" + pwhash + "&vb_login_md5password_utf=" + pwhash);
-                if (br.getCookie(MAINPAGE, "mts2password") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
+        synchronized (account) {
+            // Load cookies
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(cookies);
+                return;
             }
+            br.setFollowRedirects(false);
+            final String pwhash = JDHash.getMD5(account.getPass());
+            br.postPage("http://www.modthesims.info/login.php", "cookieuser=1&vb_login_password=&s=&do=login&forceredirect=1&vb_login_username=" + Encoding.urlEncode(account.getUser()) + "&vb_login_md5password=" + pwhash + "&vb_login_md5password_utf=" + pwhash);
+            if (br.getCookie(this.getHost(), "mts2password", Cookies.NOTDELETEDPATTERN) == null) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
-        try {
-            account.setType(AccountType.PREMIUM);
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            /* not available in old Stable 0.9.581 */
-        }
-        ai.setStatus("Premium User");
-        account.setValid(true);
+        account.setType(AccountType.PREMIUM);
+        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        account.setConcurrentUsePossible(true);
         return ai;
     }
 
@@ -189,9 +180,9 @@ public class ModTheSimsInfo extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -199,13 +190,12 @@ public class ModTheSimsInfo extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override
