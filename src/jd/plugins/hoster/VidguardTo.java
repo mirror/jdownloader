@@ -232,9 +232,10 @@ public class VidguardTo extends PluginForHost {
             final StringBuilder sb = new StringBuilder();
             for (int index = 0; index < x.length; index++) {
                 final int coordX = x[index];
+                /* Correct Y position as our example image is part of the clickable area. */
                 final int coordY = y[index] - exampleImage.getHeight();
                 if (coordY < 0) {
-                    logger.info("Invalid answer: User clicked in area of example image. This answer cannot be correct!");
+                    logger.info("Invalid captcha answer: User clicked in area of example image. This answer cannot be correct!");
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 if (sb.length() > 0) {
