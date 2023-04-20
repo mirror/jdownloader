@@ -56,8 +56,6 @@ import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UlozTo extends PluginForHost {
-    // private static final String CAPTCHA_TEXT = "CAPTCHA_TEXT";
-    // private static final String CAPTCHA_ID = "CAPTCHA_ID";
     private static final String  QUICKDOWNLOAD                = "https?://[^/]+/quickDownload/\\d+";
     /* 2017-01-02: login API seems to be broken --> Use website as workaround */
     private static final boolean use_login_api                = false;
@@ -71,9 +69,8 @@ public class UlozTo extends PluginForHost {
         this.enablePremium("https://uloz.to/kredit");
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        /* Always use current main domain! */
-        link.setUrlDownload(link.getPluginPatternMatcher().replaceAll("https?://[^/]+/", "https://" + this.getHost() + "/"));
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceAll("https?://[^/]+/", "https://" + this.getHost() + "/");
     }
 
     public static List<String[]> getPluginDomains() {
@@ -104,15 +101,6 @@ public class UlozTo extends PluginForHost {
 
     public static String[] getAnnotationUrls() {
         return buildAnnotationUrls(getPluginDomains());
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        if ("ulozto.sk".equalsIgnoreCase(host) || "ulozto.cz".equalsIgnoreCase(host) || "ulozto.net".equalsIgnoreCase(host)) {
-            return "uloz.to";
-        } else {
-            return super.rewriteHost(host);
-        }
     }
 
     @Override
@@ -149,17 +137,24 @@ public class UlozTo extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         correctDownloadLink(link);
         prepBR(this.br);
+        if (account != null) {
+            login(account, false);
+        }
         br.setFollowRedirects(false);
-        if (link.getPluginPatternMatcher().matches(QUICKDOWNLOAD)) {
+        final String contentURL = getContentURL(link);
+        if (contentURL.matches(QUICKDOWNLOAD)) {
             return AvailableStatus.TRUE;
-        } else if (link.getPluginPatternMatcher().matches("(?i)https?://[^/]+/(podminky|tos)/[^/]+")) {
+        } else if (contentURL.matches("(?i)https?://[^/]+/(podminky|tos)/[^/]+")) {
             return AvailableStatus.FALSE;
         }
         finalDirectDownloadURL = handleDownloadUrl(link, isDownload);
         if (finalDirectDownloadURL != null) {
             return AvailableStatus.TRUE;
+        } else if (this.isPrivateFile(br)) {
+            /* File is online but we can't get any information about the file. */
+            return AvailableStatus.TRUE;
         }
-        checkGeoBlocked(br, null);
+        checkErrors(br, link, account);
         handleAgeRestrictedRedirects();
         if (br.containsHTML("(?i)The file is not available at this moment, please, try it later")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
@@ -245,9 +240,12 @@ public class UlozTo extends PluginForHost {
         }
     }
 
-    /** Accesses downloadurl and checks for content. */
+    /**
+     * Accesses downloadurl and checks for content. </br>
+     * Returns final downloadurl.
+     */
     private String handleDownloadUrl(final DownloadLink link, final boolean isDownload) throws Exception {
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(this.getContentURL(link));
         int i = 0;
         while (br.getRedirectLocation() != null) {
             if (i == 10) {
@@ -262,7 +260,7 @@ public class UlozTo extends PluginForHost {
                 }
                 final String fileName = getFileNameFromDispositionHeader(con);
                 if (fileName != null) {
-                    link.setFinalFileName(fileName);
+                    link.setFinalFileName(Encoding.htmlDecode(fileName).trim());
                 }
                 link.setAvailable(true);
                 return con.getRequest().getUrl();
@@ -325,9 +323,11 @@ public class UlozTo extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink link, final Account account) throws Exception {
         AvailableStatus status = requestFileInformation(link, account, true);
-        if (link.getPluginPatternMatcher().matches(QUICKDOWNLOAD)) {
+        final String contentURL = this.getContentURL(link);
+        if (contentURL.matches(QUICKDOWNLOAD)) {
             throw new AccountRequiredException();
         }
+        this.checkErrors(br, link, account);
         if (AvailableStatus.UNCHECKABLE.equals(status)) {
             /* TODO: 2020-08-28 Check if this is still required at this place */
             final Form form = br.getFormbyActionRegex("limit-exceeded");
@@ -580,6 +580,10 @@ public class UlozTo extends PluginForHost {
         }
     }
 
+    private boolean isPrivateFile(final Browser br) {
+        return br.containsHTML(">\\s*(Soubor je označen jako soukromý|The file has been marked as private)");
+    }
+
     private String getFinalDownloadurl(Browser br) {
         String dllink = PluginJSonUtils.getJsonValue(br, "url");
         if (StringUtils.isEmpty(dllink)) {
@@ -679,17 +683,18 @@ public class UlozTo extends PluginForHost {
     }
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, false);
         if (account.getType() == AccountType.FREE) {
             /* Free Account */
             doFree(link, account);
         } else {
             /* Premium Account */
-            requestFileInformation(link, null, true);
+            requestFileInformation(link, account, true);
+            this.checkErrors(br, link, account);
+            final String contentURL = this.getContentURL(link);
             String dllink = finalDirectDownloadURL;
             if (dllink == null) {
-                if (link.getPluginPatternMatcher().matches(QUICKDOWNLOAD)) {
-                    dllink = link.getPluginPatternMatcher();
+                if (contentURL.matches(QUICKDOWNLOAD)) {
+                    dllink = contentURL;
                 } else {
                     if (link.isPasswordProtected()) {
                         handlePassword(link);
@@ -761,6 +766,13 @@ public class UlozTo extends PluginForHost {
                 setBasicAuthHeader(account);
             }
         }
+    }
+
+    private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        if (this.isPrivateFile(br)) {
+            throw new AccountRequiredException();
+        }
+        this.checkGeoBlocked(br, account);
     }
 
     private void checkGeoBlocked(final Browser br, final Account account) throws PluginException {
