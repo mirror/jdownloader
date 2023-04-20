@@ -15,11 +15,15 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.Request;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -28,6 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.net.URLHelper;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -46,12 +51,13 @@ public class ArchivosMe extends YetiShareCore {
      * other: <br />
      */
     public static final String mainDownloadDomain = "212.162.153.174";
+    public static final String mainPluginDomain   = "archivos.me";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         /* 2021-04-28: IP workaround is still required! */
-        ret.add(new String[] { "archivos.me", mainDownloadDomain, "95.215.205.103", "archivos.club" });
+        ret.add(new String[] { mainPluginDomain, mainDownloadDomain, "95.215.205.103", "archivos.club" });
         return ret;
     }
 
@@ -72,6 +78,35 @@ public class ArchivosMe extends YetiShareCore {
 
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser() {
+            @Override
+            public Browser createNewBrowserInstance() {
+                return ArchivosMe.this.createNewBrowserInstance();
+            }
+
+            @Override
+            protected void onBeforeRequestConnect(Request request) throws IOException {
+                final URL url = request.getURL();
+                if (mainPluginDomain.equalsIgnoreCase(url.getHost())) {
+                    request.setURL(new URL(URLHelper.createURL(url.getProtocol(), url.getUserInfo(), mainDownloadDomain, url.getPort(), url.getPath(), url.getQuery(), url.getRef())));
+                }
+            }
+
+            @Override
+            public Cookies getCookies(String url) {
+                final String host = Browser.getHost(url);
+                if (mainPluginDomain.equalsIgnoreCase(host)) {
+                    return super.getCookies(mainDownloadDomain);
+                } else {
+                    return super.getCookies(url);
+                }
+            }
+        };
+        return br;
     }
 
     @Override
@@ -145,12 +180,9 @@ public class ArchivosMe extends YetiShareCore {
         super.checkErrors(br, link, account);
     }
 
-    private boolean domainHackActive = false;
-
     @Override
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         /* 2020-01-18: Special */
-        domainHackActive = true;
         loginWebsite(account, true);
         if (br.getURL() == null || !br.getURL().contains("/account_edit.html")) {
             getPage("/account_edit.html");
@@ -181,21 +213,12 @@ public class ArchivosMe extends YetiShareCore {
 
     @Override
     public boolean loginWebsite(final Account account, boolean force) throws Exception {
-        domainHackActive = true;
-        try {
-            return super.loginWebsite(account, true);
-        } finally {
-            domainHackActive = false;
-        }
+        return super.loginWebsite(account, true);
     }
 
     @Override
     public String getHost() {
-        if (domainHackActive) {
-            return mainDownloadDomain;
-        } else {
-            return super.getHost();
-        }
+        return super.getHost();
     }
 
     @Override
