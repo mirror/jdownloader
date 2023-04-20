@@ -634,6 +634,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         }
     }
 
+    protected boolean allowGetProtocolHttpsAutoHandling(final String url) {
+        return true;
+    }
+
     /**
      * Returns URL to content. </br> Uses original domain whenever possible. </br> TODO add custom support to keep custom port, eg
      * vidspeeds.com
@@ -655,7 +659,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             final URL url = new URL(originalURL);
             final String urlHost = getPreferredHost(link, url);
             final String protocol;
-            if ("https".equalsIgnoreCase(url.getProtocol())) {
+            if ("https".equalsIgnoreCase(url.getProtocol()) && allowGetProtocolHttpsAutoHandling(originalURL)) {
                 protocol = "https://";
             } else if (this.useHTTPS()) {
                 protocol = "https://";
@@ -751,7 +755,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             domainToUse = urlHost;
         }
         final String protocol;
-        if ("https".equalsIgnoreCase(url.getProtocol())) {
+        if ("https".equalsIgnoreCase(url.getProtocol()) && allowGetProtocolHttpsAutoHandling(url.toExternalForm())) {
             protocol = "https://";
         } else if (this.useHTTPS()) {
             protocol = "https://";
@@ -780,18 +784,18 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected String getMainPage(final Browser br) {
-        final String browser_host = br != null ? br.getHost(true) : null;
+        final Request request = br != null ? br.getRequest() : null;
         final String host;
-        if (browser_host != null) {
+        if (request != null) {
             /* Has a browser request been done before? Use this domain as it could e.g. differ from the plugin set main domain. */
-            host = browser_host;
+            host = request.getURL().getHost();
         } else {
             /* Return current main domain */
             /* 2019-07-25: This may not be correct out of the box e.g. for imgmaze.com */
             host = this.getHost();
         }
         final String protocol;
-        if (br != null && br.getRequest() != null && "https".equalsIgnoreCase(br.getRequest().getURL().getProtocol())) {
+        if (request != null && "https".equalsIgnoreCase(request.getURL().getProtocol()) && allowGetProtocolHttpsAutoHandling(request.getUrl())) {
             protocol = "https://";
         } else if (this.useHTTPS()) {
             protocol = "https://";

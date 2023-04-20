@@ -18,8 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.YetiShareCore;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -29,6 +27,8 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
+
+import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ArchivosMe extends YetiShareCore {
@@ -205,7 +205,7 @@ public class ArchivosMe extends YetiShareCore {
     }
 
     @Override
-    protected boolean allowGetProtocolHttpsAutoHandling() {
+    protected boolean allowGetProtocolHttpsAutoHandling(String url) {
         return false;
     }
 
