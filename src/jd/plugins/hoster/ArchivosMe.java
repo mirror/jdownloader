@@ -20,6 +20,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.components.YetiShareCore;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -31,9 +34,6 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ArchivosMe extends YetiShareCore {
@@ -209,16 +209,6 @@ public class ArchivosMe extends YetiShareCore {
             /* Fallback to template handling */
             return super.fetchAccountInfoWebsite(account);
         }
-    }
-
-    @Override
-    public boolean loginWebsite(final Account account, boolean force) throws Exception {
-        return super.loginWebsite(account, true);
-    }
-
-    @Override
-    public String getHost() {
-        return super.getHost();
     }
 
     @Override
