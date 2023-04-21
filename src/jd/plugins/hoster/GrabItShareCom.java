@@ -21,6 +21,9 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -30,6 +33,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -39,9 +43,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grabitshare.com" }, urls = { "http://(www\\.)?grabitshare\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" })
 public class GrabItShareCom extends PluginForHost {
@@ -229,11 +230,9 @@ public class GrabItShareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private static Object LOCK = new Object();
-
     @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
@@ -288,9 +287,9 @@ public class GrabItShareCom extends PluginForHost {
                     }
                 }
                 if (premium == null) {
-                    account.setProperty("freeacc", true);
+                    account.setType(AccountType.FREE);
                 } else {
-                    account.setProperty("freeacc", false);
+                    account.setType(AccountType.PREMIUM);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -342,12 +341,6 @@ public class GrabItShareCom extends PluginForHost {
             Calendar cal = new GregorianCalendar(Integer.parseInt("20" + c[2]), Integer.parseInt(c[1]) - 1, Integer.parseInt(c[0]));
             ai.setCreateTime(cal.getTimeInMillis());
         }
-        if (account.getBooleanProperty("freeacc")) {
-            ai.setStatus("Registered (free) User");
-        } else {
-            ai.setStatus("Premium User");
-        }
-        account.setValid(true);
         return ai;
     }
 
@@ -357,7 +350,7 @@ public class GrabItShareCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.getPage(parameter.getDownloadURL());
         checkOffline();
-        if (account.getBooleanProperty("freeacc")) {
+        if (account.getType() == AccountType.FREE) {
             doFree(parameter);
         } else {
             String finalLink = null;
@@ -425,7 +418,7 @@ public class GrabItShareCom extends PluginForHost {
         return -1;
     }
 
-    // do not add @Override here to keep 0.* compatibility
+    @Override
     public boolean hasAutoCaptcha() {
         return true;
     }
@@ -438,17 +431,13 @@ public class GrabItShareCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
+        if (acc != null && AccountType.PREMIUM.equals(acc.getType())) {
+            return false;
+        } else {
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
     }
 
     @Override

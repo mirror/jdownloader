@@ -24,6 +24,7 @@ import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -105,7 +106,7 @@ public class MixUploadOrg extends PluginForHost {
         List<Account> accs = AccountController.getInstance().getValidAccounts("mixupload.org");
         if (accs != null && accs.size() > 0) {
             for (Account acc : accs) {
-                if (acc.isEnabled() && !acc.getBooleanProperty("free", true)) {
+                if (acc.isEnabled() && AccountType.PREMIUM.equals(acc.getType())) {
                     premiumAcc = acc;
                 }
             }

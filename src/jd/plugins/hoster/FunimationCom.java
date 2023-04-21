@@ -1,10 +1,10 @@
 package jd.plugins.hoster;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -24,7 +24,6 @@ public class FunimationCom extends antiDDoSForHost {
     static private Object                                    lock         = new Object();
     static private HashMap<Account, HashMap<String, String>> loginCookies = new HashMap<Account, HashMap<String, String>>();
 
-    @SuppressWarnings("deprecation")
     public FunimationCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.funimation.com/log-in/");
@@ -42,22 +41,14 @@ public class FunimationCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        login(account, true);
         final String premiumStatus = br.getRegex("var userState = '(\\w+)';").getMatch(0);
         if ("Subscriber".equals(premiumStatus)) {
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium Account");
         } else if ("Free".equals(premiumStatus)) {
             account.setType(AccountType.FREE);
-            ai.setStatus("Free Account");
             ai.setValidUntil(-1);
         }
-        account.setValid(true);
         return ai;
     }
 

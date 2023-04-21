@@ -20,6 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,13 +44,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EmloadCom extends antiDDoSForHost {
@@ -98,8 +98,9 @@ public class EmloadCom extends antiDDoSForHost {
     }
 
     /**
-     * New parts of the website, intriduced 2020-01-20 but then reverted back to old style 2020-01-21 </br> They will probably re-introduce
-     * their changes! In this case, simply setting this to true should fix availablecheck, login and (premium) download!
+     * New parts of the website, intriduced 2020-01-20 but then reverted back to old style 2020-01-21 </br>
+     * They will probably re-introduce their changes! In this case, simply setting this to true should fix availablecheck, login and
+     * (premium) download!
      */
     private static final boolean useWebAPI = false;
 
@@ -426,7 +427,7 @@ public class EmloadCom extends antiDDoSForHost {
             if (!br.getURL().endsWith("/me")) {
                 getPage("/me");
             }
-            final String accounttype = br.getRegex("<label>Your Plan</label>\\s*?<span class=\"known_values\"><div [^>]+></div>\\s*([^<>]+)\\s*</span>").getMatch(0);
+            final String accounttype = br.getRegex("(?i)<label>Your Plan</label>\\s*?<span class=\"known_values\"><div [^>]+></div>\\s*([^<>]+)\\s*</span>").getMatch(0);
             /* E.g. Lifetime Free Account */
             if (accounttype == null || accounttype.contains("Free")) {
                 account.setType(AccountType.FREE);

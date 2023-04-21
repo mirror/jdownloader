@@ -80,6 +80,10 @@ public class ArchivosMe extends YetiShareCore {
         return buildAnnotationNames(getPluginDomains());
     }
 
+    /**
+     * This is a hack so that we can use "archivos.me" as main domain even though it is invalid but at the same time we can internally (= in
+     * our browser instance) use a current IP of that domain.
+     */
     @Override
     public Browser createNewBrowserInstance() {
         final Browser br = new Browser() {

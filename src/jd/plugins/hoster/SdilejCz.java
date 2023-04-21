@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -28,6 +30,7 @@ import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -36,8 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sdilej.cz" }, urls = { "https?://(?:www\\.)?sdilej\\.cz/(\\d+)/([a-z0-9-\\.]+)" })
 public class SdilejCz extends PluginForHost {
@@ -51,18 +52,16 @@ public class SdilejCz extends PluginForHost {
         this.enablePremium("http://sdilej.cz/registrace");
     }
 
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        } else if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        } else {
+        if (acc != null && AccountType.PREMIUM.equals(acc.getType())) {
             return false;
+        } else {
+            return true;
         }
     }
 
+    @Override
     public boolean hasAutoCaptcha() {
         return false;
     }
@@ -312,21 +311,18 @@ public class SdilejCz extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         login(account, true);
         br.getPage("/upload/");
         final String trafficleft = br.getRegex("kredit: <strong>([^<>\"]*?)<").getMatch(0);
         if (trafficleft == null) {
-            account.setValid(true);
-            ai.setStatus("Registered User");
-            return ai;
+            account.setType(AccountType.FREE);
+        } else {
+            account.setType(AccountType.PREMIUM);
+            ai.setTrafficLeft(trafficleft.replace(",", "."));
         }
-        ai.setTrafficLeft(trafficleft.replace(",", "."));
-        account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 

@@ -15,6 +15,15 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.Regex;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -29,15 +38,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.Regex;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter.noestasinvitado.com" }, urls = { "https?://(?:www\\.)?(megacrypter\\.noestasinvitado\\.com)/(!|%21)[A-Za-z0-9\\-_\\!%]+" })
 public class MegaCrypter extends antiDDoSForHost {
@@ -95,15 +95,8 @@ public class MegaCrypter extends antiDDoSForHost {
         return false;
     }
 
+    @Override
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return false;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return false;
-        }
         return false;
     }
 
@@ -143,6 +136,7 @@ public class MegaCrypter extends antiDDoSForHost {
         MEGA_EREAD(-21),
         MEGA_EAPPKEY(-22),
         MEGA_EDLURL(-101);
+
         private int code;
 
         private MegaCrypterComApiErrorCodes(int code) {

@@ -723,11 +723,10 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     @Override
-    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
-        if (acc != null && acc.getType() == AccountType.PREMIUM) {
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc != null && AccountType.PREMIUM.equals(acc.getType())) {
             return false;
         } else {
-            /* We can expect captchas. */
             return true;
         }
     }

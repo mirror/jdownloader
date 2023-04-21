@@ -818,22 +818,6 @@ public class Account extends Property {
     public boolean setProperty(String key, Object value) {
         if (IS_MULTI_HOSTER_ACCOUNT.equalsIgnoreCase(key)) {
             isMulti = value != null && Boolean.TRUE.equals(value);
-        } else {
-            if (Property.NULL != value) {
-                if (StringUtils.equalsIgnoreCase(key, "free")) {
-                    if (Boolean.TRUE.equals(value) || StringUtils.equalsIgnoreCase("true", String.valueOf(value))) {
-                        setType(AccountType.FREE);
-                    } else {
-                        setType(AccountType.PREMIUM);
-                    }
-                } else if (StringUtils.equalsIgnoreCase(key, "premium")) {
-                    if (Boolean.TRUE.equals(value) || StringUtils.equalsIgnoreCase("true", String.valueOf(value))) {
-                        setType(AccountType.PREMIUM);
-                    } else {
-                        setType(AccountType.FREE);
-                    }
-                }
-            }
         }
         return super.setProperty(key, value);
     }
@@ -861,14 +845,6 @@ public class Account extends Property {
                 e.printStackTrace();
             }
         }
-        if (getBooleanProperty("free", false)) {
-            return AccountType.FREE;
-        } else if (getBooleanProperty("premium", false)) {
-            return AccountType.PREMIUM;
-        } else if (getBooleanProperty("PREMIUM", false)) {
-            return AccountType.PREMIUM;
-        } else {
-            return AccountType.PREMIUM;
-        }
+        return AccountType.PREMIUM;
     }
 }
