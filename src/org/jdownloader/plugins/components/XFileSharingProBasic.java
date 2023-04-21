@@ -953,7 +953,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        this.resolveShortURL(this.br, link, account);
+        this.resolveShortURL(this.br.cloneBrowser(), link, account);
         /* First, set fallback-filename */
         if (!link.isNameSet()) {
             setWeakFilename(link, null);
@@ -1137,19 +1137,18 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             if (isShortURL(link)) {
                 final String contentURL = this.getContentURL(link);
                 /* Short URLs -> We need to find the long FUID! */
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                if (probeDirectDownload(link, account, brc, brc.createGetRequest(contentURL), true)) {
+                br.setFollowRedirects(true);
+                if (probeDirectDownload(link, account, br, br.createGetRequest(contentURL), true)) {
                     return;
-                } else if (this.isOffline(link, brc, brc.toString())) {
+                } else if (this.isOffline(link, br, br.toString())) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                URL_TYPE type = getURLType(brc.getURL());
+                URL_TYPE type = getURLType(br.getURL());
                 final String realFUID;
                 if (type != null && !URL_TYPE.SHORT.equals(type)) {
-                    realFUID = getFUID(brc.getURL(), type);
+                    realFUID = getFUID(br.getURL(), type);
                 } else {
-                    final Form form = brc.getFormbyProperty("name", "F1");
+                    final Form form = br.getFormbyProperty("name", "F1");
                     final InputField id = form != null ? form.getInputFieldByName("id") : null;
                     realFUID = id != null ? id.getValue() : null;
                     type = URL_TYPE.NORMAL;
@@ -1160,16 +1159,16 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                      * Even while a limit is reached, such URLs can sometimes be checked via: "/?op=check_files" but we won't do this for
                      * now!
                      */
-                    this.checkErrors(brc, brc.toString(), link, account, false);
+                    this.checkErrors(br, br.toString(), link, account, false);
                     /* Assume that this URL is offline */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "realFUID:" + realFUID);
                 } else {
                     /* Success! */
                     final String urlNew;
                     if (URL_TYPE.FILE.equals(type)) {
-                        urlNew = URLHelper.parseLocation(new URL(this.getMainPage()), buildNormalFileURLPath(link, realFUID));
+                        urlNew = URLHelper.parseLocation(new URL(this.getMainPage(link)), buildNormalFileURLPath(link, realFUID));
                     } else {
-                        urlNew = URLHelper.parseLocation(new URL(this.getMainPage()), buildNormalURLPath(link, realFUID));
+                        urlNew = URLHelper.parseLocation(new URL(this.getMainPage(link)), buildNormalURLPath(link, realFUID));
                     }
                     logger.info("resolve URL|old: " + contentURL + "|new:" + urlNew);
                     link.setPluginPatternMatcher(urlNew);
@@ -1698,7 +1697,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        this.resolveShortURL(this.br, link, null);
+        this.resolveShortURL(this.br.cloneBrowser(), link, null);
         doFree(link, null);
     }
 
