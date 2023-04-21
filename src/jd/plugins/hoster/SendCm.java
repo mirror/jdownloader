@@ -154,7 +154,7 @@ public class SendCm extends XFileSharingProBasic {
                 for (final Cookie cookie : cookies.getCookies()) {
                     if (cookie.getKey() != null && cookie.getKey().matches("c_[A-Za-z0-9]+")) {
                         final String value = cookie.getValue();
-                        if (value != null && value.matches("[a-z0-9]{12}")) {
+                        if (value != null && value.matches("[A-Za-z0-9]{12}")) {
                             realFUIDs.add(value);
                         }
                     }
