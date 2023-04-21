@@ -16,7 +16,11 @@
 package jd.plugins.hoster;
 
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -39,11 +43,6 @@ import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(?:\\w+\\.)?porn\\.com/(?:videos/[a-z0-9\\-]*?-|videos/embed/)(\\d+)" })
 public class PornCom extends antiDDoSForHost {
     /* DEV NOTES */
@@ -60,8 +59,6 @@ public class PornCom extends antiDDoSForHost {
     // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private String               dllink            = null;
     private String               vq                = null;
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem           = new AtomicInteger(1);
 
     public PornCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -287,16 +284,14 @@ public class PornCom extends antiDDoSForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(br, account, true);
         ai.setUnlimitedTraffic();
-        maxPrem.set(FREE_MAXDOWNLOADS);
         account.setType(AccountType.FREE);
         /* free accounts can still have captcha */
-        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setMaxSimultanDownloads(FREE_MAXDOWNLOADS);
         account.setConcurrentUsePossible(false);
         return ai;
     }
@@ -322,8 +317,7 @@ public class PornCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override

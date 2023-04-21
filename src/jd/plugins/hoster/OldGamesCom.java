@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -38,15 +41,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "old-games.com" }, urls = { "https?://(?:www\\.)?old\\-games\\.com/(?:getfile|getfree)/(\\d+)" })
 public class OldGamesCom extends PluginForHost {
     public OldGamesCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.old-games.com/");
+        this.enablePremium("https://www.old-games.com/");
     }
 
     @Override
@@ -56,7 +55,7 @@ public class OldGamesCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.old-games.com/";
+        return "https://www.old-games.com/";
     }
 
     /* Connection stuff */
@@ -66,8 +65,6 @@ public class OldGamesCom extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -232,9 +229,8 @@ public class OldGamesCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setType(AccountType.PREMIUM);
-        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         ai.setStatus("Premium account");
         return ai;
@@ -266,8 +262,7 @@ public class OldGamesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override

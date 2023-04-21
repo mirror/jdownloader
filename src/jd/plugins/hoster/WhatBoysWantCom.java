@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -58,21 +57,19 @@ public class WhatBoysWantCom extends PluginForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final int     FREE_MAXDOWNLOADS            = -1;
     private static final boolean ACCOUNT_FREE_RESUME          = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = -1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
     private static final String  TYPE_BABE                    = "h.+/babes/show/\\d+";
     private static final String  TYPE_CAR                     = ".+/car/show/\\d+";
     private static final String  TYPE_MOVIE                   = ".+/(?:movies/show/\\d+|videos/.+)";
     private static final String  TYPE_VIDEOS                  = "https?://[^/]+/videos/[^/]+/([a-z0-9\\-]+)-(\\d+)";
     private static final String  default_EXT_video            = ".mp4";
     private static final String  default_EXT_photo            = ".jpg";
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -80,7 +77,7 @@ public class WhatBoysWantCom extends PluginForHost {
         final String type = getTYPE(link);
         String filename = null;
         this.setBrowserExclusive();
-        Account aa = AccountController.getInstance().getValidAccount(this);
+        final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             this.login(aa, false);
             br.getPage("https://whatboyswant.com/" + type + "/properties/" + fid + "/");
@@ -270,37 +267,22 @@ public class WhatBoysWantCom extends PluginForHost {
         }
         br.getPage("/credits");
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("Your premium membership will expire on:[\t\n\r ]+<span>([^<>\"]*?)</span>").getMatch(0);
+        final String expire = br.getRegex("(?i)Your premium membership will expire on:\\s*<span>([^<>\"]*?)</span>").getMatch(0);
         if (expire == null) {
-            account.setProperty("free", true);
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                /* free accounts can still have captcha */
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.FREE);
+            /* free accounts can still have captcha */
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
             /* Credits has noi specified amount of bytes but we know that we got no traffic at all if it's zero! */
             if (br.containsHTML("You have 0 credits\\.")) {
                 ai.setTrafficLeft(0);
             }
-            ai.setStatus("Registered (free) user");
         } else {
-            account.setProperty("free", false);
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "HH:mm dd-MM-yyyy", Locale.ENGLISH));
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Premium Account");
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
         }
-        account.setValid(true);
         return ai;
     }
 
@@ -368,8 +350,7 @@ public class WhatBoysWantCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override

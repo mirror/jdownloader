@@ -13,10 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -35,19 +34,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vipissy.com" }, urls = { "https?://(?:www\\.)?members\\.vipissy\\.com/(?:updates/)video\\-[^/]+/" }) 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vipissy.com" }, urls = { "https?://(?:www\\.)?members\\.vipissy\\.com/(?:updates/)video\\-[^/]+/" })
 public class VipissyCom extends PluginForHost {
-
     public VipissyCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://members.vipissy.com/");
+        this.enablePremium("https://members.vipissy.com/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://members.vipissy.com/misc/privacy-policy/";
+        return "https://members.vipissy.com/misc/privacy-policy/";
     }
 
     /* Connection stuff */
@@ -56,15 +52,10 @@ public class VipissyCom extends PluginForHost {
     private static final int     FREE_MAXDOWNLOADS            = 0;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
     private static final String  HTML_LOGGED_IN               = "class=\"members_menu\"";
-
     private boolean              download_not_yet_possible    = false;
     private String               dllink                       = null;
-
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     @Override
@@ -99,18 +90,20 @@ public class VipissyCom extends PluginForHost {
         final String best_quality_info = quality_info[quality_info.length - 1];
         dllink = new Regex(best_quality_info, "(http[^<>\"]*?)\"").getMatch(0);
         String filesize = new Regex(best_quality_info, "(\\d+(?: ?\\d+)?(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-        if (filesize == null || dllink == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filesize = filesize.replace(" ", "");
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            filesize = filesize.replace(" ", "");
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -123,28 +116,22 @@ public class VipissyCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE         = "http://members.vipissy.com";
-    private static Object       LOCK             = new Object();
-    public static final long    trust_cookie_age = 300000l;
+    private static final String MAINPAGE = "http://members.vipissy.com";
 
     private void login(final Account account) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
-                        /* We trust these cookies --> Do not check them */
-                        return;
-                    }
                     br.getPage(MAINPAGE);
                     if (this.br.containsHTML(HTML_LOGGED_IN)) {
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
                         return;
                     }
-                    this.br = new Browser();
+                    br.clearAll();
                 }
                 br.setFollowRedirects(true);
                 br.getPage(MAINPAGE);
@@ -172,23 +159,14 @@ public class VipissyCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(account);
         ai.setUnlimitedTraffic();
-        maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setType(AccountType.PREMIUM);
-        account.setMaxSimultanDownloads(maxPrem.get());
+        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Premium account");
-        account.setValid(true);
         return ai;
     }
 
@@ -199,14 +177,14 @@ public class VipissyCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not yet possible - content is not yet released!", 3 * 60 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premium_directlink", dllink);
@@ -215,8 +193,7 @@ public class VipissyCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override
@@ -226,5 +203,4 @@ public class VipissyCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }

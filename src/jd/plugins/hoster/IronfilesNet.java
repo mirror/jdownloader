@@ -166,13 +166,11 @@ public class IronfilesNet extends PluginForHost {
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
             ai.setUnlimitedTraffic();
-            ai.setStatus("Premium account");
         } else {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
             ai.setTrafficLeft(0);
-            ai.setStatus("Registered (free) user");
         }
         return ai;
     }
