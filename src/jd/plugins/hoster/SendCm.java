@@ -53,6 +53,13 @@ public class SendCm extends XFileSharingProBasic {
         return ret;
     }
 
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("usersfiles.com");
+        return deadDomains;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -68,7 +75,7 @@ public class SendCm extends XFileSharingProBasic {
 
     @Override
     public String rewriteHost(final String host) {
-        /* 2022-07-27: sendit.cloud and usersfiles.com have been morged from another plugin into this one. */
+        /* 2022-07-27: sendit.cloud and usersfiles.com have been merged from another plugin into this one. */
         return this.rewriteHost(getPluginDomains(), host);
     }
 
