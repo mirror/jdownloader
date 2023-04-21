@@ -1522,11 +1522,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
-    /**
-     * WARNING: DO NOT use in 09581 stable!
-     *
-     * @since JD2
-     */
     public void setComment(String comment) {
         final boolean changed;
         if (comment == null || comment.length() == 0) {

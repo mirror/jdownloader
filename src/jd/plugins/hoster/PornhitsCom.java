@@ -17,12 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.DebugMode;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -90,7 +91,7 @@ public class PornhitsCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String regexNormalTitleWebsite(final Browser br) {
-        String title = br.getRegex("class=\"headline\"><h1>([^<>\"]+)<").getMatch(0);
+        String title = br.getRegex("class=\"headline\">\\s*<h1>([^<>\"]+)<").getMatch(0);
         if (title != null) {
             return title;
         } else {
@@ -100,30 +101,72 @@ public class PornhitsCom extends KernelVideoSharingComV2 {
     }
 
     @Override
+    protected String regexEmbedTitleWebsite(final Browser br) {
+        final String title = br.getRegex("vit\\s*:\\s*\"([^\"]+)").getMatch(0);
+        if (title != null) {
+            return title;
+        } else {
+            return super.regexEmbedTitleWebsite(br);
+        }
+    }
+
+    @Override
+    protected boolean preferTitleHTML() {
+        return true;
+    }
+
+    @Override
+    protected boolean isEmbedURL(final String url) {
+        if (url == null) {
+            return false;
+        } else if (url.matches(PATERN_EMBED)) {
+            return true;
+        } else {
+            return super.isEmbedURL(url);
+        }
+    }
+
+    @Override
     protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {
-        // TODO: Add regex for magicString for when when we're on embed video page
         String magicString = br.getRegex("invideo_class\\}\\}\\}, '([^\\']+)").getMatch(0);
+        if (magicString == null) {
+            /* When we're on embed page. */
+            magicString = br.getRegex("'([^\\']+)', null\\);\\s*\\} else \\{setTimeout").getMatch(0);
+        }
         if (magicString == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            return null;
+        final String json = decryptMagic(magicString);
+        String dllink = null;
+        final List<HashMap<String, Object>> qualities = restoreFromString(json, TypeRef.LIST_HASHMAP);
+        if (qualities == null || qualities.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        for (final HashMap<String, Object> quality : qualities) {
+            final String format = quality.get("format").toString();
+            dllink = this.decryptMagic(quality.get("video_url").toString());
+            if (format.equalsIgnoreCase("_hq.mp4")) {
+                /* Prefer best */
+                break;
+            }
+        }
+        return dllink;
+    }
+
+    /** Magic since april 2023. */
+    private String decryptMagic(final String magic) throws PluginException {
         final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         final StringBuilder sb = new StringBuilder();
         sb.append("function base164decode (e) { var t = 'АВСDЕFGHIJKLМNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,~',    n = '', r = 0;  /[^АВСЕМA-Za-z0-\\\\.\\\\,\\\\~]/g.exec(e) && this.log('error decoding url'),  e = e.replace(/[^АВСЕМA-Za-z0-9\\\\.\\\\,\\\\~]/g, ''); do {      var i = t.indexOf(e.charAt(r++)),   o = t.indexOf(e.charAt(r++)),   a = t.indexOf(e.charAt(r++)),   s = t.indexOf(e.charAt(r++));   i = i << 2 | o >> 4,    o = (15 & o) << 4 | a >> 2;     var l = (3 & a) << 6 | s;   n += String.fromCharCode(i),    64 != a && (n += String.fromCharCode(o)),   64 != s && (n += String.fromCharCode(l))  } while (r < e.length); return unescape(n)  };");
-        sb.append("var res = base164decode(" + magicString + ");");
-        String dllink = null;
+        sb.append("var res = base164decode('" + magic + "');");
         try {
             engine.eval(sb.toString());
-            final String json = engine.get("res").toString();
-            // final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+            return engine.get("res").toString();
         } catch (final Exception e) {
             e.printStackTrace();
             logger.warning("js handling failed");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return null;
     }
 }

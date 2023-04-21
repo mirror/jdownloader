@@ -55,7 +55,7 @@ public class OkXxx extends KernelVideoSharingComV2 {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(type_embedded)) {
+        if (link.getPluginPatternMatcher().matches(pattern_embedded)) {
             link.setPluginPatternMatcher(generateContentURL(this.getHost(), this.getFUID(link), null));
         }
     }

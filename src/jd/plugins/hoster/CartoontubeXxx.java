@@ -59,7 +59,7 @@ public class CartoontubeXxx extends KernelVideoSharingComV2 {
         if (url == null) {
             return null;
         }
-        if (url.matches(type_embedded)) {
+        if (url.matches(pattern_embedded)) {
             return null;
         } else {
             return new Regex(url, this.getSupportedLinks()).getMatch(2);
@@ -71,8 +71,8 @@ public class CartoontubeXxx extends KernelVideoSharingComV2 {
         if (link.getPluginPatternMatcher() == null) {
             return null;
         }
-        if (link.getPluginPatternMatcher().matches(type_embedded)) {
-            return new Regex(link.getPluginPatternMatcher(), type_embedded).getMatch(0);
+        if (link.getPluginPatternMatcher().matches(pattern_embedded)) {
+            return new Regex(link.getPluginPatternMatcher(), pattern_embedded).getMatch(0);
         } else {
             return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
         }

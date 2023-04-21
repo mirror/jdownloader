@@ -63,8 +63,8 @@ public class SmutrCom extends KernelVideoSharingComV2 {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(type_embedded)) {
-            link.setPluginPatternMatcher("https://" + this.getHost() + "/v/" + new Regex(link.getPluginPatternMatcher(), type_embedded).getMatch(0) + "/");
+        if (link.getPluginPatternMatcher().matches(pattern_embedded)) {
+            link.setPluginPatternMatcher("https://" + this.getHost() + "/v/" + new Regex(link.getPluginPatternMatcher(), pattern_embedded).getMatch(0) + "/");
         }
     }
 

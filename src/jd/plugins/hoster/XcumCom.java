@@ -56,7 +56,7 @@ public class XcumCom extends KernelVideoSharingComV2 {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(type_embedded)) {
+        if (link.getPluginPatternMatcher().matches(pattern_embedded)) {
             /*
              * 2020-10-30: Embedded content can only be viewed in 360p while using their main URLs, the same content may be available in up
              * to 1080p!

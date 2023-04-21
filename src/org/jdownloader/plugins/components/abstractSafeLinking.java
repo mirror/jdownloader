@@ -842,12 +842,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         try {
             con = openAntiDDoSRequestConnection(brc, brc.createGetRequest(test));
             if (con.getResponseCode() == 200) {
-                try {
-                    /* does not exist in 09581 */
-                    file = org.appwork.utils.Application.getResource("tmp/generalsafelinking/" + JDHash.getSHA1(test) + format);
-                } catch (Throwable e) {
-                    file = JDUtilities.getResourceFile("tmp/generalsafelinking/" + JDHash.getSHA1(test) + format);
-                }
+                file = JDUtilities.getResourceFile("tmp/generalsafelinking/" + JDHash.getSHA1(test) + format);
                 if (file == null) {
                     return links;
                 }

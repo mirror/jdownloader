@@ -554,8 +554,6 @@ public abstract class PluginForDecrypt extends Plugin {
     /**
      * use this to process decrypted links while the decrypter itself is still running
      *
-     * NOTE: if you use this, please put it in try{}catch(Throwable) as this function is ONLY available in>09581
-     *
      * @param links
      */
     public void distribute(DownloadLink... links) {
@@ -819,11 +817,6 @@ public abstract class PluginForDecrypt extends Plugin {
         return false;
     }
 
-    /**
-     * DO not use in Plugins for old 09581 Stable or try/catch
-     *
-     * @return
-     */
     protected boolean isAbort() {
         final LinkCrawlerGeneration generation = this.generation;
         if (generation != null) {

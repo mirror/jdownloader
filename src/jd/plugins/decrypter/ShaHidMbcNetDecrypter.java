@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.ByteArrayOutputStream;
@@ -28,6 +27,8 @@ import java.util.zip.Inflater;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -45,11 +46,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "https?://(?:www\\.)?(?:shahid\\.mbc\\.net/(?:media/video|ar/episode)/\\d+(/\\w+)?|bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "https?://(?:www\\.)?(?:shahid\\.mbc\\.net/(?:media/video|ar/episode)/\\d+(/\\w+)?|bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*)" })
 public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
-
     public static enum Quality {
         ALLOW_HD("3f3f", "720p HD"),
         ALLOW_HIGH("3f20", "520p HIGH"),
@@ -75,9 +73,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
     }
 
     private String KEY     = "UzJpJCtQWCxYZiEsNXxeOA==";
-
     private String HASHKEY = "amEtPj5HQmNMa2E5P2hiVA==";
-
     private String PROVIDER;
 
     public ShaHidMbcNetDecrypter(PluginWrapper wrapper) {
@@ -93,16 +89,13 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         br.setFollowRedirects(false);
-
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-
         PROVIDER = br.getHost().contains("mbc.net") ? "shahid.mbc.net" : "bluefishtv.com";
         FilePackage fp = FilePackage.getInstance();
         String fpName = null;
-
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost("shahid.mbc.net"));
         if ("bluefishtv.com".equals(PROVIDER)) {
             if (br.containsHTML(">That product is not available at this time<") || this.br.getHttpConnection().getResponseCode() == 404) {
@@ -127,19 +120,16 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             logger.info("Cannot decrypt/download anything without account");
             return decryptedLinks;
         }
-
         if (br.getHttpConnection().getResponseCode() == 503) {
             String available = br.getHeaders().get("Retry-After");
             logger.warning("503 Service Unavailable! " + (available != null ? "Server is available in " + available : ""));
             return decryptedLinks;
         }
-
         String[] setCookie = br.getRegex("setCookie\\(\'(\\w+)\',\\s?\'([0-9\\.]+)\',\\s?\\d+\\)").getRow(0);
         if (!(setCookie == null || setCookie.length != 2)) {
             br.setCookie(br.getHost(), setCookie[0], setCookie[1]);
             br.getPage(parameter);
         }
-
         String playerForm = br.getRegex("playerForm=(.*?)\\&").getMatch(0);
         String mediaId = br.getRegex("mediaId=(.*?)\\&").getMatch(0);
         if ("bluefishtv.com".equals(PROVIDER)) {
@@ -148,14 +138,12 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         if (playerForm == null || mediaId == null) {
             return null;
         }
-
         int page = 0;
         String quality;
         boolean next = true;
         byte[] buffer = new byte[1024];
         Map<String, String> qStr = new HashMap<String, String>();
         Map<String, String> links = new HashMap<String, String>();
-
         // processing plugin configuration
         SubConfiguration cfg = SubConfiguration.getConfig(PROVIDER);
         Map<String, Object> shProperties = new LinkedHashMap<String, Object>();
@@ -166,7 +154,6 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                 completeSeason = (Boolean) shProperties.get("COMPLETE_SEASON");
             }
         }
-
         int i = 0;
         for (Entry<String, Object> property : shProperties.entrySet()) {
             if (property.getKey().matches("(ALLOW_HD|ALLOW_HIGH|ALLOW_MEDIUM|ALLOW_LOW|ALLOW_LOWEST)") && (Boolean) property.getValue()) {
@@ -174,20 +161,17 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                 i++;
             }
         }
-
         // if pluginconfig empty or all qualities deselected
         if (i == 0) {
             for (Quality q : Quality.values()) {
                 qStr.put(q.getHexValue(), q.name());
             }
         }
-
         // try and catch, da Anzahl der Seitenaufrufe(Variable page) unbekannt
         while (next) {
             // Get -> RC4 encrypted http stream to byte array
             String req = "http://cache2.delvenetworks.com/ps/c/v1/" + getHmacSHA256("RC4\n" + Encoding.Base64Decode(KEY)) + "/" + getHmacSHA256("Media") + "/" + getHmacSHA256(mediaId) + (page > 0 ? "/" + page : "");
             page++;
-
             byte[] enc = null;
             try {
                 br.setKeepResponseContentBytes(true);
@@ -236,23 +220,19 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-
             if (!next) {
                 break;
             }
-
             try {
                 // Decrypt -> http stream
                 /* TODO: change me after 0.9xx public --> jd.crypt.RC4 */
                 KeyCaptchaShowDialogTwo arkfour = new KeyCaptchaShowDialogTwo();
                 /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
                 byte[] compressedPlainData = arkfour.D(Encoding.Base64Decode(KEY).getBytes(), enc);
-
                 // Decompress -> decrypted http stream
                 Inflater decompressor = new Inflater();
                 decompressor.setInput(compressedPlainData);
                 ByteArrayOutputStream bos = new ByteArrayOutputStream(compressedPlainData.length);
-
                 try {
                     while (true) {
                         int count = decompressor.inflate(buffer);
@@ -269,7 +249,6 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                 } finally {
                     decompressor.end();
                 }
-
                 // Parsing -> video urls
                 String decompressedPlainData = new String(bos.toByteArray(), "UTF-8");
                 String[] finalContent = new Regex(decompressedPlainData, "(.{23}rtmp[^\r\n]+)").getColumn(0);
@@ -280,14 +259,12 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                     }
                     return null;
                 }
-
                 for (String fC : finalContent) {
                     if (fC.length() < 40) {
                         continue;
                     }
                     // Einzellink oder Alles
                     if (fC.contains("rtmp")) {
-
                         if (new Regex(fC, "/" + mediaId + "(\\-|/)").matches() || completeSeason) {
                             quality = fixedHexValue(JDHexUtils.getHexString(fC.substring(0, 2)));
                             if (quality != null && qStr.containsKey(quality)) {
@@ -308,7 +285,6 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                 continue;
             }
         }
-
         for (Entry<String, String> link : links.entrySet()) {
             if (link.getKey() == null) {
                 continue;
@@ -328,14 +304,9 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             } else {
                 dl.setFinalFileName("(" + link.getValue() + ")__" + dl.getName());
             }
-            try {
-                distribute(dl);
-            } catch (Throwable e) {
-                /* does not exist in 09581 */
-            }
+            distribute(dl);
             decryptedLinks.add(dl);
         }
-
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             return null;
         }
@@ -374,5 +345,4 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
 }
