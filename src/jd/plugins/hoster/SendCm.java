@@ -21,6 +21,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -34,9 +37,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SendCm extends XFileSharingProBasic {
@@ -160,6 +160,7 @@ public class SendCm extends XFileSharingProBasic {
                     }
                 }
                 if (realFUIDs.size() != 1) {
+                    /* No result or more than one -> Problem! */
                     logger.info("Failed to find real FUID");
                     throw exc;
                 } else {
