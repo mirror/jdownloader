@@ -449,7 +449,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        this.resolveShortURL(this.br, link, account);
+        this.resolveShortURL(this.br.cloneBrowser(), link, account);
         if (internal_useAPIZeusCloudManager(link, account)) {
             // api doesn't yet support /file/xy urls?! -> error: "no file"
             handlePremiumAPIZeusCloudManager(this.br, link, account);

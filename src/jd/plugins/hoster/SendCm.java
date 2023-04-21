@@ -17,10 +17,9 @@ package jd.plugins.hoster;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,6 +34,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SendCm extends XFileSharingProBasic {
@@ -148,22 +150,21 @@ public class SendCm extends XFileSharingProBasic {
             } catch (final PluginException exc) {
                 logger.info("Attempting special handling to find real FUID");
                 final Cookies cookies = br.getCookies(br.getHost());
-                int numberOfHits = 0;
-                String realFUID = null;
+                final Set<String> realFUIDs = new HashSet<String>();
                 for (final Cookie cookie : cookies.getCookies()) {
                     if (cookie.getKey() != null && cookie.getKey().matches("c_[A-Za-z0-9]+")) {
                         final String value = cookie.getValue();
                         if (value != null && value.matches("[a-z0-9]{12}")) {
-                            numberOfHits++;
-                            realFUID = value;
+                            realFUIDs.add(value);
                         }
                     }
                 }
-                if (realFUID == null || numberOfHits > 1) {
+                if (realFUIDs.size() != 1) {
                     logger.info("Failed to find real FUID");
                     throw exc;
                 } else {
                     /* Success! */
+                    final String realFUID = realFUIDs.iterator().next();
                     final String contentURL = this.getContentURL(link);
                     final String urlNew = URLHelper.parseLocation(new URL(this.getMainPage(link)), buildNormalURLPath(link, realFUID));
                     logger.info("resolve URL|old: " + contentURL + "|new:" + urlNew);
