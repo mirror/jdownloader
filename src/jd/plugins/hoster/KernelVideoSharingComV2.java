@@ -395,7 +395,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (deadDomains != null && deadDomains.size() > 0) {
             for (final String deadDomain : deadDomains) {
                 if (StringUtils.containsIgnoreCase(addedLinkDomain, deadDomain)) {
-                    /* Assume that plugin main domain is working. */
+                    /* Domain in url is dead -> Return this plugins' main domain. */
                     return this.getHost();
                 }
             }
@@ -441,6 +441,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        /* Provide account for availablecheck whenever possible. */
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         return requestFileInformation(link, account, false);
     }
@@ -494,13 +495,14 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             /* Set this so that offline items have "nice" titles too. */
             link.setName(weakFilename);
         }
-        /* Login if possible */
+        /* Login if we got an account. */
         if (account != null) {
             this.login(account, false, link);
         }
+        final String fuid = this.getFUID(link);
         if (isEmbedURL(link.getPluginPatternMatcher()) && this.useEmbedWorkaround()) {
             /* Embed URL --> Build fake real URL and just go for it */
-            final String fakeContentURL = this.generateContentURL(this.getWorkingDomain(link), this.getFUID(link), "dummystring");
+            final String fakeContentURL = this.generateContentURL(this.getWorkingDomain(link), fuid, "dummystring");
             br.getPage(fakeContentURL);
             if (isOfflineWebsite(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -515,7 +517,6 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* Rare case: Embedded content -> URL does not contain a title -> Look for "real" URL in html and get title from there! */
-            final String fuid = this.getFUID(link);
             /* Try to find URL-title */
             /*
              * A lot of websites will provide lower qualiy in embed mode! Let's fix that by trying to find the original URL. It is typically
@@ -624,14 +625,14 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             /* 2020-11-04: Other possible places: "videoId: '12345'" (without "") [e.g. privat-zapisi.biz] */
             /* 2020-11-04: Other possible places: name="video_id" value="12345" [e.g. privat-zapisi.biz] */
             if (fuidInsideHTML != null) {
-                if (this.getFUID(link) == null) {
+                if (fuid == null) {
                     /** Most likely useful for URLs matching pattern {@link #type_normal_without_fuid}. */
                     logger.info("Setting FUID found inside HTML as DownloadLink FUID");
                     link.setLinkID(this.getHost() + "://" + fuidInsideHTML);
                     link.setProperty(PROPERTY_FUID, fuidInsideHTML);
-                } else if (!StringUtils.equals(this.getFUID(link), fuidInsideHTML)) {
+                } else if (!StringUtils.equals(fuid, fuidInsideHTML)) {
                     /* More or less helpful for debugging: This should never happen! */
-                    logger.warning("FUID inside URL doesn't match FUID found in HTML: URL: " + this.getFUID(link) + " | HTML: " + fuidInsideHTML);
+                    logger.warning("FUID inside URL doesn't match FUID found in HTML: URL: " + fuid + " | HTML: " + fuidInsideHTML);
                 } else {
                     /* Everything alright - FUID of inside URL equals FUID found in HTML! */
                 }
@@ -650,79 +651,71 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             return AvailableStatus.TRUE;
         }
         link.removeProperty(PROPERTY_IS_PRIVATE_VIDEO);
-        try {
-            /* Only look for downloadurl if we need it! */
-            if (isDownload || !this.enableFastLinkcheck()) {
-                try {
-                    dllink = getDllink(link, this.br);
-                } catch (final PluginException e) {
-                    if (this.isPrivateVideo(link) && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                        logger.log(e);
-                        logger.info("ERROR_FILE_NOT_FOUND in getDllink but we have a private video so it is not offline ...");
-                    } else {
-                        throw e;
-                    }
-                }
-            }
-            if (!StringUtils.isEmpty(this.dllink) && !isDownload && !enableFastLinkcheck()) {
-                if (this.isHLS(this.dllink)) {
-                    /* 2022-10-27: TODO: Set estimated filesize for HLS URLs */
+        /* Only look for downloadurl if we need it! */
+        if (isDownload || !this.enableFastLinkcheck()) {
+            try {
+                dllink = getDllink(link, this.br);
+            } catch (final PluginException e) {
+                if (this.isPrivateVideo(link) && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    logger.log(e);
+                    logger.info("ERROR_FILE_NOT_FOUND in getDllink but we have a private video so it is not offline ...");
                 } else {
-                    URLConnectionAdapter con = null;
-                    try {
-                        /* if you don't do this then referrer is fked for the download! -raztoki */
-                        final Browser brc = this.br.cloneBrowser();
-                        brc.setFollowRedirects(true);
-                        brc.setAllowedResponseCodes(new int[] { 405 });
-                        // In case the link redirects to the finallink -
-                        // br.getHeaders().put("Accept-Encoding", "identity");
-                        con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
-                        final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
-                        if (workaroundURL != null) {
-                            con.disconnect();
-                            con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
-                        }
-                        if (this.looksLikeDownloadableContent(con)) {
-                            if (con.getCompleteContentLength() > 0) {
-                                link.setVerifiedFileSize(con.getCompleteContentLength());
-                            }
-                            this.dllink = con.getRequest().getUrl();
-                            logger.info("dllink: " + dllink);
-                            /* Save directurl for later usage */
-                            link.setProperty(PROPERTY_DIRECTURL, this.dllink);
-                            if (StringUtils.isEmpty(title)) {
-                                /* Fallback - attempt to find final filename */
-                                final String headerFilename = Plugin.getFileNameFromHeader(con);
-                                final String filenameFromFinalDownloadurl = Plugin.getFileNameFromURL(con.getURL());
-                                if (!StringUtils.isEmpty(headerFilename)) {
-                                    logger.info("Using final filename from content-disposition header: " + headerFilename);
-                                    title = headerFilename;
-                                    link.setFinalFileName(title);
-                                } else if (!StringUtils.isEmpty(filenameFromFinalDownloadurl)) {
-                                    logger.info("Using final filename from inside final downloadurl: " + filenameFromFinalDownloadurl);
-                                    title = filenameFromFinalDownloadurl;
-                                    link.setFinalFileName(title);
-                                } else {
-                                    logger.warning("Failed to find any final filename so far");
-                                }
-                            }
-                        } else {
-                            brc.followConnection(true);
-                            if (br.getHttpConnection().getResponseCode() == 429) {
-                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 429 too many requests", 1 * 60 * 1000l);
-                            }
-                            exceptionNoFile();
-                        }
-                    } finally {
-                        try {
-                            con.disconnect();
-                        } catch (final Throwable e) {
-                        }
-                    }
+                    throw e;
                 }
             }
-        } catch (final Exception e) {
-            throw e;
+        }
+        if (!StringUtils.isEmpty(this.dllink) && !isDownload && !enableFastLinkcheck() && !this.isHLS(this.dllink)) {
+            URLConnectionAdapter con = null;
+            try {
+                /* if you don't do this then referrer is fked for the download! -raztoki */
+                final Browser brc = this.br.cloneBrowser();
+                brc.setFollowRedirects(true);
+                brc.setAllowedResponseCodes(new int[] { 405 });
+                // In case the link redirects to the finallink -
+                // br.getHeaders().put("Accept-Encoding", "identity");
+                con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
+                final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
+                if (workaroundURL != null) {
+                    con.disconnect();
+                    con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
+                }
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    this.dllink = con.getRequest().getUrl();
+                    logger.info("dllink: " + dllink);
+                    /* Save directurl for later usage */
+                    link.setProperty(PROPERTY_DIRECTURL, this.dllink);
+                    if (StringUtils.isEmpty(title)) {
+                        /* Fallback - attempt to find final filename */
+                        final String headerFilename = Plugin.getFileNameFromHeader(con);
+                        final String filenameFromFinalDownloadurl = Plugin.getFileNameFromURL(con.getURL());
+                        if (!StringUtils.isEmpty(headerFilename)) {
+                            logger.info("Using final filename from content-disposition header: " + headerFilename);
+                            title = headerFilename;
+                            link.setFinalFileName(title);
+                        } else if (!StringUtils.isEmpty(filenameFromFinalDownloadurl)) {
+                            logger.info("Using final filename from inside final downloadurl: " + filenameFromFinalDownloadurl);
+                            title = filenameFromFinalDownloadurl;
+                            link.setFinalFileName(title);
+                        } else {
+                            logger.warning("Failed to find any final filename so far");
+                        }
+                    }
+                } else {
+                    brc.followConnection(true);
+                    if (br.getHttpConnection().getResponseCode() == 429) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 429 too many requests", 1 * 60 * 1000l);
+                    }
+                    exceptionNoFile();
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -769,10 +762,12 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             this.login(account, false, link);
         }
         final String videoID = this.getFUID(link);
-        final String weakFilename = getWeakFilename(link);
-        if (!link.isNameSet() && weakFilename != null) {
+        if (!link.isNameSet()) {
             /* Set this so that offline items have "nice" titles too. */
-            link.setName(weakFilename);
+            final String weakFilename = getWeakFilename(link);
+            if (weakFilename != null) {
+                link.setName(weakFilename);
+            }
         }
         final String lifetime = "86400";
         Request request = br.createGetRequest(getProtocol() + this.getHost() + "/api/json/video/" + lifetime + "/" + getAPIParam1(videoID) + "/" + this.getAPICroppedVideoID(videoID) + "/" + videoID + ".json");
@@ -829,6 +824,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 try {
                     con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
                     if (!this.looksLikeDownloadableContent(con)) {
+                        /* Dead end */
                         exceptionNoFile();
                     } else {
                         if (con.getCompleteContentLength() > 0) {
@@ -1011,6 +1007,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                     if (this.isPrivateVideo(link)) {
                         throw new AccountRequiredException();
                     } else {
+                        /* Broken video or broken plugin. */
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Broken video (?)");
                     }
                 }
@@ -1566,7 +1563,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         // dllink = Encoding.htmlDecode(dllink); - Why?
         dllink = Encoding.urlDecode(dllink, true);
         if (dllink.contains("&amp;")) {
-            dllink = Encoding.htmlDecode(dllink);
+            dllink = Encoding.htmlOnlyDecode(dllink);
         }
         return dllink;
     }
