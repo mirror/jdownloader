@@ -19,13 +19,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,6 +30,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornhitsCom extends KernelVideoSharingComV2 {
@@ -142,7 +143,7 @@ public class PornhitsCom extends KernelVideoSharingComV2 {
         if (qualities == null || qualities.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        for (final HashMap<String, Object> quality : qualities) {
+        for (final Map<String, Object> quality : qualities) {
             final String format = quality.get("format").toString();
             dllink = this.decryptMagic(quality.get("video_url").toString());
             if (format.equalsIgnoreCase("_hq.mp4")) {
@@ -164,9 +165,7 @@ public class PornhitsCom extends KernelVideoSharingComV2 {
             engine.eval(sb.toString());
             return engine.get("res").toString();
         } catch (final Exception e) {
-            e.printStackTrace();
-            logger.warning("js handling failed");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
         }
     }
 }

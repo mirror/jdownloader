@@ -1394,10 +1394,12 @@ public class HLSDownloader extends DownloadInterface {
                                         final PushbackInputStream pushBackInputStream = new PushbackInputStream(meteredThrottledInputStream, readWriteBuffer.length + 1024);
                                         while (meteredThrottledInputStream != null) {
                                             final int len;
+                                            final boolean eof;
                                             try {
                                                 len = pushBackInputStream.read(readWriteBuffer);
-                                                final int eof = pushBackInputStream.read();
-                                                if (eof == -1) {
+                                                final int eofRead = pushBackInputStream.read();
+                                                if (eofRead == -1) {
+                                                    eof = true;
                                                     synchronized (connectedMeteredThrottledInputStream) {
                                                         meteredThrottledInputStream.setInputStream(new EmptyInputStream());
                                                         connectedMeteredThrottledInputStream.add(meteredThrottledInputStream);
@@ -1407,7 +1409,8 @@ public class HLSDownloader extends DownloadInterface {
                                                         delayedCleanup.resetAndStart();
                                                     }
                                                 } else {
-                                                    pushBackInputStream.unread(eof);
+                                                    eof = false;
+                                                    pushBackInputStream.unread(eofRead);
                                                 }
                                             } catch (IOException e) {
                                                 synchronized (connectedMeteredThrottledInputStream) {
@@ -1423,6 +1426,9 @@ public class HLSDownloader extends DownloadInterface {
                                                 }
                                             }
                                             if (len > 0) {
+                                                if (eof) {
+                                                    System.out.println("wat");
+                                                }
                                                 IOException ioe = null;
                                                 int written = 0;
                                                 ffmpeg.updateLastUpdateTimestamp(getRequest.getReadTimeout() + timeoutBuffer);
@@ -1439,6 +1445,10 @@ public class HLSDownloader extends DownloadInterface {
                                                 if (written > 0) {
                                                     try {
                                                         fileBytesMap.mark(position, written);
+                                                        if (eof && fileBytesMap.getUnMarkedBytes() < 512) {
+                                                            System.out.println("wat");
+                                                            fileBytesMap.setFinalSize(fileBytesMap.getMarkedBytes());
+                                                        }
                                                         if (segment != null) {
                                                             segment.setLoaded(fileBytesMap.getMarkedBytes());
                                                         }
@@ -1689,14 +1699,15 @@ public class HLSDownloader extends DownloadInterface {
         if (segment != null && segment.getLoaded() >= 0) {
             final long loaded = segment.getLoaded();
             final long size = Math.max(loaded, segment.getSize());
-            final double done = (loaded / size) * 100d;
-            return done > 90d;
+            final double done = (loaded * 100 / size) / 100d;
+            return done > 0.9d;
         } else {
             return false;
         }
     }
 
     public static enum M3U8SEGMENTSTATE {
+        NOT_LOADED,
         UNKNOWN,
         ONLINE,
         FAILED
