@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -114,7 +113,6 @@ public class AlfafileNet extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private boolean              isDirecturl                  = false;
     /*
      * TODO: Use API for linkchecking whenever an account is added to JD. This will ensure that the plugin will always work, at least for
@@ -405,16 +403,14 @@ public class AlfafileNet extends PluginForHost {
         if ("true".equals(ispremium)) {
             final String expire = PluginJSonUtils.getJsonValue(br, "premium_end_time");
             ai.setValidUntil(Long.parseLong(expire) * 1000);
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium account");
         } else {
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
         }
@@ -522,8 +518,7 @@ public class AlfafileNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override

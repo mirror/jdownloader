@@ -578,30 +578,42 @@ public class VKontakteRu extends PluginForDecrypt {
             fpName = "vk.com page " + pageID;
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        // onclick="return nav.go(this, event);">KUNIO</a></b> &ndash; <span class="title" id="title-5010876_215480904_1">BUBBLEMAN -
-        // LOVE&SNOW MIX [From ROCKMAN 2] </span><span
+        fp.setName(Encoding.htmlDecode(fpName).trim());
         final String[][] audioLinks = br.getRegex("\"(https?://[a-z0-9]+\\.(vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+/audio[^<>\"]*?)\".*?onclick=\"return nav\\.go\\(this, event\\);\">([^<>\"]*?)</a></b> \\&ndash; <span class=\"title\" id=\"title(?:\\-)?\\d+_\\d+_\\d+\">([^<>\"]*?)</span>").getMatches();
-        if (audioLinks == null || audioLinks.length == 0) {
+        final ArrayList<DownloadLink> ret = this.getReturnArray();
+        if (audioLinks != null && audioLinks.length > 0) {
+            for (String audioInfo[] : audioLinks) {
+                String finallink = audioInfo[0];
+                if (finallink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                finallink = "directhttp://" + finallink;
+                final DownloadLink dl = createDownloadlink(finallink);
+                dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_mainlink, param.getCryptedUrl());
+                /* Set filename so we have nice filenames for our directhttp links */
+                dl.setFinalFileName(Encoding.htmlDecode(audioInfo[2].trim()) + " - " + Encoding.htmlDecode(audioInfo[3].trim()) + ".mp3");
+                if (fastcheck_audio) {
+                    dl.setAvailable(true);
+                }
+                ret.add(dl);
+            }
+        }
+        /* 2023-04-21: Crawl external URLs and video URLs. Ignore everything else. */
+        final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        for (final String url : urls) {
+            final String host = Browser.getHost(url);
+            if (isSingleVideo(url)) {
+                /* vk video url */
+                ret.add(this.createDownloadlink(url));
+            } else if (host.equals(br.getHost()) && !this.canHandle(url)) {
+                /* External URL */
+                ret.add(this.createDownloadlink(url));
+            }
+        }
+        if (ret.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final ArrayList<DownloadLink> ret = this.getReturnArray();
-        for (String audioInfo[] : audioLinks) {
-            String finallink = audioInfo[0];
-            if (finallink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            finallink = "directhttp://" + finallink;
-            final DownloadLink dl = createDownloadlink(finallink);
-            dl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_mainlink, param.getCryptedUrl());
-            /* Set filename so we have nice filenames for our directhttp links */
-            dl.setFinalFileName(Encoding.htmlDecode(audioInfo[2].trim()) + " - " + Encoding.htmlDecode(audioInfo[3].trim()) + ".mp3");
-            if (fastcheck_audio) {
-                dl.setAvailable(true);
-            }
-            fp.add(dl);
-            ret.add(dl);
-        }
+        fp.addLinks(ret);
         return ret;
     }
 
@@ -2805,14 +2817,14 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    private static boolean isSingleVideo(final String input) {
-        return input.matches(PATTERN_VIDEO_SINGLE_Z) || input.matches(PATTERN_CLIP_SINGLE_ORIGINAL) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL) || input.matches(PATTERN_CLIP_SINGLE_Z) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID) || input.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST) || input.matches(PATTERN_VIDEO_SINGLE_EMBED) || input.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH);
+    private static boolean isSingleVideo(final String url) {
+        return url.matches(PATTERN_VIDEO_SINGLE_Z) || url.matches(PATTERN_CLIP_SINGLE_ORIGINAL) || url.matches(PATTERN_VIDEO_SINGLE_ORIGINAL) || url.matches(PATTERN_CLIP_SINGLE_Z) || url.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_WITH_LISTID) || url.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST) || url.matches(PATTERN_VIDEO_SINGLE_EMBED) || url.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH);
     }
 
-    private static boolean isSinglePicture(final String input) {
-        if (input.matches(PATTERN_PHOTO_SINGLE)) {
+    private static boolean isSinglePicture(final String url) {
+        if (url.matches(PATTERN_PHOTO_SINGLE)) {
             return true;
-        } else if (input.matches(PATTERN_PHOTO_SINGLE_Z)) {
+        } else if (url.matches(PATTERN_PHOTO_SINGLE_Z)) {
             return true;
         } else {
             return false;
