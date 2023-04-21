@@ -2001,8 +2001,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (StringUtils.isEmpty(filename_clean)) {
             /* If e.g. filename only consisted of hostname, return original as fallback though this should never happen! */
             return filename_normal;
+        } else {
+            return filename_clean;
         }
-        return filename_clean;
     }
 
     @Override
