@@ -502,7 +502,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
     }
 
     private ExtButton createLink(final Object object, final String url) {
-        ExtButton ret = new ExtButton(new AppAction() {
+        final ExtButton ret = new ExtButton(new AppAction() {
             /**
              *
              */
