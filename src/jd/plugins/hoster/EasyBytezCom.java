@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.html.Form;
@@ -28,8 +30,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EasyBytezCom extends XFileSharingProBasic {
@@ -50,6 +50,18 @@ public class EasyBytezCom extends XFileSharingProBasic {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "easybytez.com", "easybytez.co", "easybytez.to", "zingload.com", "easyload.to", "ezbytez.com", "ebytez.com" });
         return ret;
+    }
+
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("ebytez.com");
+        deadDomains.add("ezbytez.com");
+        deadDomains.add("easyload.to");
+        deadDomains.add("zingload.com");
+        deadDomains.add("easybytez.to");
+        deadDomains.add("easybytez.co");
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {

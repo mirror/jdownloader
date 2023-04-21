@@ -146,7 +146,7 @@ public class StreamhideCom extends XFileSharingProBasic {
     @Override
     public String[] scanInfo(final String html, final String[] fileInfo) {
         super.scanInfo(html, fileInfo);
-        final String betterFilename = new Regex(html, ">\\s*Download\\s*([^<]*?)\\s*</h\\d+>").getMatch(0);
+        final String betterFilename = new Regex(html, "(?i)>\\s*Download\\s*([^<]*?)\\s*</h\\d+>").getMatch(0);
         if (betterFilename != null) {
             fileInfo[0] = betterFilename;
         }
