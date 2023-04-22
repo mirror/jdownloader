@@ -3,12 +3,12 @@ package org.jdownloader.extensions.eventscripter.sandboxobjects;
 import java.io.File;
 import java.io.IOException;
 
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.plugins.LinkInfo;
-
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.jdownloader.extensions.eventscripter.EnvironmentException;
+
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.plugins.LinkInfo;
 
 public class FilePathSandbox {
     protected final File file;
@@ -43,12 +43,14 @@ public class FilePathSandbox {
 
     public boolean isFile() throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("check if a filepath is a file");
-        return file.isFile();
+        final boolean ret = file.isFile();
+        return ret;
     }
 
     public boolean isDirectory() throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("check if a filepath is a directory");
-        return file.isDirectory();
+        final boolean ret = file.isDirectory();
+        return ret;
     }
 
     public boolean exists() throws EnvironmentException {
@@ -59,11 +61,13 @@ public class FilePathSandbox {
 
     public boolean mkdirs() throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("create folders");
-        return file.mkdirs();
+        final boolean ret = file.mkdirs();
+        return ret;
     }
 
     public long getModifiedDate() {
-        return file.lastModified();
+        final long ret = file.lastModified();
+        return ret;
     }
 
     public long getCreatedDate() {
@@ -97,17 +101,13 @@ public class FilePathSandbox {
     }
 
     public boolean renameTo(String to) throws EnvironmentException {
-        org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("rename or move files or folders");
-        final File dest = new File(to);
-        return !dest.exists() && file.renameTo(dest);
+        return rename(to) != null;
     }
 
     public FilePathSandbox renameName(final String newName) throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("rename file or folder name only");
         final File dst = new File(file.getParentFile(), newName);
-        if (dst.exists()) {
-            return null;
-        } else if (file.renameTo(dst)) {
+        if (file.renameTo(dst)) {
             return newFilePathSandbox(dst);
         } else {
             return null;
@@ -117,9 +117,7 @@ public class FilePathSandbox {
     public FilePathSandbox rename(final String newDest) throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("rename file or folder");
         final File dst = new File(newDest);
-        if (dst.exists()) {
-            return null;
-        } else if (file.renameTo(dst)) {
+        if (file.renameTo(dst)) {
             return newFilePathSandbox(dst);
         } else {
             return null;
@@ -129,9 +127,7 @@ public class FilePathSandbox {
     public FilePathSandbox renamePath(final String newPath) throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("rename file or folder path only");
         final File dst = new File(newPath, getName());
-        if (dst.exists()) {
-            return null;
-        } else if (file.renameTo(dst)) {
+        if (file.renameTo(dst)) {
             return newFilePathSandbox(dst);
         } else {
             return null;
@@ -145,7 +141,7 @@ public class FilePathSandbox {
             newFilePathSandbox(dest).mkdirs();
         }
         dest = new File(dest, file.getName());
-        final boolean ret = !dest.exists() && file.renameTo(dest);
+        final boolean ret = file.renameTo(dest);
         return ret;
     }
 

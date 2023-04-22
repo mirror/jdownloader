@@ -36,7 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oxy.cloud" }, urls = { "https?://(?:www\\.)?oxy\\.(?:cloud|st)/d/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oxy.cloud" }, urls = { "https?://(?:www\\.|download\\.)?oxy\\.(?:cloud|st)/d/([A-Za-z0-9]+)" })
 public class OxyCloud extends antiDDoSForHost {
     public OxyCloud(PluginWrapper wrapper) {
         super(wrapper);

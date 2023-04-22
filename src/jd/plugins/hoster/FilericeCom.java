@@ -21,8 +21,10 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -73,6 +75,19 @@ public class FilericeCom extends XFileSharingProBasic {
             /* Free(anonymous) and unknown account type */
             return false;
         }
+    }
+
+    @Override
+    protected boolean trustAccountInfoAPI(Browser br, Account account, AccountInfo ai) throws Exception {
+        if (account.getType() == AccountType.FREE) {
+            final Long expire_milliseconds = fetchAccountInfoWebsiteExpireDate(br.cloneBrowser(), account, ai);
+            if (expire_milliseconds != null && expire_milliseconds > 0) {
+                ai.setValidUntil(expire_milliseconds);
+                setAccountLimitsByType(account, AccountType.PREMIUM);
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
