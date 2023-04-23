@@ -4,13 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.api.RemoteAPIController;
@@ -30,6 +23,13 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveVal
 import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.ExtractionInterface;
+
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class ExtractionAPIImpl implements ExtractionAPI {
     private final PackageControllerUtils<FilePackage, DownloadLink>   packageControllerDownloadList;
@@ -61,7 +61,9 @@ public class ExtractionAPIImpl implements ExtractionAPI {
                         final DummyArchive da = extension.createDummyArchive(archive);
                         if (da != null && da.isComplete()) {
                             final ExtractionController controller = extension.addToQueue(archive, true);
-                            ret.put(controller.getUniqueID().toString(), true);
+                            if (controller != null) {
+                                ret.put(controller.getUniqueID().toString(), true);
+                            }
                         }
                     } catch (CheckException e) {
                     }

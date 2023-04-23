@@ -26,16 +26,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.regex.Pattern;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
-import jd.plugins.AddonPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -99,6 +89,16 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
+import jd.plugins.AddonPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuExtenderHandler, PackageControllerModifyVetoListener<FilePackage, DownloadLink> {
     private ExtractionQueue       extractionQueue = new ExtractionQueue();
@@ -171,6 +171,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     public synchronized ExtractionController addToQueue(Object caller, final Archive archive, boolean forceAskForUnknownPassword) {
         if (archive == null) {
             return null;
+        } else if (archive.getArchiveFiles().size() == 0) {
+            logger.info("Empty Archive(" + archive.getArchiveID() + "):" + archive.getName());
+            return null;
         }
         // check if we have this archive already in queue.
         for (final ExtractionController ec : extractionQueue.getJobs()) {
@@ -181,12 +184,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         final ExtractionController currentController = extractionQueue.getCurrentQueueEntry();
         if (currentController != null && currentController.isSameArchive(archive)) {
             return currentController;
-        } else if (archive.getArchiveFiles().size() == 0) {
-            logger.info("Empty Archive(" + archive.getArchiveID() + "):" + archive.getName());
-            return null;
-        } else if (!isAutoExtractEnabled(archive)) {
-            logger.info("AutoExtractionDisabled Archive(" + archive.getArchiveID() + "):" + archive.getName());
-            return null;
         }
         DummyArchive dummyArchive = null;
         try {
@@ -652,7 +649,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     final DownloadLink link = ((SingleDownloadController) caller).getDownloadLink();
                     if (getExtractionController(link) == null) {
                         final Archive archive = buildArchive(new DownloadLinkArchiveFactory(link));
-                        if (archive != null) {
+                        if (archive != null && isAutoExtractEnabled(archive)) {
                             addToQueue(caller, archive, false);
                         }
                     }
@@ -681,7 +678,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                             }
                             final List<Archive> newArchives = ArchiveValidator.getArchivesFromPackageChildren(archiveFactories);
                             for (Archive newArchive : newArchives) {
-                                if (newArchive != null) {
+                                if (newArchive != null && isAutoExtractEnabled(newArchive)) {
                                     final ArchiveFile firstArchiveFile = newArchive.getArchiveFiles().get(0);
                                     if (firstArchiveFile instanceof FileArchiveFile) {
                                         newArchive.getSettings().setExtractPath(((FileArchiveFile) firstArchiveFile).getFile().getParent());
@@ -701,7 +698,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     }
                     final List<Archive> newArchives = ArchiveValidator.getArchivesFromPackageChildren(files);
                     for (Archive newArchive : newArchives) {
-                        if (newArchive != null) {
+                        if (newArchive != null && isAutoExtractEnabled(newArchive)) {
                             addToQueue(caller, newArchive, false);
                         }
                     }

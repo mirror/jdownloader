@@ -122,7 +122,7 @@ public class FastShareCz extends antiDDoSForHost {
             final String redirect = br.getRequest().getHTMLRefresh();
             if (this.isAbort()) {
                 throw new InterruptedException();
-            } else if (redirect == null) {
+            } else if (StringUtils.isEmpty(redirect)) {
                 break;
             } else if (numberofRedirects >= 5) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -131,14 +131,14 @@ public class FastShareCz extends antiDDoSForHost {
                 numberofRedirects++;
             }
         } while (true);
-        if (br.containsHTML("(?i)(<title>FastShare\\.cz</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
+        if (br.containsHTML("(?i)(<title>\\s*FastShare\\.[a-z]+\\s*</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1\\s*title\\s*=\\s*\"(.*?)\\s*\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h2><b><span style=color:black;>([^<>\"]*?)</b></h2>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>([^<>\"]*?)\\s*\\|\\s*FastShare\\.cz\\s*</title>").getMatch(0);
+                filename = br.getRegex("<title>([^<>\"]*?)\\s*\\|\\s*FastShare\\.[a-z}+\\s*</title>").getMatch(0);
             }
         }
         String filesize = br.getRegex("(?i)<tr><td>\\s*(Velikost|Size): </td><td style=font\\-weight:bold>([^<>\"]*?)</td></tr>").getMatch(1);
@@ -173,7 +173,7 @@ public class FastShareCz extends antiDDoSForHost {
         }
         br.setFollowRedirects(false);
         final String captchaLink = br.getRegex("\"(/securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
-        String action = br.getRegex("=\"(/free/[^<>\"]*?)\"").getMatch(0);
+        String action = br.getRegex("=\\s*\"(/free/[^<>\"]*?)\"").getMatch(0);
         if (action == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
