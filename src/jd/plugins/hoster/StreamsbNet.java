@@ -233,6 +233,7 @@ public class StreamsbNet extends XFileSharingProBasic {
         qualityMap.put("n", 40); // normal
         qualityMap.put("h", 60); // high
         qualityMap.put("o", 80); // original
+        qualityMap.put("x", 100); // downloads
         long maxInternalQualityValue = 0;
         String filesizeStr = null;
         String videoQualityStr = null;

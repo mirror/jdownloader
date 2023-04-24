@@ -20,6 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -30,9 +33,6 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MyqloudOrg extends XFileSharingProBasic {
@@ -145,6 +145,7 @@ public class MyqloudOrg extends XFileSharingProBasic {
         qualityMap.put("n", 40); // normal
         qualityMap.put("h", 60); // high
         qualityMap.put("o", 80); // original
+        qualityMap.put("x", 100); // download
         long maxInternalQualityValue = 0;
         String filesizeStr = null;
         String videoQualityStr = null;

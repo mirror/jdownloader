@@ -121,6 +121,7 @@ public class MediaCm extends XFileSharingProBasic {
         qualityMap.put("n", 40); // normal
         qualityMap.put("h", 60); // high
         qualityMap.put("o", 80); // original
+        qualityMap.put("x", 100); // download
         long maxInternalQualityValue = 0;
         String filesizeStrBest = null;
         String filesizeStrSelected = null;
