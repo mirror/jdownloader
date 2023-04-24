@@ -2884,7 +2884,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     /** Returns user selected stream quality. -1 = BEST/no selection */
-    private final int getPreferredStreamQuality() {
+    protected final int getPreferredStreamQuality() {
         final Class<? extends XFSConfigVideo> cfgO = getVideoConfigInterface();
         if (cfgO != null) {
             final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);
