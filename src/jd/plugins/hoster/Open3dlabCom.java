@@ -56,6 +56,8 @@ public class Open3dlabCom extends PluginForHost {
         return ret;
     }
 
+    public static final String pattern_supported_links_path_relative = "/project/file/download/(\\d+)/(\\w+)/?";
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -68,7 +70,7 @@ public class Open3dlabCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/project/file/download/(\\d+)/(\\w+)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + pattern_supported_links_path_relative);
         }
         return ret.toArray(new String[0]);
     }
@@ -78,12 +80,6 @@ public class Open3dlabCom extends PluginForHost {
     private final int     FREE_MAXCHUNKS    = 0;
     private final int     FREE_MAXDOWNLOADS = -1;
 
-    // private final boolean ACCOUNT_FREE_RESUME = true;
-    // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private final int ACCOUNT_FREE_MAXDOWNLOADS = -1;
-    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);

@@ -22,6 +22,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.Open3dlabComConfig;
+import org.jdownloader.plugins.components.config.Open3dlabComConfig.MirrorFallbackMode;
+import org.jdownloader.plugins.components.config.Open3dlabComConfigSmutbaSe;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -38,12 +44,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.Open3dlabCom;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.Open3dlabComConfig;
-import org.jdownloader.plugins.components.config.Open3dlabComConfig.MirrorFallbackMode;
-import org.jdownloader.plugins.components.config.Open3dlabComConfigSmutbaSe;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { Open3dlabCom.class })
@@ -100,7 +100,6 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Open3dlabCom hosterplugin = (Open3dlabCom) this.getNewPluginForHostInstance(this.getHost());
         String title = br.getRegex("\"name\"\\s*:\\s*\"([^\"]+)\"").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         if (title != null) {
@@ -122,7 +121,7 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
             mirrorPrioList = userHosterMirrorListStr.split(",");
         }
         final MirrorFallbackMode fallbackMode = cfg.getMirrorFallbackMode();
-        final String[] dlHTMLs = br.getRegex("<td class=\"text-wrap-word js-edit-input\"(.*?)</div>\\s*</div>\\s*</td>\\s*</tr>").getColumn(0);
+        final String[] dlHTMLs = br.getRegex("<td class=\"text-wrap-word js-edit-input\"(.*?)</ul>\\s*</div>\\s*</div>\\s*</td>\\s*</tr>").getColumn(0);
         if (dlHTMLs == null || dlHTMLs.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -140,10 +139,11 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
             if (filesizeStr != null) {
                 filesize = SizeFormatter.getSize(filesizeStr);
             }
+            /* Collect all mirror links. */
             final String[] urls = HTMLParser.getHttpLinks(dlHTML, br.getURL());
             final HashSet<String> mirrorURLs = new HashSet<String>();
             for (final String url : urls) {
-                if (hosterplugin.canHandle(url)) {
+                if (url.matches("https?://[^/]+" + Open3dlabCom.pattern_supported_links_path_relative)) {
                     mirrorURLs.add(url);
                 }
             }
@@ -176,6 +176,7 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
                 }
             }
             if (preferredMirror != null) {
+                /* User prefers single mirror and that desired mirror has been found. */
                 ret.add(preferredMirror);
             } else if (fallbackMode == MirrorFallbackMode.ONE) {
                 logger.info("Failed to find desired mirror: Returning random mirror as fallback");
