@@ -89,7 +89,7 @@ public class XvideosComProfile extends PluginForDecrypt {
             sb.append("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/");
             sb.append("(");
             sb.append("pornstar-channels/[A-Za-z0-9\\-_]+#_tabRed");
-            sb.append("|(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models))/[A-Za-z0-9\\-_]+.*");
+            sb.append("|(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models|pornstars))/[A-Za-z0-9\\-_]+.*");
             sb.append("|favorite/\\d+/[a-z0-9\\_]+");
             sb.append("|account/favorites/\\d+");
             sb.append(")");
@@ -100,7 +100,7 @@ public class XvideosComProfile extends PluginForDecrypt {
 
     private static final String TYPE_FAVOURITES           = "(?i)https?://[^/]+/favorite/(\\d+)/([a-z0-9\\-_]+).*";
     private static final String TYPE_FAVOURITES_ACCOUNT   = "(?i)https?://[^/]+/account/favorites/(\\d+)";
-    private static final String TYPE_USER                 = "(?i)https?://[^/]+/(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models))/[A-Za-z0-9\\-_]+$";
+    private static final String TYPE_USER                 = "(?i)https?://[^/]+/(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models|pornstars))/[A-Za-z0-9\\-_]+$";
     private static final String TYPE_USER_PREMIUM         = "(?i)https?://[^/]+/pornstar-channels/([A-Za-z0-9\\-_]+)#_tabRed$";
     private static final String TYPE_SINGLE_VIDEO_QUICKIE = "(?i).+#quickies/./(\\d+)";
 
