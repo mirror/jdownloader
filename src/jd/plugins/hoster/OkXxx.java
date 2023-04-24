@@ -81,4 +81,9 @@ public class OkXxx extends KernelVideoSharingComV2 {
             return super.regexNormalTitleWebsite(br);
         }
     }
+
+    @Override
+    protected boolean preferTitleHTML() {
+        return true;
+    }
 }
