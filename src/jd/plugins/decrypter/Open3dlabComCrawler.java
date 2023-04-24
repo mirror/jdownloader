@@ -22,12 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.Open3dlabComConfig;
-import org.jdownloader.plugins.components.config.Open3dlabComConfig.MirrorFallbackMode;
-import org.jdownloader.plugins.components.config.Open3dlabComConfigSmutbaSe;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -44,6 +38,12 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.Open3dlabCom;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.Open3dlabComConfig;
+import org.jdownloader.plugins.components.config.Open3dlabComConfig.MirrorFallbackMode;
+import org.jdownloader.plugins.components.config.Open3dlabComConfigSmutbaSe;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { Open3dlabCom.class })
@@ -109,7 +109,6 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
             fp.setName(projectID);
         }
         fp.setCleanupPackageName(false);
-        fp.setAllowMerge(false);
         final Open3dlabComConfig cfg;
         if (this.getHost().equals("open3dlab.com")) {
             cfg = PluginJsonConfig.get(Open3dlabComConfig.class);

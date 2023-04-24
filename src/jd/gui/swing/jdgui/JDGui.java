@@ -723,27 +723,29 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     public void initShiftControlSWindowResetKeyListener() {
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
-            public boolean postProcessKeyEvent(final KeyEvent e) {
-                if (e.getID() == KeyEvent.KEY_RELEASED && e.isShiftDown() && e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
-                    try {
-                        /*
-                         * dirty little helper for mac os problem, unable to reach window header
-                         */
-                        final Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-                        JDGui.this.mainFrame.setExtendedState(Frame.NORMAL);
-                        JDGui.this.mainFrame.setSize(new Dimension(800, 600));
-                        final Rectangle abounds = JDGui.this.mainFrame.getBounds();
-                        JDGui.this.mainFrame.setLocation((dim.width - abounds.width) / 2, (dim.height - abounds.height) / 2);
-                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Center MainFrame");
-                        return true;
-                    } catch (final Exception ee) {
-                        org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(ee);
+        if (CrossSystem.isMac()) {
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(new KeyEventPostProcessor() {
+                public boolean postProcessKeyEvent(final KeyEvent e) {
+                    if (e.getID() == KeyEvent.KEY_RELEASED && e.isShiftDown() && e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
+                        try {
+                            /*
+                             * dirty little helper for mac os problem, unable to reach window header
+                             */
+                            final Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+                            JDGui.this.mainFrame.setExtendedState(Frame.NORMAL);
+                            JDGui.this.mainFrame.setSize(new Dimension(800, 600));
+                            final Rectangle abounds = JDGui.this.mainFrame.getBounds();
+                            JDGui.this.mainFrame.setLocation((dim.width - abounds.width) / 2, (dim.height - abounds.height) / 2);
+                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("Center MainFrame");
+                            return true;
+                        } catch (final Exception ee) {
+                            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(ee);
+                        }
                     }
+                    return false;
                 }
-                return false;
-            }
-        });
+            });
+        }
     }
 
     public void initSilentModeHooks() {

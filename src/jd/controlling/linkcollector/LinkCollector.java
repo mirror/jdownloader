@@ -397,10 +397,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                  * we remove all non words/digits because some hoster replace/remove other chars
                  */
                 if (JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
-                    packageName = packageName.replaceAll("(?U)[^\\w]", "").replaceAll("(?U)[_]", "").toLowerCase(Locale.ENGLISH);
+                    packageName = packageName.replaceAll("(?U)[^\\w ]", "").replaceAll("(?U)[_]", "").toLowerCase(Locale.ENGLISH);
                 } else {
-                    packageName = packageName.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ENGLISH);
+                    packageName = packageName.replaceAll("[^a-zA-Z0-9 ]", "").toLowerCase(Locale.ENGLISH);
                 }
+                packageName = packageName.replaceAll("[ ]+", " ").trim();
             }
             this.id = id;
             this.packageName = packageName;
@@ -1442,9 +1443,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, List<CrawledLink> plinks) {
