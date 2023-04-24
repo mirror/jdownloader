@@ -927,6 +927,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
      * {@link #regexEmbedTitleWebsite()}, {@link #preferTitleHTML()}
      */
     private String getFileTitle(final DownloadLink link) {
+        final String fuid = this.getFUID(link);
         final String titleUrl = getTitleURL(br, link);
         String titleFromHtml = null;
         /* For embed URLs the title might be in a different part of the html -> Check for this first */
@@ -941,7 +942,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             titleFromHtml = Encoding.htmlDecode(titleFromHtml).trim();
             titleFromHtml = cleanupFilename(br, titleFromHtml);
         }
-        if (titleFromHtml != null && this.preferTitleHTML()) {
+        if (titleFromHtml != null && (this.preferTitleHTML() || StringUtils.equals(fuid, titleUrl))) {
             return titleFromHtml;
         } else if (!StringUtils.isEmpty(titleUrl)) {
             return titleUrl;
