@@ -105,6 +105,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     public static final String             PROPERTY_RETWEET                                                 = "retweet";
     public static final String             PROPERTY_TWEET_ID                                                = "tweetid";
     private final String                   API_BASE_v2                                                      = "https://api.twitter.com/2";
+    private final String                   API_BASE_GRAPHQL                                                 = "https://twitter.com/i/api/graphql";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -188,7 +189,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         if (param.getCryptedUrl().matches(TYPE_CARD)) {
             return this.crawlCard(param, account);
         } else if (param.getCryptedUrl().matches(TwitterCom.TYPE_VIDEO_EMBED)) {
-            return this.crawlAPISingleTweet(param, new Regex(param.getCryptedUrl(), TwitterCom.TYPE_VIDEO_EMBED).getMatch(0), account);
+            return this.crawlAPISingleTweet(account, new Regex(param.getCryptedUrl(), TwitterCom.TYPE_VIDEO_EMBED).getMatch(0));
         } else if (param.getCryptedUrl().matches(TYPE_USER_POST)) {
             return this.crawlSingleTweet(param, account);
         } else {
@@ -268,10 +269,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlSingleTweet(final CryptedLink param, final Account account) throws Exception {
         final String tweetID = new Regex(param.getCryptedUrl(), TYPE_USER_POST).getMatch(1);
-        return crawlAPISingleTweet(param, tweetID, account);
+        return crawlAPISingleTweet(account, tweetID);
     }
 
-    private ArrayList<DownloadLink> crawlAPISingleTweet(final CryptedLink param, final String tweetID, final Account account) throws Exception {
+    private ArrayList<DownloadLink> crawlAPISingleTweet(final Account account, final String tweetID) throws Exception {
         if (tweetID == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -317,6 +318,87 @@ public class TwitterComCrawler extends PluginForDecrypt {
         } else {
             return crawlTweetMap(tweet);
         }
+    }
+
+    private ArrayList<DownloadLink> crawlSingleTweetViaGraphqlAPI(final Account account, final String tweetIDdd) throws Exception {
+        if (tweetIDdd == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Browser brc = br.cloneBrowser();
+        /* TODO: Auto-fetch this URL from mainpage as it will change over time. */
+        brc.getPage("https://abs.twimg.com/responsive-web/client-web/api.5218333a.js");
+        final String queryID = brc.getRegex("queryId\\s*:\\s*\"([^\"]+)\",\\s*operationName\\s*:\\s*\"TweetDetail\"").getMatch(0);
+        if (queryID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(tweetIDdd); // TODO
+        String nextCursor = null;
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final Map<String, Object> variables = new HashMap<String, Object>();
+        variables.put("focalTweetId", tweetIDdd);
+        variables.put("with_rux_injections", false);
+        variables.put("includePromotedContent", true);
+        variables.put("withCommunity", true);
+        variables.put("withQuickPromoteEligibilityTweetFields", true);
+        variables.put("withBirdwatchNotes", true);
+        variables.put("withVoice", true);
+        variables.put("withV2Timeline", true);
+        final UrlQuery query = new UrlQuery();
+        query.add("variables", Encoding.urlEncode(JSonStorage.serializeToJson(variables)));
+        query.add("features", Encoding.urlEncode(
+                "{\"blue_business_profile_image_shape_enabled\":true,\"responsive_web_graphql_exclude_directive_enabled\":true,\"verified_phone_label_enabled\":false,\"responsive_web_graphql_timeline_navigation_enabled\":true,\"responsive_web_graphql_skip_user_profile_image_extensions_enabled\":false,\"tweetypie_unmention_optimization_enabled\":true,\"vibe_api_enabled\":true,\"responsive_web_edit_tweet_api_enabled\":true,\"graphql_is_translatable_rweb_tweet_is_translatable_enabled\":true,\"view_counts_everywhere_api_enabled\":true,\"longform_notetweets_consumption_enabled\":true,\"tweet_awards_web_tipping_enabled\":false,\"freedom_of_speech_not_reach_fetch_enabled\":true,\"standardized_nudges_misinfo\":true,\"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled\":false,\"interactive_text_enabled\":true,\"responsive_web_text_conversations_enabled\":false,\"longform_notetweets_rich_text_read_enabled\":true,\"responsive_web_enhance_cards_enabled\":false}"));
+        br.getPage(API_BASE_GRAPHQL + "/" + queryID + "/TweetDetail?" + query.toString());
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/user/result/timeline_v2/timeline/instructions");
+        timelineInstructionsLoop: for (final Map<String, Object> timelineInstruction : timelineInstructions) {
+            if (!timelineInstruction.get("type").toString().equalsIgnoreCase("TimelineAddEntries")) {
+                continue;
+            }
+            final List<Map<String, Object>> timelineEntries = (List<Map<String, Object>>) timelineInstruction.get("entries");
+            for (final Map<String, Object> timelineEntry : timelineEntries) {
+                final Map<String, Object> content = (Map<String, Object>) timelineEntry.get("content");
+                final String contentType = (String) content.get("entryType");
+                if (contentType.equalsIgnoreCase("TimelineTimelineCursor")) {
+                    if (content.get("cursorType").toString().equalsIgnoreCase("Bottom")) {
+                        nextCursor = content.get("value").toString();
+                        /* We've reached the end of current page */
+                        break;
+                    }
+                } else {
+                    final Map<String, Object> result = (Map<String, Object>) JavaScriptEngineFactory.walkJson(content, "itemContent/tweet_results/result");
+                    if (result == null) {
+                        continue;
+                    }
+                    final String typename = (String) result.get("__typename");
+                    if (typename.equalsIgnoreCase("Tweet")) {
+                        final Map<String, Object> usr = (Map<String, Object>) JavaScriptEngineFactory.walkJson(result, "core/user_results/result/legacy");
+                        final Map<String, Object> tweet = (Map<String, Object>) result.get("legacy");
+                        if (tweet == null) {
+                            continue;
+                        }
+                        ret.addAll(crawlTweetMap(tweet, usr, fp));
+                    } else if (typename.equalsIgnoreCase("TweetTombstone")) {
+                        /* TODO: Check if this handling is working */
+                        /* 18+ content. We can find the ID of that tweet but we can't know the name of the user who posted it. */
+                        final String entryId = timelineEntry.get("entryId").toString();
+                        final String tweetID = new Regex(entryId, "tweet-(\\d+)").getMatch(0);
+                        if (tweetID == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/unknowntwitteruser/status/" + tweetID);
+                        link._setFilePackage(fp);
+                        ret.add(link);
+                    } else {
+                        logger.info("Skipping unsupported __typename: " + typename);
+                        continue;
+                    }
+                }
+            }
+        }
+        logger.info("Last nextCursor: " + nextCursor);
+        return ret;
     }
 
     public static Browser prepAPIHeaders(final Browser br) {
@@ -679,7 +761,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlUser(final CryptedLink param, final Account account) throws Exception {
         if (PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2()) {
-            return this.crawlUserViaWebAPI(param, account);
+            return this.crawlUserViaGraphqlAPI(param, account);
         } else {
             return crawlUserViaAPI(param, account);
         }
@@ -907,7 +989,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     /** Crawls tweets AND re-tweets of profile in given URL. */
-    private ArrayList<DownloadLink> crawlUserViaWebAPI(final CryptedLink param, final Account account) throws Exception {
+    private ArrayList<DownloadLink> crawlUserViaGraphqlAPI(final CryptedLink param, final Account account) throws Exception {
         final String username = new Regex(param.getCryptedUrl(), TYPE_USER_ALL).getMatch(0);
         if (username == null) {
             /* Developer mistake */
@@ -953,7 +1035,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final UrlQuery query = new UrlQuery();
             query.add("variables", Encoding.urlEncode(JSonStorage.serializeToJson(variables)));
             query.add("features", "%7B%22dont_mention_me_view_api_enabled%22%3Atrue%2C%22interactive_text_enabled%22%3Atrue%2C%22responsive_web_uc_gql_enabled%22%3Atrue%2C%22vibe_api_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Afalse%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D");
-            br.getPage("https://twitter.com/i/api/graphql/" + queryID + "/UserTweets?" + query.toString());
+            br.getPage(API_BASE_GRAPHQL + "/" + queryID + "/UserTweets?" + query.toString());
             final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/user/result/timeline_v2/timeline/instructions");
             final int totalCrawledTweetsCountOld = totalCrawledTweetsCount;
