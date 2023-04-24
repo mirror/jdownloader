@@ -124,7 +124,7 @@ public class HotscopeTv extends PluginForHost {
         }
         final String numberofViews = br.getRegex("\"views\"\\s*:\\s*(\\d+)").getMatch(0);
         if (numberofViews != null) {
-            link.setProperty(PROPERTY_VIEWS, numberofViews);
+            setViewCount(link, Integer.parseInt(numberofViews));
         }
         final String upvotesPercentage = br.getRegex("class=\"MuiTypography-root MuiTypography-body1 MuiTypography-colorTextSecondary\">(\\d+)<\\!-- -->%").getMatch(0);
         if (upvotesPercentage != null) {
@@ -150,6 +150,11 @@ public class HotscopeTv extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private final void setViewCount(final DownloadLink link, final Number number) {
+        link.setProperty(PROPERTY_VIEWS + "_string", TiktokCom.toHumanReadableNumber(number));
+        link.setProperty(PROPERTY_VIEWS, number.longValue());
     }
 
     @Override
