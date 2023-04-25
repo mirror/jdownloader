@@ -74,7 +74,8 @@ public class ZaycevNet extends PluginForHost {
         // br.setCookie(this.getHost(), "mm_cookie", "1");
         br.getPage(link.getPluginPatternMatcher());
         final int responsecode = this.br.getHttpConnection().getResponseCode();
-        if (br.getRedirectLocation() != null || br.containsHTML("http\\-equiv=\"Refresh\"|>Данная композиция заблокирована, приносим извинения") || responsecode == 404 || responsecode == 410) {
+        final String htmlRefresh = br.getRequest().getHTMLRefresh();
+        if (br.getRedirectLocation() != null || htmlRefresh != null || br.containsHTML(">Данная композиция заблокирована, приносим извинения") || responsecode == 404 || responsecode == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("itemProp=\"availability\"/></span></section><h1[^>]*>([^<>\"]+)</h1>").getMatch(0);

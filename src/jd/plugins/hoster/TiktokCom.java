@@ -173,7 +173,7 @@ public class TiktokCom extends PluginForHost {
     public static final String  TYPE_AUDIO                                     = "audio";
     public static final String  TYPE_VIDEO                                     = "video";
     public static final String  TYPE_PICTURE                                   = "picture";
-    public static final String  PATTERN_VIDEO                                  = "https?://[^/]+/@([^/]+)/video/(\\d+).*";
+    public static final String  PATTERN_VIDEO                                  = "(?i)https?://[^/]+/@([^/]+)/video/(\\d+).*";
     /* API related stuff */
     public static final String  API_CLIENT                                     = "trill";
     public static final String  API_AID                                        = "1180";
@@ -181,7 +181,8 @@ public class TiktokCom extends PluginForHost {
     public static final String  API_VERSION_NAME                               = "25.6.2";
     public static final String  API_VERSION_CODE                               = "250602";
     private final String        PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT  = "has_shown_download_mode_hint";
-    public static final boolean USE_NEW_HANDLING_IN_DEV_MODE                   = false;
+    // TODO: Remove this boolean after 2023-06
+    public static final boolean USE_NEW_HANDLING                               = true;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -216,7 +217,7 @@ public class TiktokCom extends PluginForHost {
             link.setName(fid + ".mp4");
         }
         String dllink = null;
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && USE_NEW_HANDLING_IN_DEV_MODE) {
+        if (USE_NEW_HANDLING) {
             /* 2021-01: New (unfinished!) handling */
             /* TODO: Update old --> New URLs via new crawler */
             dllink = getStoredDirecturl(link);

@@ -159,7 +159,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> crawlSingleMedia(final CryptedLink param, final Account account) throws Exception {
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && TiktokCom.USE_NEW_HANDLING_IN_DEV_MODE) {
+        if (TiktokCom.USE_NEW_HANDLING) {
             /* 2022-08-25: New handling: Under development */
             final DownloadLink link = param.getDownloadLink();
             final boolean forceAPI = link != null ? link.getBooleanProperty(TiktokCom.PROPERTY_FORCE_API, false) : false;
@@ -185,6 +185,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             }
         } else {
             /* Single video URL --> Is handled by host plugin */
+            // TODO: Remove this after 2023-06
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             ret.add(this.createDownloadlink(param.getCryptedUrl()));
             return ret;
