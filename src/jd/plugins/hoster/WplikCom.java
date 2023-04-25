@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -83,11 +84,26 @@ public class WplikCom extends XFileSharingProBasic {
             return 1;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
             /* 2022-09-09: Multiple chunks are allowed but they will globally speed-limit so it's no advantage. */
             return 1;
+        }
+    }
+
+    @Override
+    protected String regExTrafficLeft(final Browser br) {
+        /* 2023-04-25 */
+        String trafficLeftStr = br.getRegex("(?i)Traffic available today(?:\\s*:)?\\s*<strong>\\s*(\\d+[^<]+)</strong>").getMatch(0);
+        if (trafficLeftStr == null) {
+            /* Polish version of website. */
+            trafficLeftStr = br.getRegex("Transfer dzisiaj</div>\\s*<div class=\"txt2\"[^>]*>(\\d+[^<]+)</div>").getMatch(0);
+        }
+        if (trafficLeftStr != null) {
+            return trafficLeftStr;
+        } else {
+            return super.regExTrafficLeft(br);
         }
     }
 
