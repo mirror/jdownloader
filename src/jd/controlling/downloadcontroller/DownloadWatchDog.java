@@ -149,6 +149,7 @@ import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
+import jd.http.Browser.BlockedByException;
 import jd.http.NoGateWayException;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -2818,6 +2819,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(30 * 1000l);
                 ret.setMessage(_JDT.T.plugins_errors_proxy_auth());
+                return ret;
+            } else if (throwable instanceof BlockedByException) {
+                final BlockedByException bbe = (BlockedByException) throwable;
+                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
+                ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getDownloadUnknownIOExceptionWaittime());
+                ret.setMessage(bbe.getBlockedBy().getLabel());
                 return ret;
             } else if (throwable instanceof IOException) {
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
