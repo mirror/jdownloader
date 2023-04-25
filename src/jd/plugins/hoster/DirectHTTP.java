@@ -1262,8 +1262,7 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
                 if (nextIOExceptions > 2) {
                     if (e instanceof java.net.ConnectException || e.getCause() instanceof java.net.ConnectException) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, -1, e);
-                    }
-                    if (e instanceof java.net.UnknownHostException || e.getCause() instanceof java.net.UnknownHostException) {
+                    } else if (e instanceof java.net.UnknownHostException || e.getCause() instanceof java.net.UnknownHostException) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, -1, e);
                     }
                 }
