@@ -120,7 +120,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         boolean allow_HTTP = cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.HTTP_STREAM, true);
         boolean allow_HDS = cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.HDS_STREAM, true);
         boolean allow_HLS = cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.HLS_STREAM, true);
-        if (allow_HDS == allow_HLS == allow_HTTP == false) {
+        if (!(allow_HDS || allow_HLS || allow_HTTP)) {
             allow_HDS = true;
             allow_HLS = true;
             allow_HTTP = true;

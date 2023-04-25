@@ -4,11 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.appwork.utils.Files;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -23,6 +18,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Files;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(\\w+\\.)?porn\\.com/(?:videos/(embed/)?[a-z0-9\\-]*?\\-\\d+|out/[a-z]/[^/]+/[a-zA-Z0-9_/\\+\\=\\-%]+)" })
 public class PornCom extends PluginForDecrypt {
@@ -114,7 +114,7 @@ public class PornCom extends PluginForDecrypt {
         boolean q360 = cfg.getBooleanProperty("360p", true);
         boolean q480 = cfg.getBooleanProperty("480p", true);
         boolean q720 = cfg.getBooleanProperty("720p", true);
-        if (q240 == q360 == q480 == q720 == false) {
+        if (!(q240 || q360 || q480 || q720)) {
             q240 = true;
             q360 = true;
             q480 = true;

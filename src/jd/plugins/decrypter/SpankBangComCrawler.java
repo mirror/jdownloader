@@ -22,13 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -42,6 +35,8 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -51,6 +46,13 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.SpankBangCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SpankBangComCrawler extends PluginForDecrypt {
@@ -255,7 +257,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
         boolean q720p = cfg.getBooleanProperty(SpankBangCom.ALLOW_720p, SpankBangCom.default_ALLOW_720p);
         boolean q1080p = cfg.getBooleanProperty(SpankBangCom.ALLOW_1080p, SpankBangCom.default_ALLOW_1080p);
         boolean q4k = cfg.getBooleanProperty(SpankBangCom.ALLOW_4k, SpankBangCom.default_ALLOW_4k);
-        if (q240p == q320p == q480p == q720p == q1080p == q4k == false) {
+        if (!(q240p || q320p || q480p || q720p || q1080p || q4k)) {
             // user has made error and disabled them all, so we will treat as all enabled.
             q240p = true;
             q320p = true;
@@ -311,6 +313,9 @@ public class SpankBangComCrawler extends PluginForDecrypt {
         }
         if (ret.isEmpty()) {
             logger.info("None (of the selected) video qualities were found");
+            if (foundQualities.size() > 0) {
+                throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS);
+            }
         }
         if (cfg.getBooleanProperty(SpankBangCom.ALLOW_THUMBNAIL, SpankBangCom.default_ALLOW_THUMBNAIL)) {
             final String thumbnailURL = br.getRegex("\"thumbnailUrl\"\\s*:\\s*\"(https://[^\"]+)").getMatch(0);

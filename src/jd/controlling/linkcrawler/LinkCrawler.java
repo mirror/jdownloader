@@ -1191,9 +1191,12 @@ public class LinkCrawler {
             link.setVerifiedFileSize(contentLength);
         }
         {
+            boolean allowFileExtensionCorrection = true;
             String fileName = null;
             final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
             if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {
+                // trust given filename extension via Content-Disposition header
+                allowFileExtensionCorrection = false;
                 fileName = dispositionHeader.getFilename();
                 if (dispositionHeader.getEncoding() == null) {
                     try {
@@ -1211,10 +1214,12 @@ public class LinkCrawler {
                 }
             }
             if (fileName != null) {
-                if (fileName.indexOf(".") < 0) {
-                    final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
-                    if (ext != null) {
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    if (fileName.indexOf(".") < 0) {
                         fileName = fileName + "." + ext;
+                    } else if (allowFileExtensionCorrection) {
+                        fileName = Plugin.getCorrectOrApplyFileNameExtension(fileName, "." + ext);
                     }
                 }
                 link.setFinalFileName(fileName);

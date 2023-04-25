@@ -458,6 +458,10 @@ public abstract class Plugin implements ActionListener {
         return getFileNameFromURL(new URL(url));
     }
 
+    public String correctOrApplyFileNameExtension(final String filenameOrg, final String newExtension) {
+        return getCorrectOrApplyFileNameExtension(filenameOrg, newExtension);
+    }
+
     /**
      * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br> Pass
      * fileExtension with dot(s) to this! </br> Only replaces extensions with one dot e.g. ".mp4", NOT e.g. ".tar.gz".
@@ -470,7 +474,7 @@ public abstract class Plugin implements ActionListener {
      *
      * @return Filename with new extension
      */
-    public String correctOrApplyFileNameExtension(final String filenameOrg, final String newExtension) {
+    public static String getCorrectOrApplyFileNameExtension(final String filenameOrg, final String newExtension) {
         if (StringUtils.isEmpty(filenameOrg) || StringUtils.isEmpty(newExtension) || !newExtension.startsWith(".")) {
             return filenameOrg;
         } else if (!filenameOrg.contains(".")) {

@@ -19,11 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.Open3dlabComConfig;
-import org.jdownloader.plugins.components.config.Open3dlabComConfigSmutbaSe;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -36,6 +31,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.Open3dlabComConfig;
+import org.jdownloader.plugins.components.config.Open3dlabComConfigSmutbaSe;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Open3dlabCom extends PluginForHost {
@@ -77,7 +77,7 @@ public class Open3dlabCom extends PluginForHost {
 
     /* Connection stuff */
     private final boolean FREE_RESUME       = true;
-    private final int     FREE_MAXCHUNKS    = 0;
+    private final int     FREE_MAXCHUNKS    = 1;
     private final int     FREE_MAXDOWNLOADS = -1;
 
     @Override
@@ -128,14 +128,21 @@ public class Open3dlabCom extends PluginForHost {
         if (!StringUtils.isEmpty(dllink) && !link.isSizeSet()) {
             URLConnectionAdapter con = null;
             try {
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(true);
                 /* 2023-03-20: HEAD-request impossible */
-                con = br.openGetConnection(dllink);
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                final String serverFilename = Plugin.getFileNameFromHeader(con);
-                if (serverFilename != null) {
-                    link.setFinalFileName(serverFilename);
+                con = brc.openGetConnection(dllink);
+                if (!looksLikeDownloadableContent(con)) {
+                    brc.followConnection(true);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    final String serverFilename = Plugin.getFileNameFromHeader(con);
+                    if (serverFilename != null) {
+                        link.setFinalFileName(serverFilename);
+                    }
                 }
             } finally {
                 try {

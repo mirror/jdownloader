@@ -156,7 +156,7 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
     public void setEnabled(boolean b) {
         if (b) {
             config.setEnabledGlobally(true);
-            if (config.isEnabled() == config.ispuzzle() == config.ismouse() == false) {
+            if (!config.isEnabled() || config.ispuzzle() || config.ismouse()) {
                 config.setEnabled(b);
                 config.setmouse(b);
                 config.setpuzzle(b);
