@@ -37,7 +37,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ParteeeyDe;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/galerie/(?:uploads/)?[A-Za-z0-9\\-_]+\\-(\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/galerie/(?:uploads/)?([A-Za-z0-9\\-_]+)\\-(\\d+)" })
 public class ParteeeyDeGallery extends PluginForDecrypt {
     public ParteeeyDeGallery(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,7 +51,9 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String galleryID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
+        final String gallerySlug = urlinfo.getMatch(0);
+        final String galleryID = urlinfo.getMatch(1);
         if (galleryID == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -60,23 +62,22 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
             /* Account required to access their content */
             throw new AccountRequiredException();
         }
-        final ParteeeyDe hostPlugin = (ParteeeyDe) this.getNewPluginForHostInstance(this.getHost());
+        final ParteeeyDe hosterPlugin = (ParteeeyDe) this.getNewPluginForHostInstance(this.getHost());
         /*
          * Show 1000 links per page --> Usually we'll only get one page no matter how big a gallery is and big galleries will usually only
          * have to up to 150 items.
          */
         final String galleryURL = param.getCryptedUrl() + "?oF=f.date&oD=asc&eP=1000";
-        hostPlugin.login(aa, galleryURL, true);
+        hosterPlugin.login(aa, galleryURL, true);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML(">\\s*Seite nicht gefunden\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String urlGalleryName = new Regex(galleryURL, "(?i)parteeey\\.de/galerie/(.+)").getMatch(0);
         String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
-        if (fpName == null && urlGalleryName != null) {
+        if (fpName == null) {
             /* Fallback */
-            fpName = urlGalleryName.replace("_", " ");
+            fpName = gallerySlug.replace("_", " ").trim();
         }
         if (fpName == null) {
             /* Last resort fallback. */
@@ -126,20 +127,19 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                     urlThumb = new Regex(html, "(/thumb\\.php\\?f=[^<>\"\\']+)").getMatch(0);
                 }
                 if (photoID == null) {
-                    return null;
+                    /* This should never happen! */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 // final String finallink = "directhttp://https://www.parteeey.de/files/mul/galleries/" + gal_ID + "/" + url_fname;
-                final String url_fname = jd.plugins.hoster.ParteeeyDe.getFilenameFromThumbnailDirecturl(urlThumb);
+                final String url_fname = ParteeeyDe.getFilenameFromThumbnailDirecturl(urlThumb);
                 String finalname;
                 if (url_fname != null) {
                     finalname = df.format(counter) + "_" + url_fname;
                 } else {
                     finalname = df.format(counter) + "_" + photoID;
                 }
-                if (!finalname.endsWith(jd.plugins.hoster.ParteeeyDe.default_extension)) {
-                    finalname += jd.plugins.hoster.ParteeeyDe.default_extension;
-                }
-                final String contenturl = "https://www." + this.getHost() + "/#mulFile-" + photoID;
+                finalname = this.correctOrApplyFileNameExtension(finalname, ParteeeyDe.default_extension);
+                final String contenturl = "https://www.parteeey.de/galerie/" + gallerySlug + "-" + galleryID + "#mulFile-" + photoID;
                 final DownloadLink dl = createDownloadlink(contenturl);
                 dl.setName(finalname);
                 dl.setProperty("decrypterfilename", finalname);

@@ -41,7 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/(?:#mulFile\\-|galerie/datei\\?p=)(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "parteeey.de" }, urls = { "https?://(?:www\\.)?parteeey\\.de/(?:.*#mulFile\\-|galerie/datei\\?p=)(\\d+)" })
 public class ParteeeyDe extends PluginForHost {
     public ParteeeyDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,12 +53,8 @@ public class ParteeeyDe extends PluginForHost {
         return "https://www.parteeey.de/nutzungsbedingungen";
     }
 
-    /* Connection stuff - disable resume & chunks to keep serverload low. */
-    private static final boolean FREE_RESUME        = false;
-    private static final int     FREE_MAXCHUNKS     = 1;
-    private static final int     FREE_MAXDOWNLOADS  = 20;
-    public static final String   default_extension  = ".jpg";
-    private final String         PROPERTY_DIRECTURL = "directurl";
+    public static final String default_extension  = ".jpg";
+    private final String       PROPERTY_DIRECTURL = "directurl";
 
     private String getContentURL(final DownloadLink link) {
         return "https://www." + this.getHost() + "/galerie/datei?p=" + getFID(link);
@@ -183,7 +179,7 @@ public class ParteeeyDe extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String getMainpage() {
+    public String getMainpage() {
         return "https://www." + this.getHost();
     }
 
@@ -212,14 +208,15 @@ public class ParteeeyDe extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+        /* Connection stuff - disable resume & chunks to keep serverload low. */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         this.downloadErrorhandling(dl.getConnection());
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     public void login(final Account account, final String checkURL, final boolean validateCookies) throws Exception {
