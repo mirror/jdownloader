@@ -1273,7 +1273,11 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
             if (message == null && e.getCause() != null) {
                 message = e.getCause().getMessage();
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Network problem: " + message, 30 * 60 * 1000l, e);
+            if (e instanceof BlockedByException) {
+                throw e;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Network problem: " + message, 30 * 60 * 1000l, e);
+            }
         } catch (final Exception e) {
             this.logger.log(e);
         } finally {
