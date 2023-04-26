@@ -1,9 +1,12 @@
 package jd.controlling.downloadcontroller;
 
+import java.util.List;
+
 import jd.http.Browser.BrowserException;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.Exceptions;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.SkipReason;
 
@@ -203,9 +206,12 @@ public class DownloadLinkCandidateResult {
         this.lastPluginHost = lastPluginHost;
         this.conditionalSkip = conditionalSkip;
         this.throwable = throwable;
-        if (throwable instanceof BrowserException) {
-            // remove Request reference
-            ((BrowserException) throwable).removeRequest();
+        final List<BrowserException> brEx = Exceptions.getInstancesof(throwable, BrowserException.class);
+        if (brEx != null) {
+            for (final BrowserException brE : brEx) {
+                // remove Request reference
+                brE.removeRequest();
+            }
         }
         this.reachedDownloadInterface = reachedDownloadInterface;
     }

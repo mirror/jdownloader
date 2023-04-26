@@ -48,6 +48,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.RedditCom;
 
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -181,6 +182,13 @@ public class RedditComCrawler extends PluginForDecrypt {
         }
     }
 
+    @Override
+    public void distribute(DownloadLink... links) {
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            super.distribute(links);
+        }
+    }
+
     /**
      * Use this to crawl complete subreddits or user-profiles. </br>
      *
@@ -203,6 +211,8 @@ public class RedditComCrawler extends PluginForDecrypt {
         fp.setAllowMerge(true);
         fp.setAllowInheritance(true);
         fp.setCleanupPackageName(false);
+        Set<String> dupes = new HashSet<String>();
+        int dupeCounter = 0;
         do {
             br.getPage(url + "?" + query.toString());
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -212,9 +222,16 @@ public class RedditComCrawler extends PluginForDecrypt {
             final Map<String, Object> data = (Map<String, Object>) root.get("data");
             final int numberofItemsOnCurrentPage = ((Number) data.get("dist")).intValue();
             numberofItemsWalkedThrough += numberofItemsOnCurrentPage;
-            crawledLinks.addAll(this.crawlListing(root, fp));
+            final List<DownloadLink> pageResults = this.crawlListing(root, fp);
+            for (DownloadLink pageResult : pageResults) {
+                if (dupes.add(pageResult.getPluginPatternMatcher())) {
+                    crawledLinks.add(pageResult);
+                } else {
+                    dupeCounter++;
+                }
+            }
             final String nextPageToken = (String) data.get("after");
-            logger.info("Crawled page " + page + " | " + "Found items so far: " + crawledLinks.size() + " | Walked through items so far: " + numberofItemsWalkedThrough + " | next nextPageToken: " + nextPageToken);
+            logger.info("Crawled page " + page + " | " + "Found unique items so far: " + crawledLinks.size() + "(dupes:" + dupeCounter + ")| Walked through items so far: " + numberofItemsWalkedThrough + " | next nextPageToken: " + nextPageToken);
             /* Multiple fail safes to prevent infinite loop. */
             if (StringUtils.isEmpty(nextPageToken)) {
                 logger.info("Stopping because: nextPageToken is not given -> Looks like we've reached the last page: " + page);

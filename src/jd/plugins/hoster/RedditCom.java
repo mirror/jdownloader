@@ -280,8 +280,9 @@ public class RedditCom extends PluginForHost {
         } else {
             /* Image */
             if (!link.isNameSet()) {
+                final String ext = getFileNameExtensionFromURL(link.getPluginPatternMatcher());
                 /* Fallback: Use this if no name was set in crawler. */
-                link.setFinalFileName(this.getFID(link) + ".jpg");
+                link.setFinalFileName(this.getFID(link) + (ext != null ? ext : ".jpg"));
             }
             checkHttpDirecturlAndSetFilesize(link.getPluginPatternMatcher(), link);
         }
@@ -310,6 +311,16 @@ public class RedditCom extends PluginForHost {
             this.connectionErrorhandling(brc, con);
             if (con.getCompleteContentLength() > 0) {
                 link.setVerifiedFileSize(con.getCompleteContentLength());
+            }
+            final String ext = getExtensionFromMimeType(con.getContentType());
+            String fileName = link.getName();
+            if (ext != null && fileName != null) {
+                if (fileName.indexOf(".") < 0) {
+                    fileName = fileName + "." + ext;
+                } else {
+                    fileName = correctOrApplyFileNameExtension(fileName, "." + ext);
+                }
+                link.setFinalFileName(fileName);
             }
         } finally {
             try {

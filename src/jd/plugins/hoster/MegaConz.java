@@ -782,6 +782,7 @@ public class MegaConz extends PluginForHost {
             throw e;
         }
         if (response == null) {
+            // https://github.com/meganz/sdk/blob/master/include/mega/types.h
             final String error = getError(br);
             if ("-6".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1485,7 +1486,7 @@ public class MegaConz extends PluginForHost {
         final String ret = new Regex(link.getDownloadURL(), "(=###n=|!|%21)([a-zA-Z0-9]+)$").getMatch(1);
         final String publicFileKey = getPublicFileKey(link);
         final String nodeFileKey = getNodeFileKey(link);
-        if (ret != null && !ret.equals(publicFileKey) && !ret.equals(nodeFileKey)) {
+        if (ret != null && !StringUtils.startsWithCaseInsensitive(ret, publicFileKey) && !StringUtils.startsWithCaseInsensitive(ret, nodeFileKey)) {
             return ret;
         } else {
             return link.getStringProperty("pn", null);

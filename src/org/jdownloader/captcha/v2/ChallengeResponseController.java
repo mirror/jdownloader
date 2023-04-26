@@ -23,6 +23,7 @@ import org.jdownloader.captcha.blacklist.BlacklistEntry;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.event.ChallengeResponseEvent;
 import org.jdownloader.captcha.event.ChallengeResponseEventSender;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.HCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaDialogSolver;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaJACSolver;
 import org.jdownloader.captcha.v2.challenge.oauth.AccountOAuthSolver;
@@ -85,8 +86,9 @@ public class ChallengeResponseController {
             rules = new HashMap<String, ArrayList<CaptchaQualityEnsuranceRule>>();
         }
         boolean save = false;
-        save = addDefaultRules(rules, "recaptcha", new CaptchaQualityEnsuranceRule(20, 10 * 60 * 1000), new CaptchaQualityEnsuranceRule(4, 60 * 1000), new CaptchaQualityEnsuranceRule(3, 30 * 1000), new CaptchaQualityEnsuranceRule(2, 10 * 1000)) || save;
+        save = addDefaultRules(rules, RecaptchaV1CaptchaChallenge.RECAPTCHAV1, new CaptchaQualityEnsuranceRule(20, 10 * 60 * 1000), new CaptchaQualityEnsuranceRule(4, 60 * 1000), new CaptchaQualityEnsuranceRule(3, 30 * 1000), new CaptchaQualityEnsuranceRule(2, 10 * 1000)) || save;
         save = addDefaultRules(rules, RecaptchaV2Challenge.RECAPTCHAV2, new CaptchaQualityEnsuranceRule(60, 10 * 60 * 1000), new CaptchaQualityEnsuranceRule(6, 60 * 1000), new CaptchaQualityEnsuranceRule(3, 30 * 1000), new CaptchaQualityEnsuranceRule(2, 10 * 1000)) || save;
+        save = addDefaultRules(rules, HCaptchaChallenge.getChallengeType(), new CaptchaQualityEnsuranceRule(60, 10 * 60 * 1000), new CaptchaQualityEnsuranceRule(6, 60 * 1000), new CaptchaQualityEnsuranceRule(3, 30 * 1000), new CaptchaQualityEnsuranceRule(2, 10 * 1000)) || save;
         if (save) {
             CFG_CAPTCHA.CFG.setQualityEnsuranceRules(rules);
         }

@@ -6,7 +6,6 @@ import org.appwork.timetracker.TrackerJob;
 import org.jdownloader.captcha.v2.WaitForTrackerSlotPluginProcess;
 
 public class DownloadLinkCaptchaTracker extends TrackerJob {
-
     private final DownloadLink downloadLink;
 
     public DownloadLinkCaptchaTracker(String id, DownloadLink link) {
@@ -21,8 +20,7 @@ public class DownloadLinkCaptchaTracker extends TrackerJob {
                 synchronized (this) {
                     if (waitFor <= 0) {
                         return;
-                    }
-                    if (waitFor > 1000) {
+                    } else if (waitFor > 1000) {
                         wait(1000);
                     } else {
                         this.wait(waitFor);
@@ -47,7 +45,6 @@ public class DownloadLinkCaptchaTracker extends TrackerJob {
                     }
                     waitFor -= 1000;
                 }
-
             } finally {
                 downloadLink.removePluginProgress(progress);
             }

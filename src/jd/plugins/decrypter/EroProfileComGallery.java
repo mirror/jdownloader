@@ -34,9 +34,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.EroProfileCom;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "https?://(www\\.)?eroprofile\\.com/m/photos/album/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "https?://(www\\.)?eroprofile\\.com/m/(videos|photos)/album/[A-Za-z0-9\\-_]+" })
 public class EroProfileComGallery extends PluginForDecrypt {
     public EroProfileComGallery(PluginWrapper wrapper) {
         super(wrapper);
@@ -104,7 +105,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
                     }
                 }
             }
-            String[][] links = br.getRegex("<a href=\"(/m/photos/view/([A-Za-z0-9\\-_]+))\"").getMatches();
+            String[][] links = br.getRegex("<a href=\"(/m/(?:videos|photos)/view/([A-Za-z0-9\\-_]+))\"").getMatches();
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -112,7 +113,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
             for (final String singleLink[] : links) {
                 final DownloadLink dl = createDownloadlink("https://www.eroprofile.com" + singleLink[0]);
                 // final filename is set later in hosterplugin
-                dl.setName(singleLink[1] + ".jpg");
+                dl.setName(singleLink[1] + (StringUtils.containsIgnoreCase(singleLink[0], "/m/videos") ? ".mp4" : ".jpg"));
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
