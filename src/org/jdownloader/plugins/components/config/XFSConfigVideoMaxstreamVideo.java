@@ -16,7 +16,7 @@ public interface XFSConfigVideoMaxstreamVideo extends XFSConfigVideo {
     //
     // void setLanguagePriorityString(String str);
     final String                    text_AllowStreamDownloadAsFallbackOnCloudflareDuringOfficialDownloadAttempt = "Allow stream download as fallback on Cloudflare during official download attempt?";
-    final String                    text_TryToSkipOfficialDownloadPageToAvoidCloudflare                         = "Official download: Try to skip download page to try to avoid Cloudflare?";
+    final String                    text_TryToSkipOfficialDownloadPageToAvoidCloudflare                         = "Official download: Try to skip first download page to try to avoid Cloudflare?";
     public static final TRANSLATION TRANSLATION                                                                 = new TRANSLATION();
 
     public static class TRANSLATION {
