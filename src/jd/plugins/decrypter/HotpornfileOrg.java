@@ -17,6 +17,13 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Random;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,12 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotpornfile.org" }, urls = { "https?://(?:www\\.)?hotpornfile\\.org/(?!page)([^/]+)/(\\d+)" })
 public class HotpornfileOrg extends PluginForDecrypt {
     public HotpornfileOrg(PluginWrapper wrapper) {
@@ -48,12 +49,13 @@ public class HotpornfileOrg extends PluginForDecrypt {
     }
 
     private final String PROPERTY_recaptcha_response = "recaptcha_response";
+    private final String PROPERTY_cid                = "cid";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.getCryptedUrl();
         br.getPage(parameter);
-        String fpName = br.getRegex("<title>\\s*(.*?)\\s*(\\s*-\\s*Hotpornfile\\s*)?</title>").getMatch(0);
+        String fpName = br.getRegex("(?i)<title>\\s*(.*?)\\s*(\\s*-\\s*Hotpornfile\\s*)?</title>").getMatch(0);
         if (fpName == null) {
             fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         }
@@ -61,17 +63,17 @@ public class HotpornfileOrg extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* 2019-07-18: Stream URLs may expire which is why we don't grab them for now. */
-        // br.postPage("https://www." + this.getHost() + "/wp-admin/admin-ajax.php", "action=get_stream&postId=" + fid);
         String lastRecaptchaV2Response = this.getPluginConfig().getStringProperty(PROPERTY_recaptcha_response);
         String freshReCaptchaV2Response = null;
         logger.info("Failed to re-use previous recaptchaV2Response");
         /* round=0-> challenge, then it's ash or else branch, both increasing attempt counter */
         int attempt = 0;
+        int numberOfFreshCaptchasSolved = 0;
         Map<String, Object> entries = null;
         String lastNext = null;
         String next = null;
-        String src = null;
+        String links_text = null;
+        String cid = this.getPluginConfig().getStringProperty(PROPERTY_cid);
         do {
             final String recaptchaV2Response;
             if (lastRecaptchaV2Response != null) {
@@ -79,27 +81,39 @@ public class HotpornfileOrg extends PluginForDecrypt {
                 br.setCookie(this.getHost(), "cPass", lastRecaptchaV2Response);
                 recaptchaV2Response = lastRecaptchaV2Response;
             } else {
+                if (numberOfFreshCaptchasSolved >= 3) {
+                    logger.warning("Challenge is required but one was already solved in this round --> Something must be wrong!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 br.getPage(parameter);
                 recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Lf1jhYUAAAAAN8kNxOBBEUu3qBPcy4UNu4roO5K").getToken();
                 freshReCaptchaV2Response = recaptchaV2Response;
+                numberOfFreshCaptchasSolved++;
             }
+            if (cid == null || attempt > 0) {
+                // 2023-04-26: New and unfinished: TODO
+                cid = generateCID();
+            }
+            br.setCookie(br.getHost(), "cAsh", cid);
             final UrlQuery query = new UrlQuery();
             query.add("action", "get_links");
             query.add("postId", postID);
-            query.add("cid", "null");
+            query.add("cid", cid);
             query.add("challenge", Encoding.urlEncode(recaptchaV2Response));
             br.postPage("/wp-admin/admin-ajax.php", query);
             entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             lastNext = next;
             next = (String) entries.get("next");
             final Object error = entries.get("error");
-            src = (String) entries.get("links");
-            if ("links".equalsIgnoreCase(next) && src != null) {
+            links_text = (String) entries.get("links");
+            if ("links".equalsIgnoreCase(next) && links_text != null) {
                 logger.info("Stopping because: next=links and links not empty. error=" + error);
                 break;
             } else if (attempt > 10) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if ("ash".equalsIgnoreCase(next)) {
+                // 2023-04-26: New: TODO
+                logger.info("New cid value is needed");
                 attempt++;
                 logger.info("Continue because: lastNext=" + lastNext + "|next=ash");
                 if ("ash".equalsIgnoreCase(lastNext)) {
@@ -113,15 +127,16 @@ public class HotpornfileOrg extends PluginForDecrypt {
                 lastRecaptchaV2Response = null;
                 continue;
             } else if (Boolean.FALSE.equals(error)) {
-                logger.info("Stopping because: lastNext=" + lastNext + "|next=" + next + "|error=" + error + "|attempt=" + attempt);
+                logger.info("Stopping because Boolean.FALSE.equals(error) | lastNext=" + lastNext + "|next=" + next + "|error=" + error + "|attempt=" + attempt);
                 break;
             } else if (attempt > 0) {
-                logger.info("Stopping because:  lastNext=" + lastNext + "|next=" + next + "|attempt=" + attempt);
+                logger.info("Stopping because attempt > 0 |  lastNext=" + lastNext + "|next=" + next + "|attempt=" + attempt);
                 break;
             } else {
                 attempt++;
                 logger.info("Retrying captcha:  lastNext=" + lastNext + "|next=" + next + "|attempt=" + attempt);
                 lastRecaptchaV2Response = null;
+                /* Clear all cookies */
                 br.clearCookies(null);
                 continue;
             }
@@ -129,11 +144,11 @@ public class HotpornfileOrg extends PluginForDecrypt {
         if (isAbort()) {
             return ret;
         }
-        if (StringUtils.isEmpty(src)) {
+        if (StringUtils.isEmpty(links_text)) {
             /* Fallback */
-            src = br.getRequest().getHtmlCode();
+            links_text = br.getRequest().getHtmlCode();
         }
-        final String[] links = new Regex(src, "\"(https?://[^\"]+)").getColumn(0);
+        final String[] links = new Regex(links_text, "\"(https?://[^\"]+)").getColumn(0);
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -146,11 +161,26 @@ public class HotpornfileOrg extends PluginForDecrypt {
             fp.addLinks(ret);
         }
         if (ret.size() > 0 && freshReCaptchaV2Response != null) {
-            /* Save reCaptchaV2 response as we might be able to use it multiple times! */
+            /* Save reCaptchaV2 response and cid as we might be able to use it multiple times! */
             logger.info("Saving reCaptchaV2Response for next time: " + freshReCaptchaV2Response);
             this.getPluginConfig().setProperty(PROPERTY_recaptcha_response, freshReCaptchaV2Response);
+            this.getPluginConfig().setProperty(PROPERTY_cid, cid);
         }
         return ret;
+    }
+
+    private static String generateCID() {
+        // https://www.hotpornfile.org/wp-content/cache/autoptimize/js/autoptimize_192cd586b7da5c9f3b02b330c898f3cd.js
+        // return generateRandomString("0123456789", 4) + "XXXX" + generateRandomString("0123456789abcdef", 16);
+        return "1002XXXX" + generateRandomString("0123456789abcdef", 16);
+    }
+
+    public static String generateRandomString(final String chars, final int length) {
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(new Random().nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 
     @Override
