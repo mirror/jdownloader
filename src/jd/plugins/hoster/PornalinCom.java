@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -66,5 +67,22 @@ public class PornalinCom extends KernelVideoSharingComV2 {
             return null;
         }
         return this.getProtocol() + "www." + host + "/video/" + urlSlug + "/";
+    }
+
+    @Override
+    protected String regexNormalTitleWebsite(final Browser br) {
+        String title = br.getRegex("<h2 class=\"title\">([^<]+)</h2>").getMatch(0);
+        if (title != null) {
+            return title;
+        } else {
+            /* Fallback to upper handling */
+            return super.regexNormalTitleWebsite(br);
+        }
+    }
+
+    @Override
+    protected boolean preferTitleHTML() {
+        /* 2023-04-26 */
+        return true;
     }
 }
