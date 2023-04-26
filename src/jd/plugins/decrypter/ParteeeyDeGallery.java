@@ -142,9 +142,9 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 final String contenturl = "https://www.parteeey.de/galerie/" + gallerySlug + "-" + galleryID + "#mulFile-" + photoID;
                 final DownloadLink dl = createDownloadlink(contenturl);
                 dl.setName(finalname);
-                dl.setProperty("decrypterfilename", finalname);
-                dl.setProperty("thumburl", urlThumb);
-                dl.setProperty("galleryid", galleryID);
+                dl.setProperty(ParteeeyDe.PROPERTY_DECRYPTERFILENAME, finalname);
+                dl.setProperty(ParteeeyDe.PROPERTY_THUMBURL, urlThumb);
+                dl.setProperty(ParteeeyDe.PROPERTY_GALLERYID, galleryID);
                 dl.setContentUrl(contenturl);
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);

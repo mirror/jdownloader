@@ -53,8 +53,11 @@ public class ParteeeyDe extends PluginForHost {
         return "https://www.parteeey.de/nutzungsbedingungen";
     }
 
-    public static final String default_extension  = ".jpg";
-    private final String       PROPERTY_DIRECTURL = "directurl";
+    public static final String default_extension          = ".jpg";
+    private final String       PROPERTY_DIRECTURL         = "directurl";
+    public static final String PROPERTY_DECRYPTERFILENAME = "decrypterfilename";
+    public static final String PROPERTY_THUMBURL          = "thumburl";
+    public static final String PROPERTY_GALLERYID         = "galleryid";
 
     private String getContentURL(final DownloadLink link) {
         return "https://www." + this.getHost() + "/galerie/datei?p=" + getFID(link);
@@ -88,9 +91,9 @@ public class ParteeeyDe extends PluginForHost {
             link.getLinkStatus().setStatusText("Account needed for linkcheck- and download");
             return AvailableStatus.UNCHECKABLE;
         }
-        String urlThumb = link.getStringProperty("thumburl");
-        final String filename_decrypter = link.getStringProperty("decrypterfilename");
-        final String galleryid = link.getStringProperty("galleryid");
+        String urlThumb = link.getStringProperty(ParteeeyDe.PROPERTY_THUMBURL);
+        final String filename_decrypter = link.getStringProperty(ParteeeyDe.PROPERTY_DECRYPTERFILENAME);
+        final String galleryid = link.getStringProperty(ParteeeyDe.PROPERTY_GALLERYID);
         /**
          * 2017-10-06: Official downloads are disabled (that time this required special account permissions.) </br>
          * 2023-04-25: Left this disabled: Official downloads are slower and they do not provide the content in higher quality so there is

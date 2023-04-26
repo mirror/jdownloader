@@ -16,11 +16,16 @@ public interface XFSConfigVideoMaxstreamVideo extends XFSConfigVideo {
     //
     // void setLanguagePriorityString(String str);
     final String                    text_AllowStreamDownloadAsFallbackOnCloudflareDuringOfficialDownloadAttempt = "Allow stream download as fallback on Cloudflare during official download attempt?";
+    final String                    text_TryToSkipOfficialDownloadPageToAvoidCloudflare                         = "Official download: Try to skip download page to try to avoid Cloudflare?";
     public static final TRANSLATION TRANSLATION                                                                 = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getAllowStreamDownloadAsFallbackOnCloudflareDuringOfficialDownloadAttempt_label() {
             return text_AllowStreamDownloadAsFallbackOnCloudflareDuringOfficialDownloadAttempt;
+        }
+
+        public String getTryToSkipOfficialDownloadPageToAvoidCloudflare_label() {
+            return text_TryToSkipOfficialDownloadPageToAvoidCloudflare;
         }
     }
 
@@ -31,4 +36,12 @@ public interface XFSConfigVideoMaxstreamVideo extends XFSConfigVideo {
     boolean isAllowStreamDownloadAsFallbackOnCloudflareDuringOfficialDownloadAttempt();
 
     void setAllowStreamDownloadAsFallbackOnCloudflareDuringOfficialDownloadAttempt(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_TryToSkipOfficialDownloadPageToAvoidCloudflare)
+    @Order(201)
+    boolean isTryToSkipOfficialDownloadPageToAvoidCloudflare();
+
+    void setTryToSkipOfficialDownloadPageToAvoidCloudflare(boolean b);
 }
