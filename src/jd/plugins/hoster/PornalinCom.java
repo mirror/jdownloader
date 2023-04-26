@@ -71,7 +71,7 @@ public class PornalinCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String regexNormalTitleWebsite(final Browser br) {
-        String title = br.getRegex("<h2 class=\"title\">([^<]+)</h2>").getMatch(0);
+        final String title = br.getRegex("<h2 class=\"title\">([^<]+)</h2>").getMatch(0);
         if (title != null) {
             return title;
         } else {
