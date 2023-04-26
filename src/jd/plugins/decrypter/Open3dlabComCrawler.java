@@ -101,13 +101,12 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = br.getRegex("\"name\"\\s*:\\s*\"([^\"]+)\"").getMatch(0);
-        final FilePackage fp = FilePackage.getInstance();
-        if (title != null) {
-            fp.setName(Encoding.htmlDecode(title).trim());
-        } else {
-            fp.setName(projectID);
+        if (title == null) {
+            title = br.getRegex("<meta name=\"twitter:title\" content=\"([^\"]+)").getMatch(0);
         }
-        fp.setCleanupPackageName(false);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+        }
         final Open3dlabComConfig cfg;
         if (this.getHost().equals("open3dlab.com")) {
             cfg = PluginJsonConfig.get(Open3dlabComConfig.class);
@@ -153,8 +152,6 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
             final HashMap<String, DownloadLink> mirrorMap = new HashMap<String, DownloadLink>();
             for (final String mirrorURL : mirrorURLs) {
                 final DownloadLink dl = this.createDownloadlink(mirrorURL);
-                dl._setFilePackage(fp);
-                dl.setAvailable(true);
                 if (filename != null) {
                     dl.setName(filename);
                 }
@@ -186,6 +183,29 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
                 logger.info("Failed to find desired mirror: Returning all mirrors as fallback");
                 ret.addAll(mirrorMap.values());
             }
+        }
+        final String thumbnailURLRightSide = br.getRegex("\"image\"\\s*:\\s*\"(https?://[^\"]+)\"").getMatch(0);
+        if (thumbnailURLRightSide != null && cfg.isCrawlThumbnail()) {
+            final DownloadLink thumb = this.createDownloadlink(thumbnailURLRightSide);
+            ret.add(thumb);
+        }
+        final String[] userUploadedPreviewMediaURLs = br.getRegex("\"(https?://[^/]+/content/content/[^/]+/user_uploads/[^\"]+)").getColumn(0);
+        if (userUploadedPreviewMediaURLs != null && userUploadedPreviewMediaURLs.length > 0 && cfg.isCrawlPreviewSlashPromoMedia()) {
+            for (final String userUploadedPreviewMediaURL : userUploadedPreviewMediaURLs) {
+                final DownloadLink userUpload = this.createDownloadlink(userUploadedPreviewMediaURL);
+                ret.add(userUpload);
+            }
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        if (title != null) {
+            fp.setName(title);
+        } else {
+            fp.setName(projectID);
+        }
+        fp.setCleanupPackageName(false);
+        for (final DownloadLink result : ret) {
+            result.setAvailable(true);
+            result._setFilePackage(fp);
         }
         return ret;
     }
