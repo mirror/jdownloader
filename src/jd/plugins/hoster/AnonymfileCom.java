@@ -27,7 +27,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -171,16 +170,7 @@ public class AnonymfileCom extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        } else if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        } else {
-            /* Premium accounts do not have captchas */
-            return false;
-        }
+        return false;
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty) throws Exception {
