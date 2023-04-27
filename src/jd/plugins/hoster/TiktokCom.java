@@ -242,7 +242,7 @@ public class TiktokCom extends PluginForHost {
                     /* This should never happen */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                dllink = getStoredDirecturl(link);
+                dllink = getStoredDirecturl(result);
                 link.setProperties(result.getProperties());
                 if (mediaTypeWorkaroundActive) {
                     /*

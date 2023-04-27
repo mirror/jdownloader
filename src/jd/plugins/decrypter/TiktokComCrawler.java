@@ -164,19 +164,14 @@ public class TiktokComCrawler extends PluginForDecrypt {
             final DownloadLink link = param.getDownloadLink();
             final boolean forceAPI = link != null ? link.getBooleanProperty(TiktokCom.PROPERTY_FORCE_API, false) : false;
             if (TiktokCom.getDownloadMode() == DownloadMode.API || forceAPI) {
-                return this.crawlSingleMediaAPI(param.getCryptedUrl(), null);
+                return this.crawlSingleMediaAPI(param.getCryptedUrl(), null, forceAPI);
             } else {
                 try {
                     return crawlSingleMediaWebsite(param.getCryptedUrl(), null);
                 } catch (final PluginException e) {
                     if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"(?:status_msg|message)\"\\s*:\\s*\"Something went wrong\"")) {
-                        final ArrayList<DownloadLink> results = this.crawlSingleMediaAPI(param.getCryptedUrl(), null);
+                        final ArrayList<DownloadLink> results = this.crawlSingleMediaAPI(param.getCryptedUrl(), null, true);
                         logger.info("Auto fallback to API worked fine");
-                        if (results != null) {
-                            for (final DownloadLink result : results) {
-                                result.setProperty(TiktokCom.PROPERTY_FORCE_API, true);
-                            }
-                        }
                         return results;
                     } else {
                         throw e;
@@ -398,7 +393,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    public ArrayList<DownloadLink> crawlSingleMediaAPI(final String url, final Account account) throws Exception {
+    public ArrayList<DownloadLink> crawlSingleMediaAPI(final String url, final Account account, final boolean isForcedAPIUsage) throws Exception {
         final TiktokCom hostPlg = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
         if (account != null) {
             hostPlg.login(account, false);
@@ -591,6 +586,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             TiktokCom.setShareCount(result, (Number) statistics.get("share_count"));
             TiktokCom.setCommentCount(result, (Number) statistics.get("comment_count"));
             result.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
+            result.setProperty(TiktokCom.PROPERTY_FORCE_API, isForcedAPIUsage);
             TiktokCom.setFilename(result);
             if (packagename == null && (result.getStringProperty(TiktokCom.PROPERTY_TYPE).equals(TiktokCom.TYPE_AUDIO) || result.getStringProperty(TiktokCom.PROPERTY_TYPE).equals(TiktokCom.TYPE_VIDEO))) {
                 final String filename = result.getName();

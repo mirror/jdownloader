@@ -66,43 +66,39 @@ public class HotpornfileOrg extends PluginForDecrypt {
         String lastRecaptchaV2Response = this.getPluginConfig().getStringProperty(PROPERTY_recaptcha_response);
         String freshReCaptchaV2Response = null;
         logger.info("Failed to re-use previous recaptchaV2Response");
-        /* round=0-> challenge, then it's ash or else branch, both increasing attempt counter */
         int attempt = 0;
-        int numberOfFreshCaptchasSolved = 0;
         Map<String, Object> entries = null;
         String lastNext = null;
         String next = null;
         String links_text = null;
         String cid = this.getPluginConfig().getStringProperty(PROPERTY_cid);
         do {
+            attempt++;
             final String recaptchaV2Response;
             if (lastRecaptchaV2Response != null) {
                 logger.info("Trying to re-use lase reCaptchaV2Response: " + lastRecaptchaV2Response);
                 br.setCookie(this.getHost(), "cPass", lastRecaptchaV2Response);
                 recaptchaV2Response = lastRecaptchaV2Response;
             } else {
-                if (numberOfFreshCaptchasSolved >= 3) {
+                if (freshReCaptchaV2Response != null) {
                     logger.warning("Challenge is required but one was already solved in this round --> Something must be wrong!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.getPage(parameter);
                 recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Lf1jhYUAAAAAN8kNxOBBEUu3qBPcy4UNu4roO5K").getToken();
                 freshReCaptchaV2Response = recaptchaV2Response;
-                numberOfFreshCaptchasSolved++;
             }
-            if (cid == null || attempt > 0) {
-                // 2023-04-26: New and unfinished: TODO
-                cid = generateCID();
-                // final Browser brc = br.cloneBrowser();
-                // brc.getHeaders().put("Origin", "https://www.hotpornfile.org");
-                // brc.getHeaders().put("Referer", param.getCryptedUrl());
-                // brc.getPage("https://www.shrink-service.it/v3/api/pb/channels/bergfried/check?cid=" + cid);
-            }
-            br.setCookie(br.getHost(), "cAsh", cid);
+            // br.setCookie(br.getHost(), "cAsh", cid);
             final UrlQuery query = new UrlQuery();
             query.add("action", "get_links");
             query.add("postId", postID);
-            query.add("cid", cid);
+            if (cid == null) {
+                /* E.g. first request */
+                query.add("cid", "null");
+            } else {
+                query.add("cid", cid);
+                query.add("fb", "true");
+            }
             query.add("challenge", Encoding.urlEncode(recaptchaV2Response));
             br.postPage("/wp-admin/admin-ajax.php", query);
             entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
@@ -116,33 +112,26 @@ public class HotpornfileOrg extends PluginForDecrypt {
             } else if (attempt > 10) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if ("ash".equalsIgnoreCase(next)) {
-                // 2023-04-26: New: TODO
-                logger.info("New cid value is needed");
-                attempt++;
-                logger.info("Continue because: lastNext=" + lastNext + "|next=ash");
-                if ("ash".equalsIgnoreCase(lastNext)) {
-                    lastRecaptchaV2Response = null;
+                /* [New] cid value is needed. */
+                cid = generateCID();
+                if (cid == null) {
+                    logger.info("New [first] cid value is needed");
                 } else {
-                    lastRecaptchaV2Response = recaptchaV2Response;
+                    logger.info("New [fresh] cid value is needed");
                 }
+                logger.info("Continue because: next=ash");
                 continue;
             } else if ("challenge".equalsIgnoreCase(next)) {
+                /* Fresh captcha needs to be solved. */
                 logger.info("Continue because: lastNext=" + lastNext + "|next=challenge");
                 lastRecaptchaV2Response = null;
                 continue;
             } else if (Boolean.FALSE.equals(error)) {
-                logger.info("Stopping because Boolean.FALSE.equals(error) | lastNext=" + lastNext + "|next=" + next + "|error=" + error + "|attempt=" + attempt);
-                break;
-            } else if (attempt > 0) {
-                logger.info("Stopping because attempt > 0 |  lastNext=" + lastNext + "|next=" + next + "|attempt=" + attempt);
+                logger.info("Stopping because error == FALSE | lastNext=" + lastNext + "|next=" + next + "|error=" + error + "|attempt=" + attempt);
                 break;
             } else {
-                attempt++;
-                logger.info("Retrying captcha:  lastNext=" + lastNext + "|next=" + next + "|attempt=" + attempt);
-                lastRecaptchaV2Response = null;
-                /* Clear all cookies */
-                br.clearCookies(null);
-                continue;
+                logger.info("Stopping because attempt > 0 |  lastNext=" + lastNext + "|next=" + next + "|attempt=" + attempt);
+                break;
             }
         } while (!isAbort());
         if (isAbort()) {
