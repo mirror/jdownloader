@@ -142,6 +142,7 @@ public class RedGifsCom extends GfyCatCom {
         final String firstToken = getTemporaryToken(br, null);
         Request view = getView(br, firstToken, fid);
         if (view.getHttpConnection().getResponseCode() == 401) {
+            /* Try again with fresh token. */
             final String nextToken = getTemporaryToken(br, firstToken);
             if (!StringUtils.equals(firstToken, nextToken)) {
                 view = getView(br, nextToken, fid);

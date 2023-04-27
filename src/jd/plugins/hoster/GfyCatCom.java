@@ -52,7 +52,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(?:www\\.)?(?:gfycat\\.com(?:/ifr)?|gifdeliverynetwork\\.com(?:/ifr)?)/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(?:www\\.)?(?:gfycat\\.com|gifdeliverynetwork\\.com)(?:/ifr)?/([A-Za-z0-9]+)" })
 public class GfyCatCom extends PluginForHost {
     public GfyCatCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -79,15 +79,17 @@ public class GfyCatCom extends PluginForHost {
         this.br.getHeaders().put("User-Agent", "JDownloader");
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
+    private String getContentURL(final DownloadLink link) {
         final String fid = this.getFID(link);
-        if (Browser.getHost(link.getPluginPatternMatcher()).equalsIgnoreCase("gifdeliverynetwork.com") && fid != null) {
+        final String url = link.getPluginPatternMatcher().replace("http://", "https://");
+        if (Browser.getHost(url).equalsIgnoreCase("gifdeliverynetwork.com") && fid != null) {
             /*
              * 2020-06-18: Special: gfycat.com would redirect to gifdeliverynetwork.con in this case but redgifs.com will work fine and
              * return the expected json!
              */
-            link.setPluginPatternMatcher("https://www.redgifs.com/watch/" + fid);
+            return "https://www.redgifs.com/watch/" + fid;
+        } else {
+            return url;
         }
     }
 
@@ -102,12 +104,20 @@ public class GfyCatCom extends PluginForHost {
     }
 
     protected String getFID(final DownloadLink link) {
-        final String ret = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        if (ret != null) {
-            // ID must be lower case!
-            return ret.toLowerCase(Locale.ENGLISH);
+        final String idFromLegacyURL = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/watch/([A-Za-z0-9]+)").getMatch(0);
+        if (idFromLegacyURL != null) {
+            /*
+             * For old redgifs.com URLs which were added before separate redgifs.com plugin was added (last rev with old handling: 47215).
+             */
+            return idFromLegacyURL;
         } else {
-            return null;
+            final String ret = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+            if (ret != null) {
+                // ID must be lower case!
+                return ret.toLowerCase(Locale.ENGLISH);
+            } else {
+                return null;
+            }
         }
     }
 
@@ -181,13 +191,18 @@ public class GfyCatCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        final String fid = this.getFID(link);
+        if (fid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link));
+            link.setName(fid);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 410, 500 });
-        br.getPage(link.getPluginPatternMatcher());
+        final String contentURL = this.getContentURL(link);
+        br.getPage(contentURL);
         // gfycat/gifdeliverynetwork may redirect to redgifs
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -206,7 +221,7 @@ public class GfyCatCom extends PluginForHost {
                 synchronized (redgifsAccessKey) {
                     key = redgifsAccessKey.get();
                     if (StringUtils.isEmpty(key)) {
-                        br.getPage(link.getPluginPatternMatcher());
+                        br.getPage(contentURL);
                         /* 2021-05-04: /assets/app.59be79d0c1811e38f695.js */
                         final String jsurl = br.getRegex("<script src=\"(/assets/app\\.[a-f0-9]+\\.js)\">").getMatch(0);
                         if (jsurl == null) {
@@ -258,7 +273,7 @@ public class GfyCatCom extends PluginForHost {
              * 2022-12-27 - this api no longer returns sound or higher quality! This API is going away, please upgrade your app:
              * https://github.com/Redgifs/api/wiki
              */
-            GetRequest request = brapi.createGetRequest("https://api.redgifs.com/v1/gfycats/" + this.getFID(link));
+            final GetRequest request = brapi.createGetRequest("https://api.redgifs.com/v1/gfycats/" + fid);
             request.getHeaders().put("Origin", "https://redgifs.com/");
             if (token != null) {
                 request.getHeaders().put("Referer", "https://redgifs.com/");
@@ -363,8 +378,8 @@ public class GfyCatCom extends PluginForHost {
             }
             /* fid is used as fallback-title so in this case we don't want to have it twice in our filename! */
             if (gfyName != null) {
-                if (!StringUtils.equalsIgnoreCase(gfyName, this.getFID(link))) {
-                    filename += " - " + this.getFID(link);
+                if (!StringUtils.equalsIgnoreCase(gfyName, fid)) {
+                    filename += " - " + fid;
                 }
                 filename += " - " + gfyName + ext;
             }
@@ -400,9 +415,9 @@ public class GfyCatCom extends PluginForHost {
                     dllink = br.getRegex("\"(https?://[^<>\"]+\\.mp4)\"").getMatch(0);
                 }
                 if (dllink == null || dllink.contains(".webm")) {
-                    link.setName(this.getFID(link) + ".webm");
+                    link.setName(fid + ".webm");
                 } else {
-                    link.setName(this.getFID(link) + ".mp4");
+                    link.setName(fid + ".mp4");
                 }
             } else {
                 final String simpleJSON = br.getRegex("<script data-react-helmet\\s*=\\s*\"true\"\\s*type\\s*=\\s*\"application/ld\\+json\">\\s*(.*?)\\s*</script>").getMatch(0);
@@ -425,7 +440,7 @@ public class GfyCatCom extends PluginForHost {
                                 final Object rootO = JavaScriptEngineFactory.jsonToJavaObject(complicatedJSON);
                                 // final List<Object> ressourcelist = JSonStorage.restoreFromString(complicatedJSON, TypeRef.LIST);
                                 final Map<String, Object> allMedia = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootO, "{0}/cache/gifs");
-                                final Map<String, Object> thisMediaInfo = (Map<String, Object>) allMedia.get(this.getFID(link));
+                                final Map<String, Object> thisMediaInfo = (Map<String, Object>) allMedia.get(fid);
                                 title = (String) thisMediaInfo.get("title");
                             } catch (final Throwable e) {
                             }
@@ -440,7 +455,7 @@ public class GfyCatCom extends PluginForHost {
                         title = title.replaceFirst("(\\s*Porn\\s*GIF\\s*(by.+)?)", "");
                     }
                     /* 2021-03-09: Fallback - title can be "" (empty) [after title-correction]! */
-                    title = this.getFID(link);
+                    title = fid;
                     if (!StringUtils.isAllNotEmpty(datePublished, username, title)) {
                         /* Most likely content is not downloadable e.g. gyfcat.com/upload */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -460,8 +475,8 @@ public class GfyCatCom extends PluginForHost {
                          */
                         String filename = dateFormatted + "_" + username;
                         /* fid is used as fallback-title so in this case we don't want to have it twice in our filename! */
-                        if (!StringUtils.equalsIgnoreCase(title, this.getFID(link))) {
-                            filename += " - " + this.getFID(link);
+                        if (!StringUtils.equalsIgnoreCase(title, fid)) {
+                            filename += " - " + fid;
                         }
                         filename += " - " + title + ext;
                         link.setFinalFileName(filename);
@@ -474,13 +489,12 @@ public class GfyCatCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     final String username = PluginJSonUtils.getJsonValue(complicatedJSON, "author");
-                    final String filename = this.getFID(link);
                     final String filesize = PluginJSonUtils.getJsonValue(complicatedJSON, "webmSize");
-                    if (StringUtils.isEmpty(username) || StringUtils.isEmpty(filename)) {
+                    if (StringUtils.isEmpty(username)) {
                         /* Most likely content is not downloadable e.g. gyfcat.com/upload */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    link.setFinalFileName(username + " - " + filename + ".webm");
+                    link.setFinalFileName(username + " - " + fid + ".webm");
                     if (!StringUtils.isEmpty(filesize)) {
                         link.setDownloadSize(SizeFormatter.getSize(filesize));
                     }

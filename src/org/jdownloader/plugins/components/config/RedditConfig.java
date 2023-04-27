@@ -55,6 +55,10 @@ public interface RedditConfig extends PluginConfigInterface {
             return text_SubredditCrawlerMaxPages;
         }
 
+        public String getVideoDownloadStreamType_label() {
+            return text_VideoDownloadStreamType;
+        }
+
         public String getVideoUseDirecturlAsContentURL_label() {
             return text_VideoUseDirecturlAsContentURL;
         }
