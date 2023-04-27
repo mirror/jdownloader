@@ -90,9 +90,13 @@ public class HotpornfileOrg extends PluginForDecrypt {
                 freshReCaptchaV2Response = recaptchaV2Response;
                 numberOfFreshCaptchasSolved++;
             }
-            if (cid == null || attempt > 0) {
+            if (cid == null || attempt > 0 || true) {
                 // 2023-04-26: New and unfinished: TODO
                 cid = generateCID();
+                // final Browser brc = br.cloneBrowser();
+                // brc.getHeaders().put("Origin", "https://www.hotpornfile.org");
+                // brc.getHeaders().put("Referer", param.getCryptedUrl());
+                // brc.getPage("https://www.shrink-service.it/v3/api/pb/channels/bergfried/check?cid=" + cid);
             }
             br.setCookie(br.getHost(), "cAsh", cid);
             final UrlQuery query = new UrlQuery();
