@@ -90,7 +90,7 @@ public class HotpornfileOrg extends PluginForDecrypt {
                 freshReCaptchaV2Response = recaptchaV2Response;
                 numberOfFreshCaptchasSolved++;
             }
-            if (cid == null || attempt > 0 || true) {
+            if (cid == null || attempt > 0) {
                 // 2023-04-26: New and unfinished: TODO
                 cid = generateCID();
                 // final Browser brc = br.cloneBrowser();
