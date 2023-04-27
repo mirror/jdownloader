@@ -54,13 +54,23 @@ public class RedGifsCom extends GfyCatCom {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.XXX };
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "redgifs.com" };
+    }
+
     private static Map<ProxySelectorInterface, Object> TEMPORARYTOKENS             = new WeakHashMap<ProxySelectorInterface, Object>();
     private static AtomicBoolean                       failSafeTemporaryTokenIssue = new AtomicBoolean(false);
 
     // https://github.com/Redgifs/api/wiki/Temporary-tokens
     // tokens are bound to IP/UA
     // tokens seem to expire after 24 hours, see 'exp' field in token
-    private String getTemporaryToken(final Browser br, final String renewIfToken) throws Exception {
+    public String getTemporaryToken(final Browser br, final String renewIfToken) throws Exception {
         synchronized (TEMPORARYTOKENS) {
             Object tokenDetails[] = (Object[]) TEMPORARYTOKENS.get(br.getProxy());
             if (tokenDetails == null) {
@@ -140,39 +150,42 @@ public class RedGifsCom extends GfyCatCom {
         if (view.getHttpConnection().getResponseCode() == 401) {
             failSafeTemporaryTokenIssue.set(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (view.getHttpConnection().getResponseCode() == 404 || view.getHttpConnection().getResponseCode() == 410) {
+        } else if (view.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (view.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> response = restoreFromString(view.getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> gif = (Map<String, Object>) response.get("gif");
-        final Map<String, Object> user = (Map<String, Object>) response.get("user");// must be requested via &users=yes in /gifs/ request
+        parseFileInfo(link, gif);
+        return AvailableStatus.TRUE;
+    }
+
+    /** Takes gif map from json and processes information of it. */
+    public static final void parseFileInfo(final DownloadLink link, final Map<String, Object> gif) {
+        // final Map<String, Object> user = (Map<String, Object>) response.get("user");// must be requested via &users=yes in /gifs/ request
         final Map<String, Object> urls = (Map<String, Object>) gif.get("urls");
         String url = (String) urls.get("hd");
         if (url == null) {
             url = (String) urls.get("sd");
         }
         String ext = getFileNameExtensionFromURL(url, ".mp4");
-        final String gfyName = (String) gif.get("id");
-        final String username = (String) gif.get("userName");
+        final String fid = gif.get("id").toString();
+        final String username = gif.get("userName").toString();
         String filename = username;
         final Number createDate = (Number) gif.get("createDate");
         if (createDate != null) {
             final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             filename = sdf.format(new Date(createDate.longValue() * 1000)) + "_" + filename;
         }
-        /* fid is used as fallback-title so in this case we don't want to have it twice in our filename! */
-        if (gfyName != null) {
-            if (!StringUtils.equalsIgnoreCase(gfyName, fid)) {
-                filename += " - " + fid;
-            }
-            filename += " - " + gfyName + ext;
-        }
+        filename += fid + ext;
         if (url != null) {
             if (link.getFinalFileName() == null || (link.getFinalFileName() != null && !StringUtils.endsWithCaseInsensitive(link.getFinalFileName(), ext))) {
                 filename = filename + ext;
                 filename = filename.replaceFirst("(?i)((\\.(webm|mp4|gif|jpe?g)))?" + Pattern.quote(ext) + "$", ext);
                 link.setFinalFileName(filename);
             }
+            link.setProperty(PROPERTY_DIRECTURL, url);
         } else {
             link.setName(filename);
         }
@@ -183,22 +196,6 @@ public class RedGifsCom extends GfyCatCom {
                 link.setComment(description);
             }
         }
-        if (url == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            this.dllink = url;
-            return AvailableStatus.TRUE;
-        }
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.XXX };
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return new String[] { "redgifs.com" };
     }
 
     @Override

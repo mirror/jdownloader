@@ -89,4 +89,10 @@ public class PornhatCom extends KernelVideoSharingComV2 {
         }
         return this.getProtocol() + "www." + host + "/video/" + urlSlug + "/";
     }
+
+    @Override
+    protected boolean preferTitleHTML() {
+        /* 2023-04-27 */
+        return true;
+    }
 }

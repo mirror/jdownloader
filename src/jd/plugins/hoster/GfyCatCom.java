@@ -25,6 +25,18 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.GfycatConfig;
+import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -39,18 +51,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.GfycatConfig;
-import org.jdownloader.plugins.components.config.GfycatConfig.PreferredFormat;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(?:www\\.)?(?:gfycat\\.com(?:/ifr)?|gifdeliverynetwork\\.com(?:/ifr)?)/([A-Za-z0-9]+)" })
 public class GfyCatCom extends PluginForHost {
@@ -71,6 +71,12 @@ public class GfyCatCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://gfycat.com/terms";
+    }
+
+    @Override
+    public void setBrowser(final Browser br) {
+        this.br = br;
+        this.br.getHeaders().put("User-Agent", "JDownloader");
     }
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -115,8 +121,6 @@ public class GfyCatCom extends PluginForHost {
         }
     }
 
-    protected String dllink = null;
-
     /*
      * Using API: http://gfycat.com/api 2020-06-18: Not using the API - wtf does this comment mean?? Maybe website uses the same json as API
      * ... but API needs authorization!
@@ -129,6 +133,7 @@ public class GfyCatCom extends PluginForHost {
     private static AtomicReference<String> redgifsAccessKey             = new AtomicReference<String>(null);
     private static AtomicReference<String> redgifsAccessToken           = new AtomicReference<String>(null);
     private static AtomicLong              redgifsAccessTokenValidUntil = new AtomicLong(-1);
+    public static final String             PROPERTY_DIRECTURL           = "directurl";
 
     private String[] getDownloadURL(final DownloadLink link, final Map<String, Object> video, final Map<String, Object> photo, final PreferredFormat format) throws Exception {
         // TODO: use JSON in complicatedJSON, it contains all available formats/qualities
@@ -181,13 +186,17 @@ public class GfyCatCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        this.br.getHeaders().put("User-Agent", "JDownloader");
-        br.setAllowedResponseCodes(new int[] { 500 });
+        br.setAllowedResponseCodes(new int[] { 410, 500 });
         br.getPage(link.getPluginPatternMatcher());
         // gfycat/gifdeliverynetwork may redirect to redgifs
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String dllink = null;
         if (Browser.getHost(br.getHost()).equals("redgifs.com")) {
             /* 2021-11-29: New endpoint available and old one can be used without key/token: https://api.redgifs.com/v2/gifs/ */
             final boolean accessKeyRequired = false;
@@ -382,7 +391,7 @@ public class GfyCatCom extends PluginForHost {
                     link.setComment(description);
                 }
             }
-            this.dllink = url;
+            dllink = url;
         } else {
             if (br.getHost().equalsIgnoreCase("gifdeliverynetwork.com")) {
                 /* 2020-06-18: New and should not be needed! */
@@ -478,12 +487,13 @@ public class GfyCatCom extends PluginForHost {
                     dllink = PluginJSonUtils.getJsonValue(complicatedJSON, "webmUrl");
                 }
             }
-            if (!StringUtils.isEmpty(this.dllink) && !isDownload) {
+            if (!StringUtils.isEmpty(dllink) && !isDownload) {
                 if (!verifyDownloadURL(link, dllink)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
         }
+        link.setProperty(PROPERTY_DIRECTURL, dllink);
         return AvailableStatus.TRUE;
     }
 
@@ -517,6 +527,7 @@ public class GfyCatCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, true);
+        final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
