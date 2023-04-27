@@ -20,6 +20,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,13 +47,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvids.com", "pornflip.com" }, urls = { "http://playviddecrypted\\.com/\\d+", "http://playviddecrypted\\.com/\\d+" })
 public class PornflipCom extends PluginForHost {
@@ -209,7 +209,12 @@ public class PornflipCom extends PluginForHost {
     }
 
     public static final boolean isOffline(final Browser br) {
-        if (br.containsHTML("Video not found<|>This video has been removed|class=\"play\\-error\"|class=\"error\\-sorry\"") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (br.containsHTML("Video not found<|>This video has been removed|class=\"play\\-error\"|class=\"error\\-sorry\"")) {
+            return true;
+        } else if (br.containsHTML("class=\"remove-video\"")) {
+            /* 2023-04-27 */
             return true;
         } else {
             return false;

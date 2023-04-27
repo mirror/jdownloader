@@ -87,7 +87,7 @@ public class PornflipComCrawler extends PluginForDecrypt {
         this.param = param;
         br.setFollowRedirects(true);
         if (plugin == null) {
-            plugin = JDUtilities.getPluginForHost(this.getHost());
+            plugin = this.getNewPluginForHostInstance(this.getHost());
         }
         ((PornflipCom) plugin).prepBrowser(br);
         // Log in if possible to get 720p quality

@@ -18,16 +18,6 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -39,6 +29,16 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porndig.com" }, urls = { "https?://(?:www\\.)?porndig\\.com/videos/(\\d+)/([a-z0-9\\-]+)\\.html" })
 public class PorndigCom extends PluginForHost {
@@ -60,6 +60,7 @@ public class PorndigCom extends PluginForHost {
     private static final int     free_maxchunks                = 0;
     private static final int     free_maxdownloads             = -1;
     private static final String  PROPERTY_CHOSEN_VIDEO_QUALITY = "quality";
+    private final String         PROPERTY_DIRECTURL            = "directurl";
 
     @Override
     public String getAGBLink() {
@@ -90,11 +91,99 @@ public class PorndigCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        getOfficialDownloadurlAndSetFilesize(link);
+        final String directurl = this.findDirecturl(br, link);
+        link.setProperty(PROPERTY_DIRECTURL, directurl);
         return AvailableStatus.TRUE;
     }
 
-    private String getOfficialDownloadurlAndSetFilesize(final DownloadLink link) throws PluginException {
+    /** Returns directurl of video and does a deeper offline-check. */
+    private String findDirecturl(final Browser br, final DownloadLink link) throws Exception {
+        String directurl = this.getOfficialDownloadurlAndSetFilesize(br, link);
+        if (directurl != null) {
+            logger.info("Found official downloadurl");
+        } else {
+            logger.info("Failed to find official downloadurl --> Looking for stream downloadlink");
+            final String url_embed = this.br.getRegex("<iframe[^<>]*?src=\"(http[^<>\"]+player/[^<>\"]+)\"").getMatch(0);
+            if (url_embed == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(url_embed);
+            if (br.containsHTML("(?i)>\\s*This video has been removed")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String jssource = br.getRegex("\"sources\"\\s*:\\s*(\\[.*?\\])").getMatch(0);
+            if (jssource != null) {
+                try {
+                    Map<String, Object> entries = null;
+                    long qualityBest = 0;
+                    final List<Object> ressourcelist = (List) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                    final PreferredQuality userPreferredQuality = getConfiguredQuality(link);
+                    for (final Object videoo : ressourcelist) {
+                        entries = (Map<String, Object>) videoo;
+                        final String dllinkTmp = (String) entries.get("src");
+                        final long qualityNumberTemp = ((Number) entries.get("res")).longValue();
+                        final String qualityNameTmp = (String) entries.get("label");
+                        if (StringUtils.isEmpty(dllinkTmp) || qualityNumberTemp == 0 || StringUtils.isEmpty(qualityNameTmp)) {
+                            continue;
+                        }
+                        if (userPreferredQuality == this.gerPreferredQualityByString(qualityNameTmp, false)) {
+                            logger.info("Found user preferred quality: " + qualityNameTmp);
+                            directurl = dllinkTmp;
+                            break;
+                        }
+                        if (qualityNumberTemp > qualityBest) {
+                            qualityBest = qualityNumberTemp;
+                            directurl = dllinkTmp;
+                        }
+                    }
+                    if (!StringUtils.isEmpty(directurl)) {
+                        logger.info("Handling for multiple video stream sources succeeded");
+                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.info("BEST handling for multiple video source failed");
+                }
+            } else {
+                // <video> <source
+                int best = 0;
+                String hls = null;
+                final String[] sources = br.getRegex("<source[^>]+>").getColumn(-1);
+                if (sources != null && sources.length > 0) {
+                    for (final String source : sources) {
+                        final String url = new Regex(source, "src\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
+                        if (url.contains(".m3u8")) {
+                            // typically this is single entry.
+                            hls = url;
+                            continue;
+                        }
+                        final String label = new Regex(source, "label\\s*=\\s*('|\")(\\d+)p?\\1").getMatch(1);
+                        if (label == null || url == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        final int p = Integer.parseInt(label);
+                        if (best < p) {
+                            directurl = url;
+                            best = p;
+                        }
+                    }
+                    // prefer non hls over hls, as hls core can't chunk at this stage.
+                    if (directurl == null && hls != null) {
+                        // hls has multiple qualities....
+                        final Browser br2 = br.cloneBrowser();
+                        br2.getPage(hls);
+                        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br2));
+                        if (hlsbest == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        directurl = hlsbest.getDownloadurl();
+                    }
+                }
+            }
+        }
+        return directurl;
+    }
+
+    private String getOfficialDownloadurlAndSetFilesize(final Browser br, final DownloadLink link) throws PluginException {
         final String[] htmls = br.getRegex("<a href=\"[^\"]+/download/[^\"]+\"[^>]*><span class=\"link_name\">.*?</a>").getColumn(-1);
         long bestFilesize = -1;
         String bestDownloadurl = null;
@@ -181,85 +270,7 @@ public class PorndigCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        String dllink = getOfficialDownloadurlAndSetFilesize(link);
-        if (dllink != null) {
-            logger.info("Downloading via official downloadurl");
-        } else {
-            logger.info("Failed to find official downloadurl --> Looking for stream downloadlink");
-            final String url_embed = this.br.getRegex("<iframe[^<>]*?src=\"(http[^<>\"]+player/[^<>\"]+)\"").getMatch(0);
-            if (url_embed == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage(url_embed);
-            final String jssource = br.getRegex("\"sources\"\\s*:\\s*(\\[.*?\\])").getMatch(0);
-            if (jssource != null) {
-                try {
-                    Map<String, Object> entries = null;
-                    long qualityBest = 0;
-                    final List<Object> ressourcelist = (List) JavaScriptEngineFactory.jsonToJavaObject(jssource);
-                    final PreferredQuality userPreferredQuality = getConfiguredQuality(link);
-                    for (final Object videoo : ressourcelist) {
-                        entries = (Map<String, Object>) videoo;
-                        final String dllinkTmp = (String) entries.get("src");
-                        final long qualityNumberTemp = ((Number) entries.get("res")).longValue();
-                        final String qualityNameTmp = (String) entries.get("label");
-                        if (StringUtils.isEmpty(dllinkTmp) || qualityNumberTemp == 0 || StringUtils.isEmpty(qualityNameTmp)) {
-                            continue;
-                        }
-                        if (userPreferredQuality == this.gerPreferredQualityByString(qualityNameTmp, false)) {
-                            logger.info("Found user preferred quality: " + qualityNameTmp);
-                            dllink = dllinkTmp;
-                            break;
-                        }
-                        if (qualityNumberTemp > qualityBest) {
-                            qualityBest = qualityNumberTemp;
-                            dllink = dllinkTmp;
-                        }
-                    }
-                    if (!StringUtils.isEmpty(dllink)) {
-                        logger.info("Handling for multiple video stream sources succeeded");
-                    }
-                } catch (final Throwable e) {
-                    logger.log(e);
-                    logger.info("BEST handling for multiple video source failed");
-                }
-            } else {
-                // <video> <source
-                int best = 0;
-                String hls = null;
-                final String[] sources = br.getRegex("<source[^>]+>").getColumn(-1);
-                if (sources != null && sources.length > 0) {
-                    for (final String source : sources) {
-                        final String url = new Regex(source, "src\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
-                        if (url.contains(".m3u8")) {
-                            // typically this is single entry.
-                            hls = url;
-                            continue;
-                        }
-                        final String label = new Regex(source, "label\\s*=\\s*('|\")(\\d+)p?\\1").getMatch(1);
-                        if (label == null || url == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        final int p = Integer.parseInt(label);
-                        if (best < p) {
-                            dllink = url;
-                            best = p;
-                        }
-                    }
-                    // prefer non hls over hls, as hls core can't chunk at this stage.
-                    if (dllink == null && hls != null) {
-                        // hls has multiple qualities....
-                        final Browser br2 = br.cloneBrowser();
-                        br2.getPage(hls);
-                        final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br2));
-                        if (hlsbest == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        dllink = hlsbest.getDownloadurl();
-                    }
-                }
-            }
-        }
+        final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (dllink.contains("m3u8") || dllink.contains("//ahhls.") || dllink.contains("media=hls")) {
