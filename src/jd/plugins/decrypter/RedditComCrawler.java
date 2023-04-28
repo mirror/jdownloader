@@ -25,6 +25,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.RedditConfig;
+import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
+import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
+import org.jdownloader.plugins.components.config.RedditConfig.TextCrawlerMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -46,19 +59,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.RedditCom;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.RedditConfig;
-import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
-import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
-import org.jdownloader.plugins.components.config.RedditConfig.TextCrawlerMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { RedditCom.class })
@@ -293,8 +293,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                 break;
             }
             lastItemDupes.add(fullnameAfter);
-            query.remove("after");
-            query.add("after", fullnameAfter);
+            query.addAndReplace("after", fullnameAfter);
         } while (!this.isAbort());
         return crawledLinks;
     }

@@ -20,6 +20,19 @@ import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.SecondLevelLaunch;
 import jd.config.ConfigContainer;
@@ -35,6 +48,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountError;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -45,19 +59,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.ImgurComGallery;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: https://api.imgur.com/models/image
@@ -83,27 +84,28 @@ public class ImgurComHoster extends PluginForHost {
 
     /** User settings */
     /* 2021-05-26: Modified key as default has changed from false to true */
-    private static final String  SETTING_MP4                       = "SETTING_MP4_2021_05";
-    public static final String   SETTING_USE_API                   = "SETTING_USE_API_2020_10_07";
-    public static final String   SETTING_USE_API_IN_ANONYMOUS_MODE = "SETTING_USE_API_IN_ANONYMOUS_MODE_2020_10_09";
-    private static final String  SETTING_CLIENT_ID                 = "CLIENT_ID";
-    private static final String  SETTING_CLIENT_SECRET             = "CLIENT_SECRET";
-    public static final String   SETTING_GRAB_SOURCE_URL_VIDEO     = "SETTING_GRAB_SOURCE_URL_VIDEO";
-    private static final String  SETTING_CUSTOM_FILENAME           = "SETTING_CUSTOM_FILENAME";
-    public static final String   SETTING_CUSTOM_PACKAGENAME        = "SETTING_CUSTOM_PACKAGENAME";
+    private static final String SETTING_MP4                                                                  = "SETTING_MP4_2021_05";
+    public static final String  SETTING_USE_API                                                              = "SETTING_USE_API_2020_10_07";
+    public static final String  SETTING_USE_API_IN_ANONYMOUS_MODE                                            = "SETTING_USE_API_IN_ANONYMOUS_MODE_2020_10_09";
+    private static final String SETTING_CLIENT_ID                                                            = "CLIENT_ID";
+    private static final String SETTING_CLIENT_SECRET                                                        = "CLIENT_SECRET";
+    public static final String  SETTING_GRAB_SOURCE_URL_VIDEO                                                = "SETTING_GRAB_SOURCE_URL_VIDEO";
+    private static final String SETTING_CUSTOM_FILENAME                                                      = "SETTING_CUSTOM_FILENAME";
+    public static final String  SETTING_CUSTOM_PACKAGENAME                                                   = "SETTING_CUSTOM_PACKAGENAME";
+    private final String        SETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT = "SETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_STATUS_TEXT";
     /* DownloadLink properties */
-    public static final String   PROPERTY_DOWNLOADLINK_DIRECT_URL  = "directlink";
-    public static final String   PROPERTY_DOWNLOADLINK_TITLE       = "directtitle";
-    public static final String   PROPERTY_DOWNLOADLINK_ORDERID     = "orderid";
-    public static final String   PROPERTY_DOWNLOADLINK_DATE        = "date";
-    public static final String   PROPERTY_DOWNLOADLINK_USERNAME    = "directusername";
+    public static final String  PROPERTY_DOWNLOADLINK_DIRECT_URL                                             = "directlink";
+    public static final String  PROPERTY_DOWNLOADLINK_TITLE                                                  = "directtitle";
+    public static final String  PROPERTY_DOWNLOADLINK_ORDERID                                                = "orderid";
+    public static final String  PROPERTY_DOWNLOADLINK_DATE                                                   = "date";
+    public static final String  PROPERTY_DOWNLOADLINK_USERNAME                                               = "directusername";
     /* Only store file-type from trusted sourced as this property will be preferred over every other filetype source!! */
-    private static final String  PROPERTY_DOWNLOADLINK_FILETYPE    = "filetype";
+    private static final String PROPERTY_DOWNLOADLINK_FILETYPE                                               = "filetype";
     /* Various constants */
-    public static final int      responsecode_website_overloaded   = 502;
-    private static final int     MAX_DOWNLOADS                     = -1;
-    private static final boolean RESUME                            = true;
-    private static final int     MAXCHUNKS                         = 1;
+    public static final int     responsecode_website_overloaded                                              = 502;
+    private final int           MAX_DOWNLOADS                                                                = -1;
+    private final boolean       RESUME                                                                       = true;
+    private final int           MAXCHUNKS                                                                    = 1;
 
     /* Documentation see: https://apidocs.imgur.com/ */
     public static String getAPIBase() {
@@ -130,8 +132,7 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        String dllink = null;
-        final String previousDirecturl = getStoredDirecturl(link);
+        final String storedDirecturl = getStoredDirecturl(link);
         /*
          * Avoid unneccessary requests --> If we have the directlink, filesize and a "nice" filename, do not access site/API and only check
          * directurl if needed!
@@ -139,16 +140,17 @@ public class ImgurComHoster extends PluginForHost {
         final boolean isLackingFileInformation = link.getView().getBytesTotal() <= 0 || link.getFinalFileName() == null || getFiletype(link) == null;
         boolean filesizeHasBeenSetInThisLinkcheck = false;
         boolean filenameHasBeenSetInThisLinkcheck = false;
-        if (isLackingFileInformation || previousDirecturl == null) {
+        String dllink = null;
+        if (isLackingFileInformation || storedDirecturl == null) {
             logger.info("Handling extended linkcheck");
             final boolean apiMode = canUseAPI();
             final boolean useApiInAnonymousMode = this.getPluginConfig().getBooleanProperty(SETTING_USE_API_IN_ANONYMOUS_MODE, defaultSETTING_USE_API);
             if (apiMode) {
                 prepBRAPI(this.br);
-                if (useApiInAnonymousMode) {
+                if (useApiInAnonymousMode || account == null) {
                     br.getHeaders().put("Authorization", ImgurComHoster.getAuthorization());
                 } else {
-                    this.login(br, account, false);
+                    this.loginAPI(br, account, false);
                 }
                 getPage(this.br, getAPIBaseWithVersion() + "/image/" + getImgUID(link));
                 if (this.br.getHttpConnection().getResponseCode() == 429) {
@@ -160,8 +162,7 @@ public class ImgurComHoster extends PluginForHost {
                 } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Unable to find an image with the id")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                this.checkErrorsAPI(br, link, account);
-                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+                final Map<String, Object> entries = this.checkErrorsAPI(br, link, account);
                 final Map<String, Object> data = (Map<String, Object>) entries.get("data");
                 String title = (String) data.get("title");
                 final String description = (String) data.get("description");
@@ -216,7 +217,7 @@ public class ImgurComHoster extends PluginForHost {
                 dllink = getStoredDirecturl(link);
             }
         } else {
-            dllink = previousDirecturl;
+            dllink = storedDirecturl;
         }
         /**
          * 2021-08-11: Don't do this anymore! Not all items are officially downloadable! Most of all times this will result in: </br>
@@ -230,7 +231,7 @@ public class ImgurComHoster extends PluginForHost {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (previousDirecturl != null && !dllink.equals(previousDirecturl) && link.getView().getBytesLoaded() > 0) {
+        if (storedDirecturl != null && !dllink.equals(storedDirecturl) && link.getView().getBytesLoaded() > 0) {
             /*
              * User may have changed "Prefer mp4" setting --> Reset download-progress so we do not e.g. resume a gifv download with the .mp4
              * file, corrupting the file.
@@ -319,7 +320,8 @@ public class ImgurComHoster extends PluginForHost {
             } else {
                 /**
                  * E.g. HTTP/1.1 503 first byte timeout or e.g. error on trying to do "/download/" (official download / download button):
-                 * </br> {"data":{"error":"Imgur is temporarily over capacity. Please try again later."},"success":false,"status":500}
+                 * </br>
+                 * {"data":{"error":"Imgur is temporarily over capacity. Please try again later."},"success":false,"status":500}
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error " + con.getResponseCode(), 10 * 60 * 1000l);
             }
@@ -431,19 +433,22 @@ public class ImgurComHoster extends PluginForHost {
         return false;
     }
 
-    public void login(final Browser brlogin, final Account account, final boolean force) throws Exception {
+    public Map<String, Object> loginAPI(final Browser brlogin, final Account account, final boolean force) throws Exception {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !true) {
             loginOauthTest(brlogin, account, force);
+            return null;
         } else {
             synchronized (account) {
                 brlogin.setFollowRedirects(true);
                 brlogin.setCookiesExclusive(true);
-                if (!canUseAPI()) {
+                if (!isAPIEnabled()) {
+                    throw new AccountInvalidException(getPhrase("TEXT_ERROR_API_USAGE_DISABLED_DURING_ACCOUNT_LOGIN"));
+                } else if (!canUseAPI()) {
                     showAPIPreparationInformation();
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "API Verwendung nur mit eigenen API Zugangsdaten möglich!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException("Eigene API Zugangsdaten müssen zunächst in den Plugineinstellungen eingetragen werden!");
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "API usage is only possible with your own API application login credentials!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException("Can't add account because custom API credentials need to be added in plugin settings first!");
                     }
                 }
                 prepBRAPI(brlogin);
@@ -456,7 +461,7 @@ public class ImgurComHoster extends PluginForHost {
                     account.setProperty(PROPERTY_ACCOUNT_access_token, Property.NULL);
                     if (account.getPass().contains("error=")) {
                         /* User has tried authorization but for some reason it failed. */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException();
                     }
                     /*
                      * User entered normal username & password but we need something else as password --> Show message on what to do and let
@@ -465,9 +470,9 @@ public class ImgurComHoster extends PluginForHost {
                     showLoginInformation();
                     /* Display error to tell user to try again and this time, enter URL into PW field. */
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Versuch's nochmal und gib die Autorisierungs-URL in das Passwort Feld ein.\r\nGib NICHT dein Passwort ins Passwort Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException("Versuch's nochmal und gib die Autorisierungs-URL in das Passwort Feld ein.\r\nGib NICHT dein Passwort ins Passwort Feld ein!");
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Try again and enter your authorization URL in the password field.\r\nDo NOT enter your password into the password field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException("Try again and enter your authorization URL in the password field.\r\nDo NOT enter your password into the password field!");
                     }
                 }
                 final UrlQuery query = UrlQuery.parse(account.getPass());
@@ -507,26 +512,23 @@ public class ImgurComHoster extends PluginForHost {
                     active_valid_until = auth_valid_until;
                     token_first_use_timestamp = System.currentTimeMillis();
                 }
-                boolean loggedIN = false;
                 brlogin.getHeaders().put("Authorization", "Bearer " + active_access_token);
                 if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
                     logger.info("Trust token without check");
-                    return;
+                    return null;
                 }
                 /* Check existing access_token */
                 /* Request account information and, at the same time, check if authorization is still valid. */
                 brlogin.getPage(getAPIBaseWithVersion() + "/account/" + auth_username);
-                checkErrorsAPI(brlogin, null, account);
                 /* TODO: Check which error API will return on expired token. */
-                Map<String, Object> entries = restoreFromString(brlogin.toString(), TypeRef.MAP);
-                entries = (Map<String, Object>) entries.get("data");
-                loggedIN = entries != null && entries.containsKey("id");
+                Map<String, Object> entries = checkErrorsAPI(brlogin, null, account);
+                final Map<String, Object> data = (Map<String, Object>) entries.get("data");
                 /*
                  * E.g. 403 with
                  * {"data":{"error":"The access token provided is invalid.","request":"\/3\/account\/<username>","method":"GET"},"success":
                  * false,"status":403}
                  */
-                if (!loggedIN) {
+                if (data == null || !data.containsKey("id")) {
                     /* Build new query containing only what we need. */
                     logger.info("Trying to generate new authorization token");
                     final UrlQuery queryLogin = new UrlQuery();
@@ -536,6 +538,7 @@ public class ImgurComHoster extends PluginForHost {
                     queryLogin.add("client_secret", getClientSecret());
                     queryLogin.add("grant_type", "refresh_token");
                     brlogin.postPage(getAPIBase() + "/oauth2/token", queryLogin);
+                    entries = checkErrorsAPI(brlogin, null, account);
                     active_access_token = PluginJSonUtils.getJson(brlogin, "access_token");
                     active_refresh_token = PluginJSonUtils.getJson(brlogin, "refresh_token");
                     active_valid_until = PluginJSonUtils.getJson(brlogin, "expires_in");
@@ -546,8 +549,7 @@ public class ImgurComHoster extends PluginForHost {
                          * {"data":{"error":"Invalid refresh token","request":"\/oauth2\/token","method":"POST"},"success":false,"status":
                          * 400}
                          */
-                        checkErrorsAPI(this.br, null, account);
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException();
                     }
                     /* Update authorization header */
                     brlogin.getHeaders().put("Authorization", "Bearer " + active_access_token);
@@ -565,6 +567,7 @@ public class ImgurComHoster extends PluginForHost {
                 account.setRefreshTimeout(5 * 60 * 1000l);
                 /* Save cookies - but only to have the cookie-timestamp */
                 account.saveCookies(brlogin.getCookies(this.getHost()), "");
+                return entries;
             }
         }
     }
@@ -661,11 +664,10 @@ public class ImgurComHoster extends PluginForHost {
                 /* Request account information and, at the same time, check if authorization is still valid. */
                 logger.info("Checking existing auth_token");
                 brlogin.getPage(getAPIBaseWithVersion() + "/account/" + auth_username);
-                checkErrorsAPI(brlogin, null, account);
                 /* TODO: Check which error API will return on expired token. */
-                Map<String, Object> entries = restoreFromString(brlogin.toString(), TypeRef.MAP);
-                entries = (Map<String, Object>) entries.get("data");
-                loggedIN = entries != null && entries.containsKey("id");
+                final Map<String, Object> entries = checkErrorsAPI(brlogin, null, account);
+                final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+                loggedIN = data != null && data.containsKey("id");
                 if (!loggedIN) {
                     /* Build new query containing only what we need. */
                     logger.info("Old token expired? Trying to generate new authorization token");
@@ -687,7 +689,7 @@ public class ImgurComHoster extends PluginForHost {
                          * 400}
                          */
                         checkErrorsAPI(this.br, null, account);
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException();
                     }
                     /* Ignore 'expires_in' and just use existing token as long as possible. This is only used for debugging. */
                     account.setProperty(PROPERTY_ACCOUNT_access_token, auth_access_token);
@@ -751,7 +753,7 @@ public class ImgurComHoster extends PluginForHost {
         account.setProperty(PROPERTY_ACCOUNT_access_token, Property.NULL);
         if (account.getPass().contains("error=")) {
             /* User has tried authorization but for some reason it failed. */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException();
         }
         /* Wait for user to complete oauth process in browser. */
         boolean success = false;
@@ -769,7 +771,7 @@ public class ImgurComHoster extends PluginForHost {
                 final String error = query.get("error");
                 if (error != null) {
                     /* Something went wrong */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Error: " + error, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("Error: " + error);
                 }
                 if (responseType == RESPONSE_TYPE.CODE) {
                     /* --> Generate required tokens */
@@ -823,9 +825,9 @@ public class ImgurComHoster extends PluginForHost {
         }
         if (!success) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Timeout! Versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException("Timeout! Versuche es erneut!");
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Timeout! Try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException("Timeout! Try again!");
             }
         } else if (StringUtils.isEmpty(auth_access_token)) {
             /* This should never happen. E.g. token was retrieved successfully but access_token generation failed afterwards */
@@ -847,15 +849,10 @@ public class ImgurComHoster extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
-        if (br.getURL() == null || !br.getURL().contains("/account/" + account.getUser())) {
-            br.getPage(getAPIBaseWithVersion() + "/account/" + account.getUser());
-            checkErrorsAPI(this.br, null, account);
-        }
-        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-        entries = (Map<String, Object>) entries.get("data");
+        final Map<String, Object> entries = loginAPI(this.br, account, true);
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
         // https://api.imgur.com/models/account_settings
-        final Object pro_expiration = entries.get("pro_expiration");
+        final Object pro_expiration = data.get("pro_expiration");
         String accountStatus = null;
         if (pro_expiration == null || Boolean.FALSE.equals(pro_expiration)) {
             account.setType(AccountType.FREE);
@@ -878,43 +875,66 @@ public class ImgurComHoster extends PluginForHost {
         // if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && token_first_usage_timestamp > 0 && token_valid_until > 0) {
         // ai.setValidUntil(token_first_usage_timestamp + token_valid_until);
         // }
-        final String api_limit_reset_timestamp = br.getRequest().getResponseHeader("X-RateLimit-UserReset");
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && api_limit_reset_timestamp != null && api_limit_reset_timestamp.matches("\\d+")) {
-            ai.setValidUntil(Long.parseLong(api_limit_reset_timestamp) * 1000l);
+        final String api_limit_reset_timestampStr = br.getRequest().getResponseHeader("X-RateLimit-UserReset");
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && api_limit_reset_timestampStr != null && api_limit_reset_timestampStr.matches("\\d+")) {
+            ai.setValidUntil(Long.parseLong(api_limit_reset_timestampStr) * 1000l);
         }
-        final String api_limit_client_total = br.getRequest().getResponseHeader("X-RateLimit-ClientLimit");
-        final String api_limit_client_remaining = br.getRequest().getResponseHeader("X-RateLimit-ClientRemaining");
-        final String api_limit_user_total = br.getRequest().getResponseHeader("X-RateLimit-UserLimit");
-        final String api_limit_user_remaining = br.getRequest().getResponseHeader("X-RateLimit-UserRemaining");
+        final String api_limit_client_totalStr = br.getRequest().getResponseHeader("X-RateLimit-ClientLimit");
+        final String api_limit_client_remainingStr = br.getRequest().getResponseHeader("X-RateLimit-ClientRemaining");
+        final String api_limit_user_totalStr = br.getRequest().getResponseHeader("X-RateLimit-UserLimit");
+        final String api_limit_user_remainingStr = br.getRequest().getResponseHeader("X-RateLimit-UserRemaining");
+        int api_limit_user_total = -1;
+        int api_limit_user_remaining = -1;
         /* Some errorhandling */
-        if (api_limit_user_remaining != null && Integer.parseInt(api_limit_user_remaining) <= 0) {
-            rateLimitReached(this.br, account);
+        if (api_limit_user_remainingStr != null) {
+            api_limit_user_remaining = Integer.parseInt(api_limit_user_remainingStr);
+            if (api_limit_user_remaining <= 0) {
+                /* 2023-04-28: Looks like this is an hourly limit. */
+                rateLimitReached(this.br, account, "API user request limit reached");
+            }
         }
-        if (api_limit_client_total != null && api_limit_client_remaining != null && api_limit_user_total != null && api_limit_user_remaining != null) {
-            accountStatus += String.format(" | API req left user: %s/%s | client: %s/%s", api_limit_user_remaining, api_limit_user_total, api_limit_client_remaining, api_limit_client_total);
+        if (api_limit_client_totalStr != null && api_limit_client_remainingStr != null && api_limit_user_totalStr != null && api_limit_user_remainingStr != null) {
+            api_limit_user_total = Integer.parseInt(api_limit_user_totalStr);
+            accountStatus += String.format(" | API req left user: %s/%s | client: %s/%s", api_limit_user_remainingStr, api_limit_user_totalStr, api_limit_client_remainingStr, api_limit_client_totalStr);
         }
         ai.setStatus(accountStatus);
-        ai.setUnlimitedTraffic();
+        if (this.getPluginConfig().getBooleanProperty(SETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT, defaultSETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT)) {
+            ai.setTrafficMax(api_limit_user_total * 1024);
+            ai.setTrafficLeft(api_limit_user_remaining * 1024);
+            /* Ignore set dummy-trafficlimit. We only want this to get displayed in GUI. */
+            ai.setSpecialTraffic(true);
+        } else {
+            ai.setUnlimitedTraffic();
+        }
         return ai;
     }
 
-    private void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-        final boolean success = ((Boolean) entries.get("success")).booleanValue();
-        if (!success) {
-            /*
-             * E.g.
-             * {"data":{"error":"The access token provided is invalid.","request":"\/3\/account\/xnull","method":"GET"},"success":false,
-             * "status":403}
-             */
-            entries = (Map<String, Object>) entries.get("data");
-            final String errorStr = (String) entries.get("error");
-            if (!StringUtils.isEmpty(errorStr)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, errorStr, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+    private Map<String, Object> checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        checkErrorsAPI(entries, link, account);
+        return entries;
+    }
+
+    private void checkErrorsAPI(final Map<String, Object> entries, final DownloadLink link, final Account account) throws PluginException {
+        if (Boolean.TRUE.equals(entries.get("success"))) {
+            return;
         }
-        if (br.getHttpConnection().getResponseCode() == 429) {
-            rateLimitReached(br, account);
+        /*
+         * E.g. {"data":{"error":"The access token provided is invalid.","request":"\/3\/account\/xnull","method":"GET"},"success":false,
+         * "status":403}
+         */
+        final Number status = (Number) entries.get("status");
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        final String errorMessage = (String) data.get("error");
+        if (br.getHttpConnection().getResponseCode() == 429 || (status != null && status.intValue() == 429)) {
+            rateLimitReached(br, account, errorMessage);
+        } else {
+            logger.info("Unnknown error happened: " + errorMessage);
+            if (account != null) {
+                throw new AccountUnavailableException("", 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMessage);
+            }
         }
     }
 
@@ -924,24 +944,26 @@ public class ImgurComHoster extends PluginForHost {
      *
      * @throws PluginException
      */
-    private void rateLimitReached(final Browser br, final Account account) throws PluginException {
-        long reset_in = 0;
+    private void rateLimitReached(final Browser br, final Account account, final String errorMsg) throws PluginException {
+        long timestamp_reset_in = -1;
         /* This header will usually tell us once rate limit is over (at least when an account was used) */
-        final String api_reset_in = br.getRequest().getResponseHeader("X-RateLimit-UserReset");
-        if (api_reset_in != null && api_reset_in.matches("\\d+")) {
-            reset_in = Long.parseLong(api_reset_in);
+        final String api_timestamp_reset_inStr = br.getRequest().getResponseHeader("X-RateLimit-UserReset");
+        if (api_timestamp_reset_inStr != null && api_timestamp_reset_inStr.matches("\\d+")) {
+            timestamp_reset_in = Long.parseLong(api_timestamp_reset_inStr);
         }
         final long waittime;
-        if (reset_in > System.currentTimeMillis()) {
-            waittime = reset_in - System.currentTimeMillis() + 10000l;
+        final long timestamp_current = System.currentTimeMillis();
+        if (timestamp_reset_in > timestamp_current) {
+            waittime = timestamp_reset_in - timestamp_current + 10000l;
         } else {
             /* Default waittime */
             waittime = 5 * 60 * 1000l;
         }
         if (account != null) {
-            throw new AccountUnavailableException("API Rate Limit reached", waittime);
+            /* L(imit was reached in context of account-check. */
+            throw new AccountUnavailableException(errorMsg, waittime);
         } else {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Rate Limit reached", waittime);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsg, waittime);
         }
     }
 
@@ -973,7 +995,8 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     /**
-     * Returns downloadable imgur link. </br> Not all imgur items can be downloaded this way!
+     * Returns downloadable imgur link. </br>
+     * Not all imgur items can be downloaded this way!
      */
     public static final String getURLDownload(final String imgUID) {
         return "https://imgur.com/download/" + imgUID;
@@ -1212,37 +1235,43 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_PREFER_MP4", "Prefer .mp4 files over .gif?");
-            put("SETTING_TEXT_API_SETTINGS", "API settings - see imgur.com/account/settings/apps");
-            put("SETTING_USE_API", "Use API instead of website?");
-            put("SETTING_USE_API_IN_ANONYMOUS_MODE", "Use API in anonymous mode? To be able to use the API you will have to add your own API credentials below otherwise this will render the imgur plugin useless!");
-            put("SETTING_API_CREDENTIALS_CLIENTID", "Enter your own imgur Oauth Client-ID\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
-            put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Enter your own imgur Oauth Client-Secret\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
-            put("SETTING_TEXT_OTHER_SETTINGS", "Other settings:");
-            put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
-            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*orderid* = Order-ID of the picture e.g. '007'\r\n*ext* = Extension of the file");
-            put("LABEL_FILENAME", "Define custom filename:");
-            put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
-            put("LABEL_PACKAGENAME", "Define custom packagename for galleries:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_PREFER_MP4", "Prefer .mp4 files over .gif?");
+                                                      put("SETTING_TEXT_API_SETTINGS", "API settings - see imgur.com/account/settings/apps");
+                                                      put("SETTING_USE_API", "Use API instead of website?");
+                                                      put("SETTING_USE_API_IN_ANONYMOUS_MODE", "Use API in anonymous mode? To be able to use the API you will have to add your own API credentials below otherwise this will render the imgur plugin useless!");
+                                                      put("SETTING_API_CREDENTIALS_CLIENTID", "Enter your own imgur Oauth Client-ID\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
+                                                      put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Enter your own imgur Oauth Client-Secret\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
+                                                      put("SETTING_TEXT_OTHER_SETTINGS", "Other settings:");
+                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*orderid* = Order-ID of the picture e.g. '007'\r\n*ext* = Extension of the file");
+                                                      put("LABEL_FILENAME", "Define custom filename:");
+                                                      put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
+                                                      put("LABEL_PACKAGENAME", "Define custom packagename for galleries:");
+                                                      put("SETTING_TEXT_DEBUG_SETTINGS", "Debug settings");
+                                                      put("SETTING_TEXT_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT", "Display number of remaining API requests in account traffic left?");
+                                                      put("TEXT_ERROR_API_USAGE_DISABLED_DURING_ACCOUNT_LOGIN", "API usage is disabled. Enable API usage in settings to be able to use this account.");
+                                                  }
+                                              };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_PREFER_MP4", "Bevorzuge .mp4 Dateien anstelle von .gif Dateien?");
-            put("SETTING_TEXT_API_SETTINGS", "API Einstellungen - siehe imgur.com/account/settings/apps");
-            put("SETTING_USE_API", "Verwende API anstatt Webseite?");
-            put("SETTING_USE_API_IN_ANONYMOUS_MODE", "API als anonymer User verwenden? Um die API überhaupt verwenden zu können musst du deine eigenen API Zugangsdaten unten eintragen, ansonsten wirst du dieses Plugin nicht mehr verwenden können!");
-            put("SETTING_API_CREDENTIALS_CLIENTID", "Gib deine persönliche imgur Oauth Client-ID ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
-            put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Gib deinen persönlichen imgur Oauth Client Secret ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
-            put("SETTING_TEXT_OTHER_SETTINGS", "Andere Einstellungen:");
-            put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
-            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*orderid* = Platzierungs-ID des Bildes z.B. '007'\r\n*ext* = Dateiendung");
-            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
-            put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
-            put("LABEL_PACKAGENAME", "Gib das Muster des benutzerdefinierten Paketnamens für Gallerien an:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_PREFER_MP4", "Bevorzuge .mp4 Dateien anstelle von .gif Dateien?");
+                                                      put("SETTING_TEXT_API_SETTINGS", "API Einstellungen - siehe imgur.com/account/settings/apps");
+                                                      put("SETTING_USE_API", "Verwende API anstatt Webseite?");
+                                                      put("SETTING_USE_API_IN_ANONYMOUS_MODE", "API als anonymer User verwenden? Um die API überhaupt verwenden zu können musst du deine eigenen API Zugangsdaten unten eintragen, ansonsten wirst du dieses Plugin nicht mehr verwenden können!");
+                                                      put("SETTING_API_CREDENTIALS_CLIENTID", "Gib deine persönliche imgur Oauth Client-ID ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
+                                                      put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Gib deinen persönlichen imgur Oauth Client Secret ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
+                                                      put("SETTING_TEXT_OTHER_SETTINGS", "Andere Einstellungen:");
+                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*orderid* = Platzierungs-ID des Bildes z.B. '007'\r\n*ext* = Dateiendung");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+                                                      put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
+                                                      put("LABEL_PACKAGENAME", "Gib das Muster des benutzerdefinierten Paketnamens für Gallerien an:");
+                                                      put("SETTING_TEXT_DEBUG_SETTINGS", "Debug Einstellungen");
+                                                      put("SETTING_TEXT_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT", "Zeige Anzahl übriger API Anfragen im Account als übriger Traffic an?");
+                                                      put("TEXT_ERROR_API_USAGE_DISABLED_DURING_ACCOUNT_LOGIN", "API ist deaktiviert. Aktiviere die API in den Plugineinstellungen, um diesen Account verwenden zu können.");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
@@ -1260,13 +1289,14 @@ public class ImgurComHoster extends PluginForHost {
         return "Translation not found!";
     }
 
-    private static final String defaultAPISettingUserVisibleText         = "JDDEFAULT";
-    public static final boolean defaultMP4                               = true;
-    public static final boolean defaultSETTING_USE_API                   = false;
-    public static final boolean defaultSETTING_USE_API_IN_ANONYMOUS_MODE = false;
-    public static final boolean defaultSOURCEVIDEO                       = false;
-    private static final String defaultCustomFilename                    = "*username* - *title*_*orderid*_*imgid**ext*";
-    public static final String  defaultCustomPackagename                 = "*username* - *title* - *galleryid*";
+    private static final String defaultAPISettingUserVisibleText                                                    = "JDDEFAULT";
+    public static final boolean defaultMP4                                                                          = true;
+    public static final boolean defaultSETTING_USE_API                                                              = false;
+    public static final boolean defaultSETTING_USE_API_IN_ANONYMOUS_MODE                                            = false;
+    public static final boolean defaultSOURCEVIDEO                                                                  = false;
+    private static final String defaultCustomFilename                                                               = "*username* - *title*_*orderid*_*imgid**ext*";
+    public static final String  defaultCustomPackagename                                                            = "*username* - *title* - *galleryid*";
+    public static final boolean defaultSETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT = false;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_MP4, this.getPhrase("SETTING_PREFER_MP4")).setDefaultValue(defaultMP4));
@@ -1285,6 +1315,9 @@ public class ImgurComHoster extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_TAGS")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CUSTOM_PACKAGENAME, getPhrase("LABEL_PACKAGENAME")).setDefaultValue(defaultCustomPackagename));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_TAGS_PACKAGENAME")));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, this.getPhrase("SETTING_TEXT_DEBUG_SETTINGS")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT, this.getPhrase("SETTING_TEXT_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT")).setDefaultValue(defaultSETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT).setEnabledCondidtion(cfe, true));
     }
 
     @Override

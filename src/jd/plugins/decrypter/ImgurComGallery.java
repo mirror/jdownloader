@@ -194,7 +194,7 @@ public class ImgurComGallery extends PluginForDecrypt {
             }
             final PluginForHost hostPlg = JDUtilities.getPluginForHost(this.getHost());
             if (account != null) {
-                ((ImgurComHoster) hostPlg).login(this.br, account, false);
+                ((ImgurComHoster) hostPlg).loginAPI(this.br, account, false);
             }
         }
     }

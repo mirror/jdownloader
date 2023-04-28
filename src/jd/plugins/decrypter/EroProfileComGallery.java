@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -34,9 +37,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.EroProfileCom;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "https?://(www\\.)?eroprofile\\.com/([A-Za-z0-9\\-_]+$|m/(videos|photos)/albums?/[A-Za-z0-9\\-_]+)" })
 public class EroProfileComGallery extends PluginForDecrypt {
     public EroProfileComGallery(PluginWrapper wrapper) {
@@ -51,13 +51,13 @@ public class EroProfileComGallery extends PluginForDecrypt {
     /* must be static so all plugins share same lock */
     private static Object LOCK = new Object();
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setReadTimeout(3 * 60 * 1000);
         br.setCookiesExclusive(false);
         br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
-        br.setCookie("http://eroprofile.com/", "lang", "en");
+        br.setCookie(this.getHost(), "lang", "en");
         boolean loggedin = false;
         synchronized (LOCK) {
             /** Login process */
@@ -69,10 +69,10 @@ public class EroProfileComGallery extends PluginForDecrypt {
         // Check if account needed but none account entered
         if (br.containsHTML(jd.plugins.hoster.EroProfileCom.NOACCESS) && !loggedin) {
             logger.info("Account needed to decrypt link: " + parameter);
-            return decryptedLinks;
+            return ret;
         } else if (br.containsHTML(jd.plugins.hoster.EroProfileCom.NOACCESS)) {
             logger.info("No cookies, login maybe failed: " + parameter);
-            return decryptedLinks;
+            return ret;
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Album not found<|>\\s*No photos found|^No htmlCode read$")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -122,7 +122,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
                         // final filename is set later in hosterplugin
                         dl.setName(singleLink[1] + (StringUtils.containsIgnoreCase(singleLink[0], "/m/videos") ? ".mp4" : ".jpg"));
                         dl.setAvailable(true);
-                        decryptedLinks.add(dl);
+                        ret.add(dl);
                     }
                 }
             }
@@ -131,11 +131,11 @@ public class EroProfileComGallery extends PluginForDecrypt {
                 for (final String album[] : albums) {
                     if (!StringUtils.containsIgnoreCase(param.getCryptedUrl(), album[0])) {
                         final DownloadLink dl = createDownloadlink("https://www.eroprofile.com" + album[0]);
-                        decryptedLinks.add(dl);
+                        ret.add(dl);
                     }
                 }
             }
-            if (decryptedLinks.size() == 0) {
+            if (ret.size() == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (isProfile) {
@@ -144,10 +144,10 @@ public class EroProfileComGallery extends PluginForDecrypt {
         }
         if (fpName != null && !isAlbums) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /**

@@ -784,6 +784,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
         final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> video = (Map<String, Object>) entries.get("video");
+        if (video == null) {
+            /**
+             * 2023-04-28 e.g.: https://txxx.com/embed/882346568220/ </br>
+             * Typically also comes with this json: "error":1,"code":"video_not_found"
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Map<String, Object> channel = (Map<String, Object>) video.get("channel");
         final Map<String, Object> user = (Map<String, Object>) video.get("user");
         final String status_idStr = (String) video.get("status_id");

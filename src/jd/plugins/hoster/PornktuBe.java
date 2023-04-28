@@ -58,12 +58,22 @@ public class PornktuBe extends KernelVideoSharingComV2 {
     }
 
     public static String[] getAnnotationUrls() {
-        return KernelVideoSharingComV2.buildAnnotationUrlsDefaultVideosPattern(getPluginDomains());
+        return buildAnnotationUrlsPatternPornktube(getPluginDomains());
+    }
+
+    private final String pattern_special = "(?i)https?://[^/]+/vid/(\\d+)/([\\w\\-]+)/";
+
+    public static String[] buildAnnotationUrlsPatternPornktube(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/vid/(\\d+)/([\\w\\-]+)/");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
     public String rewriteHost(final String host) {
-        /* 2022-07-26: Main domain has changed from pornktube.vip to pornktube.tv */
+        /* 2022-07-26: Main domain has changed frequently. */
         return this.rewriteHost(getPluginDomains(), host);
     }
 
@@ -129,7 +139,35 @@ public class PornktuBe extends KernelVideoSharingComV2 {
     }
 
     @Override
+    protected String getFUIDFromURL(final String url) {
+        if (url == null) {
+            return null;
+        } else {
+            final String fuid = new Regex(url, pattern_special).getMatch(0);
+            if (fuid != null) {
+                return fuid;
+            } else {
+                return super.getFUIDFromURL(url);
+            }
+        }
+    }
+
+    @Override
+    protected String getURLTitle(final String url) {
+        if (url == null) {
+            return null;
+        } else {
+            final String urlTitle = new Regex(url, pattern_special).getMatch(1);
+            if (urlTitle != null) {
+                return urlTitle;
+            } else {
+                return super.getURLTitle(url);
+            }
+        }
+    }
+
+    @Override
     protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
-        return generateContentURLDefaultVideosPattern(host, fuid, urlSlug);
+        return "https://vwv." + host + "/vid/" + fuid + "/" + urlSlug + "/";
     }
 }
