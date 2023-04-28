@@ -81,6 +81,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         ret.add(new String[] { "wrzucaj.pl" });
         ret.add(new String[] { "egofiles.net" });
         ret.add(new String[] { "rapidshare.io" });
+        ret.add(new String[] { "sharewith.click" });
         return ret;
     }
 
