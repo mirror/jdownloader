@@ -29,19 +29,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.TwitterConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -68,6 +58,17 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.TwitterCom;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.TwitterConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwitterComCrawler extends PluginForDecrypt {
@@ -303,8 +304,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
         if (tweet == null) {
             if (looksLikeOfflineError34) {
                 /**
-                 * We're missing the permissions to view this content. </br>
-                 * Most likely it is age restricted content and (age verified) account is required.
+                 * We're missing the permissions to view this content. </br> Most likely it is age restricted content and (age verified)
+                 * account is required.
                  */
                 if (account == null) {
                     logger.info("Looks like an account is required to crawl this thread");
@@ -347,8 +348,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
         variables.put("withV2Timeline", true);
         final UrlQuery query = new UrlQuery();
         query.add("variables", Encoding.urlEncode(JSonStorage.serializeToJson(variables)));
-        query.add("features", Encoding.urlEncode(
-                "{\"blue_business_profile_image_shape_enabled\":true,\"responsive_web_graphql_exclude_directive_enabled\":true,\"verified_phone_label_enabled\":false,\"responsive_web_graphql_timeline_navigation_enabled\":true,\"responsive_web_graphql_skip_user_profile_image_extensions_enabled\":false,\"tweetypie_unmention_optimization_enabled\":true,\"vibe_api_enabled\":true,\"responsive_web_edit_tweet_api_enabled\":true,\"graphql_is_translatable_rweb_tweet_is_translatable_enabled\":true,\"view_counts_everywhere_api_enabled\":true,\"longform_notetweets_consumption_enabled\":true,\"tweet_awards_web_tipping_enabled\":false,\"freedom_of_speech_not_reach_fetch_enabled\":true,\"standardized_nudges_misinfo\":true,\"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled\":false,\"interactive_text_enabled\":true,\"responsive_web_text_conversations_enabled\":false,\"longform_notetweets_rich_text_read_enabled\":true,\"responsive_web_enhance_cards_enabled\":false}"));
+        query.add(
+                "features",
+                Encoding.urlEncode("{\"blue_business_profile_image_shape_enabled\":true,\"responsive_web_graphql_exclude_directive_enabled\":true,\"verified_phone_label_enabled\":false,\"responsive_web_graphql_timeline_navigation_enabled\":true,\"responsive_web_graphql_skip_user_profile_image_extensions_enabled\":false,\"tweetypie_unmention_optimization_enabled\":true,\"vibe_api_enabled\":true,\"responsive_web_edit_tweet_api_enabled\":true,\"graphql_is_translatable_rweb_tweet_is_translatable_enabled\":true,\"view_counts_everywhere_api_enabled\":true,\"longform_notetweets_consumption_enabled\":true,\"tweet_awards_web_tipping_enabled\":false,\"freedom_of_speech_not_reach_fetch_enabled\":true,\"standardized_nudges_misinfo\":true,\"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled\":false,\"interactive_text_enabled\":true,\"responsive_web_text_conversations_enabled\":false,\"longform_notetweets_rich_text_read_enabled\":true,\"responsive_web_enhance_cards_enabled\":false}"));
         br.getPage(API_BASE_GRAPHQL + "/" + queryID + "/TweetDetail?" + query.toString());
         final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/user/result/timeline_v2/timeline/instructions");
@@ -497,8 +499,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final Object userInContextOfTweet = tweet.get("user");
         if (userInContextOfTweet != null) {
             /**
-             * Prefer this as our user object. </br>
-             * It's only included when adding single tweets.
+             * Prefer this as our user object. </br> It's only included when adding single tweets.
              */
             user = (Map<String, Object>) userInContextOfTweet;
         }
@@ -552,89 +553,99 @@ public class TwitterComCrawler extends PluginForDecrypt {
         int mediaIndex = 0;
         int videoIndex = 0;
         if (mediaLists.size() > 0) {
-            boolean foundVideo = false;
-            for (final List<Map<String, Object>> mediaList : mediaLists) {
-                for (final Map<String, Object> media : mediaList) {
-                    final String type = (String) media.get("type");
-                    final DownloadLink dl;
-                    String filename = null;
-                    if (type.equals("video") || type.equals("animated_gif")) {
-                        /* Find highest video quality */
-                        if (foundVideo) {
-                            continue;
-                        }
-                        /* animated_gif will usually only have one .mp4 version available with bitrate "0". */
-                        int highestBitrate = -1;
-                        final List<Map<String, Object>> videoVariants = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(media, "video_info/variants");
-                        String streamURL = null;
-                        String hlsMaster = null;
-                        for (final Map<String, Object> videoVariant : videoVariants) {
-                            final String content_type = (String) videoVariant.get("content_type");
-                            if (content_type.equalsIgnoreCase("video/mp4")) {
-                                final int bitrate = ((Number) videoVariant.get("bitrate")).intValue();
-                                if (bitrate > highestBitrate) {
-                                    highestBitrate = bitrate;
-                                    streamURL = (String) videoVariant.get("url");
+            final Set<String> foundVideos = new HashSet<String>();
+            for (String processType : new String[] { "video", "animated_gif", "photo", null }) {
+                for (final List<Map<String, Object>> mediaList : mediaLists) {
+                    for (final Map<String, Object> media : mediaList) {
+                        final String type = (String) media.get("type");
+                        // process media in fixed order to make sure all videos are processed first before checking for video thumbnails
+                        if (processType == null || processType.equals(media)) {
+                            String filename = null;
+                            final DownloadLink dl;
+                            if (type.equals("video") || type.equals("animated_gif")) {
+                                /* Find highest video quality */
+                                if (foundVideos.contains(tweetID)) {
+                                    // video already found/processed
+                                    continue;
                                 }
-                            } else if (content_type.equalsIgnoreCase("application/x-mpegURL")) {
-                                hlsMaster = (String) videoVariant.get("url");
+                                /* animated_gif will usually only have one .mp4 version available with bitrate "0". */
+                                int highestBitrate = -1;
+                                final List<Map<String, Object>> videoVariants = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(media, "video_info/variants");
+                                String streamURL = null;
+                                String hlsMaster = null;
+                                for (final Map<String, Object> videoVariant : videoVariants) {
+                                    final String content_type = (String) videoVariant.get("content_type");
+                                    if (content_type.equalsIgnoreCase("video/mp4")) {
+                                        final int bitrate = ((Number) videoVariant.get("bitrate")).intValue();
+                                        if (bitrate > highestBitrate) {
+                                            highestBitrate = bitrate;
+                                            streamURL = (String) videoVariant.get("url");
+                                        }
+                                    } else if (content_type.equalsIgnoreCase("application/x-mpegURL")) {
+                                        hlsMaster = (String) videoVariant.get("url");
+                                    } else {
+                                        logger.info("Skipping unsupported video content_type: " + content_type);
+                                    }
+                                }
+                                if (StringUtils.isEmpty(streamURL)) {
+                                    /* This should never happen */
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                                dl = this.createDownloadlink(createVideourlSpecific(username, tweetID, (videoIndex + 1)));
+                                dl.setProperty(PROPERTY_TYPE, "video");
+                                lastFoundOriginalFilename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(streamURL));
+                                if (cfg.isUseOriginalFilenames()) {
+                                    filename = lastFoundOriginalFilename;
+                                } else if (mediasExtended.size() > 1) {
+                                    filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + "_" + mediaIndex + ".mp4";
+                                } else {
+                                    filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + ".mp4";
+                                }
+                                dl.setProperty(PROPERTY_BITRATE, highestBitrate);
+                                dl.setProperty(TwitterCom.PROPERTY_DIRECTURL, streamURL);
+                                if (!StringUtils.isEmpty(hlsMaster)) {
+                                    dl.setProperty(TwitterCom.PROPERTY_DIRECTURL_hls_master, hlsMaster);
+                                }
+                                dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
+                                videoIndex++;
+                                foundVideos.add(tweetID);
+                            } else if (type.equals("photo")) {
+                                if (!cfg.isCrawlVideoThumbnail() && foundVideos.contains(tweetID)) {
+                                    // do not grab video thumbnail
+                                    continue;
+                                }
+                                String photoURL = (String) media.get("media_url"); /* Also available as "media_url_https" */
+                                if (StringUtils.isEmpty(photoURL)) {
+                                    photoURL = (String) media.get("media_url_https");
+                                }
+                                if (StringUtils.isEmpty(photoURL)) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                                dl = this.createDownloadlink(photoURL);
+                                dl.setProperty(PROPERTY_TYPE, "photo");
+                                lastFoundOriginalFilename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(photoURL));
+                                if (cfg.isUseOriginalFilenames()) {
+                                    filename = lastFoundOriginalFilename;
+                                } else if (mediasExtended.size() > 1) {
+                                    filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(photoURL);
+                                } else {
+                                    filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + Plugin.getFileNameExtensionFromURL(photoURL);
+                                }
+                                dl.setContentUrl(urlToTweet);
                             } else {
-                                logger.info("Skipping unsupported video content_type: " + content_type);
+                                /* Unknown type -> This should never happen! */
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown media type:" + type);
                             }
+                            if (filename != null) {
+                                dl.setFinalFileName(filename);
+                            }
+                            dl.setAvailable(true);
+                            dl.setProperty(PROPERTY_MEDIA_INDEX, mediaIndex);
+                            dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str"));
+                            ret.add(dl);
+                            mediaIndex += 1;
                         }
-                        if (StringUtils.isEmpty(streamURL)) {
-                            /* This should never happen */
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        dl = this.createDownloadlink(createVideourlSpecific(username, tweetID, (videoIndex + 1)));
-                        dl.setProperty(PROPERTY_TYPE, "video");
-                        lastFoundOriginalFilename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(streamURL));
-                        if (cfg.isUseOriginalFilenames()) {
-                            filename = lastFoundOriginalFilename;
-                        } else if (mediasExtended.size() > 1) {
-                            filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + "_" + mediaIndex + ".mp4";
-                        } else {
-                            filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + ".mp4";
-                        }
-                        dl.setProperty(PROPERTY_BITRATE, highestBitrate);
-                        dl.setProperty(TwitterCom.PROPERTY_DIRECTURL, streamURL);
-                        if (!StringUtils.isEmpty(hlsMaster)) {
-                            dl.setProperty(TwitterCom.PROPERTY_DIRECTURL_hls_master, hlsMaster);
-                        }
-                        dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
-                        videoIndex++;
-                        foundVideo = true;
-                    } else if (type.equals("photo")) {
-                        String photoURL = (String) media.get("media_url"); /* Also available as "media_url_https" */
-                        if (StringUtils.isEmpty(photoURL)) {
-                            photoURL = (String) media.get("media_url_https");
-                        }
-                        if (StringUtils.isEmpty(photoURL)) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        dl = this.createDownloadlink(photoURL);
-                        dl.setProperty(PROPERTY_TYPE, "photo");
-                        lastFoundOriginalFilename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(photoURL));
-                        if (cfg.isUseOriginalFilenames()) {
-                            filename = lastFoundOriginalFilename;
-                        } else if (mediasExtended.size() > 1) {
-                            filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(photoURL);
-                        } else {
-                            filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + Plugin.getFileNameExtensionFromURL(photoURL);
-                        }
-                        dl.setContentUrl(urlToTweet);
-                    } else {
-                        /* Unknown type -> This should never happen! */
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown media type:" + type);
                     }
-                    if (filename != null) {
-                        dl.setFinalFileName(filename);
-                    }
-                    dl.setAvailable(true);
-                    dl.setProperty(PROPERTY_MEDIA_INDEX, mediaIndex);
-                    dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str"));
-                    ret.add(dl);
-                    mediaIndex += 1;
                 }
             }
         }
@@ -936,8 +947,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
             if (tweetMap.size() < expected_items_per_page) {
                 /**
-                 * This can sometimes happen! </br>
-                 * We'll ignore this and let it run into our other fail-safe for when a page contains zero items.
+                 * This can sometimes happen! </br> We'll ignore this and let it run into our other fail-safe for when a page contains zero
+                 * items.
                  */
                 logger.info(String.format("Current page contained only %d of max. %d expected objects --> Reached the end?", tweetMap.size(), expected_items_per_page));
                 // break;
@@ -1130,8 +1141,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Obtains information about given username via old API. </br>
-     * The response of this will also expose the users' userID which is often needed to perform further API requests.
+     * Obtains information about given username via old API. </br> The response of this will also expose the users' userID which is often
+     * needed to perform further API requests.
      */
     private Map<String, Object> getUserInfo(final Browser br, final Account account, final String username) throws Exception {
         this.prepareAPI(br, account);
@@ -1202,8 +1213,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br>
-     * Scroll down to "Twitter API error codes"
+     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br> Scroll down to "Twitter API error codes"
      */
     private void handleErrorsAPI(final Browser br) throws Exception {
         Map<String, Object> entries = null;
@@ -1229,13 +1239,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 case 63:
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                // case 88:
-                /* {"errors":[{"message":"Rate limit exceeded","code":88}]} */
-                // final String rateLimitResetTimestamp = br.getRequest().getResponseHeader("x-rate-limit-reset");
-                // if (rateLimitResetTimestamp != null && rateLimitResetTimestamp.matches("\\d+")) {
-                // logger.info("Rate-limit reached | Resets in: " +
-                // TimeFormatter.formatMilliSeconds(Long.parseLong(rateLimitResetTimestamp) - System.currentTimeMillis() / 1000, 0));
-                // }
+                    // case 88:
+                    /* {"errors":[{"message":"Rate limit exceeded","code":88}]} */
+                    // final String rateLimitResetTimestamp = br.getRequest().getResponseHeader("x-rate-limit-reset");
+                    // if (rateLimitResetTimestamp != null && rateLimitResetTimestamp.matches("\\d+")) {
+                    // logger.info("Rate-limit reached | Resets in: " +
+                    // TimeFormatter.formatMilliSeconds(Long.parseLong(rateLimitResetTimestamp) - System.currentTimeMillis() / 1000, 0));
+                    // }
                 case 109:
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 case 144:

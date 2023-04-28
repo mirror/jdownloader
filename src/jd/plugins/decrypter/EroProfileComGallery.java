@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "https?://(www\\.)?eroprofile\\.com/m/(videos|photos)/album/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "https?://(www\\.)?eroprofile\\.com/([A-Za-z0-9\\-_]+$|m/(videos|photos)/albums?/[A-Za-z0-9\\-_]+)" })
 public class EroProfileComGallery extends PluginForDecrypt {
     public EroProfileComGallery(PluginWrapper wrapper) {
         super(wrapper);
@@ -76,9 +76,18 @@ public class EroProfileComGallery extends PluginForDecrypt {
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Album not found<|>\\s*No photos found|^No htmlCode read$")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final boolean isProfile = param.getCryptedUrl().matches("(?i).*eroprofile\\.com/[A-Za-z0-9\\-_]+$");
+        final boolean isAlbums = param.getCryptedUrl().matches("(?i)^.+/m/(videos|photos)/albums/.+");
         String fpName = br.getRegex("Browse photos from album \\&quot;([^<>\"]*?)\\&quot;<").getMatch(0);
         if (fpName == null) {
             fpName = EroProfileCom.getFilename(br);
+        }
+        if (fpName != null) {
+            final String by = br.getRegex(">\\s*by\\s*<[^>]*>\\s*<a\\s*href[^>]*>\\s*(.*?)\\s*<").getMatch(0);
+            if (by != null) {
+                fpName = by + "-" + fpName;
+            }
+            fpName = fpName.replaceAll("(\\s*:\\s*)", "-");
         }
         final List<String> pagesDones = new ArrayList<String>();
         final List<String> pagesLeft = new ArrayList<String>();
@@ -105,21 +114,36 @@ public class EroProfileComGallery extends PluginForDecrypt {
                     }
                 }
             }
-            String[][] links = br.getRegex("<a href=\"(/m/(?:videos|photos)/view/([A-Za-z0-9\\-_]+))\"").getMatches();
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            if (!isProfile && !isAlbums) {
+                final String[][] videosOrPhotos = br.getRegex("<a href\\s*=\\s*\"(/m/(?:videos|photos)/view/([A-Za-z0-9\\-_]+))\"").getMatches();
+                if (videosOrPhotos != null) {
+                    for (final String singleLink[] : videosOrPhotos) {
+                        final DownloadLink dl = createDownloadlink("https://www.eroprofile.com" + singleLink[0]);
+                        // final filename is set later in hosterplugin
+                        dl.setName(singleLink[1] + (StringUtils.containsIgnoreCase(singleLink[0], "/m/videos") ? ".mp4" : ".jpg"));
+                        dl.setAvailable(true);
+                        decryptedLinks.add(dl);
+                    }
+                }
             }
-            for (final String singleLink[] : links) {
-                final DownloadLink dl = createDownloadlink("https://www.eroprofile.com" + singleLink[0]);
-                // final filename is set later in hosterplugin
-                dl.setName(singleLink[1] + (StringUtils.containsIgnoreCase(singleLink[0], "/m/videos") ? ".mp4" : ".jpg"));
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
+            final String[][] albums = br.getRegex("<a href\\s*=\\s*\"(/m/(?:videos|photos)/albums?/([A-Za-z0-9\\-_]+))\"").getMatches();
+            if (albums != null && albums.length > 0) {
+                for (final String album[] : albums) {
+                    if (!StringUtils.containsIgnoreCase(param.getCryptedUrl(), album[0])) {
+                        final DownloadLink dl = createDownloadlink("https://www.eroprofile.com" + album[0]);
+                        decryptedLinks.add(dl);
+                    }
+                }
+            }
+            if (decryptedLinks.size() == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (isProfile) {
+                break;
             }
         }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
+        if (fpName != null && !isAlbums) {
+            final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
