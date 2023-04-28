@@ -213,7 +213,7 @@ public class TiktokCom extends PluginForHost {
         }
         link.setProperty(PROPERTY_VIDEO_ID, fid);
         if (!link.isNameSet()) {
-            /* Fallback-filename */
+            /* Fallback-filename. Use .mp4 file-extension as most items are videos. */
             link.setName(fid + ".mp4");
         }
         String dllink = null;
@@ -353,6 +353,18 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
+    /**
+     * Returns true for items that can only be fetched via API. </br>
+     * Returns false for items which can also be fetched via website.
+     */
+    private final boolean needsAPIUsage(final DownloadLink link) {
+        if (isVideo(link)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     @Override
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
         if (super.looksLikeDownloadableContent(urlConnection)) {
@@ -434,6 +446,18 @@ public class TiktokCom extends PluginForHost {
         } else {
             /* Old items added in revisions in which we were only supporting single video items. */
             return TYPE_VIDEO;
+        }
+    }
+
+    public static boolean isVideo(final DownloadLink link) {
+        final String storedType = link.getStringProperty(PROPERTY_TYPE);
+        if (storedType == null) {
+            /* Older items (only video) -> Those did not have the "TYPE" property set. */
+            return true;
+        } else if (StringUtils.equals(getType(link), TYPE_VIDEO)) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -1228,7 +1252,9 @@ public class TiktokCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
         if (link != null) {
-            link.removeProperty(PROPERTY_FORCE_API);
+            if (!needsAPIUsage(link)) {
+                link.removeProperty(PROPERTY_FORCE_API);
+            }
             link.removeProperty(PROPERTY_HAS_WATERMARK);
         }
     }

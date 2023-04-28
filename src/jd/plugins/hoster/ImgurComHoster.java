@@ -39,6 +39,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -128,7 +129,7 @@ public class ImgurComHoster extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null, false);
+        return requestFileInformation(link, AccountController.getInstance().getValidAccount(this.getHost()), false);
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
@@ -187,6 +188,7 @@ public class ImgurComHoster extends PluginForHost {
                     title = HTMLEntities.unhtmlAngleBrackets(title);
                     title = HTMLEntities.unhtmlSingleQuotes(title);
                     title = HTMLEntities.unhtmlDoubleQuotes(title);
+                    title = title.trim();
                     link.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_TITLE, title);
                 }
                 if (!StringUtils.isEmpty(dllink)) {
@@ -228,7 +230,6 @@ public class ImgurComHoster extends PluginForHost {
         // }
         if (StringUtils.isEmpty(dllink)) {
             /* This should never happen */
-            logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (storedDirecturl != null && !dllink.equals(storedDirecturl) && link.getView().getBytesLoaded() > 0) {
@@ -361,7 +362,7 @@ public class ImgurComHoster extends PluginForHost {
                     logger.warning("Unable to determine any finalFallbackFilename");
                 } else {
                     finalFallbackFilename = getImgUID(link) + "." + mimeTypeExt;
-                    link.setFinalFileName(getImgUID(link) + "." + mimeTypeExt);
+                    link.setFinalFileName(finalFallbackFilename);
                     /* Set filetype as property so this can be used to determine the customized filename on next linkcheck. */
                     link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, mimeTypeExt);
                 }
@@ -500,21 +501,21 @@ public class ImgurComHoster extends PluginForHost {
                 String active_valid_until;
                 long token_first_use_timestamp;
                 if (this.isSamePW(account)) {
-                    /* Login with same password as before. */
+                    /* Login with same password as before -> Use stored values from Account instance. */
                     active_refresh_token = account.getStringProperty(PROPERTY_ACCOUNT_refresh_token, auth_refresh_token);
                     active_access_token = account.getStringProperty(PROPERTY_ACCOUNT_access_token, auth_access_token);
                     active_valid_until = account.getStringProperty(PROPERTY_ACCOUNT_valid_until);
                     token_first_use_timestamp = account.getLongProperty(PROPERTY_ACCOUNT_token_first_use_timestamp, System.currentTimeMillis());
                 } else {
-                    /* First login with new logindata */
+                    /* First login with new logindata -> Use data from query which user has entered into "password" field. */
                     active_refresh_token = auth_refresh_token;
                     active_access_token = auth_access_token;
                     active_valid_until = auth_valid_until;
                     token_first_use_timestamp = System.currentTimeMillis();
                 }
                 brlogin.getHeaders().put("Authorization", "Bearer " + active_access_token);
-                if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
-                    logger.info("Trust token without check");
+                if (!force) {
+                    /* Do not check token. */
                     return null;
                 }
                 /* Check existing access_token */
@@ -656,8 +657,8 @@ public class ImgurComHoster extends PluginForHost {
             boolean loggedIN = false;
             if (auth_access_token != null) {
                 brlogin.getHeaders().put("Authorization", "Bearer " + auth_access_token);
-                if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 5 * 60 * 1000l) {
-                    logger.info("Trust auth_token without check");
+                if (!force) {
+                    /* Do not check token. */
                     return;
                 }
                 /* Check existing access_token */
@@ -853,7 +854,7 @@ public class ImgurComHoster extends PluginForHost {
         final Map<String, Object> data = (Map<String, Object>) entries.get("data");
         // https://api.imgur.com/models/account_settings
         final Object pro_expiration = data.get("pro_expiration");
-        String accountStatus = null;
+        String accountStatus;
         if (pro_expiration == null || Boolean.FALSE.equals(pro_expiration)) {
             account.setType(AccountType.FREE);
             accountStatus = "Free user";
