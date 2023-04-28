@@ -805,7 +805,7 @@ public class UlozTo extends PluginForHost {
     }
 
     private void checkGeoBlocked(final Browser br, final Account account) throws PluginException {
-        if (StringUtils.containsIgnoreCase(br.getURL(), "/blocked")) {
+        if (StringUtils.endsWithCaseInsensitive(br.getURL(), "/blocked") || br.containsHTML("<title>Error 451")) {
             if (account != null) {
                 throw new AccountUnavailableException("Geoblocked", 5 * 60 * 1000l);
             } else {
