@@ -129,7 +129,12 @@ public class ImgurComHoster extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, AccountController.getInstance().getValidAccount(this.getHost()), false);
+        final boolean debugUseAccountDuringLinkcheck = false;
+        Account account = null;
+        if (debugUseAccountDuringLinkcheck && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            account = AccountController.getInstance().getValidAccount(this.getHost());
+        }
+        return requestFileInformation(link, account, false);
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
