@@ -19,6 +19,10 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -31,6 +35,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -39,9 +44,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.SpankBangComCrawler;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { SpankBangComCrawler.class })
@@ -245,9 +247,14 @@ public class SpankBangCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
+                final Cookies userCookies = account.loadUserCookies();
+                if (cookies != null || userCookies != null) {
                     logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
+                    if (userCookies != null) {
+                        this.br.setCookies(this.getHost(), userCookies);
+                    } else {
+                        this.br.setCookies(this.getHost(), cookies);
+                    }
                     if (!force) {
                         /* Don't validate cookies */
                         return false;
@@ -255,11 +262,33 @@ public class SpankBangCom extends PluginForHost {
                     br.getPage("https://www." + this.getHost() + "/");
                     if (this.isLoggedin(br)) {
                         logger.info("Cookie login successful");
-                        /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        /* Refresh cookie timestamp -> Only if username + password was used to login. */
+                        if (userCookies == null) {
+                            account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        } else {
+                            /*
+                             * Try to set unique username even if user used cookie login (technically user could enter whatever he wants
+                             * when cookie login is used).
+                             */
+                            final String usernameFromHTML = br.getRegex("class=\"user\"[^>]*><a href=\"/profile/([^/\"]+)").getMatch(0);
+                            if (usernameFromHTML != null) {
+                                account.setUser(Encoding.htmlDecode(usernameFromHTML).trim());
+                            } else {
+                                logger.warning("Failed to find username in HTML");
+                            }
+                        }
                         return true;
                     } else {
                         logger.info("Cookie login failed");
+                        if (userCookies != null) {
+                            if (account.hasEverBeenValid()) {
+                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                            } else {
+                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                            }
+                        } else {
+                            br.clearCookies(null);
+                        }
                     }
                 }
                 logger.info("Performing full login");

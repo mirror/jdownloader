@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -140,7 +139,19 @@ public class UlozTo extends PluginForHost {
         return br;
     }
 
-    private String finalDirectDownloadURL = null;
+    protected static String getDownloadModeDirectlinkProperty(final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
+            /* Free Account */
+            return "freelink2";
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+            /* Premium account */
+            return "premlink";
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return "freelink";
+        }
+    }
 
     /**
      * 2019-09-16: They are GEO-blocking several countries including Germany. Error 451 will then be returned! This can be avoided via their
@@ -185,8 +196,9 @@ public class UlozTo extends PluginForHost {
         } else if (contentURL.matches("(?i)https?://[^/]+/(podminky|tos)/[^/]+")) {
             return AvailableStatus.FALSE;
         }
-        finalDirectDownloadURL = handleDownloadUrl(link, isDownload);
-        if (finalDirectDownloadURL != null) {
+        final String directDownloadURL = handleDownloadUrl(link, isDownload);
+        if (directDownloadURL != null) {
+            link.setProperty(getDownloadModeDirectlinkProperty(account), directDownloadURL);
             return AvailableStatus.TRUE;
         } else if (this.isPrivateFile(br)) {
             /* File is online but we can't get any information about the file. */
@@ -358,35 +370,40 @@ public class UlozTo extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink link, final Account account) throws Exception {
-        AvailableStatus status = requestFileInformation(link, account, true);
-        final String contentURL = this.getContentURL(link);
-        if (contentURL.matches(QUICKDOWNLOAD)) {
-            throw new AccountRequiredException();
-        }
-        this.checkErrors(br, link, account);
-        if (AvailableStatus.UNCHECKABLE.equals(status)) {
-            /* TODO: 2020-08-28 Check if this is still required at this place */
-            final Form form = br.getFormbyActionRegex("limit-exceeded");
-            if (form == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            br.submitForm(form);
-            status = requestFileInformation(link);
-        }
-        if (AvailableStatus.UNCHECKABLE.equals(status)) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        }
-        br.setFollowRedirects(true);
-        String dllink = checkDirectLink(link, "directlink_free");
+        String dllink = checkDirectLink(link, account);
         if (dllink == null) {
+            AvailableStatus status = requestFileInformation(link, account, true);
+            final String contentURL = this.getContentURL(link);
+            if (contentURL.matches(QUICKDOWNLOAD)) {
+                throw new AccountRequiredException();
+            }
+            this.checkErrors(br, link, account);
+            if (AvailableStatus.UNCHECKABLE.equals(status)) {
+                /* TODO: 2020-08-28 Check if this is still required at this place */
+                final Form form = br.getFormbyActionRegex("limit-exceeded");
+                if (form == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.submitForm(form);
+                status = requestFileInformation(link);
+            }
+            if (AvailableStatus.UNCHECKABLE.equals(status)) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
+            br.setFollowRedirects(true);
+            // TODO: Refactor this
             boolean captcha_failed = false;
             /* 2019-05-15: New: Free download without captcha */
             dllink = br.getRegex("(/[^\"<>]+\\?do=slowDirectDownload[^\"<>]*?)\"").getMatch(0);
             if (dllink == null) {
                 /* 2020-03-09: New */
                 dllink = br.getRegex("(/slowDownload[^\"<>]+)\"").getMatch(0);
+            }
+            if (dllink == null) {
+                /* 2020-03-09: New */
+                dllink = br.getRegex("(/quickDownload[^\"<>]+)\"").getMatch(0);
             }
             if (dllink == null) {
                 if (link.isPasswordProtected()) {
@@ -522,27 +539,8 @@ public class UlozTo extends PluginForHost {
                         break;
                     } else {
                         br.followConnection(true);
-                        if (account != null) {
-                            if (br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
-                                throw new AccountUnavailableException("Not enough premium traffic available", 1 * 60 * 60 * 1000l);
-                            }
-                        }
-                        if (br.containsHTML("Stránka nenalezena")) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        } else if (br.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) {
-                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
-                        } else if (br.containsHTML("Chyba při ověření uživatele|Nastala chyba při odeslání textu\\. Znovu opiš text z obrázku\\.")) {
-                            if (account != null) {
-                                synchronized (account) {
-                                    account.clearCookies("");
-                                }
-                                throw new PluginException(LinkStatus.ERROR_RETRY);
-                            } else {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                        }
-                        br.clearCookies("ulozto.net");
-                        br.clearCookies("uloz.to");
+                        this.checkErrors(cbr, link, account);
+                        br.clearCookies(br.getHost());
                         dllink = handleDownloadUrl(link, true);
                         if (dllink != null) {
                             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
@@ -558,15 +556,9 @@ public class UlozTo extends PluginForHost {
                     }
                 }
             }
-            if (account != null) {
-                if (br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
-                    throw new AccountUnavailableException("Not enough premium traffic available", 1 * 60 * 60 * 1000l);
-                }
-            }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (dllink.contains("/error404/?fid=file_not_found")) {
-                logger.info("The user entered the correct captcha but this file is offline...");
+            } else if (StringUtils.containsIgnoreCase(dllink, "/error404/?fid=file_not_found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (captcha_failed) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -577,34 +569,20 @@ public class UlozTo extends PluginForHost {
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The finallink doesn't seem to be a file: " + dllink);
-            try {
-                br.followConnection();
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            if (account != null) {
-                if (br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
-                    throw new AccountUnavailableException("Not enough premium traffic available", 1 * 60 * 60 * 1000l);
-                }
-            }
+            br.followConnection(true);
+            this.checkErrors(br, link, account);
             if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
-                // 503 with nginx means no more connections allow, it doesn't mean server error!
-                synchronized (freeRunning) {
-                    final int maxFreeBefore = totalMaxSimultanFreeDownload.get();
-                    totalMaxSimultanFreeDownload.set(Math.min(Math.max(1, freeRunning.get()), maxFreeBefore));
-                    logger.info("maxFreeRunning(" + link.getName() + ")|running:" + freeRunning.get() + "|before:" + maxFreeBefore + "|after:" + totalMaxSimultanFreeDownload.get());
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 504 too many connections", 5 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl.setFilenameFix(true);
-        link.setProperty("directlink_free", dl.getConnection().getURL().toString());
+        link.setProperty(getDownloadModeDirectlinkProperty(account), dl.getConnection().getURL().toString());
         /* Add a download slot */
         controlMaxFreeDownloads(account, link, +1);
         try {
@@ -646,6 +624,7 @@ public class UlozTo extends PluginForHost {
                 /* 2016-12-07: Prefer this way to prevent failures due to wrong website language! */
                 final Form pwform = br.getFormbyKey("password_send");
                 if (pwform == null) {
+                    logger.warning("Failed to find passwordForm -> Items is not password protected or plugin needs to be fixed!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 String passCode = link.getDownloadPassword();
@@ -692,8 +671,9 @@ public class UlozTo extends PluginForHost {
         return isPasswordProtectedAccordingToHTML || isPasswordProtectedAccordingToResponseCode;
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final Account account) {
+        final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
+        String dllink = link.getStringProperty(directlinkproperty);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
@@ -706,7 +686,7 @@ public class UlozTo extends PluginForHost {
                     throw new IOException();
                 }
             } catch (final Exception e) {
-                link.removeProperty(property);
+                link.removeProperty(directlinkproperty);
                 logger.log(e);
                 return null;
             } finally {
@@ -724,40 +704,42 @@ public class UlozTo extends PluginForHost {
             doFree(link, account);
         } else {
             /* Premium Account */
-            requestFileInformation(link, account, true);
-            this.checkErrors(br, link, account);
-            final String contentURL = this.getContentURL(link);
-            String dllink = finalDirectDownloadURL;
+            final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
+            String dllink = checkDirectLink(link, account);
             if (dllink == null) {
-                if (contentURL.matches(QUICKDOWNLOAD)) {
-                    dllink = contentURL;
-                } else {
-                    if (link.isPasswordProtected()) {
-                        handlePassword(link);
-                    }
-                    dllink = br.getRegex("(/quickDownload/[^<>\"\\']+)\"").getMatch(0);
-                    if (dllink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                requestFileInformation(link, account, true);
+                this.checkErrors(br, link, account);
+                /* First check for freshly obtained directurl. */
+                dllink = link.getStringProperty(directlinkproperty);
+                if (dllink == null) {
+                    /* Check if link itself is a directurl or try to find directurl in html. */
+                    final String contentURL = this.getContentURL(link);
+                    if (contentURL.matches(QUICKDOWNLOAD)) {
+                        dllink = contentURL;
+                    } else {
+                        if (link.isPasswordProtected()) {
+                            handlePassword(link);
+                        }
+                        dllink = br.getRegex("(/quickDownload/[^<>\"\\']+)\"").getMatch(0);
+                        if (dllink == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                 }
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection();
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                if (br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
-                    throw new AccountUnavailableException("Not enough premium traffic available", 1 * 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                br.followConnection();
+                this.checkErrors(br, link, account);
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
             dl.startDownload();
         }
     }
@@ -805,12 +787,20 @@ public class UlozTo extends PluginForHost {
     }
 
     private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        this.checkGeoBlocked(br, account);
         if (this.isPrivateFile(br)) {
             throw new AccountRequiredException();
         }
-        this.checkGeoBlocked(br, account);
+        if (br.containsHTML("Stránka nenalezena")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
+        }
         if (br.containsHTML("(?i)The file is not available at this moment, please, try it later")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
+        }
+        if (account != null && br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
+            throw new AccountUnavailableException("Not enough premium traffic available", 1 * 10 * 60 * 1000l);
         }
     }
 
