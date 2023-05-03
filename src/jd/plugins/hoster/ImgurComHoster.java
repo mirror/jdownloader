@@ -130,15 +130,20 @@ public class ImgurComHoster extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final boolean debugUseAccountDuringLinkcheck = false;
-        Account account = null;
         if (debugUseAccountDuringLinkcheck && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            account = AccountController.getInstance().getValidAccount(this.getHost());
+            final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+            return requestFileInformation(link, account, false);
+        } else {
+            return requestFileInformation(link, null, false);
         }
-        return requestFileInformation(link, account, false);
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final String storedDirecturl = getStoredDirecturl(link);
+        final boolean devDebugAllowSuperfastLinkcheck = false;
+        if (storedDirecturl != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE && devDebugAllowSuperfastLinkcheck) {
+            return AvailableStatus.TRUE;
+        }
         /*
          * Avoid unneccessary requests --> If we have the directlink, filesize and a "nice" filename, do not access site/API and only check
          * directurl if needed!
@@ -246,8 +251,8 @@ public class ImgurComHoster extends PluginForHost {
             link.setChunksProgress(null);
             link.setVerifiedFileSize(-1);
         }
-        final boolean checkDirectURLToFindMoreFileInformation = !filesizeHasBeenSetInThisLinkcheck && !filenameHasBeenSetInThisLinkcheck;
-        if (!isDownload && checkDirectURLToFindMoreFileInformation) {
+        final boolean allowCheckDirectURLToFindMoreFileInformation = !filesizeHasBeenSetInThisLinkcheck && !filenameHasBeenSetInThisLinkcheck;
+        if (!isDownload && allowCheckDirectURLToFindMoreFileInformation) {
             /*
              * Only check available link if user is NOT starting the download --> Avoid to access it twice in a small amount of time -->
              * Keep server-load down.

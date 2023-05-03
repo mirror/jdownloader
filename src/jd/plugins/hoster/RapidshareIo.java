@@ -18,9 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -100,5 +102,24 @@ public class RapidshareIo extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected String getContinueLink(final Browser br) throws Exception {
+        final String url = super.getContinueLink(br);
+        if (url != null) {
+            final UrlQuery query = UrlQuery.parse(url);
+            final String urlInsideURL = query.get("url");
+            if (urlInsideURL != null && urlInsideURL.contains("download_token")) {
+                /*
+                 * 2022-07-22: They got some kind of google URL in fron e.g.
+                 * hhttps://docs.google.com/gview?url=https://...real_downloadurl_is_here
+                 */
+                return urlInsideURL;
+            } else {
+                return url;
+            }
+        }
+        return null;
     }
 }
