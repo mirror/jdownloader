@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +44,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redgifs.com" }, urls = { "https?://(?:www\\.)?redgifs\\.com/(?:watch|ifr)/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class RedGifsCom extends GfyCatCom {
     /**
      * 2022-12-27: different site/api
@@ -59,9 +60,34 @@ public class RedGifsCom extends GfyCatCom {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.XXX };
     }
 
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "redgifs.com", "gifdeliverynetwork.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "redgifs.com" };
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:(?:watch|ifr)/)?([A-Za-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    protected String getContentURL(final DownloadLink link) {
+        final String fid = this.getFID(link);
+        return "https://www.redgifs.com/watch/" + fid;
     }
 
     private static Map<ProxySelectorInterface, Object> TEMPORARYTOKENS             = new WeakHashMap<ProxySelectorInterface, Object>();

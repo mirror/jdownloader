@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -52,7 +53,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(?:www\\.)?(?:gfycat\\.com|gifdeliverynetwork\\.com)(?:/ifr)?/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GfyCatCom extends PluginForHost {
     public GfyCatCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,14 +64,33 @@ public class GfyCatCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.XXX };
     }
 
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "gfycat.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "gfycat.com", "gifdeliverynetwork.com" };
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:ifr/)?([A-Za-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://gfycat.com/terms";
+        return "https://gfycat.com/terms";
     }
 
     @Override
@@ -79,7 +99,7 @@ public class GfyCatCom extends PluginForHost {
         this.br.getHeaders().put("User-Agent", "JDownloader");
     }
 
-    private String getContentURL(final DownloadLink link) {
+    protected String getContentURL(final DownloadLink link) {
         final String fid = this.getFID(link);
         final String url = link.getPluginPatternMatcher().replace("http://", "https://");
         if (Browser.getHost(url).equalsIgnoreCase("gifdeliverynetwork.com") && fid != null) {
@@ -87,6 +107,7 @@ public class GfyCatCom extends PluginForHost {
              * 2020-06-18: Special: gfycat.com would redirect to gifdeliverynetwork.con in this case but redgifs.com will work fine and
              * return the expected json!
              */
+            // TODO: Refactor plugin so that such kind of URLs will be handled by the plugin "RedGifsCom".
             return "https://www.redgifs.com/watch/" + fid;
         } else {
             return url;
