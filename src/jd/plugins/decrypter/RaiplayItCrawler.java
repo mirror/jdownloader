@@ -555,7 +555,7 @@ public class RaiplayItCrawler extends PluginForDecrypt {
             throw new DecrypterRetryException(RetryReason.GEO);
         }
         // final String ext = brc.getRegex("<ct>([A-Za-z0-9]+)</ct>").getMatch(0);
-        String dllink = brc.getRegex("<url type=\"content\"><!\\[CDATA\\[([a-zA-Z:\\/0-9\\-\\._,\\?\\&\\=~\\*]+)\\]\\]>").getMatch(0);
+        String dllink = brc.getRegex("<url type=\"content\"><!\\[CDATA\\[(http[^\\]]+)\\]\\]>").getMatch(0);
         if (dllink != null && dllink.startsWith("mms://")) {
             /* Convert mms to http */
             dllink = dllink.replace("mms://", "http://");
@@ -579,17 +579,19 @@ public class RaiplayItCrawler extends PluginForDecrypt {
         final String middleBitrate = brc.getRegex("<bitrate>(\\d+)</bitrate>").getMatch(0);
         final String[] staticBitrateList = new String[] { "10000", "5000", "3600", "3200", "2400", "1800", "1200", "700", "400", "250" };
         final QualitySelectionMode mode = PluginJsonConfig.get(this.getConfigInterface()).getQualitySelectionMode();
-        if (dllink.contains(".m3u8")) {
+        final String httpBitratesFromMPDStreamingMinusSeparated = new Regex(dllink, "filter=[A-Za-z0-9]+_([0-9\\-]+)").getMatch(0);
+        if (dllink.contains(".m3u8") || httpBitratesFromMPDStreamingMinusSeparated != null) {
             // https?:\/\/[^\/]+\/i\/VOD\/(teche_root\/YT_ITALIA_TECHE_HD\/[0-9]*_)([0-9,]+)\.mp4(?:.csmil)?\/index_[0-9]+_av.m3u8\?null=[0-9]+&id=[A-Za-z0-9]+%3d%3d&hdntl=exp=[0-9]+~acl=%2f\*~data=hdntl~hmac=[A-Za-z0-9]+
-            final String httpBitratesCommaSeparated = new Regex(dllink, ",(\\d{3,}[0-9,]*)").getMatch(0);
-            if (httpBitratesCommaSeparated != null || (middleBitrate != null && dllink.contains(middleBitrate))) {
+            final String httpBitratesFromHLSStreamingCommaSeparated = new Regex(dllink, ",(\\d{3,}[0-9,]*)").getMatch(0);
+            if (httpBitratesFromMPDStreamingMinusSeparated != null || httpBitratesFromHLSStreamingCommaSeparated != null || (middleBitrate != null && dllink.contains(middleBitrate))) {
                 /*
                  * Prefer HTTP URLs over HLS URLs as HLS will be split audio/video which we do not yet support.
                  */
                 final ArrayList<String> availableHTTPBitrates = new ArrayList<String>();
-                if (httpBitratesCommaSeparated != null) {
-                    final String[] bitrateList = httpBitratesCommaSeparated.split(",");
-                    availableHTTPBitrates.addAll(Arrays.asList(bitrateList));
+                if (httpBitratesFromMPDStreamingMinusSeparated != null) {
+                    availableHTTPBitrates.addAll(Arrays.asList(httpBitratesFromMPDStreamingMinusSeparated.split("-")));
+                } else if (httpBitratesFromHLSStreamingCommaSeparated != null) {
+                    availableHTTPBitrates.addAll(Arrays.asList(httpBitratesFromHLSStreamingCommaSeparated.split(",")));
                 } else {
                     /* Only a single bitrate/quality is available */
                     availableHTTPBitrates.add(middleBitrate);
