@@ -172,12 +172,12 @@ public class ImgurComGallery extends PluginForDecrypt {
     /** Call this once before attempting any API requests! */
     private void prepareAPIUsage() throws Exception {
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        final boolean useAPIInAnonymousMode = cfg.getBooleanProperty(ImgurComHoster.SETTING_USE_API_IN_ANONYMOUS_MODE, true);
         if (!ImgurComHoster.canUseAPI()) {
             logger.info("API usage is impossible");
             ImgurComHoster.showAPIPreparationInformation();
             throw new DecrypterException("API usage not possible but required");
         }
+        final boolean useAPIInAnonymousMode = cfg.getBooleanProperty(ImgurComHoster.SETTING_USE_API_IN_ANONYMOUS_MODE, ImgurComHoster.defaultSETTING_USE_API_IN_ANONYMOUS_MODE);
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (useAPIInAnonymousMode || account == null) {
             br.getHeaders().put("Authorization", ImgurComHoster.getAuthorization());
