@@ -29,6 +29,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
@@ -76,14 +77,6 @@ public class VoeSx extends XFileSharingProBasic {
             logger.log(e);
         }
         return null;
-    }
-
-    @Override
-    protected void processFileInfo(String[] fileInfo, Browser altbr, DownloadLink link) {
-        if (fileInfo != null && fileInfo[0] != null) {
-            fileInfo[0] = fileInfo[0].replaceFirst("(\\s*-\\s*VOE\\s*\\|\\s*Content\\s*Delivery\\s*Network\\s*\\(CDN\\)\\s*&\\s*Video\\s*Cloud)", "");
-        }
-        super.processFileInfo(fileInfo, altbr, link);
     }
 
     @Override
@@ -176,16 +169,47 @@ public class VoeSx extends XFileSharingProBasic {
     }
 
     @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        if (link.getPluginPatternMatcher().matches("(?i)https?://[^/]+/(e/|embed-).+")) {
+            this.requestFileInformationVideoEmbed(br, link, account, isDownload);
+            return AvailableStatus.TRUE;
+        } else {
+            return super.requestFileInformationWebsite(link, account, isDownload);
+        }
+    }
+
+    @Override
     protected String requestFileInformationVideoEmbed(final Browser br, final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
         /* 2021-03-09: Special: New browser required else they won't let us stream some videos at all! */
         final boolean embedOnly = br.containsHTML(">\\s*This video can be watched as embed only");
         br.setFollowRedirects(true);
         br.getPage(this.getMainPage(link) + "/e/" + this.getFUIDFromURL(link));
+        if (this.isOffline(link, br, correctedBR)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String[] fileInfo = internal_getFileInfoArray();
+        scanInfo(fileInfo);
+        processFileInfo(fileInfo, br, link);
+        if (!StringUtils.isEmpty(fileInfo[0])) {
+            /* Correct- and set filename */
+            setFilename(fileInfo[0], link, br);
+        } else {
+            /* Fallback. Do this again as now we got the html code available so we can e.g. know if this is a video-filehoster or not. */
+            this.setWeakFilename(link, br);
+        }
         final String dllink = getDllinkVideohost(link, account, null, br.toString());
         if (StringUtils.isEmpty(dllink) && embedOnly) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
         }
         return dllink;
+    }
+
+    @Override
+    protected void processFileInfo(String[] fileInfo, Browser altbr, DownloadLink link) {
+        if (fileInfo != null && fileInfo[0] != null) {
+            fileInfo[0] = fileInfo[0].replaceFirst("(\\s*-\\s*VOE\\s*\\|\\s*Content\\s*Delivery\\s*Network\\s*\\(CDN\\)\\s*&\\s*Video\\s*Cloud)", "");
+        }
+        super.processFileInfo(fileInfo, altbr, link);
     }
 
     @Override
@@ -224,6 +248,16 @@ public class VoeSx extends XFileSharingProBasic {
             }
             return dllink;
         }
+    }
+
+    @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
+        final String betterTitle = br.getRegex("class=\"player-title\"[^>]*>([^<]+)").getMatch(0);
+        if (betterTitle != null) {
+            fileInfo[0] = betterTitle;
+        }
+        return fileInfo;
     }
 
     @Override

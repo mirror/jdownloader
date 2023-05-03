@@ -905,8 +905,13 @@ public class ImgurComHoster extends PluginForHost {
         }
         ai.setStatus(accountStatus);
         if (this.getPluginConfig().getBooleanProperty(SETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT, defaultSETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT)) {
-            ai.setTrafficMax(api_limit_user_total * 1024);
-            ai.setTrafficLeft(api_limit_user_remaining * 1024);
+            if (this.getPluginConfig().getBooleanProperty(SETTING_USE_API_IN_ANONYMOUS_MODE, defaultSETTING_USE_API)) {
+                ai.setTrafficMax(Long.parseLong(api_limit_client_totalStr) * 1024);
+                ai.setTrafficLeft(Long.parseLong(api_limit_client_remainingStr) * 1024);
+            } else {
+                ai.setTrafficMax(api_limit_user_total * 1024);
+                ai.setTrafficLeft(api_limit_user_remaining * 1024);
+            }
             /* Ignore set dummy-trafficlimit. We only want this to get displayed in GUI. */
             ai.setSpecialTraffic(true);
         } else {
