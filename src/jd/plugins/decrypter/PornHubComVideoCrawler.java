@@ -1075,6 +1075,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         /* Add properties */
         for (final DownloadLink result : ret) {
             /* Set some Packagizer properties */
+            result.setProperty(PornHubCom.PROPERTY_TITLE, siteTitle);
             if (!StringUtils.isEmpty(username)) {
                 result.setProperty(PornHubCom.PROPERTY_USERNAME, username);
             }

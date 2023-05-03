@@ -248,6 +248,10 @@ public class FastShareCz extends antiDDoSForHost {
                 logger.info("Performing full login");
                 br.setFollowRedirects(true);
                 postPage("https://" + this.getHost() + "/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
+                final String redirect = br.getRequest().getHTMLRefresh();
+                if (redirect != null) {
+                    getPage(redirect);
+                }
                 if (!isLoggedIN(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
