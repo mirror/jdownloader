@@ -89,7 +89,7 @@ public class MegaConz extends PluginForDecrypt {
         final String ret = new Regex(link.getCryptedUrl(), "(!|%21)([a-zA-Z0-9]+)$").getMatch(1);
         final String folderID = getFolderID(link);
         final String masterKey = getMasterKey(link);
-        if (ret != null && !StringUtils.startsWithCaseInsensitive(ret, folderID) && !!StringUtils.startsWithCaseInsensitive(ret, masterKey)) {
+        if (ret != null && !StringUtils.startsWithCaseInsensitive(ret, folderID) && !StringUtils.startsWithCaseInsensitive(ret, masterKey)) {
             return ret;
         }
         return null;
@@ -226,9 +226,9 @@ public class MegaConz extends PluginForDecrypt {
                         }
                     } else {
                         con = br.openRequestConnection(br.createJSonPostRequest("https://g.api.mega.co.nz/cs?id=" + CS.incrementAndGet() + "&n=" + folderID
-                        /*
-                         * + "&domain=meganz
-                         */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
+                                /*
+                                 * + "&domain=meganz
+                                 */, "[{\"a\":\"f\",\"c\":\"1\",\"r\":\"1\",\"ca\":1}]"));// ca=1
                         // ->
                         // !nocache,
                         // commands.cpp
@@ -455,19 +455,19 @@ public class MegaConz extends PluginForDecrypt {
         }
         /*
          * p = parent node (ID)
-         * 
+         *
          * s = size
-         * 
+         *
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         * 
+         *
          * ts = timestamp
-         * 
+         *
          * h = node (ID)
-         * 
+         *
          * u = owner
-         * 
+         *
          * a = attribute (contains name)
-         * 
+         *
          * k = node key
          */
         Boolean preferredNodeIDFound = StringUtils.isNotEmpty(preferredNodeID) ? Boolean.FALSE : null;
