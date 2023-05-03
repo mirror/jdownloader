@@ -172,14 +172,19 @@ public class RedGifsCom extends GfyCatCom {
         }
         String ext = getFileNameExtensionFromURL(url, ".mp4");
         final String fid = gif.get("id").toString();
-        final String username = gif.get("userName").toString();
+        final String username = (String) gif.get("userName"); // can be null!
         String filename = username;
+        if (!StringUtils.isEmpty(username) && !StringUtils.equals(username, fid)) {
+            filename = filename + " - " + fid;
+        } else {
+            filename = fid;
+        }
         final Number createDate = (Number) gif.get("createDate");
         if (createDate != null) {
             final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             filename = sdf.format(new Date(createDate.longValue() * 1000)) + "_" + filename;
         }
-        filename += fid + ext;
+        filename += ext;
         if (url != null) {
             if (link.getFinalFileName() == null || (link.getFinalFileName() != null && !StringUtils.endsWithCaseInsensitive(link.getFinalFileName(), ext))) {
                 filename = filename + ext;
@@ -191,9 +196,14 @@ public class RedGifsCom extends GfyCatCom {
             link.setName(filename);
         }
         if (link.getComment() == null) {
-            final List<Object> tags = (List<Object>) gif.get("tags");
-            if (tags != null) {
-                final String description = StringUtils.join(tags.toArray(new Object[0]), " ") + " Porn GIF by " + username;
+            final List<String> tags = (List<String>) gif.get("tags");
+            if (tags != null && tags.size() > 0) {
+                String description = StringUtils.join(tags.toArray(new Object[0]), " ");
+                if (!StringUtils.isEmpty(username)) {
+                    description += " Porn GIF by " + username;
+                } else {
+                    description += " Porn GIF by unknown user";
+                }
                 link.setComment(description);
             }
         }

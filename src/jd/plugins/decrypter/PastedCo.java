@@ -48,12 +48,11 @@ public class PastedCo extends PluginForDecrypt {
     /** This can handle websites based on script "tinypaste". */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)>\\s*This page was either removed or never existed at all")) {
+        } else if (br.containsHTML("(?i)>\\s*This page was either removed or never existed at all|>\\s*This paste either never existed or was removed")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String pwRegex = "(?i)(Enter the correct password|has been password protected)";
@@ -89,8 +88,9 @@ public class PastedCo extends PluginForDecrypt {
         }
         br.getPage(pasteFrame.trim());
         String[] links = HTMLParser.getHttpLinks(br.toString(), null);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (links == null || links.length == 0) {
-            return decryptedLinks;
+            return ret;
         }
         final Set<String> pws = PasswordUtils.getPasswords(br.toString());
         for (String element : links) {
@@ -98,11 +98,12 @@ public class PastedCo extends PluginForDecrypt {
             if (pws != null && pws.size() > 0) {
                 dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
-        return decryptedLinks;
+        return ret;
     }
 
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

@@ -223,7 +223,7 @@ public class RedditComCrawler extends PluginForDecrypt {
             final int numberofItemsOnCurrentPage = ((Number) data.get("dist")).intValue();
             numberofItemsWalkedThrough += numberofItemsOnCurrentPage;
             final List<DownloadLink> pageResults = this.crawlListing(root, fp);
-            for (DownloadLink pageResult : pageResults) {
+            for (final DownloadLink pageResult : pageResults) {
                 if (dupes.add(pageResult.getPluginPatternMatcher())) {
                     crawledLinks.add(pageResult);
                 } else {

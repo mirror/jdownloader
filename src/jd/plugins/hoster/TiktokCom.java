@@ -35,6 +35,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -187,7 +188,7 @@ public class TiktokCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        return requestFileInformation(link, account, false);
+        return requestFileInformation(link, account, false, false);
     }
 
     public static String toHumanReadableNumber(final Number number) {
@@ -201,7 +202,7 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload, final boolean forceFetchNewDirecturl) throws Exception {
         if (account != null) {
             /* Login whenever possible. */
             this.login(account, false);
@@ -213,15 +214,14 @@ public class TiktokCom extends PluginForHost {
         }
         link.setProperty(PROPERTY_VIDEO_ID, fid);
         if (!link.isNameSet()) {
-            /* Fallback-filename. Use .mp4 file-extension as most items are videos. */
+            /* Set fallback-filename. Use .mp4 file-extension as most items are videos. */
             link.setName(fid + ".mp4");
         }
         String dllink = null;
         if (USE_NEW_HANDLING) {
-            /* 2021-01: New (unfinished!) handling */
-            /* TODO: Update old --> New URLs via new crawler */
             dllink = getStoredDirecturl(link);
-            if (dllink == null) {
+            if (dllink == null || forceFetchNewDirecturl) {
+                logger.info("Obtaining fresh directurl");
                 final TiktokComCrawler crawler = (TiktokComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
                 final ArrayList<DownloadLink> results = crawler.crawlSingleMedia(new CryptedLink(link.getPluginPatternMatcher()), account);
                 final String storedType = link.getStringProperty(PROPERTY_TYPE);
@@ -279,10 +279,17 @@ public class TiktokCom extends PluginForHost {
             try {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
+                prepareDownloadHeaders(link, brc);
                 if (allowsHeadRequest(link)) {
                     con = brc.openHeadConnection(dllink);
                 } else {
                     con = brc.openGetConnection(dllink);
+                }
+                if (con.getResponseCode() == 405 && con.getRequestMethod() == RequestMethod.HEAD) {
+                    logger.info("Fallback: Attempt GET-request");
+                    prepareDownloadHeaders(link, brc);
+                    con = brc.openGetConnection(dllink);
+                    link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, false);
                 }
                 if (!this.looksLikeDownloadableContent(con)) {
                     brc.followConnection(true);
@@ -300,6 +307,11 @@ public class TiktokCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    /** Prepare headers for usage of tiktok media direct-URLs. */
+    private void prepareDownloadHeaders(final DownloadLink link, final Browser br) {
+        br.getHeaders().put("Referer", "https://www." + this.getHost() + "/");
     }
 
     private boolean allowsHeadRequest(final DownloadLink link) {
@@ -431,14 +443,6 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
-    private static String getStoredDirecturlProperty(final DownloadLink link) {
-        if (useAPI(link)) {
-            return PROPERTY_DIRECTURL_API;
-        } else {
-            return PROPERTY_DIRECTURL_WEBSITE;
-        }
-    }
-
     public static String getType(final DownloadLink link) {
         final String storedType = link.getStringProperty(PROPERTY_TYPE);
         if (storedType != null) {
@@ -470,7 +474,20 @@ public class TiktokCom extends PluginForHost {
     }
 
     private static String getStoredDirecturl(final DownloadLink link) {
-        return link.getStringProperty(getStoredDirecturlProperty(link));
+        final Boolean forceAPI = (Boolean) link.getProperty(PROPERTY_FORCE_API);
+        String directlink;
+        if (configUseAPI()) {
+            directlink = link.getStringProperty(PROPERTY_DIRECTURL_API);
+        } else if (Boolean.TRUE.equals(forceAPI)) {
+            directlink = link.getStringProperty(PROPERTY_DIRECTURL_API);
+        } else {
+            directlink = link.getStringProperty(PROPERTY_DIRECTURL_WEBSITE);
+        }
+        if (directlink == null && forceAPI == null) {
+            /* E.g. items that have been added via crawler in website mode while download mode is set to API. */
+            directlink = link.getStringProperty(PROPERTY_DIRECTURL_WEBSITE);
+        }
+        return directlink;
     }
 
     @Deprecated
@@ -1084,7 +1101,7 @@ public class TiktokCom extends PluginForHost {
         if (this.attemptStoredDownloadurlDownload(link)) {
             logger.info("Using stored directurl for downloading");
         } else {
-            requestFileInformation(link, account, true);
+            requestFileInformation(link, account, true, true);
             final String dllink = getStoredDirecturl(link);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1110,7 +1127,7 @@ public class TiktokCom extends PluginForHost {
         }
         try {
             final Browser brc = br.cloneBrowser();
-            brc.getHeaders().put("Referer", "https://www." + this.getHost() + "/");
+            this.prepareDownloadHeaders(link, brc);
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, null), this.getMaxChunks(null));
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 missingDateFilenameLastResortHandling(link, dl.getConnection());
@@ -1120,7 +1137,6 @@ public class TiktokCom extends PluginForHost {
                 throw new IOException();
             }
         } catch (final Throwable e) {
-            link.removeProperty(getStoredDirecturlProperty(link));
             logger.log(e);
             try {
                 dl.getConnection().disconnect();

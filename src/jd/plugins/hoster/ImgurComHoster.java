@@ -1023,7 +1023,7 @@ public class ImgurComHoster extends PluginForHost {
         if (storedFiletype != null) {
             final String image = new Regex(storedFiletype, "images/(.+)").getMatch(0);
             if (image != null) {
-                if (StringUtils.equals("jpeg", image)) {
+                if (StringUtils.equalsIgnoreCase("jpeg", image)) {
                     return "jpg";
                 } else {
                     return image;
@@ -1032,7 +1032,7 @@ public class ImgurComHoster extends PluginForHost {
             final String videoExt = new Regex(storedFiletype, "video/(.+)").getMatch(0);
             if (videoExt != null) {
                 return getCorrectedFileExtension(videoExt);
-            } else if (StringUtils.equals("jpeg", storedFiletype)) {
+            } else if (StringUtils.equalsIgnoreCase("jpeg", storedFiletype)) {
                 return "jpg";
             } else {
                 return getCorrectedFileExtension(storedFiletype);
