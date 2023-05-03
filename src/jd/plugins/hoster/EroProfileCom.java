@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -32,9 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "https?://(?:www\\.)?eroprofile\\.com/m/(?:videos|photos)/view/([A-Za-z0-9\\-_]+)" })
 public class EroProfileCom extends PluginForHost {
@@ -67,6 +67,12 @@ public class EroProfileCom extends PluginForHost {
     }
 
     @Override
+    public void setBrowser(Browser br) {
+        this.br = br;
+        br.setCookie(this.getHost(), "lang", "en");
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://www.eroprofile.com/p/help/termsOfUse";
     }
@@ -88,7 +94,6 @@ public class EroProfileCom extends PluginForHost {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
-        br.setCookie(this.getHost(), "lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(NOACCESS)) {
             return AvailableStatus.TRUE;

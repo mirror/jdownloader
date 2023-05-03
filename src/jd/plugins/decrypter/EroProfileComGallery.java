@@ -26,6 +26,7 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -33,9 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.EroProfileCom;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "https?://(www\\.)?eroprofile\\.com/([A-Za-z0-9\\-_]+$|m/(videos|photos)/albums?/[A-Za-z0-9\\-_]+)" })
 public class EroProfileComGallery extends PluginForDecrypt {
@@ -53,7 +52,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String url = param.getCryptedUrl();
         br.setReadTimeout(3 * 60 * 1000);
         br.setCookiesExclusive(false);
         br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
@@ -65,13 +64,15 @@ public class EroProfileComGallery extends PluginForDecrypt {
             loggedin = getUserLogin(true);
         }
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(url);
         // Check if account needed but none account entered
-        if (br.containsHTML(jd.plugins.hoster.EroProfileCom.NOACCESS) && !loggedin) {
-            logger.info("Account needed to decrypt link: " + parameter);
-            return ret;
-        } else if (br.containsHTML(jd.plugins.hoster.EroProfileCom.NOACCESS)) {
-            logger.info("No cookies, login maybe failed: " + parameter);
+        if (br.containsHTML("(?i)>\\s*You are not allowed to view this profile")) {
+            throw new AccountRequiredException();
+        } else if (br.containsHTML(EroProfileCom.NOACCESS) && !loggedin) {
+            logger.info("Account needed to crawl link: " + url);
+            throw new AccountRequiredException();
+        } else if (br.containsHTML(EroProfileCom.NOACCESS)) {
+            logger.info("No cookies, login maybe failed: " + url);
             return ret;
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Album not found<|>\\s*No photos found|^No htmlCode read$")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -103,7 +104,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
                 break;
             }
             if (!page.equals("1")) {
-                br.getPage(parameter + "?pnum=" + page);
+                br.getPage(url + "?pnum=" + page);
             }
             pagesDones.add(page);
             final String[] nextPages = br.getRegex("\\?pnum=(\\d+)\"").getColumn(0);
@@ -150,31 +151,26 @@ public class EroProfileComGallery extends PluginForDecrypt {
         return ret;
     }
 
-    /**
-     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
-     */
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
     }
 
     private boolean getUserLogin(final boolean force) throws Exception {
-        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("eroprofile.com");
-        Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        final EroProfileCom hostPlugin = (EroProfileCom) this.getNewPluginForHostInstance(this.getHost());
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (aa == null) {
             return false;
         }
         try {
-            ((jd.plugins.hoster.EroProfileCom) hostPlugin).login(this.br, aa, force);
+            hostPlugin.login(this.br, aa, force);
         } catch (final PluginException e) {
             aa.setValid(false);
             return false;
         }
-        // Account is valid, let's just add it
-        AccountController.getInstance().addAccount(hostPlugin, aa);
         return true;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
