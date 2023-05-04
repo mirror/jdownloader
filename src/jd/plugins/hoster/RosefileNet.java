@@ -20,6 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -30,6 +34,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -38,10 +43,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RosefileNet extends PluginForHost {
@@ -106,23 +107,30 @@ public class RosefileNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            /* Fallback */
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)404 File does not exist")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)404 File does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* 2021-04-12: Trust filename inside URL. */
-        String filename = br.getRegex("<title>\\s*(.*?)\\s*-\\s*RoseFile\\s*</title>").getMatch(0);
+        String filename = br.getRegex("(?i)<title>\\s*(.*?)\\s*-\\s*RoseFile\\s*</title>").getMatch(0);
+        if (filename == null) {
+            /* 2023-05-04 */
+            filename = br.getRegex("<h3>([^<]+)</h3>").getMatch(0);
+        }
         if (filename == null) {
             filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
-            filename = Encoding.htmlDecode(filename);
         }
         if (filename != null) {
-            link.setName(filename.trim());
-        } else if (!link.isNameSet()) {
-            /* Fallback */
-            link.setName(this.getFID(link));
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setName(filename);
         }
         String filesize = br.getRegex("<span class=\"h4\">(\\d+[^<>\"]+)</span>").getMatch(0);
         if (filesize != null) {
@@ -149,6 +157,9 @@ public class RosefileNet extends PluginForHost {
                 if (!this.isLoggedin(br)) {
                     throw new AccountUnavailableException("Session expired?", 30 * 1000l);
                 }
+            }
+            if (br.containsHTML("(?i)>\\s*This file is available for Premium Users only")) {
+                throw new AccountRequiredException();
             }
             final String internalFileID = br.getRegex("add_ref\\((\\d+)\\);").getMatch(0);
             if (internalFileID == null) {

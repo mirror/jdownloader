@@ -78,6 +78,7 @@ public class VoeSxCrawler extends PluginForDecrypt {
         if (!cfg.isCrawlSubtitle()) {
             /* User does not want subtitle -> Let hosterplugin do the linkcheck as crawler handling is not needed. */
             ret.add(this.createDownloadlink(param.getCryptedUrl()));
+            return ret;
         }
         final PluginForHost hosterPlugin = this.getNewPluginForHostInstance(this.getHost());
         final DownloadLink link = new DownloadLink(hosterPlugin, this.getHost(), param.getCryptedUrl(), true);
