@@ -31,6 +31,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -68,7 +69,7 @@ public class ShrinkServiceIt extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?:s/)?[A-Za-z0-9]{2,}");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?:(?:btn|s)/)?([A-Za-z0-9]{2,})");
         }
         return ret.toArray(new String[0]);
     }
@@ -76,9 +77,8 @@ public class ShrinkServiceIt extends PluginForDecrypt {
     private final String API_BASE = "https://www.shrink-service.it/v3/api";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        br.getPage(param.getCryptedUrl().replaceFirst("http://", "https://"));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br._getURL().getPath().equals("/HTTP404.html")) {
@@ -97,12 +97,18 @@ public class ShrinkServiceIt extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String forcedDomain = "adshnk.com";
-        final String addedUrlWithNewDomain = param.getCryptedUrl().replaceFirst(Browser.getHost(param.getCryptedUrl()), forcedDomain);
+        final String uri;
+        final Regex exclude = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/btn/(.+)");
+        if (exclude.matches()) {
+            uri = "https://" + forcedDomain + "/" + exclude.getMatch(0);
+        } else {
+            uri = param.getCryptedUrl().replaceFirst(Browser.getHost(param.getCryptedUrl()), forcedDomain);
+        }
         final Browser brc = br.cloneBrowser();
         String finallink = null;
         final UrlQuery query = new UrlQuery();
         query.add("req", "init");
-        query.add("uri", Encoding.urlEncode(addedUrlWithNewDomain));
+        query.add("uri", Encoding.urlEncode(uri));
         query.add("cookie_bypass_v1", Encoding.urlEncode(cookie_bypass_v1));
         // brc.setAllowedResponseCodes(500);
         brc.getHeaders().put("Origin", "https://" + forcedDomain);
@@ -110,6 +116,7 @@ public class ShrinkServiceIt extends PluginForDecrypt {
         brc.postPage(API_BASE + "/prototype/init", query);
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.getRequest().getHtmlCode());
         final Map<String, Object> response0 = (Map<String, Object>) entries.get("0");
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (response0 != null) {
             logger.info("Successfully skipped captcha");
             finallink = (String) response0.get("destination");

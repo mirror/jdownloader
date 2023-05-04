@@ -63,6 +63,13 @@ public class WupfileCom extends XFileSharingProBasic {
     }
 
     @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("salefiles.com");
+        return deadDomains;
+    }
+
+    @Override
     public String rewriteHost(String host) {
         return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }

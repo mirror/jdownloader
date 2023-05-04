@@ -211,6 +211,10 @@ public class FilemoonSx extends XFileSharingProBasic {
             dlform.put("file_code", this.getFUIDFromURL(link));
             dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             this.submitForm(dlform);
+            if (isSpecialError404(br)) {
+                /* 2023-05-04 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 404 download impossible at this moment");
+            }
             dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
         }
         handleDownload(link, account, dllink, null);
@@ -231,11 +235,15 @@ public class FilemoonSx extends XFileSharingProBasic {
     protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         super.checkErrors(br, html, link, account, checkAll);
         /* 2022-11-04: Website failure after captcha on "/download/..." page */
-        if (br.containsHTML("(?i)class=\"error e404\"|>\\s*Page not found")) {
+        if (isSpecialError404(br)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
         } else if (br.containsHTML("(?i)>\\s*This video is not available in your country")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
         }
+    }
+
+    private boolean isSpecialError404(final Browser br) {
+        return br.containsHTML("(?i)class=\"error e404\"|>\\s*Page not found");
     }
 
     @Override
