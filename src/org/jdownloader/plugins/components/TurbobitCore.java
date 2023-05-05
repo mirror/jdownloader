@@ -9,6 +9,18 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,18 +47,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
@@ -99,9 +99,9 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         /**
          * Enabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
-         * filesize is not known already. This will speedup the linkcheck! </br> Disabled = Check for filesize via single-linkcheck even
-         * first time links get added as long as no filesize is given. This will slow down the linkcheck and cause more http requests in a
-         * short amount of time!
+         * filesize is not known already. This will speedup the linkcheck! </br>
+         * Disabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will
+         * slow down the linkcheck and cause more http requests in a short amount of time!
          */
         final boolean fastLinkcheck = isFastLinkcheckEnabled();
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
@@ -971,7 +971,7 @@ public class TurbobitCore extends antiDDoSForHost {
                     br.setCookies(curr_domain, cookies);
                     /* Request same URL again, this time with cookies set */
                     getPage(br.getURL());
-                    if (isLoggedIN()) {
+                    if (isLoggedIN(br)) {
                         logger.info("Cookie login successful");
                         /* Set new cookie timestamp */
                         br.setCookies(curr_domain, cookies);
@@ -1015,7 +1015,7 @@ public class TurbobitCore extends antiDDoSForHost {
                 }
                 universalLoginErrorhandling(br);
                 handlePremiumActivation(br, account);
-                if (!isLoggedIN()) {
+                if (!isLoggedIN(br)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.\r\n3. Gehe auf folgende Seite, deaktiviere den Login Captcha Schutz deines Accounts und versuche es erneut: " + account.getHoster() + "/user/settings", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -1039,7 +1039,7 @@ public class TurbobitCore extends antiDDoSForHost {
     }
 
     protected void handlePremiumActivation(Browser br, Account account) throws Exception {
-        if (!isLoggedIN() && br.containsHTML("<div[^>]*id\\s*=\\s*\"activation-form\"")) {
+        if (!isLoggedIN(br) && br.containsHTML("<div[^>]*id\\s*=\\s*\"activation-form\"")) {
             // <h1>Premium activation</h1>
             // <div id="activation-form">
             // <input-premium-block
@@ -1067,7 +1067,7 @@ public class TurbobitCore extends antiDDoSForHost {
                 if (redirect != null) {
                     getPage(redirect);
                 }
-                if (isLoggedIN()) {
+                if (isLoggedIN(br)) {
                     return;
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1117,8 +1117,8 @@ public class TurbobitCore extends antiDDoSForHost {
         return thread;
     }
 
-    protected boolean isLoggedIN() {
-        return ("1".equals(br.getHostCookie("user_isloggedin", Cookies.NOTDELETEDPATTERN)));
+    protected boolean isLoggedIN(final Browser br) {
+        return br.containsHTML("(?i)/user/logout");
     }
 
     private Form findAndPrepareLoginForm(Browser br, final Account account) throws PluginException {

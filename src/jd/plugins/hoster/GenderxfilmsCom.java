@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfigBlowpass;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfigGenderxfilmsCom;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
@@ -62,7 +62,7 @@ public class GenderxfilmsCom extends EvilangelCore {
 
     @Override
     public Class<? extends EvilangelCoreConfig> getConfigInterface() {
-        return EvilangelCoreConfigBlowpass.class;
+        return EvilangelCoreConfigGenderxfilmsCom.class;
     }
 
     @Override
