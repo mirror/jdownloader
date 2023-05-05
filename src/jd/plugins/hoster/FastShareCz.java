@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -305,14 +306,12 @@ public class FastShareCz extends antiDDoSForHost {
                 } else {
                     logger.warning("Failed to find expire date of unlimited traffic");
                 }
-                if (!ai.isExpired()) {
-                    ai.setUnlimitedTraffic();
-                    if (trafficLeftStr != null) {
-                        /* User has unlimited traffic and also still some traffic left on account --> Display that in status text */
-                        ai.setStatus("Unlimited traffic and " + trafficLeftStr);
-                    } else {
-                        ai.setStatus("Unlimited traffic");
-                    }
+                ai.setUnlimitedTraffic();
+                if (trafficLeftStr != null) {
+                    /* User has unlimited traffic and also still some traffic left on account --> Display that in status text. */
+                    ai.setStatus("Unlimited traffic and " + trafficLeftStr);
+                } else {
+                    ai.setStatus("Unlimited traffic");
                 }
             } else if (trafficLeftStr != null) {
                 ai.setTrafficLeft(SizeFormatter.getSize(trafficLeftStr));
@@ -340,10 +339,14 @@ public class FastShareCz extends antiDDoSForHost {
                 dllink = br.getRedirectLocation();
             }
             if (dllink == null) {
-                /* Direct downloads inactive --> We have to find the final downloadlink */
-                dllink = br.getRegex("\"(https?://[a-z0-9]+\\.fastshare\\.cz/download\\.php[^<>\"]*?)\"").getMatch(0);
+                logger.info("Direct downloads inactive --> We have to find the final downloadlink");
+                /*
+                 * 2023-05-05: Very important: Include current domain in RegEx. They still got some old/dummy URLs with older domains in
+                 * html code -> Accessing these will result in an empty page instead of the file we want.
+                 */
+                dllink = br.getRegex("\"(https?://[a-z0-9]+\\." + Pattern.quote(br.getHost()) + "/download\\.php[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("class=\"speed\">\\s*<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+                    dllink = br.getRegex("class=\"speed\">\\s*<a href=\"(https?://[^/]*" + Pattern.quote(br.getHost()) + "/[^<>\"]*?)\"").getMatch(0);
                 }
             }
             if (dllink == null) {
