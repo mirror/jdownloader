@@ -147,6 +147,39 @@ public class YoutubeClipData {
         this.playlistEntryNumber = playlistEntryNumber;
     }
 
+    public boolean copyTo(YoutubeClipData dest) {
+        if (dest.videoID == null || StringUtils.equals(videoID, dest.videoID)) {
+            dest.videoID = videoID;
+            dest.title = title;
+            dest.title_alternative = title_alternative;
+            dest.category = category;
+            dest.playlistEntryNumber = playlistEntryNumber;
+            dest.channelTitle = channelTitle;
+            dest.channelTitle_alternative = channelTitle_alternative;
+            dest.user = user;
+            dest.user_alternative = user_alternative;
+            dest.bestVideoItag = bestVideoItag;
+            dest.datePublished = datePublished;
+            dest.userGooglePlusID = userGooglePlusID;
+            dest.channelID = channelID;
+            dest.duration = duration;
+            dest.dateUploaded = dateUploaded;
+            dest.views = views;
+            dest.description = description;
+            dest.description_alternative = description_alternative;
+            dest.streams = streams;
+            dest.subtitles = subtitles;
+            dest.keywords = keywords;
+            dest.keywords3D = keywords3D;
+            dest.error = error;
+            dest.ageCheck = ageCheck;
+            dest.approxThreedLayout = approxThreedLayout;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public void copyToDownloadLink(final DownloadLink dest) {
         setValue(dest, YoutubeHelper.YT_TITLE, title);
         setValue(dest, YoutubeHelper.YT_TITLE_ALTERNATIVE, title_alternative);

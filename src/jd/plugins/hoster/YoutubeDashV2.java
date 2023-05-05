@@ -874,7 +874,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     private AvailableStatus requestFileInformationDescription(DownloadLink downloadLink, String id, YoutubeHelper helper) throws Exception, UnsupportedEncodingException {
         String description = downloadLink.getTempProperties().getStringProperty(YoutubeHelper.YT_DESCRIPTION);
         if (StringUtils.isEmpty(description)) {
-            final YoutubeClipData vid = ClipDataCache.get(helper, id);
+            final YoutubeClipData vid = ClipDataCache.load(helper, new YoutubeClipData(id));
             downloadLink.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION, description = vid.description);
         }
         downloadLink.setDownloadSize(description.getBytes("UTF-8").length);

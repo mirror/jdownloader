@@ -458,12 +458,12 @@ public class TbCmV2 extends PluginForDecrypt {
                 final boolean hasCache = ClipDataCache.hasCache(helper, vid.videoID);
                 final YoutubeClipData old = vid;
                 try {
-                    vid = ClipDataCache.get(helper, vid.videoID);
+                    vid = ClipDataCache.load(helper, vid);
                 } catch (Exception e) {
                     logger.log(e);
                     if (hasCache) {
                         ClipDataCache.clearCache(vid.videoID);
-                        vid = ClipDataCache.get(helper, vid.videoID);
+                        vid = ClipDataCache.load(helper, vid);
                     } else {
                         throw e;
                     }

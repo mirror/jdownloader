@@ -32,11 +32,7 @@ public class ClipDataCache {
             proxyList = proxyListNew;
         }
 
-        protected void setYoutubeClipData(YoutubeClipData clipData) {
-            this.clipData = clipData;
-        }
-
-        public boolean hasValidProxyList(List<HTTPProxy> validateList) {
+        private boolean hasValidProxyList(List<HTTPProxy> validateList) {
             if (proxyList != null && validateList != null) {
                 for (final HTTPProxy proxy : proxyList) {
                     if (!validateList.contains(proxy)) {
@@ -49,7 +45,7 @@ public class ClipDataCache {
             }
         }
 
-        public boolean isExpired() {
+        private boolean isExpired() {
             return Time.systemIndependentCurrentJVMTimeMillis() - timeStamp > (30 * 60 * 1000l);
         }
     }
@@ -58,18 +54,18 @@ public class ClipDataCache {
 
     public static YoutubeClipData get(YoutubeHelper helper, DownloadLink downloadLink) throws Exception {
         final String videoID = downloadLink.getStringProperty(YoutubeHelper.YT_ID);
-        final CachedClipData ret = getInternal(helper, videoID);
+        final CachedClipData ret = get(helper, new YoutubeClipData(videoID));
         ret.clipData.copyToDownloadLink(downloadLink);
         // put a reference to the link. if we remove all links with the ref, the cache will cleanup it self
         downloadLink.getTempProperties().setProperty("CLIP_DATA_REFERENCE", ret);
         return ret.clipData;
     }
 
-    public static YoutubeClipData get(YoutubeHelper helper, String videoID) throws Exception {
-        return getInternal(helper, videoID).clipData;
+    public static YoutubeClipData load(YoutubeHelper helper, YoutubeClipData vid) throws Exception {
+        return get(helper, vid).clipData;
     }
 
-    private static CachedClipData getInternal(YoutubeHelper helper, YoutubeClipData vid) throws Exception {
+    private static CachedClipData get(YoutubeHelper helper, YoutubeClipData vid) throws Exception {
         synchronized (LOCK) {
             final String cachedID = vid.videoID;
             if (StringUtils.isEmpty(cachedID)) {
@@ -90,15 +86,16 @@ public class ClipDataCache {
                 } else if (cachedData.isExpired()) {
                     helper.getLogger().info("invalidate CachedClipData:" + cachedID + "|reason:expired");
                     cachedData = null;
-                } else {
-                    helper.getLogger().info("valid CachedClipData found:" + cachedID);
                 }
             }
-            if (cachedData == null) {
+            if (cachedData == null || cachedData.clipData == null) {
                 cachedData = new CachedClipData(proxyListNew, vid);
                 helper.getLogger().info("refresh CachedClipData:" + cachedID);
                 helper.loadVideo(cachedData.clipData);
                 put(cachedID, cachedData);
+            } else {
+                helper.getLogger().info("valid CachedClipData found:" + cachedID);
+                cachedData.clipData.copyTo(vid);
             }
             if (cachedData.clipData.streams == null || StringUtils.isNotEmpty(cachedData.clipData.error)) {
                 if (StringUtils.equalsIgnoreCase(cachedData.clipData.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(cachedData.clipData.error, "This video is not available.")) {
@@ -137,10 +134,6 @@ public class ClipDataCache {
         }
     }
 
-    private static CachedClipData getInternal(YoutubeHelper helper, String videoID) throws Exception {
-        return getInternal(helper, new YoutubeClipData(videoID));
-    }
-
     public static void clearCache(DownloadLink downloadLink) {
         final String videoID = downloadLink.getStringProperty(YoutubeHelper.YT_ID);
         clearCache(videoID);
@@ -148,7 +141,7 @@ public class ClipDataCache {
 
     public static void clearCache(String videoID) {
         synchronized (LOCK) {
-            CACHE.remove(get(videoID));
+            put(videoID, null);
         }
     }
 
@@ -163,7 +156,7 @@ public class ClipDataCache {
                 helper.getLogger().log(e);
             }
             if (data != null && !data.isExpired() && data.hasValidProxyList(proxyListNew)) {
-                data.setYoutubeClipData(vid);
+                data.clipData = vid;
                 link.getTempProperties().setProperty("CLIP_DATA_REFERENCE", data);
             } else {
                 data = new CachedClipData(proxyListNew, vid);
@@ -179,12 +172,10 @@ public class ClipDataCache {
             while (it.hasNext()) {
                 final Entry<CachedClipData, String> next = it.next();
                 final CachedClipData ret = next.getKey();
-                if (StringUtils.equals(videoID, next.getValue())) {
-                    if (ret != null) {
-                        return ret;
-                    } else {
-                        it.remove();
-                    }
+                if (ret == null || ret.clipData == null) {
+                    it.remove();
+                } else if (StringUtils.equals(videoID, next.getValue())) {
+                    return ret;
                 }
             }
         }
@@ -196,7 +187,10 @@ public class ClipDataCache {
             final Iterator<Entry<CachedClipData, String>> it = CACHE.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<CachedClipData, String> next = it.next();
-                if (StringUtils.equals(videoID, next.getValue())) {
+                final CachedClipData ret = next.getKey();
+                if (ret == null || ret.clipData == null) {
+                    it.remove();
+                } else if (StringUtils.equals(videoID, next.getValue())) {
                     it.remove();
                 }
             }

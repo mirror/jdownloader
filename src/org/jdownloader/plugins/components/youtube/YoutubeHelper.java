@@ -3559,7 +3559,9 @@ public class YoutubeHelper {
             if (throwException) {
                 throw e;
             } else {
-                logger.log(e);
+                if (!StringUtils.containsIgnoreCase(e.getMessage(), "window.ytplayer")) {
+                    logger.log(e);
+                }
                 return null;
             }
         }
