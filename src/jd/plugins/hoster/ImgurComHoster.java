@@ -1107,8 +1107,8 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     public static Browser prepBRWebsite(final Browser br) {
-        Browser.setRequestIntervalLimitGlobal("imgur.com", true, 250);
-        Browser.setRequestIntervalLimitGlobal("api.imgur.com", true, 250);
+        Browser.setRequestIntervalLimitGlobal("imgur.com", false, 125);
+        Browser.setRequestIntervalLimitGlobal("api.imgur.com", true, 125);
         Browser.setRequestIntervalLimitGlobal("i.imgur.com", true, 100);
         br.setAllowedResponseCodes(responsecode_website_overloaded);
         br.setFollowRedirects(true);
