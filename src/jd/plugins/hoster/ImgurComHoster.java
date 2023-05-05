@@ -20,19 +20,6 @@ import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.SecondLevelLaunch;
 import jd.config.ConfigContainer;
@@ -60,6 +47,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.ImgurComGallery;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: https://api.imgur.com/models/image
@@ -331,8 +331,7 @@ public class ImgurComHoster extends PluginForHost {
             } else {
                 /**
                  * E.g. HTTP/1.1 503 first byte timeout or e.g. error on trying to do "/download/" (official download / download button):
-                 * </br>
-                 * {"data":{"error":"Imgur is temporarily over capacity. Please try again later."},"success":false,"status":500}
+                 * </br> {"data":{"error":"Imgur is temporarily over capacity. Please try again later."},"success":false,"status":500}
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error " + con.getResponseCode(), 10 * 60 * 1000l);
             }
@@ -1011,8 +1010,7 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     /**
-     * Returns downloadable imgur link. </br>
-     * Not all imgur items can be downloaded this way!
+     * Returns downloadable imgur link. </br> Not all imgur items can be downloaded this way!
      */
     public static final String getURLDownload(final String imgUID) {
         return "https://imgur.com/download/" + imgUID;
@@ -1109,7 +1107,9 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     public static Browser prepBRWebsite(final Browser br) {
-        Browser.setRequestIntervalLimitGlobal("imgur.com", 250);
+        Browser.setRequestIntervalLimitGlobal("imgur.com", true, 250);
+        Browser.setRequestIntervalLimitGlobal("api.imgur.com", true, 250);
+        Browser.setRequestIntervalLimitGlobal("i.imgur.com", true, 100);
         br.setAllowedResponseCodes(responsecode_website_overloaded);
         br.setFollowRedirects(true);
         /* Skip "are you over 19?" Form. */
