@@ -134,9 +134,9 @@ public class DropboxCom extends PluginForHost {
          * Setting this cookie may save some http requests as the website will not ask us to enter the password again if it has been entered
          * successfully before!
          */
-        final String password_cookie = link.getStringProperty(PROPERTY_PASSWORD_COOKIE, null);
-        if (password_cookie != null) {
-            br.setCookie(this.getHost(), "sm_auth", password_cookie);
+        final String password_cookie_value = link.getStringProperty(PROPERTY_PASSWORD_COOKIE);
+        if (password_cookie_value != null) {
+            DropBoxComCrawler.setPasswordCookie(br, password_cookie_value);
         }
         prepBrWebsite(this.br);
         br.setFollowRedirects(true);
@@ -697,7 +697,7 @@ public class DropboxCom extends PluginForHost {
      * Deprecated since: 2023-05-03: It is not easy / impossible to differentiate between files and folders only by URL-structure!
      */
     @Deprecated
-    public static boolean isSingleFile(final String url) {
+    public static boolean looksLikeSingleFile(final String url) {
         if (url.matches(TYPE_S) || url.matches(TYPE_SH)) {
             return true;
         } else {
@@ -706,7 +706,7 @@ public class DropboxCom extends PluginForHost {
     }
 
     private boolean isSingleFile(final DownloadLink link) {
-        if (isSingleFile(this.getRootFolderURL(link, link.getPluginPatternMatcher())) || link.getBooleanProperty(PROPERTY_IS_SINGLE_FILE, false)) {
+        if (looksLikeSingleFile(this.getRootFolderURL(link, link.getPluginPatternMatcher())) || link.getBooleanProperty(PROPERTY_IS_SINGLE_FILE, false)) {
             return true;
         } else {
             return false;

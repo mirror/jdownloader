@@ -17,6 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.EpornerComConfig;
+import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,13 +42,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.EpornerComConfig;
-import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "https?://(?:\\w+\\.)?eporner\\.com/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?" })
 public class EPornerCom extends PluginForHost {
@@ -104,7 +104,11 @@ public class EPornerCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (!this.br.getURL().contains(this.getFID(link)) || br.containsHTML("id=\"deletedfile\"") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("id=\"deletedfile\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.br.getURL().contains(this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String betterTitleByURL = new Regex(br.getURL(), this.getSupportedLinks()).getMatch(2);
@@ -114,7 +118,7 @@ public class EPornerCom extends PluginForHost {
         String title = br.getRegex("(?i)<title>([^<>\"]*?) \\- EPORNER Free HD Porn Tube\\s*</title>").getMatch(0);
         if (title == null) {
             /* 2022-11-21 */
-            title = br.getRegex("<title>([^<>\"]+) - EPORNER</title>").getMatch(0);
+            title = br.getRegex("(?i)<title>([^<>\"]+) - EPORNER</title>").getMatch(0);
         }
         long filesizeMax = 0;
         getDllink(this.br, link);

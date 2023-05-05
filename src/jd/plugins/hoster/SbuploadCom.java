@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -100,5 +101,17 @@ public class SbuploadCom extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected String getContinueLink(final Browser br) throws Exception {
+        /* 2023-05-05 */
+        String result = br.getRegex("(?i)class=\"download-timer\">\\s*<a class='btn btn-free'[^>]*href='(https?://[^<>\"\\']+)'>\\s*DOWNLOAD NOW\\s*</a>").getMatch(0);
+        // result = br.getRegex("load-timer1'\\)\\.html\\(\"[^>]*href='(https?://[^<>\\']+)").getMatch(0);
+        if (result != null) {
+            return result;
+        } else {
+            return super.getContinueLink(br);
+        }
     }
 }
