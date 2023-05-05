@@ -34,6 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
@@ -136,6 +137,7 @@ public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
                     final long filesize = ((Number) file.get("file_size")).longValue();
                     final String url = file.get("url").toString();
                     final DownloadLink dl = this.createDownloadlink("directhttp://https://" + this.getHost() + "/" + url + "?shareable_link=" + fileID + "&password=null&thumbnail=");
+                    dl.setProperty(DirectHTTP.FORCE_NOCHUNKS, true);
                     dl.setFinalFileName(filename);
                     dl.setVerifiedFileSize(filesize);
                     dl.setAvailable(true);
@@ -144,7 +146,7 @@ public class DownloadSaikoanimesNetFolder extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                 }
             }
-            logger.info("Crawled page " + page + "/" + lastPage + " | Numberof items on current page: " + ressourcelist.size() + " | Total: " + decryptedLinks.size() + "/" + totalNumberofItems);
+            logger.info("Crawled page " + page + "/" + lastPage + " | Number of items on current page: " + ressourcelist.size() + " | Total: " + decryptedLinks.size() + "/" + totalNumberofItems);
             if (this.isAbort()) {
                 break;
             } else if (page == lastPage) {

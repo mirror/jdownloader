@@ -554,6 +554,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         int videoIndex = 0;
         if (mediaLists.size() > 0) {
             final String mediaTypeVideo = "video";
+            final String mediaTypePhoto = "photo";
             final Set<String> foundMediaTypes = new HashSet<String>();
             final Map<String, DownloadLink> mediaResultMap = new HashMap<String, DownloadLink>();
             final Set<String> videoIDs = new HashSet<String>();
@@ -616,7 +617,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         }
                         dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
                         videoIndex++;
-                    } else if (mediaType.equals("photo")) {
+                    } else if (mediaType.equals(mediaTypePhoto)) {
                         // if (!cfg.isCrawlVideoThumbnail() && foundVideos.contains(tweetID)) {
                         // // do not grab video thumbnail
                         // continue;
@@ -657,7 +658,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 /* Remove video thumbnails from results as user doesn't want video thumbnails. */
                 int numberofSkippedVideoThumbnails = 0;
                 for (final String videoMediaIDStr : videoIDs) {
-                    final String keyForMap = mediaTypeVideo + "_" + videoMediaIDStr;
+                    final String keyForMap = mediaTypePhoto + "_" + videoMediaIDStr;
                     if (mediaResultMap.containsKey(keyForMap)) {
                         mediaResultMap.remove(keyForMap);
                         numberofSkippedVideoThumbnails++;
