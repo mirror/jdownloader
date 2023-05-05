@@ -16,18 +16,21 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 /**
@@ -41,7 +44,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.me" }, urls = { "https?://(?:www\\.)?(?:shink\\.(?:in|me)|shon\\.xyz)/(s/)?(?-i)[a-zA-Z0-9]{5}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ShinkMe extends antiDDoSForDecrypt {
     private static Object CTRLLOCK = new Object();
 
@@ -49,28 +52,50 @@ public class ShinkMe extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "shink.me", "shink.in", "shon.xyz" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:s/)?[a-zA-Z0-9]{5}");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace(".in/", ".me/");
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String url = param.getCryptedUrl().replace(".in/", ".me/");
         br.setFollowRedirects(true);
         Form dform = null;
         /* 2021-03-16: reCaptcha not present anymore */
         // they seem to only show recaptchav2 once!! they track ip session (as restarting client doesn't get recaptchav2, the only cookies
         // that are cached are cloudflare and they are only kept in memory, and restarting will flush it)
         synchronized (CTRLLOCK) {
-            getPage(parameter);
+            getPage(url);
             if (br.getHttpConnection().getResponseCode() == 404) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             dform = br.getFormbyProperty("id", "skip");
             if (dform == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // can contain recaptchav2
             if (dform.containsHTML("class=(\"|')g-recaptcha\\1")) {
@@ -90,17 +115,22 @@ public class ShinkMe extends antiDDoSForDecrypt {
             if (inValidate(finallink)) {
                 finallink = br.getRegex("<a class=('|\")\\s*btn btn-primary\\s*\\1 href=('|\")(.*?)\\2").getMatch(2);
                 if (inValidate(finallink)) {
-                    logger.warning("Decrypter broken for link: " + parameter);
+                    logger.warning("Decrypter broken for link: " + url);
                     return null;
                 }
             }
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        if (StringUtils.equalsIgnoreCase(finallink, "http://deleted/")) {
+            /* 2023-05-05 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+        return true;
     }
 
     public boolean hasAutoCaptcha() {

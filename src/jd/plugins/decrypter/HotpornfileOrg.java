@@ -19,6 +19,12 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,12 +36,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hotpornfile.org" }, urls = { "https?://(?:www\\.)?hotpornfile\\.org/(?!page)([^/]+)/(\\d+)" })
 public class HotpornfileOrg extends PluginForDecrypt {
@@ -63,9 +63,10 @@ public class HotpornfileOrg extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String lastRecaptchaV2Response = this.getPluginConfig().getStringProperty(PROPERTY_recaptcha_response);
+        final String lastRecaptchaV2Response = this.getPluginConfig().getStringProperty(PROPERTY_recaptcha_response);
+        boolean allowReUseLastReCaptchaV2Response = true;
+        boolean hasEverReUsedFreshReCaptchaV2Token = false;
         String freshReCaptchaV2Response = null;
-        logger.info("Failed to re-use previous recaptchaV2Response");
         int attempt = 0;
         Map<String, Object> entries = null;
         String lastNext = null;
@@ -75,15 +76,19 @@ public class HotpornfileOrg extends PluginForDecrypt {
         do {
             attempt++;
             final String recaptchaV2Response;
-            if (lastRecaptchaV2Response != null) {
-                logger.info("Trying to re-use lase reCaptchaV2Response: " + lastRecaptchaV2Response);
+            if (lastRecaptchaV2Response != null && allowReUseLastReCaptchaV2Response) {
+                logger.info("Trying to re-use last reCaptchaV2Response: " + lastRecaptchaV2Response);
                 br.setCookie(this.getHost(), "cPass", lastRecaptchaV2Response);
                 recaptchaV2Response = lastRecaptchaV2Response;
-            } else {
-                if (freshReCaptchaV2Response != null) {
-                    logger.warning("Challenge is required but one was already solved in this round --> Something must be wrong!");
+            } else if (freshReCaptchaV2Response != null) {
+                /* E.g. first attempt: cid is null -> Obtain freshReCaptchaV2Response -> Fresh cid is needed -> Try again with same */
+                if (hasEverReUsedFreshReCaptchaV2Token) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                logger.info("Trying to re-use freshReCaptchaV2Response created in this session reCaptchaV2Response: " + freshReCaptchaV2Response);
+                recaptchaV2Response = freshReCaptchaV2Response;
+                hasEverReUsedFreshReCaptchaV2Token = true;
+            } else {
                 br.getPage(parameter);
                 recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Lf1jhYUAAAAAN8kNxOBBEUu3qBPcy4UNu4roO5K").getToken();
                 freshReCaptchaV2Response = recaptchaV2Response;
@@ -124,7 +129,7 @@ public class HotpornfileOrg extends PluginForDecrypt {
             } else if ("challenge".equalsIgnoreCase(next)) {
                 /* Fresh captcha needs to be solved. */
                 logger.info("Continue because: lastNext=" + lastNext + "|next=challenge");
-                lastRecaptchaV2Response = null;
+                allowReUseLastReCaptchaV2Response = false;
                 continue;
             } else if (Boolean.FALSE.equals(error)) {
                 logger.info("Stopping because error == FALSE | lastNext=" + lastNext + "|next=" + next + "|error=" + error + "|attempt=" + attempt);
@@ -134,12 +139,8 @@ public class HotpornfileOrg extends PluginForDecrypt {
                 break;
             }
         } while (!isAbort());
-        if (isAbort()) {
-            return ret;
-        }
         if (StringUtils.isEmpty(links_text)) {
-            /* Fallback */
-            links_text = br.getRequest().getHtmlCode();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String[] links = new Regex(links_text, "\"(https?://[^\"]+)").getColumn(0);
         if (links == null || links.length == 0) {
