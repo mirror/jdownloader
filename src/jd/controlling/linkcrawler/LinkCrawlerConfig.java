@@ -52,9 +52,9 @@ public interface LinkCrawlerConfig extends ConfigInterface {
     @DefaultStringArrayValue({ "CAPTCHA", "EMPTY_FOLDER", "EMPTY_PROFILE", "FILE_NOT_FOUND", "NO_ACCOUNT", "PLUGIN_DEFECT", "PLUGIN_SETTINGS", "PASSWORD", "GEO", "IP", "HOST_RATE_LIMIT", "UNSUPPORTED_LIVESTREAM", "BLOCKED_BY" })
     @AboutConfig
     @DescriptionForConfigEntry("Add a retry task for following crawling errors")
-    String[] getAddRetryCrawlerTasks();
+    String[] getAddRetryCrawlerTasks2();
 
-    public void setAddRetryCrawlerTasks(String[] origins);
+    public void setAddRetryCrawlerTasks2(String[] origins);
 
     @DefaultBooleanValue(true)
     @AboutConfig
