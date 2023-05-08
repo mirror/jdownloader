@@ -418,8 +418,9 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                 // prevent hash values from been edited...
                 if (CFG_GUI.CFG.isPresentationModeEnabled()) {
                     return false;
+                } else {
+                    return PremiumAccountTableModel.this.isEditable();
                 }
-                return PremiumAccountTableModel.this.isEditable();
             }
 
             @Override
