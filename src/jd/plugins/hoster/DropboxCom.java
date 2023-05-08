@@ -146,8 +146,7 @@ public class DropboxCom extends PluginForHost {
          * This might not be necessary for any other linktype as the old '?dl=1' method is working just fine!
          */
         if (link.getPluginPatternMatcher().matches(TYPE_SC_GALLERY)) {
-            String url = link.getPluginPatternMatcher();
-            url = url.replaceFirst("(?i)/dropbox.com/", "/www.dropbox.com/");
+            final String url = link.getPluginPatternMatcher().replaceFirst("(?i)/dropbox.com/", "/www.dropbox.com/");
             br.getPage(url);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
