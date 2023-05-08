@@ -18,9 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,20 +39,20 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class ExpfileCom extends PluginForHost {
-    public ExpfileCom(PluginWrapper wrapper) {
+public class FiveSixSevenFileCom extends PluginForHost {
+    public FiveSixSevenFileCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://" + getHost() + "/";
+        return "https://" + getHost() + "/";
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "expfile.com" });
+        ret.add(new String[] { "567file.com" });
         return ret;
     }
 
@@ -107,23 +110,19 @@ public class ExpfileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.containsHTML("window\\.location='down2-\\d+\\.html")) {
-            br.getPage("/down2-" + this.getFID(link) + ".html");
-        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* 72bbb.com definitly returns 404 on url offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*文件不存在或已删除")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<h2>文件名：([^<]+)</h2>").getMatch(0);
-        String filesize = br.getRegex("文件大小：</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("文件大小：</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
-        }
+        final String filename = br.getRegex("<h1>([^<]+)</h1>").getMatch(0);
+        String filesize = br.getRegex(">\\s*文件大小：([^>]*?)\\&nbsp;").getMatch(0);
         if (filename != null) {
             link.setName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
         }
         return AvailableStatus.TRUE;
     }
@@ -137,29 +136,51 @@ public class ExpfileCom extends PluginForHost {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             requestFileInformation(link);
-            // this.br.getPage("/down-" + this.getFID(link) + ".html");
+            final String fid = this.getFID(link);
+            if (br.containsHTML("down2-" + fid)) {
+                br.getPage("/down2-" + fid + ".html");
+                br.getPage("/down-" + fid + ".html");
+            }
+            final String sign = br.getRegex("sign=([a-f0-9]+)").getMatch(0);
             final Browser ajax = this.br.cloneBrowser();
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            /** 2022-05-04: Waittime and captcha (required for anonymous downloads in browser) is skippable! */
-            // br.getPage("/ajax.php?action=load_time&ctime=" + System.currentTimeMillis());
-            // final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-            // final int waitSeconds = ((Number) entries.get("")).intValue();
-            // this.sleep(waitSeconds * 1001l, link);
-            // br.getPage("https://" + this.br.getHost() + "/d/" + this.getFID(link) + "/" + Encoding.urlEncode(link.getName()) + ".html");
-            // final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
-            // br.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
-            // if (br.toString().equals("false")) {
-            // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            // }
-            ajax.postPage("/ajax.php", "action=load_down_addr1&file_id=" + this.getFID(link));
-            dllink = ajax.getRegex("(cd\\.php[^\"\\']+)").getMatch(0);
+            final boolean skipCaptcha = true;
+            if (!skipCaptcha) {
+                /** 2022-05-04: Waittime and captcha (required for anonymous downloads in browser) is skippable! */
+                br.getPage("/ajax.php?action=load_time&ctime=" + System.currentTimeMillis());
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final boolean skipWaittime = false;
+                if (!skipWaittime) {
+                    final int waitSeconds = ((Number) entries.get("waittime")).intValue();
+                    if (waitSeconds >= 180) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1001);
+                    }
+                    this.sleep(waitSeconds * 1001l, link);
+                }
+                final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
+                br.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
+                if (br.toString().equals("false")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            }
+            final UrlQuery query = new UrlQuery();
+            query.add("action", "load_down_addr10");
+            query.add("file_id", fid);
+            if (sign != null) {
+                query.add("sign", sign);
+            }
+            ajax.postPage("/ajax.php", query);
+            dllink = ajax.getRegex("((https?://[^/]+)?/dl\\.php[^\"\\']+)").getMatch(0);
             if (dllink == null) {
                 dllink = ajax.getRegex("true\\|(http[^<>\"]+)").getMatch(0);
             }
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (dllink.contains("account.php")) {
+                if (br.containsHTML("vip\\.php")) {
+                    throw new AccountRequiredException();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } else if (dllink.contains("account.php") || dllink.contains("vip\\.php")) {
                 throw new AccountRequiredException();
             }
         }

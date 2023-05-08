@@ -84,7 +84,20 @@ public class ShinkMe extends antiDDoSForDecrypt {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String url = param.getCryptedUrl().replace(".in/", ".me/");
         br.setFollowRedirects(true);
-        Form dform = null;
+        // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)
+        // Chrome/112.0.0.0 Safari/537.36");
+        // br.getHeaders().put("sec-ch-ua", "\"Chromium\";v=\"112\", \"Google Chrome\";v=\"112\", \"Not:A-Brand\";v=\"99\"");
+        // br.getHeaders().put("sec-ch-ua-mobile", "?0");
+        // br.getHeaders().put("sec-ch-ua-platform", "\"Windows\"");
+        // br.getHeaders().put("upgrade-insecure-requests", "1");
+        // br.getHeaders().put("Origin", "https://shon.xyz");
+        // br.getHeaders().put("Accept",
+        // "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+        // br.getHeaders().put("sec-fetch-site", "same-origin");
+        // br.getHeaders().put("sec-fetch-mode", "navigate");
+        // br.getHeaders().put("sec-fetch-user", "?1");
+        // br.getHeaders().put("sec-fetch-dest", "document");
+        Form form1 = null;
         /* 2021-03-16: reCaptcha not present anymore */
         // they seem to only show recaptchav2 once!! they track ip session (as restarting client doesn't get recaptchav2, the only cookies
         // that are cached are cloudflare and they are only kept in memory, and restarting will flush it)
@@ -93,26 +106,28 @@ public class ShinkMe extends antiDDoSForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            dform = br.getFormbyProperty("id", "skip");
-            if (dform == null) {
+            form1 = br.getFormbyProperty("id", "skip");
+            if (form1 == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* 2023-05-08: Looks like they've moved the captcha to the 2nd form. */
-            if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(dform)) {
+            if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(form1)) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                dform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                form1.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
         }
         br.setFollowRedirects(false);
-        submitForm(dform);
-        final Form f = br.getFormbyProperty("id", "skip");
-        if (f != null) {
+        submitForm(form1);
+        final Form form2 = br.getFormbyProperty("id", "skip");
+        if (form2 != null) {
             final String reCaptchav2FieldKey = "g-recaptcha-response";
-            if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(f) || f.hasInputFieldByName(reCaptchav2FieldKey)) {
+            if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(form2) || form2.hasInputFieldByName(reCaptchav2FieldKey)) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-                f.put(reCaptchav2FieldKey, Encoding.urlEncode(recaptchaV2Response));
+                form2.put(reCaptchav2FieldKey, Encoding.urlEncode(recaptchaV2Response));
             }
-            submitForm(f);
+            submitForm(form2);
+        } else {
+            logger.warning("Failed to find form2");
         }
         String finallink = br.getRedirectLocation();
         if (inValidate(finallink)) {
