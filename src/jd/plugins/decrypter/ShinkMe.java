@@ -97,8 +97,8 @@ public class ShinkMe extends antiDDoSForDecrypt {
             if (dform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // can contain recaptchav2
-            if (dform.containsHTML("class=(\"|')g-recaptcha\\1")) {
+            /* 2023-05-08: Looks like they've moved the captcha to the 2nd form. */
+            if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(dform)) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 dform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
@@ -107,6 +107,11 @@ public class ShinkMe extends antiDDoSForDecrypt {
         submitForm(dform);
         final Form f = br.getFormbyProperty("id", "skip");
         if (f != null) {
+            final String reCaptchav2FieldKey = "g-recaptcha-response";
+            if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(f) || f.hasInputFieldByName(reCaptchav2FieldKey)) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                f.put(reCaptchav2FieldKey, Encoding.urlEncode(recaptchaV2Response));
+            }
             submitForm(f);
         }
         String finallink = br.getRedirectLocation();

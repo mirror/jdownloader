@@ -1022,12 +1022,11 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String albumsJson = br.getRegex("extend\\(cur, (\\{\".*?\\})\\);\\s+").getMatch(0);
         final Map<String, Object> albumInfo = restoreFromString(albumsJson, TypeRef.MAP);
-        if (numberOfItemsStr == null) {
+        if (numberOfItemsStr == null || numberOfItemsStr.equals("0")) {
             numberOfItemsStr = albumInfo.get("count").toString();
         }
         if (numberOfItemsStr != null && numberOfItemsStr.equals("0")) {
-            logger.info("This album doesn't contain any items");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
         final String startOffset = albumInfo.get("offset").toString();
         final FilePackage fp = FilePackage.getInstance();

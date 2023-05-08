@@ -65,7 +65,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "novafile.org", "novafile.com", "nfile.cc" });
+        ret.add(new String[] { "novafile.org", "novafile.com" });
         return ret;
     }
 
@@ -79,6 +79,7 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     }
 
     protected URL_TYPE getURLType(final String url) {
+        /* 2023-05-18: Legacy: Those URLs are now processed by separate crawler plugin NfileCc. */
         if (url != null && url.matches("(?i)https?://[^/]*nfile\\.cc/([A-Za-z0-9]+)$")) {
             return URL_TYPE.SHORT;
         } else {

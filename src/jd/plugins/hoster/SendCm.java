@@ -240,6 +240,10 @@ public class SendCm extends XFileSharingProBasic {
         if (betterFilename != null) {
             fileInfo[0] = betterFilename;
         }
+        final String betterFilesize = br.getRegex("(?i)id=\"downloadbtn[>]*><i [^>]*></i>\\s*Download \\[([^<\\]]+)\\]</button>").getMatch(0);
+        if (betterFilesize != null) {
+            fileInfo[1] = betterFilesize;
+        }
         return fileInfo;
     }
 
@@ -271,6 +275,12 @@ public class SendCm extends XFileSharingProBasic {
     @Override
     protected boolean supports_availablecheck_filename_abuse() {
         /* 2021-09-29 */
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2023-05-28 */
         return false;
     }
 
