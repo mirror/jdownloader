@@ -6,7 +6,6 @@ import java.net.URL;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Map;
 import java.util.Random;
-import java.util.WeakHashMap;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -53,12 +52,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.DropBoxComCrawler;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "" })
 public class DropboxCom extends PluginForHost {
     public DropboxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,7 +75,7 @@ public class DropboxCom extends PluginForHost {
     }
 
     public static Browser prepBrWebsite(final Browser br) {
-        br.setCookie("https://dropbox.com", "locale", "en");
+        br.setCookie("dropbox.com", "locale", "en");
         br.setAllowedResponseCodes(new int[] { 429, 460, 509 });
         return br;
     }
@@ -104,25 +104,34 @@ public class DropboxCom extends PluginForHost {
         }
     }
 
-    public static final String                   TYPE_S                                = "https?://[^/]+/(s/.+)";
-    public static final String                   TYPE_SH                               = "https?://[^/]+/sh/[^/]+/[^/]+/[^/]+";
+    public static final String  TYPE_S                                = "https?://[^/]+/(s/.+)";
+    public static final String  TYPE_SH                               = "https?://[^/]+/sh/[^/]+/[^/]+/[^/]+";
     /* 2019-09-26: API does currently not support this kind of URL. A feature request to support those has been forwarded! */
-    public static final String                   TYPE_SC_GALLERY                       = "https?://[^/]+/sc/.+";
-    private static WeakHashMap<Account, Cookies> accountMap                            = new WeakHashMap<Account, Cookies>();
-    public static final String                   API_BASE                              = "https://api.dropboxapi.com/2";
-    private static final String                  API_BASE_CONTENT                      = "https://content.dropboxapi.com/2";
+    public static final String  TYPE_SC_GALLERY                       = "https?://[^/]+/sc/.+";
+    public static final String  API_BASE                              = "https://api.dropboxapi.com/2";
+    private static final String API_BASE_CONTENT                      = "https://content.dropboxapi.com/2";
     /** 2019-09-25: Website login is broken - enforce API usage for all users! */
-    private final boolean                        HARDCODED_ENFORCE_API                 = false;
-    public static final String                   PROPERTY_MAINPAGE                     = "mainlink";
-    public static final String                   PROPERTY_INTERNAL_PATH                = "serverside_path_to_file_relative";
-    public static final String                   PROPERTY_PASSWORD_COOKIE              = "password_cookie";
-    public static final String                   PROPERTY_IS_SINGLE_FILE               = "is_single_file";
-    public static final String                   PROPERTY_ACCOUNT_ACCESS_TOKEN         = "access_token";
-    public static final String                   PROPERTY_ACCOUNT_LAST_AUTH_VALIDATION = "last_auth_validation";
-    public static final String                   PROPERTY_DIRECTLINK                   = "directlink";
-    public static final String                   PROPERTY_PREVIEW_DOWNLOADLINK         = "preview_downloadlink";
-    public static final String                   PROPERTY_ORIGINAL_FILENAME            = "original_filename";
-    public static final String                   IS_OFFICIALLY_DOWNLOADABLE            = "is_officially_downloadable";
+    private final boolean       HARDCODED_ENFORCE_API                 = false;
+    public static final String  PROPERTY_MAINPAGE                     = "mainlink";
+    public static final String  PROPERTY_INTERNAL_PATH                = "serverside_path_to_file_relative";
+    public static final String  PROPERTY_PASSWORD_COOKIE              = "password_cookie";
+    public static final String  PROPERTY_IS_SINGLE_FILE               = "is_single_file";
+    public static final String  PROPERTY_ACCOUNT_ACCESS_TOKEN         = "access_token";
+    public static final String  PROPERTY_ACCOUNT_LAST_AUTH_VALIDATION = "last_auth_validation";
+    public static final String  PROPERTY_DIRECTLINK                   = "directlink";
+    public static final String  PROPERTY_PREVIEW_DOWNLOADLINK         = "preview_downloadlink";
+    public static final String  PROPERTY_ORIGINAL_FILENAME            = "original_filename";
+    public static final String  IS_OFFICIALLY_DOWNLOADABLE            = "is_officially_downloadable";
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        try {
+            final String pathWithoutParams = new URL(Encoding.htmlDecode(link.getPluginPatternMatcher())).getPath();
+            return "dropbox://" + pathWithoutParams;
+        } catch (final MalformedURLException e) {
+            return super.getLinkID(link);
+        }
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -153,13 +162,15 @@ public class DropboxCom extends PluginForHost {
             }
             /* 2019-09-25: Do nothing, trust filename & size which was set in crawler. At this stage we know that the content is online! */
         } else {
-            final String dllink = getOldDirecturl(link);
+            final String dllink = generateDirecturl(link);
             URLConnectionAdapter con = null;
             final Browser brc = br.cloneBrowser();
             try {
                 brc.setFollowRedirects(true);
                 con = brc.openHeadConnection(dllink);
-                if (con.getResponseCode() == 404) {
+                if (con.getResponseCode() == 403 || con.getResponseCode() == 404) {
+                    /* Workaround/fallback */
+                    logger.info("Looks like HEAD-request is not possible -> Trying GET-request");
                     try {
                         brc.followConnection(true);
                     } catch (IOException e) {
@@ -195,17 +206,11 @@ public class DropboxCom extends PluginForHost {
                          */
                         logger.info("Looks like this file is officially not downloadable");
                         /* Try to gather more information about this file */
-                        final String fileJson = brc.getRegex("InitReact\\.mountComponent\\(mod, (\\{.*?\\})\\);").getMatch(0);
-                        if (fileJson != null) {
-                            final Map<String, Object> entries = restoreFromString(fileJson, TypeRef.MAP);
-                            final Map<String, Object> fileinfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/file");
-                            if (fileinfo != null) {
-                                DropBoxComCrawler.parseMiscFileInfo(link, fileinfo);
-                            } else {
-                                logger.warning("Failed to find fileinfo");
-                            }
+                        final Map<String, Object> fileinfo = getSingleFileJsonMap(brc);
+                        if (fileinfo != null) {
+                            DropBoxComCrawler.parseMiscFileInfo(link, fileinfo);
                         } else {
-                            logger.warning("Failed to find filejson");
+                            logger.warning("Failed to find additional information about officially un-downloadable file");
                         }
                         link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, false);
                         if (link.hasProperty(PROPERTY_PREVIEW_DOWNLOADLINK)) {
@@ -285,13 +290,24 @@ public class DropboxCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String getOldDirecturl(final DownloadLink link) throws MalformedURLException {
-        final UrlQuery params = UrlQuery.parse(link.getPluginPatternMatcher());
-        params.addAndReplace("dl", "1");
-        final String urlWithoutParams = URLHelper.getURL(new URL(link.getPluginPatternMatcher()), false, true, true).toString();
-        String dllink = urlWithoutParams;
+    public Map<String, Object> getSingleFileJsonMap(final Browser brc) {
+        final String fileJson = brc.getRegex("InitReact\\.mountComponent\\(mod, (\\{.*?\\})\\);").getMatch(0);
+        if (fileJson != null) {
+            final Map<String, Object> entries = restoreFromString(fileJson, TypeRef.MAP);
+            final Map<String, Object> fileinfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/file");
+            return fileinfo;
+        } else {
+            return null;
+        }
+    }
+
+    /** Returns URL with "dl=1" parameter. This should work for all officially downloadable items. */
+    private String generateDirecturl(final DownloadLink link) throws MalformedURLException {
+        final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
+        query.addAndReplace("dl", "1");
+        String dllink = URLHelper.getUrlWithoutParams(link.getPluginPatternMatcher());
         dllink = dllink.replaceFirst("(?i)/dropbox\\.com/", "/www.dropbox.com/");
-        dllink += "?" + params.toString();
+        dllink += "?" + query.toString();
         return dllink;
     }
 
@@ -472,10 +488,10 @@ public class DropboxCom extends PluginForHost {
                     link.setProperty(PROPERTY_PASSWORD_COOKIE, password_cookie);
                 }
                 link.setDownloadPassword(passCode);
-                dllink = this.getOldDirecturl(link);
+                dllink = this.generateDirecturl(link);
             } else {
                 resume_supported = true;
-                dllink = this.getOldDirecturl(link);
+                dllink = this.generateDirecturl(link);
             }
         }
         handleDownload(link, dllink, resume_supported);
@@ -487,15 +503,20 @@ public class DropboxCom extends PluginForHost {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        boolean allowFixFileExtension = false;
         final String directurlPreview = link.getStringProperty(PROPERTY_PREVIEW_DOWNLOADLINK);
         if (StringUtils.equals(dllink, directurlPreview)) {
             /* Stream download active -> Filesize can be different from size of original file. */
             link.setVerifiedFileSize(-1);
+            allowFixFileExtension = true;
         }
+        /* Important: URL needs to contain "www."! */
         dllink = dllink.replaceFirst("(?i)/dropbox.com/", "/www.dropbox.com/");
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, 1);
+        final String filename = link.getName();
         if (LinkCrawlerDeepInspector.looksLikeMpegURL(dl.getConnection())) {
             /* HLS download (usually only needed as fallback if official download is disabled) */
+            dl = null;
             checkFFmpeg(link, "Download a HLS Stream");
             br.followConnection();
             final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br));
@@ -504,7 +525,10 @@ public class DropboxCom extends PluginForHost {
             }
             dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());
             final String extension = hlsbest.getFileExtension();
-            link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getName(), extension));
+            /* Correct file extension */
+            if (filename != null) {
+                link.setFinalFileName(this.correctOrApplyFileNameExtension(filename, extension));
+            }
             dl.startDownload();
         } else {
             /* http download */
@@ -519,6 +543,10 @@ public class DropboxCom extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+            }
+            final String ext = Plugin.getExtensionFromMimeTypeStatic(dl.getConnection().getContentType());
+            if (allowFixFileExtension && filename != null && ext != null) {
+                link.setFinalFileName(this.correctOrApplyFileNameExtension(filename, ext));
             }
             dl.startDownload();
         }
@@ -571,7 +599,7 @@ public class DropboxCom extends PluginForHost {
         } else if (!useAPI()) {
             /* Website downloads */
             loginWebsite(account, false);
-            dlURL = this.getOldDirecturl(link);
+            dlURL = this.generateDirecturl(link);
         } else {
             /* API download - uses different handling + errorhandling! */
             handleDownloadAccountAPI(account, link);
@@ -743,34 +771,25 @@ public class DropboxCom extends PluginForHost {
 
     /** 2019-09-20: Avoid using this. It is outdated - does not support 2FA login and is broken for a long time already! */
     @Deprecated
-    private void loginWebsite(final Account account, boolean refresh) throws Exception {
-        boolean ok = false;
+    private void loginWebsite(final Account account, boolean validateCookies) throws Exception {
         synchronized (account) {
             setBrowserExclusive();
             br.setFollowRedirects(true);
-            if (refresh == false) {
-                Cookies accCookies = accountMap.get(account);
-                if (accCookies != null) {
-                    logger.info("Trust cookies without check");
-                    br.getCookies("https://www.dropbox.com").add(accCookies);
-                    return;
-                }
-            }
-            /* 2020-09-30: Website login is not possible anymore for multiple reasons. We're using cookie-login as a workaround. */
-            final boolean allowWebsiteLogin = false;
             final Cookies userCookies = account.loadUserCookies();
-            if (userCookies == null && !allowWebsiteLogin) {
+            if (userCookies == null || userCookies.isEmpty()) {
                 showCookieLoginInfo();
                 throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
             if (userCookies != null) {
                 br.setCookies(userCookies);
+                if (!validateCookies) {
+                    /* Do not validate cookies. */
+                    return;
+                }
                 /* 2020-09-30: This will redirect to login page if cookies are invalid! */
                 br.getPage("https://www." + this.getHost() + "/account");
                 if (br.getURL().contains(br.getHost() + "/account")) {
-                    // account.saveCookies(br.getCookies(br.getHost()), "");
                     logger.info("User cookie login successful");
-                    accountMap.put(account, br.getCookies(br.getHost()));
                     return;
                 } else {
                     logger.info("User cookie login failed");
@@ -781,10 +800,10 @@ public class DropboxCom extends PluginForHost {
                     }
                 }
             }
-            logger.info("Full login required");
-            try {
+            if (!true) {
+                // Old code
+                logger.info("Full login required");
                 br.getPage("https://www.dropbox.com/login");
-                final String lang = System.getProperty("user.language");
                 String t = br.getRegex("type=\"hidden\" name=\"t\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (t == null) {
                     t = this.br.getCookie("dropbox.com", "t");
@@ -801,22 +820,17 @@ public class DropboxCom extends PluginForHost {
                 postdata += "&login_sd=";
                 postdata += "";
                 br.postPage("/ajax_login", postdata);
-                if (!isLoggedInViaCookies() || !"OK".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                ok = true;
-            } finally {
-                if (ok) {
-                    accountMap.put(account, br.getCookies("https://www.dropbox.com"));
-                } else {
-                    accountMap.remove(account);
+                if (!isLoggedInViaCookies(br) || !"OK".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
+                    throw new AccountInvalidException();
                 }
             }
+            /* This code should never be reached! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
-    private boolean isLoggedInViaCookies() {
-        return br.getCookie("https://www.dropbox.com", "jar", Cookies.NOTDELETEDPATTERN) != null;
+    private boolean isLoggedInViaCookies(final Browser br) {
+        return br.getCookie(br.getHost(), "jar", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     /**
