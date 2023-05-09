@@ -423,13 +423,16 @@ public class TiktokComCrawler extends PluginForDecrypt {
             /* Make sure that the next request will not contain a Referer header otherwise we'll get a blank page! */
             br.setCurrentURL("");
             TiktokCom.accessAPI(br, "/feed", query);
-            entries = restoreFromString(br.toString(), TypeRef.MAP);
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> aweme_list = (List<Map<String, Object>>) entries.get("aweme_list");
             for (final Map<String, Object> aweme_detailTmp : aweme_list) {
                 if (StringUtils.equals(aweme_detailTmp.get("aweme_id").toString(), contentID)) {
                     aweme_detail = aweme_detailTmp;
                     break;
                 }
+            }
+            if (aweme_detail == null) {
+                logger.info("Fallback failed -> Video item looks to be offline");
             }
         }
         if (aweme_detail == null) {

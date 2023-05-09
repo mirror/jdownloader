@@ -19,6 +19,10 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.YetiShareCore;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -28,10 +32,6 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SharingWtf extends YetiShareCore {
@@ -53,6 +53,13 @@ public class SharingWtf extends YetiShareCore {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "sharing.wtf", "dirrtyshar.es", "filesharing.io" });
         return ret;
+    }
+
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("dirrtyshar.es");
+        return deadDomains;
     }
 
     @Override
@@ -171,6 +178,10 @@ public class SharingWtf extends YetiShareCore {
              */
             continue_link = br.getRegex("\\$\\(\\'\\.download-timer\\'\\)\\.html.+\\$\\(\\'\\.download-timer\\'\\)\\.html\\(\"[^\\)]+\\'(https://[^\\']+)").getMatch(0);
         }
+        if (continue_link == null) {
+            /* 2023-05-09 */
+            continue_link = br.getRegex("(?i)href='(https?://[^<>\"\\']+)' target='_top'[^>]*>\\s*Download\\s*</a>").getMatch(0);
+        }
         if (continue_link != null) {
             return continue_link;
         } else {
@@ -181,7 +192,7 @@ public class SharingWtf extends YetiShareCore {
     @Override
     public void checkErrors(Browser br, final DownloadLink link, final Account account) throws PluginException {
         /* 2020-02-17: Special */
-        if (br.containsHTML("you need to be a registered user to download any files")) {
+        if (br.containsHTML("(?i)you need to be a registered user to download any files")) {
             throw new AccountRequiredException();
         }
         String errorMsg = null;
@@ -195,9 +206,9 @@ public class SharingWtf extends YetiShareCore {
             logger.log(e);
         }
         if (errorMsg != null) {
-            if (errorMsg.matches("You must be a registered member account to download files more than.+")) {
+            if (errorMsg.matches("(?i)You must be a registered member account to download files more than.+")) {
                 throw new AccountRequiredException(errorMsg);
-            } else if (errorMsg.matches("You need to be a member to download.*")) {
+            } else if (errorMsg.matches("(?i)You need to be a member to download.*")) {
                 /* 2020-08-05: Different premiumonly error */
                 throw new AccountRequiredException(errorMsg);
             }

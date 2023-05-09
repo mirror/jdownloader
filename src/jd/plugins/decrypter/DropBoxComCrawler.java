@@ -540,7 +540,6 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(subFolderPath);
-        int current_page_numberof_items;
         int page_num = 0;
         String next_request_voucher = null;
         int website_max_items_per_page = 30;
@@ -579,7 +578,6 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         final String cookie_t = br.getCookie(getHost(), "t", Cookies.NOTDELETEDPATTERN);
         do {
             page_num++;
-            current_page_numberof_items = 0;
             logger.info("Crawling page: " + page_num);
             String json_source = null;
             final boolean isFirstPage = page == page_start;
@@ -736,50 +734,48 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                     throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "SUBFOLDER_CRAWL_DESELECTED_BUT_ONLY_SUBFOLDERS_AVAILABLE_" + dummyFilenameForErrors, "You deselected subfolder crawling but this folder contains only subfolders and no single files!");
                 }
             }
-            if (!ressourcelist_files.isEmpty()) {
-                current_page_numberof_items += ressourcelist_files.size();
-                for (final Map<String, Object> file : ressourcelist_files) {
-                    final DownloadLink dl = this.crawlFolderItem(file);
+            int current_page_numberof_items = 0;
+            /* Count all items for pagination regardless whether or not we're actually adding them. */
+            current_page_numberof_items += ressourcelist_files.size();
+            current_page_numberof_items += ressourcelist_folders.size();
+            for (final Map<String, Object> file : ressourcelist_files) {
+                final DownloadLink dl = this.crawlFolderItem(file);
+                if (!StringUtils.isEmpty(passCode)) {
+                    dl.setDownloadPassword(passCode);
+                    dl.setPasswordProtected(true);
+                    if (!StringUtils.isEmpty(passwordCookieValue)) {
+                        dl.setProperty(DropboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookieValue);
+                    }
+                }
+                /*
+                 * 2019-09-24: All URLs crawled via website crawler count as single files later on if we try to download them via API!
+                 */
+                dl.setProperty(DropboxCom.PROPERTY_IS_SINGLE_FILE, true);
+                dl.setRelativeDownloadFolderPath(subFolderPath);
+                dl._setFilePackage(fp);
+                ret.add(dl);
+                distribute(dl);
+            }
+            if (crawlSubfolders) {
+                for (final Map<String, Object> folder : ressourcelist_folders) {
+                    final DownloadLink dl = this.crawlFolderItem(folder);
+                    /*
+                     * Make sure that for password protected folders, user will not be asked for password again in next round/next
+                     * subfolder-level.
+                     */
                     if (!StringUtils.isEmpty(passCode)) {
                         dl.setDownloadPassword(passCode);
-                        dl.setPasswordProtected(true);
                         if (!StringUtils.isEmpty(passwordCookieValue)) {
                             dl.setProperty(DropboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookieValue);
                         }
                     }
-                    /*
-                     * 2019-09-24: All URLs crawled via website crawler count as single files later on if we try to download them via API!
-                     */
-                    dl.setProperty(DropboxCom.PROPERTY_IS_SINGLE_FILE, true);
-                    dl.setRelativeDownloadFolderPath(subFolderPath);
-                    dl._setFilePackage(fp);
+                    final String foldername = folder.get("filename").toString();
+                    /* Store next path as property so we can keep track of the full path. */
+                    final String currentPath = subFolderPath + "/" + foldername;
+                    dl.setRelativeDownloadFolderPath(currentPath);
+                    dl.setProperty(PROPERTY_CRAWL_SUBFOLDERS, true);
                     ret.add(dl);
                     distribute(dl);
-                }
-            }
-            if (!ressourcelist_folders.isEmpty()) {
-                current_page_numberof_items += ressourcelist_folders.size();
-                if (crawlSubfolders) {
-                    for (final Map<String, Object> folder : ressourcelist_folders) {
-                        final DownloadLink dl = this.crawlFolderItem(folder);
-                        /*
-                         * Make sure that for password protected folders, user will not be asked for password again in next round/next
-                         * subfolder-level.
-                         */
-                        if (!StringUtils.isEmpty(passCode)) {
-                            dl.setDownloadPassword(passCode);
-                            if (!StringUtils.isEmpty(passwordCookieValue)) {
-                                dl.setProperty(DropboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookieValue);
-                            }
-                        }
-                        final String foldername = folder.get("filename").toString();
-                        /* Store next path as property so we can keep track of the full path. */
-                        final String currentPath = subFolderPath + "/" + foldername;
-                        dl.setRelativeDownloadFolderPath(currentPath);
-                        dl.setProperty(PROPERTY_CRAWL_SUBFOLDERS, true);
-                        ret.add(dl);
-                        distribute(dl);
-                    }
                 }
             }
             if (current_page_numberof_items < website_max_items_per_page) {
@@ -788,9 +784,10 @@ public class DropBoxComCrawler extends PluginForDecrypt {
             } else if (StringUtils.isEmpty(next_request_voucher)) {
                 logger.info("Stopping because: Failed to find next_request_voucher");
                 break;
+            } else {
+                /* Continue to next page */
+                page++;
             }
-            /* Continue to next page */
-            page++;
         } while (!this.isAbort());
         if (ret.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
