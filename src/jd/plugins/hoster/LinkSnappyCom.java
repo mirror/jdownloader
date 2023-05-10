@@ -23,6 +23,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -45,24 +63,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -519,8 +519,8 @@ public class LinkSnappyCom extends PluginForHost {
                     wrongPasswordAttempts += 1;
                     passCode = getUserInput("Password?", link);
                     /**
-                     * Do not reset initial password.</br> Multihosters are prone to error - we do not want to remove the users' initial
-                     * manually typed in PW!
+                     * Do not reset initial password.</br>
+                     * Multihosters are prone to error - we do not want to remove the users' initial manually typed in PW!
                      */
                     // link.setDownloadPassword(null);
                     continue;
@@ -571,9 +571,10 @@ public class LinkSnappyCom extends PluginForHost {
         dl.setFilenameFix(true);
         if (this.dl.startDownload()) {
             /**
-             * Check if user wants JD to clear serverside download history in linksnappy account after each successful download. </br> Also
-             * make sure we get no exception as our download was successful. </br> NOTE: Even failed downloads will appear in the download
-             * history - but they will also be cleared once there is one successful download.
+             * Check if user wants JD to clear serverside download history in linksnappy account after each successful download. </br>
+             * Also make sure we get no exception as our download was successful. </br>
+             * NOTE: Even failed downloads will appear in the download history - but they will also be cleared once there is one successful
+             * download.
              */
             if (PluginJsonConfig.get(LinkSnappyComConfig.class).isClearDownloadHistoryEnabled()) {
                 logger.info("Clearing download history");
@@ -593,8 +594,8 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     /**
-     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br> It should be
-     * minimum of 5 minutes and above!
+     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br>
+     * It should be minimum of 5 minutes and above!
      *
      * @throws InterruptedException
      */
@@ -682,33 +683,30 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     private void handleErrors(final DownloadLink link, final Account account, final Map<String, Object> entries) throws PluginException, InterruptedException {
-        final String err = getError(entries);
-        if (err != null) {
-            if (new Regex(err, "(?i)No server available for this filehost, Please retry after few minutes").matches()) {
-                // if no server available for the filehost
-                mhm.putError(account, link, 5 * 60 * 1000l, "hoster offline");
-            } else if (new Regex(err, "(?i)Couldn't (re-)?start download in system").matches()) {
-                mhm.handleErrorGeneric(account, link, "Can't start cache. Possibly daily limit reached", 50);
-            } else if (new Regex(err, "(?i)You have reached max download request").matches()) {
+        final String errormsg = getError(entries);
+        if (errormsg != null) {
+            if (new Regex(errormsg, "(?i)No server available for this filehost, Please retry after few minutes").matches()) {
+                /* Temp disable complete filehost for some minutes */
+                mhm.putError(account, link, 5 * 60 * 1000l, errormsg);
+            } else if (new Regex(errormsg, "(?i)You have reached max download request").matches()) {
+                /* Too many requests -> Disable currently used filehost for some minutes. */
                 mhm.putError(account, link, 5 * 60 * 1000l, "Too many requests. Please wait 5 minutes");
-            } else if (new Regex(err, "(?i)You have reached max download limit of").matches()) {
+            } else if (new Regex(errormsg, "(?i)You have reached max download limit of").matches()) {
                 try {
                     account.getAccountInfo().setTrafficLeft(0);
                 } catch (final Throwable e) {
+                    // Catch NPE
                 }
                 throw new AccountUnavailableException("\r\nLimit Reached. Please purchase elite membership!", 1 * 60 * 1000);
-            } else if (new Regex(err, "(?i)Invalid .*? link\\. Cannot find Filename").matches()) {
-                logger.info("Error: Disabling current host");
-                mhm.putError(account, link, 5 * 60 * 1000l, "Multihoster issue");
-            } else if (new Regex(err, "(?i)Invalid file URL format\\.").matches()) {
+            } else if (new Regex(errormsg, "(?i)Invalid file URL format\\.").matches()) {
                 /*
                  * Update by Bilal Ghouri: Should not disable support for the entire host for this error. it means the host is online but
                  * the link format is not added on linksnappy.
                  */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported URL format");
-            } else if (new Regex(err, "(?i)File not found").matches()) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 'file not found'");
-            } else if (new Regex(err, "(?i)Your Account has Expired").matches()) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "URL format not supported by multihoster " + this.getHost());
+            } else if (new Regex(errormsg, "(?i)File not found").matches()) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 'file not found' by multihoster " + this.getHost());
+            } else if (new Regex(errormsg, "(?i)Your Account has Expired").matches()) {
                 /*
                  * 2019-09-03 "{"status": "ERROR", "error": "Your Account has Expired, Please <a
                  * href=\"https://linksnappy.com/myaccount/extend\">extend it</a>"}"
@@ -717,26 +715,20 @@ public class LinkSnappyCom extends PluginForHost {
                  * This message may also happens if you try to download with a free account with UN-confirmed E-Mail!! Browser will show a
                  * more precise errormessage in this case!
                  */
-                try {
-                    account.getAccountInfo().setExpired(true);
-                } catch (final Throwable e) {
-                }
                 throw new AccountUnavailableException("Account expired", 5 * 60 * 1000l);
-            } else if (isErrorDownloadPasswordRequiredOrWrong(err)) {
+            } else if (isErrorDownloadPasswordRequiredOrWrong(errormsg)) {
                 /** This error will usually be handled outside of here! */
-                if (link != null) {
-                    link.setDownloadPassword(null);
-                }
+                link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-            } else if (new Regex(err, "(?i)Please upgrade to Elite membership").matches()) {
+            } else if (new Regex(errormsg, "(?i)Please upgrade to Elite membership").matches()) {
                 /* 2019-09-05: Free Account daily downloadlimit reached */
                 throw new AccountUnavailableException("Daily downloadlimit reached", 10 * 60 * 1000l);
             } else {
-                logger.warning("Possible unknown API error occured: " + err);
+                logger.warning("Misc API error occured: " + errormsg);
                 if (link == null) {
-                    throw new AccountUnavailableException(err, 10 * 60 * 1000l);
+                    throw new AccountUnavailableException(errormsg, 10 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, err, 5 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormsg, 5 * 60 * 1000l);
                 }
             }
         }
@@ -838,7 +830,8 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     /**
-     * Checks login status by available cookies. </br> Works for website- and API.
+     * Checks login status by available cookies. </br>
+     * Works for website- and API.
      */
     private boolean isLoggedin(final Browser br) {
         return br.getCookie(this.getHost(), "Auth", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(this.getHost(), "username", Cookies.NOTDELETEDPATTERN) != null;

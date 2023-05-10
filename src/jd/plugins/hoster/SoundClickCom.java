@@ -17,7 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -33,6 +36,11 @@ import jd.plugins.PluginForHost;
 public class SoundClickCom extends PluginForHost {
     public SoundClickCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
     private String dllink = null;
@@ -58,8 +66,10 @@ public class SoundClickCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        /* Offline links should also have nice filenames */
-        link.setName(getFID(link) + ".mp3");
+        if (!link.isNameSet()) {
+            /* Offline links should also have nice filenames */
+            link.setName(getFID(link) + ".mp3");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
@@ -80,18 +90,21 @@ public class SoundClickCom extends PluginForHost {
         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // }
         /* 2020-05-06 */
-        br.getPage("https://www.soundclick.com/utils_download/download_song.cfm?ID=" + getFID(link));
-        dllink = String.format("https://www.soundclick.com/utils_download/download_songDeliver.cfm?songID=%s&ppID=0&selectLevel=160", this.getFID(link));
+        br.getPage("https://www." + this.getHost() + "/utils_download/download_song.cfm?ID=" + getFID(link));
+        dllink = String.format("/utils_download/download_songDeliver.cfm?songID=%s&ppID=0&selectLevel=160", this.getFID(link));
         if (filename != null) {
             link.setFinalFileName(filename);
         }
+        final Browser brc = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html") && con.isContentDisposition()) {
+            con = brc.openHeadConnection(dllink);
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
                 final String filename_server = Plugin.getFileNameFromDispositionHeader(con);
-                link.setDownloadSize(con.getLongContentLength());
-                if (filename == null) {
+                if (filename != null) {
                     link.setFinalFileName(filename_server);
                 }
             } else {
@@ -107,18 +120,14 @@ public class SoundClickCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private String getid(final DownloadLink dl) {
-        return new Regex(dl.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
     }
 
     @Override

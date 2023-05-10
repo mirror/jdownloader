@@ -18,6 +18,13 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -29,19 +36,13 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "slideshare.net" }, urls = { "https?://(?:www\\.)?(slidesharedecrypted\\.net/[a-z0-9\\-_]+/[a-z0-9\\-_]+|slidesharepicturedecrypted\\.net/\\d+)" })
 public class SlideShareNet extends PluginForHost {
@@ -78,16 +79,21 @@ public class SlideShareNet extends PluginForHost {
     public static boolean isOffline(final Browser br) {
         if (br.getHttpConnection().getResponseCode() == 410) {
             return true;
-        } else if (br.containsHTML(FILENOTFOUND) || br.containsHTML(">Uploaded Content Removed<")) {
+        } else if (br.containsHTML(FILENOTFOUND) || br.containsHTML("(?i)>\\s*Uploaded Content Removed\\s*<")) {
             return true;
+        } else {
+            return false;
         }
-        return false;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
     }
 
     // TODO: Implement API: http://www.slideshare.net/developers/documentation
     @SuppressWarnings("deprecation")
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
         isVideo = false;
         server_issues = false;
@@ -102,8 +108,10 @@ public class SlideShareNet extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(directlink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -116,16 +124,19 @@ public class SlideShareNet extends PluginForHost {
         } else {
             br.getPage(link.getDownloadURL());
             br.followConnection();
-            if (br.getHttpConnection().getResponseCode() == 410) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML(FILENOTFOUND) || br.containsHTML(">Uploaded Content Removed<")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (!this.br.containsHTML("id=\"slideview\\-container\"")) {
-                /* 2016-11-23: No slideshow-class in html --> Probably offline content */
-                logger.info("Probably no downloadable content");
+            if (isOffline(br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String json = this.br.getRegex("slideshare_object,\\s*?(\\{.*?)\\);").getMatch(0);
+            if (json == null && !this.br.containsHTML("id=\"slideview\\-container\"")) {
+                /* 2016-11-23: No slideshow-class in html --> Probably offline content */
+                if (isDownload) {
+                    throw new AccountRequiredException();
+                } else {
+                    /* Item is online but can only be downloaded with account. */
+                    return AvailableStatus.TRUE;
+                }
+            }
             Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
             entries = (Map<String, Object>) entries.get("slideshow");
             final String url_filename = new Regex(link.getDownloadURL(), "https?://[^/]+/([a-z0-9\\-_]+/[a-z0-9\\-_]+)").getMatch(0).replace("/", " - ");
@@ -172,8 +183,10 @@ public class SlideShareNet extends PluginForHost {
                                     dllink = videourlHDtoSD(this.dllink);
                                     con = br.openHeadConnection(dllink);
                                 }
-                                if (!con.getContentType().contains("html")) {
-                                    link.setDownloadSize(con.getLongContentLength());
+                                if (this.looksLikeDownloadableContent(con)) {
+                                    if (con.getCompleteContentLength() > 0) {
+                                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                                    }
                                     link.setProperty("directlink", dllink);
                                 } else {
                                     server_issues = true;
@@ -214,11 +227,11 @@ public class SlideShareNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link, true);
         // TODO: Check if anything is downloadable without account (easy to check via API)
-        if (downloadLink.getDownloadURL().matches(PICTURELINK)) {
-            dllink = downloadLink.getStringProperty("directpiclink", null);
+        if (link.getDownloadURL().matches(PICTURELINK)) {
+            dllink = link.getStringProperty("directpiclink");
         } else {
             handleErrors();
             if (!this.isVideo) {
@@ -228,14 +241,14 @@ public class SlideShareNet extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, this.dllink, true, getMaxChunks());
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.dllink, true, getMaxChunks());
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             handleServerErrors(null);
         }
         /* Set correct ending - 2016-11-23: Only pictures- and videos are downloadable without account. */
         if (!this.isVideo) {
-            fixFilename(downloadLink);
+            fixFilename(link);
         }
         dl.startDownload();
     }
@@ -249,11 +262,10 @@ public class SlideShareNet extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://slideshare.net";
-    private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -319,26 +331,18 @@ public class SlideShareNet extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        final AccountInfo ai = new AccountInfo();
+        login(this.br, account, true);
         ai.setUnlimitedTraffic();
-        account.setValid(true);
-        ai.setStatus("Registered (free) User");
         return ai;
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         handleErrors();
         if (link.getDownloadURL().matches(PICTURELINK)) {
             dllink = link.getStringProperty("directpiclink", null);
@@ -396,7 +400,7 @@ public class SlideShareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.dllink, true, getMaxChunks());
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             handleServerErrors(account);
         }
@@ -429,10 +433,10 @@ public class SlideShareNet extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    private void fixFilename(final DownloadLink downloadLink) {
-        String oldName = downloadLink.getFinalFileName();
+    private void fixFilename(final DownloadLink link) {
+        String oldName = link.getFinalFileName();
         if (oldName == null) {
-            oldName = downloadLink.getName();
+            oldName = link.getName();
         }
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
@@ -442,9 +446,9 @@ public class SlideShareNet extends PluginForHost {
                 oldExtension = oldName.substring(oldName.lastIndexOf("."));
             }
             if (oldExtension != null && oldExtension.length() <= 5) {
-                downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
+                link.setFinalFileName(oldName.replace(oldExtension, newExtension));
             } else {
-                downloadLink.setFinalFileName(oldName + newExtension);
+                link.setFinalFileName(oldName + newExtension);
             }
         }
     }
