@@ -18,20 +18,12 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -52,6 +44,16 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CyberdropMeAlbum extends PluginForDecrypt {
     public CyberdropMeAlbum(PluginWrapper wrapper) {
@@ -67,6 +69,10 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         ret.add(new String[] { MAIN_CYBERDROP_DOMAIN, "cyberdrop.to", "cyberdrop.cc" });
         ret.add(new String[] { MAIN_BUNKR_DOMAIN, "bunkr.su", "bunkr.ru", "bunkr.is" });
         return ret;
+    }
+
+    public static List<String> getDeadDomains() {
+        return Arrays.asList(new String[] { "bunkr.su", "bunkr.ru", "bunkr.is" });
     }
 
     public static String[] getAnnotationNames() {
@@ -98,13 +104,13 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public static final String TYPE_ALBUM       = "(?i)https?://[^/]+/a/([A-Za-z0-9]+)";                                 // album
+    public static final String TYPE_ALBUM       = "(?i)https?://[^/]+/a/([A-Za-z0-9]+)";                                // album
     /* 2023-03-24: bunkr, files subdomain seems outdated? */
     public static final String TYPE_FILES       = "(?i)https?://(files\\.)?[^/]+/(?:v|d)/([^/]*?\\." + EXTENSIONS + ")";
     public static final String TYPE_STREAM      = "(?i)https?://stream(\\d*)\\.[^/]+/(?:v|d)/(.+\\." + EXTENSIONS + ")"; // bunkr
-    public static final String TYPE_CDN         = "(?i)https?://cdn(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";            // bunkr
-    public static final String TYPE_FS          = "(?i)https?://fs-(\\d+)\\.[^/]+/(.+\\." + EXTENSIONS + ")";            // cyberdrop
-    public static final String TYPE_MEDIA_FILES = "(?i)https?://media-files(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";    // bunkr
+    public static final String TYPE_CDN         = "(?i)https?://cdn(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";           // bunkr
+    public static final String TYPE_FS          = "(?i)https?://fs-(\\d+)\\.[^/]+/(.+\\." + EXTENSIONS + ")";           // cyberdrop
+    public static final String TYPE_MEDIA_FILES = "(?i)https?://media-files(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";   // bunkr
     private PluginForHost      plugin           = null;
 
     private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, String directurl, String filename, final String filesizeBytes, final String filesize) throws Exception {
@@ -182,6 +188,14 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final URL url = new URL(param.getCryptedUrl());
+        final String host = url.getHost();
+        for (String deadHost : getDeadDomains()) {
+            if (StringUtils.endsWithCaseInsensitive(host, deadHost)) {
+                ret.add(createDownloadlink(param.getCryptedUrl().replaceFirst(Pattern.quote(host) + "/", getHost() + "/")));
+                return ret;
+            }
+        }
         final String correctedDirectURL = correctDirecturl(param.getCryptedUrl());
         if (correctedDirectURL != null) {
             // only if domain already contains specific server number
@@ -331,9 +345,8 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
     }
 
     /**
-     * Corrects given URL. </br>
-     * Returns null if given URL is not a known stream/cdn URL. </br>
-     * 2022-03-14: Especially required for bunkr.is video-URLs.
+     * Corrects given URL. </br> Returns null if given URL is not a known stream/cdn URL. </br> 2022-03-14: Especially required for bunkr.is
+     * video-URLs.
      */
     private String correctDirecturl(final String url) {
         String host = getHost();
