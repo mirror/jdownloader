@@ -122,12 +122,7 @@ public class CyberdropMe extends DirectHTTP {
 
     @Override
     protected String getDownloadURL(DownloadLink downloadLink) throws IOException {
-        if (!hasCustomDownloadURL() && CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(getHost())) {
-            // rewrite outdated domains
-            String url = downloadLink.getPluginPatternMatcher();
-            url = url.replaceFirst("bunkr\\.(su|ru|is)/", "bunkr.la/");
-            return url;
-        } else if (false && !hasCustomDownloadURL() && CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(getHost())) {
+        if (false && !hasCustomDownloadURL() && CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(getHost())) {
             final String url = downloadLink.getPluginPatternMatcher();
             /* 2022-11-10: fs-(03|04|05|06) are offline, rewrite to fs-01, fs-02 redirects to fs-01 */
             /* 2023-03-24: looks like fs-(03|04|05|06) are working again */

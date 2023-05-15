@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -725,15 +726,19 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
     }
 
     @Override
-    public Boolean verifyDownloadableContent(URLConnectionAdapter urlConnection) {
+    public Boolean verifyDownloadableContent(Set<LazyHostPlugin> plugins, URLConnectionAdapter urlConnection) {
+        if (plugins == null) {
+            plugins = new HashSet<LazyHostPlugin>();
+        }
+        plugins.add(getLazyP());
         final String host = Browser.getHost(urlConnection.getURL());
         final LazyHostPlugin lazyHostPlugin = new PluginFinder()._assignHost(host);
-        if (lazyHostPlugin != null) {
+        if (lazyHostPlugin != null && plugins.add(lazyHostPlugin)) {
             try {
                 final PluginClassLoaderChild pluginClassLoaderChild = PluginClassLoader.getThreadPluginClassLoaderChild();
                 final PluginForHost plugin = Plugin.getNewPluginInstance(this, lazyHostPlugin, pluginClassLoaderChild);
                 if (plugin instanceof DownloadConnectionVerifier) {
-                    return ((DownloadConnectionVerifier) plugin).verifyDownloadableContent(urlConnection);
+                    return ((DownloadConnectionVerifier) plugin).verifyDownloadableContent(plugins, urlConnection);
                 }
             } catch (PluginException e) {
                 getLogger().log(e);
@@ -750,7 +755,7 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
              *
              * we retry without HEAD in order to get full html response
              */
-            return RequestMethod.HEAD.equals(con.getRequest().getRequestMethod()) && Boolean.FALSE.equals(verifyDownloadableContent(con));
+            return RequestMethod.HEAD.equals(con.getRequest().getRequestMethod()) && Boolean.FALSE.equals(verifyDownloadableContent(null, con));
         case 400:// Bad Request
         case 401:// Unauthorized
         case 403:// Forbidden
@@ -964,7 +969,7 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
                     followURLConnection(br, urlConnection);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, urlConnection.getResponseCode() + "-" + urlConnection.getResponseMessage(), 15 * 60 * 1000l);
                 case SUCCESS_OK:
-                    if (Boolean.FALSE.equals(verifyDownloadableContent(urlConnection))) {
+                    if (Boolean.FALSE.equals(verifyDownloadableContent(null, urlConnection))) {
                         followURLConnection(br, urlConnection);
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, urlConnection.getResponseCode() + "-" + urlConnection.getResponseMessage());
                     } else {

@@ -191,7 +191,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         final URL url = new URL(param.getCryptedUrl());
         final String host = url.getHost();
         for (String deadHost : getDeadDomains()) {
-            if (StringUtils.endsWithCaseInsensitive(host, deadHost)) {
+            if (StringUtils.equalsIgnoreCase(host, deadHost, "www." + deadHost)) {
                 ret.add(createDownloadlink(param.getCryptedUrl().replaceFirst(Pattern.quote(host) + "/", getHost() + "/")));
                 return ret;
             }

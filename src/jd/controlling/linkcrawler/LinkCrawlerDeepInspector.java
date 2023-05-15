@@ -1,6 +1,8 @@
 package jd.controlling.linkcrawler;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
 import jd.http.Browser;
@@ -87,11 +89,11 @@ public abstract class LinkCrawlerDeepInspector {
             } else if (filePathName != null && filePathName.matches("(?i).+\\.srt") && isPlainTextContent(urlConnection) && (!hasContentLength || completeContentLength > 512 || hasEtag)) {
                 /*
                  * Accept-Ranges: bytes
-                 *
+                 * 
                  * Content-Type: text/plain
-                 *
+                 * 
                  * ETag: "11968........"
-                 *
+                 * 
                  * Content-Length: 28...
                  */
                 looksLike = true;
@@ -99,18 +101,19 @@ public abstract class LinkCrawlerDeepInspector {
         }
         if (looksLike) {
             try {
+                final Set<LazyHostPlugin> plugins = new HashSet<LazyHostPlugin>();
                 final Plugin currentActivePlugin = Plugin.getCurrentActivePlugin();
                 if (currentActivePlugin instanceof DownloadConnectionVerifier) {
-                    verified = ((DownloadConnectionVerifier) currentActivePlugin).verifyDownloadableContent(urlConnection);
+                    verified = ((DownloadConnectionVerifier) currentActivePlugin).verifyDownloadableContent(plugins, urlConnection);
                 }
                 if (verified == null) {
                     final String host = Browser.getHost(urlConnection.getURL());
                     final LazyHostPlugin lazyHostPlugin = new PluginFinder()._assignHost(host);
-                    if (lazyHostPlugin != null) {
+                    if (lazyHostPlugin != null && plugins.add(lazyHostPlugin)) {
                         final PluginClassLoaderChild pluginClassLoaderChild = PluginClassLoader.getThreadPluginClassLoaderChild();
                         final PluginForHost plugin = Plugin.getNewPluginInstance(currentActivePlugin, lazyHostPlugin, pluginClassLoaderChild);
                         if (plugin instanceof DownloadConnectionVerifier) {
-                            verified = ((DownloadConnectionVerifier) plugin).verifyDownloadableContent(urlConnection);
+                            verified = ((DownloadConnectionVerifier) plugin).verifyDownloadableContent(plugins, urlConnection);
                         }
                     }
                 }
