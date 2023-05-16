@@ -4,7 +4,6 @@ import org.jdownloader.startup.ParameterHandler;
 import org.jdownloader.startup.StartupCommand;
 
 public class HelpCommand extends AbstractStartupCommand {
-
     private static final String DIV = "==================================================================================================";
     private ParameterHandler    handler;
 
@@ -20,13 +19,12 @@ public class HelpCommand extends AbstractStartupCommand {
 
     @Override
     public void run(String command, String... parameters) {
-
         final String[][] help = new String[][] { { "-s/--show\t", "Show JAC prepared captchas" }, { "-t/--train\t", "Train a JAC method" }, { "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" }, { "-p/--add-password(s)", "Add passwords" }, { "-n --new-instance", "Force new instance if another jD is running" } };
         write(DIV);
         write(DIV);
         write("                         ---  JDownloader2 CommandLine Help  ---       ");
         write(DIV);
-        write("http://www.jdownloader2.com");
+        write("https://jdownloader.org");
         for (StartupCommand suc : handler.getCommands()) {
             write(suc.help());
         }
@@ -46,5 +44,4 @@ public class HelpCommand extends AbstractStartupCommand {
     public String getDescription() {
         return "Show this help";
     }
-
 }

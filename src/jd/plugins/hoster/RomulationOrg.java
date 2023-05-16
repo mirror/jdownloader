@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,11 +32,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "romulation.org" }, urls = { "https?://(?:www\\.)?romulation\\.(?:net|org)/rom/([^/]+/[^/]+)" })
 public class RomulationOrg extends PluginForHost {
@@ -170,33 +173,70 @@ public class RomulationOrg extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
+    public static AccountInfo fetchAccountInfo(final Plugin plugin, Browser br, final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        RomulationOrg.login(plugin, br, account, true);
+        if (!br.getURL().contains("/user")) {
+            br.getPage("/user");
+        }
+        ai.setUnlimitedTraffic();
+        if (br.containsHTML("User class: Premium")) {
+            // <li>User class: Premium</li>
+            // <li>Premium status: active
+            // <li>Premium renews at: 2023-02-27 UTC</li>
+            final String renew = br.getRegex("Premium renews at: (\\d+-\\d+-\\d+)").getMatch(0);
+            final String active = br.getRegex("Premium status:\\s*(active)").getMatch(0);
+            if (active != null) {
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setConcurrentUsePossible(true);
+                if (renew != null) {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(renew, "yyyy'-'MM'-'dd", Locale.ENGLISH));
+                }
+                if (!ai.isExpired()) {
+                    return ai;
+                }
+            }
+        }
+        if (br.containsHTML("User class: Regular Member")) {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+        } else {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+        }
+        return ai;
+    }
+
+    public static void login(Plugin plugin, Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(plugin.getHost(), cookies);
                     if (!force) {
                         /* Trust cookies without check */
                         return;
                     } else {
-                        logger.info("Checking cookies...");
-                        br.getPage("https://www." + this.getHost() + "/");
-                        if (isLoggedIn(this.br)) {
-                            logger.info("Cookie login successful");
-                            account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        plugin.getLogger().info("Checking cookies...");
+                        br.getPage("https://www." + plugin.getHost() + "/");
+                        if (isLoggedIn(br)) {
+                            plugin.getLogger().info("Cookie login successful");
+                            account.saveCookies(br.getCookies(plugin.getHost()), "");
                             return;
                         } else {
-                            logger.info("Cookie login failed");
+                            plugin.getLogger().info("Cookie login failed");
                             br.clearCookies(br.getHost());
                         }
                     }
                 }
-                logger.info("Performing full login");
+                plugin.getLogger().info("Performing full login");
                 br.getPage("https://www." + account.getHoster() + "/user/login");
-                final Form loginform = br.getForm(0);
+                final Form loginform = br.getFormbyActionRegex(".*/user/login");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -204,10 +244,10 @@ public class RomulationOrg extends PluginForHost {
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("remember", "1");
                 br.submitForm(loginform);
-                if (!isLoggedIn(this.br)) {
+                if (!isLoggedIn(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(plugin.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -215,7 +255,7 @@ public class RomulationOrg extends PluginForHost {
         }
     }
 
-    private boolean isLoggedIn(final Browser br) {
+    private static boolean isLoggedIn(final Browser br) {
         if (br.containsHTML("/user/logout")) {
             return true;
         } else {
@@ -225,29 +265,12 @@ public class RomulationOrg extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        login(account, true);
-        if (!br.getURL().contains("/user")) {
-            br.getPage("/user");
-        }
-        ai.setUnlimitedTraffic();
-        if (br.containsHTML("User class: Regular Member")) {
-            account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
-        } else {
-            /* Untested */
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setConcurrentUsePossible(true);
-        }
-        return ai;
+        return fetchAccountInfo(this, br, account);
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, false);
+        login(this, br, account, false);
         handleDownload(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
     }
 

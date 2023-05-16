@@ -22,10 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -42,6 +38,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.XHamsterCom;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterGallery extends PluginForDecrypt {
@@ -236,6 +236,12 @@ public class XHamsterGallery extends PluginForDecrypt {
             logger.info("Found " + numberofNewItems + " items on page: " + page + " | Total: " + ret.size());
             page++;
             nextpage = br.getRegex("class=\"xh-paginator-button[^\"]*\"[^>]*href=\"(https?://[^<>\"]+/" + page + ")\" data-page=\"" + page + "\">").getMatch(0);
+            if (nextpage == null) {
+                final String maybeNextPage = br.getURL().replaceFirst("/\\d*$", "") + "/" + page;
+                if (br.containsHTML(Pattern.quote(maybeNextPage))) {
+                    nextpage = maybeNextPage;
+                }
+            }
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;

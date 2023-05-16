@@ -105,11 +105,9 @@ public class LookAndFeelController implements LAFManagerInterface {
         }
         if (LookAndFeelType.DEFAULT.equals(lafTheme) || lafTheme.isAvailable() || lafTheme.getExtensionID() == null) {
             return;
-        }
-        if (UpdateController.getInstance().isExtensionInstalled(lafTheme.getExtensionID())) {
+        } else if (UpdateController.getInstance().isExtensionInstalled(lafTheme.getExtensionID())) {
             return;
-        }
-        if (UIOManager.I().showConfirmDialog(0, _GUI.T.LookAndFeelController_handleThemesInstallation_title_(), _GUI.T.LookAndFeelController_handleThemesInstallation_message_(lafTheme.name()), new AbstractIcon(IconKey.ICON_UPDATERICON0, 64), null, null)) {
+        } else if (UIOManager.I().showConfirmDialog(0, _GUI.T.LookAndFeelController_handleThemesInstallation_title_(), _GUI.T.LookAndFeelController_handleThemesInstallation_message_(lafTheme.name()), new AbstractIcon(IconKey.ICON_UPDATERICON0, 64), null, null)) {
             final LookAndFeelType finalLafTheme = lafTheme;
             new Thread("Install Extension") {
                 public void run() {

@@ -229,12 +229,15 @@ public class AdvancedConfigEntry {
 
     public void setValue(Object value) {
         try {
-            final Object v = getValue();
+            final Object valueBefore = getValue();
             if (value instanceof Number) {
                 value = ReflectionUtils.castNumber((Number) value, getClazz());
             }
             keyHandler.getSetMethod().invoke(configInterface, new Object[] { value });
-            if (!equals(v, value)) {
+            final Object valueAfter = getValue();
+            if (equals(valueBefore, valueAfter)) {
+                return;
+            } else if (!equals(valueBefore, value)) {
                 if (keyHandler.getAnnotation(RequiresRestart.class) != null) {
                     if (JDGui.bugme(WarnLevel.NORMAL)) {
                         new Thread("RestartRequired:" + keyHandler.getKey()) {

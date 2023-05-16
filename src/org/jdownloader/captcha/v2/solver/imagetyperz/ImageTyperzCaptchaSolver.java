@@ -16,6 +16,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.HCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
@@ -55,7 +56,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
 
     @Override
     protected boolean isChallengeSupported(Challenge<?> c) {
-        return c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge;
+        return c instanceof RecaptchaV2Challenge || c instanceof BasicCaptchaChallenge || c instanceof HCaptchaChallenge;
     }
 
     @Override
@@ -63,13 +64,15 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
         final Challenge<String> challenge = job.getChallenge();
         if (challenge instanceof RecaptchaV2Challenge) {
             handleRecaptchaV2(job);
+        } else if (challenge instanceof HCaptchaChallenge) {
+            handleHCaptcha(job);
         } else {
             super.solveCES(job);
         }
     }
 
-    // http://www.imagetyperz.com/Forms/recaptchaapi.aspx
-    protected void handleRecaptchaV2(CESSolverJob<String> job) throws InterruptedException, SolverException {
+    // https://www.imagetyperz.com/Forms/api/api.html#-hcaptcha
+    protected void handleHCaptcha(CESSolverJob<String> job) throws InterruptedException, SolverException {
         job.showBubble(this);
         checkInterruption();
         job.getChallenge().sendStatsSolving(this);
@@ -79,12 +82,13 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
             final Browser br = new Browser();
             br.setReadTimeout(5 * 60000);
             job.setStatus(SolverStatus.SOLVING);
-            final PostFormDataRequest upload = new PostFormDataRequest("http://captchatypers.com/captchaapi/UploadRecaptchaV1.ashx");
+            final PostFormDataRequest upload = new PostFormDataRequest("https://captchatypers.com/captchaapi/UploadHCaptchaUser.ashx");
             upload.addFormData(new FormData("action", "UPLOADCAPTCHA"));
             upload.addFormData(new FormData("username", (config.getUserName())));
             upload.addFormData(new FormData("password", (config.getPassword())));
             upload.addFormData(new FormData("pageurl", challenge.getSiteDomain()));
-            upload.addFormData(new FormData("googlekey", challenge.getSiteKey()));
+            upload.addFormData(new FormData("sitekey", challenge.getSiteKey()));
+            upload.addFormData(new FormData("captchatype", "11"));
             conn = br.openRequestConnection(upload);
             String response = br.loadConnection(conn).getHtmlCode();
             if (response.startsWith("ERROR: ")) {
@@ -92,7 +96,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
             }
             final String captchaID = br.getRegex("^(\\d+)$").getMatch(0);
             if (captchaID != null) {
-                final PostFormDataRequest poll = new PostFormDataRequest("http://captchatypers.com/captchaapi/GetRecaptchaText.ashx");
+                final PostFormDataRequest poll = new PostFormDataRequest("https://captchatypers.com/captchaapi/GetRecaptchaText.ashx");
                 poll.addFormData(new FormData("action", "GETTEXT"));
                 poll.addFormData(new FormData("username", (config.getUserName())));
                 poll.addFormData(new FormData("password", (config.getPassword())));
@@ -108,7 +112,85 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
                             throw new SolverException(response.substring("ERROR: ".length()));
                         }
                     } else {
-                        final AbstractResponse<String> answer = challenge.parseAPIAnswer(response, challenge instanceof RecaptchaV2Challenge ? "rawtoken" : null, this);
+                        final AbstractResponse<String> answer = challenge.parseAPIAnswer(response, "rawtoken", this);
+                        job.setAnswer(new ImageTyperzResponse(challenge, this, captchaID, answer.getValue(), answer.getPriority()));
+                    }
+                }
+            } else {
+                job.getLogger().info("Failed solving CAPTCHA");
+                throw new SolverException("Failed:" + response);
+            }
+        } catch (Exception e) {
+            job.getLogger().log(e);
+            job.getChallenge().sendStatsError(this, e);
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            } catch (final Throwable e) {
+            }
+        }
+    }
+
+    // https://www.imagetyperz.com/Forms/api/api.html#-recaptcha
+    protected void handleRecaptchaV2(CESSolverJob<String> job) throws InterruptedException, SolverException {
+        job.showBubble(this);
+        checkInterruption();
+        job.getChallenge().sendStatsSolving(this);
+        URLConnectionAdapter conn = null;
+        try {
+            final RecaptchaV2Challenge challenge = (RecaptchaV2Challenge) job.getChallenge();
+            final Browser br = new Browser();
+            br.setReadTimeout(5 * 60000);
+            job.setStatus(SolverStatus.SOLVING);
+            final PostFormDataRequest upload;
+            if (challenge.isEnterprise()) {
+                upload = new PostFormDataRequest("https://captchatypers.com/captchaapi/UploadRecaptchaEnt.ashx");
+            } else {
+                upload = new PostFormDataRequest("https://captchatypers.com/captchaapi/UploadRecaptchaV1.ashx");
+            }
+            upload.addFormData(new FormData("action", "UPLOADCAPTCHA"));
+            upload.addFormData(new FormData("username", (config.getUserName())));
+            upload.addFormData(new FormData("password", (config.getPassword())));
+            upload.addFormData(new FormData("pageurl", challenge.getSiteDomain()));
+            upload.addFormData(new FormData("googlekey", challenge.getSiteKey()));
+            String enterprise_type = "v2";// default
+            if (challenge.isInvisible()) {
+                enterprise_type = "v2";// invisible
+            }
+            if (challenge.getV3Action() != null) {
+                final String action = (String) challenge.getV3Action().get("action");
+                if (action != null) {
+                    enterprise_type = "v3";// v3
+                    upload.addFormData(new FormData("captchaaction", action));
+                }
+            }
+            upload.addFormData(new FormData("enterprise_type", enterprise_type));
+            conn = br.openRequestConnection(upload);
+            String response = br.loadConnection(conn).getHtmlCode();
+            if (response.startsWith("ERROR: ")) {
+                throw new SolverException(response.substring("ERROR: ".length()));
+            }
+            final String captchaID = br.getRegex("^(\\d+)$").getMatch(0);
+            if (captchaID != null) {
+                final PostFormDataRequest poll = new PostFormDataRequest("https://captchatypers.com/captchaapi/GetRecaptchaText.ashx");
+                poll.addFormData(new FormData("action", "GETTEXT"));
+                poll.addFormData(new FormData("username", (config.getUserName())));
+                poll.addFormData(new FormData("password", (config.getPassword())));
+                poll.addFormData(new FormData("captchaid", captchaID));
+                while (job.getJob().isAlive()) {
+                    checkInterruption();
+                    Thread.sleep(2000);
+                    response = br.getPage(poll.cloneRequest());
+                    if (response.startsWith("ERROR: ")) {
+                        if (StringUtils.contains(response, "NOT_DECODED")) {
+                            continue;
+                        } else {
+                            throw new SolverException(response.substring("ERROR: ".length()));
+                        }
+                    } else {
+                        final AbstractResponse<String> answer = challenge.parseAPIAnswer(response, "rawtoken", this);
                         job.setAnswer(new ImageTyperzResponse(challenge, this, captchaID, answer.getValue(), answer.getPriority()));
                     }
                 }
@@ -140,7 +222,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
             // Put your CAPTCHA image file, file object, input stream,
             // or vector of bytes here:
             job.setStatus(SolverStatus.SOLVING);
-            final PostFormDataRequest r = new PostFormDataRequest("http://captchatypers.com/Forms/UploadFileAndGetTextNew.ashx");
+            final PostFormDataRequest r = new PostFormDataRequest("https://captchatypers.com/Forms/UploadFileAndGetTextNew.ashx");
             r.addFormData(new FormData("action", "UPLOADCAPTCHA"));
             r.addFormData(new FormData("username", (config.getUserName())));
             r.addFormData(new FormData("password", (config.getPassword())));
@@ -212,7 +294,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
                         final Challenge<?> challenge = response.getChallenge();
                         if (challenge instanceof BasicCaptchaChallenge) {
                             final Browser br = new Browser();
-                            final PostFormDataRequest r = new PostFormDataRequest("http://captchatypers.com/Forms/SetBadImage.ashx");
+                            final PostFormDataRequest r = new PostFormDataRequest("https://captchatypers.com/Forms/SetBadImage.ashx");
                             final String userName = config.getUserName();
                             r.addFormData(new FormData("action", "SETBADIMAGE"));
                             r.addFormData(new FormData("username", userName));
@@ -248,7 +330,7 @@ public class ImageTyperzCaptchaSolver extends CESChallengeSolver<String> {
         URLConnectionAdapter conn = null;
         try {
             final Browser br = new Browser();
-            final PostFormDataRequest r = new PostFormDataRequest("http://captchatypers.com/Forms/RequestBalance.ashx");
+            final PostFormDataRequest r = new PostFormDataRequest("https://captchatypers.com/Forms/RequestBalance.ashx");
             final String userName = config.getUserName();
             r.addFormData(new FormData("action", "REQUESTBALANCE"));
             r.addFormData(new FormData("username", userName));

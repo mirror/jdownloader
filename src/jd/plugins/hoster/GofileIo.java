@@ -91,32 +91,24 @@ public class GofileIo extends PluginForHost {
     protected static AtomicReference<String> TOKEN                   = new AtomicReference<String>();
     protected static AtomicLong              TOKEN_TIMESTAMP         = new AtomicLong(-1);
     protected final static long              TOKEN_EXPIRE            = 30 * 60 * 1000l;
-    @Deprecated
     protected static AtomicReference<String> WEBSITE_TOKEN           = new AtomicReference<String>();
-    @Deprecated
     protected static AtomicLong              WEBSITE_TOKEN_TIMESTAMP = new AtomicLong(-1);
 
     public static String getWebsiteToken(final Plugin plugin, final Browser br) throws IOException, PluginException {
         synchronized (WEBSITE_TOKEN) {
-            final boolean useStaticValue = true;
-            if (useStaticValue) {
-                /* 2021-01-12: Website is using same value */
-                return "12345";
+            String token = WEBSITE_TOKEN.get();
+            if (!StringUtils.isEmpty(token) && Time.systemIndependentCurrentJVMTimeMillis() - WEBSITE_TOKEN_TIMESTAMP.get() < TOKEN_EXPIRE) {
+                return token;
             } else {
-                String token = WEBSITE_TOKEN.get();
-                if (!StringUtils.isEmpty(token) && Time.systemIndependentCurrentJVMTimeMillis() - WEBSITE_TOKEN_TIMESTAMP.get() < TOKEN_EXPIRE) {
-                    return token;
+                final Browser brc = br.cloneBrowser();
+                brc.getPage("https://" + plugin.getHost() + "/dist/js/alljs.js");
+                token = brc.getRegex("websiteToken\\s*(?::|=)\\s*\"(.*?)\"").getMatch(0);
+                if (StringUtils.isEmpty(token)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
-                    final Browser brc = br.cloneBrowser();
-                    brc.getPage("https://" + plugin.getHost() + "/contents/files.html");
-                    token = brc.getRegex("websiteToken\\s*:\\s*\"(.*?)\"").getMatch(0);
-                    if (StringUtils.isEmpty(token)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        WEBSITE_TOKEN.set(token);
-                        WEBSITE_TOKEN_TIMESTAMP.set(Time.systemIndependentCurrentJVMTimeMillis());
-                        return token;
-                    }
+                    WEBSITE_TOKEN.set(token);
+                    WEBSITE_TOKEN_TIMESTAMP.set(Time.systemIndependentCurrentJVMTimeMillis());
+                    return token;
                 }
             }
         }

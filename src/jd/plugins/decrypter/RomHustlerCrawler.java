@@ -80,6 +80,7 @@ public class RomHustlerCrawler extends PluginForDecrypt {
             fpName = urlSlug;
         }
         final String[] results = br.getRegex("<a[^>]+(/roms/(?:file|download)/[^>]*/[A-Za-z0-9/\\+=%]*)\"[^>]+>").getColumn(0);
+        // TODO: add support for multiple parts
         if (results == null || results.length == 0 || fpName == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

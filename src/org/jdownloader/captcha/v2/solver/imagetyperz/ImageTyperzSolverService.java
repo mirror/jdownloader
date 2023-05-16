@@ -78,7 +78,7 @@ public class ImageTyperzSolverService extends AbstractSolverService implements S
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        CrossSystem.openURL("http://www.ImageTyperz.com/");
+                        CrossSystem.openURL("https://www.ImageTyperz.com/");
                     }
                 }), "gapleft 37,spanx,pushx,growx");
                 username = new TextInput(CFG_IMAGE_TYPERZ.USER_NAME);

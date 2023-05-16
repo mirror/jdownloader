@@ -23,6 +23,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -40,6 +43,7 @@ import org.appwork.utils.StringUtils;
 public class RomHustler extends PluginForHost {
     public RomHustler(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://www.romhustler.org/user/sign-up");
     }
 
     public static List<String[]> getPluginDomains() {
@@ -67,12 +71,9 @@ public class RomHustler extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
+    @Override
     public String getAGBLink() {
         return "https://romhustler.org/disclaimer";
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
     }
 
     private static AtomicReference<String> agent = new AtomicReference<String>();
@@ -118,9 +119,42 @@ public class RomHustler extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private boolean isLoggedIn(final Browser br) {
+        if (br.containsHTML("/user/logout")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
-    public void handleFree(final DownloadLink link) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        return RomulationOrg.fetchAccountInfo(this, br, account);
+    }
+
+    /* Connection stuff */
+    private static final int FREE_MAXDOWNLOADS            = 1;
+    private static final int ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        RomulationOrg.login(this, br, account, false);
+        handleDownload(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return FREE_MAXDOWNLOADS;
+    }
+
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         br.getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("(?i)>\\s*File too big for guests")) {
             throw new AccountRequiredException();
@@ -165,7 +199,7 @@ public class RomHustler extends PluginForHost {
         if (link.getBooleanProperty("splitlink", false)) {
             ddlink += "/1";
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, ddlink, true, -4);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, ddlink, true, account != null && AccountType.PREMIUM.equals(account.getType()) ? -10 : -4);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 503) {
@@ -178,6 +212,12 @@ public class RomHustler extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         link.setFinalFileName(filename);
         dl.startDownload();
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        handleDownload(link, null);
     }
 
     public void reset() {
