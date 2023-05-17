@@ -20,13 +20,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -35,8 +39,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.RomHustlerCrawler;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { RomHustlerCrawler.class })
@@ -66,7 +68,8 @@ public class RomHustler extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/roms/(?:file|download)/.+");
+            // 2023-05-17: Plugin has no RegEx anymore as URLs get pushed in via crawler plugin.
+            ret.add("");
         }
         return ret.toArray(new String[0]);
     }
@@ -76,47 +79,68 @@ public class RomHustler extends PluginForHost {
         return "https://romhustler.org/disclaimer";
     }
 
-    private static AtomicReference<String> agent = new AtomicReference<String>();
-
-    public Browser prepBrowser(Browser prepBr) {
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
         if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
             agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        prepBr.getHeaders().put("User-Agent", agent.get());
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        prepBr.setCustomCharset("utf-8");
-        prepBr.setFollowRedirects(true);
-        return prepBr;
+        br.getHeaders().put("User-Agent", agent.get());
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.setCustomCharset("utf-8");
+        br.setFollowRedirects(true);
+        return br;
     }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String contentID = getInternalContentID(link);
+        if (contentID != null) {
+            return this.getHost() + "://" + this.getPartPosition(link);
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private static AtomicReference<String> agent                       = new AtomicReference<String>();
+    public static final String             PROPERTY_MAIN_CONTENT_URL   = "decrypterLink";
+    public static final String             PROPERTY_PARTS_OVERVIEW_URL = "part_overview_url";
+    public static final String             PROPERTY_DIRECTURL          = "directurl";
+    public static final String             PROPERTY_POSITION           = "position";
+    public static final String             PROPERTY_NUMBEROF_PARTS     = "numberof_parts";
 
     /** 2022-10-31: This website is similar to romulation.org? */
     public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException, IOException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        prepBrowser(br);
-        final String decrypterLink = link.getStringProperty("decrypterLink");
-        if (decrypterLink == null) {
-            /* This should never happen. */
-            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            br.getPage(link.getPluginPatternMatcher());
-            String filename = br.getRegex("itemprop=\"name\">([^<>]+)</h1>").getMatch(0);
-            if (filename != null) {
-                link.setName(filename + " " + System.currentTimeMillis());
-            }
-        } else {
-            br.getPage(decrypterLink);
+        final String mainContentLink = getMainContentURL(link);
+        if (mainContentLink == null) {
+            /* This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String jslink = br.getRegex("\"(/js/cache[a-z0-9\\-]+\\.js)\"").getMatch(0);
-        if (jslink != null) {
-            try {
-                br.cloneBrowser().getPage("https://" + this.getHost() + jslink);
-            } catch (final Exception e) {
-            }
+        br.getPage(mainContentLink);
+        if (RomHustlerCrawler.isOffline(br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // don't worry about filename... set within decrypter should be good until download starts.
         return AvailableStatus.TRUE;
+    }
+
+    private String getInternalContentID(final DownloadLink link) {
+        final String partsOverviewURL = getPartsDownloadOverviewURL(link);
+        if (partsOverviewURL != null) {
+            return new Regex(partsOverviewURL, "/download/guest/(\\d+)").getMatch(0);
+        }
+        return null;
+    }
+
+    private String getMainContentURL(final DownloadLink link) {
+        return link.getStringProperty("decrypterLink");
+    }
+
+    private String getPartsDownloadOverviewURL(final DownloadLink link) {
+        return link.getStringProperty(PROPERTY_PARTS_OVERVIEW_URL);
     }
 
     private boolean isLoggedIn(final Browser br) {
@@ -132,30 +156,47 @@ public class RomHustler extends PluginForHost {
         return RomulationOrg.fetchAccountInfo(this, br, account);
     }
 
-    /* Connection stuff */
-    private static final int FREE_MAXDOWNLOADS            = 1;
-    private static final int ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        RomulationOrg.login(this, br, account, false);
         handleDownload(link, account);
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return -1;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        br.getPage(link.getPluginPatternMatcher());
+        if (account != null) {
+            RomulationOrg.login(this, br, account, false);
+        }
+        final String mainContentLink = getMainContentURL(link);
+        if (mainContentLink == null) {
+            /* This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final RomHustlerCrawler crawler = (RomHustlerCrawler) this.getNewPluginForDecryptInstance(this.getHost());
+        final ArrayList<DownloadLink> crawledParts = crawler.decryptIt(new CryptedLink(mainContentLink), null);
+        if (crawledParts == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        DownloadLink matchingPart = null;
+        for (final DownloadLink crawledPart : crawledParts) {
+            if (StringUtils.equals(this.getLinkID(link), this.getLinkID(crawledPart))) {
+                matchingPart = crawledPart;
+                break;
+            }
+        }
+        if (matchingPart == null && !link.hasProperty(PROPERTY_POSITION)) {
+            /* Backward compatibility for items added before- and until revision 47763. */
+            matchingPart = crawledParts.get(0);
+        }
+        /* Check for errors */
         if (br.containsHTML("(?i)>\\s*File too big for guests")) {
             throw new AccountRequiredException();
         } else if (br.containsHTML("class=\"alert alert-danger restricted-button\"")) {
@@ -163,7 +204,12 @@ public class RomHustler extends PluginForHost {
         }
         final String otherErrormessage = br.getRegex("<ul class=\"list-unstyled\">\\s*<li>([^<]+)</li>").getMatch(0);
         if (!StringUtils.isEmpty(otherErrormessage)) {
+            /* E.g. "Sorry, this game is restricted." */
             throw new PluginException(LinkStatus.ERROR_FATAL, otherErrormessage);
+        }
+        if (matchingPart == null) {
+            /* This should never happen. */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         boolean skipWaittime = true;
         if (!skipWaittime) {
@@ -174,49 +220,47 @@ public class RomHustler extends PluginForHost {
             }
             sleep(wait * 1001l, link);
         }
-        // final String continuelink = br.getRegex("(/roms/download/guest[^\"\\']+)").getMatch(0);
-        // if (continuelink == null) {
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // br.getPage(continuelink);
-        String ddlink = br.getRegex("href=\"(https?://dl\\.[^\"]+)").getMatch(0);
-        /* Old handling down below */
-        // final String fuid = new Regex(link.getDownloadURL(), "/(\\d+)/").getMatch(0);
-        // if (fuid == null) {
-        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // }
-        // if (true) {
-        // Browser br2 = br.cloneBrowser();
-        // br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        // br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        // br2.getPage("/link/" + fuid + "?_=" + System.currentTimeMillis());
-        // ddlink = PluginJSonUtils.getJson(br2, "hashed");
-        // }
-        if (StringUtils.isEmpty(ddlink) || !ddlink.startsWith("http") || ddlink.length() > 500) {
+        final String directurl = matchingPart.getStringProperty(PROPERTY_DIRECTURL);
+        if (StringUtils.isEmpty(directurl) || !directurl.startsWith("http") || directurl.length() > 500) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        ddlink = ddlink.replace("\\", "");
-        if (link.getBooleanProperty("splitlink", false)) {
-            ddlink += "/1";
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, ddlink, true, account != null && AccountType.PREMIUM.equals(account.getType()) ? -10 : -4);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, true, account != null && AccountType.PREMIUM.equals(account.getType()) ? -10 : -4);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 503) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 503 too many connections", 1 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Error 503 too many connections", 2 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        String filename = getFileNameFromHeader(dl.getConnection());
-        filename = Encoding.htmlDecode(filename);
-        link.setFinalFileName(filename);
+        final String filename = getFileNameFromHeader(dl.getConnection());
+        if (filename != null) {
+            link.setFinalFileName(Encoding.htmlDecode(filename));
+        }
         dl.startDownload();
+    }
+
+    private int getPartPosition(final DownloadLink link) {
+        return link.getIntegerProperty(PROPERTY_POSITION, 0);
+    }
+
+    @Deprecated
+    private boolean isSplitPartInPosHigherThanZero(final DownloadLink link) {
+        if (link.getBooleanProperty("splitlink", false)) {
+            /* Legacy compatibility */
+            return true;
+        } else {
+            final int position = link.getIntegerProperty(PROPERTY_POSITION, -1);
+            if (position > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
         handleDownload(link, null);
     }
 

@@ -18,8 +18,11 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -29,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
+import jd.plugins.hoster.RomHustler;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RomHustlerCrawler extends PluginForDecrypt {
@@ -67,41 +70,76 @@ public class RomHustlerCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String addedurl = param.getCryptedUrl();
-        final PluginForHost rhPlugin = this.getNewPluginForHostInstance(this.getHost());
-        ((jd.plugins.hoster.RomHustler) rhPlugin).prepBrowser(this.br);
+        final String addedurl = param.getCryptedUrl().replaceFirst("http://", "https://");
+        final RomHustler rhPlugin = (RomHustler) this.getNewPluginForHostInstance(this.getHost());
         br.getPage(addedurl);
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 \\- Page got lost|>\\s*This is a ESA protected rom|>Administrators only")) {
+        if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String urlSlug = new Regex(addedurl, "/rom/(.+)").getMatch(0);
-        String fpName = br.getRegex("<h1 [^>]*?itemprop=\"name\"[^>]*?>([^<>\"]*?)</h1>").getMatch(0);
-        if (fpName == null) {
-            fpName = urlSlug;
+        String title = br.getRegex("<h1 [^>]*?itemprop=\"name\"[^>]*?>([^<>\"]*?)</h1>").getMatch(0);
+        if (title == null) {
+            title = urlSlug.replace("-", " ").trim();
         }
-        final String[] results = br.getRegex("<a[^>]+(/roms/(?:file|download)/[^>]*/[A-Za-z0-9/\\+=%]*)\"[^>]+>").getColumn(0);
-        // TODO: add support for multiple parts
-        if (results == null || results.length == 0 || fpName == null) {
+        final String[] urls = br.getRegex("<a[^>]+(/roms/(?:file|download)/[^>]*/[A-Za-z0-9/\\+=%]*)\"[^>]+>").getColumn(0);
+        if (urls == null || urls.length == 0 || title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        int counter = 1;
-        for (final String result : results) {
-            final String name = fpName + "_" + counter;
-            final DownloadLink dl = createDownloadlink(br.getURL(result).toString());
-            dl.setName(name);
-            dl.setProperty("decrypterLink", addedurl);
-            if (counter > 1) {
-                dl.setProperty("splitlink", true);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(title).trim());
+        for (final String url : urls) {
+            br.getPage(url);
+            final String partOverviewURL = br.getURL();
+            final String[][] dlinfos = br.getRegex("<a href=\"(https?://dl\\.[^/]+/files/guest/[^\"]+)\">([^<]*) - \\((\\d+[^\\)]+)\\)\\s*</a>").getMatches();
+            int position = 0;
+            if (dlinfos != null && dlinfos.length > 0) {
+                for (final String[] dlinfo : dlinfos) {
+                    final String partDirectDownloadurl = dlinfo[0];
+                    final String partTitle = dlinfo[1];
+                    final String partFilesizeStr = dlinfo[2];
+                    final String temporaryFilename = title + "_" + (position + 1) + "_" + Encoding.htmlDecode(partTitle).trim();
+                    final DownloadLink dl = new DownloadLink(rhPlugin, temporaryFilename, this.getHost(), partOverviewURL, true);
+                    dl.setName(temporaryFilename);
+                    dl.setDownloadSize(SizeFormatter.getSize(partFilesizeStr));
+                    dl.setProperty(RomHustler.PROPERTY_MAIN_CONTENT_URL, addedurl);
+                    dl.setProperty(RomHustler.PROPERTY_PARTS_OVERVIEW_URL, partOverviewURL);
+                    dl.setProperty(RomHustler.PROPERTY_DIRECTURL, partDirectDownloadurl);
+                    dl.setProperty(RomHustler.PROPERTY_POSITION, position);
+                    dl.setProperty(RomHustler.PROPERTY_NUMBEROF_PARTS, urls.length);
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                    ret.add(dl);
+                    distribute(dl);
+                    position++;
+                }
+            } else {
+                /* Single file download */
+                final String temporaryFilename = title + "_" + (position + 1);
+                final String filesizeStr = br.getRegex("(?i)Filesize\\s*</strong></td>\\s*<td>([^<]+)</td>").getMatch(0);
+                final DownloadLink dl = new DownloadLink(rhPlugin, temporaryFilename, this.getHost(), partOverviewURL, true);
+                dl.setName(temporaryFilename);
+                if (filesizeStr != null) {
+                    dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+                }
+                dl.setProperty(RomHustler.PROPERTY_MAIN_CONTENT_URL, addedurl);
+                dl.setProperty(RomHustler.PROPERTY_PARTS_OVERVIEW_URL, partOverviewURL);
+                dl.setProperty(RomHustler.PROPERTY_POSITION, position);
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                ret.add(dl);
+                distribute(dl);
+                position++;
             }
-            dl.setAvailable(true);
-            ret.add(dl);
-            counter++;
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
-            fp.addLinks(ret);
+            logger.info("Crawled item " + (position + 1) + "/" + urls.length + " | Results so far: " + ret.size());
         }
         return ret;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*404 \\- Page got lost|>\\s*This is a ESA protected rom|>Administrators only")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
