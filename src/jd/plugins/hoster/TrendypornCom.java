@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -28,11 +33,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TrendypornCom extends antiDDoSForHost {
@@ -200,7 +200,7 @@ public class TrendypornCom extends antiDDoSForHost {
             }
         }
         if (dllink == null) {
-            dllink = br.getRegex("source src=\"(https?://[^\"]+)\"[^>]*type='video/mp4'").getMatch(0);
+            dllink = br.getRegex("source src=\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
         }
         final String ext = ".mp4";
         if (filename != null) {

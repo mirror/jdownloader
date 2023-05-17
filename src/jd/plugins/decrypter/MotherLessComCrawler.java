@@ -234,21 +234,21 @@ public class MotherLessComCrawler extends PluginForDecrypt {
          */
         int maxPage = getMaxPage(br);
         final HashSet<String> pages = new HashSet<String>();
-        logger.info("Found " + maxPage + " page(s), crawling now...");
+        logger.info("Found " + maxPage + " page(s) [!page number may change later!], crawling now...");
         int page = 1;
         while (true) {
             int numberofResultsThisPage = 0;
             /* Find all galleries of [user | user favorites, and so on] */
             /* E.g. /f/username/galleries */
             final String[] galleries = br.getRegex("data-gallery-codename=\"([A-Z0-9]+)").getColumn(0);
-            if (galleries.length > 0) {
+            if (galleries != null && galleries.length > 0) {
                 for (final String galleryID : galleries) {
                     ret.add(this.createDownloadlink("https://" + this.getHost() + "/G" + galleryID));
+                    numberofResultsThisPage += 1;
                 }
-                numberofResultsThisPage += galleries.length;
             }
             final String[] videolinks = br.getRegex("<a href=\"(?:https?://[^/]+)?(/[^\"]+)\" class=\"img-container\" target=\"_self\">\\s*<span class=\"currently-playing-icon\"").getColumn(0);
-            if (videolinks.length != 0) {
+            if (videolinks != null && videolinks.length != 0) {
                 for (String singlelink : videolinks) {
                     final String contentID = new Regex(singlelink, "/([A-Z0-9]+$)").getMatch(0);
                     if (!dupes.add(contentID)) {
@@ -274,11 +274,11 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                     }
                     distribute(dl);
                     ret.add(dl);
+                    numberofResultsThisPage += 1;
                 }
-                numberofResultsThisPage += videolinks.length;
             }
             final String[] picturelinks = br.getRegex("<a href=\"(?:https?://[^/]+)?(?:/g/[^/]+)?(/[a-zA-Z0-9]+){1,2}\"[^>]*class=\"img-container\"").getColumn(0);
-            if (picturelinks.length != 0) {
+            if (picturelinks != null && picturelinks.length > 0) {
                 for (String singlelink : picturelinks) {
                     final String contentID = new Regex(singlelink, "/([A-Z0-9]+$)").getMatch(0);
                     if (!dupes.add(contentID)) {
@@ -303,8 +303,8 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                     }
                     distribute(dl);
                     ret.add(dl);
+                    numberofResultsThisPage += 1;
                 }
-                numberofResultsThisPage += picturelinks.length;
             }
             logger.info("Crawled page " + page + "/" + maxPage + " | Results on this page: " + numberofResultsThisPage + " | Results so far: " + ret.size() + " | Limit: " + maxItemsLimit);
             String nextPageURL = br.getRegex("(?i)<a href=\"(/[^<>\"]+\\?page=\\d+)\"[^>]+>NEXT").getMatch(0);
@@ -328,11 +328,11 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                 /* Fail-safe */
                 logger.info("Stopping because: Already crawled current nextPage");
                 break;
+            } else if (maxItemsLimit != -1 && ret.size() >= maxItemsLimit) {
+                logger.info("Stopping because: Reached max items limit of " + maxItemsLimit);
+                break;
             } else if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
-                break;
-            } else if (maxItemsLimit != -1 && ret.size() >= maxItemsLimit) {
-                logger.info("Stopping because: Reached max items limit");
                 break;
             } else {
                 /* Double-check that we're accessing the expected page */
@@ -340,12 +340,12 @@ public class MotherLessComCrawler extends PluginForDecrypt {
                 final String nextPageNumberStr = nextPageQuery.get("page");
                 if (nextPageNumberStr == null || Integer.parseInt(nextPageNumberStr) != (page + 1)) {
                     /* This should never happen */
-                    logger.warning("Stopping because: Unexpected nextPage value: " + nextPageNumberStr);
+                    logger.warning("Stopping because: nextPageNumberStr does not match expected value: Got: " + nextPageNumberStr + " | Expected: " + (page + 1));
                     break;
                 }
                 br.getPage(nextPageURL);
                 final int newMaxPage = getMaxPage(br);
-                if (newMaxPage != maxPage) {
+                if (newMaxPage != maxPage && newMaxPage > maxPage) {
                     logger.info("maxPage changed: Old: " + maxPage + " | New: " + newMaxPage);
                     maxPage = newMaxPage;
                 }

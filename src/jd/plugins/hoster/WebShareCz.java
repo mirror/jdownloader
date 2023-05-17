@@ -228,18 +228,22 @@ public class WebShareCz extends PluginForHost {
                 final String lang = System.getProperty("user.language");
                 br.setFollowRedirects(false);
                 br.postPage("https://" + this.getHost() + "/api/salt/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&wst=");
-                final String salt = br.getRegex("<salt>([^<>\"]*?)</salt>").getMatch(0);
+                final String salt = br.getRegex("<salt>([^<]*?)</salt>").getMatch(0);
                 if (salt == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new AccountInvalidException("\r\nUngültige E-Mail Adresse oder Benutzername!");
+                    } else {
+                        throw new AccountInvalidException("\r\nInvalid E-Mail or username!");
+                    }
                 }
                 final String password = JDHash.getSHA1(crypt_md5(account.getPass().getBytes("UTF-8"), salt));
                 final String digest = Hash.getMD5(account.getUser() + ":Webshare:" + account.getPass());
                 br.postPage("/api/login/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + password + "&digest=" + digest + "&keep_logged_in=1&wst=");
                 if (br.containsHTML("<code>LOGIN_FATAL_\\d+</code>")) {
                     if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException("\r\nUngültiges Passwort!\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!");
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException("\r\nInvalid password!\r\nQuick help:\r\nYou're sure that the password you entered is correct?\r\nIf your password contains special characters, change it (remove them) and try again!");
                     }
                 }
                 final String token = getXMLtagValue("token");
@@ -260,7 +264,7 @@ public class WebShareCz extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         login(account, true);
         if (!br.getURL().contains("/api/user_data/")) {
             br.postPage("/api/user_data/", "wst=" + getToken(account));
@@ -274,28 +278,33 @@ public class WebShareCz extends PluginForHost {
                 throw new AccountInvalidException();
             }
         }
-        final String days = getXMLtagValue("vip_days");
-        if (days == null || "0".equals(days)) {
+        final String daysStr = getXMLtagValue("vip_days");
+        String statustext;
+        if (daysStr == null || "0".equals(daysStr)) {
             final String credits = getXMLtagValue("credits");
             ai.setTrafficLeft(SizeFormatter.getSize((Long.parseLong(credits) * 10) + "MB"));
             if (ai.getTrafficLeft() > 0) {
                 account.setType(AccountType.PREMIUM);
                 account.setConcurrentUsePossible(true);
                 account.setMaxSimultanDownloads(20);
-                ai.setStatus("User with credits");
+                statustext = account.getType().getLabel() + " | User with credits";
             } else {
+                /* Free account or expired premium account */
                 account.setType(AccountType.FREE);
                 account.setMaxSimultanDownloads(getMaxSimultanFreeDownloadNum());
                 account.setConcurrentUsePossible(false);
+                statustext = account.getType().getLabel();
             }
         } else {
-            ai.setValidUntil(System.currentTimeMillis() + Integer.parseInt(days) * 24 * 60 * 60 * 1000l);
+            ai.setValidUntil(System.currentTimeMillis() + Integer.parseInt(daysStr) * 24 * 60 * 60 * 1000l);
             ai.setUnlimitedTraffic();
             account.setType(AccountType.PREMIUM);
             account.setConcurrentUsePossible(true);
             account.setMaxSimultanDownloads(20);
-            ai.setStatus("VIP User");
+            statustext = "VIP User";
         }
+        statustext += " | Points: " + getXMLtagValue("points");
+        ai.setStatus(statustext);
         return ai;
     }
 
@@ -322,8 +331,8 @@ public class WebShareCz extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getToken(final Account acc) {
-        return acc.getStringProperty("token");
+    private String getToken(final Account account) {
+        return account.getStringProperty("token");
     }
 
     /*
