@@ -22,6 +22,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -51,23 +68,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.InstaGramComDecrypter;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.InstagramConfig;
-import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 @PluginDependencies(dependencies = { InstaGramComDecrypter.class })
@@ -160,6 +160,7 @@ public class InstaGramCom extends PluginForHost {
     public static final String  PROPERTY_is_private                      = "is_private";
     private final String        ACCOUNT_USERNAME                         = "username";
     private final String        ACCOUNT_DISPLAED_COOKIE_LOGIN_HINT       = "displayed_cookie_login_hint";
+    private boolean             hasJustRefreshedDirecturl                = false;
 
     public static void setRequestLimit() {
         Browser.setRequestIntervalLimitGlobal("instagram.com", true, 8000);
@@ -246,12 +247,13 @@ public class InstaGramCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
                 }
                 link.setProperty(PROPERTY_DIRECTURL, this.dllink);
+                this.hasJustRefreshedDirecturl = true;
                 /* Only do this extra request if the user triggered a single linkcheck! */
                 if (!isDownload) {
                     dllink = this.checkLinkAndSetFilesize(link, this.dllink);
                     if (this.dllink == null) {
                         /* This should never happen */
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl: New directurl is invalid too");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl: New directurl is invalid too -> Content offline or broken");
                     }
                 }
             }
@@ -343,8 +345,8 @@ public class InstaGramCom extends PluginForHost {
     }
 
     /**
-     * Login required to be able to use this!! </br> removePictureEffects true = grab best quality & original, removePictureEffects false =
-     * grab best quality but keep effects/filters.
+     * Login required to be able to use this!! </br>
+     * removePictureEffects true = grab best quality & original, removePictureEffects false = grab best quality but keep effects/filters.
      *
      * @throws Exception
      */
@@ -496,32 +498,29 @@ public class InstaGramCom extends PluginForHost {
             final PluginForDecrypt crawler = this.getNewPluginForDecryptInstance(this.getHost());
             final String thisLinkID = this.getLinkID(link);
             final String thisOrderID = link.getStringProperty(PROPERTY_orderid);
-            try {
-                final CryptedLink forDecrypter = new CryptedLink(link.getContentUrl(), link);
-                final ArrayList<DownloadLink> items = crawler.decryptIt(forDecrypter, null);
-                DownloadLink foundLink = null;
-                for (final DownloadLink linkTmp : items) {
-                    if (StringUtils.equals(linkTmp.getLinkID(), thisLinkID)) {
-                        foundLink = linkTmp;
-                        break;
-                    } else if (StringUtils.equals(linkTmp.getStringProperty(PROPERTY_orderid), thisOrderID)) {
-                        /* Backward compatibility. TODO: Remove this after 01-2023 */
-                        foundLink = linkTmp;
-                        break;
-                    }
+            final CryptedLink forDecrypter = new CryptedLink(link.getContentUrl(), link);
+            final ArrayList<DownloadLink> items = crawler.decryptIt(forDecrypter, null);
+            DownloadLink foundLink = null;
+            for (final DownloadLink linkTmp : items) {
+                if (StringUtils.equals(linkTmp.getLinkID(), thisLinkID)) {
+                    foundLink = linkTmp;
+                    break;
+                } else if (StringUtils.equals(linkTmp.getStringProperty(PROPERTY_orderid), thisOrderID)) {
+                    /* Backward compatibility. TODO: Remove this after 01-2023 */
+                    foundLink = linkTmp;
+                    break;
                 }
-                directurl = foundLink.getStringProperty(PROPERTY_DIRECTURL);
-            } catch (final Throwable e) {
-                logger.log(e);
             }
+            directurl = foundLink.getStringProperty(PROPERTY_DIRECTURL);
         }
         if (directurl == null) {
             /* On failure, check for offline. */
             logger.info("Failed to find fresh directurl --> Assuming that item is offline");
             return null;
+        } else {
+            logger.info("Successfully found fresh directurl");
+            return directurl;
         }
-        logger.info("Successfully found fresh directurl");
-        return directurl;
     }
 
     private boolean preferAltAPIForDirecturlRefresh() {
@@ -545,15 +544,16 @@ public class InstaGramCom extends PluginForHost {
         }
     }
 
-    private String checkLinkAndSetFilesize(final DownloadLink link, final String flink) throws IOException, PluginException {
-        if (StringUtils.isEmpty(flink)) {
+    private String checkLinkAndSetFilesize(final DownloadLink link, final String directurl) throws IOException, PluginException {
+        if (StringUtils.isEmpty(directurl)) {
             return null;
         }
         URLConnectionAdapter con = null;
         final Browser br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);
+        boolean throwException = false;
         try {
-            con = br2.openHeadConnection(flink);
+            con = br2.openHeadConnection(directurl);
             if (!looksLikeDownloadableContent(con)) {
                 throw new IOException();
             } else {
@@ -562,11 +562,15 @@ public class InstaGramCom extends PluginForHost {
                     // link.setVerifiedFileSize(con.getCompleteContentLength());
                     link.setDownloadSize(con.getCompleteContentLength());
                 }
-                return flink;
+                return directurl;
             }
         } catch (final Exception e) {
-            logger.log(e);
-            return null;
+            if (throwException) {
+                throw e;
+            } else {
+                logger.log(e);
+                return null;
+            }
         } finally {
             if (con != null) {
                 try {
@@ -611,7 +615,11 @@ public class InstaGramCom extends PluginForHost {
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 link.removeProperty(PROPERTY_DIRECTURL);
                 br.followConnection(true);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl expired (?)", 5 * 60 * 1000l);
+                if (this.hasJustRefreshedDirecturl) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl expired -> Broken content?", 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl expired (?)", 5 * 60 * 1000l);
+                }
             }
             dl.startDownload();
         }

@@ -29,6 +29,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -59,16 +69,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.plugins.hoster.VKontakteRuHoster.Quality;
 import jd.plugins.hoster.VKontakteRuHoster.QualitySelectionMode;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://(?:www\\.|m\\.|new\\.)?(?:(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink)[a-z0-9_/=\\.\\-\\?&%@:\\!]+|vk\\.cc/[A-Za-z0-9]+)" })
 public class VKontakteRu extends PluginForDecrypt {
@@ -278,7 +278,7 @@ public class VKontakteRu extends PluginForDecrypt {
         } else if (param.getCryptedUrl().matches(PATTERN_GENERAL_AUDIO)) {
             if (param.getCryptedUrl().matches(PATTERN_AUDIO_ALBUM)) {
                 /* Audio album */
-                return decryptAudioAlbum(param);
+                return decryptAudioAlbumAndSection(param);
             } else if (param.getCryptedUrl().matches(PATTERN_AUDIO_AUDIOS_ALBUM)) {
                 return decryptAudiosAlbum(param);
             } else {
@@ -364,38 +364,58 @@ public class VKontakteRu extends PluginForDecrypt {
      * @throws Exception
      */
     @SuppressWarnings("deprecation")
-    private ArrayList<DownloadLink> decryptAudioAlbum(final CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> decryptAudioAlbumAndSection(final CryptedLink param) throws Exception {
         final String owner_ID = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)$").getMatch(0);
         final String album_id = UrlQuery.parse(param.getCryptedUrl()).get("album_id");
-        String fpName = null;
-        if (cfg.getBooleanProperty(VKontakteRuHoster.VKAUDIOS_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKAUDIOS_USEIDASPACKAGENAME)) {
-            fpName = "audios" + owner_ID;
-        }
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final String postData;
-        if (album_id != null) {
-            postData = "act=load_silent&al=1&album_id=" + album_id + "&band=false&owner_id=" + owner_ID;
+        final String section = UrlQuery.parse(param.getCryptedUrl()).get("section");
+        if (StringUtils.equalsIgnoreCase(section, "playlists")) {
+            /* Overview of playlists */
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            br.setFollowRedirects(true);
+            br.getPage(param.getCryptedUrl());
+            this.siteGeneralErrorhandling(br);
+            final String[] playlistURLs = br.getRegex("(/music/playlist/[^<>\"\\']+)").getColumn(0);
+            if (playlistURLs == null || playlistURLs.length == 0) {
+                logger.info("Nothing found --> Probably offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            logger.info("Found playlists: " + playlistURLs.length);
+            for (final String playlistURL : playlistURLs) {
+                ret.add(this.createDownloadlink(br.getURL(playlistURL).toString()));
+            }
+            return ret;
         } else {
-            postData = "access_hash=&act=load_section&al=1&claim=0&offset=0&is_loading_all=1&owner_id=" + owner_ID + "&playlist_id=-1&type=playlist";
+            /* Single playlist */
+            String fpName = null;
+            if (cfg.getBooleanProperty(VKontakteRuHoster.VKAUDIOS_USEIDASPACKAGENAME, VKontakteRuHoster.default_VKAUDIOS_USEIDASPACKAGENAME)) {
+                fpName = "audios" + owner_ID;
+            }
+            final String postData;
+            if (album_id != null) {
+                postData = "act=load_silent&al=1&album_id=" + album_id + "&band=false&owner_id=" + owner_ID;
+            } else {
+                postData = "access_hash=&act=load_section&al=1&claim=0&offset=0&is_loading_all=1&owner_id=" + owner_ID + "&playlist_id=-1&type=playlist";
+            }
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage(getBaseURL() + "/al_audio.php", postData);
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+            if (StringUtils.isEmpty(fpName)) {
+                fpName = (String) entries.get("title");
+            }
+            if (StringUtils.isEmpty(fpName)) {
+                /* Last chance fallback */
+                fpName = "vk.com audio - " + owner_ID;
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            /* TODO: 2020-05-11: Fix this */
+            final List<Object> audioData = (List<Object>) entries.get("payload");
+            if (audioData == null || audioData.size() == 0) {
+                logger.info("Nothing found --> Probably offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return addJsonAudioObjects(param, audioData, fp);
         }
-        br.postPage(getBaseURL() + "/al_audio.php", postData);
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        if (StringUtils.isEmpty(fpName)) {
-            fpName = (String) entries.get("title");
-        }
-        if (StringUtils.isEmpty(fpName)) {
-            /* Last chance fallback */
-            fpName = "vk.com audio - " + owner_ID;
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        /* TODO: 2020-05-11: Fix this */
-        final List<Object> audioData = (List<Object>) entries.get("payload");
-        if (audioData == null || audioData.size() == 0) {
-            logger.info("Nothing found --> Probably offline");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        return addJsonAudioObjects(param, audioData, fp);
     }
 
     /** NOT using API audio pages and audio playlist's are similar, TODO: Return host-plugin links here to improve the overall stability. */
@@ -2883,8 +2903,9 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     /**
-     * Basic preparations on user-added links.</br> Make sure to remove unneeded things so that in the end, our links match the desired
-     * linktypes.</br> This is especially important because we get required IDs out of these urls or even access them directly without API.
+     * Basic preparations on user-added links.</br>
+     * Make sure to remove unneeded things so that in the end, our links match the desired linktypes.</br>
+     * This is especially important because we get required IDs out of these urls or even access them directly without API.
      *
      * @param a
      *
@@ -2915,8 +2936,6 @@ public class VKontakteRu extends PluginForDecrypt {
         } else if (url.matches(PATTERN_WALL_LOOPBACK_LINK)) {
             /* Remove loopback-part as it only contains information which we need later but not in the link */
             url = new Regex(url, "(https?://(www\\.)?vk\\.com/wall(\\-)?\\d+)").getMatch(0);
-        } else if (url.matches(PATTERN_AUDIO_ALBUM)) {
-            url = "https://vk.com/audios" + new Regex(url, "(?:audio(?:\\.php)?\\?id=|audios)((?:\\-)?\\d+)").getMatch(0);
         } else if (url.matches(PATTERN_AUDIO_PAGE)) {
             /* PATTERN_AUDIO_PAGE RegEx is wide open --> Make sure that our URL is correct! */
             final String pageID = get_ID_PAGE(url);
