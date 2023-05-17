@@ -115,6 +115,7 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "hellspy.cz", "hellspy.sk", "hellspy.com" });
         ret.add(new String[] { "hellshare.com", "hellshare.sk", "hellshare.hu", "hellshare.de", "hellshare.cz", "hellshare.pl" });
         ret.add(new String[] { "kufile.net", "onstclouds.com" });
+        ret.add(new String[] { "streamzz.to", "streamz.ws", "streamz.cc", "streamz.bz", "streamz.vg" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }
