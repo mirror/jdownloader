@@ -119,6 +119,23 @@ public class SupervideoTv extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        return false;
+    }
+
+    @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
+        final String betterFilename = br.getRegex("<h1 class=\"download__title\">([^<]+)</h1>").getMatch(0);
+        if (betterFilename != null) {
+            fileInfo[0] = betterFilename;
+        }
+        /* Small workaround */
+        fileInfo[1] = null;
+        return fileInfo;
+    }
+
+    @Override
     public Class<? extends XFSConfigVideo> getConfigInterface() {
         return XFSConfigVideoSupervideoTv.class;
     }

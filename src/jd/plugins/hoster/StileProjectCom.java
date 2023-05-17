@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,15 +33,13 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { jd.plugins.decrypter.StileProjectComDecrypter.class })
 public class StileProjectCom extends PluginForHost {
-    private String              dllink      = null;
-    public static final String  TYPE_EMBED  = "https?://[^/]+/embed/(\\d+)";
-    private static final String TYPE_NORMAL = "https?://[^/]+/video/([a-z0-9\\-]+)-(\\d+)\\.html";
+    private String             dllink       = null;
+    public static final String TYPE_EMBED   = "https?://[^/]+/embed/(\\d+)";
+    public static final String TYPE_NORMAL  = "https?://[^/]+/video/([a-z0-9\\-_]+)-(\\d+)\\.html";
+    public static final String TYPE_NORMAL2 = "https?://[^/]+/videos/(\\d+)/([a-z0-9\\-_]+)/?";
 
     public StileProjectCom(PluginWrapper wrapper) {
         super(wrapper);

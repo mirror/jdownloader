@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,15 +35,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamableCom extends PluginForHost {
     public StreamableCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     @Override
@@ -91,10 +97,17 @@ public class StreamableCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            /* Fallback */
+            link.setName(this.getFID(link) + ".mp4");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(410);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String json = br.getRegex("var videoObject =\\s*(\\{.+\\});").getMatch(0);
@@ -108,13 +121,10 @@ public class StreamableCom extends PluginForHost {
         if (!StringUtils.isEmpty(filename)) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setFinalFileName(filename + ".mp4");
-        } else if (!link.isNameSet()) {
-            /* Fallback */
-            link.setName(this.getFID(link) + ".mp4");
         }
         if (filesize > 0) {
             link.setDownloadSize(filesize);
-            /* Do NOT set verifiedfilesize here - this one isn't safe! */
+            /* Do NOT set verifiedFilesize here - this one isn't safe! */
         }
         return AvailableStatus.TRUE;
     }

@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,26 +30,32 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "toypics.net" }, urls = { "http://(www\\.)?videos\\.toypics\\.net/view/\\d+/[a-z0-9\\-_]+/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "toypics.net" }, urls = { "https?://(www\\.)?videos\\.toypics\\.net/view/(\\d+)/[a-z0-9\\-_]+/" })
 public class ToyPicsNet extends PluginForHost {
-
     public ToyPicsNet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     private String dllink = null;
 
     @Override
     public String getAGBLink() {
-        return "http://videos.toypics.net/pages/terms.html";
+        return "https://videos.toypics.net/pages/terms.html";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://videos.toypics.net/") || br.containsHTML(">Requested video does not exist") || br.getURL().endsWith("/signup/")) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().equals("http://videos.toypics.net/") || br.containsHTML(">Requested video does not exist") || br.getURL().endsWith("/signup/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div class=\"hd-l\">([^<>\"]*?)</div>").getMatch(0);
@@ -65,33 +72,35 @@ public class ToyPicsNet extends PluginForHost {
         dllink = Encoding.htmlDecode(dllink);
         filename = filename.trim();
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

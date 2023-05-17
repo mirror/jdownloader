@@ -37,13 +37,14 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        decryptedLinks.addAll(this.preProcessCryptedLink(param));
-        if (!decryptedLinks.isEmpty()) {
-            return decryptedLinks;
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        ret.addAll(this.preProcessCryptedLink(param));
+        if (!ret.isEmpty()) {
+            return ret;
+        } else {
+            ret.addAll(findEmbedUrls());
+            return ret;
         }
-        decryptedLinks.addAll(findEmbedUrls());
-        return decryptedLinks;
     }
 
     /** Place dead domains here so crawler will change URLs containing dead domains in an attempt to make them work. */

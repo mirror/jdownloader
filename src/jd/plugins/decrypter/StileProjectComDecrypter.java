@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -61,14 +62,19 @@ public class StileProjectComDecrypter extends PornEmbedParser {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/([a-z0-9\\-]+)-(\\d+)\\.html");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(video/[a-z0-9\\-_]+-\\d+\\.html|videos/\\d+/[a-z0-9\\-_]+/?)");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
     protected String getFileTitle(final CryptedLink param, final Browser br) {
-        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ").trim();
+        final Regex type1 = new Regex(param.getCryptedUrl(), StileProjectCom.TYPE_NORMAL);
+        if (type1.matches()) {
+            return type1.getMatch(0).replace("-", " ").trim();
+        } else {
+            return new Regex(param.getCryptedUrl(), StileProjectCom.TYPE_NORMAL2).getMatch(1).replace("-", " ").trim();
+        }
     }
 
     @Override
@@ -78,11 +84,26 @@ public class StileProjectComDecrypter extends PornEmbedParser {
 
     @Override
     protected boolean isSelfhosted(final Browser br) {
-        final String embedURL = br.getRegex(StileProjectCom.TYPE_EMBED).getMatch(-1);
-        if (embedURL != null && embedURL.contains(br.getHost())) {
+        final String[] embedURLs = br.getRegex(StileProjectCom.TYPE_EMBED).getColumn(-1);
+        // e.g. html will always contain: "embedUrl": "https://www.stileproject.com/embed/123456789",
+        if (embedURLs != null && embedURLs.length > 1) {
             return true;
         } else {
             return false;
+        }
+    }
+
+    @Override
+    protected boolean allowResult(final String url) {
+        /**
+         * Ignore self-embed URLs which would go into host plugin for this host. </br>
+         * To put it short: Without this check, even items with external URLs would always also return invalid selfhosted results which
+         * would get displayed as offline -> We don't want that!
+         */
+        if (url.matches("https?://(www\\.)?" + Pattern.quote(this.getHost()) + "/embed/\\d+/?")) {
+            return false;
+        } else {
+            return super.allowResult(url);
         }
     }
 }
