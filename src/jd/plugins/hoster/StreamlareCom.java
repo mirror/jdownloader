@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -28,13 +33,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamlareCom extends PluginForHost {
@@ -128,16 +129,25 @@ public class StreamlareCom extends PluginForHost {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
             requestFileInformation(link);
             final Browser brc = br.cloneBrowser();
-            brc.postPageRaw("/api/video/get", "{\"id\":\"" + this.getFID(link) + "\"}");
-            if (br.getHttpConnection().getResponseCode() == 404) {
+            // brc.postPageRaw("/api/video/get", "{\"id\":\"" + this.getFID(link) + "\"}");
+            brc.postPageRaw("/api/video/download/get", "{\"id\":\"" + this.getFID(link) + "\"}"); // 2023-05-17
+            if (brc.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.HASHMAP);
             final String message = (String) entries.get("message");
             if (!entries.containsKey("result") || !StringUtils.equalsIgnoreCase(message, "ok")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - video is still converting?", 5 * 60 * 1000l);
             }
-            final String dllink = (String) JavaScriptEngineFactory.walkJson(entries, "result/Original/src");
+            String dllink = (String) JavaScriptEngineFactory.walkJson(entries, "result/Original/src");
+            if (StringUtils.isEmpty(dllink)) {
+                /* 2023-05-17 */
+                dllink = (String) JavaScriptEngineFactory.walkJson(entries, "result/Original/url");
+                if (StringUtils.isEmpty(dllink)) {
+                    /* 2023-05-17 */
+                    dllink = (String) JavaScriptEngineFactory.walkJson(entries, "result/{0}/url");
+                }
+            }
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -154,6 +164,20 @@ public class StreamlareCom extends PluginForHost {
                 }
             }
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        }
+        final String filenameFromHeader = Plugin.getFileNameFromHeader(dl.getConnection());
+        if (filenameFromHeader != null) {
+            /* 2023-05-17: Do not use this filename as encoding is broken serverside (plus instead of space). */
+            final boolean trustHeaderFilename = false;
+            if (trustHeaderFilename) {
+                link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader));
+            } else {
+                final String oldFilename = link.getName();
+                final String newFileExtension = Plugin.getFileNameExtensionFromString(filenameFromHeader);
+                if (oldFilename != null && newFileExtension != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(oldFilename, newFileExtension));
+                }
+            }
         }
         dl.startDownload();
     }
