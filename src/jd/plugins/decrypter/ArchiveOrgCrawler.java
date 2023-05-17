@@ -828,6 +828,10 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             logger.info(skippedItems.toString());
         }
         if (desiredSubpathDecoded != null && ret.size() == 1) {
+            /**
+             * Force auto package handling for single items e.g. if user only added a single file which is part of a huge folder. </br>
+             * Reference: https://board.jdownloader.org/showthread.php?t=92666&page=2
+             */
             final Regex typeDownload = new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD);
             if (typeDownload.matches() && StringUtils.equalsIgnoreCase(ret.get(0).getPluginPatternMatcher(), param.getCryptedUrl())) {
                 CrawledLink source = getCurrentLink().getSourceLink();
