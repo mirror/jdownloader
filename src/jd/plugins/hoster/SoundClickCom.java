@@ -47,7 +47,7 @@ public class SoundClickCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.soundclick.com/docs/legal.cfm";
+        return "https://www.soundclick.com/docs/legal.cfm";
     }
 
     @Override

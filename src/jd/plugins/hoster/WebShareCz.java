@@ -221,7 +221,7 @@ public class WebShareCz extends PluginForHost {
                         return;
                     } else {
                         logger.info("Cookie login failed");
-                        br.clearCookies(br.getHost());
+                        br.clearCookies(null);
                     }
                 }
                 logger.info("Performing full login");

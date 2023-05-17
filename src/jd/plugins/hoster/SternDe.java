@@ -13,10 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.util.Arrays;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
@@ -28,11 +30,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer;
 import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer.Protocol;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stern.de" }, urls = { "https?://(?:www\\.)?stern\\.de/.*?\\.html|https?://(?:www\\.)?stern\\.de/action/\\d+/videoembed\\?video=\\d+" })
 public class SternDe extends PluginForHost {
-
     private String dllink = null;
 
     public SternDe(final PluginWrapper wrapper) {
@@ -41,7 +40,7 @@ public class SternDe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.stern.de/agb-4541846.html";
+        return "https://www.stern.de/agb-4541846.html";
     }
 
     @Override
@@ -53,14 +52,12 @@ public class SternDe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
-
         setBrowserExclusive();
         String dlink = link.getDownloadURL();
         br.getPage(dlink);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         /* 2017-03-09: http- and hls available --> Grab only http as hls seems to be always lower quality (for mobile devices). */
         final BrightcoveEdgeContainer bestQuality = jd.plugins.decrypter.BrightcoveDecrypter.findBESTBrightcoveEdgeContainerAuto(this.br, Arrays.asList(new Protocol[] { Protocol.HTTP }));
         if (bestQuality == null) {
@@ -69,35 +66,35 @@ public class SternDe extends PluginForHost {
         }
         dllink = bestQuality.getDownloadURL();
         bestQuality.setInformationOnDownloadLink(link);
-
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        download(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        download(link);
     }
 
-    private void download(final DownloadLink downloadLink) throws Exception {
+    private void download(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
-        if (dllink != null && dllink.contains(".m3u8")) {
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, dllink);
+        if (StringUtils.containsIgnoreCase(this.dllink, ".m3u8")) {
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
             dl.startDownload();
         } else {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
                 }
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
             }
             dl.startDownload();
         }
@@ -110,5 +107,4 @@ public class SternDe extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

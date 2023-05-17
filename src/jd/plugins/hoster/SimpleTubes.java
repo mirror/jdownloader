@@ -85,7 +85,13 @@ public class SimpleTubes extends PluginForHost {
         String title = br.getRegex("<title>(.*?)( -  Free Videos & Sex Movies - XXX Tube - EYNY)?</title>").getMatch(0);
         dllink = br.getRegex("<source.*?src=\'([^<>']*?)\'").getMatch(0);
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String internalVideoID = br.getRegex("(\\?|&)vid=(\\d+)").getMatch(0);
+            if (internalVideoID == null) {
+                /* Mainpage without redirect -> Offline video. Example: http://video.eyny.com/watch?v=DJRBupD */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         logger.info("dllink: " + dllink);
         dllink = Encoding.htmlDecode(dllink);
