@@ -26,24 +26,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.JVMVersion;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -63,6 +45,8 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountUnavailableException;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -72,6 +56,24 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.JVMVersion;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
@@ -504,19 +506,25 @@ public class VimeoCom extends PluginForHost {
         if (Boolean.FALSE.equals(properties.get(apiRequest.getUrl()))) {
             plugin.getLogger().info("Skip accessVimeoAPI:" + apiRequest.getUrl());
             return null;
-        }
-        if (jwt == null) {
-            jwt = getVIEWER(plugin, br)[0];
-        }
-        apiRequest.getHeaders().put("Authorization", "jwt " + jwt);
-        apiRequest.setCustomCharset("UTF-8");
-        br.getPage(apiRequest);
-        final Map<String, Object> apiResponse = apiResponseValidator(plugin, br);
-        if (apiResponse == null) {
-            properties.put(apiRequest.getUrl(), Boolean.FALSE);
-            return null;
         } else {
-            return apiResponse;
+            if (jwt == null) {
+                jwt = getVIEWER(plugin, br)[0];
+            }
+            apiRequest.getHeaders().put("Authorization", "jwt " + jwt);
+            apiRequest.setCustomCharset("UTF-8");
+            br.getPage(apiRequest);
+            if (isPasswordProtectedAPIError(br)) {
+                throw new DecrypterRetryException(RetryReason.PASSWORD);
+            } else {
+                final Map<String, Object> apiResponse = apiResponseValidator(plugin, br);
+                if (apiResponse == null) {
+                    // do not retry accessVimeoAPI again
+                    properties.put(apiRequest.getUrl(), Boolean.FALSE);
+                    return null;
+                } else {
+                    return apiResponse;
+                }
+            }
         }
     }
 
@@ -570,10 +578,18 @@ public class VimeoCom extends PluginForHost {
                 plugin.getLogger().info("getUrlType:" + url_source + "->" + newUrlType);
                 if (apiMode && videoID != null && reviewHash == null) {
                     Browser brc = br.cloneBrowser();
-                    if (accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null) != null) {
-                        br.setRequest(brc.getRequest());
-                    } else {
-                        br.getPage(url_source);
+                    try {
+                        if (accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null) != null) {
+                            br.setRequest(brc.getRequest());
+                        } else {
+                            br.getPage(url_source);
+                        }
+                    } catch (DecrypterRetryException e) {
+                        if (RetryReason.PASSWORD.equals(e.getReason())) {
+                            // required for password handling
+                            br.getPage(url_source);
+                        }
+                        throw e;
                     }
                 } else {
                     br.getPage(url_source);
@@ -589,15 +605,25 @@ public class VimeoCom extends PluginForHost {
                 br.getPage(url_source);
             } else if (unlistedHash == null && (urlTypeRequested == VIMEO_URL_TYPE.PLAYER || (urlTypeRequested == null && referer != null))) {
                 newUrlType = VIMEO_URL_TYPE.PLAYER;
+                final String nonAPIRequestURL = "https://player.vimeo.com/video/" + videoID;
                 if (apiMode) {
                     Browser brc = br.cloneBrowser();
-                    if (accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null) != null) {
-                        br.setRequest(brc.getRequest());
-                    } else { // video might be unlisted, unlisted_hash required for api.vimeo.com
-                        br.getPage("https://player.vimeo.com/video/" + videoID);
+                    try {
+                        if (accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null) != null) {
+                            br.setRequest(brc.getRequest());
+                        } else {
+                            // video might be unlisted, unlisted_hash required for api.vimeo.com
+                            br.getPage(nonAPIRequestURL);
+                        }
+                    } catch (DecrypterRetryException e) {
+                        if (RetryReason.PASSWORD.equals(e.getReason())) {
+                            // required for password handling
+                            br.getPage(nonAPIRequestURL);
+                        }
+                        throw e;
                     }
                 } else {
-                    br.getPage("https://player.vimeo.com/video/" + videoID);
+                    br.getPage(nonAPIRequestURL);
                 }
             } else if (unlistedHash != null && (urlTypeRequested == VIMEO_URL_TYPE.UNLISTED || urlTypeRequested == VIMEO_URL_TYPE.PLAYER || urlTypeRequested == VIMEO_URL_TYPE.PLAYER_UNLISTED || urlTypeRequested == null)) {
                 Browser brcPlayer = null;
@@ -611,24 +637,36 @@ public class VimeoCom extends PluginForHost {
                 }
                 if (newUrlType == null) {
                     newUrlType = VIMEO_URL_TYPE.UNLISTED;
-                    final Browser brc = br.cloneBrowser();
-                    final Map<String, Object> apiResponse = accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null);
-                    if (apiResponse != null) {
-                        br.setRequest(brc.getRequest());
-                    } else if (brc.getHttpConnection().getResponseCode() == 404) {
-                        if (urlTypeRequested == VIMEO_URL_TYPE.PLAYER_UNLISTED) {
-                            newUrlType = VIMEO_URL_TYPE.PLAYER_UNLISTED;
+                    try {
+                        final Browser brc = br.cloneBrowser();
+                        final Map<String, Object> apiResponse = accessVimeoAPI(plugin, brc, properties, videoID, unlistedHash, null);
+                        if (apiResponse != null) {
+                            br.setRequest(brc.getRequest());
+                        } else if (brc.getHttpConnection().getResponseCode() == 404) {
+                            if (urlTypeRequested == VIMEO_URL_TYPE.PLAYER_UNLISTED) {
+                                newUrlType = VIMEO_URL_TYPE.PLAYER_UNLISTED;
+                                if (brcPlayer == null) {
+                                    br.getPage("https://player.vimeo.com/video/" + videoID + "?h=" + unlistedHash);
+                                } else {
+                                    br.setRequest(brcPlayer.getRequest());
+                                }
+                            } else {
+                                /* {"error": "The requested video couldn't be found."} */
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    } catch (DecrypterRetryException e) {
+                        if (RetryReason.PASSWORD.equals(e.getReason()) && urlTypeRequested == VIMEO_URL_TYPE.PLAYER_UNLISTED) {
+                            // required for password handling
                             if (brcPlayer == null) {
                                 br.getPage("https://player.vimeo.com/video/" + videoID + "?h=" + unlistedHash);
                             } else {
                                 br.setRequest(brcPlayer.getRequest());
                             }
-                        } else {
-                            /* {"error": "The requested video couldn't be found."} */
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        throw e;
                     }
                 }
             } else if (urlTypeRequested == VIMEO_URL_TYPE.SHOWCASE_VIDEO) {
@@ -862,7 +900,11 @@ public class VimeoCom extends PluginForHost {
     public static boolean isPasswordProtected(final Browser br) throws PluginException {
         // view variable: 4 scheint private mit passwort zu sein
         // view 2 scheint referer
-        return br.containsHTML("\\d+/password") || isPasswordProtectedReview(br);
+        return br.containsHTML("\\d+/password") || isPasswordProtectedReview(br) || isPasswordProtectedAPIError(br);
+    }
+
+    public static boolean isPasswordProtectedAPIError(final Browser br) throws PluginException {
+        return br.containsHTML("\"error_code\"\\s*:\\s*2223") && br.containsHTML("\"error\"\\s*:\\s*\"Whoops! Please enter a password");
     }
 
     public static boolean isPasswordProtectedReview(final Browser br) throws PluginException {

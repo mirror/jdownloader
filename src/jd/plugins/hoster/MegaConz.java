@@ -101,6 +101,7 @@ import org.jdownloader.plugins.components.config.MegaConzConfig;
 import org.jdownloader.plugins.components.config.MegaConzConfig.LimitMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
@@ -112,7 +113,7 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "mega.co.nz", "mega.nz", "mega" };
+        return new String[] { "mega.co.nz", "mega.nz", "mega.io", "mega" };
     }
 
     public MegaConz(PluginWrapper wrapper) {
@@ -665,6 +666,12 @@ public class MegaConz extends PluginForHost {
 
     public static String aLong_to_String(final long... aLong) throws IOException {
         return new String(aLong_to_aByte(aLong), "ISO-8859-1");
+    }
+
+    @Override
+    public Object getFavIcon(String host) throws IOException {
+        // host/https://mega.co.nz redirect via javascript to https://mega.io/
+        return "https://mega.io/";
     }
 
     @Override
@@ -1551,6 +1558,11 @@ public class MegaConz extends PluginForHost {
     @Override
     public boolean hasCaptcha(DownloadLink link, Account acc) {
         return false;
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.FAVICON };
     }
 
     private boolean isMULTIHOST(PluginForHost plugin) {

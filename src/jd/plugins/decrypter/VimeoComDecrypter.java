@@ -537,9 +537,16 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                             throw e;
                         }
                     }
-                } catch (final PluginException e2) {
-                    logger.log(e2);
-                    if (e2.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                } catch (final DecrypterRetryException e) {
+                    logger.log(e);
+                    if (RetryReason.PASSWORD.equals(e.getReason())) {
+                        password = handlePW(param, this.br);
+                    } else {
+                        throw e;
+                    }
+                } catch (final PluginException e) {
+                    logger.log(e);
+                    if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                         if (isPasswordProtected(this.br)) {
                             password = handlePW(param, this.br);
                         } else {
@@ -549,7 +556,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     } else if (isPasswordProtected(this.br)) {
                         password = handlePW(param, this.br);
                     } else {
-                        throw e2;
+                        throw e;
                     }
                 }
                 if (isPasswordProtected(this.br)) {
@@ -1311,8 +1318,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         final Form pwForm = br.getFormbyProperty("id", "pw_form");
         if (pwForm == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return pwForm;
         }
-        return pwForm;
     }
 
     public static String createPrivateVideoUrlWithReferer(final String vimeo_video_id, final String referer_url) throws IOException {

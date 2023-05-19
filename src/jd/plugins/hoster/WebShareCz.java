@@ -22,12 +22,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.WebshareCzConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -44,6 +38,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.WebshareCzConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class WebShareCz extends PluginForHost {
@@ -238,6 +238,11 @@ public class WebShareCz extends PluginForHost {
                 }
                 final String password = JDHash.getSHA1(crypt_md5(account.getPass().getBytes("UTF-8"), salt));
                 final String digest = Hash.getMD5(account.getUser() + ":Webshare:" + account.getPass());
+                /* wst is random 16 char cookie, app().setCookie('wst', ws.strings.randomString(16)) || app().cookie('wst') */
+                /*
+                 * for request, wst is reverse string of wst cookie value, args.wst = app().auth().token() ||
+                 * ws.strings.subString(app().cookie('wst'), 16, 0);
+                 */
                 br.postPage("/api/login/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + password + "&digest=" + digest + "&keep_logged_in=1&wst=");
                 if (br.containsHTML("<code>LOGIN_FATAL_\\d+</code>")) {
                     if ("de".equalsIgnoreCase(lang)) {
@@ -375,8 +380,8 @@ public class WebShareCz extends PluginForHost {
      * $FreeBSD: src/lib/libcrypt/crypt-md5.c,v 1.5 1999/12/17 20:21:45 peter Exp $
      */
     private final String magic    = "$1$"; /*
-                                            * This string is magic for this algorithm. Having it this way, we can get get better later on
-                                            */
+     * This string is magic for this algorithm. Having it this way, we can get get better later on
+     */
     private final int    MD5_SIZE = 16;
 
     private static void memset(byte[] array) {

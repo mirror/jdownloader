@@ -19,12 +19,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.FilestoreToConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -44,6 +38,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.FilestoreToConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "https?://(?:www\\.)?filestore\\.to/\\?d=([A-Z0-9]+)" })
 public class FilestoreTo extends PluginForHost {
@@ -72,7 +72,7 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        login(account, true);
+        login(account, true, null);
         if (!StringUtils.endsWithCaseInsensitive(br.getURL(), "/konto")) {
             br.getPage("/konto");
         }
@@ -101,7 +101,7 @@ public class FilestoreTo extends PluginForHost {
         }
     }
 
-    private boolean login(final Account account, final boolean validateCookies) throws Exception {
+    private boolean login(final Account account, final boolean validateCookies, final String validateCookiesURL) throws Exception {
         synchronized (account) {
             final Cookies cookies = account.loadCookies("");
             this.prepBrowser(br);
@@ -113,7 +113,11 @@ public class FilestoreTo extends PluginForHost {
                         return false;
                     }
                     logger.info("Validating login cookies...");
-                    br.getPage("http://" + this.getHost() + "/konto");
+                    if (validateCookiesURL != null) {
+                        br.getPage(validateCookiesURL);
+                    } else {
+                        br.getPage("http://" + this.getHost() + "/konto");
+                    }
                     if (this.isLoggedinHTML(br)) {
                         logger.info("Cookie login successful");
                         /* refresh saved cookies timestamp */
@@ -121,7 +125,7 @@ public class FilestoreTo extends PluginForHost {
                         return true;
                     } else {
                         logger.info("Cookie login failed");
-                        br.clearCookies(null);
+                        br.clearCookies(getHost());
                         account.clearCookies("");
                     }
                 }
@@ -133,11 +137,15 @@ public class FilestoreTo extends PluginForHost {
                 InputField password = form.getInputFieldByNameRegex("(?i)Password");
                 password.setValue(Encoding.urlEncode(account.getPass()));
                 br.submitForm(form);
+                if (validateCookiesURL != null) {
+                    br.getPage(validateCookiesURL);
+                }
                 if (!this.isLoggedinHTML(br)) {
                     throw new AccountInvalidException();
+                } else {
+                    account.saveCookies(br.getCookies(getHost()), "");
+                    return true;
                 }
-                account.saveCookies(br.getCookies(getHost()), "");
-                return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -150,8 +158,11 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        login(account, false, null);
         br.getPage(link.getPluginPatternMatcher());
+        if (!isLoggedinHTML(br)) {
+            login(account, true, link.getPluginPatternMatcher());
+        }
         if (AccountType.FREE.equals(account.getType())) {
             handleDownload(link, account, true, 1);
         } else {
@@ -366,9 +377,9 @@ public class FilestoreTo extends PluginForHost {
     }
 
     private String getDllink(final Browser br) {
-        String dllink = br.getRegex("<a href=(\"|')([^>]*)\\1>hier</a>").getMatch(1);
+        String dllink = br.getRegex("<a href\\s*=\\s*(\"|')([^>]*)\\1>hier</a>").getMatch(1);
         if (dllink == null) {
-            dllink = br.getRegex("<iframe class=\"downframe\" src=\"(.*?)\"").getMatch(0);
+            dllink = br.getRegex("<iframe class\\s*=\\s*\"downframe\" src\\s*=\\s*\"(.*?)\"").getMatch(0);
         }
         return dllink;
     }
