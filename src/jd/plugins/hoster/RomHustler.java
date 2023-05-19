@@ -131,12 +131,13 @@ public class RomHustler extends PluginForHost {
         final String partsOverviewURL = getPartsDownloadOverviewURL(link);
         if (partsOverviewURL != null) {
             return new Regex(partsOverviewURL, "/download/guest/(\\d+)").getMatch(0);
+        } else {
+            return null;
         }
-        return null;
     }
 
     private String getMainContentURL(final DownloadLink link) {
-        return link.getStringProperty("decrypterLink");
+        return link.getStringProperty(PROPERTY_MAIN_CONTENT_URL);
     }
 
     private String getPartsDownloadOverviewURL(final DownloadLink link) {
@@ -196,7 +197,7 @@ public class RomHustler extends PluginForHost {
             /* Backward compatibility for items added before- and until revision 47763. */
             matchingPart = crawledParts.get(0);
         }
-        /* Check for errors */
+        /* Check for errors first. */
         if (br.containsHTML("(?i)>\\s*File too big for guests")) {
             throw new AccountRequiredException();
         } else if (br.containsHTML("class=\"alert alert-danger restricted-button\"")) {

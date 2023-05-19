@@ -22,6 +22,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.CrawlMode;
+import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
+import org.jdownloader.plugins.components.config.TiktokConfig.ImageFormat;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -42,18 +54,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.TiktokCom;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.CrawlMode;
-import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
-import org.jdownloader.plugins.components.config.TiktokConfig.ImageFormat;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { TiktokCom.class })
@@ -158,37 +158,28 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> crawlSingleMedia(final CryptedLink param, final Account account) throws Exception {
-        if (TiktokCom.USE_NEW_HANDLING) {
-            /* 2022-08-25: New handling: Under development */
-            final DownloadLink link = param.getDownloadLink();
-            final boolean forceAPI = link != null ? link.getBooleanProperty(TiktokCom.PROPERTY_FORCE_API, false) : false;
-            if (TiktokCom.getDownloadMode() == DownloadMode.API || forceAPI) {
-                return this.crawlSingleMediaAPI(param.getCryptedUrl(), null, forceAPI);
-            } else {
-                try {
-                    return crawlSingleMediaWebsite(param.getCryptedUrl(), null);
-                } catch (final PluginException e) {
-                    if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"(?:status_msg|message)\"\\s*:\\s*\"Something went wrong\"")) {
-                        final ArrayList<DownloadLink> results = this.crawlSingleMediaAPI(param.getCryptedUrl(), null, true);
-                        logger.info("Auto fallback to API worked fine");
-                        return results;
-                    } else {
-                        throw e;
-                    }
+        final DownloadLink link = param.getDownloadLink();
+        final boolean forceAPI = link != null ? link.getBooleanProperty(TiktokCom.PROPERTY_FORCE_API, false) : false;
+        if (TiktokCom.getDownloadMode() == DownloadMode.API || forceAPI) {
+            return this.crawlSingleMediaAPI(param.getCryptedUrl(), null, forceAPI);
+        } else {
+            try {
+                return crawlSingleMediaWebsite(param.getCryptedUrl(), null);
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"(?:status_msg|message)\"\\s*:\\s*\"Something went wrong\"")) {
+                    final ArrayList<DownloadLink> results = this.crawlSingleMediaAPI(param.getCryptedUrl(), null, true);
+                    logger.info("Auto fallback to API worked fine");
+                    return results;
+                } else {
+                    throw e;
                 }
             }
-        } else {
-            /* Single video URL --> Is handled by host plugin */
-            // TODO: Remove this after 2023-06
-            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            ret.add(this.createDownloadlink(param.getCryptedUrl()));
-            return ret;
         }
     }
 
     /**
-     * This can crawl single videos from website. </br> If this tiktok item also contains images or contains only images, this handling will
-     * fail!
+     * This can crawl single videos from website. </br>
+     * If this tiktok item also contains images or contains only images, this handling will fail!
      */
     public ArrayList<DownloadLink> crawlSingleMediaWebsite(final String url, final Account account) throws Exception {
         final TiktokCom hostPlg = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
@@ -213,8 +204,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
         String dateFormatted = null;
         final boolean useWebsiteEmbed = true;
         /**
-         * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br> When using an account and
-         * potentially downloading private videos however, we can't use the embed way.
+         * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br>
+         * When using an account and potentially downloading private videos however, we can't use the embed way.
          */
         String videoDllink = null;
         if (account != null) {
@@ -516,9 +507,9 @@ public class TiktokComCrawler extends PluginForDecrypt {
                  * https://github.com/yt-dlp/yt-dlp/issues/4138#issuecomment-1217380819
                  */
                 /**
-                 * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br> This is also possible using modified URLs
-                 * in e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any "uri_list" which contains the "video_id"
-                 * parameter which also typically matches play_addr/uri
+                 * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br>
+                 * This is also possible using modified URLs in e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any
+                 * "uri_list" which contains the "video_id" parameter which also typically matches play_addr/uri
                  */
                 video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, String.format("https://api.tiktokv.com/aweme/v1/play/?video_id=%s&line=0&watermark=0&source=AWEME_DETAIL&is_play_url=1&ratio=default&improve_bitrate=1", play_addr.get("uri").toString()));
                 /*
@@ -543,8 +534,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
                     video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, directurl);
                     if (data_size != null) {
                         /**
-                         * Set filesize of download-version because streaming- and download-version are nearly identical. </br> If a video
-                         * is watermarked and downloads are prohibited both versions should be identical.
+                         * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
+                         * If a video is watermarked and downloads are prohibited both versions should be identical.
                          */
                         video0.setDownloadSize(data_size.longValue());
                     }
@@ -621,8 +612,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Use website to crawl all videos of a user. </br> Pagination hasn't been implemented so this will only find the first batch of items -
-     * usually around 30 items!
+     * Use website to crawl all videos of a user. </br>
+     * Pagination hasn't been implemented so this will only find the first batch of items - usually around 30 items!
      */
     public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param) throws Exception {
         prepBRWebsite(br);

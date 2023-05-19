@@ -225,9 +225,9 @@ public class WebShareCz extends PluginForHost {
                     }
                 }
                 logger.info("Performing full login");
-                final String lang = System.getProperty("user.language");
                 br.setFollowRedirects(false);
                 br.postPage("https://" + this.getHost() + "/api/salt/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&wst=");
+                final String lang = System.getProperty("user.language");
                 final String salt = br.getRegex("<salt>([^<]*?)</salt>").getMatch(0);
                 if (salt == null) {
                     if ("de".equalsIgnoreCase(lang)) {
