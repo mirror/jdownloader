@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.text.DecimalFormat;
+import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
@@ -59,6 +60,7 @@ public class TvNrkNo extends PluginForHost {
     private boolean             isAvailable       = true;
     private boolean             newAPI            = false;
     private Map<String, Object> entries           = null;
+    private String              clip_id           = null;
 
     @Override
     public String getAGBLink() {
@@ -77,7 +79,7 @@ public class TvNrkNo extends PluginForHost {
         br.setFollowRedirects(true);
         final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), ".+/serie/([^<>\"/]+)(/([A-Z]{4}\\d{8}))?/sesong.(\\d+)/episode.(\\d+)");
         final String url_series_title = urlinfo.getMatch(0);
-        String clip_id = urlinfo.getMatch(2);
+        clip_id = urlinfo.getMatch(2);
         final String url_season = urlinfo.getMatch(3);
         final String url_episode = urlinfo.getMatch(4);
         String apikey = null;
@@ -94,7 +96,8 @@ public class TvNrkNo extends PluginForHost {
             new_api_base_url = br.getRegex("data-psapi-base-url=\"(http[^\"]+)\"").getMatch(0);
         }
         /* 2019-09-16: Both ways are still working! */
-        final boolean use_new_api = false;
+        /* 2023-05-19: Only new API is working. */
+        final boolean use_new_api = true;
         String series_title = null;
         String episode_title = null;
         String description = null;
@@ -115,7 +118,7 @@ public class TvNrkNo extends PluginForHost {
                 /* 404 handling is enough to determine offline state (via API AND website)! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
             series_title = (String) entries.get("seriesTitle");
             episode_title = (String) entries.get("title");
             description = (String) entries.get("longDescription");
@@ -170,19 +173,26 @@ public class TvNrkNo extends PluginForHost {
         if (!isAvailable) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Content is not downloadable or has not aired yet");
         }
-        String hls_master = null;
+        boolean isEncryptedHLS = false;
+        String url_hls_master = null;
         String url_hds = null;
         if (newAPI) {
             /*
              * 2019-09-16: New API has hls-master directly available - old API will only return hds URL which we will have to "convert" to
              * HLS-master manually.
              */
-            try {
-                entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "mediaAssetsOnDemand/{0}");
-                url_hds = (String) entries.get("hdsUrl");
-                hls_master = (String) entries.get("hlsUrl");
-            } catch (final Throwable e) {
-                e.printStackTrace();
+            br.getPage("/playback/manifest/program/" + clip_id + "?eea-portability=true");
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
+            final List<Map<String, Object>> assets = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "playable/assets");
+            for (final Map<String, Object> asset : assets) {
+                final String format = asset.get("format").toString();
+                final String url = asset.get("url").toString();
+                if (format.equalsIgnoreCase("HLS")) {
+                    url_hls_master = url;
+                    isEncryptedHLS = ((Boolean) asset.get("encrypted")).booleanValue();
+                } else if (format.equalsIgnoreCase("HDS")) {
+                    url_hds = url;
+                }
             }
         } else {
             url_hds = PluginJSonUtils.getJsonValue(br, "mediaUrl");
@@ -197,14 +207,16 @@ public class TvNrkNo extends PluginForHost {
         // url_hds = this.br.getRegex("data\\-media=\"(http[^<>\"]*?)\"").getMatch(0);
         // hls_master = this.br.getRegex("data\\-hls\\-media=\"(http[^<>\"]*?)\"").getMatch(0);
         // }
-        if (StringUtils.isEmpty(url_hds) && StringUtils.isEmpty(hls_master)) {
+        if (StringUtils.isEmpty(url_hds) && StringUtils.isEmpty(url_hls_master)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (isEncryptedHLS) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "DRM unsupported");
         }
-        if (StringUtils.isEmpty(hls_master) && !StringUtils.isEmpty(url_hds)) {
+        if (StringUtils.isEmpty(url_hls_master) && !StringUtils.isEmpty(url_hds)) {
             /* This is a rare case - convert hds urls --> hls urls */
-            hls_master = url_hds.replace("akamaihd.net/z/", "akamaihd.net/i/").replace("/manifest.f4m", "/master.m3u8");
+            url_hls_master = url_hds.replace("akamaihd.net/z/", "akamaihd.net/i/").replace("/manifest.f4m", "/master.m3u8");
         }
-        this.br.getPage(hls_master);
+        this.br.getPage(url_hls_master);
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -28,6 +28,10 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -49,10 +53,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Tube8Com extends PluginForHost {
@@ -163,16 +163,12 @@ public class Tube8Com extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         }
-        String filename = br.getRegex("<span class=\"item\">\\s*(.*?)\\s*</span>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>\\s*(.*?)\\s*-\\s*Porn Video\\s*\\d+[^<]*<").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>\\s*(.*?)\\s*-\\s*Tube8\\s*<").getMatch(0);
+        String title = br.getRegex("\"video_title\":\"([^\"]+)").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<span class=\"item\">(.*?)</span>").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("<title>([^<]+)<").getMatch(0);
             }
-        }
-        if (filename == null) {
-            /* Fallback */
-            filename = fid;
         }
         boolean failed = true;
         boolean preferMobile = getPluginConfig().getBooleanProperty(mobile, false);
@@ -203,13 +199,17 @@ public class Tube8Com extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        filename = filename.trim();
-        if (dllink.contains(".3gp")) {
-            link.setFinalFileName((filename + ".3gp"));
-        } else if (dllink.contains(".mp4")) {
-            link.setFinalFileName((filename + ".mp4"));
-        } else {
-            link.setFinalFileName(filename + ".flv");
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            /* Remove irrelevant parts */
+            title = title.replaceFirst(" Porn Videos - Tube8", "");
+            if (dllink.contains(".3gp")) {
+                link.setFinalFileName((title + ".3gp"));
+            } else if (dllink.contains(".mp4")) {
+                link.setFinalFileName((title + ".mp4"));
+            } else {
+                link.setFinalFileName(title + ".flv");
+            }
         }
         if (failed) {
             return AvailableStatus.UNCHECKABLE;

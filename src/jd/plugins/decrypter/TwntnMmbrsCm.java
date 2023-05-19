@@ -20,16 +20,18 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.TwentyOneMembersVariantInfo;
@@ -41,23 +43,20 @@ public class TwntnMmbrsCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         if (!TwentyOneMembersCom.login(br)) {
-            UIOManager.I().showErrorMessage("An active 21members.com account is required for " + parameter);
-            return decryptedLinks;
+            throw new AccountRequiredException();
         }
         final String id = new Regex(parameter, "(\\d+)$").getMatch(0);
         br.getPage(parameter);
         if (jd.plugins.hoster.TwentyOneMembersCom.isOffline(this.br)) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final ArrayList<TwentyOneMembersVariantInfo> videoVariantInfos = TwentyOneMembersCom.parseVideoVariants(br);
         if (videoVariantInfos == null || videoVariantInfos.size() == 0) {
-            UIOManager.I().showErrorMessage("No access to " + parameter);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         sortVariants(videoVariantInfos);
         String title = PluginJSonUtils.getJson(this.br, "sceneTitle");
@@ -73,7 +72,7 @@ public class TwntnMmbrsCm extends PluginForDecrypt {
         videoDummy.setVariantSupport(true);
         videoDummy.setVariants(videoVariantInfos);
         TwentyOneMembersCom.setVariant(videoDummy, videoVariantInfos.get(0));
-        decryptedLinks.add(videoDummy);
+        ret.add(videoDummy);
         br.getPage("http://21members.com/members/scene/photos/" + id + "/");
         final ArrayList<TwentyOneMembersVariantInfo> photoVariantInfos = TwentyOneMembersCom.parsePhotoVariants(br);
         if (photoVariantInfos != null && photoVariantInfos.size() > 0) {
@@ -84,11 +83,11 @@ public class TwntnMmbrsCm extends PluginForDecrypt {
             photoDummy.setVariantSupport(true);
             photoDummy.setVariants(photoVariantInfos);
             TwentyOneMembersCom.setVariant(photoDummy, photoVariantInfos.get(0));
-            decryptedLinks.add(photoDummy);
+            ret.add(photoDummy);
         }
         // TwentyOneMembersCom.update
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 
     /**

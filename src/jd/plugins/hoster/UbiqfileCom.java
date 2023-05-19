@@ -18,15 +18,18 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UbiqfileCom extends XFileSharingProBasic {
@@ -145,6 +148,10 @@ public class UbiqfileCom extends XFileSharingProBasic {
                 fileInfo[0] = new Regex(this.correctedBR, "name=description content=\"Download File ([^<>\"]+)\"").getMatch(0);
             }
         }
+        final String betterFilesize = br.getRegex("(?i)>\\s*Size\\s*:\\s*(\\d+[^<]+)</div>").getMatch(0);
+        if (betterFilesize != null) {
+            fileInfo[1] = betterFilesize;
+        }
         return fileInfo;
     }
 
@@ -159,5 +166,13 @@ public class UbiqfileCom extends XFileSharingProBasic {
     public boolean supports_availablecheck_filename_abuse() {
         /* 2019-06-27: Special */
         return false;
+    }
+
+    @Override
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, html, link, account, checkAll);
+        if (br.containsHTML("(?i)>\\s*This file is not available for free download")) {
+            throw new AccountRequiredException();
+        }
     }
 }
