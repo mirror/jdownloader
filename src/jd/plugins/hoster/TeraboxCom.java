@@ -239,56 +239,42 @@ public class TeraboxCom extends PluginForHost {
         return -1;
     }
 
-    public void login(final Account account, final boolean force) throws Exception {
+    public AccountInfo login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             final Cookies userCookies = account.loadUserCookies();
-            if (userCookies == null) {
+            if (userCookies == null || userCookies.isEmpty()) {
                 showCookieLoginInfo();
                 throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
             br.setCookies(userCookies);
             if (!force) {
-                return;
+                return null;
             }
             logger.info("Performing full user-cookie login");
             br.setCookies(userCookies);
-            if (!this.checkLoginStatus(br, account)) {
-                if (account.hasEverBeenValid()) {
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                } else {
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                }
+            br.getPage("https://www." + this.getHost() + "/disk/home");
+            final String bdstoken = br.getRegex("\"bdstoken\":\"([a-f0-9]{32})\"").getMatch(0);
+            if (bdstoken == null) {
+                errorAccountInvalid(account);
             }
-            return;
-        }
-    }
-
-    private boolean checkLoginStatus(final Browser br, final Account account) throws IOException {
-        br.setFollowRedirects(true);
-        br.getPage("https://www." + this.getHost() + "/disk/home");
-        final String bdstoken = br.getRegex("\"bdstoken\":\"([a-f0-9]{32})\"").getMatch(0);
-        if (bdstoken == null) {
-            return false;
-        } else {
             account.setProperty(PROPERTY_ACCOUNT_TOKEN, bdstoken);
-            account.saveCookies(this.br.getCookies(this.getHost()), "");
-            return true;
-        }
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        login(account, true);
-        final String token = account.getStringProperty(PROPERTY_ACCOUNT_TOKEN);
-        if (token != null) {
             /* Try to find additional account information */
+            final AccountInfo ai = new AccountInfo();
             final Browser brc = br.cloneBrowser();
-            brc.getPage("/rest/2.0/membership/proxy/user?method=query&membership_version=1.0&channel=dubox&web=1&app_id=250528&clienttype=0&bdstoken=" + token);
+            brc.getPage("/rest/2.0/membership/proxy/user?method=query&membership_version=1.0&channel=dubox&web=1&app_id=250528&clienttype=0&bdstoken=" + bdstoken);
             /* 2021-04-14: Only free accounts are existent/supported */
-            final Map<String, Object> root = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> root = JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Number error_code = (Number) root.get("error_code");
+            if (error_code != null && error_code.intValue() != 0) {
+                /*
+                 * Assume that cookies are invalid. When user logs out in browser it may happen that we can still get a token via html but
+                 * the token is invalid.
+                 */
+                /* E.g. {"error_code":100003,"error_msg":"Invalid Bduss","request_id":"<Number>"} */
+                errorAccountInvalid(account);
+            }
             final Map<String, Object> data = (Map<String, Object>) root.get("data");
             final Map<String, Object> member_info = (Map<String, Object>) data.get("member_info");
             final Number is_vip = ((Number) member_info.get("is_vip"));
@@ -301,12 +287,24 @@ public class TeraboxCom extends PluginForHost {
             } else {
                 account.setType(AccountType.FREE);
             }
-        } else {
-            logger.warning("WebAPI-Token is missing: Can't fetch account details!");
-            account.setType(AccountType.FREE);
+            ai.setUnlimitedTraffic();
+            // account.saveCookies(br.getCookies(br.getHost()), "");
+            return ai;
         }
-        ai.setUnlimitedTraffic();
-        return ai;
+    }
+
+    private void errorAccountInvalid(final Account account) throws AccountInvalidException {
+        account.removeProperty(PROPERTY_ACCOUNT_TOKEN);
+        if (account.hasEverBeenValid()) {
+            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+        } else {
+            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        return login(account, true);
     }
 
     @Override
