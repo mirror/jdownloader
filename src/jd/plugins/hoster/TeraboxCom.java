@@ -21,6 +21,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -44,13 +51,6 @@ import jd.plugins.decrypter.TeraboxComFolder;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { TeraboxComFolder.class })
@@ -287,7 +287,7 @@ public class TeraboxCom extends PluginForHost {
             /* Try to find additional account information */
             final Browser brc = br.cloneBrowser();
             brc.getPage("/rest/2.0/membership/proxy/user?method=query&membership_version=1.0&channel=dubox&web=1&app_id=250528&clienttype=0&bdstoken=" + token);
-            /* 2021-04-14: Only free accounts are existant/supported */
+            /* 2021-04-14: Only free accounts are existent/supported */
             final Map<String, Object> root = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
             final Map<String, Object> data = (Map<String, Object>) root.get("data");
             final Map<String, Object> member_info = (Map<String, Object>) data.get("member_info");
@@ -302,6 +302,7 @@ public class TeraboxCom extends PluginForHost {
                 account.setType(AccountType.FREE);
             }
         } else {
+            logger.warning("WebAPI-Token is missing: Can't fetch account details!");
             account.setType(AccountType.FREE);
         }
         ai.setUnlimitedTraffic();
