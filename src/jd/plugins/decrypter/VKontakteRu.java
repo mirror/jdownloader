@@ -862,7 +862,13 @@ public class VKontakteRu extends PluginForDecrypt {
                     }
                 }
                 for (final HlsContainer hlsQuality : hlsQualitiesBestFirst) {
-                    foundQualities.put(hlsQuality.getHeight() + "p", hlsQuality.getDownloadurl());
+                    final int correctedHeightValue = getHeightByWidth(hlsQuality.getWidth());
+                    if (correctedHeightValue != -1) {
+                        /* Small ugly workaround e.g. for 1280x718 --> 720p */
+                        foundQualities.put(correctedHeightValue + "p", hlsQuality.getDownloadurl());
+                    } else {
+                        foundQualities.put(hlsQuality.getHeight() + "p", hlsQuality.getDownloadurl());
+                    }
                 }
             }
         }
@@ -873,9 +879,10 @@ public class VKontakteRu extends PluginForDecrypt {
         // create sorted linkedHashMap with best->worse quality sort order
         final Map<String, String> foundAndSortedQualities = new LinkedHashMap<String, String>();
         for (final String[] qualityInfo : knownQualities) {
-            final String url = foundQualities.get(qualityInfo[2]);
+            final String qualityHeightStr = qualityInfo[2];
+            final String url = foundQualities.get(qualityHeightStr);
             if (url != null) {
-                foundAndSortedQualities.put(qualityInfo[2], url);
+                foundAndSortedQualities.put(qualityHeightStr, url);
             }
         }
         if (foundAndSortedQualities.isEmpty()) {
@@ -937,6 +944,32 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.warning("Single video crawler is returning empty array");
         }
         return ret;
+    }
+
+    private int getHeightByWidth(final int width) {
+        switch (width) {
+        default:
+            return -1;
+        case 640:
+            return 480;
+        case 1280:
+            return 720;
+        case 1920:
+            return 1080;
+        }
+    }
+
+    private int getWidthByHeight(final int height) {
+        switch (height) {
+        default:
+            return -1;
+        case 480:
+            return 640;
+        case 720:
+            return 1280;
+        case 1080:
+            return 1920;
+        }
     }
 
     private static Map<String, Object> findVideoMap(final Browser br, final String videoid) throws Exception {

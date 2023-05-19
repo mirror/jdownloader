@@ -18,6 +18,10 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -28,10 +32,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * NOTE: <br />
@@ -84,20 +84,8 @@ public class ShinkMe extends antiDDoSForDecrypt {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String url = param.getCryptedUrl().replace(".in/", ".me/");
         br.setFollowRedirects(true);
-        // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)
-        // Chrome/112.0.0.0 Safari/537.36");
-        // br.getHeaders().put("sec-ch-ua", "\"Chromium\";v=\"112\", \"Google Chrome\";v=\"112\", \"Not:A-Brand\";v=\"99\"");
-        // br.getHeaders().put("sec-ch-ua-mobile", "?0");
-        // br.getHeaders().put("sec-ch-ua-platform", "\"Windows\"");
-        // br.getHeaders().put("upgrade-insecure-requests", "1");
-        // br.getHeaders().put("Origin", "https://shon.xyz");
-        // br.getHeaders().put("Accept",
-        // "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-        // br.getHeaders().put("sec-fetch-site", "same-origin");
-        // br.getHeaders().put("sec-fetch-mode", "navigate");
-        // br.getHeaders().put("sec-fetch-user", "?1");
-        // br.getHeaders().put("sec-fetch-dest", "document");
         Form form1 = null;
+        final boolean skipCaptcha = true;
         /* 2021-03-16: reCaptcha not present anymore */
         // they seem to only show recaptchav2 once!! they track ip session (as restarting client doesn't get recaptchav2, the only cookies
         // that are cached are cloudflare and they are only kept in memory, and restarting will flush it)
@@ -114,7 +102,7 @@ public class ShinkMe extends antiDDoSForDecrypt {
             /*
              * 2023-05-19: looks like captcha is not required/validated
              */
-            if (false && CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(form1)) {
+            if (!skipCaptcha && CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(form1)) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 form1.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
@@ -125,7 +113,7 @@ public class ShinkMe extends antiDDoSForDecrypt {
         if (form2 != null) {
             final String reCaptchav2FieldKey = "g-recaptcha-response";
             /* 2023-05-19: looks like captcha is not required/validated */
-            if (false && (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(form2) || form2.hasInputFieldByName(reCaptchav2FieldKey))) {
+            if (!skipCaptcha && (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(form2) || form2.hasInputFieldByName(reCaptchav2FieldKey))) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 form2.put(reCaptchav2FieldKey, Encoding.urlEncode(recaptchaV2Response));
             }

@@ -91,7 +91,6 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String TYPE_PICTURELINK                                                            = "(?i)https?://vkontaktedecrypted\\.ru/picturelink/((?:\\-)?\\d+)_(\\d+)(\\?tag=[\\d\\-]+)?";
     public static final String  TYPE_DOCLINK_1                                                              = "(?i)https?://[^/]+/doc([\\d\\-]+)_([\\d\\-]+)(\\?hash=[^&#]+(\\&dl=[^&#]{16,})?)?";
     public static final String  TYPE_DOCLINK_2                                                              = "(?i)https?://[^/]+/s/v1/doc/([A-Za-z0-9\\-_]+)";
-    public static final long    trust_cookie_age                                                            = 300000l;
     /* Settings stuff */
     public static final String  FASTLINKCHECK_VIDEO                                                         = "FASTLINKCHECK_VIDEO";
     public static final String  FASTCRAWL_VIDEO                                                             = "FASTCRAWL_VIDEO";
@@ -927,7 +926,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private boolean isHLS(final DownloadLink link, final String url) {
         if (url == null) {
             return false;
-        } else if (url.contains(".m3u8") || url.contains("video_hls.php")) {
+        } else if (StringUtils.containsIgnoreCase(url, ".m3u8") || StringUtils.containsIgnoreCase(url, "video_hls.php")) {
             return true;
         } else if (StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_VIDEO_STREAM_TYPE), VIDEO_STREAM_TYPE_HLS)) {
             return true;
@@ -1175,9 +1174,8 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     br.setCookies(DOMAIN, cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !forceCookieCheck) {
-                        /* We trust these cookies --> Do not check them */
-                        logger.info("Trust login cookies as they're not yet that old");
+                    if (!forceCookieCheck) {
+                        /* Do not validate login cookies */
                         return;
                     } else {
                         logger.info("Attempting cookie login");

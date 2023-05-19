@@ -16,7 +16,6 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
@@ -24,6 +23,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PremiumizeBrowseNode;
 import jd.plugins.hoster.ZeveraCore;
@@ -73,18 +74,13 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
         this.setBrowserExclusive();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final ArrayList<PremiumizeBrowseNode> nodes = getNodes(br, account, parameter.getCryptedUrl());
-        final Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        if (nodes == null) {
-            final String status = (String) data.get("status");
-            if ("error".equals(status)) {
-                /* E.g. "{"status":"error","message":"customer_id and pin param missing or not logged in "}" */
-                final String urlParams = new Regex(parameter.getCryptedUrl(), "\\?(.+)").getMatch(0);
-                final DownloadLink offline = this.createOfflinelink(parameter.getCryptedUrl(), urlParams, "Either invalid login credentials, wrong account (you can only download your own cloud files) or invalid folder_id");
-                offline.setFinalFileName(urlParams);
-                ret.add(offline);
-                return ret;
-            }
-            return null;
+        final Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        final String status = (String) data.get("status");
+        final Object errorO = data.get("error");
+        if ("error".equals(status) || errorO != null) {
+            throw new AccountRequiredException();
+        } else if (nodes == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Use path from previous craw process if available --> Saves http requests */
         String folderPath = this.getAdoptedCloudFolderStructure();
