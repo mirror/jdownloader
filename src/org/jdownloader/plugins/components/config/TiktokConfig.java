@@ -17,8 +17,8 @@ public interface TiktokConfig extends PluginConfigInterface {
     public static final TiktokConfig.TRANSLATION TRANSLATION                                                = new TRANSLATION();
     final String                                 text_EnableFastLinkcheck                                   = "Enable fast linkcheck? If enabled, filenames may contain less information in website mode and filesize might be missing until download is started.";
     final String                                 text_MaxSimultaneousDownloads                              = "Set max. simultaneous downloads. The higher the value the higher is the chance that your IP gets blocked by tiktok!";
-    final String                                 text_DownloadMode                                          = "Download mode";
-    final String                                 text_CrawlMode                                             = "Profile crawl mode";
+    final String                                 text_MediaCrawlMode                                        = "Media crawl mode";
+    final String                                 text_ProfileCrawlMode                                      = "Profile crawl mode";
     final String                                 text_AddDummyURLProfileCrawlerWebsiteModeMissingPagination = "Profile crawler website mode: Add dummy URL when user profile is crawled and crawler fails to find all items due to missing pagination support?";
     final String                                 text_ProfileCrawlerMaxItemsLimit                           = "Profile crawler: Define max number of items to be fetched: 0 = disable profile crawler, -1 = fetch all items";
     final String                                 text_TagCrawlerMaxItemsLimit                               = "Tag crawler: Define max number of items to be fetched: 0 = disable tag crawler, -1 = fetch all items";
@@ -35,12 +35,12 @@ public interface TiktokConfig extends PluginConfigInterface {
             return text_MaxSimultaneousDownloads;
         }
 
-        public String getDownloadMode_label() {
-            return text_DownloadMode;
+        public String getMediaCrawlMode_label() {
+            return text_MediaCrawlMode;
         }
 
-        public String getCrawlMode_label() {
-            return text_CrawlMode;
+        public String getProfileCrawlMode_label() {
+            return text_ProfileCrawlMode;
         }
 
         public String getAddDummyURLProfileCrawlerWebsiteModeMissingPagination_label() {
@@ -85,7 +85,7 @@ public interface TiktokConfig extends PluginConfigInterface {
 
     void setMaxSimultaneousDownloads(int i);
 
-    public static enum DownloadMode implements LabelInterface {
+    public static enum MediaCrawlMode implements LabelInterface {
         WEBSITE {
             @Override
             public String getLabel() {
@@ -103,12 +103,12 @@ public interface TiktokConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("API")
     @Order(40)
-    @DescriptionForConfigEntry(text_DownloadMode)
-    DownloadMode getDownloadMode();
+    @DescriptionForConfigEntry(text_MediaCrawlMode)
+    MediaCrawlMode getMediaCrawlMode();
 
-    void setDownloadMode(final DownloadMode mode);
+    void setMediaCrawlMode(final MediaCrawlMode mode);
 
-    public static enum CrawlMode implements LabelInterface {
+    public static enum ProfileCrawlMode implements LabelInterface {
         WEBSITE {
             @Override
             public String getLabel() {
@@ -126,10 +126,10 @@ public interface TiktokConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("API")
     @Order(50)
-    @DescriptionForConfigEntry(text_CrawlMode)
-    CrawlMode getCrawlMode();
+    @DescriptionForConfigEntry(text_ProfileCrawlMode)
+    ProfileCrawlMode getProfileCrawlMode();
 
-    void setCrawlMode(final CrawlMode mode);
+    void setProfileCrawlMode(final ProfileCrawlMode mode);
 
     @AboutConfig
     @DefaultBooleanValue(true)

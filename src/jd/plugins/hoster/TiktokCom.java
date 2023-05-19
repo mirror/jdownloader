@@ -40,7 +40,7 @@ import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
+import org.jdownloader.plugins.components.config.TiktokConfig.MediaCrawlMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -399,20 +399,20 @@ public class TiktokCom extends PluginForHost {
         }
     }
 
-    public static DownloadMode getDownloadMode() {
-        final DownloadMode mode = PluginJsonConfig.get(TiktokConfig.class).getDownloadMode();
+    public static MediaCrawlMode getDownloadMode() {
+        final MediaCrawlMode mode = PluginJsonConfig.get(TiktokConfig.class).getMediaCrawlMode();
         if (false) {
             // see https://svn.jdownloader.org/issues/90292
-            return DownloadMode.WEBSITE;
+            return MediaCrawlMode.WEBSITE;
         } else {
             return mode;
         }
     }
 
     private static boolean configUseAPI() {
-        final DownloadMode mode = getDownloadMode();
+        final MediaCrawlMode mode = getDownloadMode();
         // if (mode == DownloadMode.API || mode == DownloadMode.API_HD) {
-        if (mode == DownloadMode.API) {
+        if (mode == MediaCrawlMode.API) {
             return true;
         } else {
             return false;
@@ -1064,7 +1064,7 @@ public class TiktokCom extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
-        final DownloadMode mode = getDownloadMode();
+        final MediaCrawlMode mode = getDownloadMode();
         if (!link.hasProperty(PROPERTY_LAST_USED_DOWNLOAD_MODE) || !StringUtils.equals(link.getStringProperty(PROPERTY_LAST_USED_DOWNLOAD_MODE), mode.name())) {
             /* Prevent file corruption */
             logger.info("Resetting progress because user has downloaded using other download mode before");

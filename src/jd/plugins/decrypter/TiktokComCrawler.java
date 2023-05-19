@@ -28,9 +28,9 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.CrawlMode;
-import org.jdownloader.plugins.components.config.TiktokConfig.DownloadMode;
 import org.jdownloader.plugins.components.config.TiktokConfig.ImageFormat;
+import org.jdownloader.plugins.components.config.TiktokConfig.MediaCrawlMode;
+import org.jdownloader.plugins.components.config.TiktokConfig.ProfileCrawlMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -160,7 +160,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> crawlSingleMedia(final CryptedLink param, final Account account) throws Exception {
         final DownloadLink link = param.getDownloadLink();
         final boolean forceAPI = link != null ? link.getBooleanProperty(TiktokCom.PROPERTY_FORCE_API, false) : false;
-        if (TiktokCom.getDownloadMode() == DownloadMode.API || forceAPI) {
+        if (TiktokCom.getDownloadMode() == MediaCrawlMode.API || forceAPI) {
             return this.crawlSingleMediaAPI(param.getCryptedUrl(), null, forceAPI);
         } else {
             try {
@@ -604,7 +604,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             logger.info("User has disabled profile crawler --> Returning empty array");
             return new ArrayList<DownloadLink>();
         }
-        if (PluginJsonConfig.get(TiktokConfig.class).getCrawlMode() == CrawlMode.API) {
+        if (PluginJsonConfig.get(TiktokConfig.class).getProfileCrawlMode() == ProfileCrawlMode.API) {
             return crawlProfileAPI(param);
         } else {
             return crawlProfileWebsite(param);

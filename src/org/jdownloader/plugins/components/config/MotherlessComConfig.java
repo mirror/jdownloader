@@ -17,7 +17,7 @@ public interface MotherlessComConfig extends PluginConfigInterface {
     public static final TRANSLATION TRANSLATION                            = new TRANSLATION();
 
     public static class TRANSLATION {
-        public String getPreferOriginal_label() {
+        public String getGroupCrawlerLimit_label() {
             return text_GroupCrawlerLimit;
         }
 

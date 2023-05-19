@@ -233,6 +233,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Plugin outdated" })
     String downloadlink_status_error_defect();
 
+    @Default(lngs = { "en" }, values = { "Blocked by %s1" })
+    String downloadlink_status_error_blocked_by(Object s1);
+
     @Default(lngs = { "en" }, values = { "Service temp. unavailable" })
     String download_error_message_unavailable();
 

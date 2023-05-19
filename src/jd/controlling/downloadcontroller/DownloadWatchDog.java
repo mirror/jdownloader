@@ -2824,7 +2824,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 final BlockedByException bbe = (BlockedByException) throwable;
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getDownloadUnknownIOExceptionWaittime());
-                ret.setMessage(bbe.getBlockedBy().getLabel());
+                ret.setMessage(_JDT.T.downloadlink_status_error_blocked_by(bbe.getBlockedBy().getLabel()));
                 return ret;
             } else if (throwable instanceof IOException) {
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);

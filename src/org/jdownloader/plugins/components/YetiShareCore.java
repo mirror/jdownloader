@@ -798,7 +798,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                                 }
                             }
                             br.setFollowRedirects(true);
-                        } else if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'")) {
+                        } else if (br.containsHTML("data\\-sitekey=|g\\-recaptcha\\'") || CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(continueform)) {
                             loopLog += " --> reCaptchaV2";
                             hasRequestedCaptcha = true;
                             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
@@ -851,6 +851,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             br.setFollowRedirects(true);
                             dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
                         } else if (continueform != null && continueform.getMethod() == MethodType.POST) {
+                            /* Form + no captcha */
                             loopLog += " --> Form_POST";
                             waitTime(this.br, link, timeBeforeCaptchaInput);
                             br.setFollowRedirects(true);
@@ -859,6 +860,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             logger.warning("Unknown state");
                             break;
                         }
+                        logger.info("loopLog: " + loopLog);
                         try {
                             checkResponseCodeErrors(dl.getConnection());
                         } catch (final PluginException e) {
@@ -870,6 +872,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             throw e;
                         }
                         if (looksLikeDownloadableContent(this.dl.getConnection())) {
+                            loopLog += " --> DOWNLOAD!";
                             logger.info("Successfully initiated download");
                             break;
                         } else {
@@ -896,7 +899,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             }
                         }
                     } while (true);
-                    logger.info("loopLog: " + loopLog);
+                    logger.info("Final loopLog: " + loopLog);
                 }
             }
         }
@@ -1008,21 +1011,20 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         }
         if (continueform == null) {
             return null;
+        }
+        if (continueform.containsHTML("(?i)" + Pattern.quote(continue_link))) {
+            return continueform;
         } else {
-            if (continueform.containsHTML("(?i)" + Pattern.quote(continue_link))) {
-                return continueform;
-            } else {
-                continueform = new Form();
-                continueform.setMethod(continueform.getMethod());
-                continueform.setAction(continue_link);
-                continueform.put("submit", "Submit");
-                continueform.put("submitted", "1");
-                continueform.put("d", "1");
-                for (final InputField field : continueform.getInputFields()) {
-                    continueform.put(field.getKey(), field.getValue());
-                }
-                return continueform;
+            continueform = new Form();
+            continueform.setMethod(continueform.getMethod());
+            continueform.setAction(continue_link);
+            continueform.put("submit", "Submit");
+            continueform.put("submitted", "1");
+            continueform.put("d", "1");
+            for (final InputField field : continueform.getInputFields()) {
+                continueform.put(field.getKey(), field.getValue());
             }
+            return continueform;
         }
     }
 
