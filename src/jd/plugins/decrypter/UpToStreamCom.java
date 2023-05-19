@@ -19,23 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.controlling.AccountController;
-import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.hoster.UpToBoxCom;
-import jd.utils.JDUtilities;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -46,24 +29,64 @@ import org.jdownloader.plugins.components.config.UpToBoxComConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uptostream.com", "uptobox.com" }, urls = { "https?://(?:www\\.)?uptostream\\.com/(?:iframe/)?([a-z0-9]{12})(/([^/]+))?", "https?://(?:www\\.)?uptobox\\.com/(\\?op=user_public\\&|user_public\\?)hash=[a-f0-9]{16}\\&folder=\\d+" })
+import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginDependencies;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.UpToBoxCom;
+import jd.utils.JDUtilities;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { UpToBoxCom.class })
 public class UpToStreamCom extends antiDDoSForDecrypt {
     public UpToStreamCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String DOMAIN = "uptostream.com";
+    private static List<String[]> getPluginDomains() {
+        return UpToBoxCom.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((\\?op=user_public\\&|user_public\\?)hash=[a-f0-9]{16}\\&folder=\\d+|(?:iframe/)?([a-z0-9]{12})(/([^/]+))?)");
+        }
+        return ret.toArray(new String[0]);
+    }
 
     @SuppressWarnings({ "deprecation" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final String parameter;
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final String parameter = param.getCryptedUrl();
         /* Load sister-host plugin */
         final ArrayList<String> dupecheck = new ArrayList<String>();
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (param.toString().contains("user_public")) {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        if (parameter.contains("user_public")) {
             /* Using API: https://docs.uptobox.com/#retrieve-files-in-public-folder */
-            parameter = param.toString();
-            final UrlQuery query = new UrlQuery().parse(parameter);
+            final UrlQuery query = UrlQuery.parse(parameter);
             final String hash = query.get("hash");
             final String folderID = query.get("folder");
             if (hash == null || folderID == null) {
@@ -74,22 +97,18 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
             int pageMax = 1;
             int pageCurrent = 0;
             int offset = 0;
+            final String host = Browser.getHost(param.getCryptedUrl());
             do {
                 pageCurrent++;
-                logger.info("Crawling page " + pageCurrent + " of " + pageMax);
                 /* 2018-10-18: default = "limit=10" */
-                getPage(UpToBoxCom.API_BASE + "/user/public?folder=" + folderID + "&hash=" + hash + "&orderBy=file_name&dir=asc&limit=100&offset=" + offset);
+                getPage("https://" + host + "/api/user/public?folder=" + folderID + "&hash=" + hash + "&orderBy=file_name&dir=asc&limit=100&offset=" + offset);
                 final String errormessage = PluginJSonUtils.getJson(br, "message");
                 if (!StringUtils.isEmpty(errormessage) && !StringUtils.equalsIgnoreCase(errormessage, "Success")) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    break;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
                 entries = (Map<String, Object>) entries.get("data");
-                if (pageCurrent == 1) {
-                    /* Set maxPage on first request */
-                    pageMax = (int) JavaScriptEngineFactory.toLong(entries.get("pageCount"), 0);
-                }
+                pageMax = ((Number) entries.get("pageCount")).intValue();
                 /*
                  * 2020-04-16: Folders can only contain files. They can contain subfolders and files in the users' account but not in public
                  * URLs.
@@ -110,18 +129,22 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                     final DownloadLink dl = this.createDownloadlink("https://" + br.getHost() + "/" + linkid);
                     dl.setName(filename);
                     dl.setAvailable(true);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                     dupecheck.add(linkid);
                     offset++;
                 }
-            } while (!this.isAbort() && pageCurrent < pageMax);
+                logger.info("Crawled page " + pageCurrent + " of " + pageMax + " | Found items so far: " + ret.size());
+                if (pageCurrent >= pageMax) {
+                    logger.info("Stopping because: Reached last page");
+                    break;
+                }
+            } while (!this.isAbort());
         } else {
-            parameter = param.toString();
             final String host_uptobox = "uptobox.com";
             final String fuid = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
             final UpToBoxComConfig cfg = PluginJsonConfig.get(UpToBoxComConfig.class);
-            final DownloadLink uptoboxURL = this.createDownloadlink(parameter.replace("uptostream.com", host_uptobox));
+            final DownloadLink uptoboxURL = this.createDownloadlink(parameter.replaceFirst("uptostream.com/", host_uptobox + "/"));
             uptoboxURL.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
             UpToBoxCom.prepBrowserStatic(br);
             final PluginForHost plg = JDUtilities.getPluginForHost(host_uptobox);
@@ -189,12 +212,12 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                                 }
                                 filename += extension;
                                 dlSubtitle.setFinalFileName(filename);
-                                decryptedLinks.add(dlSubtitle);
+                                ret.add(dlSubtitle);
                             }
                             /* FilePackage is only required if we have multiple objects */
                             final FilePackage fp = FilePackage.getInstance();
                             fp.setName(fpName);
-                            fp.addLinks(decryptedLinks);
+                            fp.addLinks(ret);
                         }
                     } catch (final Throwable e) {
                         logger.log(e);
@@ -202,19 +225,17 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                     }
                 }
             }
-            decryptedLinks.add(uptoboxURL);
+            ret.add(uptoboxURL);
         }
-        return decryptedLinks;
+        return ret;
     }
 
-    /**
-     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
-     */
+    @Override
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(final CryptedLink link, final Account acc) {
         return false;
     }

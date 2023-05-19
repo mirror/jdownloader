@@ -23,23 +23,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -58,6 +41,23 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends antiDDoSForHost {
     public UpToBoxCom(PluginWrapper wrapper) {
@@ -70,7 +70,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         return "https://uptobox.com/tos";
     }
 
-    private static List<String[]> getPluginDomains() {
+    public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "uptobox.com", "uptobox.eu", "uptobox.info", "uptobox.help" });
@@ -253,7 +253,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                     }
                 }
                 this.getPage(checkbr, API_BASE + "/link/info?fileCodes=" + sb.toString());
-                final Map<String, Object> entries = restoreFromString(checkbr.toString(), TypeRef.MAP);
+                final Map<String, Object> entries = restoreFromString(checkbr.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Object> linkcheckResults = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/list");
                 /* Number of results should be == number of file-ids we wanted to check! */
                 if (linkcheckResults.size() != index) {
@@ -485,7 +485,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
-        } else if (br.toString().contains("showVPNWarning")) {
+        } else if (br.getRequest().getHtmlCode().contains("showVPNWarning")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Website error: 'Warning: Your ip adress may come from a VPN. Please submit your VPN'", 15 * 60 * 1000);
         } else if (br.containsHTML("<h1>\\s*Banned\\s*</h1>|>\\s*We suspected fraudulent activity from your connection")) {
             throw new AccountUnavailableException("Account banned", 3 * 60 * 60 * 1000l);
@@ -554,7 +554,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                      * Streams can also contain multiple video streams with e.g. different languages --> We will ignore this rare case and
                      * always download the first stream of the user preferred quality we get.
                      */
-                    final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     dllink = (String) JavaScriptEngineFactory.walkJson(entries, "data/streamLinks/" + preferredQuality + "/{0}");
                     if (!StringUtils.isEmpty(dllink)) {
                         logger.info("Successfully found user preferred quality " + preferredQuality);
@@ -642,7 +642,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 final UrlQuery queryDL = queryBasic;
                 queryDL.append("waitingToken", waitingToken, true);
                 this.getPage(API_BASE + "/link?" + queryDL.toString());
-                entries = restoreFromString(br.toString(), TypeRef.MAP);
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 entries = (Map<String, Object>) entries.get("data");
             }
             dllink = (String) entries.get("dlLink");
@@ -841,7 +841,7 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     private void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         try {
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             checkErrorsAPI(br, link, account, entries);
         } catch (final JSonMapperException jse) {
             /* Assume we got html code and check for errors in html code */
