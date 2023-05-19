@@ -18,10 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * NOTE: <br />
@@ -75,7 +75,7 @@ public class ShinkMe extends antiDDoSForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:s/)?[a-zA-Z0-9]{5}");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:s/)?[a-zA-Z0-9]{5,}");
         }
         return ret.toArray(new String[0]);
     }
@@ -111,7 +111,10 @@ public class ShinkMe extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* 2023-05-08: Looks like they've moved the captcha to the 2nd form. */
-            if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(form1)) {
+            /*
+             * 2023-05-19: looks like captcha is not required/validated
+             */
+            if (false && CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(form1)) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 form1.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             }
@@ -121,7 +124,8 @@ public class ShinkMe extends antiDDoSForDecrypt {
         final Form form2 = br.getFormbyProperty("id", "skip");
         if (form2 != null) {
             final String reCaptchav2FieldKey = "g-recaptcha-response";
-            if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(form2) || form2.hasInputFieldByName(reCaptchav2FieldKey)) {
+            /* 2023-05-19: looks like captcha is not required/validated */
+            if (false && (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(form2) || form2.hasInputFieldByName(reCaptchav2FieldKey))) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 form2.put(reCaptchav2FieldKey, Encoding.urlEncode(recaptchaV2Response));
             }
@@ -143,9 +147,10 @@ public class ShinkMe extends antiDDoSForDecrypt {
         if (StringUtils.equalsIgnoreCase(finallink, "http://deleted/")) {
             /* 2023-05-05 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            ret.add(createDownloadlink(finallink));
+            return ret;
         }
-        ret.add(createDownloadlink(finallink));
-        return ret;
     }
 
     @Override
