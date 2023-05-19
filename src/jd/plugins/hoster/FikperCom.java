@@ -26,6 +26,18 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -44,18 +56,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FikperCom extends PluginForHost {
@@ -88,7 +88,7 @@ public class FikperCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)/([^/]+)(\\.html)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)(/([^/]+)(\\.html)?)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -137,9 +137,21 @@ public class FikperCom extends PluginForHost {
     }
 
     private String getFiletitleFromURL(final DownloadLink link) {
-        String title = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        title = title.replaceFirst("(?i)\\.html$", "");
-        return title;
+        final String title = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        if (title != null) {
+            return title.replaceFirst("(?i)\\.html$", "");
+        } else {
+            return null;
+        }
+    }
+
+    private String getWeakFilename(final DownloadLink link) {
+        final String titleFromURL = getFiletitleFromURL(link);
+        if (titleFromURL != null) {
+            return titleFromURL;
+        } else {
+            return this.getFID(link);
+        }
     }
 
     private final String API_BASE = "https://sapi.fikper.com/";
@@ -183,7 +195,7 @@ public class FikperCom extends PluginForHost {
                 final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
                 for (final DownloadLink link : links) {
                     if (!link.isNameSet()) {
-                        link.setName(getFiletitleFromURL(link));
+                        link.setName(this.getWeakFilename(link));
                     }
                     final String fileID = this.getFID(link);
                     Map<String, Object> finfo = null;
@@ -240,7 +252,7 @@ public class FikperCom extends PluginForHost {
 
     private Map<String, Object> requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException {
         if (!link.isNameSet()) {
-            link.setName(getFiletitleFromURL(link));
+            link.setName(this.getWeakFilename(link));
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);

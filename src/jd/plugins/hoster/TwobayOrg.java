@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,9 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TwobayOrg extends PluginForHost {
@@ -110,7 +110,9 @@ public class TwobayOrg extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*File not available")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*File not available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (link.getPluginPatternMatcher().matches("https?://[^/]+/v/[A-Za-z0-9]+")) {
@@ -169,7 +171,10 @@ public class TwobayOrg extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Free download is impossible at the moment", 2 * 60 * 1000l);
             }
             br.getPage(dllink);
-            dllink = br.getRegex("(?:\"|\\')([^/\"\\']+/db/[^<>\"\\']+)").getMatch(0);
+            dllink = br.getRegex("name='urlfile' type='hidden' value=\"([^\"]+)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("(?:\"|\\')([^/\"\\']+/db/[^<>\"\\']+)").getMatch(0);
+            }
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
