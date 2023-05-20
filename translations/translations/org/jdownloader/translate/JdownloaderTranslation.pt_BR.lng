@@ -282,6 +282,7 @@ download_error_message_outofmemory=Não tem espaço suficiente para o download
 download_error_message_rangeheaderparseerror=Formato de cabeçalho inesperado:
 download_error_message_rangeheaders=Servidor não suporta partes
 download_error_message_unavailable=Serviço temporariamente indisponível
+downloadlink_status_error_blocked_by=Bloqueado por %s1
 downloadlink_status_error_defect=Tente reiniciar este link (plugin desatualizado?)
 downloadlink_status_error_download_limit=Limite de download atingido
 downloadlink_status_error_downloadfailed=Falha no download
