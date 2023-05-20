@@ -39,6 +39,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -98,6 +100,9 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
             int pageCurrent = 0;
             int offset = 0;
             final String host = Browser.getHost(param.getCryptedUrl());
+            String currentFolderName = null;
+            String filePath = this.getAdoptedCloudFolderStructure("");
+            FilePackage fp = null;
             do {
                 pageCurrent++;
                 /* 2018-10-18: default = "limit=10" */
@@ -106,21 +111,23 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                 if (!StringUtils.isEmpty(errormessage) && !StringUtils.equalsIgnoreCase(errormessage, "Success")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-                entries = (Map<String, Object>) entries.get("data");
-                pageMax = ((Number) entries.get("pageCount")).intValue();
+                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+                final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+                if (pageCurrent == 1) {
+                    pageMax = ((Number) data.get("pageCount")).intValue();
+                    currentFolderName = data.get("folderName").toString();
+                    filePath += "/" + currentFolderName;
+                    fp = FilePackage.getInstance();
+                    fp.setName(filePath);
+                }
                 /*
                  * 2020-04-16: Folders can only contain files. They can contain subfolders and files in the users' account but not in public
                  * URLs.
                  */
-                final List<Object> ressourcelist = (List<Object>) entries.get("list");
-                for (final Object fileO : ressourcelist) {
-                    entries = (Map<String, Object>) fileO;
-                    final String linkid = (String) entries.get("file_code");
-                    final String filename = (String) entries.get("file_name");
-                    if (StringUtils.isEmpty(linkid) || StringUtils.isEmpty(filename)) {
-                        continue;
-                    }
+                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) data.get("list");
+                for (final Map<String, Object> file : ressourcelist) {
+                    final String linkid = file.get("file_code").toString();
+                    final String filename = file.get("file_name").toString();
                     /* Extra failsafe - avoid infinite loop! */
                     if (dupecheck.contains(linkid)) {
                         logger.info("Found dupe");
@@ -129,6 +136,8 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                     final DownloadLink dl = this.createDownloadlink("https://" + br.getHost() + "/" + linkid);
                     dl.setName(filename);
                     dl.setAvailable(true);
+                    dl.setRelativeDownloadFolderPath(filePath);
+                    dl._setFilePackage(fp);
                     ret.add(dl);
                     distribute(dl);
                     dupecheck.add(linkid);
@@ -140,6 +149,9 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                     break;
                 }
             } while (!this.isAbort());
+            if (ret.isEmpty()) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_FOLDER_" + filePath);
+            }
         } else {
             final String host_uptobox = "uptobox.com";
             final String fuid = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
