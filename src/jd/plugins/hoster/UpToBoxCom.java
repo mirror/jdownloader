@@ -23,22 +23,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -51,23 +35,47 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.UpToBoxComConfig;
 import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class UpToBoxCom extends antiDDoSForHost {
+public class UpToBoxCom extends PluginForHost {
     public UpToBoxCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://uptobox.com/payments");
+        this.enablePremium("https://" + this.getHost() + "/payments");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser newbr = new Browser();
+        prepBrowserStatic(newbr);
+        return newbr;
     }
 
     @Override
     public String getAGBLink() {
-        return "https://uptobox.com/tos";
+        return "https://" + this.getHost() + "/tos";
     }
 
     public static List<String[]> getPluginDomains() {
@@ -76,6 +84,10 @@ public class UpToBoxCom extends antiDDoSForHost {
         ret.add(new String[] { "uptobox.com", "uptobox.eu", "uptobox.info", "uptobox.help" });
         // ret.add(new String[] { "uptobox.com", "uptostream.com" });
         return ret;
+    }
+
+    protected List<String> getDeadDomains() {
+        return null;
     }
 
     public static String[] getAnnotationNames() {
@@ -111,6 +123,19 @@ public class UpToBoxCom extends antiDDoSForHost {
     private static final int     api_errorcode_file_temporarily_unavailable       = 25;
     private static final int     api_errorcode_file_offline                       = 28;
 
+    /** TODO: Make use of this or something similar. */
+    private String getAPIBase(final String url) {
+        final String hostFromURL = Browser.getHost(url);
+        final List<String> deadDomains = this.getDeadDomains();
+        final String hostToUse;
+        if (deadDomains != null && deadDomains.contains(hostFromURL)) {
+            hostToUse = this.getHost();
+        } else {
+            hostToUse = hostFromURL;
+        }
+        return "https://" + hostToUse + "/api";
+    }
+
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         final boolean requires_premium = link.getBooleanProperty(PROPERTY_needs_premium, false);
@@ -119,11 +144,6 @@ public class UpToBoxCom extends antiDDoSForHost {
         } else {
             return true;
         }
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
     }
 
     @Override
@@ -152,20 +172,15 @@ public class UpToBoxCom extends antiDDoSForHost {
         return weakFilename;
     }
 
-    @Override
-    public Browser prepBrowser(final Browser prepBr, final String host) {
-        if (!(this.browserPrepped.containsKey(prepBr) && this.browserPrepped.get(prepBr) == Boolean.TRUE)) {
-            super.prepBrowser(prepBr, host);
-            prepBrowserStatic(br);
-        }
-        return prepBr;
-    }
-
     public static Browser prepBrowserStatic(final Browser br) {
         br.getHeaders().put("User-Agent", "JDownloader");
         br.getHeaders().put("Accept", "application/json");
         br.setFollowRedirects(true);
         return br;
+    }
+
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceFirst("http://", "https://");
     }
 
     @Override
@@ -194,8 +209,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             link.setName(getWeakFilename(link));
         }
         this.setBrowserExclusive();
-        prepBrowser(this.br, this.getHost());
-        getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
+        br.getPage(getContentURL(link));
         /* 2020-04-07: Website returns proper 404 error for offline which is enough for us to check */
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -227,8 +241,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             return false;
         }
         try {
-            final Browser checkbr = new Browser();
-            prepBrowser(checkbr, this.getHost());
+            final Browser checkbr = this.createNewBrowserInstance();
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
@@ -252,7 +265,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                         sb.append("%2C");
                     }
                 }
-                this.getPage(checkbr, API_BASE + "/link/info?fileCodes=" + sb.toString());
+                checkbr.getPage(API_BASE + "/link/info?fileCodes=" + sb.toString());
                 final Map<String, Object> entries = restoreFromString(checkbr.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Object> linkcheckResults = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/list");
                 /* Number of results should be == number of file-ids we wanted to check! */
@@ -375,7 +388,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                     } else {
                         logger.info("ZERO pre-download waittime(1)");
                     }
-                    this.submitForm(dlform);
+                    br.submitForm(dlform);
                     checkErrorsWebsite(br, link, null);
                     dllink = getDllinkWebsite(br);
                     dlform = getWaitingTokenForm(br);
@@ -387,7 +400,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                         } else {
                             logger.info("ZERO pre-download waittime(2)");
                         }
-                        this.submitForm(dlform);
+                        br.submitForm(dlform);
                         checkErrorsWebsite(br, link, null);
                         dllink = getDllinkWebsite(br);
                         dlform = getWaitingTokenForm(br);
@@ -548,7 +561,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             } else {
                 logger.info("Trying to generate new streaming URL in preferred quality");
                 isFreshDirecturl = true;
-                this.getPage(API_BASE + "/streaming?" + queryBasic.toString());
+                br.getPage(API_BASE + "/streaming?" + queryBasic.toString());
                 try {
                     /*
                      * Streams can also contain multiple video streams with e.g. different languages --> We will ignore this rare case and
@@ -591,7 +604,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 if (passCode != null) {
                     queryDownload.addAndReplace("password", Encoding.urlEncode(passCode));
                 }
-                this.getPage(API_BASE + "/link?" + queryDownload.toString());
+                br.getPage(API_BASE + "/link?" + queryDownload.toString());
                 entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 statusCode = ((Number) entries.get("statusCode")).intValue();
                 if (hasAskedUserForPassword) {
@@ -641,7 +654,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 this.sleep((waitSeconds + 2) * 1000, link);
                 final UrlQuery queryDL = queryBasic;
                 queryDL.append("waitingToken", waitingToken, true);
-                this.getPage(API_BASE + "/link?" + queryDL.toString());
+                br.getPage(API_BASE + "/link?" + queryDL.toString());
                 entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 entries = (Map<String, Object>) entries.get("data");
             }
@@ -707,16 +720,15 @@ public class UpToBoxCom extends antiDDoSForHost {
         synchronized (account) {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
-            prepBrowser(this.br, this.getHost());
             final String apikey = account.getPass();
             if (StringUtils.isEmpty(apikey)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException();
             } else if (!verifySession) {
                 logger.info("Trust apikey without verification");
                 return null;
             } else {
                 logger.info("Performing full login");
-                this.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(apikey));
+                br.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(apikey));
                 this.checkErrorsAPI(br, null, account);
                 account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
                 return restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
@@ -878,7 +890,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000);
             case 2:
-                invalidLogin();
+                exceptionInvalidLogin();
             case 5:
                 /* Premium account required to download this file */
                 throw new AccountRequiredException(errorMsg);
@@ -893,7 +905,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
             case 13:
                 /* "Invalid token" --> Permanently disable account */
-                invalidLogin();
+                exceptionInvalidLogin();
             case 39:
                 /* Waittime between multiple (free account) downloads -> Temp. disable account */
                 long waitSeconds = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(entries, "data/waiting"), 0);
@@ -964,11 +976,11 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
     }
 
-    private void invalidLogin() throws PluginException {
+    private void exceptionInvalidLogin() throws PluginException {
         if ("fr".equalsIgnoreCase(System.getProperty("user.language"))) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nToken invalide. / Vous pouvez trouver votre token ici : uptobox.com/my_account.\r\nSi vous utilisez JDownloader à distance/myjdownloader/headless, entrez le token dans les champs de nom d'utilisateur de de mot de passe.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("\r\nToken invalide. / Vous pouvez trouver votre token ici : " + this.getHost() + "/my_account.\r\nSi vous utilisez JDownloader à distance/myjdownloader/headless, entrez le token dans les champs de nom d'utilisateur de de mot de passe.");
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid token!\r\nYou can find your token here: uptobox.com/my_account\r\nIf you are running JDownloader headless or using myjdownloader, just put your token into the username and password field.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("\r\nInvalid token!\r\nYou can find your token here: " + this.getHost() + "/my_account\r\nIf you are running JDownloader headless or using myjdownloader, just put your token into the username and password field.");
         }
     }
 

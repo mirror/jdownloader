@@ -190,18 +190,10 @@ public class DropboxCom extends PluginForHost {
                     con = brc.openGetConnection(dllink);
                 }
                 if (con.getResponseCode() == 400) {
-                    try {
-                        brc.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
+                    brc.followConnection(true);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (con.getResponseCode() == 403) {
-                    try {
-                        brc.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
+                    brc.followConnection(true);
                     /*
                      * Check if the content is offline or just is not downloadable (e.g. owner has disabled download button - can only be
                      * downloaded by himself or other users with appropriate rights.)
@@ -260,11 +252,7 @@ public class DropboxCom extends PluginForHost {
                     return AvailableStatus.TRUE;
                 } else {
                     /* Rare case */
-                    try {
-                        brc.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
+                    brc.followConnection(true);
                     logger.info("File is not direct-downloadable");
                     if (brc.getURL().contains("/speedbump/")) {
                         /* 2019-09-26: TODO: Check this - this should only happen for executable files in some cases */
@@ -274,7 +262,11 @@ public class DropboxCom extends PluginForHost {
                         /* Password handling is located in download handling. */
                         link.setPasswordProtected(true);
                         return AvailableStatus.TRUE;
-                    } else {
+                    } else if (password_cookie_value == null) {
+                        /*
+                         * If password_cookie_value is given, file most likely is password protected but website doesn't ask for password as
+                         * access is currently already granted via cookie session.
+                         */
                         link.setPasswordProtected(false);
                     }
                     if (RequestMethod.HEAD.equals(con.getRequestMethod())) {

@@ -24,7 +24,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.plugins.components.config.UpToBoxComConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -47,6 +46,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.UpToBoxCom;
@@ -54,7 +54,7 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { UpToBoxCom.class })
-public class UpToStreamCom extends antiDDoSForDecrypt {
+public class UpToStreamCom extends PluginForDecrypt {
     public UpToStreamCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -104,10 +104,11 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
             String filePath = this.getAdoptedCloudFolderStructure("");
             FilePackage fp = null;
             final int maxItemsPerPage = 100;
+            final boolean foldersCanHaveSubfolders = false;
             paginationLoop: do {
                 pageCurrent++;
                 /* 2018-10-18: default = "limit=10" */
-                getPage("https://" + host + "/api/user/public?folder=" + folderID + "&hash=" + hash + "&orderBy=file_name&dir=asc&limit=" + maxItemsPerPage + "&offset=" + offset);
+                br.getPage("https://" + host + "/api/user/public?folder=" + folderID + "&hash=" + hash + "&orderBy=file_name&dir=asc&limit=" + maxItemsPerPage + "&offset=" + offset);
                 final String errormessage = PluginJSonUtils.getJson(br, "message");
                 if (!StringUtils.isEmpty(errormessage) && !StringUtils.equalsIgnoreCase(errormessage, "Success")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -117,7 +118,11 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                 if (pageCurrent == 1) {
                     pageMax = ((Number) data.get("pageCount")).intValue();
                     currentFolderName = data.get("folderName").toString();
-                    filePath += "/" + currentFolderName;
+                    if (filePath.isEmpty()) {
+                        filePath = currentFolderName;
+                    } else {
+                        filePath += "/" + currentFolderName;
+                    }
                     fp = FilePackage.getInstance();
                     fp.setName(filePath);
                 }
@@ -138,7 +143,9 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                     final DownloadLink dl = this.createDownloadlink("https://" + br.getHost() + "/" + linkid);
                     dl.setName(filename);
                     dl.setAvailable(true);
-                    dl.setRelativeDownloadFolderPath(filePath);
+                    if (foldersCanHaveSubfolders) {
+                        dl.setRelativeDownloadFolderPath(filePath);
+                    }
                     dl._setFilePackage(fp);
                     ret.add(dl);
                     distribute(dl);
@@ -201,7 +208,7 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                     }
                     try {
                         final String token = account.getPass();
-                        this.getPage(UpToBoxCom.API_BASE + "/streaming?token=" + Encoding.urlEncode(token) + "&file_code=" + fuid);
+                        br.getPage(UpToBoxCom.API_BASE + "/streaming?token=" + Encoding.urlEncode(token) + "&file_code=" + fuid);
                         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                         final List<Object> subtitles = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/subs");
                         if (subtitles == null || subtitles.size() == 0) {

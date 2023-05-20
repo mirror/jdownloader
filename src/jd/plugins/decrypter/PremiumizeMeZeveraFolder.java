@@ -9,6 +9,7 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -27,6 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PremiumizeBrowseNode;
+import jd.plugins.hoster.PremiumizeMe;
+import jd.plugins.hoster.ZeveraCom;
 import jd.plugins.hoster.ZeveraCore;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -221,25 +224,27 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
     }
 
     protected static String accessCloudItem(final Browser br, final Account account, final String url_source) throws IOException, AccountInvalidException {
-        final boolean pairingLogin = jd.plugins.hoster.ZeveraCore.setAuthHeader(br, account);
-        final String itemID = jd.plugins.hoster.PremiumizeMe.getCloudID(url_source);
+        final boolean pairingLogin = ZeveraCore.setAuthHeader(br, account);
+        final String itemID = PremiumizeMe.getCloudID(url_source);
         final String client_id;
         if (account.getHoster().equals("premiumize.me")) {
-            client_id = jd.plugins.hoster.PremiumizeMe.getClientIDExt();
+            client_id = PremiumizeMe.getClientIDExt();
         } else {
-            client_id = jd.plugins.hoster.ZeveraCom.getClientIDExt();
+            client_id = ZeveraCom.getClientIDExt();
         }
-        String getData = "?id=" + itemID + "&client_id=" + client_id;
+        final UrlQuery query = new UrlQuery();
+        query.add("id", Encoding.urlEncode(itemID));
+        query.add("client_id", Encoding.urlEncode(client_id));
         if (!pairingLogin) {
-            getData += "&pin=" + Encoding.urlEncode(ZeveraCore.getAPIKey(account));
+            query.add("apikey", Encoding.urlEncode(ZeveraCore.getAPIKey(account)));
         }
         if (StringUtils.containsIgnoreCase(url_source, "folder_id")) {
             /* Folder */
-            br.getPage("https://www." + account.getHoster() + "/api/folder/list" + getData);
+            br.getPage("https://www." + account.getHoster() + "/api/folder/list?" + query.toString());
         } else {
             /* Single file */
-            br.getPage("https://www." + account.getHoster() + "/api/item/details" + getData);
+            br.getPage("https://www." + account.getHoster() + "/api/item/details?" + query.toString());
         }
-        return br.toString();
+        return br.getRequest().getHtmlCode();
     }
 }

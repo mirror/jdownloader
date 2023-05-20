@@ -10,7 +10,8 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "dropbox.com", type = Type.HOSTER)
 public interface DropBoxConfig extends PluginConfigInterface {
-    public static final TRANSLATION TRANSLATION = new TRANSLATION();
+    public static final TRANSLATION TRANSLATION                         = new TRANSLATION();
+    final String                    text_AskIfSubfoldersShouldBeCrawled = "Folder crawler: Ask if subfolders should be crawled?";
 
     public static class TRANSLATION {
         // public String getUseAPI_label() {
@@ -19,7 +20,7 @@ public interface DropBoxConfig extends PluginConfigInterface {
         // // return "Use API (in account mode)? [Recommended]";
         // }
         public String getAskIfSubfoldersShouldBeCrawled_label() {
-            return "Enable this if you want to be asked each time whether or not subfolders should be crawled.";
+            return text_AskIfSubfoldersShouldBeCrawled;
         }
     }
     // @DefaultBooleanValue(false)
@@ -32,7 +33,7 @@ public interface DropBoxConfig extends PluginConfigInterface {
 
     @DefaultBooleanValue(false)
     @AboutConfig
-    @DescriptionForConfigEntry("Enable this if you want to be asked each time whether or not subfolders should be crawled.")
+    @DescriptionForConfigEntry(text_AskIfSubfoldersShouldBeCrawled)
     @Order(20)
     boolean isAskIfSubfoldersShouldBeCrawled();
 

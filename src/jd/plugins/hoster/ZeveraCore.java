@@ -177,14 +177,15 @@ abstract public class ZeveraCore extends UseNet {
             return super.requestFileInformation(link);
         } else {
             final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-            return requestFileInformationSelfhosted(link, account);
+            requestFileInformationSelfhosted(link, account);
+            return AvailableStatus.TRUE;
         }
     }
 
-    protected AvailableStatus requestFileInformationSelfhosted(final DownloadLink link, final Account account) throws Exception {
-        /* 2020-07-16: New handling */
+    protected Map<String, Object> requestFileInformationSelfhosted(final DownloadLink link, final Account account) throws Exception {
         final String fileID = getFID(link);
         if (fileID == null) {
+            /* This should never happen. */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!link.isNameSet()) {
@@ -193,21 +194,27 @@ abstract public class ZeveraCore extends UseNet {
         }
         if (account == null) {
             /* Cannot check without account */
-            return AvailableStatus.UNCHECKABLE;
+            throw new AccountRequiredException();
         }
         /* See: https://app.swaggerhub.com/apis-docs/premiumize.me/api/1.6.7#/ */
         callAPI(this.br, account, "/api/item/details?id=" + fileID);
-        this.handleAPIErrors(br, link, account);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final String filename = (String) entries.get("name");
-        final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), -1l);
+        final Map<String, Object> details;
+        final Map<String, Object> entries = this.handleAPIErrors(br, link, account);
+        final Object detailsO = entries.get("details");
+        if (detailsO instanceof Map) {
+            details = (Map<String, Object>) detailsO;
+        } else {
+            details = entries;
+        }
+        final String filename = details.get("name").toString();
+        final Number filesize = (Number) details.get("size");
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         }
-        if (filesize > 0) {
-            link.setDownloadSize(filesize);
+        if (filesize != null) {
+            link.setDownloadSize(filesize.longValue());
         }
-        return AvailableStatus.TRUE;
+        return details;
     }
 
     @Override
@@ -301,9 +308,8 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     private void handleDLSelfhosted(final DownloadLink link, final Account account) throws Exception {
-        this.requestFileInformationSelfhosted(link, account);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-        final String dllink = (String) entries.get("link");
+        final Map<String, Object> details = this.requestFileInformationSelfhosted(link, account);
+        final String dllink = (String) details.get("link");
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -350,8 +356,7 @@ abstract public class ZeveraCore extends UseNet {
                 postRequest.addFormData(new FormData(entry.getKey(), URLEncode.decodeURIComponent(entry.getValue())));
             }
             sendRequest(br, postRequest);
-            this.handleAPIErrors(br, link, account);
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = this.handleAPIErrors(br, link, account);
             dllink = (String) entries.get("location");
             final String filename = (String) entries.get("filename");
             if (!StringUtils.isEmpty(filename) && link.getFinalFileName() == null) {
@@ -411,7 +416,7 @@ abstract public class ZeveraCore extends UseNet {
     public AccountInfo fetchAccountInfoAPI(final Browser br, final String client_id, final Account account) throws Exception {
         login(br, account, true, client_id);
         final AccountInfo ai = new AccountInfo();
-        final Map<String, Object> userinfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> userinfo = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
         final String customerID = userinfo.get("customer_id").toString();
         if (customerID != null) {
             account.setUser(customerID);
@@ -466,8 +471,7 @@ abstract public class ZeveraCore extends UseNet {
             }
         }
         callAPI(br, account, "/api/services/list");
-        this.handleAPIErrors(br, null, account);
-        final Map<String, Object> hosterinfo = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> hosterinfo = this.handleAPIErrors(br, null, account);
         final HashSet<String> supportedHostsMainDomains = new HashSet<String>();
         final String[] hosterListTypesToAdd = new String[] { "directdl", "queue" };
         for (final String hosterListTypeToAdd : hosterListTypesToAdd) {
@@ -678,7 +682,7 @@ abstract public class ZeveraCore extends UseNet {
                         logger.info("Token expired or user has revoked access --> Full login required");
                     }
                     this.postPage("https://www." + account.getHoster() + "/token", "response_type=device_code&client_id=" + clientID);
-                    Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                     final long interval_seconds = ((Number) entries.get("interval")).longValue();
                     final long expires_in_seconds = ((Number) entries.get("expires_in")).longValue() - interval_seconds;
                     final long expires_in_timestamp = System.currentTimeMillis() + expires_in_seconds * 1000l;
@@ -698,7 +702,7 @@ abstract public class ZeveraCore extends UseNet {
                             logger.info("Waiting for user to authorize application: " + loop);
                             Thread.sleep(interval_seconds * 1001l);
                             this.postPage("https://www." + account.getHoster() + "/token", "grant_type=device_code&client_id=" + clientID + "&code=" + device_code);
-                            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                            entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                             access_token = (String) entries.get("access_token");
                             if (!StringUtils.isEmpty(access_token)) {
                                 success = true;
@@ -902,11 +906,11 @@ abstract public class ZeveraCore extends UseNet {
      *
      * @throws Exception
      */
-    private void handleAPIErrors(final Browser br, final DownloadLink link, final Account account) throws Exception {
+    private Map<String, Object> handleAPIErrors(final Browser br, final DownloadLink link, final Account account) throws Exception {
         /* E.g. {"status":"error","error":"topup_required","message":"Please purchase premium membership or activate free mode."} */
         Map<String, Object> entries = null;
         try {
-            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         } catch (final JSonMapperException ignore) {
             /* This should never happen. */
             if (link != null) {
@@ -915,8 +919,9 @@ abstract public class ZeveraCore extends UseNet {
                 throw new AccountUnavailableException("Invalid API response", 60 * 1000);
             }
         }
+        final Map<String, Object> errormap = (Map<String, Object>) entries.get("error");
         final String status = (String) entries.get("status");
-        String message = (String) entries.get("message");
+        final String message = (String) entries.get("message");
         /* API can control how long we should wait until next retry. */
         final Number delaySecondsO = (Number) entries.get("delay");
         final long retryInMilliseconds = delaySecondsO != null ? delaySecondsO.longValue() * 1000 : 1 * 60 * 1000;
@@ -991,10 +996,28 @@ abstract public class ZeveraCore extends UseNet {
              * be downloaded 100% serverside until the user can download them.
              */
             if (StringUtils.isEmpty(message)) {
-                message = "Wait for serverside download until you can download this file";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait for serverside download until you can download this file", retryInMilliseconds);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, retryInMilliseconds);
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, retryInMilliseconds);
+        } else if (errormap != null) {
+            /* 2023-05-20: new json zevera.com(?) */
+            final String messageNew = errormap.get("message").toString();
+            if (messageNew.matches("(?i).*file not found.*")) {
+                /*
+                 * {"jsonrpc":"2.0","id":1,"error":{"code":0,"message":"File not found or not your file"}}
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, message);
+            } else {
+                if (link == null) {
+                    /* Account/login related error */
+                    throw new AccountUnavailableException(messageNew, retryInMilliseconds);
+                } else {
+                    mhm.handleErrorGeneric(account, link, messageNew, 2, retryInMilliseconds);
+                }
+            }
         }
+        return entries;
     }
 
     public static String getCloudID(final String url) throws MalformedURLException {
