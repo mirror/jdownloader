@@ -301,10 +301,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                     if (!StringUtils.isEmpty(serverside_path_to_file_relative) && !is_single_file) {
                         dl.setProperty(DropboxCom.PROPERTY_INTERNAL_PATH, serverside_path_to_file_relative);
                     }
-                    if (!StringUtils.isEmpty(passCode)) {
-                        dl.setDownloadPassword(passCode);
-                        dl.setPasswordProtected(true);
-                    }
+                    this.setDownloadPasswordProperties(dl, passCode, null);
                     if (is_single_file) {
                         dl.setProperty(DropboxCom.PROPERTY_IS_SINGLE_FILE, true);
                     }
@@ -568,6 +565,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                     /* First page: Get prefetch-json from html */
                     json_source = br.getRegex("REGISTER_SHARED_LINK_FOLDER_PRELOAD_HANDLER\"\\]\\.responseReceived\\(\"(\\{.*?\\})\"\\)\\}\\);").getMatch(0);
                     if (json_source != null) {
+                        logger.info("Found prefetch json in html code of first page");
                         json_source = PluginJSonUtils.unescape(json_source);
                     } else {
                         logger.info("Failed to find json source for folder content on first page --> Plugin might be broken or this is a single file and not a folder");
@@ -575,16 +573,13 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 }
                 if (json_source == null) {
                     if (isFirstPage) {
-                        logger.info("First page didn't contain prefetch json in HTML -> Trying to obtain that via Ajax request");
+                        logger.info("First page didn't contain prefetch json in HTML -> Trying to obtain that via ajax request");
                     } else {
-                        logger.info("Loading next page");
+                        logger.info("Loading next page: " + page);
                     }
                     if (link_type == null || cookie_t == null || link_key == null || secure_hash == null) {
                         logger.warning("Stopping because: Pagination is not possible");
                         break;
-                    } else if (StringUtils.isEmpty(next_request_voucher) && !isFirstPage) {
-                        /* next_request_voucher is required for pagination */
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     String sub_path = getFilepathFromURL(contentURL);
                     if (sub_path == null) {
@@ -625,13 +620,11 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                     if (ret.isEmpty()) {
                         /* Nothing has been found before -> Assume that we got a single file. */
                         final DownloadLink singleFile = createSingleFileDownloadLink(br.getURL());
-                        singleFile.setAvailable(true);
-                        if (!StringUtils.isEmpty(passCode)) {
-                            singleFile.setDownloadPassword(passCode);
-                            singleFile.setPasswordProtected(true);
-                            if (!StringUtils.isEmpty(passwordCookieValue)) {
-                                singleFile.setProperty(DropboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookieValue);
-                            }
+                        setDownloadPasswordProperties(singleFile, passCode, passwordCookieValue);
+                        // TODO: Maybe add plugin setting for this. Reference: https://board.jdownloader.org/showthread.php?t=93518
+                        final boolean enableFastLinkcheckForAssumedSingleFiles = true;
+                        if (enableFastLinkcheckForAssumedSingleFiles) {
+                            singleFile.setAvailable(true);
                         }
                         ret.add(singleFile);
                         return ret;
@@ -657,13 +650,6 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                         } else {
                             dummyFilenameForErrors = folderidString;
                         }
-                    }
-                }
-                next_request_voucher = (String) response.get("next_request_voucher");
-                if (next_request_voucher != null) {
-                    /* Only escape if it does not fit already. */
-                    if (next_request_voucher.contains("\\\\")) {
-                        next_request_voucher = PluginJSonUtils.unescape(next_request_voucher);
                     }
                 }
                 final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) response.get("entries");
@@ -724,13 +710,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 }
                 for (final Map<String, Object> file : ressourcelist_files) {
                     final DownloadLink dl = this.crawlFolderItem(file);
-                    if (!StringUtils.isEmpty(passCode)) {
-                        dl.setDownloadPassword(passCode);
-                        dl.setPasswordProtected(true);
-                        if (!StringUtils.isEmpty(passwordCookieValue)) {
-                            dl.setProperty(DropboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookieValue);
-                        }
-                    }
+                    setDownloadPasswordProperties(dl, passCode, passwordCookieValue);
                     /*
                      * 2019-09-24: All URLs crawled via website crawler count as single files later on if we try to download them via API!
                      */
@@ -747,12 +727,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                          * Make sure that for password protected folders, user will not be asked for password again in next round/next
                          * subfolder-level.
                          */
-                        if (!StringUtils.isEmpty(passCode)) {
-                            dl.setDownloadPassword(passCode);
-                            if (!StringUtils.isEmpty(passwordCookieValue)) {
-                                dl.setProperty(DropboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookieValue);
-                            }
-                        }
+                        setDownloadPasswordProperties(dl, passCode, passwordCookieValue);
                         final String foldername = folder.get("filename").toString();
                         /* Store next path as property so we can keep track of the full path. */
                         final String currentPath = subFolderPath + "/" + foldername;
@@ -762,7 +737,8 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                         distribute(dl);
                     }
                 }
-                logger.info("Crawled page " + page + " | Items walked through so far: " + numberofItemsWalkedThroughSoFar + "/" + response.get("total_num_entries") + " | Actually crawled items: " + ret.size());
+                next_request_voucher = (String) response.get("next_request_voucher");
+                logger.info("Crawled page " + page + " | Items walked through so far: " + numberofItemsWalkedThroughSoFar + "/" + response.get("total_num_entries") + " | Actually crawled items: " + ret.size() + " | next_request_voucher: " + next_request_voucher);
                 if (Boolean.FALSE.equals(response.get("has_more_entries"))) {
                     logger.info("Stopping because: Reached end on page: " + page);
                     break;
@@ -785,6 +761,16 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         }
     }
 
+    private void setDownloadPasswordProperties(final DownloadLink link, final String passCode, final String passwordCookieValue) {
+        if (!StringUtils.isEmpty(passCode)) {
+            link.setDownloadPassword(passCode);
+            link.setPasswordProtected(true);
+            if (!StringUtils.isEmpty(passwordCookieValue)) {
+                link.setProperty(DropboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookieValue);
+            }
+        }
+    }
+
     public static final void setPasswordCookie(final Browser br, final String value) {
         final String host;
         if (br.getHost() != null) {
@@ -801,7 +787,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         final DownloadLink dl;
         if (is_dir) {
             /* Folder --> Will go back into crawler */
-            dl = this.createDownloadlink(url);
+            dl = createDownloadlink(url);
         } else {
             dl = createSingleFileDownloadLink(url);
             parseMiscFileInfo(dl, filefolderinfo);
@@ -819,13 +805,13 @@ public class DropBoxComCrawler extends PluginForDecrypt {
             dl.setVerifiedFileSize(filesize.longValue());
         }
         dl.setFinalFileName(filename);
-        dl.setAvailable(true);
         if (!StringUtils.isEmpty(videoStreamURL)) {
             dl.setProperty(DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, videoStreamURL);
         } else if (!StringUtils.isEmpty(photoStreamURL)) {
             dl.setProperty(DropboxCom.PROPERTY_PREVIEW_DOWNLOADLINK, photoStreamURL);
         }
         dl.setProperty(DropboxCom.PROPERTY_ORIGINAL_FILENAME, filename);
+        dl.setAvailable(true);
     }
 
     public static String getSharedJsonSource(final Browser br) {

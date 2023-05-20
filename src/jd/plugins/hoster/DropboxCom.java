@@ -115,13 +115,14 @@ public class DropboxCom extends PluginForHost {
     public static final String  PROPERTY_MAINPAGE                     = "mainlink";
     public static final String  PROPERTY_INTERNAL_PATH                = "serverside_path_to_file_relative";
     public static final String  PROPERTY_PASSWORD_COOKIE              = "password_cookie";
+    @Deprecated
     public static final String  PROPERTY_IS_SINGLE_FILE               = "is_single_file";
     public static final String  PROPERTY_ACCOUNT_ACCESS_TOKEN         = "access_token";
     public static final String  PROPERTY_ACCOUNT_LAST_AUTH_VALIDATION = "last_auth_validation";
     public static final String  PROPERTY_DIRECTLINK                   = "directlink";
     public static final String  PROPERTY_PREVIEW_DOWNLOADLINK         = "preview_downloadlink";
     public static final String  PROPERTY_ORIGINAL_FILENAME            = "original_filename";
-    public static final String  IS_OFFICIALLY_DOWNLOADABLE            = "is_officially_downloadable";
+    public static final String  PROPERTY_IS_OFFICIALLY_DOWNLOADABLE   = "is_officially_downloadable";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -167,8 +168,18 @@ public class DropboxCom extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             try {
                 brc.setFollowRedirects(true);
-                con = brc.openHeadConnection(dllink);
-                if (con.getResponseCode() == 403 || con.getResponseCode() == 404) {
+                /*
+                 * 2023-05-20: Disabled head request because when using it, that will quite often returns a content-length header with value
+                 * 0 plus it sometimes fails with http response != 200 for unknown reasons but we want to find the filesize with that
+                 * request.
+                 */
+                final boolean useHeadRequestFirst = false;
+                if (useHeadRequestFirst) {
+                    con = brc.openHeadConnection(dllink);
+                } else {
+                    con = brc.openGetConnection(dllink);
+                }
+                if (useHeadRequestFirst && (con.getResponseCode() == 403 || con.getResponseCode() == 404)) {
                     /* Workaround/fallback */
                     logger.info("Looks like HEAD-request is not possible -> Trying GET-request");
                     try {
@@ -212,7 +223,7 @@ public class DropboxCom extends PluginForHost {
                         } else {
                             logger.warning("Failed to find additional information about officially un-downloadable file");
                         }
-                        link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, false);
+                        link.setProperty(PROPERTY_IS_OFFICIALLY_DOWNLOADABLE, false);
                         if (link.hasProperty(PROPERTY_PREVIEW_DOWNLOADLINK)) {
                             return AvailableStatus.TRUE;
                         } else {
@@ -235,7 +246,7 @@ public class DropboxCom extends PluginForHost {
                 } else if (this.looksLikeDownloadableContent(con)) {
                     // this.dllink = con.getURL().toString();
                     link.setProperty(PROPERTY_DIRECTLINK, dllink);
-                    link.setProperty(IS_OFFICIALLY_DOWNLOADABLE, true);
+                    link.setProperty(PROPERTY_IS_OFFICIALLY_DOWNLOADABLE, true);
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
@@ -408,7 +419,7 @@ public class DropboxCom extends PluginForHost {
          */
         final boolean resume_supported;
         String dllink = null;
-        final Object isOfficiallyDownloadable = link.getProperty(IS_OFFICIALLY_DOWNLOADABLE);
+        final Object isOfficiallyDownloadable = link.getProperty(PROPERTY_IS_OFFICIALLY_DOWNLOADABLE);
         if (Boolean.FALSE.equals(isOfficiallyDownloadable)) {
             /* Workaround for files without official downloadbutton e.g. some video streams --> Downloads stream/"preview file" */
             logger.info("Attempting stream download");

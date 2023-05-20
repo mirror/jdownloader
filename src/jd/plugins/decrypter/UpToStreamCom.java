@@ -103,10 +103,11 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
             String currentFolderName = null;
             String filePath = this.getAdoptedCloudFolderStructure("");
             FilePackage fp = null;
-            do {
+            final int maxItemsPerPage = 100;
+            paginationLoop: do {
                 pageCurrent++;
                 /* 2018-10-18: default = "limit=10" */
-                getPage("https://" + host + "/api/user/public?folder=" + folderID + "&hash=" + hash + "&orderBy=file_name&dir=asc&limit=100&offset=" + offset);
+                getPage("https://" + host + "/api/user/public?folder=" + folderID + "&hash=" + hash + "&orderBy=file_name&dir=asc&limit=" + maxItemsPerPage + "&offset=" + offset);
                 final String errormessage = PluginJSonUtils.getJson(br, "message");
                 if (!StringUtils.isEmpty(errormessage) && !StringUtils.equalsIgnoreCase(errormessage, "Success")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -130,8 +131,9 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                     final String filename = file.get("file_name").toString();
                     /* Extra failsafe - avoid infinite loop! */
                     if (dupecheck.contains(linkid)) {
-                        logger.info("Found dupe");
-                        break;
+                        /* This should never happen. */
+                        logger.info("Stopping because: Found dupe");
+                        break paginationLoop;
                     }
                     final DownloadLink dl = this.createDownloadlink("https://" + br.getHost() + "/" + linkid);
                     dl.setName(filename);
@@ -143,9 +145,13 @@ public class UpToStreamCom extends antiDDoSForDecrypt {
                     dupecheck.add(linkid);
                     offset++;
                 }
-                logger.info("Crawled page " + pageCurrent + " of " + pageMax + " | Found items so far: " + ret.size());
+                logger.info("Crawled page " + pageCurrent + " / " + pageMax + " | Found items so far: " + ret.size());
                 if (pageCurrent >= pageMax) {
                     logger.info("Stopping because: Reached last page");
+                    break;
+                } else if (ressourcelist.size() < maxItemsPerPage) {
+                    /* Additional fail-safe */
+                    logger.info("Stopping because: Current page contains less items than: " + maxItemsPerPage);
                     break;
                 }
             } while (!this.isAbort());
