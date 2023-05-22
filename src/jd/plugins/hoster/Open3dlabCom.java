@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.Open3dlabComConfig;
+import org.jdownloader.plugins.components.config.Open3dlabComConfigSmutbaSe;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,11 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.Open3dlabComConfig;
-import org.jdownloader.plugins.components.config.Open3dlabComConfigSmutbaSe;
-import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Open3dlabCom extends PluginForHost {
@@ -132,7 +133,7 @@ public class Open3dlabCom extends PluginForHost {
                 brc.setFollowRedirects(true);
                 /* 2023-03-20: HEAD-request impossible */
                 con = brc.openGetConnection(dllink);
-                if (!looksLikeDownloadableContent(con)) {
+                if (!looksLikeDownloadableContent(con, link.getName())) {
                     brc.followConnection(true);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
@@ -154,6 +155,16 @@ public class Open3dlabCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection, final String filename) {
+        final String mimeExt = getExtensionFromMimeType(urlConnection.getContentType());
+        if (mimeExt != null && filename != null && filename.toLowerCase(Locale.ENGLISH).endsWith("." + mimeExt)) {
+            /* 2023-05-22: Small workaround: For .txt files they do not return a content-disposition header. */
+            return true;
+        } else {
+            return super.looksLikeDownloadableContent(urlConnection);
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
@@ -168,7 +179,7 @@ public class Open3dlabCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection(), link.getName())) {
                 br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);

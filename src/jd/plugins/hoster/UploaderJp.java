@@ -54,7 +54,6 @@ public class UploaderJp extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0) + "_" + new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -67,19 +66,19 @@ public class UploaderJp extends antiDDoSForHost {
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex(">オリジナル</span><span class=\"right\">([^<>\"]*?)</span>").getMatch(0);
-        String filesize = br.getRegex(">ファイル</span><span class=\"right\">download \\(([^<>\"]*?)\\)</span>").getMatch(0);
+        String filename = br.getRegex("(?i)>\\s*オリジナル</span><span class=\"right\">([^<>\"]*?)</span>").getMatch(0);
+        String filesize = br.getRegex("(?i)>\\s*ファイル</span><span class=\"right\">download \\(([^<>\"]*?)\\)</span>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<th>オリジナル</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         }
         if (filesize == null) {
-            filesize = br.getRegex("<th>容量</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+            filesize = br.getRegex("<th>\\s*容量</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         }
         if (filename == null) {
             /* Fallback */
             link.setName(this.getFID(link));
         } else {
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -92,31 +91,31 @@ public class UploaderJp extends antiDDoSForHost {
     }
 
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 File Not found<|Page not found");
+        return br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)404 File Not found<|Page not found");
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         Form form = br.getFormbyProperty("name", "agree");
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (form.hasInputFieldByName("password")) {
-            String passCode = downloadLink.getDownloadPassword();
+            String passCode = link.getDownloadPassword();
             if (passCode == null) {
-                passCode = getUserInput(null, downloadLink);
+                passCode = getUserInput(null, link);
             }
             form.put("password", Encoding.urlEncode(passCode));
             submitForm(form);
             // check to see if its correct password
             if ((form = br.getFormbyProperty("name", "agree")) != null && form.hasInputFieldByName("password")) {
-                if (downloadLink.getDownloadPassword() != null) {
-                    downloadLink.setDownloadPassword(null);
+                if (link.getDownloadPassword() != null) {
+                    link.setDownloadPassword(null);
                 }
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
             }
-            downloadLink.setDownloadPassword(passCode);
+            link.setDownloadPassword(passCode);
             // standard download
             submitForm(form);
         } else {
@@ -126,10 +125,9 @@ public class UploaderJp extends antiDDoSForHost {
         String dllink = br.getRegex("\"(https?://d(?:ownload|l)(x|\\d+)\\.getuploader\\.com/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            dllink = Encoding.htmlDecode(dllink);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dllink = Encoding.htmlDecode(dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {

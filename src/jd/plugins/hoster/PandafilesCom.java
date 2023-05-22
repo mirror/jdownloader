@@ -15,13 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -55,6 +58,49 @@ public class PandafilesCom extends XFileSharingProBasic {
     @Override
     public String[] siteSupportedNames() {
         return buildSupportedNames(getPluginDomains());
+    }
+
+    @Override
+    protected String getContentURL(final DownloadLink link) {
+        if (link == null) {
+            return null;
+        }
+        final String originalURL = link.getPluginPatternMatcher();
+        if (originalURL == null) {
+            /* This should never happen! */
+            return null;
+        }
+        /* link cleanup, prefer https if possible */
+        try {
+            final URL url = new URL(originalURL);
+            final String urlHost = getPreferredHost(link, url);
+            final String protocol;
+            if ("https".equalsIgnoreCase(url.getProtocol()) && allowGetProtocolHttpsAutoHandling(originalURL)) {
+                protocol = "https://";
+            } else if (this.useHTTPS()) {
+                protocol = "https://";
+            } else {
+                protocol = "http://";
+            }
+            /* Get full host with subdomain and correct base domain. */
+            final String pluginHost = this.getHost();
+            final List<String> deadDomains = this.getDeadDomains();
+            final String host;
+            if (deadDomains != null && deadDomains.contains(urlHost)) {
+                /* Fallback to plugin domain */
+                /* e.g. down.xx.com -> down.yy.com, keep subdomain(s) */
+                host = urlHost.replaceFirst("(?i)" + Pattern.quote(Browser.getHost(url, false)) + "$", pluginHost);
+            } else {
+                /* Use preferred host */
+                host = urlHost;
+            }
+            final String hostCorrected = this.appendWWWIfRequired(host);
+            return protocol + hostCorrected + url.getPath();
+        } catch (final MalformedURLException e) {
+            logger.log(e);
+        }
+        /* Return unmodified url. */
+        return originalURL;
     }
 
     public static String[] getAnnotationUrls() {
@@ -92,24 +138,6 @@ public class PandafilesCom extends XFileSharingProBasic {
         } else {
             /* Free(anonymous) and unknown account type */
             return -2;
-        }
-    }
-
-    @Override
-    protected URL_TYPE getURLType(final String url) {
-        if (url == null) {
-            return null;
-        } else {
-            final String fileID = new Regex(url, "^https?://[^/]+/([A-Za-z0-9]+)$").getMatch(0);
-            if (url.matches("(?i)^https?://[^/]+/d/([a-z0-9]+).*")) {
-                return URL_TYPE.SHORT;
-            } else if (fileID != null && !fileID.matches("[a-z0-9]{12}")) {
-                /* E.g. https://pandafiles.com/1Gh7 */
-                return URL_TYPE.NORMAL;
-            } else {
-                /* Resign to upper handling -> We should have a known URL-Type. */
-                return super.getURLType(url);
-            }
         }
     }
 

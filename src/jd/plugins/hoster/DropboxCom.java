@@ -170,8 +170,8 @@ public class DropboxCom extends PluginForHost {
                 brc.setFollowRedirects(true);
                 /*
                  * 2023-05-20: Disabled head request because when using it, that will quite often returns a content-length header with value
-                 * 0 plus it sometimes fails with http response != 200 for unknown reasons but we want to find the filesize with that
-                 * request.
+                 * 0 plus it sometimes fails with http response != 200 for unknown reasons. For those reasons using a GET request is the way
+                 * to go.
                  */
                 final boolean useHeadRequestFirst = false;
                 if (useHeadRequestFirst) {
@@ -190,7 +190,6 @@ public class DropboxCom extends PluginForHost {
                     con = brc.openGetConnection(dllink);
                 }
                 if (this.looksLikeDownloadableContent(con)) {
-                    // this.dllink = con.getURL().toString();
                     link.setProperty(PROPERTY_DIRECTLINK, dllink);
                     link.setProperty(PROPERTY_IS_OFFICIALLY_DOWNLOADABLE, true);
                     if (con.getCompleteContentLength() > 0) {
@@ -221,6 +220,7 @@ public class DropboxCom extends PluginForHost {
                      * Check if the content is offline or just is not downloadable (e.g. owner has disabled download button - can only be
                      * downloaded by himself or other users with appropriate rights.)
                      */
+                    logger.info("Error 403 -> Looking to get file infor via root folder URL");
                     brc.getPage(this.getRootFolderURL(link, link.getPluginPatternMatcher()));
                     if (brc.getHttpConnection().getResponseCode() == 403) {
                         /* Still error 403 -> File is offline. */

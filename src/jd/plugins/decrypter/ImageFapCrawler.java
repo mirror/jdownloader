@@ -156,8 +156,6 @@ public class ImageFapCrawler extends PluginForDecrypt {
             if (galleryIDStr == null) {
                 galleryIDStr = new Regex(parameter, "gallery\\.php\\?p?gid=(\\d+)").getMatch(0);
             }
-            final ArrayList<String> allPages = new ArrayList<String>();
-            allPages.add("0");
             if (parameter.matches(type_invalid)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -217,18 +215,6 @@ public class ImageFapCrawler extends PluginForDecrypt {
                 if (galleryIDStr == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                /**
-                 * Max number of images per page = 1000, if we got more we always have at least 2 pages
-                 */
-                final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
-                for (final String url : urls) {
-                    final UrlQuery query = UrlQuery.parse(url);
-                    final String pageStrTmp = query.get("page");
-                    final String galleryIDStrTmp = query.get("gid");
-                    if (pageStrTmp != null && StringUtils.equals(galleryIDStrTmp, galleryIDStr) && !allPages.contains(pageStrTmp)) {
-                        allPages.add(pageStrTmp);
-                    }
-                }
                 final Long galleryID = Long.parseLong(galleryIDStr);
                 final FilePackage fp = FilePackage.getInstance();
                 if (galleryID != null) {
@@ -240,10 +226,34 @@ public class ImageFapCrawler extends PluginForDecrypt {
                 final UrlQuery query = new UrlQuery();
                 query.add("gid", galleryIDStr);
                 query.add("view", "0");
-                for (final String page : allPages) {
-                    if (!page.equals("0")) {
-                        query.addAndReplace("page", page);
+                int maxPage = 0;
+                for (int page = 0; page <= maxPage; page++) {
+                    if (page > 0) {
+                        query.addAndReplace("page", Integer.toString(page));
                         getPage(this.br, baseURL + "?" + query.toString());
+                    }
+                    /*
+                     * Find new max page value on each page. E.g. if we are on page one, highest page number we can see is 10 even though
+                     * the item may have 20+ pages.
+                     */
+                    int maxPageValueOfCurrentPage = -1;
+                    final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+                    for (final String url : urls) {
+                        final UrlQuery pagequery = UrlQuery.parse(url);
+                        final String pageStrTmp = pagequery.get("page");
+                        if (pageStrTmp == null || !pageStrTmp.matches("\\d+")) {
+                            /* This should never happen. */
+                            continue;
+                        }
+                        final int pageInt = Integer.parseInt(pageStrTmp);
+                        final String galleryIDStrTmp = pagequery.get("gid");
+                        if (StringUtils.equals(galleryIDStrTmp, galleryIDStr) && pageInt > maxPageValueOfCurrentPage) {
+                            maxPageValueOfCurrentPage = pageInt;
+                        }
+                    }
+                    if (maxPageValueOfCurrentPage > maxPage) {
+                        logger.info("Found new maxPage value: old: " + maxPage + " --> New: " + maxPageValueOfCurrentPage);
+                        maxPage = maxPageValueOfCurrentPage;
                     }
                     final String info[][] = br.getRegex("<span id=\"img_(\\d+)_desc\">.*?<font face=verdana color=\"#000000\"><i>([^<>\"]*?)</i>").getMatches();
                     if (info == null || info.length == 0) {
@@ -282,7 +292,7 @@ public class ImageFapCrawler extends PluginForDecrypt {
                             numberofNewItems++;
                         }
                     }
-                    logger.info("Crawled page: " + page + "/" + allPages.size() + " | Found items so far: " + ret.size());
+                    logger.info("Crawled page: " + page + "/" + maxPage + " | Found items so far: " + ret.size());
                     if (numberofNewItems == 0) {
                         logger.info("Stopping because: Failed to find new items on current page");
                         break;

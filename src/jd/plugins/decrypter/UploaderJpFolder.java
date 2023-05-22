@@ -27,6 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.hoster.UploaderJp;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploader.jp" }, urls = { "https?://u[a-z0-9]\\.getuploader\\.com/.+" })
 public class UploaderJpFolder extends antiDDoSForDecrypt {
@@ -36,7 +37,7 @@ public class UploaderJpFolder extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (param.getCryptedUrl().matches("https?://[^/]+/[^/]+/download/\\d+.*")) {
+        if (param.getCryptedUrl().matches("(?i)https?://[^/]+/[^/]+/download/\\d+.*")) {
             /* Single file -> Handle via host plugin */
             ret.add(createDownloadlink(param.getCryptedUrl()));
         } else {
@@ -46,12 +47,13 @@ public class UploaderJpFolder extends antiDDoSForDecrypt {
             if (form != null) {
                 submitForm(form);
             }
-            if (jd.plugins.hoster.UploaderJp.isOffline(this.br)) {
+            if (UploaderJp.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String[] links = br.getRegex("\"(https?://[^/]+/[^/]+/download/\\d+)\"").getColumn(0);
+            final String[] links = br.getRegex("(?i)\"(https?://[^/]+/[^/]+/download/\\d+)\"").getColumn(0);
             if (links == null || links.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* Content offline, plugin broken or unsupported URL. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             for (final String singleLink : links) {
                 ret.add(createDownloadlink(singleLink));
