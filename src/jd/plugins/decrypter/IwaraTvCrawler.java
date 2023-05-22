@@ -118,6 +118,8 @@ public class IwaraTvCrawler extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(usernameForFilename);
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        int numberofSkippedExternalLinks = 0;
+        final IwaraTvConfig cfg = PluginJsonConfig.get(IwaraTvConfig.class);
         do {
             query.addAndReplace("page", Integer.toString(page - 1));
             br.getPage("/videos?" + query.toString());
@@ -127,6 +129,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
             final Map<String, Object> entries2 = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> results = (List<Map<String, Object>>) entries2.get("results");
             int foundNumberofNewItemsThisPage = 0;
+            int numberofSkippedExternalLinksThisPage = 0;
             for (final Map<String, Object> result : results) {
                 final String videoID = result.get("id").toString();
                 if (!dupes.add(videoID) || "thumbnails".equals(videoID)) {
@@ -145,12 +148,17 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                 final String embedUrl = dl.getStringProperty(IwaraTv.PROPERTY_EMBED_URL);
                 if (embedUrl != null) {
                     /* Video is not hosted on iwara.tv but on a 3rd party website. */
-                    final DownloadLink externalVideo = this.createDownloadlink(embedUrl);
-                    ret.add(externalVideo);
-                    distribute(externalVideo);
+                    if (cfg.isProfileCrawlerSkipExternalURLs()) {
+                        logger.info("Skipping externally hosted item: " + embedUrl);
+                        numberofSkippedExternalLinksThisPage++;
+                    } else {
+                        final DownloadLink externalVideo = this.createDownloadlink(embedUrl);
+                        ret.add(externalVideo);
+                        distribute(externalVideo);
+                    }
                 } else {
                     dl.setName(IwaraTv.getFilename(dl));
-                    if (PluginJsonConfig.get(IwaraTvConfig.class).isProfileCrawlerEnableFastLinkcheck()) {
+                    if (cfg.isProfileCrawlerEnableFastLinkcheck()) {
                         dl.setAvailable(true);
                     }
                     dl._setFilePackage(fp);
@@ -159,9 +167,10 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                 }
                 foundNumberofNewItemsThisPage++;
             }
+            numberofSkippedExternalLinks += numberofSkippedExternalLinksThisPage;
             final int count = ((Number) entries2.get("count")).intValue();
             final int limit = ((Number) entries2.get("limit")).intValue();
-            logger.info("Crawled page " + page + " | Found items on this page: " + foundNumberofNewItemsThisPage + " | Total so far: " + ret.size());
+            logger.info("Crawled page " + page + " | Found items on this page: " + foundNumberofNewItemsThisPage + " | Total so far: " + ret.size() + " | Skipped externally hosted items this page: " + numberofSkippedExternalLinksThisPage + " | Skipped externally hosted items so far: " + numberofSkippedExternalLinks);
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;

@@ -17,6 +17,7 @@ public interface IwaraTvConfig extends PluginConfigInterface {
     final String                                  text_PreferredFilenameSchemeType       = "Select preferred filename scheme type";
     final String                                  text_PreferredFilenameScheme           = "Select preferred filename scheme";
     final String                                  text_FindFilesizeDuringAvailablecheck  = "Find filesize during linkcheck?\r\nWarning: Can slow down linkcheck!";
+    final String                                  text_ProfileCrawlerSkipExternalURLs    = "Profile crawler: Skip externally hosted videos e.g. youtube.com URLs?";
 
     public static class TRANSLATION {
         public String getProfileCrawlerEnableFastLinkcheck_label() {
@@ -33,6 +34,10 @@ public interface IwaraTvConfig extends PluginConfigInterface {
 
         public String getFindFilesizeDuringAvailablecheck_label() {
             return text_FindFilesizeDuringAvailablecheck;
+        }
+
+        public String getProfileCrawlerSkipExternalURLs_label() {
+            return text_ProfileCrawlerSkipExternalURLs;
         }
     }
 
@@ -121,4 +126,12 @@ public interface IwaraTvConfig extends PluginConfigInterface {
     boolean isFindFilesizeDuringAvailablecheck();
 
     void setFindFilesizeDuringAvailablecheck(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_ProfileCrawlerSkipExternalURLs)
+    @Order(40)
+    boolean isProfileCrawlerSkipExternalURLs();
+
+    void setProfileCrawlerSkipExternalURLs(boolean b);
 }
