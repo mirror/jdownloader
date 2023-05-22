@@ -56,7 +56,9 @@ import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
@@ -199,7 +201,7 @@ abstract public class ZeveraCore extends UseNet {
         /* See: https://app.swaggerhub.com/apis-docs/premiumize.me/api/1.6.7#/ */
         callAPI(this.br, account, "/api/item/details?id=" + fileID);
         final Map<String, Object> details;
-        final Map<String, Object> entries = this.handleAPIErrors(br, link, account);
+        final Map<String, Object> entries = this.handleAPIErrors(this, br, link, account);
         final Object detailsO = entries.get("details");
         if (detailsO instanceof Map) {
             details = (Map<String, Object>) detailsO;
@@ -278,7 +280,7 @@ abstract public class ZeveraCore extends UseNet {
             login(this.br, account, false, getClientID());
             final String dllink = getDllink(this.br, account, link, getClientID(), this);
             if (StringUtils.isEmpty(dllink)) {
-                handleAPIErrors(this.br, link, account);
+                handleAPIErrors(this, this.br, link, account);
                 mhm.handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
             }
             link.setProperty(account.getHoster() + "directlink", dllink);
@@ -289,7 +291,7 @@ abstract public class ZeveraCore extends UseNet {
                     br.followConnection(true);
                     /* Only check for API issues if we got a json response. */
                     if (br.getHttpConnection().getContentType().contains("application/json")) {
-                        handleAPIErrors(this.br, link, account);
+                        handleAPIErrors(this, this.br, link, account);
                     }
                     mhm.handleErrorGeneric(account, link, "Unknown download error", 50, 5 * 60 * 1000l);
                 }
@@ -356,7 +358,7 @@ abstract public class ZeveraCore extends UseNet {
                 postRequest.addFormData(new FormData(entry.getKey(), URLEncode.decodeURIComponent(entry.getValue())));
             }
             sendRequest(br, postRequest);
-            final Map<String, Object> entries = this.handleAPIErrors(br, link, account);
+            final Map<String, Object> entries = this.handleAPIErrors(this, br, link, account);
             dllink = (String) entries.get("location");
             final String filename = (String) entries.get("filename");
             if (!StringUtils.isEmpty(filename) && link.getFinalFileName() == null) {
@@ -471,7 +473,7 @@ abstract public class ZeveraCore extends UseNet {
             }
         }
         callAPI(br, account, "/api/services/list");
-        final Map<String, Object> hosterinfo = this.handleAPIErrors(br, null, account);
+        final Map<String, Object> hosterinfo = this.handleAPIErrors(this, br, null, account);
         final HashSet<String> supportedHostsMainDomains = new HashSet<String>();
         final String[] hosterListTypesToAdd = new String[] { "directdl", "queue" };
         for (final String hosterListTypeToAdd : hosterListTypesToAdd) {
@@ -673,7 +675,7 @@ abstract public class ZeveraCore extends UseNet {
                         hasTriedOldToken = true;
                         callAPI(br, account, "/api/account/info");
                         try {
-                            this.handleAPIErrors(br, null, account);
+                            this.handleAPIErrors(this, br, null, account);
                             logger.info("Token login successful");
                             return;
                         } catch (final Throwable ignore) {
@@ -736,7 +738,7 @@ abstract public class ZeveraCore extends UseNet {
                     account.setProperty("token_valid_until", System.currentTimeMillis() + ((Number) entries.get("expires_in")).longValue());
                     setAuthHeader(br, account);
                     callAPI(br, account, "/api/account/info");
-                    this.handleAPIErrors(br, null, account);
+                    this.handleAPIErrors(this, br, null, account);
                     /* No Exception = Success */
                 } finally {
                     /*
@@ -748,7 +750,7 @@ abstract public class ZeveraCore extends UseNet {
                 }
             } else {
                 callAPI(br, account, "/api/account/info");
-                this.handleAPIErrors(br, null, account);
+                this.handleAPIErrors(this, br, null, account);
                 /* No Exception = Success */
             }
         }
@@ -906,7 +908,7 @@ abstract public class ZeveraCore extends UseNet {
      *
      * @throws Exception
      */
-    private Map<String, Object> handleAPIErrors(final Browser br, final DownloadLink link, final Account account) throws Exception {
+    public Map<String, Object> handleAPIErrors(final Plugin plugin, final Browser br, final DownloadLink link, final Account account) throws Exception {
         /* E.g. {"status":"error","error":"topup_required","message":"Please purchase premium membership or activate free mode."} */
         Map<String, Object> entries = null;
         try {
@@ -981,7 +983,9 @@ abstract public class ZeveraCore extends UseNet {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, message);
             } else {
                 /* Unknown error */
-                if (link == null) {
+                if (plugin instanceof PluginForDecrypt) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, message);
+                } else if (link == null) {
                     /* Account/login related error */
                     throw new AccountUnavailableException(message, retryInMilliseconds);
                 } else if (errortype != null) {
@@ -1009,7 +1013,9 @@ abstract public class ZeveraCore extends UseNet {
                  */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, message);
             } else {
-                if (link == null) {
+                if (plugin instanceof PluginForDecrypt) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, message);
+                } else if (link == null) {
                     /* Account/login related error */
                     throw new AccountUnavailableException(messageNew, retryInMilliseconds);
                 } else {

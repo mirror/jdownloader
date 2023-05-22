@@ -24,8 +24,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PremiumizeBrowseNode;
 import jd.plugins.hoster.PremiumizeMe;
@@ -75,17 +73,11 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
             throw new AccountRequiredException();
         }
         this.setBrowserExclusive();
+        final ZeveraCore hosterPlugin = (ZeveraCore) this.getNewPluginForHostInstance(this.getHost());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final ArrayList<PremiumizeBrowseNode> nodes = getNodes(br, account, parameter.getCryptedUrl());
-        final Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-        final String status = (String) data.get("status");
-        final Object errorO = data.get("error");
-        if ("error".equals(status) || errorO != null) {
-            throw new AccountRequiredException();
-        } else if (nodes == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        /* Use path from previous craw process if available --> Saves http requests */
+        final Map<String, Object> data = hosterPlugin.handleAPIErrors(this, br, null, account);
+        /* Use path from previous crawl process if available --> Saves http requests */
         String folderPath = this.getAdoptedCloudFolderStructure();
         if (folderPath == null) {
             /* Try to find complete path by going back until we reach the root folder. */

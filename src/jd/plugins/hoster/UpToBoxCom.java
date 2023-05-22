@@ -165,11 +165,12 @@ public class UpToBoxCom extends PluginForHost {
      * a name is not present in the URL.
      */
     private String getWeakFilename(final DownloadLink link) {
-        String weakFilename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
-        if (weakFilename == null) {
-            weakFilename = this.getFUID(link);
+        final String filenameFromURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        if (filenameFromURL != null) {
+            return filenameFromURL;
+        } else {
+            return this.getFUID(link);
         }
-        return weakFilename;
     }
 
     public static Browser prepBrowserStatic(final Browser br) {
@@ -180,6 +181,7 @@ public class UpToBoxCom extends PluginForHost {
     }
 
     private String getContentURL(final DownloadLink link) {
+        // TODO: Add handling to replace domain if we know that current domain is a dead domain.
         return link.getPluginPatternMatcher().replaceFirst("http://", "https://");
     }
 

@@ -189,17 +189,41 @@ public class DropboxCom extends PluginForHost {
                     }
                     con = brc.openGetConnection(dllink);
                 }
+                if (this.looksLikeDownloadableContent(con)) {
+                    // this.dllink = con.getURL().toString();
+                    link.setProperty(PROPERTY_DIRECTLINK, dllink);
+                    link.setProperty(PROPERTY_IS_OFFICIALLY_DOWNLOADABLE, true);
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    String name = getFileNameFromHeader(con);
+                    if (!StringUtils.isEmpty(name)) {
+                        if (Encoding.isHtmlEntityCoded(name)) {
+                            name = Encoding.htmlDecode(name).trim();
+                        }
+                        link.setFinalFileName(name);
+                    }
+                    return AvailableStatus.TRUE;
+                }
+                brc.followConnection(true);
                 if (con.getResponseCode() == 400) {
-                    brc.followConnection(true);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (con.getResponseCode() == 403) {
-                    brc.followConnection(true);
+                } else if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (con.getResponseCode() == 460) {
+                    /* Restricted Content: This file is no longer available. For additional information contact Dropbox Support. */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (con.getResponseCode() == 509) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 509", 60 * 60 * 1000l);
+                }
+                if (con.getResponseCode() == 403) {
                     /*
                      * Check if the content is offline or just is not downloadable (e.g. owner has disabled download button - can only be
                      * downloaded by himself or other users with appropriate rights.)
                      */
                     brc.getPage(this.getRootFolderURL(link, link.getPluginPatternMatcher()));
                     if (brc.getHttpConnection().getResponseCode() == 403) {
+                        /* Still error 403 -> File is offline. */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
                         /**
@@ -219,59 +243,37 @@ public class DropboxCom extends PluginForHost {
                         if (link.hasProperty(PROPERTY_PREVIEW_DOWNLOADLINK)) {
                             return AvailableStatus.TRUE;
                         } else {
-                            /* File owner has disabled downloads and there is no streaming link available as fallback. */
+                            /**
+                             * File owner has disabled downloads and there is no streaming link available as fallback. </br>
+                             * --> File is online but cannot be downloaded.
+                             */
                             if (isDownload) {
                                 throw new PluginException(LinkStatus.ERROR_FATAL, "File owner has disabled downloads");
+                            } else {
+                                return AvailableStatus.TRUE;
                             }
                         }
                     }
-                } else if (con.getResponseCode() == 404) {
-                    brc.followConnection(true);
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (con.getResponseCode() == 460) {
-                    brc.followConnection(true);
-                    /* Restricted Content: This file is no longer available. For additional information contact Dropbox Support. */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (con.getResponseCode() == 509) {
-                    brc.followConnection(true);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
-                } else if (this.looksLikeDownloadableContent(con)) {
-                    // this.dllink = con.getURL().toString();
-                    link.setProperty(PROPERTY_DIRECTLINK, dllink);
-                    link.setProperty(PROPERTY_IS_OFFICIALLY_DOWNLOADABLE, true);
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    String name = getFileNameFromHeader(con);
-                    if (!StringUtils.isEmpty(name)) {
-                        if (Encoding.isHtmlEntityCoded(name)) {
-                            name = Encoding.htmlDecode(name).trim();
-                        }
-                        link.setFinalFileName(name);
-                    }
+                }
+                /* Rare case */
+                logger.info("File is not direct-downloadable");
+                if (brc.getURL().contains("/speedbump/")) {
+                    /* 2019-09-26: TODO: Check this - this should only happen for executable files in some cases */
+                    // brc.getURL().replace("/speedbump/", "/speedbump/dl/");
+                }
+                if (isPasswordProtectedWebsite(brc)) {
+                    /* Password handling is located in download handling. */
+                    link.setPasswordProtected(true);
                     return AvailableStatus.TRUE;
-                } else {
-                    /* Rare case */
-                    brc.followConnection(true);
-                    logger.info("File is not direct-downloadable");
-                    if (brc.getURL().contains("/speedbump/")) {
-                        /* 2019-09-26: TODO: Check this - this should only happen for executable files in some cases */
-                        // brc.getURL().replace("/speedbump/", "/speedbump/dl/");
-                    }
-                    if (isPasswordProtectedWebsite(brc)) {
-                        /* Password handling is located in download handling. */
-                        link.setPasswordProtected(true);
-                        return AvailableStatus.TRUE;
-                    } else if (password_cookie_value == null) {
-                        /*
-                         * If password_cookie_value is given, file most likely is password protected but website doesn't ask for password as
-                         * access is currently already granted via cookie session.
-                         */
-                        link.setPasswordProtected(false);
-                    }
-                    if (RequestMethod.HEAD.equals(con.getRequestMethod())) {
-                        brc.getPage(dllink);
-                    }
+                } else if (password_cookie_value == null) {
+                    /*
+                     * If password_cookie_value is given, file most likely is password protected but website doesn't ask for password as
+                     * access is currently already granted via cookie session.
+                     */
+                    link.setPasswordProtected(false);
+                }
+                if (RequestMethod.HEAD.equals(con.getRequestMethod())) {
+                    brc.getPage(dllink);
                 }
             } finally {
                 try {
