@@ -24,6 +24,24 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -43,24 +61,6 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends PluginForHost {
     public UpToBoxCom(PluginWrapper wrapper) {
@@ -79,8 +79,6 @@ public class UpToBoxCom extends PluginForHost {
     public String getAGBLink() {
         return "https://" + this.getPreferredDomain() + "/tos";
     }
-
-    private final static String defaultMainDomain = "uptobox.eu";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -171,10 +169,10 @@ public class UpToBoxCom extends PluginForHost {
         }
         if (deadDomains != null && deadDomains.contains(chosenDomain)) {
             /* Fallback 1 */
-            return defaultMainDomain;
+            return UpToBoxComConfig.PreferredDomain.DEFAULT.getDomain();
         } else if (dnsBlockedDomains != null && dnsBlockedDomains.contains(chosenDomain)) {
             /* Fallback 2 */
-            return defaultMainDomain;
+            return UpToBoxComConfig.PreferredDomain.DEFAULT.getDomain();
         } else {
             return chosenDomain;
         }
@@ -187,42 +185,34 @@ public class UpToBoxCom extends PluginForHost {
          * setting to let the user define a custom preferred domain.
          */
         final UpToBoxComConfig cfg = PluginJsonConfig.get(UpToBoxComConfig.class);
-        final String customDefinedPreferredDomain = cfg.getCustomDomain();
-        if (!StringUtils.isEmpty(customDefinedPreferredDomain)) {
-            /* Check if domain added by user is valid. */
-            try {
-                final URL url;
-                if (customDefinedPreferredDomain.matches("(?i)https?://.+")) {
-                    url = new URL(customDefinedPreferredDomain);
-                } else {
-                    url = new URL("https://" + customDefinedPreferredDomain);
-                }
-                org.appwork.utils.net.URLHelper.verifyURL(url);
-                // logger.info("Returning user defined domain: " + customDefinedPreferredDomain);
-                return url.getHost();
-            } catch (final Throwable e) {
-                /* Fallback to selection of pre defined domains. */
-                logger.exception("User defined domain is invalid:" + customDefinedPreferredDomain, e);
-            }
-        }
         PreferredDomain cfgdomain = cfg.getPreferredDomain();
         if (cfgdomain == null) {
             cfgdomain = PreferredDomain.DEFAULT;
         }
         switch (cfgdomain) {
-        case DOMAIN1:
-            return "uptobox.com";
-        case DOMAIN2:
-            return "uptobox.fr";
-        case DOMAIN3:
-            return "uptostream.com";
-        case DOMAIN4:
-            return "uptostream.fr";
-        case DOMAIN5:
-            return "uptostream.eu";
+        case CUSTOM:
+            final String customDefinedPreferredDomain = cfg.getCustomDomain();
+            if (!StringUtils.isEmpty(customDefinedPreferredDomain)) {
+                /* Check if domain added by user is valid. */
+                try {
+                    final URL url;
+                    if (customDefinedPreferredDomain.matches("(?i)https?://.+")) {
+                        url = new URL(customDefinedPreferredDomain);
+                    } else {
+                        url = new URL("https://" + customDefinedPreferredDomain);
+                    }
+                    org.appwork.utils.net.URLHelper.verifyURL(url);
+                    // logger.info("Returning user defined domain: " + customDefinedPreferredDomain);
+                    return url.getHost();
+                } catch (final Throwable e) {
+                    /* Fallback to selection of pre defined domains. */
+                    logger.exception("User defined domain is invalid:" + customDefinedPreferredDomain, e);
+                }
+            }
         case DEFAULT:
+            return cfgdomain.getDomain();
         default:
-            return defaultMainDomain;
+            return cfgdomain.getDomain();
         }
     }
 
@@ -1113,9 +1103,8 @@ public class UpToBoxCom extends PluginForHost {
 
         public UptoboxAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
-            final String domain = UpToBoxCom.defaultMainDomain;
             add(new JLabel("Click here to find your token:"));
-            add(new JLink("https://" + domain + "/my_account"));
+            add(new JLink("https://" + UpToBoxComConfig.PreferredDomain.DEFAULT.getDomain() + "/my_account"));
             add(new JLabel("Click here to get help:"));
             add(new JLink("https://uptobox.help/"));
             add(new JLabel("Token:"));

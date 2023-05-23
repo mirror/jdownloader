@@ -3,6 +3,7 @@ package org.jdownloader.plugins.components.config;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultOnNull;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.Order;
@@ -108,43 +109,98 @@ public interface UpToBoxComConfig extends PluginConfigInterface {
         DEFAULT {
             @Override
             public String getLabel() {
-                return "default (= uptobox.eu)";
+                return "default (= " + getDomain() + ")";
+            }
+
+            @Override
+            public String getDomain() {
+                return UPTOBOXEU.getDomain();
             }
         },
-        DOMAIN1 {
+        CUSTOM {
             @Override
             public String getLabel() {
+                return "custom";
+            }
+
+            @Override
+            public String getDomain() {
+                return null;
+            }
+        },
+        UPTOBOXEU {
+            // DEFAULT
+            @Override
+            public String getLabel() {
+                return getDomain();
+            }
+
+            @Override
+            public String getDomain() {
+                return "uptobox.eu";
+            }
+        },
+        UPTOBOXCOM {
+            @Override
+            public String getLabel() {
+                return getDomain();
+            }
+
+            @Override
+            public String getDomain() {
                 return "uptobox.com";
             }
         },
-        DOMAIN2 {
+        UPTOBOXFR {
             @Override
             public String getLabel() {
+                return getDomain();
+            }
+
+            @Override
+            public String getDomain() {
                 return "uptobox.fr";
             }
         },
-        DOMAIN3 {
+        UPTOSTREAMCOM {
             @Override
             public String getLabel() {
-                return "uptostream.com";
+                return getDomain();
+            }
+
+            @Override
+            public String getDomain() {
+                return "";
             }
         },
-        DOMAIN4 {
+        UPTOSTREAMFR {
             @Override
             public String getLabel() {
+                return getDomain();
+            }
+
+            @Override
+            public String getDomain() {
                 return "uptostream.fr";
             }
         },
-        DOMAIN5 {
+        UPTOSTREAMEU {
             @Override
             public String getLabel() {
+                return getDomain();
+            }
+
+            @Override
+            public String getDomain() {
                 return "uptostream.eu";
             }
         };
+        public abstract String getDomain();
     }
 
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
+    @DefaultOnNull
     @DescriptionForConfigEntry(text_PreferredDomain)
     @Order(70)
     PreferredDomain getPreferredDomain();

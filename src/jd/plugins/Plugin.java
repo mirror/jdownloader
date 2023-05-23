@@ -195,6 +195,7 @@ public abstract class Plugin implements ActionListener {
             final HashMap<String, String> map = new HashMap<String, String>();
             map.put("application/x-7z-compressed", "7z");
             map.put("image/gif", "gif");
+            map.put("image/jpg", "jpg");
             map.put("image/jpeg", "jpg");
             map.put("image/png", "png");
             map.put("image/apng", "apng");
