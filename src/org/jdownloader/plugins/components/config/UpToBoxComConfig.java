@@ -170,7 +170,7 @@ public interface UpToBoxComConfig extends PluginConfigInterface {
 
             @Override
             public String getDomain() {
-                return "";
+                return "uptostream.com";
             }
         },
         UPTOSTREAMFR {
