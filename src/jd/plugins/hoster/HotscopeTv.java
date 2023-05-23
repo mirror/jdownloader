@@ -132,7 +132,7 @@ public class HotscopeTv extends PluginForHost {
         }
         final String uploadDate = br.getRegex("\"uploadDate\"\\s*:\\s*\"([^\"]+)").getMatch(0);
         if (PROPERTY_DATE != null) {
-            link.setProperty(PROPERTY_USERNAME, uploadDate);
+            link.setProperty(PROPERTY_DATE, uploadDate);
         }
         if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;

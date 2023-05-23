@@ -215,15 +215,13 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         do {
             logger.info("Crawling page: " + page);
             lastArraySize = ret.size();
-            final boolean foundNewItems = parsePage(ret, dupes, fp, param);
-            if (!foundNewItems) {
+            final ArrayList<DownloadLink> newResults = parsePage(dupes, fp, param);
+            if (newResults.isEmpty()) {
                 /* Fail-safe */
                 logger.info("Stopping because failed to find new items on current page");
                 break;
-            } else if (ret.size() < lastArraySize) {
-                logger.info("Stopping because: Failed to find any items on current page");
-                break;
             }
+            ret.addAll(newResults);
             /* Increment to value of next page */
             page += 1;
             if (!this.accessNextPage(this.br, page)) {
@@ -300,10 +298,11 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         return fpName;
     }
 
-    private boolean parsePage(final ArrayList<DownloadLink> decryptedLinks, final ArrayList<String> dupes, final FilePackage fp, final CryptedLink param) throws PluginException {
-        boolean foundNewItems = false;
+    private ArrayList<DownloadLink> parsePage(final ArrayList<String> dupes, final FilePackage fp, final CryptedLink param) throws PluginException {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        int numberofNewItems = 0;
         String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost(true)) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
-        if (links == null && links.length == 0) {
+        if (links == null || links.length == 0) {
             links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost(false)) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
         }
         if (links != null && links.length > 0) {
@@ -322,7 +321,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                  * TODO: Consider adding support for "fast linkcheck" option via XFS core (superclass) --> Set links as available here -
                  * maybe only if filename is given inside URL (which is often the case). In general, files inside a folder should be online!
                  */
-                foundNewItems = true;
+                numberofNewItems++;
                 final DownloadLink dl = createDownloadlink(link);
                 String html_snippet = null;
                 final Iterator<String> it = tr_snippets.iterator();
@@ -406,12 +405,9 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 if (fp != null) {
                     dl._setFilePackage(fp);
                 }
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 distribute(dl);
                 dupes.add(linkid);
-                if (this.isAbort()) {
-                    return false;
-                }
             }
         }
         /* These should only be shown when its a /user/ decrypt task */
@@ -425,16 +421,18 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
                 final String cleanedUpFoundFolderLink = new Regex(folderlink, "https?://[^/]+/(.+)").getMatch(0);
                 /* Make sure that we're not grabbing the parent folder but only the folder that the user has added + eventual subfolders! */
                 final boolean folderIsChildFolder = cleanedUpFoundFolderLink.length() > cleanedUpAddedFolderLink.length();
-                if (folderlink.matches(this.getSupportedLinks().pattern()) && !dupes.contains(folderlink) && folderIsChildFolder) {
-                    foundNewItems = true;
+                if (this.canHandle(folderlink) && !dupes.contains(folderlink) && folderIsChildFolder) {
+                    numberofNewItems++;
                     final DownloadLink dlfolder = createDownloadlink(folderlink);
-                    decryptedLinks.add(dlfolder);
+                    ret.add(dlfolder);
                     distribute(dlfolder);
                     dupes.add(folderlink);
+                } else {
+                    logger.info("Skipping possible result: " + folderlink);
                 }
             }
         }
-        return foundNewItems;
+        return ret;
     }
 
     UrlQuery folderQuery = null;
