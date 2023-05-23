@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -36,6 +37,7 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.UpToBoxComConfig;
+import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredDomain;
 import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -63,7 +65,7 @@ import jd.plugins.PluginForHost;
 public class UpToBoxCom extends PluginForHost {
     public UpToBoxCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://" + this.getHost() + "/payments");
+        this.enablePremium("https://" + this.getPreferredDomain() + "/payments");
     }
 
     @Override
@@ -75,18 +77,30 @@ public class UpToBoxCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://" + this.getHost() + "/tos";
+        return "https://" + this.getPreferredDomain() + "/tos";
     }
+
+    private final static String defaultMainDomain = "uptobox.eu";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "uptobox.com", "uptostream.com", "uptobox.eu", "uptobox.info", "uptobox.help" });
+        ret.add(new String[] { "uptobox.com", "uptobox.fr", "uptobox.eu", "uptostream.com", "uptostream.fr", "uptostream.eu" });
+        /* Other known domains which can NOT be used for downloadlinks and API calls: uptobox.info, uptobox.help */
         return ret;
     }
 
     protected List<String> getDeadDomains() {
         return null;
+    }
+
+    /** Returns list of domains DNS blocked by any ISP. */
+    protected List<String> getDNSBlockedDomains() {
+        /* Keep this list updated! */
+        final List<String> list = new ArrayList<String>();
+        list.add("uptobox.com");
+        list.add("uptobox.fr");
+        return list;
     }
 
     public static String[] getAnnotationNames() {
@@ -106,33 +120,110 @@ public class UpToBoxCom extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    /* Connection stuff */
-    public static final String   API_BASE                                         = "https://uptobox.com/api";
+    // public static final String API_BASE = "https://uptobox.com/api";
     /* If pre-download-waittime is > this, reconnect exception will be thrown! */
-    private static final int     WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT             = 240;
-    private static final String  PROPERTY_timestamp_lastcheck                     = "timestamp_lastcheck";
+    private final int          WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT             = 240;
+    private final String       PROPERTY_timestamp_lastcheck                     = "timestamp_lastcheck";
     /* If a file-ID is also available on uptostream, we might be able to select between different video qualities. */
-    public static final String   PROPERTY_available_on_uptostream                 = "available_on_uptostream";
+    public static final String PROPERTY_available_on_uptostream                 = "available_on_uptostream";
     /* 2020-04-12: All files >=5GB are premiumonly but instead of hardcoding this, their filecheck-API returns the property. */
-    private static final String  PROPERTY_needs_premium                           = "needs_premium";
-    private static final String  PROPERTY_preset_api_errorcode                    = "api_errorcode";
-    private static final String  PROPERTY_last_downloaded_quality                 = "last_downloaded_quality";
-    private static final boolean use_api_availablecheck_for_single_availablecheck = true;
-    private static final int     api_errorcode_password_required_or_wrong         = 17;
-    private static final int     api_errorcode_file_temporarily_unavailable       = 25;
-    private static final int     api_errorcode_file_offline                       = 28;
+    private final String       PROPERTY_needs_premium                           = "needs_premium";
+    private final String       PROPERTY_preset_api_errorcode                    = "api_errorcode";
+    private final String       PROPERTY_last_downloaded_quality                 = "last_downloaded_quality";
+    private final boolean      use_api_availablecheck_for_single_availablecheck = true;
+    private final int          api_errorcode_password_required_or_wrong         = 17;
+    private final int          api_errorcode_file_temporarily_unavailable       = 25;
+    private final int          api_errorcode_file_offline                       = 28;
+
+    public String getAPIBase() {
+        return getAPIBase(null);
+    }
 
     /** TODO: Make use of this or something similar. */
-    private String getAPIBase(final String url) {
-        final String hostFromURL = Browser.getHost(url);
+    public String getAPIBase(final String url) {
+        return "https://" + getPreferredDomain(url) + "/api";
+    }
+
+    private String getPreferredDomain() {
+        return getPreferredDomain(null);
+    }
+
+    private String getPreferredDomain(final String url) {
+        final String userPreferredDomain = getConfiguredDomain();
         final List<String> deadDomains = this.getDeadDomains();
-        final String hostToUse;
-        if (deadDomains != null && deadDomains.contains(hostFromURL)) {
-            hostToUse = this.getHost();
+        final List<String> dnsBlockedDomains = this.getDNSBlockedDomains();
+        final String chosenDomain;
+        /* Enable this to prefer domain from given URL as long as it is not "blacklisted". */
+        final boolean allowUseDomainFromURL = false;
+        if (url == null || !allowUseDomainFromURL) {
+            chosenDomain = userPreferredDomain;
         } else {
-            hostToUse = hostFromURL;
+            final String domainFromURL = Browser.getHost(url);
+            if (deadDomains != null && deadDomains.contains(domainFromURL)) {
+                /* Domain is known to be dead -> Prefer user selected domain. */
+                chosenDomain = userPreferredDomain;
+            } else if (dnsBlockedDomains.contains(domainFromURL)) {
+                /* Domain is known to be DNS-blocked -> Prefer user selected domain. */
+                chosenDomain = userPreferredDomain;
+            } else {
+                chosenDomain = domainFromURL;
+            }
         }
-        return "https://" + hostToUse + "/api";
+        if (deadDomains != null && deadDomains.contains(chosenDomain)) {
+            /* Fallback 1 */
+            return defaultMainDomain;
+        } else if (dnsBlockedDomains != null && dnsBlockedDomains.contains(chosenDomain)) {
+            /* Fallback 2 */
+            return defaultMainDomain;
+        } else {
+            return chosenDomain;
+        }
+    }
+
+    protected String getConfiguredDomain() {
+        /* Returns user-set value which can be used to circumvent government based GEO-block. */
+        /**
+         * 2021-02-03: They're adding new domains quite often so in order to provide a more permanent solution for the user, I've added a
+         * setting to let the user define a custom preferred domain.
+         */
+        final UpToBoxComConfig cfg = PluginJsonConfig.get(UpToBoxComConfig.class);
+        final String customDefinedPreferredDomain = cfg.getCustomDomain();
+        if (!StringUtils.isEmpty(customDefinedPreferredDomain)) {
+            /* Check if domain added by user is valid. */
+            try {
+                final URL url;
+                if (customDefinedPreferredDomain.matches("(?i)https?://.+")) {
+                    url = new URL(customDefinedPreferredDomain);
+                } else {
+                    url = new URL("https://" + customDefinedPreferredDomain);
+                }
+                org.appwork.utils.net.URLHelper.verifyURL(url);
+                // logger.info("Returning user defined domain: " + customDefinedPreferredDomain);
+                return url.getHost();
+            } catch (final Throwable e) {
+                /* Fallback to selection of pre defined domains. */
+                logger.exception("User defined domain is invalid:" + customDefinedPreferredDomain, e);
+            }
+        }
+        PreferredDomain cfgdomain = cfg.getPreferredDomain();
+        if (cfgdomain == null) {
+            cfgdomain = PreferredDomain.DEFAULT;
+        }
+        switch (cfgdomain) {
+        case DOMAIN1:
+            return "uptobox.com";
+        case DOMAIN2:
+            return "uptobox.fr";
+        case DOMAIN3:
+            return "uptostream.com";
+        case DOMAIN4:
+            return "uptostream.fr";
+        case DOMAIN5:
+            return "uptostream.eu";
+        case DEFAULT:
+        default:
+            return defaultMainDomain;
+        }
     }
 
     @Override
@@ -266,7 +357,7 @@ public class UpToBoxCom extends PluginForHost {
                         sb.append("%2C");
                     }
                 }
-                checkbr.getPage(API_BASE + "/link/info?fileCodes=" + sb.toString());
+                checkbr.getPage(this.getAPIBase() + "/link/info?fileCodes=" + sb.toString());
                 final Map<String, Object> entries = restoreFromString(checkbr.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Object> linkcheckResults = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/list");
                 /* Number of results should be == number of file-ids we wanted to check! */
@@ -562,7 +653,7 @@ public class UpToBoxCom extends PluginForHost {
             } else {
                 logger.info("Trying to generate new streaming URL in preferred quality");
                 isFreshDirecturl = true;
-                br.getPage(API_BASE + "/streaming?" + queryBasic.toString());
+                br.getPage(this.getAPIBase(link.getPluginPatternMatcher()) + "/streaming?" + queryBasic.toString());
                 try {
                     /*
                      * Streams can also contain multiple video streams with e.g. different languages --> We will ignore this rare case and
@@ -605,7 +696,7 @@ public class UpToBoxCom extends PluginForHost {
                 if (passCode != null) {
                     queryDownload.addAndReplace("password", Encoding.urlEncode(passCode));
                 }
-                br.getPage(API_BASE + "/link?" + queryDownload.toString());
+                br.getPage(this.getAPIBase(link.getPluginPatternMatcher()) + "/link?" + queryDownload.toString());
                 entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 statusCode = ((Number) entries.get("statusCode")).intValue();
                 if (hasAskedUserForPassword) {
@@ -655,7 +746,7 @@ public class UpToBoxCom extends PluginForHost {
                 this.sleep((waitSeconds + 2) * 1000, link);
                 final UrlQuery queryDL = queryBasic;
                 queryDL.append("waitingToken", waitingToken, true);
-                br.getPage(API_BASE + "/link?" + queryDL.toString());
+                br.getPage(this.getAPIBase(link.getPluginPatternMatcher()) + "/link?" + queryDL.toString());
                 entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 entries = (Map<String, Object>) entries.get("data");
             }
@@ -729,7 +820,7 @@ public class UpToBoxCom extends PluginForHost {
                 return null;
             } else {
                 logger.info("Performing full login");
-                br.getPage(API_BASE + "/user/me?token=" + Encoding.urlEncode(apikey));
+                br.getPage(this.getAPIBase() + "/user/me?token=" + Encoding.urlEncode(apikey));
                 this.checkErrorsAPI(br, null, account);
                 account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
                 return restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
@@ -979,9 +1070,9 @@ public class UpToBoxCom extends PluginForHost {
 
     private void exceptionInvalidLogin() throws PluginException {
         if ("fr".equalsIgnoreCase(System.getProperty("user.language"))) {
-            throw new AccountInvalidException("\r\nToken invalide. / Vous pouvez trouver votre token ici : " + this.getHost() + "/my_account.\r\nSi vous utilisez JDownloader à distance/myjdownloader/headless, entrez le token dans les champs de nom d'utilisateur de de mot de passe.");
+            throw new AccountInvalidException("\r\nToken invalide. / Vous pouvez trouver votre token ici : " + this.getPreferredDomain() + "/my_account.\r\nSi vous utilisez JDownloader à distance/myjdownloader/headless, entrez le token dans les champs de nom d'utilisateur de de mot de passe.");
         } else {
-            throw new AccountInvalidException("\r\nInvalid token!\r\nYou can find your token here: " + this.getHost() + "/my_account\r\nIf you are running JDownloader headless or using myjdownloader, just put your token into the username and password field.");
+            throw new AccountInvalidException("\r\nInvalid token!\r\nYou can find your token here: " + this.getPreferredDomain() + "/my_account\r\nIf you are running JDownloader headless or using myjdownloader, just put your token into the username and password field.");
         }
     }
 
@@ -1022,8 +1113,11 @@ public class UpToBoxCom extends PluginForHost {
 
         public UptoboxAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
+            final String domain = UpToBoxCom.defaultMainDomain;
             add(new JLabel("Click here to find your token:"));
-            add(new JLink("https://uptobox.com/my_account"));
+            add(new JLink("https://" + domain + "/my_account"));
+            add(new JLabel("Click here to get help:"));
+            add(new JLink("https://uptobox.help/"));
             add(new JLabel("Token:"));
             add(this.pass = new ExtPasswordField() {
                 @Override

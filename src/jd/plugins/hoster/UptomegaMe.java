@@ -56,13 +56,14 @@ public class UptomegaMe extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "uptomega.me", "uptomega.com" });
+        ret.add(new String[] { "uptomega.net", "uptomega.me", "uptomega.com" });
         return ret;
     }
 
     @Override
     public String rewriteHost(final String host) {
         /* 2020-12-10: Main domain has changed from uptomega.com to uptomega.me */
+        /* 2023-05-23: Main domain has changed from uptomega.me to uptomega.net */
         return this.rewriteHost(getPluginDomains(), host, new String[0]);
     }
 

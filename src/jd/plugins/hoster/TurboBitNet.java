@@ -76,7 +76,7 @@ public class TurboBitNet extends TurbobitCore {
                 logger.exception("User defined domain is invalid:" + customDefinedPreferredDomain, e);
             }
         }
-        PreferredDomain cfgdomain = PluginJsonConfig.get(TurbobitCoreConfigTurbobitNet.class).getPreferredDomain();
+        PreferredDomain cfgdomain = cfg.getPreferredDomain();
         if (cfgdomain == null) {
             cfgdomain = PreferredDomain.DEFAULT;
         }

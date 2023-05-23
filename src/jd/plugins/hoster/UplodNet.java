@@ -152,6 +152,7 @@ public class UplodNet extends XFileSharingProBasic {
         /* First bring up saved final links */
         String dllink = checkDirectLink(link, account);
         if (StringUtils.isEmpty(dllink)) {
+            this.requestFileInformationWebsite(link, account, true);
             this.checkErrors(br, correctedBR, link, account, false);
             final Form dl1 = br.getFormByInputFieldKeyValue("op", "step1");
             if (dl1 == null) {

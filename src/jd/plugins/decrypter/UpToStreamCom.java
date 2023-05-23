@@ -23,7 +23,6 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.config.UpToBoxComConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -31,7 +30,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -47,10 +45,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.UpToBoxCom;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { UpToBoxCom.class })
@@ -86,6 +81,8 @@ public class UpToStreamCom extends PluginForDecrypt {
         /* Load sister-host plugin */
         final ArrayList<String> dupecheck = new ArrayList<String>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final UpToBoxCom hosterPlugin = (UpToBoxCom) this.getNewPluginForHostInstance(this.getHost());
+        final Account account = AccountController.getInstance().getValidAccount(hosterPlugin.getHost());
         if (parameter.contains("user_public")) {
             /* Using API: https://docs.uptobox.com/#retrieve-files-in-public-folder */
             final UrlQuery query = UrlQuery.parse(parameter);
@@ -99,7 +96,6 @@ public class UpToStreamCom extends PluginForDecrypt {
             int pageMax = 1;
             int pageCurrent = 0;
             int offset = 0;
-            final String host = Browser.getHost(param.getCryptedUrl());
             String currentFolderName = null;
             String filePath = this.getAdoptedCloudFolderStructure("");
             FilePackage fp = null;
@@ -108,14 +104,15 @@ public class UpToStreamCom extends PluginForDecrypt {
             paginationLoop: do {
                 pageCurrent++;
                 /* 2018-10-18: default = "limit=10" */
-                br.getPage("https://" + host + "/api/user/public?folder=" + folderID + "&hash=" + hash + "&orderBy=file_name&dir=asc&limit=" + maxItemsPerPage + "&offset=" + offset);
-                final String errormessage = PluginJSonUtils.getJson(br, "message");
-                if (!StringUtils.isEmpty(errormessage) && !StringUtils.equalsIgnoreCase(errormessage, "Success")) {
+                br.getPage(hosterPlugin.getAPIBase(param.getCryptedUrl()) + "/user/public?folder=" + folderID + "&hash=" + hash + "&orderBy=file_name&dir=asc&limit=" + maxItemsPerPage + "&offset=" + offset);
+                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+                final String message = (String) entries.get("message");
+                if (!StringUtils.equalsIgnoreCase(message, "Success")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
                 final Map<String, Object> data = (Map<String, Object>) entries.get("data");
                 if (pageCurrent == 1) {
+                    /* Init some variables when we're on first page. */
                     pageMax = ((Number) data.get("pageCount")).intValue();
                     currentFolderName = data.get("folderName").toString();
                     if (filePath.isEmpty()) {
@@ -169,14 +166,13 @@ public class UpToStreamCom extends PluginForDecrypt {
             final String host_uptobox = "uptobox.com";
             final String fuid = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
             final UpToBoxComConfig cfg = PluginJsonConfig.get(UpToBoxComConfig.class);
-            final DownloadLink uptoboxURL = this.createDownloadlink(parameter.replaceFirst("uptostream.com/", host_uptobox + "/"));
-            uptoboxURL.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+            final DownloadLink videoStreamURL = this.createDownloadlink(parameter.replaceFirst("uptostream.com/", host_uptobox + "/"));
+            videoStreamURL.setName(fuid + ".mp4");
             UpToBoxCom.prepBrowserStatic(br);
-            final PluginForHost plg = JDUtilities.getPluginForHost(host_uptobox);
-            final Account account = AccountController.getInstance().getValidAccount(plg.getHost());
             final boolean grabSubtitle = cfg.isGrabSubtitle();
             /* 2020-04-13: API access (= premium account) required to get subtitles */
             if (grabSubtitle && account != null && account.getType() == AccountType.PREMIUM) {
+                /* Extra handling to grab subtitles */
                 logger.info("Trying to crawl subtitles");
                 /* We need to linkcheck the main URL to get the filename */
                 boolean isOnline = false;
@@ -185,10 +181,10 @@ public class UpToStreamCom extends PluginForDecrypt {
                  */
                 boolean isAvailableUnUptostream = false;
                 try {
-                    plg.setBrowser(this.br);
-                    ((jd.plugins.hoster.UpToBoxCom) plg).requestFileInformation(uptoboxURL);
-                    isOnline = uptoboxURL.isAvailabilityStatusChecked() && uptoboxURL.isAvailable();
-                    isAvailableUnUptostream = uptoboxURL.getBooleanProperty(UpToBoxCom.PROPERTY_available_on_uptostream, false);
+                    hosterPlugin.setBrowser(this.br);
+                    hosterPlugin.requestFileInformation(videoStreamURL);
+                    isOnline = videoStreamURL.isAvailabilityStatusChecked() && videoStreamURL.isAvailable();
+                    isAvailableUnUptostream = videoStreamURL.getBooleanProperty(UpToBoxCom.PROPERTY_available_on_uptostream, false);
                 } catch (final Throwable e) {
                     logger.log(e);
                     logger.info("Availablecheck in crawler failed");
@@ -197,7 +193,7 @@ public class UpToStreamCom extends PluginForDecrypt {
                     logger.info("Not looking for subtitles as main URL is offline or content is not available on uptostream");
                 } else {
                     logger.info("Main URL is online --> Looking for subtitles");
-                    String fpName = uptoboxURL.getFinalFileName();
+                    String fpName = videoStreamURL.getFinalFileName();
                     if (fpName == null) {
                         /* Fallback - should not be required */
                         fpName = fuid;
@@ -208,7 +204,7 @@ public class UpToStreamCom extends PluginForDecrypt {
                     }
                     try {
                         final String token = account.getPass();
-                        br.getPage(UpToBoxCom.API_BASE + "/streaming?token=" + Encoding.urlEncode(token) + "&file_code=" + fuid);
+                        br.getPage(hosterPlugin.getAPIBase(param.getCryptedUrl()) + "/streaming?token=" + Encoding.urlEncode(token) + "&file_code=" + fuid);
                         Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                         final List<Object> subtitles = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/subs");
                         if (subtitles == null || subtitles.size() == 0) {
@@ -250,7 +246,7 @@ public class UpToStreamCom extends PluginForDecrypt {
                     }
                 }
             }
-            ret.add(uptoboxURL);
+            ret.add(videoStreamURL);
         }
         return ret;
     }

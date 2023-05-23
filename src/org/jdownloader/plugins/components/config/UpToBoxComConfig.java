@@ -15,6 +15,8 @@ public interface UpToBoxComConfig extends PluginConfigInterface {
     final String                    text_PreferredQuality     = "If your preferred quality is not found, original/best will be downloaded instead. Only works for content also available on uptostream! Only works if you own a premium account!";
     final String                    text_GrabSubtitle         = "[Premium only] Crawl subtitle?";
     final String                    text_UseHTTPSForDownloads = "Use https for final downloadurls?";
+    final String                    text_PreferredDomain      = "Preferred domain";
+    final String                    text_CustomDomain         = "Define custom preferred domain. If given this will be preferred over the above selection";
     public static final TRANSLATION TRANSLATION               = new TRANSLATION();
 
     public static class TRANSLATION {
@@ -28,6 +30,14 @@ public interface UpToBoxComConfig extends PluginConfigInterface {
 
         public String getUseHTTPSForDownloads_label() {
             return text_UseHTTPSForDownloads;
+        }
+
+        public String getPreferredDomain_label() {
+            return text_PreferredDomain;
+        }
+
+        public String getCustomDomain_label() {
+            return text_CustomDomain;
         }
     }
 
@@ -73,6 +83,7 @@ public interface UpToBoxComConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
     @DescriptionForConfigEntry(text_PreferredQuality)
+    @Order(40)
     PreferredQuality getPreferredQuality();
 
     void setPreferredQuality(PreferredQuality domain);
@@ -92,4 +103,59 @@ public interface UpToBoxComConfig extends PluginConfigInterface {
     boolean isUseHTTPSForDownloads();
 
     void setUseHTTPSForDownloads(boolean b);
+
+    public static enum PreferredDomain implements LabelInterface {
+        DEFAULT {
+            @Override
+            public String getLabel() {
+                return "default (= uptobox.eu)";
+            }
+        },
+        DOMAIN1 {
+            @Override
+            public String getLabel() {
+                return "uptobox.com";
+            }
+        },
+        DOMAIN2 {
+            @Override
+            public String getLabel() {
+                return "uptobox.fr";
+            }
+        },
+        DOMAIN3 {
+            @Override
+            public String getLabel() {
+                return "uptostream.com";
+            }
+        },
+        DOMAIN4 {
+            @Override
+            public String getLabel() {
+                return "uptostream.fr";
+            }
+        },
+        DOMAIN5 {
+            @Override
+            public String getLabel() {
+                return "uptostream.eu";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("DEFAULT")
+    @DescriptionForConfigEntry(text_PreferredDomain)
+    @Order(70)
+    PreferredDomain getPreferredDomain();
+
+    void setPreferredDomain(PreferredDomain domain);
+
+    @AboutConfig
+    // @DefaultStringValue("")
+    @DescriptionForConfigEntry(text_CustomDomain)
+    @Order(80)
+    String getCustomDomain();
+
+    void setCustomDomain(String str);
 }
