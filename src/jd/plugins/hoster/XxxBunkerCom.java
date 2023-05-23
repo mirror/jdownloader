@@ -203,7 +203,7 @@ public class XxxBunkerCom extends PluginForHost {
         br.getHeaders().put("Referer", "");
         br.setCookie(br.getURL(), "ageconfirm", "20150302");
         br.setCookie(br.getURL(), "autostart", "1");
-        link.setProperty("ServerComaptibleForByteRangeRequest", true);
+        link.setProperty(DirectHTTP.PROPERTY_ServerComaptibleForByteRangeRequest, true);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
@@ -211,12 +211,9 @@ public class XxxBunkerCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

@@ -25,6 +25,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
@@ -34,8 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pandora.tv" }, urls = { "http://(?:.+)?channel\\.pandora\\.tv/channel/video\\.ptv\\?.+|http://(?:www\\.)?pandora\\.tv/my\\.[^/]+/\\d+" })
 public class PandoraTV extends PluginForHost {
@@ -159,16 +159,17 @@ public class PandoraTV extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String dllink = br.getRegex("\"(.*?)\"").getMatch(0, 1);
-        downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
+        downloadLink.setProperty(DirectHTTP.PROPERTY_ServerComaptibleForByteRangeRequest, true);
         dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

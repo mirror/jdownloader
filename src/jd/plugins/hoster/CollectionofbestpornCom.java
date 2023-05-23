@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -29,8 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "collectionofbestporn.com" }, urls = { "https?://(www\\.)?collectionofbestporn\\.com/video/[a-z0-9\\-]+\\.html" })
 public class CollectionofbestpornCom extends PluginForHost {
@@ -141,7 +141,7 @@ public class CollectionofbestpornCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
+        downloadLink.setProperty(DirectHTTP.PROPERTY_ServerComaptibleForByteRangeRequest, true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {

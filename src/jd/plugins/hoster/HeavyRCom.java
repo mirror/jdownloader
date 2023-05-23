@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -26,8 +28,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heavy-r.com" }, urls = { "https?://(?:www\\.)?heavy\\-r\\.com/video/\\d+(?:/[^/]*/?)?" })
 public class HeavyRCom extends antiDDoSForHost {
@@ -103,26 +103,26 @@ public class HeavyRCom extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         boolean resume = true;
         int maxchunks = 0;
-        if (downloadLink.getBooleanProperty(HeavyRCom.NORESUME, false)) {
+        if (link.getBooleanProperty(HeavyRCom.NORESUME, false)) {
             resume = false;
         }
         if (!resume) {
             maxchunks = 1;
         }
-        downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
+        link.setProperty(DirectHTTP.PROPERTY_ServerComaptibleForByteRangeRequest, true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume impossible, disabling it for the next try");
-            downloadLink.setChunksProgress(null);
-            downloadLink.setProperty(HeavyRCom.NORESUME, Boolean.valueOf(true));
+            link.setChunksProgress(null);
+            link.setProperty(HeavyRCom.NORESUME, Boolean.valueOf(true));
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

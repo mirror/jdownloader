@@ -60,6 +60,7 @@ import org.appwork.uio.CloseReason;
 import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ConcatIterator;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
@@ -691,77 +692,90 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return dsm;
     }
 
-    public void validateDestination(File file) throws BadDestinationException {
-        if (!file.exists()) {
-            File checking = null;
-            try {
-                String[] folders;
-                switch (CrossSystem.getOSFamily()) {
-                case LINUX:
-                    folders = CrossSystem.getPathComponents(file);
-                    if (folders.length >= 3) {
-                        final String userName = System.getProperty("user.name");
-                        if (folders.length >= 4 && "run".equals(folders[1]) && "media".equals(folders[2]) && folders[3].equals(userName)) {
-                            /* 0:/ | 1:run | 2:media | 3:user | 4:mounted volume */
-                            checking = new File("/run/media/" + userName + "/" + folders[4]);
-                        } else if ("media".equals(folders[1])) {
-                            /* 0:/ | 1:media | 2:mounted volume */
-                            checking = new File("/media/" + folders[2]);
-                        } else if ("mnt".equals(folders[1])) {
-                            /* 0:/ | 1:media | 2:mounted volume */
-                            checking = new File("/mnt/" + folders[2]);
-                        }
+    /** Throws Exception if given download destination looks to be invalid. */
+    public void validateDestination(final File file) throws BadDestinationException {
+        if (file.exists()) {
+            return;
+        }
+        File checking = null;
+        try {
+            String[] folders;
+            switch (CrossSystem.getOSFamily()) {
+            case LINUX:
+                folders = CrossSystem.getPathComponents(file);
+                if (folders.length >= 3) {
+                    final String userName = System.getProperty("user.name");
+                    if (folders.length >= 4 && "run".equals(folders[1]) && "media".equals(folders[2]) && folders[3].equals(userName)) {
+                        /* 0:/ | 1:run | 2:media | 3:user | 4:mounted volume */
+                        checking = new File("/run/media/" + userName + "/" + folders[4]);
+                    } else if ("media".equals(folders[1])) {
+                        /* 0:/ | 1:media | 2:mounted volume */
+                        checking = new File("/media/" + folders[2]);
+                    } else if ("mnt".equals(folders[1])) {
+                        /* 0:/ | 1:media | 2:mounted volume */
+                        checking = new File("/mnt/" + folders[2]);
                     }
-                    break;
-                case MAC:
-                    folders = CrossSystem.getPathComponents(file);
-                    if (folders.length >= 3) {
-                        if ("media".equals(folders[1])) {
-                            /* 0:/ | 1:media | 2:mounted volume */
-                            checking = new File("/media/" + folders[2]);
-                        } else if ("mnt".equals(folders[1])) {
-                            /* 0:/ | 1:media | 2:mounted volume */
-                            checking = new File("/mnt/" + folders[2]);
-                        } else if ("Volumes".equals(folders[1])) {
-                            /* 0:/ | 1:Volumes | 2:mounted volume */
-                            checking = new File("/Volumes/" + folders[2]);
-                        }
+                }
+                break;
+            case MAC:
+                folders = CrossSystem.getPathComponents(file);
+                if (folders.length >= 3) {
+                    if ("media".equals(folders[1])) {
+                        /* 0:/ | 1:media | 2:mounted volume */
+                        checking = new File("/media/" + folders[2]);
+                    } else if ("mnt".equals(folders[1])) {
+                        /* 0:/ | 1:media | 2:mounted volume */
+                        checking = new File("/mnt/" + folders[2]);
+                    } else if ("Volumes".equals(folders[1])) {
+                        /* 0:/ | 1:Volumes | 2:mounted volume */
+                        checking = new File("/Volumes/" + folders[2]);
                     }
-                    break;
-                case WINDOWS:
-                default:
-                    if (CrossSystem.getOS().isMaximum(OperatingSystem.WINDOWS_NT) && file.getAbsolutePath().length() > 259) {
-                        // old windows API does not allow longer paths
-                        checking = file;
-                        throw new PathTooLongException(file);
-                    } else {
-                        folders = CrossSystem.getPathComponents(file);
-                        if (folders.length > 0) {
-                            String root = folders[0];
-                            if (root.matches("^[a-zA-Z]{1}:\\\\$") || root.matches("^[a-zA-Z]{1}://$")) {
-                                /* X:/ or X:\ */
-                                checking = new File(folders[0]);
-                            } else if (root.equals("\\\\")) {
-                                if (folders.length >= 3) {
-                                    /* \\\\computer\\folder\\ in network */
-                                    checking = new File(folders[0] + folders[1] + "\\" + folders[2]);
-                                }
+                }
+                break;
+            case WINDOWS:
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    /**
+                     * TODO: Find a way to check if this limit applies for the current Windows system. </br>
+                     * Also there are special paths which can be used to exceed the popular Windows path limitation such as "\\?\" </br>
+                     * : https://stackoverflow.com/questions/23041983/path-prefixes-and
+                     */
+                    if (file.getAbsolutePath().length() > 259) {
+                        logger.warning("Path is too long: " + file.getAbsolutePath());
+                        throw new PathTooLongException(checking);
+                    }
+                }
+            default:
+                if (CrossSystem.getOS().isMaximum(OperatingSystem.WINDOWS_NT) && file.getAbsolutePath().length() > 259) {
+                    // old windows API does not allow longer paths
+                    checking = file;
+                    throw new PathTooLongException(file);
+                } else {
+                    folders = CrossSystem.getPathComponents(file);
+                    if (folders.length > 0) {
+                        String root = folders[0];
+                        if (root.matches("^[a-zA-Z]{1}:\\\\$") || root.matches("^[a-zA-Z]{1}://$")) {
+                            /* X:/ or X:\ */
+                            checking = new File(folders[0]);
+                        } else if (root.equals("\\\\")) {
+                            if (folders.length >= 3) {
+                                /* \\\\computer\\folder\\ in network */
+                                checking = new File(folders[0] + folders[1] + "\\" + folders[2]);
                             }
                         }
                     }
                 }
-                if (checking != null && checking.exists() && checking.isDirectory()) {
-                    checking = null;
-                }
-            } catch (BadDestinationException e) {
-                throw e;
-            } catch (Throwable e) {
-                logger.log(e);
             }
-            if (checking != null) {
-                logger.info("DownloadFolderRoot: " + checking + " for " + file + " is invalid! Missing or not a directory!");
-                throw new BadDestinationException(checking);
+            if (checking != null && checking.exists() && checking.isDirectory()) {
+                checking = null;
             }
+        } catch (BadDestinationException e) {
+            throw e;
+        } catch (Throwable e) {
+            logger.log(e);
+        }
+        if (checking != null) {
+            logger.info("DownloadFolderRoot: " + checking + " for " + file + " is invalid! Missing or not a directory!");
+            throw new BadDestinationException(checking);
         }
     }
 
@@ -3942,6 +3956,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 final boolean fileExists = fileOutput.exists();
                 if (!fileExists) {
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        // TODO: Make use of this, add more precise errormessage for user and test it thoroughly
+                        if (CrossSystem.isWindows()) {
+                            final String fileName = fileOutput.getName();
+                            if (fileName.length() > 259) {
+                                controller.getLogger().severe("fileOutput : filename is too long for Windows OS: " + fileOutput);
+                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                            }
+                        }
+                    }
                     try {
                         validateDestination(fileOutput);
                     } catch (PathTooLongException e) {

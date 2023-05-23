@@ -2090,7 +2090,7 @@ public class GoogleDrive extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
         if (link != null) {
-            link.setProperty("ServerComaptibleForByteRangeRequest", true);
+            link.setProperty(DirectHTTP.PROPERTY_ServerComaptibleForByteRangeRequest, true);
             link.removeProperty(PROPERTY_USED_QUALITY);
             link.removeProperty(PROPERTY_CAN_DOWNLOAD);
             link.removeProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ACCOUNT);
