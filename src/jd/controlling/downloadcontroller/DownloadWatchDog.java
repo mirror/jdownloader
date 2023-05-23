@@ -739,7 +739,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                      * Also there are special paths which can be used to exceed the popular Windows path limitation such as "\\?\" </br>
                      * : https://stackoverflow.com/questions/23041983/path-prefixes-and
                      */
-                    if (file.getAbsolutePath().length() > 259) {
+                    // TODO: Make use of this, add more precise errormessage for user and test it thoroughly
+                    final int maxAllowedLength = 259;
+                    final String fileName = file.getName();
+                    if (!file.isDirectory() && fileName.length() > maxAllowedLength) {
+                        logger.warning("fileOutput : filename is too long for Windows OS: " + fileName);
+                        throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                    } else if (file.getAbsolutePath().length() > maxAllowedLength) {
                         logger.warning("Path is too long: " + file.getAbsolutePath());
                         throw new PathTooLongException(checking);
                     }
@@ -3956,16 +3962,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 final boolean fileExists = fileOutput.exists();
                 if (!fileExists) {
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        // TODO: Make use of this, add more precise errormessage for user and test it thoroughly
-                        if (CrossSystem.isWindows()) {
-                            final String fileName = fileOutput.getName();
-                            if (fileName.length() > 259) {
-                                controller.getLogger().severe("fileOutput : filename is too long for Windows OS: " + fileOutput);
-                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
-                            }
-                        }
-                    }
                     try {
                         validateDestination(fileOutput);
                     } catch (PathTooLongException e) {
