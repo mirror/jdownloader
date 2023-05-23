@@ -44,13 +44,14 @@ public class UpvidBiz extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "upvid.cloud", "upvid.biz", "upvid.co" });
+        ret.add(new String[] { "opvid.org", "opvid.online", "upvid.cloud", "upvid.biz", "upvid.co" });
         return ret;
     }
 
     @Override
     public String rewriteHost(final String host) {
         /* 2022-09-09: Main domain has changed from upvid.biz to upvid.cloud */
+        /* 2023-05-23: Main domain has changed from upvid.cloud to opvid.org */
         return this.rewriteHost(getPluginDomains(), host);
     }
 

@@ -351,6 +351,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         br.setLoadLimit(br.getLoadLimit() * 4);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String contentURL = param.getCryptedUrl();
+        final DropBoxConfig cfg = PluginJsonConfig.get(DropBoxConfig.class);
         if (contentURL.matches(DropboxCom.TYPE_SC_GALLERY)) {
             /* Gallery */
             /*
@@ -402,7 +403,6 @@ public class DropBoxComCrawler extends PluginForDecrypt {
              */
             final DownloadLink previousDownloadlink = param.getDownloadLink();
             final boolean enforceCrawlSubfoldersByProperty = previousDownloadlink != null && previousDownloadlink.hasProperty(PROPERTY_CRAWL_SUBFOLDERS);
-            final boolean askIfSubfoldersShouldbeCrawled = PluginJsonConfig.get(DropBoxConfig.class).isAskIfSubfoldersShouldBeCrawled();
             final String storedPasswordCookieValue = previousDownloadlink != null ? previousDownloadlink.getStringProperty(DropboxCom.PROPERTY_PASSWORD_COOKIE) : null;
             if (storedPasswordCookieValue != null) {
                 /**
@@ -621,9 +621,13 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                         /* Nothing has been found before -> Assume that we got a single file. */
                         final DownloadLink singleFile = createSingleFileDownloadLink(br.getURL());
                         setDownloadPasswordProperties(singleFile, passCode, passwordCookieValue);
-                        // TODO: Maybe add plugin setting for this. Reference: https://board.jdownloader.org/showthread.php?t=93518
-                        final boolean enableFastLinkcheckForAssumedSingleFiles = true;
-                        if (enableFastLinkcheckForAssumedSingleFiles) {
+                        /**
+                         * TODO: Remove that setting once we can parse GRPC strings </br>
+                         * References: </br>
+                         * Ticket: https://svn.jdownloader.org/issues/90376 </br>
+                         * Forum: https://board.jdownloader.org/showthread.php?t=93518
+                         */
+                        if (cfg.isEnableFastLinkcheckForSingleFiles()) {
                             singleFile.setAvailable(true);
                         }
                         ret.add(singleFile);
@@ -676,9 +680,10 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 }
                 if (enforceCrawlSubfoldersByProperty) {
                     crawlSubfolders = true;
-                } else if (!askIfSubfoldersShouldbeCrawled) {
+                } else if (!cfg.isAskIfSubfoldersShouldBeCrawled()) {
+                    /* Do not ask user. Always crawl subfolders. */
                     crawlSubfolders = true;
-                } else if (askIfSubfoldersShouldbeCrawled && ressourcelist_folders.size() > 0 && !askedUserIfHeWantsSubfolders) {
+                } else if (ressourcelist_folders.size() > 0 && !askedUserIfHeWantsSubfolders) {
                     /*
                      * Only ask user if there are actually subfolders that can be crawled AND if we haven't asked him already for this
                      * folder AND if subfolders exist in this folder!
