@@ -49,11 +49,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.FileupOrg;
 import jd.plugins.hoster.TakefileLink;
+import jd.plugins.hoster.UploadBoyCom;
 
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
-    private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "powvideo.net", "youwatch.org", "salefiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "mixshared.com", "longfiles.com", "novafile.com", "novafile.org", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc", "cosmobox.org", "easybytez.com", "userupload.net", "tstorage.info", "fastfile.cc", "uploadboy.com", "uploadboy.me", "uploadb.me", "datanodes.to" };
+    private static final String[] domains        = new String[] { "up-4.net", "up-4ever.com", "up-4ever.net", "subyshare.com", "brupload.net", "powvideo.net", "youwatch.org", "salefiles.com", "restfile.ca", "restfilee.com", "storagely.com", "free-uploading.com", "rapidfileshare.net", "fireget.com", "mixshared.com", "longfiles.com", "novafile.com", "novafile.org", "qtyfiles.com", "free-uploading.com", "free-uploading.com", "uppit.com", "downloadani.me", "clicknupload.org", "isra.cloud", "world-files.com", "katfile.com", "filefox.cc", "cosmobox.org", "easybytez.com", "userupload.net", "tstorage.info", "fastfile.cc", "datanodes.to" };
     /* This list contains all hosts which need special Patterns (see below) - all other XFS hosts have the same folder patterns! */
     private static final String[] specialDomains = { "hotlink.cc", "ex-load.com", "imgbaron.com", "filespace.com", "spaceforfiles.com", "prefiles.com", "imagetwist.com", "file.al", "send.cm", "takefile.link" };
 
@@ -70,11 +71,16 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         return FileupOrg.getPluginDomains().get(0);
     }
 
+    private static String[] getUploadboyDomains() {
+        return UploadBoyCom.getPluginDomains().get(0);
+    }
+
     /* Returns Array containing all elements of domains + specialDomains. */
     public static String[] getAllDomains() {
         final List<String> ret = new ArrayList<String>();
         ret.addAll(Arrays.asList(domains));
         ret.addAll(Arrays.asList(getFileUpDomains()));
+        ret.addAll(Arrays.asList(getUploadboyDomains()));
         ret.addAll(Arrays.asList(specialDomains));
         for (String[] takeFileVirtual : TakefileLink.getVirtualPluginDomains()) {
             ret.add(takeFileVirtual[0]);
@@ -90,6 +96,9 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         }
         for (final String fileupDomain : getFileUpDomains()) {
             ret.add("https?://(?:www\\.)?" + Pattern.quote(fileupDomain) + "/users/[a-z0-9_]+(?:/[^\\?\r\n]+)?");
+        }
+        for (final String fileupDomain : getUploadboyDomains()) {
+            ret.add("https?://(?:www\\.)?" + Pattern.quote(fileupDomain) + "/(users/[a-z0-9_]+(?:/[^\\?\r\n]+)?|ur-.+)");
         }
         /*
          * Now add special patterns - this might be ugly but usually we do not get new specialDomains! Keep in mind that their patterns have
@@ -160,10 +169,10 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         do {
             try {
                 getPage(param.getCryptedUrl());
-                if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No such user exist|No such folder")) {
+                if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)No such user exist|No such folder")) {
                     logger.info("Incorrect URL, Invalid user or empty folder");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (br.containsHTML(">\\s*?Guest access not possible")) {
+                } else if (br.containsHTML("(?i)>\\s*?Guest access not possible")) {
                     /* 2019-08-13: Rare special case E.g. easybytez.com */
                     if (loggedIN) {
                         logger.info("We are loggedIN but still cannot view this folder --> Wrong account or crawler plugin failure");

@@ -30,7 +30,6 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -217,47 +216,31 @@ public class ImageFapCrawler extends PluginForDecrypt {
                 }
                 final Long galleryID = Long.parseLong(galleryIDStr);
                 final FilePackage fp = FilePackage.getInstance();
-                if (galleryID != null) {
-                    fp.setName(authorsName + " - " + galleryName + " - " + galleryID);
-                } else {
-                    fp.setName(authorsName + " - " + galleryName);
-                }
+                fp.setName(authorsName + " - " + galleryName + " - " + galleryID);
                 final String baseURL = URLHelper.getUrlWithoutParams(br._getURL());
                 final UrlQuery query = new UrlQuery();
                 query.add("gid", galleryIDStr);
                 query.add("view", "0");
-                int maxPage = 0;
+                int maxPage = this.getMaxPage(br);
                 for (int page = 0; page <= maxPage; page++) {
                     if (page > 0) {
                         query.addAndReplace("page", Integer.toString(page));
                         getPage(this.br, baseURL + "?" + query.toString());
                     }
-                    /*
-                     * Find new max page value on each page. E.g. if we are on page one, highest page number we can see is 10 even though
-                     * the item may have 20+ pages.
-                     */
-                    int maxPageValueOfCurrentPage = -1;
-                    final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
-                    for (final String url : urls) {
-                        final UrlQuery pagequery = UrlQuery.parse(url);
-                        final String pageStrTmp = pagequery.get("page");
-                        if (pageStrTmp == null || !pageStrTmp.matches("\\d+")) {
-                            /* This should never happen. */
-                            continue;
-                        }
-                        final int pageInt = Integer.parseInt(pageStrTmp);
-                        final String galleryIDStrTmp = pagequery.get("gid");
-                        if (StringUtils.equals(galleryIDStrTmp, galleryIDStr) && pageInt > maxPageValueOfCurrentPage) {
-                            maxPageValueOfCurrentPage = pageInt;
-                        }
-                    }
-                    if (maxPageValueOfCurrentPage > maxPage) {
-                        logger.info("Found new maxPage value: old: " + maxPage + " --> New: " + maxPageValueOfCurrentPage);
-                        maxPage = maxPageValueOfCurrentPage;
-                    }
                     final String info[][] = br.getRegex("<span id=\"img_(\\d+)_desc\">.*?<font face=verdana color=\"#000000\"><i>([^<>\"]*?)</i>").getMatches();
                     if (info == null || info.length == 0) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (page == maxPage) {
+                        /**
+                         * Find new max page value if it looks like we're currently on the last page. </br>
+                         * E.g. if we are on page one, highest page number we can see is 10 even though the item may have 20+ pages.
+                         */
+                        final int maxPageValueOfCurrentPage = getMaxPage(br);
+                        if (maxPageValueOfCurrentPage > maxPage) {
+                            logger.info("Found new maxPage value: old: " + maxPage + " --> New: " + maxPageValueOfCurrentPage);
+                            maxPage = maxPageValueOfCurrentPage;
+                        }
                     }
                     int numberofNewItems = 0;
                     for (final String elements[] : info) {
@@ -293,7 +276,11 @@ public class ImageFapCrawler extends PluginForDecrypt {
                         }
                     }
                     logger.info("Crawled page: " + page + "/" + maxPage + " | Found items so far: " + ret.size());
-                    if (numberofNewItems == 0) {
+                    if (page == maxPage) {
+                        logger.info("Stopping because: Reached last page: " + maxPage);
+                        break;
+                    } else if (numberofNewItems == 0) {
+                        /* Additiona lfail-safe */
                         logger.info("Stopping because: Failed to find new items on current page");
                         break;
                     } else if (isAbort()) {
@@ -304,6 +291,18 @@ public class ImageFapCrawler extends PluginForDecrypt {
             }
         }
         return ret;
+    }
+
+    private int getMaxPage(final Browser br) {
+        int maxPage = 0;
+        final String[] pages = br.getRegex("page=(\\d+)").getColumn(0);
+        for (final String pageStr : pages) {
+            final int pageInt = Integer.parseInt(pageStr);
+            if (pageInt > maxPage) {
+                maxPage = pageInt;
+            }
+        }
+        return maxPage;
     }
 
     private String addParameter(String url, final String data) {

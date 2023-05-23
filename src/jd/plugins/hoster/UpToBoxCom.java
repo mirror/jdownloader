@@ -81,8 +81,7 @@ public class UpToBoxCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "uptobox.com", "uptobox.eu", "uptobox.info", "uptobox.help" });
-        // ret.add(new String[] { "uptobox.com", "uptostream.com" });
+        ret.add(new String[] { "uptobox.com", "uptostream.com", "uptobox.eu", "uptobox.info", "uptobox.help" });
         return ret;
     }
 
