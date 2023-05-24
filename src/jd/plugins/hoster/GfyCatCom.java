@@ -164,7 +164,8 @@ public class GfyCatCom extends PluginForHost {
     private static AtomicReference<String> redgifsAccessKey             = new AtomicReference<String>(null);
     private static AtomicReference<String> redgifsAccessToken           = new AtomicReference<String>(null);
     private static AtomicLong              redgifsAccessTokenValidUntil = new AtomicLong(-1);
-    public static final String             PROPERTY_DIRECTURL           = "directurl";
+    public static final String             PROPERTY_DIRECTURL_SD        = "directurl_sd";
+    public static final String             PROPERTY_DIRECTURL_HD        = "directurl_hd";
 
     private String[] getDownloadURL(final DownloadLink link, final Map<String, Object> video, final Map<String, Object> photo, final PreferredFormat format) throws Exception {
         // TODO: use JSON in complicatedJSON, it contains all available formats/qualities
@@ -217,7 +218,7 @@ public class GfyCatCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!link.isNameSet()) {
-            link.setName(fid);
+            link.setName(fid + ".mp4");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -528,19 +529,19 @@ public class GfyCatCom extends PluginForHost {
                 }
             }
         }
-        link.setProperty(PROPERTY_DIRECTURL, dllink);
+        link.setProperty(PROPERTY_DIRECTURL_HD, dllink);
         return AvailableStatus.TRUE;
     }
 
-    protected boolean verifyDownloadURL(final DownloadLink link, final String downloadURL) throws IOException {
-        if (StringUtils.isEmpty(downloadURL)) {
+    protected boolean verifyDownloadURL(final DownloadLink link, final String directurl) throws IOException {
+        if (StringUtils.isEmpty(directurl)) {
             return false;
         }
         URLConnectionAdapter con = null;
         try {
             final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(true);
-            con = brc.openHeadConnection(downloadURL);
+            con = brc.openHeadConnection(directurl);
             if (con.getResponseCode() == 404) {
                 return false;
             } else if (looksLikeDownloadableContent(con)) {
@@ -562,11 +563,28 @@ public class GfyCatCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, true);
-        final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
-        if (StringUtils.isEmpty(dllink)) {
+        final String dllink_hd = link.getStringProperty(PROPERTY_DIRECTURL_HD);
+        final String dllink_sd = link.getStringProperty(PROPERTY_DIRECTURL_SD);
+        final ArrayList<String> directurls = new ArrayList<String>();
+        if (dllink_hd != null) {
+            directurls.add(dllink_hd);
+        }
+        if (dllink_sd != null) {
+            directurls.add(dllink_sd);
+        }
+        if (directurls.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        int counter = 0;
+        for (final String directurl : directurls) {
+            counter++;
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, true, 1);
+            final boolean success = this.looksLikeDownloadableContent(dl.getConnection());
+            logger.info("Directurl " + counter + "/" + directurls.size() + ": success = " + success + " | URL: " + directurl);
+            if (success) {
+                break;
+            }
+        }
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {

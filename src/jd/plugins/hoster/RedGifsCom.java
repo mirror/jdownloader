@@ -156,10 +156,10 @@ public class RedGifsCom extends GfyCatCom {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link, boolean isDownload) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, boolean isDownload) throws Exception {
         final String fid = getFID(link);
         if (!link.isNameSet()) {
-            link.setName(fid);
+            link.setName(fid + ".mp4");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -192,11 +192,13 @@ public class RedGifsCom extends GfyCatCom {
     public static final void parseFileInfo(final DownloadLink link, final Map<String, Object> gif) {
         // final Map<String, Object> user = (Map<String, Object>) response.get("user");// must be requested via &users=yes in /gifs/ request
         final Map<String, Object> urls = (Map<String, Object>) gif.get("urls");
-        String url = (String) urls.get("hd");
-        if (url == null) {
-            url = (String) urls.get("sd");
+        link.setProperty(PROPERTY_DIRECTURL_HD, urls.get("hd"));
+        link.setProperty(PROPERTY_DIRECTURL_SD, urls.get("sd"));
+        String url = link.getStringProperty(PROPERTY_DIRECTURL_HD);
+        if (StringUtils.isEmpty(url)) {
+            url = link.getStringProperty(PROPERTY_DIRECTURL_SD);
         }
-        String ext = getFileNameExtensionFromURL(url, ".mp4");
+        final String ext = getFileNameExtensionFromURL(url, ".mp4");
         final String fid = gif.get("id").toString();
         final String username = (String) gif.get("userName"); // can be null!
         String filename = username;
@@ -217,7 +219,6 @@ public class RedGifsCom extends GfyCatCom {
                 filename = filename.replaceFirst("(?i)((\\.(webm|mp4|gif|jpe?g)))?" + Pattern.quote(ext) + "$", ext);
                 link.setFinalFileName(filename);
             }
-            link.setProperty(PROPERTY_DIRECTURL, url);
         } else {
             link.setName(filename);
         }
