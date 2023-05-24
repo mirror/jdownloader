@@ -26,6 +26,16 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.regex.Pattern;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
+import jd.plugins.AddonPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -89,16 +99,6 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
-
-import jd.SecondLevelLaunch;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.PackageControllerModifyVetoListener;
-import jd.plugins.AddonPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuExtenderHandler, PackageControllerModifyVetoListener<FilePackage, DownloadLink> {
     private ExtractionQueue       extractionQueue = new ExtractionQueue();
@@ -172,7 +172,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         if (archive == null) {
             return null;
         } else if (archive.getArchiveFiles().size() == 0) {
-            logger.info("Empty Archive(" + archive.getArchiveID() + "):" + archive.getName());
+            logger.info("Empty Archive(" + archive.getArchiveID() + "|" + caller + "):" + archive.getName());
             return null;
         }
         // check if we have this archive already in queue.
@@ -193,22 +193,18 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
         if (dummyArchive == null || !dummyArchive.isComplete()) {
             if (dummyArchive == null) {
-                logger.info("Incomplete Archive(" + archive.getArchiveID() + "):" + archive.getName());
+                logger.info("Incomplete Archive(" + archive.getArchiveID() + "|" + caller + "):" + archive.getName());
             } else {
-                logger.info("Incomplete Archive(" + archive.getArchiveID() + "):" + dummyArchive.toString());
+                logger.info("Incomplete Archive(" + archive.getArchiveID() + "|" + caller + "):" + dummyArchive.toString());
             }
             return null;
         }
         final IExtraction extractor = getExtractorInstanceByFactory(archive.getFactory());
         if (extractor == null) {
-            logger.info("Unsupported Archive(" + archive.getArchiveID() + "):" + archive.getName());
+            logger.info("Unsupported Archive(" + archive.getArchiveID() + "|" + caller + "):" + archive.getName());
             return null;
         } else {
-            if (caller != null) {
-                logger.info("Supported Archive(" + archive.getArchiveID() + "|" + caller + "):" + dummyArchive.toString());
-            } else {
-                logger.exception("Supported Archive(" + archive.getArchiveID() + "):" + dummyArchive.toString(), new Exception("Archive:" + archive.getArchiveID()));
-            }
+            logger.info("Supported Archive(" + archive.getArchiveID() + "|" + caller + "):" + dummyArchive.toString());
         }
         archive.getFactory().fireArchiveAddedToQueue(archive);
         final ExtractionController controller = new ExtractionController(this, archive, extractor);

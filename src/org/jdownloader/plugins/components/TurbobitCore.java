@@ -9,18 +9,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,6 +35,18 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
@@ -99,9 +99,9 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         /**
          * Enabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
-         * filesize is not known already. This will speedup the linkcheck! </br>
-         * Disabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will
-         * slow down the linkcheck and cause more http requests in a short amount of time!
+         * filesize is not known already. This will speedup the linkcheck! </br> Disabled = Check for filesize via single-linkcheck even
+         * first time links get added as long as no filesize is given. This will slow down the linkcheck and cause more http requests in a
+         * short amount of time!
          */
         final boolean fastLinkcheck = isFastLinkcheckEnabled();
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
@@ -243,7 +243,7 @@ public class TurbobitCore extends antiDDoSForHost {
             if (StringUtils.contains(fileName, "...")) {
                 final String[] split = fileName.split("\\.\\.\\.");
                 if (split.length == 2) {
-                    final String customTitlePattern = "<title>\\s*[^<]*\\s*(" + Pattern.quote(split[0]) + ".*?" + Pattern.quote(split[1]) + ")\\s*\\(([\\d\\.,]+\\s*[BMKGTP]{1,2}\\s*)\\)";
+                    final String customTitlePattern = "<title>\\s*[^<]*\\s*(" + Pattern.quote(split[0]) + ".*?" + Pattern.quote(split[1]) + ")\\s*\\(([\\d\\., ]+\\s*[BMKGTP]{1,2}\\s*)\\)";
                     final String fromTitle = br.getRegex(customTitlePattern).getMatch(0);
                     if (fromTitle != null && fromTitle.length() > fileName.length()) {
                         fileName = fromTitle;
@@ -256,7 +256,7 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         if (fileSize == null) {
             /* E.g. for hitfile.net, filesize is in brakets '(")(")' */
-            fileSize = br.getRegex("class\\s*=\\s*\"file-size\"\\s*>\\s*\\(([^<>\"]*?\\))\\s*<").getMatch(0);
+            fileSize = br.getRegex("class\\s*=\\s*\"file-size\"\\s*>\\s*\\(?\\s*([^<>\"]*?)\\s*\\)?\\s*<").getMatch(0);
         }
         if (fileName != null) {
             link.setName(fileName);
