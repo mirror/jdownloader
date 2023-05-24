@@ -218,7 +218,7 @@ public class GfyCatCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!link.isNameSet()) {
-            link.setName(fid + ".mp4");
+            link.setName(fid);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);

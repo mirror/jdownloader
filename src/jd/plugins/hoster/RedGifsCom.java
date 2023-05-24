@@ -159,7 +159,7 @@ public class RedGifsCom extends GfyCatCom {
     public AvailableStatus requestFileInformation(final DownloadLink link, boolean isDownload) throws Exception {
         final String fid = getFID(link);
         if (!link.isNameSet()) {
-            link.setName(fid + ".mp4");
+            link.setName(fid);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);

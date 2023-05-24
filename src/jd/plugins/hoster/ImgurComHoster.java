@@ -18,7 +18,21 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.SecondLevelLaunch;
@@ -47,19 +61,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.ImgurComGallery;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  * IMPORTANT: Never grab IDs bigger than 7 characters because these are Thumbnails - see API description: https://api.imgur.com/models/image
@@ -100,8 +101,9 @@ public class ImgurComHoster extends PluginForHost {
     public static final String  PROPERTY_DOWNLOADLINK_ORDERID                                                = "orderid";
     public static final String  PROPERTY_DOWNLOADLINK_DATE                                                   = "date";
     public static final String  PROPERTY_DOWNLOADLINK_USERNAME                                               = "directusername";
-    /* Only store file-type from trusted sourced as this property will be preferred over every other filetype source!! */
+    /* Only store file-type from trusted sources as this property will be preferred over every other filetype source!! */
     private static final String PROPERTY_DOWNLOADLINK_FILETYPE                                               = "filetype";
+    private static final String PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_FAILED                                   = "timestamp_mp4_failed";
     /* Various constants */
     public static final int     responsecode_website_overloaded                                              = 502;
     private final int           MAX_DOWNLOADS                                                                = -1;
@@ -151,6 +153,7 @@ public class ImgurComHoster extends PluginForHost {
         final boolean isLackingFileInformation = link.getView().getBytesTotal() <= 0 || link.getFinalFileName() == null || getFiletype(link) == null;
         boolean filesizeHasBeenSetInThisLinkcheck = false;
         boolean filenameHasBeenSetInThisLinkcheck = false;
+        final String fuid = getImgUID(link);
         String dllink = null;
         if (isLackingFileInformation || storedDirecturl == null) {
             logger.info("Handling extended linkcheck");
@@ -163,7 +166,7 @@ public class ImgurComHoster extends PluginForHost {
                 } else {
                     this.loginAPI(br, account, false);
                 }
-                getPage(this.br, getAPIBaseWithVersion() + "/image/" + getImgUID(link));
+                getPage(this.br, getAPIBaseWithVersion() + "/image/" + fuid);
                 if (this.br.getHttpConnection().getResponseCode() == 429) {
                     if (!useApiInAnonymousMode) {
                         account.setError(AccountError.TEMP_DISABLED, 30 * 60 * 1000l, "Rate limit reached");
@@ -178,17 +181,18 @@ public class ImgurComHoster extends PluginForHost {
                 String title = (String) data.get("title");
                 final String description = (String) data.get("description");
                 final long sizeNormal = JavaScriptEngineFactory.toLong(data.get("size"), -1);
-                final Number sizeMP4 = (Number) data.get("mp4_size");
+                final Number sizeMP4L = (Number) data.get("mp4_size");
+                long sizeMp4 = 0;
+                if (sizeMP4L != null) {
+                    sizeMp4 = sizeMP4L.longValue();
+                }
+                final long filesize;
                 final String directurlMP4 = (String) data.get("mp4");
-                if (directurlMP4 != null && userPrefersMp4()) {
+                if (directurlMP4 != null && userPrefersMp4() && sizeMp4 > 0) {
                     dllink = directurlMP4;
+                    filesize = sizeMp4;
                 } else {
                     dllink = (String) data.get("link");
-                }
-                long filesize;
-                if (userPrefersMp4() && sizeMP4 != null) {
-                    filesize = sizeMP4.longValue();
-                } else {
                     filesize = sizeNormal;
                 }
                 if (!StringUtils.isEmpty(title)) {
@@ -221,7 +225,7 @@ public class ImgurComHoster extends PluginForHost {
             } else {
                 /* Website mode */
                 prepBRWebsite(this.br);
-                getPage(this.br, "https://" + this.getHost() + "/" + getImgUID(link));
+                getPage(this.br, "https://" + this.getHost() + "/" + fuid);
                 if (isOfflineWebsite(br)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -261,6 +265,12 @@ public class ImgurComHoster extends PluginForHost {
             br.setFollowRedirects(true);
             try {
                 con = this.br.openHeadConnection(dllink);
+                /* Workaround for broken/unavailable MP4 files. */
+                if (looksLikeBrokenMp4(con)) {
+                    logger.info("Looks like broken mp4 -> Try gif");
+                    link.setProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_FAILED, System.currentTimeMillis());
+                    con = this.br.openHeadConnection(ImgurComGallery.generateURLGifDownload(fuid));
+                }
                 checkConnectionAndSetFinalFilename(link, con);
             } finally {
                 try {
@@ -270,6 +280,15 @@ public class ImgurComHoster extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    /** 2023-05-24: Super rare case, see: https://board.jdownloader.org/showthread.php?t=93553 */
+    private boolean looksLikeBrokenMp4(final URLConnectionAdapter con) {
+        if (con != null && !this.looksLikeDownloadableContent(con) && con.getURL().toString().toLowerCase(Locale.ENGLISH).endsWith(".mp4")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void websiteParseAndSetData(final DownloadLink link) {
@@ -331,7 +350,8 @@ public class ImgurComHoster extends PluginForHost {
             } else {
                 /**
                  * E.g. HTTP/1.1 503 first byte timeout or e.g. error on trying to do "/download/" (official download / download button):
-                 * </br> {"data":{"error":"Imgur is temporarily over capacity. Please try again later."},"success":false,"status":500}
+                 * </br>
+                 * {"data":{"error":"Imgur is temporarily over capacity. Please try again later."},"success":false,"status":500}
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error " + con.getResponseCode(), 10 * 60 * 1000l);
             }
@@ -360,7 +380,7 @@ public class ImgurComHoster extends PluginForHost {
                 contentDispositionFilename = contentDispositionFilename.replaceAll(" ?- Imgur", "");
                 final String ext = Plugin.getFileNameExtensionFromString(contentDispositionFilename);
                 if (ext != null) {
-                    link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, ext.replace(".", ""));
+                    link.setProperty(PROPERTY_DOWNLOADLINK_FILETYPE, ext);
                 }
                 finalFallbackFilename = contentDispositionFilename;
             } else {
@@ -391,7 +411,13 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     public static String getStoredDirecturl(final DownloadLink link) {
-        return link.getStringProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL);
+        final String storedDirecturl = link.getStringProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL);
+        if (storedDirecturl != null && storedDirecturl.toLowerCase(Locale.ENGLISH).endsWith(".mp4") && looksLikeBrokenMp4(link)) {
+            /* Mp4 download is not working ->Return gif URL. */
+            return ImgurComGallery.generateURLGifDownload(getImgUID(link));
+        } else {
+            return storedDirecturl;
+        }
     }
 
     @Override
@@ -401,7 +427,23 @@ public class ImgurComHoster extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link, account, true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, getStoredDirecturl(link), RESUME, MAXCHUNKS);
+        Exception exception = null;
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, getStoredDirecturl(link), RESUME, MAXCHUNKS);
+        } catch (final Exception e) {
+            /*
+             * Mostly made for java.lang.IllegalStateException: HTTP/1.1 416 Requested Range Not Satisfiable due to invalid/irritating
+             * response code from imgur.com for broken mp4 downloads.
+             */
+            exception = e;
+        }
+        if (this.looksLikeBrokenMp4(br.getHttpConnection())) {
+            logger.info("Looks like broken mp4 -> Try gif");
+            link.setProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_FAILED, System.currentTimeMillis());
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, ImgurComGallery.generateURLGifDownload(getImgUID(link)), RESUME, MAXCHUNKS);
+        } else if (exception != null) {
+            throw exception;
+        }
         checkConnectionAndSetFinalFilename(link, this.dl.getConnection());
         dl.startDownload();
     }
@@ -1010,7 +1052,8 @@ public class ImgurComHoster extends PluginForHost {
     }
 
     /**
-     * Returns downloadable imgur link. </br> Not all imgur items can be downloaded this way!
+     * Returns downloadable imgur link. </br>
+     * Not all imgur items can be downloaded this way!
      */
     public static final String getURLDownload(final String imgUID) {
         return "https://imgur.com/download/" + imgUID;
@@ -1020,8 +1063,18 @@ public class ImgurComHoster extends PluginForHost {
         return new Regex(dl.getPluginPatternMatcher(), "/([^/]+)$").getMatch(0);
     }
 
-    public static String getFiletype(final DownloadLink link) {
+    /** Returns mime-type or file-extension without dot. */
+    public static String getStoredFiletype(final DownloadLink link) {
         final String storedFiletype = link.getStringProperty(PROPERTY_DOWNLOADLINK_FILETYPE);
+        if (storedFiletype != null) {
+            return storedFiletype.replace(".", "");
+        } else {
+            return null;
+        }
+    }
+
+    public static String getFiletype(final DownloadLink link) {
+        final String storedFiletype = getStoredFiletype(link);
         final String storedDirectURL = getStoredDirecturl(link);
         if (storedFiletype != null) {
             final String image = new Regex(storedFiletype, "images/(.+)").getMatch(0);
@@ -1034,31 +1087,39 @@ public class ImgurComHoster extends PluginForHost {
             }
             final String videoExt = new Regex(storedFiletype, "video/(.+)").getMatch(0);
             if (videoExt != null) {
-                return getCorrectedFileExtension(videoExt);
+                return getCorrectedFileExtension(link, videoExt);
             } else if (StringUtils.equalsIgnoreCase("jpeg", storedFiletype)) {
                 return "jpg";
             } else {
-                return getCorrectedFileExtension(storedFiletype);
+                return getCorrectedFileExtension(link, storedFiletype);
             }
         } else if (storedDirectURL != null && storedDirectURL.matches(ImgurComGallery.type_single_direct)) {
             final String extByURL = Plugin.getFileNameExtensionFromURL(storedDirectURL).replace(".", "");
-            return getCorrectedFileExtension(extByURL);
+            return getCorrectedFileExtension(link, extByURL);
         }
         return null;
     }
 
     /** Returns back either given extension or gif/mp4 based on user selection if given filetype is gif or mp4. */
-    public static String getCorrectedFileExtension(final String ext) {
-        if (ext == null) {
+    public static String getCorrectedFileExtension(final DownloadLink link, final String suggestedExt) {
+        if (suggestedExt == null) {
             return null;
-        } else if (ext.matches("(?i)(gif|mp4)")) {
-            if (userPrefersMp4()) {
+        } else if (suggestedExt.matches("(?i)(gif|mp4)")) {
+            if (userPrefersMp4() && !looksLikeBrokenMp4(link)) {
                 return "mp4";
             } else {
                 return "gif";
             }
         } else {
-            return ext;
+            return suggestedExt;
+        }
+    }
+
+    public static boolean looksLikeBrokenMp4(final DownloadLink link) {
+        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_FAILED, 0) < 5 * 60 * 1000) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -1226,7 +1287,7 @@ public class ImgurComHoster extends PluginForHost {
         final SubConfiguration cfg = SubConfiguration.getConfig("imgur.com");
         final String ext = getFiletype(link);
         if (ext == null) {
-            /* We cannot generate a user-preferred filename without extension! */
+            /* We cannot generate a user-preferred filename without file-extension! */
             return null;
         }
         final String username = link.getStringProperty(PROPERTY_DOWNLOADLINK_USERNAME, "-");
