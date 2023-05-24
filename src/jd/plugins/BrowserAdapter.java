@@ -17,6 +17,9 @@ package jd.plugins;
 
 import java.nio.charset.CharacterCodingException;
 
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.settings.GeneralSettings;
+
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
@@ -27,9 +30,6 @@ import jd.parser.html.Form;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
-
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.settings.GeneralSettings;
 
 public class BrowserAdapter {
     public static final int ERROR_REDIRECTED = -1;
@@ -334,20 +334,6 @@ public class BrowserAdapter {
                     // page
                     // in error, contact Helpdesk at the email address below</td>
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Zscaler");
-                } else if (dl.getConnection().getHeaderField("Server") != null && dl.getConnection().getHeaderField("Server").matches("Protected by WireFilter.+")) {
-                    // country filter service.. note that the date is wrong!
-                    // happens on standard html pages.. not just data..
-                    // ----------------Response------------------------
-                    // HTTP/1.1 403 Forbidden
-                    // Server: Protected by WireFilter 8000 (RYD-WF02-FB01)
-                    // Connection: close
-                    // Content-Type: text/html
-                    // Expires: Sat, 01 Jan 2000 11:11:11 GMT
-                    // x,vitruvian: IT
-                    // Content-Length: 3679
-                    // ------------------------------------------------
-                    // @see BlcokedConnections\2227034739341.log
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by your governments Internet filter.");
                 }
             }
         }

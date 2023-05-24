@@ -29,7 +29,6 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -103,26 +102,32 @@ public class UuploadIr extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            /* Set weak filename. */
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"message_box\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"message_box\"")) {
             /*
              * div class="message_box"><h1>پیام سیستم</h1><br />موجود نمیباشد <b>CENSORED_FILENAME/</b> فایل<br><br>ممکن است این فایل توسط
              * خودکاربر و یا بنا به دلایلی از جمله نقض قوانین توسط مدیر حذف شده باشد</div>﻿
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)<h1>\\s*پیام سیستم")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1><b>([^<>\"]+)</b></h1>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = this.getFID(link);
-        }
         String filesize = br.getRegex("File Size:<br> ([^<>\"]+)<").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            /* Remove unneeded parts. */
+            filename = filename.replace("دانلود ", "");
+            link.setName(filename);
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -131,34 +136,57 @@ public class UuploadIr extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            br.getHeaders().put("Origin", "http://uupload.ir");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.setCookie(br.getHost(), "cookie_matching", "true");
-            // br.setCookie(br.getHost(), "pushNotification-shownCount-222", "6");
-            br.setCookie(br.getHost(), "tlc", "true");
-            br.postPage("/linkbuild.php", "filename=" + URLEncode.encodeURIComponent(Encoding.htmlDecode(this.getFID(link))));
-            dllink = br.getRegex("(/filelink/[^<>\"\\']+)").getMatch(0);
+            requestFileInformation(link);
+            final String filenameValue = br.getRegex("'filename'\\s*:\\s*'([^<>\"\\']+)").getMatch(0);
+            if (filenameValue == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String contentURL = br.getURL();
+            boolean hasReTriedOnce = false;
+            final Browser brc = br.cloneBrowser();
+            do {
+                brc.getHeaders().put("Origin", "https://uupload.ir");
+                brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                brc.getHeaders().put("Referer", contentURL);
+                // br.setCookie(br.getHost(), "pushNotification-shownCount-222", "6");
+                brc.postPage("/linkbuild.php", "filename=" + URLEncode.encodeURIComponent(filenameValue));
+                if (hasReTriedOnce) {
+                    break;
+                } else if (this.isAbort()) {
+                    throw new InterruptedException();
+                } else {
+                    final String redirect = brc.getRequest().getHTMLRefresh();
+                    if (redirect != null || StringUtils.isEmpty(brc.getRequest().getHtmlCode())) {
+                        logger.info("First attempt failed -> Trying again");
+                        hasReTriedOnce = true;
+                        continue;
+                    } else {
+                        logger.info("Looks like success");
+                        break;
+                    }
+                }
+            } while (true);
+            dllink = brc.getRegex("(https?://[^/]+/filelink/[^<>\"\\']+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
@@ -191,15 +219,6 @@ public class UuploadIr extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
         return false;
     }
 
