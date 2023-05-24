@@ -3925,6 +3925,21 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     private final static HashSet<String> accessChecks = new HashSet<String>();
 
+    public static boolean looksLikeTooLongWindowsPathOrFilename(final File file) throws IOException {
+        // TODO: Add exceptions for "non limited" paths starting with "\\?\'drive-letter'\"
+        final String[] folders = CrossSystem.getPathComponents(file);
+        for (final String folder : folders) {
+            if (looksLikeTooLongWindowsPathSegment(folder)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean looksLikeTooLongWindowsPathSegment(final String str) throws IOException {
+        return str.length() > 255;
+    }
+
     public void localFileCheck(final SingleDownloadController controller, final ExceptionRunnable runOkay, final ExceptionRunnable runFailed) throws Exception {
         final NullsafeAtomicReference<Object> asyncResult = new NullsafeAtomicReference<Object>(null);
         enqueueJob(new DownloadWatchDogJob() {
@@ -3961,7 +3976,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         /* Path to file doesn't exist yet -> Create it */
                         if (!fileOutput.getParentFile().mkdirs()) {
                             controller.getLogger().severe("could not mkdirs parentFile: " + fileOutput.getParent());
-                            if (CrossSystem.isWindows() && CrossSystem.looksLikeTooLongWindowsPathOrFilename(fileOutput)) {
+                            if (CrossSystem.isWindows() && looksLikeTooLongWindowsPathOrFilename(fileOutput)) {
                                 controller.getLogger().severe("Looks like too long downloadpath for Windows: " + fileOutput.getParent());
                             }
                             throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
