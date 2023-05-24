@@ -60,7 +60,6 @@ import org.appwork.uio.CloseReason;
 import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ConcatIterator;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
@@ -733,23 +732,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 break;
             case WINDOWS:
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    /**
-                     * TODO: Find a way to check if this limit applies for the current Windows system. </br>
-                     * Also there are special paths which can be used to exceed the popular Windows path limitation such as "\\?\" </br>
-                     * : https://stackoverflow.com/questions/23041983/path-prefixes-and
-                     */
-                    // TODO: Make use of this, add more precise errormessage for user and test it thoroughly
-                    final int maxAllowedLength = 259;
-                    final String fileName = file.getName();
-                    if (!file.isDirectory() && fileName.length() > maxAllowedLength) {
-                        logger.warning("fileOutput : filename is too long for Windows OS: " + fileName);
-                        throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
-                    } else if (file.getAbsolutePath().length() > maxAllowedLength) {
-                        logger.warning("Path is too long: " + file.getAbsolutePath());
-                        throw new PathTooLongException(checking);
-                    }
-                }
             default:
                 if (CrossSystem.getOS().isMaximum(OperatingSystem.WINDOWS_NT) && file.getAbsolutePath().length() > 259) {
                     // old windows API does not allow longer paths
@@ -3976,12 +3958,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
                     }
                     if (!fileOutput.getParentFile().exists()) {
+                        /* Path to file doesn't exist yet -> Create it */
                         if (!fileOutput.getParentFile().mkdirs()) {
-                            controller.getLogger().severe("could not mkdirs parentFile " + fileOutput.getParent());
+                            controller.getLogger().severe("could not mkdirs parentFile: " + fileOutput.getParent());
+                            if (CrossSystem.isWindows() && CrossSystem.looksLikeTooLongWindowsPathOrFilename(fileOutput)) {
+                                controller.getLogger().severe("Looks like too long downloadpath for Windows: " + fileOutput.getParent());
+                            }
                             throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
                         }
                     }
                     if (!accessChecks.contains(fileOutput.getParentFile().getAbsolutePath())) {
+                        // TODO: Use writeTest filename with same length as final filename to detect issues with too long filenames/path.
                         final File writeTest = new File(fileOutput.getParentFile(), "jd_accessCheck_" + new UniqueAlltimeID().getID());
                         try {
                             if (writeTest.exists() == false) {
