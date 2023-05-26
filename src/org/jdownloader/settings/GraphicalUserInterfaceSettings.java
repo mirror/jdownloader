@@ -456,6 +456,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
             this(divider, false);
         }
 
+        public long to(SIZEUNIT dest, long value) {
+            final long ret = (value * getDivider()) / dest.getDivider();
+            return ret;
+        }
+
         public static final String formatValue(SIZEUNIT maxSizeUnit, final long fileSize) {
             return formatValue(maxSizeUnit, new DecimalFormat("0.00"), fileSize);
         }
