@@ -26,18 +26,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -49,6 +37,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -56,6 +45,19 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FikperCom extends PluginForHost {
@@ -212,18 +214,14 @@ public class FikperCom extends PluginForHost {
                     } else {
                         final Object error = finfo.get("error");
                         final String filename = (String) finfo.get("fileName");
-                        final Object filesizeO = finfo.get("fileSize");
+                        final String filesize = StringUtils.valueOfOrNull(finfo.get("fileSize"));
                         if (!StringUtils.isEmpty(filename)) {
                             link.setFinalFileName(filename);
                         }
-                        if (filesizeO != null) {
-                            if (filesizeO instanceof Number) {
-                                link.setVerifiedFileSize(((Number) filesizeO).longValue());
-                            } else if (filesizeO instanceof String) {
-                                /* 2023-01-31: Sometimes they're returning numbers as strings lol */
-                                // 2023-02-02: According to the admin this has been fixed.
-                                link.setVerifiedFileSize(Long.parseLong(filesizeO.toString()));
-                            }
+                        if (filesize != null && filesize.matches("\\d+")) {
+                            /* 2023-01-31: Sometimes they're returning numbers as strings lol */
+                            // 2023-02-02: According to the admin this has been fixed.
+                            link.setVerifiedFileSize(Long.parseLong(filesize));
                         }
                         if (error != null) {
                             /* E.g. {"fileHashName":"filehash","error":404,"message":"Not found"} */
@@ -263,11 +261,9 @@ public class FikperCom extends PluginForHost {
         }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         link.setFinalFileName(entries.get("name").toString());
-        final Object filesize = entries.get("size");
-        if (filesize instanceof Number) {
-            link.setVerifiedFileSize(((Number) filesize).longValue());
-        } else {
-            link.setVerifiedFileSize(Long.parseLong(filesize.toString()));
+        final String filesize = StringUtils.valueOfOrNull(entries.get("size"));
+        if (filesize != null && filesize.matches("\\d+")) {
+            link.setVerifiedFileSize(Long.parseLong(filesize));
         }
         link.setPasswordProtected(((Boolean) entries.get("password")).booleanValue());
         return entries;
@@ -283,7 +279,7 @@ public class FikperCom extends PluginForHost {
             logger.info("Re-using previously generated directurl");
         } else {
             String dllink = null;
-            if (account != null && account.getType() == AccountType.PREMIUM) {
+            if (account != null && AccountType.PREMIUM.equals(account.getType())) {
                 this.login(account, false);
                 br.getPage(API_BASE + "api/file/download/" + Encoding.urlEncode(this.getFID(link)));
                 this.checkErrorsAPI(br, link, account, null);
@@ -296,15 +292,14 @@ public class FikperCom extends PluginForHost {
                 if (link.isPasswordProtected()) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected items are not yet supported");
                 }
-                final Object remainingDelay = entries.get("remainingDelay");
+                final long fileSize = link.getVerifiedFileSize();
+                if (fileSize >= SIZEUNIT.GB.to(SIZEUNIT.B, 2)) {
+                    throw new AccountRequiredException("You can download files up to 2GB in free mode");
+                }
+                final String remainingDelay = StringUtils.valueOfOrNull(entries.get("remainingDelay"));
                 if (remainingDelay != null) {
                     /* Downloadlimit has been reached */
-                    final int limitWaitSeconds;
-                    if (remainingDelay instanceof Number) {
-                        limitWaitSeconds = ((Number) remainingDelay).intValue();
-                    } else {
-                        limitWaitSeconds = Integer.parseInt(remainingDelay.toString());
-                    }
+                    final int limitWaitSeconds = Integer.parseInt(remainingDelay);
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, limitWaitSeconds * 1000l);
                 }
                 final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
@@ -331,18 +326,21 @@ public class FikperCom extends PluginForHost {
                 }
                 br.postPageRaw(API_BASE, JSonStorage.serializeToJson(postdata));
                 final Map<String, Object> dlresponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                dllink = dlresponse.get("directLink").toString();
-                final Object filesizeO = dlresponse.get("size");
-                if (filesizeO != null) {
-                    if (filesizeO instanceof Number) {
-                        link.setVerifiedFileSize(((Number) filesizeO).longValue());
-                    } else if (filesizeO instanceof String) {
-                        final String filesizeStr = filesizeO.toString();
-                        if (filesizeStr.matches("\\d+")) {
-                            link.setVerifiedFileSize(Long.parseLong(filesizeStr));
-                        }
+                final String code = StringUtils.valueOfOrNull(dlresponse.get("code"));
+                if (code != null && !"200".equals(code)) {
+                    final String message = StringUtils.valueOfOrNull(dlresponse.get("message"));
+                    if ("403".equals(code) && "File size limit".equals(message)) {
+                        // You can download files up to 2GB in free mode.
+                        // {"code":403,"message":"File size limit"}
+                        throw new AccountRequiredException("You can download files up to 2GB in free mode");
                     }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Code:" + code + "|Message:" + message);
                 }
+                final String filesize = StringUtils.valueOfOrNull(dlresponse.get("size"));
+                if (filesize != null && filesize.matches("\\d+")) {
+                    link.setVerifiedFileSize(Long.parseLong(filesize));
+                }
+                dllink = dlresponse.get("directLink").toString();
             }
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -352,12 +350,12 @@ public class FikperCom extends PluginForHost {
             link.setProperty(getDirectlinkproperty(account), dl.getConnection().getURL().toString());
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
+                checkError429(dl.getConnection());
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 } else {
-                    checkError429(dl.getConnection());
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
@@ -512,10 +510,11 @@ public class FikperCom extends PluginForHost {
             /* Free users can't use the API */
             ai.setExpired(true);
             return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.ENGLISH));
+            account.setType(AccountType.PREMIUM);
+            return ai;
         }
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.ENGLISH));
-        account.setType(AccountType.PREMIUM);
-        return ai;
     }
 
     @Override
