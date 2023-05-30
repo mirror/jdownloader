@@ -304,13 +304,7 @@ public class BrowserAdapter {
     public final static void handleBlockedConnection(final DownloadInterface dl, final Browser br) throws PluginException {
         if (dl != null && br != null) {
             if (dl.getConnection().getResponseCode() == 403) {
-                if ("Blocked by Bitdefender".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
-                    // Bitdefender handling
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Bitdefender");
-                } else if ("Blocked by ESET Security".equalsIgnoreCase(dl.getConnection().getResponseMessage())) {
-                    // Eset
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by ESET");
-                } else if (dl.getConnection().getHeaderField("Server") != null && "WebGuard".equalsIgnoreCase(dl.getConnection().getHeaderField("Server"))) {
+                if (dl.getConnection().getHeaderField("Server") != null && "WebGuard".equalsIgnoreCase(dl.getConnection().getHeaderField("Server"))) {
                     // WebGuard jdlog://7294408642041
                     // ----------------Response------------------------
                     // HTTP/1.1 403 Forbidden
