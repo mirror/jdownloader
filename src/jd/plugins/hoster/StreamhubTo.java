@@ -92,15 +92,6 @@ public class StreamhubTo extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isVideohosterEmbedHTML(final Browser br) {
-        if (br.containsHTML("(?i)This video can be watched as embed only\\s*</div>")) {
-            return true;
-        } else {
-            return super.isVideohosterEmbedHTML(br);
-        }
-    }
-
-    @Override
     protected String requestFileInformationVideoEmbed(final Browser br, final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
         /* Small hack: Remove referer or we will get response "Video embed restricted for this domain". */
         br.setCurrentURL("");

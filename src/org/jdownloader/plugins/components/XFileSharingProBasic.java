@@ -355,6 +355,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         } else if (br.containsHTML("/e/" + this.getFUIDFromURL(this.getDownloadLink()))) {
             /* A lot of newer XFS templates got such embed URLs. */
             return true;
+        } else if (br.containsHTML("(?i)This video can be watched as embed only\\s*<")) {
+            return true;
         } else {
             return false;
         }
