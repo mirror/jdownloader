@@ -21,8 +21,10 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -103,5 +105,12 @@ public class FireGetCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected void checkErrorsLoginWebsite(final Browser br, final Account account) throws Exception {
+        if (br.containsHTML("Your IP was banned by administrator")) {
+            throw new AccountUnavailableException("Your IP was banned by administrator", 10 * 60 * 1000l);
+        }
     }
 }
