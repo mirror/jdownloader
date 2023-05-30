@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -30,12 +33,15 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "https?://(?:www\\.)?viz\\.com/(read/)?[^/]+/[^/]+/(?:chapter/|issue/|product/|manga/product/|manga/product/digital/|promo/)\\d+" })
-public class VizCom extends antiDDoSForDecrypt {
-    public VizCom(PluginWrapper wrapper) {
+public class VizComCrawler extends antiDDoSForDecrypt {
+    public VizComCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     /* Tags: MangaPictureCrawler */

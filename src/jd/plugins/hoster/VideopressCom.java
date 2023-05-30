@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -36,6 +37,11 @@ public class VideopressCom extends PluginForHost {
     public VideopressCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+    }
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -48,7 +54,6 @@ public class VideopressCom extends PluginForHost {
     private static final int     free_maxchunks        = 0;
     private static final int     free_maxdownloads     = -1;
     private String               dllink                = null;
-    private boolean              server_issues         = false;
     private static final String  PROPERTY_PRIVATEVIDEO = "privatevideo";
 
     @Override
@@ -72,11 +77,11 @@ public class VideopressCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(fid + default_extension);
         }
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(401);
@@ -86,17 +91,19 @@ public class VideopressCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 401) {
             link.setProperty(PROPERTY_PRIVATEVIDEO, true);
+            return AvailableStatus.TRUE;
         }
         link.removeProperty(PROPERTY_PRIVATEVIDEO);
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        String filename = (String) entries.get("title");
-        dllink = (String) entries.get("original");
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        String title = (String) entries.get("title"); // can be empty
+        if (StringUtils.isEmpty(title)) {
+            /* Fallback */
+            title = fid;
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
+        dllink = (String) entries.get("original");
+        title = Encoding.htmlDecode(title);
+        title = title.trim();
+        title = encodeUnicode(title);
         String ext;
         if (!StringUtils.isEmpty(dllink)) {
             ext = getFileNameExtensionFromString(dllink, default_extension);
@@ -106,12 +113,12 @@ public class VideopressCom extends PluginForHost {
         } else {
             ext = default_extension;
         }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (!title.endsWith(ext)) {
+            title += ext;
         }
         if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
+            link.setFinalFileName(title);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
@@ -120,7 +127,7 @@ public class VideopressCom extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } else {
-                    server_issues = true;
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video?");
                 }
             } finally {
                 try {
@@ -130,7 +137,7 @@ public class VideopressCom extends PluginForHost {
             }
         } else {
             /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
+            link.setName(title);
         }
         return AvailableStatus.TRUE;
     }
@@ -138,9 +145,7 @@ public class VideopressCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (this.isPrivateVideo(link)) {
+        if (this.isPrivateVideo(link)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Private video");
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

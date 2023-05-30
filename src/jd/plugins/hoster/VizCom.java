@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.Locale;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -35,12 +36,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.VizComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viz.com" }, urls = { "http://vizdecrypted/\\d+_\\d+_\\d+" })
 public class VizCom extends PluginForHost {
     public VizCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("");
+        this.enablePremium();
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     /* DEV NOTES */
@@ -91,7 +98,7 @@ public class VizCom extends PluginForHost {
         final String page_for_url = ids[2];
         /* Access mainpage to get cookies - important! */
         this.br.getPage("https://www.viz.com/");
-        jd.plugins.decrypter.VizCom.accessPage(this.br, manga_id, page_for_url);
+        VizComCrawler.accessPage(this.br, manga_id, page_for_url);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

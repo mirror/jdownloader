@@ -117,6 +117,7 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "kufile.net", "onstclouds.com" });
         ret.add(new String[] { "streamzz.to", "streamz.ws", "streamz.cc", "streamz.bz", "streamz.vg" });
         ret.add(new String[] { "rockfile.co", "rockfile.eu", "rockfileserver.eu", "rfservers.eu" });
+        ret.add(new String[] { "vidhd.co", "vidhd.me" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }

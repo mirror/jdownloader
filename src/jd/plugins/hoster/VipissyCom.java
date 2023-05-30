@@ -16,12 +16,12 @@
 package jd.plugins.hoster;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -42,6 +42,11 @@ public class VipissyCom extends PluginForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://members.vipissy.com/misc/privacy-policy/";
     }
@@ -49,7 +54,7 @@ public class VipissyCom extends PluginForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 0;
+    private static final int     FREE_MAXDOWNLOADS            = -1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
@@ -137,9 +142,8 @@ public class VipissyCom extends PluginForHost {
                 br.getPage(MAINPAGE);
                 {
                     // required for the pcah cookie
-                    URLConnectionAdapter con = null;
                     final Browser br2 = br.cloneBrowser();
-                    con = br2.openGetConnection("/img.cptcha");
+                    br2.openGetConnection("/img.cptcha");
                 }
                 final String postData = "rmb=y&rlm=Members+Only&for=http%253a%252f%252fmembers%252evipissy%252ecom%252f&uid=" + Encoding.urlEncode(account.getUser()) + "&pwd=" + Encoding.urlEncode(account.getPass());
                 br.postPage("http://members.vipissy.com/auth.form", postData);
@@ -184,8 +188,9 @@ public class VipissyCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premium_directlink", dllink);
         dl.startDownload();

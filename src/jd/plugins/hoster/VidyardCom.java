@@ -15,11 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -38,6 +38,11 @@ import jd.plugins.PluginForHost;
 public class VidyardCom extends PluginForHost {
     public VidyardCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
     /* DEV NOTES */
     // Tags:
@@ -72,7 +77,7 @@ public class VidyardCom extends PluginForHost {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (!link.isNameSet()) {
             link.setName(getFID(link) + ".mp4");
         }
@@ -84,63 +89,71 @@ public class VidyardCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+        String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         String fallback_sd_url = this.br.getRegex("property=\"og:video\" content=\"(https[^<>\"]+)\"").getMatch(0);
-        try {
-            this.br.getPage("https://play.vidyard.com/player/" + this.getFID(link) + ".json");
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final Map<String, Object> video = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/chapters/{0}");
-            filename = (String) video.get("name");
-            final String description = (String) video.get("description");
-            if (!StringUtils.isEmpty(description) && link.getComment() == null) {
-                link.setComment(description);
-            }
-            final List<Object> ressourcelist = (List) JavaScriptEngineFactory.walkJson(video, "sources/mp4");
-            if (fallback_sd_url == null) {
-                fallback_sd_url = (String) entries.get("sd_url");
-            }
-            if (fallback_sd_url == null) {
-                fallback_sd_url = (String) entries.get("sd_unsecure_url");
-            }
-            String profile = null;
-            String url_temp = null;
-            boolean stop = false;
-            final String[] qualities = { "full_hd", "hd", "720p", "480p", "360p", "sd" };
-            for (final String quality : qualities) {
-                for (final Object qualityo : ressourcelist) {
-                    final Map<String, Object> qualityMap = (Map<String, Object>) qualityo;
-                    profile = (String) qualityMap.get("profile");
-                    url_temp = (String) qualityMap.get("url");
-                    if (StringUtils.isEmpty(url_temp)) {
-                        url_temp = (String) qualityMap.get("unsecure_url");
-                    }
-                    if (profile == null || url_temp == null) {
-                        continue;
-                    }
-                    if (profile.equals(quality)) {
-                        stop = true;
-                        dllink = url_temp;
-                        break;
-                    }
+        this.br.getPage("https://play.vidyard.com/player/" + this.getFID(link) + ".json");
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        final Map<String, Object> videomap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/vyContext/chapterAttributes/{0}");
+        final Map<String, Object> video_data = (Map<String, Object>) videomap.get("video_data");
+        title = (String) video_data.get("name");
+        final String description = (String) video_data.get("description");
+        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+            link.setComment(description);
+        }
+        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) videomap.get("video_files");
+        if (ressourcelist == null || ressourcelist.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (fallback_sd_url == null) {
+            fallback_sd_url = (String) entries.get("sd_url");
+        }
+        if (fallback_sd_url == null) {
+            fallback_sd_url = (String) entries.get("sd_unsecure_url");
+        }
+        String profile = null;
+        String url_temp = null;
+        boolean stop = false;
+        final String[] supportedQualities = { "full_hd", "hd", "720p", "480p", "360p", "sd", "mp3" };
+        for (final String quality : supportedQualities) {
+            for (final Map<String, Object> qualityMap : ressourcelist) {
+                profile = (String) qualityMap.get("profile");
+                url_temp = (String) qualityMap.get("url");
+                if (StringUtils.isEmpty(url_temp)) {
+                    url_temp = (String) qualityMap.get("unsecure_url");
                 }
-                if (stop) {
+                if (profile == null || url_temp == null) {
+                    continue;
+                }
+                if (profile.equals(quality)) {
+                    stop = true;
+                    dllink = url_temp;
                     break;
                 }
             }
-        } catch (final Throwable e) {
+            if (stop) {
+                break;
+            }
         }
         if (dllink == null) {
             /* Last chance */
             dllink = fallback_sd_url;
         }
-        if (filename == null || dllink == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String ext;
+        if (StringUtils.equalsIgnoreCase(profile, "mp3")) {
+            ext = ".mp3";
+        } else {
+            ext = ".mp4";
+        }
         dllink = Encoding.htmlDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        link.setFinalFileName(filename + ".mp4");
+        if (!StringUtils.isEmpty(title)) {
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
+            title = encodeUnicode(title);
+            link.setFinalFileName(title + ext);
+        }
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -178,8 +191,9 @@ public class VidyardCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
