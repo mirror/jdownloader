@@ -28,6 +28,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -49,20 +63,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.download.HashInfo;
 import jd.plugins.hoster.ArchiveOrg;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
 public class ArchiveOrgCrawler extends PluginForDecrypt {
@@ -86,16 +86,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
         param.setCryptedUrl(param.getCryptedUrl().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/"));
-        final Regex typeDownload = new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD);
-        if (typeDownload.matches()) {
-            /* Only crawl XML --> Fastest way */
-            final String path = typeDownload.getMatch(0);
-            return crawlXML(param, br, path);
+        if (new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD).matches()) {
+            return crawlPatternSlashDownload(param);
         } else {
             /*
              * 2020-08-26: Login might sometimes be required for book downloads.
              */
-            this.hostPlugin = (ArchiveOrg) getNewPluginForHostInstance("archive.org");
+            ensureInitHosterplugin();
             final Account account = AccountController.getInstance().getValidAccount(hostPlugin.getHost());
             if (account != null) {
                 hostPlugin.login(account, false);
@@ -176,6 +173,56 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 return crawlFiles(param);
             }
         }
+    }
+
+    private void ensureInitHosterplugin() throws PluginException {
+        if (this.hostPlugin == null) {
+            this.hostPlugin = (ArchiveOrg) getNewPluginForHostInstance("archive.org");
+        }
+    }
+
+    private ArrayList<DownloadLink> crawlPatternSlashDownload(final CryptedLink param) throws Exception {
+        final Regex typeDownload = new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD);
+        /* Only crawl XML --> Fastest way */
+        final String path = typeDownload.getMatch(0);
+        if (path == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final boolean allowCheckForDirecturl = true;
+        if (path.contains("/") && allowCheckForDirecturl) {
+            /**
+             * 2023-05-30: Especially important when user adds a like to a file inside a .zip file as that will not be contained in the XML
+             * which we are crawling below. </br>
+             * Reference: https://board.jdownloader.org/showthread.php?t=89368
+             */
+            logger.info("Path contains subpath -> Checking for single directurl");
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(param.getCryptedUrl());
+                ensureInitHosterplugin();
+                if (this.looksLikeDownloadableContent(con)) {
+                    logger.info("URL is directurl");
+                    final DownloadLink dl = new DownloadLink(hostPlugin, null, hostPlugin.getHost(), param.getCryptedUrl(), true);
+                    if (con.getCompleteContentLength() > 0) {
+                        dl.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    dl.setFinalFileName(getFileNameFromHeader(con));
+                    dl.setAvailable(true);
+                    final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+                    ret.add(dl);
+                    return ret;
+                } else {
+                    logger.info("URL is not a directurl");
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return crawlXML(param, br, path);
     }
 
     /** Crawls all files from "/download/..." URLs. */
@@ -266,8 +313,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             boolean returnDetailedItems = false;
             if (metadataJson != null) {
                 /**
-                 * Try to find more metadata to the results we already have and combine them with the track-position-data we know. </br> In
-                 * the end we should get the best of both worlds: All tracks with track numbers, metadata and file hashes for CRC checking.
+                 * Try to find more metadata to the results we already have and combine them with the track-position-data we know. </br>
+                 * In the end we should get the best of both worlds: All tracks with track numbers, metadata and file hashes for CRC
+                 * checking.
                  */
                 logger.info("Looking for more detailed audio metadata");
                 audioPlaylistItemsDetailed.addAll(this.crawlMetadataJson(metadataJson, filenameToTrackPositionMapping));
@@ -599,8 +647,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     dl.setProperty(ArchiveOrg.PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP, System.currentTimeMillis() + loanedSecondsLeft * 1000);
                 }
                 /**
-                 * Mark pages that are not viewable in browser as offline. </br> If we have borrowed this book, this field will not exist at
-                 * all.
+                 * Mark pages that are not viewable in browser as offline. </br>
+                 * If we have borrowed this book, this field will not exist at all.
                  */
                 final Object viewable = bookpage.get("viewable");
                 if (Boolean.FALSE.equals(viewable)) {

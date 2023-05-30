@@ -579,54 +579,54 @@ public class UdemyCom extends PluginForHost {
 
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
+            if (userCookies != null) {
+                /* 2021-02-03: Experimental */
+                logger.info("Checking user cookies");
+                br.setCookies(this.getHost(), userCookies);
+                if (!force) {
+                    /* Do not check cookies */
+                    return;
+                }
+                if (verifyCookies(account, userCookies)) {
+                    logger.info("Successfully loggedin via user cookies");
+                    /*
+                     * User can enter anything in "username" field when logging in via cookies --> Try to get real username/email and set it
+                     * so user cannot easily add the same cookies for the same account multiple times.
+                     */
+                    final String email = PluginJSonUtils.getJson(br, "email");
+                    if (!StringUtils.isEmpty(email)) {
+                        account.setUser(email);
+                    }
+                    return;
+                } else {
+                    logger.info("Failed to login via user cookies");
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                    } else {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                    }
+                }
+            }
+            if (cookies != null) {
+                br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Do not check cookies */
+                    return;
+                }
+                if (verifyCookies(account, cookies)) {
+                    logger.info("Successfully loggedin via cookies");
+                    account.saveCookies(br.getCookies(this.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Failed to login via cookies");
+                    br.clearAll();
+                }
+            }
+            logger.info("Performing full login");
             try {
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = account.loadUserCookies();
-                if (userCookies != null) {
-                    /* 2021-02-03: Experimental */
-                    logger.info("Checking user cookies");
-                    br.setCookies(this.getHost(), userCookies);
-                    if (!force) {
-                        /* Do not check cookies */
-                        return;
-                    }
-                    if (verifyCookies(account, userCookies)) {
-                        logger.info("Successfully loggedin via user cookies");
-                        /*
-                         * User can enter anything in "username" field when logging in via cookies --> Try to get real username/email and
-                         * set it so user cannot easily add the same cookies for the same account multiple times.
-                         */
-                        final String email = PluginJSonUtils.getJson(br, "email");
-                        if (!StringUtils.isEmpty(email)) {
-                            account.setUser(email);
-                        }
-                        return;
-                    } else {
-                        logger.info("Failed to login via user cookies");
-                        if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                        } else {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                        }
-                    }
-                }
-                if (cookies != null) {
-                    br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        /* Do not check cookies */
-                        return;
-                    }
-                    if (verifyCookies(account, cookies)) {
-                        logger.info("Successfully loggedin via cookies");
-                        account.saveCookies(br.getCookies(this.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Failed to login via cookies");
-                        br.clearAll();
-                    }
-                }
-                logger.info("Performing full login");
                 br.setFollowRedirects(true);
                 br.getPage("https://www." + this.getHost() + "/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=de_DE");
                 final String csrftoken = br.getCookie(this.getHost(), "csrftoken");
@@ -636,14 +636,18 @@ public class UdemyCom extends PluginForHost {
                 final String postData = "csrfmiddlewaretoken=" + csrftoken + "&locale=de_DE&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&displayType=ajax";
                 br.postPage("/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=de_DE", postData);
                 if (br.containsHTML("data-purpose=\"do-login\"")) {
+                    account.clearCookies("");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
+                if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
+                    /* Tell user to try again using cookie login */
+                    showCookieLoginInfo();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+                } else {
+                    throw e;
                 }
-                throw e;
             }
         }
     }

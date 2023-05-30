@@ -267,6 +267,15 @@ public class SendCm extends XFileSharingProBasic {
     }
 
     @Override
+    public boolean isPasswordProtectedHTML(final Browser br, final Form pwForm) {
+        if (pwForm != null && pwForm.containsHTML("Enter File Password")) {
+            return true;
+        } else {
+            return super.isPasswordProtectedHTML(br, pwForm);
+        }
+    }
+
+    @Override
     protected boolean supports_availablecheck_alt() {
         /* 2022-10-04 */
         return true;

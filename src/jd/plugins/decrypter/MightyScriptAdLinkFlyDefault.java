@@ -41,6 +41,8 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
     }
 
     private static final String[]     domains                    = { "arabtvlink.com", "medche.com", "go-urls.tk", "topklink.com", "shorts-link.com", "easy4earn.com", "linkat4all.com", "linkdrop.net", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "kingurl.net", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "adlink.guru", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "adbilty.me", "linclik.com", "oke.io", "pnd.tl", "met.bz", "urlcloud.us", "clik.pw", "z2i.com", "fant1asy.com",
+            /** 2023-05-30 */
+            "oii.io",
             /** 2023-01-16 */
             "thoyva.ink",
             /** 2022-07-13 */

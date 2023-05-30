@@ -741,34 +741,35 @@ public class ArchiveOrg extends PluginForHost {
     public boolean looksLikeDownloadableContent(final URLConnectionAdapter con, final boolean isOfficialDownloadurl) {
         if (super.looksLikeDownloadableContent(con)) {
             return true;
-        }
-        if (con.getResponseCode() == 200 || con.getResponseCode() == 206) {
-            if (isOfficialDownloadurl) {
-                /**
-                 * It's an official downloadurl but they're not necessarily sending a Content-Disposition header so checks down below could
-                 * e.g. fail for .html files. </br>
-                 */
-                return true;
-            } else if (StringUtils.containsIgnoreCase(con.getURL().getPath(), ".xml")) {
-                /* 2021-02-15: Special handling for .xml files */
-                return StringUtils.containsIgnoreCase(con.getContentType(), "xml");
-            } else if (con.getURL().getPath().matches("(?i).*\\.(txt|log)$")) {
-                /* 2021-05-03: Special handling for .txt files */
-                return StringUtils.containsIgnoreCase(con.getContentType(), "text/plain");
-            } else if (StringUtils.containsIgnoreCase(con.getURL().getPath(), ".html")) {
-                /* 2023-02-13: Special handling for .html files */
-                return StringUtils.containsIgnoreCase(con.getContentType(), "html") || StringUtils.containsIgnoreCase(con.getContentType(), "text/plain");
-            } else {
-                /* MimeType file-extension and extension at the end of the URL are the same -> Also accept as downloadable content. */
-                final String extension = getExtensionFromMimeType(con.getContentType());
-                if (StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), "." + extension)) {
+        } else {
+            if (con.getResponseCode() == 200 || con.getResponseCode() == 206) {
+                if (isOfficialDownloadurl) {
+                    /**
+                     * It's an official downloadurl but they're not necessarily sending a Content-Disposition header so checks down below
+                     * could e.g. fail for .html files. </br>
+                     */
                     return true;
+                } else if (StringUtils.containsIgnoreCase(con.getURL().getPath(), ".xml")) {
+                    /* 2021-02-15: Special handling for .xml files */
+                    return StringUtils.containsIgnoreCase(con.getContentType(), "xml");
+                } else if (con.getURL().getPath().matches("(?i).*\\.(txt|log)$")) {
+                    /* 2021-05-03: Special handling for .txt files */
+                    return StringUtils.containsIgnoreCase(con.getContentType(), "text/plain");
+                } else if (StringUtils.containsIgnoreCase(con.getURL().getPath(), ".html")) {
+                    /* 2023-02-13: Special handling for .html files */
+                    return StringUtils.containsIgnoreCase(con.getContentType(), "html") || StringUtils.containsIgnoreCase(con.getContentType(), "text/plain");
                 } else {
-                    return false;
+                    /* MimeType file-extension and extension at the end of the URL are the same -> Also accept as downloadable content. */
+                    final String extension = getExtensionFromMimeType(con.getContentType());
+                    if (StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), "." + extension)) {
+                        return true;
+                    } else {
+                        return false;
+                    }
                 }
             }
+            return false;
         }
-        return false;
     }
 
     @Override

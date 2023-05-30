@@ -25,6 +25,13 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,12 +58,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(?:www\\.|m\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file(?:_premium)?/|file\\?|download/?).*?(?=http:|$|\r|\n))|https?://download\\d+.mediafire(?:cdn)?\\.com/[^/]+/([a-z0-9]+)/([^/]+)" })
 public class MediafireCom extends PluginForHost {
@@ -178,7 +179,7 @@ public class MediafireCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(this.br, account, true);
-        Map<String, Object> entries = restoreFromString(this.brAPI.toString(), TypeRef.MAP);
+        Map<String, Object> entries = restoreFromString(this.brAPI.getRequest().getHtmlCode(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("response");
         entries = (Map<String, Object>) entries.get("user_info");
         /* 2021-04-29: All numbers are given as String -> Use "toLong" method! */
@@ -186,7 +187,6 @@ public class MediafireCom extends PluginForHost {
             ai.setUsedSpace(JavaScriptEngineFactory.toLong(entries.get("used_storage_size"), 0));
         }
         if (account.getType() == AccountType.FREE) {
-            ai.setStatus("Free Account");
             ai.setUnlimitedTraffic();
             account.setMaxSimultanDownloads(10);
             account.setConcurrentUsePossible(true);
@@ -194,7 +194,6 @@ public class MediafireCom extends PluginForHost {
             if (entries.containsKey("bandwidth")) {
                 ai.setTrafficLeft(JavaScriptEngineFactory.toLong(entries.get("bandwidth"), 0));
             }
-            ai.setStatus("Premium Account");
             account.setMaxSimultanDownloads(20);
             account.setConcurrentUsePossible(true);
         }
@@ -537,7 +536,7 @@ public class MediafireCom extends PluginForHost {
                 logger.info("Checking cookie validity");
                 try {
                     apiCommand(account, "user/get_info.php", null);
-                    final Map<String, Object> entries = restoreFromString(brAPI.toString(), TypeRef.MAP);
+                    final Map<String, Object> entries = restoreFromString(brAPI.getRequest().getHtmlCode(), TypeRef.MAP);
                     final String email = (String) JavaScriptEngineFactory.walkJson(entries, "response/user_info/email");
                     if (StringUtils.equalsIgnoreCase(email, account.getUser())) {
                         logger.info("Cookie login successful");
@@ -666,7 +665,7 @@ public class MediafireCom extends PluginForHost {
                         account.clearCookies("");
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                    // offline file, to file/get_info as a single file... we need to return so the proper
+                // offline file, to file/get_info as a single file... we need to return so the proper
                 case 110:
                     // invalid uid
                 case 111:
@@ -757,7 +756,7 @@ public class MediafireCom extends PluginForHost {
                     brAPI.getPage("https://www.mediafire.com/api/1.5/file/get_info.php" + "?r=" + getRandomFourLetters() + "&" + sb.toString() + "&response_format=json");
                     handleApiError(account);
                 }
-                final Map<String, Object> apiResponse = restoreFromString(brAPI.toString(), TypeRef.MAP);
+                final Map<String, Object> apiResponse = restoreFromString(brAPI.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Map<String, Object>> file_infos;
                 Object infos = JavaScriptEngineFactory.walkJson(apiResponse, "response/file_infos");
                 if (infos == null) {
@@ -856,7 +855,7 @@ public class MediafireCom extends PluginForHost {
         return getAvailableStatus(link);
     }
 
-    private void handleNonAPIErrors(final DownloadLink dl, Browser imported) throws PluginException, IOException {
+    private void handleNonAPIErrors(final DownloadLink link, Browser imported) throws PluginException, IOException {
         // imported browser affects br so lets make a new browser just for error checking.
         Browser eBr = new Browser();
         // catch, and prevent a null imported browser
@@ -877,37 +876,40 @@ public class MediafireCom extends PluginForHost {
             }
         }
         // error checking below!
-        if (eBr.getURL().matches(".+/error\\.php\\?errno=3(20|23|78|80|86|88).*?")) {
-            // 320 = file is removed by the originating user or MediaFire.
-            // 323 = Dangerous File Blocked.
-            // 378 = File Removed for Violation (of TOS)
-            // 380 = claimed by a copyright holder through a valid DMCA request
-            // 386 = File Blocked for Violation.
-            // 388 = identified as copyrighted work
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (eBr.getURL().matches(".+/error\\.php\\?errno=394.*?")) {
-            /*
-             * The file you attempted to download is an archive that is encrypted or password protected. MediaFire does not support
-             * unlimited downloads of encrypted or password protected archives and the limit for this file has been reached. MediaFire
-             * understands the need for users to transfer encrypted and secured files, we offer this service starting at $1.50 per month. We
-             * have informed the owner that sharing of this file has been limited and how they can resolve this issue.
-             */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible, retriction based on uploaders account");
-        } else if (eBr.getURL().contains("mediafire.com/error.php?errno=382")) {
-            dl.getLinkStatus().setStatusText("File Belongs to Suspended Account.");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (eBr.getURL().contains("mediafire.com/error.php?errno=999") && eBr.containsHTML("<div id=\"privateTitle\">This file is currently set to private.</div>")) {
-            // note: error 999 can redirect into other error messages! eg. http://www.mediafire.com/error.php?errno=999 ->
-            // http://www.mediafire.com/error.php?errno=320, with the file id it will hold it's place
-            // /error.php?errno=999&quickkey=FUID&origin=download.
-            // 999 = ...
-            // 999 = This file is currently set to private.
-            // When a resource is set to private by its owner, only the owner can access it. If you would like to request access to the
-            // file, please log in to your account.
-            // Link; 8609354739341.log; 47049765; jdlog://8609354739341
-            dl.getLinkStatus().setStatusText("File has been set to private, only owner can download.");
-            throw new PluginException(LinkStatus.ERROR_FATAL);
-        } else if (eBr.containsHTML("class=\"error\\-title\">Temporarily Unavailable</p>")) {
+        final String errorcodeStr = UrlQuery.parse(eBr.getURL()).get("errno");
+        if (errorcodeStr != null) {
+            switch (Integer.parseInt(errorcodeStr)) {
+            case 320:
+                // 320 = file is removed by the originating user or MediaFire.
+            case 323:
+                // 323 = Dangerous File Blocked.
+            case 326:
+                // 326 = Dangerous File Identified by Google Safe Browsing
+            case 378:
+                // 378 = File Removed for Violation (of TOS)
+            case 380:
+                // 380 = claimed by a copyright holder through a valid DMCA request
+            case 382:
+                // 382 = File Belongs to Suspended Account.
+            case 386:
+                // 386 = File Blocked for Violation.
+            case 388:
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 394:
+                /*
+                 * The file you attempted to download is an archive that is encrypted or password protected. MediaFire does not support
+                 * unlimited downloads of encrypted or password protected archives and the limit for this file has been reached. MediaFire
+                 * understands the need for users to transfer encrypted and secured files, we offer this service starting at $1.50 per
+                 * month. We have informed the owner that sharing of this file has been limited and how they can resolve this issue.
+                 */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible, retriction based on uploaders account");
+            case 999:
+                throw new PluginException(LinkStatus.ERROR_FATAL, "File has been set to private, only owner can download.");
+            default:
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown errorcode: " + errorcodeStr);
+            }
+        }
+        if (eBr.containsHTML("class=\"error\\-title\">Temporarily Unavailable</p>")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable!", 30 * 60 * 1000l);
         } else if (eBr.containsHTML("class=\"error-title\">This download is currently unavailable<")) {
             // jdlog://7235652095341
