@@ -456,7 +456,7 @@ public abstract class VideoFCTwoCore extends PluginForHost {
 
     private void doDownload(final Account account, final DownloadLink link) throws Exception {
         /* OLD-API handling */
-        final String error = br.getRegex("^err_code=(\\d+)").getMatch(0);
+        final String error = br.getRegex("(?i)^err_code=(\\d+)").getMatch(0);
         if (error != null) {
             switch (Integer.parseInt(error)) {
             case 503:
