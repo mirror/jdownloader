@@ -521,7 +521,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 antiDDosCaptcha.decrementAndGet();
             }
         }
-        ibr.checkForAfterRequestAntiddosBlock();
+        ibr.checkForBlockedByAfterLoadConnection();
     }
 
     private static Map<String, AtomicReference<Object>> concurrentLock = new HashMap<String, AtomicReference<Object>>();

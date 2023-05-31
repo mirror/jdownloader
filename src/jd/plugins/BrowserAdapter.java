@@ -281,56 +281,9 @@ public class BrowserAdapter {
                 dl.getConnection().disconnect();
             } catch (Throwable ignore) {
             }
-            if (dl.getConnection() != null) {
-                BrowserAdapter.handleBlockedConnection(dl, br);
-            }
             throw forward;
         }
-        if (dl.getConnection() != null) {
-            BrowserAdapter.handleBlockedConnection(dl, br);
-        }
         return dl;
-    }
-
-    /**
-     * Antivirus/Firewall/Gateway blocks. ONLY to be used within headers, not content.
-     *
-     * @author raztoki
-     * @since JD2
-     * @param dl
-     * @param br
-     * @throws PluginException
-     */
-    public final static void handleBlockedConnection(final DownloadInterface dl, final Browser br) throws PluginException {
-        if (dl != null && br != null) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                if (dl.getConnection().getHeaderField("Server") != null && "WebGuard".equalsIgnoreCase(dl.getConnection().getHeaderField("Server"))) {
-                    // WebGuard jdlog://7294408642041
-                    // ----------------Response------------------------
-                    // HTTP/1.1 403 Forbidden
-                    // Server: WebGuard
-                    // Content-Type: text/html; charset=UTF-8
-                    // Content-Length: 3218
-                    // ------------------------------------------------
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by WebGuard");
-                } else if (dl.getConnection().getHeaderField("Server") != null && dl.getConnection().getHeaderField("Server").matches("^Zscaler/.+")) {
-                    // Zscaler, corporate firewall/antivirus ? http://www.zscaler.com/ jdlog://2660609980341
-                    // ----------------Response------------------------
-                    // HTTP/1.1 403 Forbidden
-                    // Content-Type: text/html
-                    // Server: Zscaler/5.0
-                    // Cache-Control: no-cache
-                    // Content-length: 10135
-                    // ------------------------------------------------
-                    // <title>Threat download blocked</title>
-                    // ..
-                    // <span><font color="black" size=6><p>For security reasons your request was blocked.<p>If you feel you've reached this
-                    // page
-                    // in error, contact Helpdesk at the email address below</td>
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Zscaler");
-                }
-            }
-        }
     }
 
     /**

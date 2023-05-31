@@ -470,7 +470,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                 releaseLock(lockObject);
             }
         }
-        ibr.checkForAfterRequestAntiddosBlock();
+        ibr.checkForBlockedByAfterLoadConnection();
     }
 
     private static Map<String, AtomicReference<Object>> concurrentLock = new HashMap<String, AtomicReference<Object>>();
