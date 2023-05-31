@@ -16,6 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -23,6 +26,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,20 +35,42 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wrzucplik.pl" }, urls = { "http://(?:www\\.)?(?:wyslij-plik|uploadfile|wrzucplik)\\.pl/pokaz/\\d+[^/]+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WyslijPlikPl extends PluginForHost {
-    @Override
-    public String[] siteSupportedNames() {
-        return new String[] { "uploadfile.pl", "wyslij-plik.pl", "wrzucplik.pl" };
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "uploadfile.pl", "wyslij-plik.pl", "wrzucplik.pl" });
+        return ret;
+    }
+
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("wrzucplik.pl");
+        deadDomains.add("wyslij-plik.pl");
+        return deadDomains;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
-    public String rewriteHost(String host) {
-        if (host == null || host.equalsIgnoreCase("uploadfile.pl")) {
-            return this.getHost();
-        } else {
-            return super.rewriteHost(host);
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/pokaz/(\\d+)[^/]+\\.html");
         }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public WyslijPlikPl(PluginWrapper wrapper) {
@@ -57,24 +83,45 @@ public class WyslijPlikPl extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME    = true;
+    private static final int     FREE_MAXCHUNKS = 0;
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) throws Exception {
-        final String host = Browser.getHost(link.getPluginPatternMatcher());
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace(host + "/", "wrzucplik.pl/").replace("//www.", "//"));
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    private String getContentURL(final DownloadLink link) {
+        final String pluginHost = this.getHost();
+        final List<String> deadDomains = this.getDeadDomains();
+        final String host;
+        final String urlHost = Browser.getHost(link.getPluginPatternMatcher());
+        if (deadDomains != null && deadDomains.contains(urlHost)) {
+            /* Fallback to plugin domain */
+            host = urlHost.replaceFirst("(?i)" + Pattern.quote(Browser.getHost(urlHost, false)) + "$", pluginHost);
+        } else {
+            /* Use preferred host */
+            host = urlHost;
+        }
+        return link.getPluginPatternMatcher().replaceFirst(Pattern.quote(urlHost) + "/", host + "/");
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "agreeCookies", "yes");
         br.setCookie(this.getHost(), "lang", "en");
-        br.getPage(link.getDownloadURL());
+        br.getPage(this.getContentURL(link));
         /* E.g. <div class="error">Plik nie istnieje!</div> */
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"error\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -98,9 +145,9 @@ public class WyslijPlikPl extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -141,6 +188,7 @@ public class WyslijPlikPl extends PluginForHost {
                     throw new IOException();
                 }
             } catch (final Exception e) {
+                link.removeProperty(property);
                 logger.log(e);
                 return null;
             } finally {
@@ -154,7 +202,7 @@ public class WyslijPlikPl extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     @Override

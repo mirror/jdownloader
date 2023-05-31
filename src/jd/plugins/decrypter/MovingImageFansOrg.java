@@ -64,22 +64,12 @@ public class MovingImageFansOrg extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        // br.setAllowedResponseCodes(400);
-        // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)
-        // Chrome/113.0.0.0 Safari/537.36");
-        // br.getHeaders().put("sec-ch-ua", "\"Google Chrome\";v=\"113\", \"Chromium\";v=\"113\", \"Not-A.Brand\";v=\"24\"");
-        // br.getHeaders().put("sec-ch-ua-mobile", "?0");
-        // br.getHeaders().put("sec-ch-ua-platform", "\"Windows\"");
-        // br.getHeaders().put("Upgrade-Insecure-Requests", "1");
-        // br.getHeaders().put("Accept",
-        // "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-        // br.getHeaders().put("Accept-Language", "de-DE,de;q=0.9");
-        // br.getHeaders().put("Sec-Fetch-Site", "none");
-        // br.getHeaders().put("Sec-Fetch-Mode", "navigate");
-        // br.getHeaders().put("Sec-Fetch-User", "?1");
-        // br.getHeaders().put("Sec-Fetch-Dest", "document");
+        br.setAllowedResponseCodes(400);
         br.getPage(param.getCryptedUrl().replaceFirst("http://", "https://"));
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 400) {
+            logger.info("Added URL expired and cannot be re-used");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String finallink = br.getRedirectLocation();

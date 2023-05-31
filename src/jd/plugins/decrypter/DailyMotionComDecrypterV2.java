@@ -45,8 +45,8 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
     }
 
     @Override
-    protected ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param) throws Exception {
-        ArrayList<DownloadLink> ret = super.crawlSingleVideo(param);
+    protected ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param, final String contenturl) throws Exception {
+        final ArrayList<DownloadLink> ret = super.crawlSingleVideo(param, contenturl);
         ArrayList<DownloadLink> mp4s = new ArrayList<DownloadLink>();
         ArrayList<DailyMotionVariant> variantInfos = new ArrayList<DailyMotionVariant>();
         DownloadLink variantLink = null;
