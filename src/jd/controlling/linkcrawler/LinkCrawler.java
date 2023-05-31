@@ -637,7 +637,7 @@ public class LinkCrawler {
             duplicateFinderFinal = new HashMap<String, CrawledLink>();
             duplicateFinderDeep = new HashMap<String, Object>();
             loopPreventionEmbedded = new HashMap<CrawledLink, Object>();
-            setHandler(defaulHandlerFactory());
+            setHandler(defaultHandlerFactory());
             setDeepInspector(defaultDeepInspector());
             defaultDownloadFolder = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
             parentCrawler = null;
@@ -3970,7 +3970,7 @@ public class LinkCrawler {
         };
     }
 
-    public LinkCrawlerHandler defaulHandlerFactory() {
+    public LinkCrawlerHandler defaultHandlerFactory() {
         return new LinkCrawlerHandler() {
             public void handleFinalLink(CrawledLink link) {
                 synchronized (crawledLinks) {

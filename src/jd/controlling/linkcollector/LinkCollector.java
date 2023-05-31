@@ -217,7 +217,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             this.collectingInfo = new LinkCollectingInformation(this);
             this.linkChecker = new JobLinkChecker(this);
             this.linkChecker.setLinkCheckHandler(linkCollector);
-            final LinkCrawlerHandler defaultHandler = defaulHandlerFactory();
+            final LinkCrawlerHandler defaultHandler = defaultHandlerFactory();
             setHandler(new LinkCrawlerHandler() {
                 @Override
                 public void handleUnHandledLink(CrawledLink link) {
