@@ -297,9 +297,6 @@ public class BrowserAdapter {
      * @throws PluginException
      */
     public final static void handleBlockedContent(final Browser br) throws PluginException, CharacterCodingException {
-        if (br.containsHTML("<div class=\"prodhead\"><div class=\"logoimg\"><span class=\"logotxt\">ESET NOD32 Antivirus</span></div></div>") && br.containsHTML("- ESET NOD32 Antivirus</title>")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by ESET NOD32 Antivirus");
-        }
         // limit to size so it can't be abused.
         if (br.getHttpConnection().getLongContentLength() < 400) {
             // Content-Length: 327

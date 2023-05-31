@@ -13,10 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins;
 
 import java.nio.charset.CharacterCodingException;
+
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.settings.GeneralSettings;
 
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
@@ -27,9 +29,6 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.raf.OldRAFDownload;
 
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.settings.GeneralSettings;
-
 /**
  * heavily modified download interface by raztoki
  *
@@ -37,7 +36,6 @@ import org.jdownloader.settings.GeneralSettings;
  *
  */
 public class BrowserDownloadInterface {
-
     public static final int ERROR_REDIRECTED = -1;
 
     protected DownloadInterface getDownloadInterface(Downloadable downloadable, Request request, boolean resumeEnabled, int chunksCount) throws Exception {
@@ -185,7 +183,6 @@ public class BrowserDownloadInterface {
                     // Cache-Control: no-cache
                     // Content-length: 10135
                     // ------------------------------------------------
-
                     // <title>Threat download blocked</title>
                     // ..
                     // <span><font color="black" size=6><p>For security reasons your request was blocked.<p>If you feel you've reached
@@ -193,7 +190,6 @@ public class BrowserDownloadInterface {
                     // page
                     // in error, contact Helpdesk at the email address below</td>
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Zscaler");
-
                 } else if (dl.getConnection().getHeaderField("Server") != null && dl.getConnection().getHeaderField("Server").matches("Protected by WireFilter.+")) {
                     // country filter service.. note that the date is wrong!
                     // happens on standard html pages.. not just data..
@@ -224,9 +220,6 @@ public class BrowserDownloadInterface {
      * @throws PluginException
      */
     public void handleBlockedContent(final Browser br) throws PluginException, CharacterCodingException {
-        if (br.containsHTML("<div class=\"prodhead\"><div class=\"logoimg\"><span class=\"logotxt\">ESET NOD32 Antivirus</span></div></div>") && br.containsHTML("- ESET NOD32 Antivirus</title>")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by ESET NOD32 Antivirus");
-        }
         // limit to size so it can't be abused.
         if (br.getHttpConnection().getLongContentLength() < 1024) {
             // https://board.jdownloader.org/showthread.php?t=64825
@@ -277,5 +270,4 @@ public class BrowserDownloadInterface {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by almaviva.it portal");
         }
     }
-
 }
