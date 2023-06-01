@@ -80,7 +80,8 @@ public class CooldebridCom extends PluginForHost {
         if (account == null) {
             return false;
         } else {
-            return super.canHandle(link, account);
+            mhm.runCheck(account, link);
+            return true;
         }
     }
 

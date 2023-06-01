@@ -1215,6 +1215,16 @@ public class ProLeechLink extends antiDDoSForHost {
     }
 
     @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (account == null) {
+            return false;
+        } else {
+            mhm.runCheck(account, link);
+            return true;
+        }
+    }
+
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         throw new AccountRequiredException();
     }

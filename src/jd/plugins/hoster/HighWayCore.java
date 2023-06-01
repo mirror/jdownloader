@@ -304,6 +304,7 @@ public abstract class HighWayCore extends UseNet {
                     }
                 }
             }
+            mhm.runCheck(account, link);
             return true;
         }
     }

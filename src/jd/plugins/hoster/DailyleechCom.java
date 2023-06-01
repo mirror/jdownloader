@@ -89,6 +89,7 @@ public class DailyleechCom extends PluginForHost {
             /* without account its not possible to download the link */
             return false;
         } else {
+            mhm.runCheck(account, link);
             return true;
         }
     }

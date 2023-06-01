@@ -553,6 +553,16 @@ public class DebridLinkFr2 extends PluginForHost {
     }
 
     @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (account == null) {
+            return false;
+        } else {
+            mhm.runCheck(account, link);
+            return true;
+        }
+    }
+
+    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         /* Extra check for pre-stored "quota reached" state -> Saves a few http requests */
         if (hostHasReachedQuotaLimit(link.getHost(), false)) {
@@ -665,15 +675,6 @@ public class DebridLinkFr2 extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
-    }
-
-    @Override
-    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
-        if (account != null) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override

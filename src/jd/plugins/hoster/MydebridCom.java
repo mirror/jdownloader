@@ -44,7 +44,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -86,10 +85,11 @@ public class MydebridCom extends antiDDoSForHost {
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
-            /* without account its not possible to download the link */
             return false;
+        } else {
+            mhm.runCheck(account, link);
+            return true;
         }
-        return true;
     }
 
     @Override

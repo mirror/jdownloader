@@ -23,24 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -63,6 +45,24 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -519,8 +519,8 @@ public class LinkSnappyCom extends PluginForHost {
                     wrongPasswordAttempts += 1;
                     passCode = getUserInput("Password?", link);
                     /**
-                     * Do not reset initial password.</br>
-                     * Multihosters are prone to error - we do not want to remove the users' initial manually typed in PW!
+                     * Do not reset initial password.</br> Multihosters are prone to error - we do not want to remove the users' initial
+                     * manually typed in PW!
                      */
                     // link.setDownloadPassword(null);
                     continue;
@@ -571,10 +571,9 @@ public class LinkSnappyCom extends PluginForHost {
         dl.setFilenameFix(true);
         if (this.dl.startDownload()) {
             /**
-             * Check if user wants JD to clear serverside download history in linksnappy account after each successful download. </br>
-             * Also make sure we get no exception as our download was successful. </br>
-             * NOTE: Even failed downloads will appear in the download history - but they will also be cleared once there is one successful
-             * download.
+             * Check if user wants JD to clear serverside download history in linksnappy account after each successful download. </br> Also
+             * make sure we get no exception as our download was successful. </br> NOTE: Even failed downloads will appear in the download
+             * history - but they will also be cleared once there is one successful download.
              */
             if (PluginJsonConfig.get(LinkSnappyComConfig.class).isClearDownloadHistoryEnabled()) {
                 logger.info("Clearing download history");
@@ -594,8 +593,8 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     /**
-     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br>
-     * It should be minimum of 5 minutes and above!
+     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br> It should be
+     * minimum of 5 minutes and above!
      *
      * @throws InterruptedException
      */
@@ -830,8 +829,7 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     /**
-     * Checks login status by available cookies. </br>
-     * Works for website- and API.
+     * Checks login status by available cookies. </br> Works for website- and API.
      */
     private boolean isLoggedin(final Browser br) {
         return br.getCookie(this.getHost(), "Auth", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(this.getHost(), "username", Cookies.NOTDELETEDPATTERN) != null;
@@ -840,9 +838,9 @@ public class LinkSnappyCom extends PluginForHost {
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
-            /* without account its not possible to download the link */
             return false;
         } else {
+            mhm.runCheck(account, link);
             return true;
         }
     }

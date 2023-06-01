@@ -113,6 +113,16 @@ public class NeodebridCom extends PluginForHost {
     }
 
     @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (account == null) {
+            return true;
+        } else {
+            mhm.runCheck(account, link);
+            return true;
+        }
+    }
+
+    @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         handleDLSelfhosted(null, link);

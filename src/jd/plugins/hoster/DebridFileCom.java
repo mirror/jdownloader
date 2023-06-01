@@ -91,6 +91,16 @@ public class DebridFileCom extends PluginForHost {
     }
 
     @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (account == null) {
+            return false;
+        } else {
+            mhm.runCheck(account, link);
+            return true;
+        }
+    }
+
+    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         prepBR(this.br);
         mhm.runCheck(account, link);
@@ -266,7 +276,7 @@ public class DebridFileCom extends PluginForHost {
             /*
              * 2020-03-27: What does this mean? Is this supposed to be a temporary error? If so, you should use e.g. throw new
              * AccountUnavailableException("Error 403 'blocked by debrid-file'", 10 * 60 * 1000);
-             *
+             * 
              * 2020-03-27 : phg : This a temporary fix as we are not supposed to have a 403 error and we must fix the 403. I let the
              * previous code as it is not a temporary account error but a fatal plugin error
              */

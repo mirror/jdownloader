@@ -363,6 +363,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
             // no non account handleMultiHost support.
             return false;
         } else {
+            mhm.runCheck(account, link);
             return true;
         }
     }

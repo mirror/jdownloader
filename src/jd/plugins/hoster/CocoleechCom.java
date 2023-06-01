@@ -90,9 +90,9 @@ public class CocoleechCom extends PluginForHost {
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
-            /* without account its not possible to download the link */
             return false;
         } else {
+            mhm.runCheck(account, link);
             return true;
         }
     }

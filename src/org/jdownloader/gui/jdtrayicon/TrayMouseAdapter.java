@@ -16,17 +16,9 @@
 package org.jdownloader.gui.jdtrayicon;
 
 import java.awt.Color;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.Image;
-import java.awt.Insets;
-import java.awt.Rectangle;
-import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.event.MouseEvent;
-import java.awt.geom.Area;
-import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 
@@ -42,31 +34,13 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class TrayMouseAdapter extends org.appwork.swing.trayicon.TrayMouseAdapter {
     private final TrayIcon                            trayIcon;
-    private ArrayList<Area>                           possibleLocations;
     private final Image                               image;
     private final GenericConfigEventListener<Boolean> clipboardToggle;
-    private static int                                TOOLTIP_DELAY = 1000;
 
     public TrayMouseAdapter(TrayExtension lightTray, TrayIcon trayIcon) {
         super(lightTray, trayIcon);
         this.trayIcon = trayIcon;
         this.image = trayIcon.getImage();
-        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        final GraphicsDevice lstGDs[] = ge.getScreenDevices();
-        possibleLocations = new ArrayList<Area>();
-        for (GraphicsDevice gd : lstGDs) {
-            GraphicsConfiguration gc = gd.getDefaultConfiguration();
-            Rectangle screenBounds = gc.getBounds();
-            Rectangle safeArea = new Rectangle(screenBounds);
-            Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gd.getDefaultConfiguration());
-            safeArea.x += insets.left;
-            safeArea.y += insets.top;
-            safeArea.width -= (insets.left + insets.right);
-            safeArea.height -= (insets.top + insets.bottom);
-            Area possibleArea = new Area(screenBounds);
-            possibleArea.subtract(new Area(safeArea));
-            possibleLocations.add(possibleArea);
-        }
         clipboardToggle = new GenericConfigEventListener<Boolean>() {
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {

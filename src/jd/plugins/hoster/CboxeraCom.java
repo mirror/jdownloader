@@ -103,9 +103,8 @@ public class CboxeraCom extends PluginForHost {
                 // logger.info("File is too big to be downloaded by multihost " + this.getHost());
                 return false;
             }
-            /* Download is allowed */
-            return true;
         }
+        mhm.runCheck(account, link);
         return true;
     }
 

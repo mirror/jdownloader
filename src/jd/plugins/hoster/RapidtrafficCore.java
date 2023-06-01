@@ -21,14 +21,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -46,6 +38,13 @@ import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public abstract class RapidtrafficCore extends PluginForHost {
@@ -254,7 +253,7 @@ public abstract class RapidtrafficCore extends PluginForHost {
         sleep(1000l, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, resume, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) // unknown
-        // error
+            // error
         {
             br.followConnection();
             // not tested!
@@ -329,10 +328,11 @@ public abstract class RapidtrafficCore extends PluginForHost {
 
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
-        if (account != null) {
-            return true;
-        } else {
+        if (account == null) {
             return false;
+        } else {
+            mhm.runCheck(account, link);
+            return true;
         }
     }
 
@@ -356,35 +356,35 @@ public abstract class RapidtrafficCore extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-                                                      put("LOGIN_ERROR", "Rapidtraffic.pl: Login Error");
-                                                      put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
-                                                      put("HOST_UNAVAILABLE", "Host is temporarily unavailable via ");
-                                                      put("RETRY", "Retry in few secs");
-                                                      put("NO_TRAFFIC", "No traffic left");
-                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
-                                                      put("PREMIUM", "Premium User");
-                                                      put("TRAFFIC_LEFT", "Traffic Left");
-                                                      put("ACCOUNT_TYPE", "Account type");
-                                                      put("BAD_LINK", "Multihoster rapidtraffic.pl reports: Bad link!");
-                                                  }
-                                              };
+        {
+            put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+            put("LOGIN_ERROR", "Rapidtraffic.pl: Login Error");
+            put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
+            put("HOST_UNAVAILABLE", "Host is temporarily unavailable via ");
+            put("RETRY", "Retry in few secs");
+            put("NO_TRAFFIC", "No traffic left");
+            put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
+            put("PREMIUM", "Premium User");
+            put("TRAFFIC_LEFT", "Traffic Left");
+            put("ACCOUNT_TYPE", "Account type");
+            put("BAD_LINK", "Multihoster rapidtraffic.pl reports: Bad link!");
+        }
+    };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
-                                                      put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
-                                                      put("LOGIN_ERROR", "Rapidtraffic.pl: Błąd logowania");
-                                                      put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
-                                                      put("HOST_UNAVAILABLE", "Pobieranie z tego serwisu jest tymczasowo niedostępne w ");
-                                                      put("RETRY", "Ponowna próba za kilka sekund");
-                                                      put("NO_TRAFFIC", "Brak dostępnego transferu");
-                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
-                                                      put("PREMIUM", "Użytkownik Premium");
-                                                      put("TRAFFIC_LEFT", "Pozostały transfer");
-                                                      put("ACCOUNT_TYPE", "Typ konta");
-                                                      put("BAD_LINK", "Serwis rapidtraffic.pl zgłasza: Błędny Link!");
-                                                  }
-                                              };
+        {
+            put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
+            put("LOGIN_ERROR", "Rapidtraffic.pl: Błąd logowania");
+            put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
+            put("HOST_UNAVAILABLE", "Pobieranie z tego serwisu jest tymczasowo niedostępne w ");
+            put("RETRY", "Ponowna próba za kilka sekund");
+            put("NO_TRAFFIC", "Brak dostępnego transferu");
+            put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
+            put("PREMIUM", "Użytkownik Premium");
+            put("TRAFFIC_LEFT", "Pozostały transfer");
+            put("ACCOUNT_TYPE", "Typ konta");
+            put("BAD_LINK", "Serwis rapidtraffic.pl zgłasza: Błędny Link!");
+        }
+    };
 
     /**
      * Returns a Polish/English translation of a phrase. We don't use the JDownloader translation framework since we need only Polish and

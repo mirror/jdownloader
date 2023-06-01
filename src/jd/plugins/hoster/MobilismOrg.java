@@ -88,6 +88,7 @@ public class MobilismOrg extends antiDDoSForHost {
         if (account == null) {
             return false;
         } else {
+            mhm.runCheck(account, link);
             return true;
         }
     }

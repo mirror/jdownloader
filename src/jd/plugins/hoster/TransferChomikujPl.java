@@ -97,6 +97,16 @@ public class TransferChomikujPl extends PluginForHost {
     }
 
     @Override
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (account == null) {
+            return false;
+        } else {
+            mhm.runCheck(account, link);
+            return true;
+        }
+    }
+
+    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
         final String directlinkProperty = this.getHost() + "directlink";

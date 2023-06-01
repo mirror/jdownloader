@@ -134,6 +134,7 @@ public class PremboxCom extends PluginForHost {
                     }
                 }
             }
+            mhm.runCheck(account, link);
             return true;
         }
     }

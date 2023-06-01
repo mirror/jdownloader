@@ -216,12 +216,8 @@ public class RealDebridCom extends PluginForHost {
             // no non account handleMultiHost support.
             return false;
         } else {
-            try {
-                mhm.runCheck(account, downloadLink);
-                return true;
-            } catch (PluginException e) {
-                return false;
-            }
+            mhm.runCheck(account, downloadLink);
+            return true;
         }
     }
 

@@ -863,6 +863,7 @@ public class AllDebridCom extends antiDDoSForHost {
         if (account == null) {
             return false;
         } else {
+            mhm.runCheck(account, link);
             return true;
         }
     }

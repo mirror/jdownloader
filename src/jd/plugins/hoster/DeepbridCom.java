@@ -112,8 +112,10 @@ public class DeepbridCom extends antiDDoSForHost {
         } else if (account == null) {
             /* Without account its not possible to download links from other filehosts */
             return false;
+        } else {
+            mhm.runCheck(account, link);
+            return true;
         }
-        return true;
     }
 
     @Override

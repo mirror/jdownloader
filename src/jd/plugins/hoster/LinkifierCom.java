@@ -111,7 +111,12 @@ public class LinkifierCom extends PluginForHost {
 
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
-        return account != null && account.getType() == AccountType.PREMIUM;
+        if (account == null || account.getType() != AccountType.PREMIUM) {
+            return false;
+        } else {
+            mhm.runCheck(account, link);
+            return true;
+        }
     }
 
     @Override
