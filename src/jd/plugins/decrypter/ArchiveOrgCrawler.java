@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,7 +34,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
 import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
@@ -242,7 +240,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlDetails(final CryptedLink param) throws Exception {
-        final String titleSlug = new Regex(param.getCryptedUrl(), "/details/([^/]+)").getMatch(0);
+        final String urlWithoutParams = br._getURL().getPath();
+        final String titleSlug = new Regex(urlWithoutParams, "/details/([^/]+)").getMatch(0);
         if (titleSlug == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -360,14 +359,25 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 throw new AccountRequiredException();
             }
         }
-        /** TODO: 2020-09-29: Consider taking the shortcut here to always use that XML straight away (?!) */
-        final URL url = br._getURL();
-        final String pageIndex = new Regex(url.getQuery(), "(?:\\?|&)page=(\\d+)").getMatch(0);
-        int page = pageIndex != null ? Integer.parseInt(pageIndex) : 1;
+        final UrlQuery query = UrlQuery.parse(br.getURL());
+        final String startPageStr = query.get("page");
+        final int startPage;
+        if (startPageStr != null && startPageStr.matches("\\d+")) {
+            logger.info("Starting from user defined page: " + startPageStr);
+            startPage = Integer.parseInt(startPageStr);
+        } else {
+            logger.info("Starting from page 1");
+            startPage = 1;
+        }
+        int page = startPage;
+        logger.info("Starting from page " + startPage);
+        final HashSet<String> dupes = new HashSet<String>();
+        boolean stopBecauseOfPaginationLimitation = false;
         do {
-            // TODO: Review this: Is this check still needed?
-            if (br.containsHTML("(?i)This item is only available to logged in Internet Archive users")) {
-                ret.add(createDownloadlink(param.getCryptedUrl().replace("/details/", "/download/")));
+            /* Check for serverside pagination limitation. Typically around page 136 */
+            if (br.containsHTML("(?i)<div[^>]*class\\s*=\\s*\"no-results\"[^>]*>\\s*No results matched your criteria")) {
+                logger.info("Stopping because: Reached serverside pagination limitation: Error 'No results matched your criteria': " + br.getURL());
+                stopBecauseOfPaginationLimitation = true;
                 break;
             }
             final String[] details = br.getRegex("<div class=\"item-ia\".*? <a href=\"(/details/[^\"]*?)\" title").getColumn(0);
@@ -375,27 +385,47 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 logger.info("Stopping because: Failed to find any results on current page: " + br.getURL());
                 break;
             }
+            int numberofNewItemsOnThisPage = 0;
             for (final String detail : details) {
+                if (!dupes.add(detail)) {
+                    continue;
+                }
                 final DownloadLink link = createDownloadlink(br.getURL(detail).toString());
                 ret.add(link);
+                /* The following statement makes debugging easier. */
                 if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     distribute(link);
                 }
+                numberofNewItemsOnThisPage++;
             }
-            final int currentPage = page;
-            final String nextPage;
-            if (pageIndex == null) {
-                nextPage = URLHelper.parseLocation(url, "&page=" + (++page));
-            } else {
-                nextPage = url.toString().replaceFirst("page=" + pageIndex, "page=" + (++page));
-            }
-            logger.info("Crawled page " + currentPage + " | Results so far: " + ret.size() + "| next page=" + nextPage);
-            br.getPage(nextPage);
-            if (br.containsHTML("<div[^>]*class\\s*=\\s*\"no-results\"[^>]*>\\s*No results matched your criteria.?\\s*</div>")) {
-                logger.info("Stopping because: No results matched your criteria: " + br.getURL());
+            logger.info("Crawled page " + page + " | New items on this page: " + numberofNewItemsOnThisPage + " | Results so far: " + ret.size());
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
                 break;
+            } else if (numberofNewItemsOnThisPage == 0) {
+                /* Additional fail-safe */
+                logger.info("Stopping because: Failed to find any new items on current page: " + page);
+                break;
+            } else if (!br.containsHTML("page=" + (page + 1))) {
+                /* Next page not found -> We should've reached the end */
+                logger.info("Stopping because: Reached last page: " + page);
+                break;
+            } else {
+                page++;
+                query.addAndReplace("page", Integer.toString(page));
+                final String nextPageURL = urlWithoutParams + "?" + query.toString();
+                br.getPage(nextPageURL);
             }
         } while (!this.isAbort());
+        if (ret.isEmpty()) {
+            if (stopBecauseOfPaginationLimitation && startPage > 1) {
+                /* Problem most likely caused by user adding link with page number that cannot be displayed [extremely rare case]. */
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_DUE_TO_PAGINATION_LIMITATION_START_PAGE_DEFINED_BY_USER_" + startPage + "_" + titleSlug);
+            } else {
+                /* Also a very unlikely case. */
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_" + titleSlug);
+            }
+        }
         return ret;
     }
 
