@@ -47,8 +47,6 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             "thoyva.ink",
             /** 2022-07-13 */
             "linkshrink.ca",
-            /** 2022-02-21: linksly.co domains */
-            "linksly.co",
             /** 2021-08-26: rapid-cut.com domains */
             "rapid-cut.com", "sougkniss.com",
             /** 2021-08-20 */

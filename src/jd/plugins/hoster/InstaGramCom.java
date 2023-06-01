@@ -22,6 +22,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.InstagramConfig;
+import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -51,23 +68,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.InstaGramComDecrypter;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.InstagramConfig;
-import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 @PluginDependencies(dependencies = { InstaGramComDecrypter.class })
@@ -345,8 +345,8 @@ public class InstaGramCom extends PluginForHost {
     }
 
     /**
-     * Login required to be able to use this!! </br> removePictureEffects true = grab best quality & original, removePictureEffects false =
-     * grab best quality but keep effects/filters.
+     * Login required to be able to use this!! </br>
+     * removePictureEffects true = grab best quality & original, removePictureEffects false = grab best quality but keep effects/filters.
      *
      * @throws Exception
      */
@@ -404,6 +404,12 @@ public class InstaGramCom extends PluginForHost {
         }
         /* E.g. {"message": "Invalid media_id 1234561234567862322X", "status": "fail"} */
         /* E.g. {"message": "Media not found or unavailable", "status": "fail"} */
+        Map<String, Object> map = null;
+        String message = null;
+        if (StringUtils.contains(br.getHttpConnection().getContentType(), "json")) {
+            map = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            message = (String) map.get("message");
+        }
         if (br.getHttpConnection().getResponseCode() == 400) {
             /* Either the request we made was plain wrong or we were (partly) logged out */
             /*
@@ -411,7 +417,12 @@ public class InstaGramCom extends PluginForHost {
              * :"/challenge/","hide_webview_header":true,"lock":true,"logout":false,"native_flow":true,"flow_render_type":0},"status":
              * "fail"}
              */
-            errorSessionExpired(account);
+            if (StringUtils.equalsIgnoreCase(message, "Not authorized to view user")) {
+                /* E.g. private Instagram account/content and current user is not allowed to view it. */
+                throw new AccountRequiredException();
+            } else {
+                errorSessionExpired(account);
+            }
         } else if (br.getHttpConnection().getResponseCode() == 403) {
             /*
              * {"message":"login_required","error_title":"Du wurdest abgemeldet","error_body":"Bitte melde dich wieder an."
