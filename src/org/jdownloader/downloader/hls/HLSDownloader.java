@@ -707,7 +707,18 @@ public class HLSDownloader extends DownloadInterface {
                     lastBitrate.set(-1);
                     lastBytesWritten.set(bytesWritten.get());
                     currentPlayListIndex.set(index);
-                    ffmpeg.runCommand(null, buildDownloadCommandLine(downloadFormat, ffmpeg, destination.getAbsolutePath()));
+                    while (true) {
+                        try {
+                            ffmpeg.runCommand(null, buildDownloadCommandLine(downloadFormat, ffmpeg, destination.getAbsolutePath()));
+                            break;
+                        } catch (FFMpegException e) {
+                            if (FFMpegException.ERROR.UNKNOWN.equals(e.getError()) && StringUtils.containsIgnoreCase(e.getStdErr(), "Codec 'mp3'") && Boolean.TRUE.equals(putRetryMapValue("aac_adtstoasc", Boolean.FALSE, false))) {
+                                logger.log(e);
+                                continue;
+                            }
+                            throw e;
+                        }
+                    }
                     partFile.flag.set(true);
                 } catch (FFMpegException e) {
                     // some systems have problems with special chars to find the in or out file.
@@ -771,8 +782,36 @@ public class HLSDownloader extends DownloadInterface {
         return false;
     }
 
+    protected Object getRetryMapValue(final String key) {
+        final int playListIndex = getCurrentPlayListIndex();
+        synchronized (HLSDownloader.this.retryMap) {
+            final Map<String, Object> currentRetryMap = HLSDownloader.this.retryMap.get(playListIndex);
+            return currentRetryMap == null ? null : currentRetryMap.get(key);
+        }
+    }
+
+    protected Object putRetryMapValue(final String key, final Object value, final boolean removeFlag) {
+        final int playListIndex = getCurrentPlayListIndex();
+        synchronized (HLSDownloader.this.retryMap) {
+            Map<String, Object> currentRetryMap = HLSDownloader.this.retryMap.get(playListIndex);
+            if (currentRetryMap == null && !removeFlag) {
+                currentRetryMap = new HashMap<String, Object>();
+                HLSDownloader.this.retryMap.put(playListIndex, currentRetryMap);
+            }
+            if (removeFlag) {
+                return currentRetryMap == null ? null : currentRetryMap.remove(key);
+            } else {
+                return currentRetryMap.put(key, value);
+            }
+        }
+    }
+
     protected boolean requiresAdtstoAsc(final String format, final FFmpeg ffmpeg) {
-        return ffmpeg.requiresAdtstoAsc(format);
+        boolean ret = ffmpeg.requiresAdtstoAsc(format);
+        if (ret && Boolean.FALSE.equals(getRetryMapValue("aac_adtstoasc"))) {
+            ret = false;
+        }
+        return ret;
     }
 
     protected ArrayList<String> buildConcatCommandLine(final String format, FFmpeg ffmpeg, String out) {
@@ -890,6 +929,7 @@ public class HLSDownloader extends DownloadInterface {
         if (format != null && requiresAdtstoAsc(format, ffmpeg)) {
             cmdLine.add("-bsf:a");
             cmdLine.add("aac_adtstoasc");
+            putRetryMapValue("aac_adtstoasc", Boolean.TRUE, false);
         }
     }
 
