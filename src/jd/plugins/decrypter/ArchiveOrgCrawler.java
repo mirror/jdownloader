@@ -467,7 +467,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         String cursor = null;
         int page = 1;
         pagination: do {
-            br.getPage("/services/search/v1/scrape?" + query.toString());
+            br.getPage("https://" + this.getHost() + "/services/search/v1/scrape?" + query.toString());
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final int maxItems = ((Number) entries.get("total")).intValue();
             if (maxItems == 0) {
