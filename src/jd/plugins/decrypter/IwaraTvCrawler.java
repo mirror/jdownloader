@@ -29,6 +29,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -130,6 +131,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
             final List<Map<String, Object>> results = (List<Map<String, Object>>) entries2.get("results");
             int foundNumberofNewItemsThisPage = 0;
             int numberofSkippedExternalLinksThisPage = 0;
+            final boolean allowFastLinkcheckInProfileCrawler = cfg.isProfileCrawlerEnableFastLinkcheck() && !cfg.isScanForDownloadableLinksInContentDescription();
             for (final Map<String, Object> result : results) {
                 final String videoID = result.get("id").toString();
                 if (!dupes.add(videoID) || "thumbnails".equals(videoID)) {
@@ -158,7 +160,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                     }
                 } else {
                     dl.setName(IwaraTv.getFilename(dl));
-                    if (cfg.isProfileCrawlerEnableFastLinkcheck()) {
+                    if (allowFastLinkcheckInProfileCrawler) {
                         dl.setAvailable(true);
                     }
                     dl._setFilePackage(fp);
@@ -194,26 +196,45 @@ public class IwaraTvCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param, final Account account) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final DownloadLink selfhostedVideo = this.createDownloadlink(param.getCryptedUrl());
-        PluginException errorDuringAvailablecheck = null;
+        final DownloadLink maybeSelfhostedVideo = this.createDownloadlink(param.getCryptedUrl());
+        PluginException pluginExceptionDuringAvailablecheck = null;
         try {
             final IwaraTv hostPlugin = (IwaraTv) this.getNewPluginForHostInstance(this.getHost());
-            hostPlugin.requestFileInformation(selfhostedVideo, account, false);
+            hostPlugin.requestFileInformation(maybeSelfhostedVideo, account, false);
         } catch (final PluginException e) {
-            errorDuringAvailablecheck = e;
+            pluginExceptionDuringAvailablecheck = e;
         }
-        final String embedUrl = selfhostedVideo.getStringProperty(IwaraTv.PROPERTY_EMBED_URL);
+        final String descriptionText = maybeSelfhostedVideo.getStringProperty(IwaraTv.PROPERTY_DESCRIPTION);
+        if (descriptionText != null && PluginJsonConfig.get(IwaraTvConfig.class).isScanForDownloadableLinksInContentDescription()) {
+            final String[] urls = HTMLParser.getHttpLinks(descriptionText, null);
+            if (urls != null && urls.length > 0) {
+                for (final String url : urls) {
+                    ret.add(this.createDownloadlink(url));
+                }
+            }
+        }
+        final String embedUrl = maybeSelfhostedVideo.getStringProperty(IwaraTv.PROPERTY_EMBED_URL);
         if (embedUrl != null) {
             /* Video is not hosted on iwara.tv but on a 3rd party website. */
             ret.add(this.createDownloadlink(embedUrl));
-        } else if (ret.isEmpty()) {
+        } else {
             /* Looks like content is selfhosted. */
-            if (errorDuringAvailablecheck != null && errorDuringAvailablecheck.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+            if (pluginExceptionDuringAvailablecheck != null && pluginExceptionDuringAvailablecheck.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                 /* Most likely content is offline */
-                throw errorDuringAvailablecheck;
+                throw pluginExceptionDuringAvailablecheck;
             } else {
-                selfhostedVideo.setAvailable(true);
-                ret.add(selfhostedVideo);
+                maybeSelfhostedVideo.setAvailable(true);
+                ret.add(maybeSelfhostedVideo);
+            }
+        }
+        final String title = maybeSelfhostedVideo.getStringProperty(IwaraTv.PROPERTY_TITLE);
+        if (title != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            for (final DownloadLink result : ret) {
+                if (fp != null) {
+                    result._setFilePackage(fp);
+                }
             }
         }
         return ret;

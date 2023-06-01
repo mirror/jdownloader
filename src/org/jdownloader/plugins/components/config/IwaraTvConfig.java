@@ -12,12 +12,13 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "iwara.tv", type = Type.HOSTER)
 public interface IwaraTvConfig extends PluginConfigInterface {
-    public static final IwaraTvConfig.TRANSLATION TRANSLATION                            = new TRANSLATION();
-    final String                                  text_ProfileCrawlerEnableFastLinkcheck = "Enable fast linkcheck for videos found via profile crawler?";
-    final String                                  text_PreferredFilenameSchemeType       = "Select preferred filename scheme type";
-    final String                                  text_PreferredFilenameScheme           = "Select preferred filename scheme";
-    final String                                  text_FindFilesizeDuringAvailablecheck  = "Find filesize during linkcheck?\r\nWarning: Can slow down linkcheck!";
-    final String                                  text_ProfileCrawlerSkipExternalURLs    = "Profile crawler: Skip externally hosted videos e.g. youtube.com URLs?";
+    public static final IwaraTvConfig.TRANSLATION TRANSLATION                                       = new TRANSLATION();
+    final String                                  text_ProfileCrawlerEnableFastLinkcheck            = "Enable fast linkcheck for videos found via profile crawler?";
+    final String                                  text_PreferredFilenameSchemeType                  = "Select preferred filename scheme type";
+    final String                                  text_PreferredFilenameScheme                      = "Select preferred filename scheme";
+    final String                                  text_FindFilesizeDuringAvailablecheck             = "Find filesize during linkcheck?\r\nWarning: Can slow down linkcheck!";
+    final String                                  text_ProfileCrawlerSkipExternalURLs               = "Profile crawler: Skip externally hosted videos e.g. youtube.com URLs?";
+    final String                                  text_ScanForDownloadableLinksInContentDescription = "Scan for downloadable URLs in content description?";
 
     public static class TRANSLATION {
         public String getProfileCrawlerEnableFastLinkcheck_label() {
@@ -38,6 +39,10 @@ public interface IwaraTvConfig extends PluginConfigInterface {
 
         public String getProfileCrawlerSkipExternalURLs_label() {
             return text_ProfileCrawlerSkipExternalURLs;
+        }
+
+        public String getScanForDownloadableLinksInContentDescription_label() {
+            return text_ScanForDownloadableLinksInContentDescription;
         }
     }
 
@@ -134,4 +139,12 @@ public interface IwaraTvConfig extends PluginConfigInterface {
     boolean isProfileCrawlerSkipExternalURLs();
 
     void setProfileCrawlerSkipExternalURLs(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_ProfileCrawlerSkipExternalURLs)
+    @Order(50)
+    boolean isScanForDownloadableLinksInContentDescription();
+
+    void setScanForDownloadableLinksInContentDescription(boolean b);
 }

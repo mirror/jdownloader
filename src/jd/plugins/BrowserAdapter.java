@@ -15,17 +15,12 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins;
 
-import java.nio.charset.CharacterCodingException;
-
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.settings.GeneralSettings;
 
 import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
 import jd.http.Request;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
@@ -238,8 +233,7 @@ public class BrowserAdapter {
                 String lastRedirectUrl = null;
                 while (redirect_count++ < redirect_max) {
                     request = br.createRedirectFollowingRequest(request);
-                    String redirectUrl = request.getUrl();
-                    BrowserAdapter.handleBlockedRedirect(redirectUrl);
+                    final String redirectUrl = request.getUrl();
                     if (lastRedirectUrl != null && (forceRedirectWait || redirectUrl.equals(lastRedirectUrl))) {
                         // some providers don't like fast redirects, as they use this for preparing final file. lets add short wait based on
                         // retry count
@@ -284,74 +278,5 @@ public class BrowserAdapter {
             throw forward;
         }
         return dl;
-    }
-
-    /**
-     * generic parsing browser content, for browser header blocks look at handleBlockedConnection, for redirect based blocks check
-     * handleBlockedRedirect
-     *
-     * @author raztoki
-     * @since JD2
-     * @param br
-     * @throws CharacterCodingException
-     * @throws PluginException
-     */
-    public final static void handleBlockedContent(final Browser br) throws PluginException, CharacterCodingException {
-        // limit to size so it can't be abused.
-        if (br.getHttpConnection().getLongContentLength() < 400) {
-            // Content-Length: 327
-            // Indian filter, on real ip, just exchanged body when not using https and blocked content.
-            if (br.containsHTML("<html>\\s*<head\\s*<title>\\s*</title>\\s*</head>\\s*<body>\\s*<h0>\\s*<font\\s*color=\"black\">\\s*<font\\s*size=\"[\\d.]+\">\\s*Your\\s*requested\\s*url\\s*has\\s*been\\s*blocked\\s*as\\s*per\\s*the\\s*directions\\s*received\\s*from\\s*Department\\s*of\\s*Telecommunications,\\s*Government\\s*of\\s*India\\.\\s*</font>\\s*</h0>\\s*</body>\\s*</html>")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by the Indian internet filter");
-            }
-        }
-        if (br.getHttpConnection().getLongContentLength() < 1024) {
-            // https://board.jdownloader.org/showthread.php?t=64825
-            // Link; 9509752095341.log; 289478; jdlog://9509752095341
-            // always as full url, only seen as IP address:8080 182.79.218.37
-            final String iframe = br.getRegex("<iframe [^>]+src=(\"|')(http?://182\\.79\\.218\\.37:\\d+/webadmin/deny/index\\.php.*?)\\1").getMatch(1);
-            if (iframe != null && Encoding.urlDecode(iframe, false).contains(br.getURL())) {
-                // Netsweeper Cloud Manager (indian http filtering front end?)
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by NetSweeper Cloud Manager");
-            }
-        } else if (br.getHttpConnection().getLongContentLength() < 1250) {
-            // fortinet based blocks, you can usually identify them as they have the same css and heading layouts
-            // Link; 9567354739341.log; 285632; jdlog://9567354739341 /JDClosed/src/LogRefences/BlockedConnections/9567354739341.log
-            if (br.containsHTML("https?://(?:www\\.)?fortinet\\.com/")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Forinet Security Services");
-            }
-            // Link; 5977354739341.log; 288093; jdlog://5977354739341 /JDClosed/src/LogRefences/BlockedConnections/5977354739341.log
-            if (br.containsHTML("<h1>The URL you requested has been blocked</h1><p>The page you have requested has been blocked, because the URL is banned.<br />")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Forinet Security Services");
-            }
-        }
-    }
-
-    /**
-     * browser can get redirected to portals/firewall/antivirus/malware software services, we can check here based on URL Pattern.
-     *
-     * @author raztoki
-     * @since JD2
-     * @param br
-     * @throws PluginException
-     */
-    public final static void handleBlockedRedirect(final String redirect) throws PluginException {
-        if (redirect == null) {
-            return;
-        }
-        if (redirect.matches("https?://block\\.malwarebytes\\.org")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Malwarebytes");
-        }
-        // local IP based network filters/blocks?
-        final String ip = new Regex(redirect, "^https?://(" + IP.IP_PATTERN + ")").getMatch(0);
-        if (IP.isLocalIP(ip) && new Regex(redirect, "/cgi-bin/blockpage\\.cgi\\?ws-session=\\d+$").matches()) {
-            // websense block. example log jdlog://6965119980341
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Websense");
-        }
-        if (new Regex(redirect, "^https?://portal\\.almaviva\\.it/UserCheck/PortalMain\\?").matches()) {
-            // Link; 0628362095341.log; 269593; jdlog://0628362095341
-            // https://support.jdownloader.org/staff/index.php?/Tickets/Ticket/View/45042/inbox/3/6/-1
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by almaviva.it portal");
-        }
     }
 }

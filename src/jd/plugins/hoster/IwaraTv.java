@@ -110,6 +110,7 @@ public class IwaraTv extends PluginForHost {
     public static final String   PROPERTY_DIRECTURL            = "directurl";
     public static final String   PROPERTY_IS_PRIVATE           = "is_private";
     public static final String   PROPERTY_EMBED_URL            = "embed_url";
+    public static final String   PROPERTY_DESCRIPTION          = "description";
     private final String         PROPERTY_ACCOUNT_ACCESS_TOKEN = "access_token";
     public static final String   WEBAPI_BASE                   = "https://api.iwara.tv";
 
@@ -288,6 +289,13 @@ public class IwaraTv extends PluginForHost {
         if (embedUrl != null) {
             /* This should never happen! */
             link.setProperty(PROPERTY_EMBED_URL, embedUrl);
+        }
+        final String descriptionText = (String) entries.get("body");
+        if (!StringUtils.isEmpty(descriptionText)) {
+            link.setProperty(PROPERTY_DESCRIPTION, descriptionText);
+            if (link.getComment() == null) {
+                link.setComment(descriptionText);
+            }
         }
     }
 
