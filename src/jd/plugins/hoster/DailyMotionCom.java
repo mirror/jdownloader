@@ -45,6 +45,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -71,7 +72,6 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     public String                dllink                 = null;
-    private static final String  REGISTEREDONLYUSERTEXT = "Download only possible for registered users";
     private static final String  COUNTRYBLOCKUSERTEXT   = "This video is not available for your country";
     /** Settings stuff */
     public static final String   ALLOW_SUBTITLE         = "ALLOW_SUBTITLE";
@@ -92,6 +92,7 @@ public class DailyMotionCom extends PluginForHost {
     private static final String  CUSTOM_FILENAME        = "CUSTOM_FILENAME";
     private final static String  defaultCustomFilename  = "*videoname*_*quality**ext*";
     private final static String  defaultCustomDate      = "dd.MM.yyyy";
+    public static final String   API_BASE_GRAPHQL       = "https://graphql.api.dailymotion.com/";
     public final static boolean  default_ALLOW_SUBTITLE = true;
     private final static boolean defaultAllowAudio      = true;
     public static final boolean  default_ALLOW_HLS      = true;
@@ -108,48 +109,45 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
         br.setFollowRedirects(true);
-        br.setCookie("http://www.dailymotion.com", "family_filter", "off");
-        br.setCookie("http://www.dailymotion.com", "ff", "off");
-        br.setCookie("http://www.dailymotion.com", "lang", "en_US");
+        br.setCookie(this.getHost(), "family_filter", "off");
+        br.setCookie(this.getHost(), "ff", "off");
+        br.setCookie(this.getHost(), "lang", "en_US");
         prepBrowser(this.br);
-        if (downloadLink.getBooleanProperty("offline", false)) {
+        if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (downloadLink.getBooleanProperty("countryblock", false)) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.countryblocked", COUNTRYBLOCKUSERTEXT));
+        } else if (link.getBooleanProperty("countryblock", false)) {
             return AvailableStatus.TRUE;
-        } else if (downloadLink.getBooleanProperty("registeredonly", false)) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.registeredonly", REGISTEREDONLYUSERTEXT));
+        } else if (link.getBooleanProperty("registeredonly", false)) {
             return AvailableStatus.TRUE;
         }
-        if (isHDS(downloadLink)) {
-            // br.getPage(downloadLink.getStringProperty("directlink", null));
-            downloadLink.getLinkStatus().setStatusText("HDS stream download is not supported (yet)!");
-            downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
+        if (isHDS(link)) {
+            link.setFinalFileName(getFormattedFilename(link));
             return AvailableStatus.FALSE;
-        } else if (isHLS(downloadLink)) {
+        } else if (isHLS(link)) {
             /* Make sure to follow redirects! */
             this.br.setFollowRedirects(true);
-            final String contentURL = downloadLink.getContentUrl();
+            final String contentURL = link.getContentUrl();
             final String videoURL;
             if (contentURL != null) {
                 videoURL = contentURL;
             } else {
-                videoURL = downloadLink.getStringProperty("mainlink", null);
+                videoURL = link.getStringProperty("mainlink", null);
             }
-            if (videoURL != null) {
-                br.getPage(videoURL);
+            if (videoURL == null) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String videoSource = DailyMotionComDecrypter.getVideosource(this, this.br, getVideoID(downloadLink));
+            final String videoSource = DailyMotionComDecrypter.getVideosource(this, this.br, getVideoID(link));
             if (videoSource != null) {
                 final LinkedHashMap<String, String[]> foundQualities = DailyMotionComDecrypter.findVideoQualities(this, this.br, videoURL, videoSource);
-                final String qualityValue = downloadLink.getStringProperty("qualityvalue", null);
+                final String qualityValue = link.getStringProperty("qualityvalue", null);
                 if (foundQualities != null && foundQualities.containsKey(qualityValue)) {
-                    downloadLink.setProperty("directlink", Encoding.htmlDecode(foundQualities.get(qualityValue)[0]));
+                    link.setProperty("directlink", Encoding.htmlDecode(foundQualities.get(qualityValue)[0]));
                 }
-                final String dllink = getDirectlink(downloadLink);
+                final String dllink = getDirectlink(link);
                 final Browser brc = br.cloneBrowser();
                 brc.getPage(dllink);
                 if (brc.getHttpConnection().isOK()) {
@@ -162,22 +160,22 @@ public class DailyMotionCom extends PluginForHost {
                     if (hlsBest == null || hlsBest.size() == 0) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
-                        checkFFProbe(downloadLink, "File Checking a HLS Stream");
+                        checkFFProbe(link, "File Checking a HLS Stream");
                         Exception caughtE = null;
                         for (final HlsContainer hlsContainer : hlsBest) {
                             try {
                                 final String hlsURL = hlsContainer.getStreamURL();
-                                final HLSDownloader downloader = new HLSDownloader(downloadLink, brc, hlsURL);
+                                final HLSDownloader downloader = new HLSDownloader(link, brc, hlsURL);
                                 final StreamInfo streamInfo = downloader.getProbe();
-                                if (downloadLink.getBooleanProperty("encrypted")) {
+                                if (link.getBooleanProperty("encrypted")) {
                                     throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
                                 }
                                 if (streamInfo != null) {
                                     final long estimatedSize = downloader.getEstimatedSize();
-                                    if (downloadLink.getKnownDownloadSize() == -1) {
-                                        downloadLink.setDownloadSize(estimatedSize);
+                                    if (link.getKnownDownloadSize() == -1) {
+                                        link.setDownloadSize(estimatedSize);
                                     } else {
-                                        downloadLink.setDownloadSize(Math.max(downloadLink.getKnownDownloadSize(), estimatedSize));
+                                        link.setDownloadSize(Math.max(link.getKnownDownloadSize(), estimatedSize));
                                     }
                                 }
                                 this.dllink = hlsURL;
@@ -194,48 +192,48 @@ public class DailyMotionCom extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (isSubtitle(downloadLink)) {
-            final String contentURL = downloadLink.getContentUrl();
+        } else if (isSubtitle(link)) {
+            final String contentURL = link.getContentUrl();
             if (contentURL != null) {
                 br.getPage(contentURL);
             }
-            dllink = getDirectlink(downloadLink);
-            if (!checkDirectLink(downloadLink) || dllink == null) {
+            dllink = getDirectlink(link);
+            if (!checkDirectLink(link) || dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
-            final String contentURL = downloadLink.getContentUrl();
+            final String contentURL = link.getContentUrl();
             if (contentURL != null) {
                 br.getPage(contentURL);
             }
-            String mainlink = downloadLink.getStringProperty("mainlink", null);
+            String mainlink = link.getStringProperty("mainlink");
             logger.info("mainlink: " + mainlink);
-            dllink = getDirectlink(downloadLink);
+            dllink = getDirectlink(link);
             logger.info("dllink: " + dllink);
             if (dllink == null) {
             } else {
                 // System.out.println("DLink FOund");
             }
             /* .m4a links have wrong internal directlinks --> Size check not possible */
-            if (!downloadLink.getName().contains(".m4a")) {
-                if (!checkDirectLink(downloadLink) || dllink == null) {
-                    dllink = findFreshDirectlink(downloadLink);
+            if (!link.getName().contains(".m4a")) {
+                if (!checkDirectLink(link) || dllink == null) {
+                    dllink = findFreshDirectlink(link);
                     if (dllink == null) {
                         logger.warning("dllink is null...");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    if (!checkDirectLink(downloadLink)) {
+                    if (!checkDirectLink(link)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                 }
             }
         }
-        downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
+        link.setFinalFileName(getFormattedFilename(link));
         return AvailableStatus.TRUE;
     }
 
     private String getVideoID(DownloadLink downloadLink) throws Exception {
-        final String ret = downloadLink.getStringProperty("plain_videoid", null);
+        final String ret = downloadLink.getStringProperty("plain_videoid");
         if (ret == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
@@ -243,25 +241,25 @@ public class DailyMotionCom extends PluginForHost {
         }
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception {
-        if (isHDS(downloadLink)) {
+    public void doFree(final DownloadLink link) throws Exception {
+        if (isHDS(link)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "HDS stream download is not supported (yet)!");
-        } else if (isHLS(downloadLink)) {
+        } else if (isHLS(link)) {
             if (this.dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, this.dllink);
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, this.dllink);
             dl.startDownload();
         } else if (dllink.startsWith("rtmp")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            downloadDirect(downloadLink);
+            downloadDirect(link);
         }
     }
 
     private String getDirectlink(final DownloadLink dl) {
-        return dl.getStringProperty("directlink", null);
+        return dl.getStringProperty("directlink");
     }
 
     protected void downloadDirect(DownloadLink downloadLink) throws Exception {
@@ -288,9 +286,7 @@ public class DailyMotionCom extends PluginForHost {
     private String findFreshDirectlink(final DownloadLink dl) throws IOException {
         try {
             dllink = null;
-            /* Remove old cookies/Referer */
-            this.br = new Browser();
-            final String mainlink = dl.getStringProperty("mainlink", null);
+            final String mainlink = dl.getStringProperty("mainlink");
             br.setFollowRedirects(true);
             br.getPage(mainlink);
             logger.info("findFreshDirectlink - getPage mainlink has been done, next: getVideosource");
@@ -322,7 +318,6 @@ public class DailyMotionCom extends PluginForHost {
         login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        ai.setStatus("Registered (free) User");
         return ai;
     }
 
@@ -380,7 +375,7 @@ public class DailyMotionCom extends PluginForHost {
         if (link.getBooleanProperty("countryblock", false)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT);
         } else if (link.getBooleanProperty("registeredonly", false)) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, REGISTEREDONLYUSERTEXT);
+            throw new AccountRequiredException();
         }
         doFree(link);
     }
@@ -413,7 +408,7 @@ public class DailyMotionCom extends PluginForHost {
             return;
         } else {
             setGraphqlHeaders(br);
-            br.postPageRaw("https://graphql.api.dailymotion.com/", "{\"operationName\":\"USER_BIRTHDAY_QUERY\",\"variables\":{},\"query\":\"query USER_BIRTHDAY_QUERY {  me {    id    birthday    __typename  }}\"}");
+            br.postPageRaw(API_BASE_GRAPHQL, "{\"operationName\":\"USER_BIRTHDAY_QUERY\",\"variables\":{},\"query\":\"query USER_BIRTHDAY_QUERY {  me {    id    birthday    __typename  }}\"}");
             try {
                 final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                 final Map<String, Object> data = (Map<String, Object>) root.get("data");
@@ -485,9 +480,10 @@ public class DailyMotionCom extends PluginForHost {
         return StringUtils.contains(directLink, ".m3u8");
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    @Override
+    public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
+        /* Allow only downloads with original plugin. */
+        return link.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     @Override
