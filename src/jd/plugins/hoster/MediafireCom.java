@@ -25,13 +25,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -58,6 +51,13 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(?:www\\.|m\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file(?:_premium)?/|file\\?|download/?).*?(?=http:|$|\r|\n))|https?://download\\d+.mediafire(?:cdn)?\\.com/[^/]+/([a-z0-9]+)/([^/]+)" })
 public class MediafireCom extends PluginForHost {
@@ -665,7 +665,7 @@ public class MediafireCom extends PluginForHost {
                         account.clearCookies("");
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                // offline file, to file/get_info as a single file... we need to return so the proper
+                    // offline file, to file/get_info as a single file... we need to return so the proper
                 case 110:
                     // invalid uid
                 case 111:
@@ -880,21 +880,21 @@ public class MediafireCom extends PluginForHost {
         if (errorcodeStr != null) {
             switch (Integer.parseInt(errorcodeStr)) {
             case 320:
-                // 320 = file is removed by the originating user or MediaFire.
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File is removed by the originating user or MediaFire");
             case 323:
-                // 323 = Dangerous File Blocked.
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Dangerous File Blocked");
             case 326:
-                // 326 = Dangerous File Identified by Google Safe Browsing
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Dangerous File Identified by Google Safe Browsing");
             case 378:
-                // 378 = File Removed for Violation (of TOS)
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File Removed for Violation (of TOS)");
             case 380:
-                // 380 = claimed by a copyright holder through a valid DMCA request
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Claimed by a copyright holder through a valid DMCA request");
             case 382:
-                // 382 = File Belongs to Suspended Account.
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File Belongs to Suspended Account");
             case 386:
-                // 386 = File Blocked for Violation.
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File Blocked for Violation");
             case 388:
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Identified as copyrighted work");
             case 394:
                 /*
                  * The file you attempted to download is an archive that is encrypted or password protected. MediaFire does not support
