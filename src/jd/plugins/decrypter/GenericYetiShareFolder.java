@@ -63,8 +63,6 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         /* Please try to sort website based on old/new style */
-        /* websites using the OLD style: */
-        ret.add(new String[] { "fireload.com" });
         /* Websites using the NEW style: */
         ret.add(new String[] { "letsupload.io", "letsupload.org", "letsupload.to", "letsupload.co" });
         ret.add(new String[] { "truefile.cc" });

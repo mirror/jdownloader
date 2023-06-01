@@ -21,7 +21,6 @@ import java.util.List;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -116,6 +115,9 @@ public class VideosectionCom extends antiDDoSForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         String dllink = br.getRegex("itemprop=\"contentUrl\" href=\"(https?://[^\"]+)").getMatch(0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         dllink = Encoding.htmlDecode(dllink);
         checkFFmpeg(link, "Download a HLS Stream");
         dl = new HLSDownloader(link, br, dllink);
