@@ -19,6 +19,7 @@ import java.io.IOException;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -82,9 +83,9 @@ public class YimuheCom extends PluginForHost {
         final String sha1 = this.br.getRegex("(?i)SHA1:([^<>]+)<").getMatch(0);
         final String md5 = this.br.getRegex("(?i)MD5:([^<>]+)<").getMatch(0);
         String filename = br.getRegex("\\.AddFavorite\\(\\'[^\\']*?\\',\\'([^<>\"\\']+)\\'\\)").getMatch(0);
-        String filesize = br.getRegex("文件大小：</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
+        String filesize = br.getRegex("文件大小：\\s*</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("文件大小：</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
+            filesize = br.getRegex("文件大小：\\s*</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
         }
         if (filename != null) {
             link.setName(Encoding.htmlDecode(filename).trim());
@@ -110,22 +111,31 @@ public class YimuheCom extends PluginForHost {
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            this.br.getPage("/down-" + this.getFID(link) + ".html");
-            final String js_source = this.br.getRegex("down_file\\(([^<>\"]+)\\)").getMatch(0).replace("'", "");
-            final String[] js_params = js_source.split(",");
+            final String fid = this.getFID(link);
+            this.br.getPage("/down-" + fid + ".html");
+            final String js_source = this.br.getRegex("down_file\\(([^<>\"]+)\\)").getMatch(0);
+            final String[] js_params = js_source.split("','");
             if (js_params.length < 6) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* Correct values */
+            for (int i = 0; i < js_params.length; i++) {
+                js_params[i] = js_params[i].replace("'", "");
             }
             /*
              * 2022-01-31: This captcha can be very hard to read sometimes! Also it seems like the answer is also verified case-sensitive!
              */
             final String code = this.getCaptchaCode("/n_downcode.php", link);
             if (code == null || !code.matches("[A-Za-z0-9]{4}")) {
-                logger.info("Invalid captcha format");
+                logger.info("Invalid captcha-answer format");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.postPage("/n_downcode.php", "action=yz&id=" + this.getFID(link) + "&code=" + Encoding.urlEncode(code));
+            final UrlQuery query1 = new UrlQuery();
+            query1.add("action", "yz");
+            query1.add("id", fid);
+            query1.add("code", code);
+            this.br.postPage("/n_downcode.php", query1);
             if (!this.br.toString().equals("1")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -134,10 +144,23 @@ public class YimuheCom extends PluginForHost {
             final String file_key = js_params[2];
             final String file_name = js_params[3];
             final String ser = js_params[4];
-            this.br.getPage("/n_dd.php?file_id=" + this.getFID(link) + "&userlogin=" + Encoding.urlEncode(userlogin) + "&p=" + p + "&types=http&file_key=" + file_key + "&file_name=" + Encoding.urlEncode(file_name) + "&ser=" + ser);
+            final UrlQuery query2 = new UrlQuery();
+            query2.add("file_id", fid);
+            query2.add("userlogin", Encoding.urlEncode(userlogin));
+            query2.add("p", p);
+            query2.add("types", "http");
+            query2.add("file_key", file_key);
+            query2.add("file_name", Encoding.urlEncode(file_name));
+            query2.add("ser", ser);
+            this.br.getPage("/n_dd.php?" + query2.toString());
             dllink = br.getRegex("(http[^<>\"]+/downfile/[^<>\"]+)").getMatch(0);
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (br.containsHTML("(?i)alert\\('此文件已被删除")) {
+                    /* Super rare case. */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);

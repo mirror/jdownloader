@@ -359,73 +359,156 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 throw new AccountRequiredException();
             }
         }
-        final UrlQuery query = UrlQuery.parse(br.getURL());
-        final String startPageStr = query.get("page");
-        final int startPage;
-        if (startPageStr != null && startPageStr.matches("\\d+")) {
-            logger.info("Starting from user defined page: " + startPageStr);
-            startPage = Integer.parseInt(startPageStr);
-        } else {
-            logger.info("Starting from page 1");
-            startPage = 1;
-        }
-        int page = startPage;
-        logger.info("Starting from page " + startPage);
-        final HashSet<String> dupes = new HashSet<String>();
-        boolean stopBecauseOfPaginationLimitation = false;
-        do {
-            /* Check for serverside pagination limitation. Typically around page 136 */
-            if (br.containsHTML("(?i)<div[^>]*class\\s*=\\s*\"no-results\"[^>]*>\\s*No results matched your criteria")) {
-                logger.info("Stopping because: Reached serverside pagination limitation: Error 'No results matched your criteria': " + br.getURL());
-                stopBecauseOfPaginationLimitation = true;
-                break;
-            }
-            final String[] details = br.getRegex("<div class=\"item-ia\".*? <a href=\"(/details/[^\"]*?)\" title").getColumn(0);
-            if (details == null || details.length == 0) {
-                logger.info("Stopping because: Failed to find any results on current page: " + br.getURL());
-                break;
-            }
-            int numberofNewItemsOnThisPage = 0;
-            for (final String detail : details) {
-                if (!dupes.add(detail)) {
-                    continue;
+        if (ret.isEmpty()) {
+            logger.info("Crawling collections...");
+            final boolean useScrapingAPI = true;
+            if (useScrapingAPI) {
+                final ArrayList<DownloadLink> collectionResults = searchViaScrapeAPI("collection:" + titleSlug, -1);
+                if (collectionResults.isEmpty()) {
+                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_" + titleSlug);
                 }
-                final DownloadLink link = createDownloadlink(br.getURL(detail).toString());
+                ret.addAll(collectionResults);
+            } else {
+                /* Website */
+                final UrlQuery query = UrlQuery.parse(br.getURL());
+                final String startPageStr = query.get("page");
+                final int startPage;
+                if (startPageStr != null && startPageStr.matches("\\d+")) {
+                    logger.info("Starting from user defined page: " + startPageStr);
+                    startPage = Integer.parseInt(startPageStr);
+                } else {
+                    logger.info("Starting from page 1");
+                    startPage = 1;
+                }
+                int page = startPage;
+                logger.info("Starting from page " + startPage);
+                final HashSet<String> dupes = new HashSet<String>();
+                boolean stopBecauseOfPaginationLimitation = false;
+                do {
+                    /* Check for serverside pagination limitation. Typically around page 136 */
+                    if (br.containsHTML("(?i)<div[^>]*class\\s*=\\s*\"no-results\"[^>]*>\\s*No results matched your criteria")) {
+                        logger.info("Stopping because: Reached serverside pagination limitation: Error 'No results matched your criteria': " + br.getURL());
+                        stopBecauseOfPaginationLimitation = true;
+                        break;
+                    }
+                    final String[] details = br.getRegex("<div class=\"item-ia\".*? <a href=\"(/details/[^\"]*?)\" title").getColumn(0);
+                    if (details == null || details.length == 0) {
+                        logger.info("Stopping because: Failed to find any results on current page: " + br.getURL());
+                        break;
+                    }
+                    int numberofNewItemsOnThisPage = 0;
+                    for (final String detail : details) {
+                        if (!dupes.add(detail)) {
+                            continue;
+                        }
+                        final DownloadLink link = createDownloadlink(br.getURL(detail).toString());
+                        ret.add(link);
+                        /* The following statement makes debugging easier. */
+                        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            distribute(link);
+                        }
+                        numberofNewItemsOnThisPage++;
+                    }
+                    logger.info("Crawled page " + page + " | New items on this page: " + numberofNewItemsOnThisPage + " | Results so far: " + ret.size());
+                    if (this.isAbort()) {
+                        logger.info("Stopping because: Aborted by user");
+                        break;
+                    } else if (numberofNewItemsOnThisPage == 0) {
+                        /* Additional fail-safe */
+                        logger.info("Stopping because: Failed to find any new items on current page: " + page);
+                        break;
+                    } else if (!br.containsHTML("page=" + (page + 1))) {
+                        /* Next page not found -> We should've reached the end */
+                        logger.info("Stopping because: Reached last page: " + page);
+                        break;
+                    } else {
+                        page++;
+                        query.addAndReplace("page", Integer.toString(page));
+                        final String nextPageURL = urlWithoutParams + "?" + query.toString();
+                        br.getPage(nextPageURL);
+                    }
+                } while (!this.isAbort());
+                if (ret.isEmpty()) {
+                    if (stopBecauseOfPaginationLimitation && startPage > 1) {
+                        /*
+                         * Problem most likely caused by user adding link with page number that cannot be displayed [extremely rare case].
+                         */
+                        throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_DUE_TO_PAGINATION_LIMITATION_START_PAGE_DEFINED_BY_USER_" + startPage + "_" + titleSlug);
+                    } else {
+                        /* Also a very unlikely case. */
+                        throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_" + titleSlug);
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+
+    /** API: Docs: https://archive.org/help/aboutsearch.htm */
+    private ArrayList<DownloadLink> searchViaScrapeAPI(final String searchTerm, final int maxAllowedResults) throws Exception {
+        if (searchTerm == null) {
+            throw new IllegalArgumentException();
+        }
+        if (maxAllowedResults == 0) {
+            throw new IllegalArgumentException();
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final int maxNumberofItemsPerPage = 10000;
+        final UrlQuery query = new UrlQuery();
+        query.add("fields", "identifier");
+        query.add("q", Encoding.urlEncode(searchTerm));
+        final int maxNumberofItemsPerPageForThisRun;
+        if (maxAllowedResults > 100 && maxAllowedResults < maxNumberofItemsPerPage) {
+            maxNumberofItemsPerPageForThisRun = maxAllowedResults;
+        } else {
+            maxNumberofItemsPerPageForThisRun = maxNumberofItemsPerPage;
+        }
+        query.add("count", Integer.toString(maxNumberofItemsPerPageForThisRun));
+        String cursor = null;
+        int page = 1;
+        pagination: do {
+            br.getPage("/services/search/v1/scrape?" + query.toString());
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final int maxItems = ((Number) entries.get("total")).intValue();
+            if (maxItems == 0) {
+                logger.info("Search returned zero results");
+                return ret;
+            }
+            final List<Map<String, Object>> items = (List<Map<String, Object>>) entries.get("items");
+            for (final Map<String, Object> item : items) {
+                final DownloadLink link = this.createDownloadlink("https://archive.org/details/" + item.get("identifier").toString());
                 ret.add(link);
                 /* The following statement makes debugging easier. */
                 if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     distribute(link);
                 }
-                numberofNewItemsOnThisPage++;
+                if (ret.size() == maxAllowedResults) {
+                    logger.info("Stopping because: Reached max allowed results: " + maxAllowedResults);
+                    break pagination;
+                }
             }
-            logger.info("Crawled page " + page + " | New items on this page: " + numberofNewItemsOnThisPage + " | Results so far: " + ret.size());
+            final String lastCursor = cursor;
+            cursor = (String) entries.get("cursor");
+            logger.info("Crawled page " + page + " | Found items so far: " + ret.size() + "/" + maxItems + " | Max allowed results: " + maxAllowedResults + " | Cursor: " + lastCursor + " | Next cursor: " + cursor);
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
-            } else if (numberofNewItemsOnThisPage == 0) {
+            } else if (StringUtils.isEmpty(cursor)) {
+                logger.info("Stopping because: Reached last page: " + lastCursor);
+                break;
+            } else if (ret.size() >= maxItems) {
                 /* Additional fail-safe */
-                logger.info("Stopping because: Failed to find any new items on current page: " + page);
+                logger.info("Stopping because: Found all items: " + maxItems);
                 break;
-            } else if (!br.containsHTML("page=" + (page + 1))) {
-                /* Next page not found -> We should've reached the end */
-                logger.info("Stopping because: Reached last page: " + page);
+            } else if (items.size() < maxNumberofItemsPerPageForThisRun) {
+                /* Additional fail-safe */
+                logger.info("Stopping because: Current page contains less items than max allowed per page for this run: " + maxNumberofItemsPerPageForThisRun);
                 break;
             } else {
+                query.add("cursor", Encoding.urlEncode(cursor));
                 page++;
-                query.addAndReplace("page", Integer.toString(page));
-                final String nextPageURL = urlWithoutParams + "?" + query.toString();
-                br.getPage(nextPageURL);
             }
-        } while (!this.isAbort());
-        if (ret.isEmpty()) {
-            if (stopBecauseOfPaginationLimitation && startPage > 1) {
-                /* Problem most likely caused by user adding link with page number that cannot be displayed [extremely rare case]. */
-                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_DUE_TO_PAGINATION_LIMITATION_START_PAGE_DEFINED_BY_USER_" + startPage + "_" + titleSlug);
-            } else {
-                /* Also a very unlikely case. */
-                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_" + titleSlug);
-            }
-        }
+        } while (true);
         return ret;
     }
 

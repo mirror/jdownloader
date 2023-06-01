@@ -21,6 +21,8 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -43,7 +45,7 @@ public class YoudboxCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "youdbox.net", "youdbox.com" });
+        ret.add(new String[] { "youdboox.com", "youdbox.net", "youdbox.com" });
         return ret;
     }
 
@@ -62,8 +64,14 @@ public class YoudboxCom extends XFileSharingProBasic {
         return buildSupportedNames(getPluginDomains());
     }
 
+    private final String PATTERN_SPECIAL = "(?i)https?://[^/]+/mp3embed-([a-z0-9]{12})";
+
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?::\\d+)?" + "(" + XFileSharingProBasic.getDefaultAnnotationPatternPart() + "|/mp3embed-[a-z0-9]{12})");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -107,5 +115,33 @@ public class YoudboxCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
+    }
+
+    @Override
+    protected URL_TYPE getURLType(final String url) {
+        if (url != null && url.matches(PATTERN_SPECIAL)) {
+            return URL_TYPE.NORMAL;
+        } else {
+            return super.getURLType(url);
+        }
+    }
+
+    @Override
+    protected String getFUID(final String url, URL_TYPE type) {
+        final String idFromSpecialPattern = new Regex(url, PATTERN_SPECIAL).getMatch(0);
+        if (idFromSpecialPattern != null) {
+            return idFromSpecialPattern;
+        } else {
+            return super.getFUID(url, type);
+        }
+    }
+
+    @Override
+    protected boolean isVideohosterEmbedHTML(final Browser br) {
+        /*
+         * Special/small workaround: Website looks like videohost but they only host audio files and typically their filenames already end
+         * with ".mp3".
+         */
+        return false;
     }
 }
