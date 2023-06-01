@@ -83,18 +83,20 @@ public class AdultempireComCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String internalIDStr;
-        String[] scenesHTMLs = null;
+        String[][] scenesData = null;
+        Browser sceneBR = null;
         if (param.getCryptedUrl().matches(TYPE_EMBED)) {
             /* Internal ID given inside URL. */
             internalIDStr = new Regex(param.getCryptedUrl(), TYPE_EMBED).getMatch(0);
         } else {
             /* Internal ID needs to be parsed via HTML code. */
-            br.getPage(param.getCryptedUrl());
-            if (br.getHttpConnection().getResponseCode() == 404) {
+            sceneBR = br.cloneBrowser();
+            sceneBR.getPage(param.getCryptedUrl());
+            if (sceneBR.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            internalIDStr = br.getRegex("item:\\s*'(\\d+)'").getMatch(0);
-            scenesHTMLs = br.getRegex("href=\"/Account/BuyMinutesPage\"(.*?)class=\"btn btn-primary\"><i class=\"fa fa-play\"></i> Watch Now\\s*</a></div>").getColumn(0);
+            internalIDStr = sceneBR.getRegex("item:\\s*'(\\d+)'").getMatch(0);
+            scenesData = sceneBR.getRegex("ShowMoreScreens2017\\((\\d+),(\\d+),(\\d+),(\\d+), \\'(/\\d+/[^\\']+)'").getMatches();
         }
         if (internalIDStr == null) {
             /* Assume that content is offline or no trailer is available. */
@@ -119,29 +121,34 @@ public class AdultempireComCrawler extends PluginForDecrypt {
             ret.add(httpStream);
         }
         /* Add snapshots + trailer of each scene */
-        if (scenesHTMLs.length > 0) {
+        if (scenesData != null && scenesData.length > 0) {
             int sceneCounter = 1;
-            for (final String scenesHTML : scenesHTMLs) {
-                String sceneTitle = new Regex(scenesHTML, "class=\"modal-title\">([^<]+)</h3>").getMatch(0);
+            for (final String[] sceneInfo : scenesData) {
+                // String sceneTitle = new Regex(scenesHTML, "class=\"modal-title\">([^<]+)</h3>").getMatch(0);
+                String sceneTitle = "Scene " + sceneCounter;
                 if (sceneTitle != null) {
                     sceneTitle = Encoding.htmlDecode(sceneTitle).trim();
                 }
-                logger.info("Crawling scene " + sceneCounter + "/" + scenesHTMLs.length + " | Title: " + sceneTitle);
-                final String[] scenesSnapshotURLs = getSnapshotURLs(scenesHTML);
-                if (scenesSnapshotURLs.length > 0) {
-                    final ArrayList<String> allScreenshotURLs = new ArrayList<String>();
-                    allScreenshotURLs.addAll(Arrays.asList(scenesSnapshotURLs));
-                    final Regex showMoreScreenshotsInfo = new Regex(scenesHTML, "ShowMoreScreens2017\\((\\d+),(\\d+),(\\d+),(\\d+), \\'(/\\d+/[^\\']+)'");
-                    if (showMoreScreenshotsInfo.matches()) {
-                        logger.info("Crawling more screenshots");
-                        final String item = showMoreScreenshotsInfo.getMatch(0), start = showMoreScreenshotsInfo.getMatch(1), end = showMoreScreenshotsInfo.getMatch(2), sceneID = showMoreScreenshotsInfo.getMatch(3);
-                        final Browser br3 = br.cloneBrowser();
-                        br3.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        br3.getPage("/Item/LoadSceneScreenshots?item=" + item + "&start=" + start + "&end=" + end + "&sceneID=" + sceneID + "&_=" + System.currentTimeMillis());
-                        final String[] scenesSnapshotURLs2 = getSnapshotURLs(br3.getRequest().getHtmlCode());
-                        logger.info("Found " + scenesSnapshotURLs2.length + " more scene snapshots");
-                        allScreenshotURLs.addAll(Arrays.asList(scenesSnapshotURLs2));
+                final String item = sceneInfo[0], start = sceneInfo[1], end = sceneInfo[2], sceneID = sceneInfo[3];
+                logger.info("Crawling scene " + sceneCounter + "/" + scenesData.length + " | Title: " + sceneTitle);
+                final ArrayList<String> allScreenshotURLs = new ArrayList<String>();
+                final String[] snapshotHTMLs = sceneBR.getRegex("scene_id='" + sceneID + "'><img src=\"(.*?)class=\"fancy screen\"").getColumn(0);
+                for (final String snapshotHTML : snapshotHTMLs) {
+                    final String url = new Regex(snapshotHTML, "href=\"(https://[^\"]+)\"").getMatch(0);
+                    if (url != null) {
+                        allScreenshotURLs.add(url);
+                    } else {
+                        logger.warning("Plugin outdated or invalid image source: " + snapshotHTML);
                     }
+                }
+                if (allScreenshotURLs.size() > 0) {
+                    logger.info("Crawling more screenshots");
+                    final Browser br3 = br.cloneBrowser();
+                    br3.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br3.getPage("/Item/LoadSceneScreenshots?item=" + item + "&start=" + start + "&end=" + end + "&sceneID=" + sceneID + "&_=" + System.currentTimeMillis());
+                    final String[] scenesSnapshotURLs2 = br3.getRegex("a rel=\"(?:scenescreenshots|morescreenshots)\"\\s*href=\"(https?://[^\"]+)\"").getColumn(0);
+                    logger.info("Found " + scenesSnapshotURLs2.length + " more scene snapshots");
+                    allScreenshotURLs.addAll(Arrays.asList(scenesSnapshotURLs2));
                     int snapshotCounter = 1;
                     final int padLength = StringUtils.getPadLength(allScreenshotURLs.size());
                     for (final String scenesSnapshotURL : allScreenshotURLs) {
@@ -158,12 +165,21 @@ public class AdultempireComCrawler extends PluginForDecrypt {
                     }
                 }
                 /* Add scene preview video if available */
-                final String sceneIDStr = new Regex(scenesHTML, "data-video=\"scenePreview_(\\d+)\"").getMatch(0);
-                if (sceneIDStr != null) {
+                final boolean hasScenePreviewVideo = sceneBR.containsHTML("data-video=\"scenePreview_" + sceneID);
+                logger.info("Scene: " + sceneCounter + " |  Images: " + allScreenshotURLs.size() + " | hasScenePreviewVideo: " + hasScenePreviewVideo);
+                if (hasScenePreviewVideo) {
+                    /* */
                     logger.info("Crawling scene preview");
-                    ret.addAll(this.crawlVideo(br.cloneBrowser(), internalIDStr, sceneIDStr, "preview", sceneTitle));
+                    ret.addAll(this.crawlVideo(sceneBR.cloneBrowser(), internalIDStr, sceneID, "preview", sceneTitle));
+                } else {
+                    logger.warning("Found scene without preview video(?): " + sceneID);
                 }
-                sceneCounter++;
+                if (this.isAbort()) {
+                    logger.info("Aborted by user");
+                    break;
+                } else {
+                    sceneCounter++;
+                }
             }
         }
         final FilePackage fp = FilePackage.getInstance();
@@ -232,9 +248,5 @@ public class AdultempireComCrawler extends PluginForDecrypt {
             ret.add(video);
         }
         return ret;
-    }
-
-    private String[] getSnapshotURLs(final String html) {
-        return new Regex(html, "a rel=\"(?:scenescreenshots|morescreenshots)\"\\s*href=\"(https?://[^\"]+)\"").getColumn(0);
     }
 }
