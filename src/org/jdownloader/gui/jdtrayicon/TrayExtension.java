@@ -16,21 +16,17 @@
 package org.jdownloader.gui.jdtrayicon;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.SystemTray;
-import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
 import java.awt.image.BufferedImage;
@@ -50,6 +46,8 @@ import jd.gui.swing.jdgui.MainFrameClosingHandler;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 import jd.plugins.AddonPanel;
 
+import org.appwork.swing.trayicon.AbstractTray;
+import org.appwork.swing.trayicon.TrayMouseListener;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -82,7 +80,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
-public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
+public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements TrayMouseListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
     @Override
     public boolean isHeadlessRunnable() {
         return false;
@@ -307,11 +305,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             /*
                              * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
                              * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
-                             *
+                             * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
-                             *
+                             * 
                              * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
-                             *
+                             * 
                              * TODO: maybe add dialog to inform user
                              */
                             LogController.CL().log(e);
@@ -345,7 +343,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         }
     }
 
-    public void mousePressed(MouseEvent e) {
+    public void mousePressed(final MouseEvent e) {
         hideTrayIconToolTip();
         if (e.getSource() instanceof TrayIcon) {
             if (!CrossSystem.isMac()) {
@@ -360,7 +358,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             return;
                         }
                         trayIconPopup = new TrayIconPopup(this);
-                        calcLocation(trayIconPopup, e.getPoint());
+                        final Point location = AbstractTray.calculateLocation(trayIconPopup, ma, e);
+                        trayIconPopup.setLocation(location);
                         WindowManager.getInstance().setVisible(trayIconPopup, true, FrameState.OS_DEFAULT);
                         trayIconPopup.startAutoHide();
                     }
@@ -376,10 +375,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         if (!checkPassword()) {
                             return;
                         }
-                        trayIconPopup = new TrayIconPopup(this);
-                        Point pointOnScreen = e.getLocationOnScreen();
-                        // if (e.getX() > 0) pointOnScreen.x -= e.getPoint().x;
-                        calcLocation(trayIconPopup, pointOnScreen);
+                        final Point location = AbstractTray.calculateLocation(trayIconPopup, ma, e);
+                        trayIconPopup.setLocation(location);
                         WindowManager.getInstance().setVisible(trayIconPopup, true, FrameState.OS_DEFAULT);
                         trayIconPopup.startAutoHide();
                     }
@@ -420,43 +417,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     public void mouseMoved(MouseEvent e) {
-    }
-
-    private static void calcLocation(final TrayIconPopup window, final Point p) {
-        new EDTHelper<Object>() {
-            @Override
-            public Object edtRun() {
-                Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-                int limitX = (int) screenSize.getWidth() / 2;
-                int limitY = (int) screenSize.getHeight() / 2;
-                if (!CrossSystem.isMac()) {
-                    if (p.x <= limitX) {
-                        if (p.y <= limitY) {
-                            // top left
-                            window.setLocation(p.x, p.y);
-                        } else {
-                            // bottom left
-                            window.setLocation(p.x, p.y - window.getHeight());
-                        }
-                    } else {
-                        if (p.y <= limitY) {
-                            // top right
-                            window.setLocation(p.x - window.getWidth(), p.y);
-                        } else {
-                            // bottom right
-                            window.setLocation(p.x - window.getWidth(), p.y - window.getHeight());
-                        }
-                    }
-                } else {
-                    if (p.getX() <= (screenSize.getWidth() - window.getWidth())) {
-                        window.setLocation((int) p.getX(), 22);
-                    } else {
-                        window.setLocation(p.x - window.getWidth(), 22);
-                    }
-                }
-                return null;
-            }
-        }.waitForEDT();
     }
 
     /**
