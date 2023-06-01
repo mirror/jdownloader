@@ -21,6 +21,7 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     final String                    text_BookImageQuality                                        = "Set book image quality (0 = highest, 10 = lowest)";
     final String                    text_BookCrawlMode                                           = "Set book crawl mode";
     final String                    text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable = "Mark non viewable book pages as offline if no account is available?";
+    final String                    text_SearchTermCrawlerMaxResultsLimit                        = "Search term crawler: Limit max results [0 = disable this crawler]";
     public static final TRANSLATION TRANSLATION                                                  = new TRANSLATION();
 
     public static class TRANSLATION {
@@ -50,6 +51,10 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
         public String getMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable_label() {
             return text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable;
+        }
+
+        public String getSearchTermCrawlerMaxResultsLimit_label() {
+            return text_SearchTermCrawlerMaxResultsLimit;
         }
     }
 
@@ -107,7 +112,7 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     @Order(30)
     int getBookImageQuality();
 
-    void setBookImageQuality(int scaleFactor);
+    void setBookImageQuality(int i);
 
     public static enum BookCrawlMode implements LabelInterface {
         PREFER_ORIGINAL {
@@ -145,4 +150,13 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     boolean isMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable();
 
     void setMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable(boolean b);
+
+    @AboutConfig
+    @SpinnerValidator(min = 0, max = 100000, step = 100)
+    @DefaultIntValue(100)
+    @DescriptionForConfigEntry(text_SearchTermCrawlerMaxResultsLimit)
+    @Order(60)
+    int getSearchTermCrawlerMaxResultsLimit();
+
+    void setSearchTermCrawlerMaxResultsLimit(int i);
 }

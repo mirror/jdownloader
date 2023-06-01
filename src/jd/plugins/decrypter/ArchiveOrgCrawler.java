@@ -62,7 +62,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.download.HashInfo;
 import jd.plugins.hoster.ArchiveOrg;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/(?:details|download|stream|embed)/(?!copyrightrecords)@?.+", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/((?:details|download|stream|embed)/.+|search\\?query=.+)", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
 public class ArchiveOrgCrawler extends PluginForDecrypt {
     public ArchiveOrgCrawler(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,7 +77,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
     }
 
-    private final String PATTERN_DOWNLOAD = "https?://[^/]+/download/(.+)";
+    private final String PATTERN_DOWNLOAD = "(?i)https?://[^/]+/download/(.+)";
+    private final String PATTERN_SEARCH   = "(?i)https?://[^/]+/search\\?query=.+";
     final Set<String>    dups             = new HashSet<String>();
     private ArchiveOrg   hostPlugin       = null;
 
@@ -86,6 +87,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         param.setCryptedUrl(param.getCryptedUrl().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/"));
         if (new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD).matches()) {
             return crawlPatternSlashDownload(param);
+        } else if (param.getCryptedUrl().matches(PATTERN_SEARCH)) {
+            return this.crawlSearchQueryURL(param);
         } else {
             /*
              * 2020-08-26: Login might sometimes be required for book downloads.
@@ -444,29 +447,57 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         return ret;
     }
 
+    private ArrayList<DownloadLink> crawlSearchQueryURL(final CryptedLink param) throws Exception {
+        final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
+        final int maxResults = cfg.getSearchTermCrawlerMaxResultsLimit();
+        if (maxResults == 0) {
+            logger.info("User disabled search term crawler -> Returning empty array");
+            return new ArrayList<DownloadLink>();
+        }
+        final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
+        String searchQuery = query.get("query");
+        if (searchQuery != null) {
+            searchQuery = Encoding.htmlDecode(searchQuery).trim();
+        }
+        if (StringUtils.isEmpty(searchQuery)) {
+            /* User supplied invalid URL. */
+            throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "INVALID_SEARCH_QUERY");
+        }
+        final ArrayList<DownloadLink> searchResults = searchViaScrapeAPI(searchQuery, maxResults);
+        if (searchResults.isEmpty()) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "NO_SEARCH_RESULTS_FOR_QUERY_" + searchQuery);
+        }
+        return searchResults;
+    }
+
     /** API: Docs: https://archive.org/help/aboutsearch.htm */
-    private ArrayList<DownloadLink> searchViaScrapeAPI(final String searchTerm, final int maxAllowedResults) throws Exception {
-        if (searchTerm == null) {
+    private ArrayList<DownloadLink> searchViaScrapeAPI(final String searchTerm, final int maxResultsLimit) throws Exception {
+        if (StringUtils.isEmpty(searchTerm)) {
+            throw new IllegalArgumentException();
+        } else if (maxResultsLimit == 0) {
             throw new IllegalArgumentException();
         }
-        if (maxAllowedResults == 0) {
-            throw new IllegalArgumentException();
-        }
+        logger.info("Searching for: " + searchTerm + " | maxResultsLimit = " + maxResultsLimit);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final int maxNumberofItemsPerPage = 10000;
+        final int minNumberofItemsPerPage = 100;
         final UrlQuery query = new UrlQuery();
         query.add("fields", "identifier");
         query.add("q", Encoding.urlEncode(searchTerm));
         final int maxNumberofItemsPerPageForThisRun;
-        if (maxAllowedResults > 100 && maxAllowedResults < maxNumberofItemsPerPage) {
-            maxNumberofItemsPerPageForThisRun = maxAllowedResults;
+        if (maxResultsLimit == -1) {
+            maxNumberofItemsPerPageForThisRun = maxNumberofItemsPerPage;
+        } else if (maxResultsLimit <= minNumberofItemsPerPage) {
+            maxNumberofItemsPerPageForThisRun = minNumberofItemsPerPage;
+        } else if (maxResultsLimit < maxNumberofItemsPerPage) {
+            maxNumberofItemsPerPageForThisRun = maxResultsLimit;
         } else {
             maxNumberofItemsPerPageForThisRun = maxNumberofItemsPerPage;
         }
         query.add("count", Integer.toString(maxNumberofItemsPerPageForThisRun));
         String cursor = null;
         int page = 1;
-        pagination: do {
+        do {
             br.getPage("https://" + this.getHost() + "/services/search/v1/scrape?" + query.toString());
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final int maxItems = ((Number) entries.get("total")).intValue();
@@ -475,6 +506,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 return ret;
             }
             final List<Map<String, Object>> items = (List<Map<String, Object>>) entries.get("items");
+            boolean stopDueToCrawlLimitReached = false;
             for (final Map<String, Object> item : items) {
                 final DownloadLink link = this.createDownloadlink("https://archive.org/details/" + item.get("identifier").toString());
                 ret.add(link);
@@ -482,15 +514,19 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     distribute(link);
                 }
-                if (ret.size() == maxAllowedResults) {
-                    logger.info("Stopping because: Reached max allowed results: " + maxAllowedResults);
-                    break pagination;
+                if (ret.size() == maxResultsLimit) {
+                    /* Do not step out of main loop yet so we can get the log output down below one last time. */
+                    stopDueToCrawlLimitReached = true;
+                    break;
                 }
             }
             final String lastCursor = cursor;
             cursor = (String) entries.get("cursor");
-            logger.info("Crawled page " + page + " | Found items so far: " + ret.size() + "/" + maxItems + " | Max allowed results: " + maxAllowedResults + " | Cursor: " + lastCursor + " | Next cursor: " + cursor);
-            if (this.isAbort()) {
+            logger.info("Crawled page " + page + " | Found items so far: " + ret.size() + "/" + maxItems + " | maxResultsLimit: " + maxResultsLimit + " | Cursor: " + lastCursor + " | Next cursor: " + cursor);
+            if (stopDueToCrawlLimitReached) {
+                logger.info("Stopping because: Reached max allowed results: " + maxResultsLimit);
+                break;
+            } else if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
             } else if (StringUtils.isEmpty(cursor)) {
