@@ -22,6 +22,7 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -106,8 +107,15 @@ public class FireloadCom extends YetiShareCore {
     @Override
     public String[] scanInfo(final DownloadLink link, final String[] fileInfo) {
         super.scanInfo(link, fileInfo);
+        final String betterFilesize = br.getRegex(">\\s*File Size:\\s*</strong>([^<]+)</p>").getMatch(0);
+        if (betterFilesize != null) {
+            fileInfo[1] = betterFilesize;
+        }
         if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = br.getRegex("lass=\"fileName fileNameDl\">([^<>\"]+)<").getMatch(0);
+            fileInfo[0] = br.getRegex("<title>([^<]+) \\| Fireload</title>").getMatch(0);
+            if (StringUtils.isEmpty(fileInfo[0])) {
+                fileInfo[0] = br.getRegex("lass='fileApps'>\\s*<p>([^<]+)</p><div").getMatch(0);
+            }
         }
         return fileInfo;
     }
@@ -116,5 +124,15 @@ public class FireloadCom extends YetiShareCore {
     public boolean supports_availablecheck_over_info_page(final DownloadLink link) {
         /* 2020-07-27: Special */
         return false;
+    }
+
+    @Override
+    public String regexWaittime(final Browser br) {
+        final String waitSecondsStr = br.getRegex("\"dwait\":\\s*\"?(\\d+)").getMatch(0);
+        if (waitSecondsStr != null) {
+            return waitSecondsStr;
+        } else {
+            return super.regexWaittime(br);
+        }
     }
 }
