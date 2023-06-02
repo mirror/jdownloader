@@ -45,12 +45,6 @@ import javax.swing.Icon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.MainFrameClosingHandler;
-import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
-import jd.plugins.AddonPanel;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -87,6 +81,12 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
+
+import jd.SecondLevelLaunch;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.MainFrameClosingHandler;
+import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
+import jd.plugins.AddonPanel;
 
 public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements TrayMouseListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry, GenericConfigEventListener<Boolean> {
     @Override
@@ -465,7 +465,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         TrayIconTooltip trayIconTooltip = this.trayIconTooltip;
         if (trayIconTooltip == null) {
             trayIconTooltip = new TrayIconTooltip();
-            this.trayIconTooltip = this.trayIconTooltip;
+            this.trayIconTooltip = trayIconTooltip;
         }
         trayIconTooltip.showTooltip(((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft());
     }
