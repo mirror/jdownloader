@@ -234,26 +234,36 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                         LogController.CL(TrayExtension.class).info("Apply LinuxTrayIcon workaround");
                                         final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
                                         final GraphicsDevice[] screens = ge.getScreenDevices();
-                                        GraphicsDevice taskBarDevice = ge.getDefaultScreenDevice();
+                                        GraphicsDevice taskBarDevice = null;
+                                        Rectangle taskBarRectangle = null;
                                         for (final GraphicsDevice screen : screens) {
                                             final GraphicsConfiguration screenConfiguration = screen.getDefaultConfiguration();
                                             final Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(screenConfiguration);
                                             if (insets.bottom > 0 | insets.top > 0 | insets.right > 0 | insets.left > 0) {
                                                 taskBarDevice = screen;
+                                                final Rectangle bounds = screenConfiguration.getBounds();
+                                                if (insets.top > 0) {
+                                                    taskBarRectangle = new Rectangle(bounds.x, bounds.y, 2, img.getHeight());
+                                                } else {
+                                                    // TODO: add support for taskbar at other locations
+                                                }
                                                 break;
                                             }
                                         }
-                                        final Robot robo = new java.awt.Robot(taskBarDevice);
-                                        final BufferedImage screenCapture = robo.createScreenCapture(new Rectangle(2, img.getHeight()));
-                                        for (int y = 0; y < img.getHeight(); y++) {
-                                            final Color pixel = new Color(screenCapture.getRGB(1, y));
-                                            for (int x = 0; x < img.getWidth(); x++) {
-                                                final Color tmp = new Color(img.getRGB(x, y));
-                                                final float alpha = ((img.getRGB(x, y) >> 24) & 0xFF) / 255F;
-                                                final int cr = (int) (alpha * tmp.getRed() + (1 - alpha) * pixel.getRed());
-                                                final int cg = (int) (alpha * tmp.getGreen() + (1 - alpha) * pixel.getGreen());
-                                                final int cb = (int) (alpha * tmp.getBlue() + (1 - alpha) * pixel.getBlue());
-                                                img.setRGB(x, y, new Color(cr, cg, cb).getRGB());
+                                        if (taskBarDevice != null && taskBarRectangle != null) {
+                                            final Robot robo = new java.awt.Robot(taskBarDevice);
+                                            final BufferedImage screenCapture = robo.createScreenCapture(taskBarRectangle);
+                                            for (int y = 0; y < img.getHeight(); y++) {
+                                                final Color pixel = new Color(screenCapture.getRGB(1, y));
+                                                for (int x = 0; x < img.getWidth(); x++) {
+                                                    final int rgb = img.getRGB(x, y);
+                                                    final Color tmp = new Color(rgb);
+                                                    final float alpha = ((rgb >> 24) & 0xFF) / 255F;
+                                                    final int cr = (int) (alpha * tmp.getRed() + (1 - alpha) * pixel.getRed());
+                                                    final int cg = (int) (alpha * tmp.getGreen() + (1 - alpha) * pixel.getGreen());
+                                                    final int cb = (int) (alpha * tmp.getBlue() + (1 - alpha) * pixel.getBlue());
+                                                    img.setRGB(x, y, new Color(cr, cg, cb).getRGB());
+                                                }
                                             }
                                         }
                                     }
