@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -61,11 +62,27 @@ public class ZMagsCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getPluginPatternMatcher());
+            if (con.getResponseCode() == 400) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
         if (br.getHttpConnection().getResponseCode() == 403) {
-            /* 2020-05-27: E.g. "The publication you are trying to view has not been activated by the publisher." */
-            // throw new AccountRequiredException();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
+            final String baseErrortext = "Server error 403";
+            final String betterErrormessage = br.getRegex("<h1>([^<]+)</h1>").getMatch(0);
+            if (betterErrormessage != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, baseErrortext + ": " + Encoding.htmlDecode(betterErrormessage).trim());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, baseErrortext);
+            }
         } else if (br.getHttpConnection().getResponseCode() == 404 | br.containsHTML("(>Publication not found<|>The publication you are trying to view does not exist or may have been deleted|Please check the URL and re\\-enter it in the address line of your browser)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
