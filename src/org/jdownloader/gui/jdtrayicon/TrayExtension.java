@@ -17,10 +17,15 @@ package org.jdownloader.gui.jdtrayicon;
 
 import java.awt.Color;
 import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.SystemTray;
+import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -46,6 +51,9 @@ import jd.gui.swing.jdgui.MainFrameClosingHandler;
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 import jd.plugins.AddonPanel;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.trayicon.AbstractTray;
 import org.appwork.swing.trayicon.TrayMouseListener;
 import org.appwork.uio.UIOManager;
@@ -80,7 +88,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.RestartController;
 import org.jdownloader.updatev2.SmartRlyExitRequest;
 
-public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements TrayMouseListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry {
+public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements TrayMouseListener, WindowStateListener, ActionListener, MainFrameClosingHandler, CheckBoxedEntry, GenericConfigEventListener<Boolean> {
     @Override
     public boolean isHeadlessRunnable() {
         return false;
@@ -154,8 +162,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         return true;
     }
 
-    private TrayIconPopup                       trayIconPopup;
-    private TrayIcon                            trayIcon;
+    private volatile TrayIconPopup              trayIconPopup;
+    private volatile TrayIcon                   trayIcon;
     private JFrame                              guiFrame;
     private volatile TrayIconTooltip            trayIconTooltip = null;
     private TrayMouseAdapter                    ma;
@@ -224,7 +232,18 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                         getSettings()._getStorageHandler().write();// disable+write to avoid crash on next try
                                         // Wayland/java crashes onjava.awt.Robot.createScreenCapture
                                         LogController.CL(TrayExtension.class).info("Apply LinuxTrayIcon workaround");
-                                        final Robot robo = new java.awt.Robot();
+                                        final GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                                        final GraphicsDevice[] screens = ge.getScreenDevices();
+                                        GraphicsDevice taskBarDevice = ge.getDefaultScreenDevice();
+                                        for (final GraphicsDevice screen : screens) {
+                                            final GraphicsConfiguration screenConfiguration = screen.getDefaultConfiguration();
+                                            final Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(screenConfiguration);
+                                            if (insets.bottom > 0 | insets.top > 0 | insets.right > 0 | insets.left > 0) {
+                                                taskBarDevice = screen;
+                                                break;
+                                            }
+                                        }
+                                        final Robot robo = new java.awt.Robot(taskBarDevice);
                                         final BufferedImage screenCapture = robo.createScreenCapture(new Rectangle(2, img.getHeight()));
                                         for (int y = 0; y < img.getHeight(); y++) {
                                             final Color pixel = new Color(screenCapture.getRGB(1, y));
@@ -283,7 +302,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                                 new EDTRunner() {
                                                     @Override
                                                     protected void runInEDT() {
-                                                        removeTrayIcon();
                                                         initGUI(false);
                                                     }
                                                 };
@@ -292,8 +310,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                     });
                                     guiFrame.removeWindowStateListener(TrayExtension.this);
                                     guiFrame.addWindowStateListener(TrayExtension.this);
-                                    if (startup && getSettings().isStartMinimizedEnabled()) {
-                                        JDGui.getInstance().setWindowToTray(true);
+                                    if (startup) {
+                                        if (getSettings().isStartMinimizedEnabled()) {
+                                            JDGui.getInstance().setWindowToTray(true);
+                                        }
+                                        CFG_TRAY_CONFIG.TRAY_ONLY_VISIBLE_IF_WINDOW_IS_HIDDEN_ENABLED.getEventSender().addListener(TrayExtension.this, true);
                                     }
                                 }
                             }
@@ -305,11 +326,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             /*
                              * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
                              * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
-                             * 
+                             *
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
-                             * 
+                             *
                              * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
-                             * 
+                             *
                              * TODO: maybe add dialog to inform user
                              */
                             LogController.CL().log(e);
@@ -350,14 +371,16 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 if (e.getClickCount() >= (getSettings().isToogleWindowStatusWithSingleClickEnabled() ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
                     JDGui.getInstance().setWindowToTray(guiFrame.isVisible());
                 } else {
+                    TrayIconPopup trayIconPopup = this.trayIconPopup;
                     if (trayIconPopup != null && trayIconPopup.isShowing()) {
                         trayIconPopup.dispose();
-                        trayIconPopup = null;
+                        this.trayIconPopup = null;
                     } else if (SwingUtilities.isRightMouseButton(e)) {
                         if (!checkPassword()) {
                             return;
+                        } else if (trayIconPopup == null) {
+                            this.trayIconPopup = trayIconPopup = new TrayIconPopup(this);
                         }
-                        trayIconPopup = new TrayIconPopup(this);
                         final Point location = AbstractTray.calculateLocation(trayIconPopup, ma, e);
                         trayIconPopup.setLocation(location);
                         WindowManager.getInstance().setVisible(trayIconPopup, true, FrameState.OS_DEFAULT);
@@ -368,12 +391,15 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 if (e.getClickCount() >= (getSettings().isToogleWindowStatusWithSingleClickEnabled() ? 1 : 2) && !SwingUtilities.isLeftMouseButton(e)) {
                     JDGui.getInstance().setWindowToTray(guiFrame.isVisible() & guiFrame.getState() != Frame.ICONIFIED);
                 } else if (SwingUtilities.isLeftMouseButton(e)) {
+                    TrayIconPopup trayIconPopup = this.trayIconPopup;
                     if (trayIconPopup != null && trayIconPopup.isShowing()) {
                         trayIconPopup.dispose();
-                        trayIconPopup = null;
+                        this.trayIconPopup = null;
                     } else if (SwingUtilities.isLeftMouseButton(e)) {
                         if (!checkPassword()) {
                             return;
+                        } else if (trayIconPopup == null) {
+                            this.trayIconPopup = trayIconPopup = new TrayIconPopup(this);
                         }
                         final Point location = AbstractTray.calculateLocation(trayIconPopup, ma, e);
                         trayIconPopup.setLocation(location);
@@ -386,28 +412,24 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     private boolean checkPassword() {
-        final boolean visible = JDGui.getInstance().getMainFrame().isVisible();
-        if (visible) {
+        if (JDGui.getInstance().getMainFrame().isVisible()) {
             return true;
-        }
-        final boolean pwEnabled = CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled();
-        if (!pwEnabled) {
+        } else if (!CFG_GUI.PASSWORD_PROTECTION_ENABLED.isEnabled()) {
             return true;
-        }
-        final boolean pwEmpty = StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue());
-        if (pwEmpty) {
+        } else if (StringUtils.isEmpty(CFG_GUI.PASSWORD.getValue())) {
             return true;
-        }
-        try {
-            final String password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI.T.JDGui_setVisible_password_(), _GUI.T.JDGui_setVisible_password_msg(), null, new AbstractIcon(IconKey.ICON_LOCK, 32), null, null);
-            if (!CFG_GUI.PASSWORD.getValue().equals(password)) {
-                Dialog.getInstance().showMessageDialog(_GUI.T.JDGui_setVisible_password_wrong());
+        } else {
+            try {
+                final String password = Dialog.getInstance().showInputDialog(Dialog.STYLE_PASSWORD, _GUI.T.JDGui_setVisible_password_(), _GUI.T.JDGui_setVisible_password_msg(), null, new AbstractIcon(IconKey.ICON_LOCK, 32), null, null);
+                if (!CFG_GUI.PASSWORD.getValue().equals(password)) {
+                    Dialog.getInstance().showMessageDialog(_GUI.T.JDGui_setVisible_password_wrong());
+                    return false;
+                }
+            } catch (DialogNoAnswerException e) {
                 return false;
             }
-        } catch (DialogNoAnswerException e) {
-            return false;
+            return true;
         }
-        return true;
     }
 
     public void mouseReleased(MouseEvent e) {
@@ -426,19 +448,24 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         if (!getSettings().isToolTipEnabled()) {
             return;
         }
+        final TrayIconPopup trayIconPopup = this.trayIconPopup;
         if (trayIconPopup != null && trayIconPopup.isVisible()) {
             return;
         }
+        TrayIconTooltip trayIconTooltip = this.trayIconTooltip;
         if (trayIconTooltip == null) {
             trayIconTooltip = new TrayIconTooltip();
+            this.trayIconTooltip = this.trayIconTooltip;
         }
         trayIconTooltip.showTooltip(((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft());
     }
 
     private void removeTrayIcon() {
         try {
+            final TrayIcon trayIcon = this.trayIcon;
             if (trayIcon != null) {
                 trayIcon.removeActionListener(this);
+                final TrayMouseAdapter ma = this.ma;
                 if (ma != null) {
                     ma.stopListener();
                 }
@@ -453,6 +480,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     public void windowDeactivated(WindowEvent e) {
         /* workaround for : toFront() */
+        final JFrame guiFrame = this.guiFrame;
         if (guiFrame != null) {
             guiFrame.setAlwaysOnTop(false);
         }
@@ -652,6 +680,22 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     public boolean isActive() {
+        final TrayIconPopup trayIconPopup = this.trayIconPopup;
         return trayIconPopup != null && trayIconPopup.hasBeenRecentlyActive();
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+        new EDTRunner() {
+            @Override
+            protected void runInEDT() {
+                removeTrayIcon();
+                initGUI(false);
+            }
+        };
     }
 }

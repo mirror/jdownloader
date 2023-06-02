@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +60,7 @@ import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredDomai
 import org.jdownloader.plugins.components.config.UpToBoxComConfig.PreferredQuality;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -90,6 +92,16 @@ public class UpToBoxCom extends PluginForHost {
 
     protected List<String> getDeadDomains() {
         return null;
+    }
+
+    @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { FEATURE.FAVICON };
+    }
+
+    @Override
+    public Object getFavIcon(String host) throws IOException {
+        return "https://" + getPreferredDomain();
     }
 
     /** Returns list of domains DNS blocked by any ISP. */
