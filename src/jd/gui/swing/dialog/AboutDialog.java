@@ -109,6 +109,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
     public static Thread showNonBlocking() {
         final Thread thread = new Thread("AboutDialog") {
             {
+                setName("AboutDialog");
                 setDaemon(true);
             }
 
