@@ -26,16 +26,18 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.HostPlugin;
+import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://(?:[a-z0-9\\.\\-]+)?zevera\\.com/file\\?id=([A-Za-z0-9\\-_]+)" })
 public class ZeveraCom extends ZeveraCore {
+    protected static MultiHosterManagement mhm = new MultiHosterManagement("zevera.com");
+
     public ZeveraCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www." + this.getHost() + "/premium");
@@ -182,5 +184,10 @@ public class ZeveraCom extends ZeveraCore {
         public Account getAccount() {
             return new Account(null, getPassword());
         }
+    }
+
+    @Override
+    protected MultiHosterManagement getMultiHosterManagement() {
+        return mhm;
     }
 }

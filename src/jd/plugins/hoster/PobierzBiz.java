@@ -18,9 +18,12 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pobierz.biz" }, urls = { "" })
 public class PobierzBiz extends RapidtrafficCore {
+    protected static MultiHosterManagement mhm = new MultiHosterManagement("pobierz.biz");
+
     public PobierzBiz(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -31,5 +34,10 @@ public class PobierzBiz extends RapidtrafficCore {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    protected MultiHosterManagement getMultiHosterManagement() {
+        return mhm;
     }
 }

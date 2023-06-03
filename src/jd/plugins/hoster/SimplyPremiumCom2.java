@@ -50,9 +50,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "simply-premium.com" }, urls = { "" })
 public class SimplyPremiumCom2 extends HighWayCore {
+    protected static MultiHosterManagement mhm = new MultiHosterManagement("simply-premium.com");
+
+    @Override
+    protected MultiHosterManagement getMultiHosterManagement() {
+        return mhm;
+    }
+
     public SimplyPremiumCom2(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.simply-premium.com/vip");

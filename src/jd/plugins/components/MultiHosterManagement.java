@@ -3,15 +3,15 @@ package jd.plugins.components;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.Time;
+
 import jd.config.Property;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.utils.Time;
 
 /**
  * Instead of duplication we create a class
@@ -30,10 +30,6 @@ public class MultiHosterManagement {
 
     protected String getErrorProperty() {
         return getHost().replaceAll("https?://|\\.|\\-", "") + "_failedtimes_";
-    }
-
-    public MultiHosterManagement() {
-        this(null);
     }
 
     private final Map<String, Map<Object, Map<String, UnavailableHost>>> dataBase = new HashMap<String, Map<Object, Map<String, UnavailableHost>>>();

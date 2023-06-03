@@ -36,7 +36,6 @@ import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -45,9 +44,12 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://(?:[a-z0-9\\.\\-]+)?premiumize\\.me/file\\?id=([A-Za-z0-9\\-_]+)" })
 public class PremiumizeMe extends ZeveraCore {
+    protected static MultiHosterManagement mhm = new MultiHosterManagement("premiumize.me");
+
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www." + this.getHost() + "/premium");
@@ -307,5 +309,10 @@ public class PremiumizeMe extends ZeveraCore {
         public Account getAccount() {
             return new Account(null, getPassword());
         }
+    }
+
+    @Override
+    protected MultiHosterManagement getMultiHosterManagement() {
+        return mhm;
     }
 }
