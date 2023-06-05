@@ -84,7 +84,7 @@ public class WyslijPlikPl extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean FREE_RESUME    = true;
-    private static final int     FREE_MAXCHUNKS = 0;
+    private static final int     FREE_MAXCHUNKS = 1;
 
     @Override
     public String getLinkID(final DownloadLink link) {

@@ -21,10 +21,15 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VtubeTo extends XFileSharingProBasic {
@@ -125,5 +130,37 @@ public class VtubeTo extends XFileSharingProBasic {
     protected boolean supports_availablecheck_filesize_html() {
         /* 2022-01-24: Disabled else it may pick up false positives! */
         return false;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        final AvailableStatus status = super.requestFileInformationWebsite(link, account, isDownload);
+        if (status == AvailableStatus.TRUE) {
+            /**
+             * 2023-06-06: Special offline check: Some items look like they're online but they are offline -> Check thumbnailURL to find the
+             * real status.
+             */
+            final String fuid = this.getFUIDFromURL(link);
+            final String thumbnailURL = br.getRegex("(https?://pix\\.[^/]+/" + fuid + "\\.jpg)").getMatch(0);
+            if (thumbnailURL != null) {
+                logger.info("Performing extended offline-check");
+                URLConnectionAdapter con = null;
+                final Browser brc = br.cloneBrowser();
+                try {
+                    con = brc.openHeadConnection(thumbnailURL);
+                    if (!this.looksLikeDownloadableContent(con)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            } else {
+                logger.warning("Failed to find thumbnailURL");
+            }
+        }
+        return status;
     }
 }

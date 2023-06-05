@@ -97,7 +97,7 @@ public class YimuheCom extends PluginForHost {
             link.setSha1Hash(sha1);
         }
         if (md5 != null) {
-            link.setSha1Hash(md5);
+            link.setMD5Hash(md5);
         }
         return AvailableStatus.TRUE;
     }
@@ -174,6 +174,7 @@ public class YimuheCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        dl.setFilenameFix(true);
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }

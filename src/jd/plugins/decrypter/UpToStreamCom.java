@@ -70,7 +70,7 @@ public class UpToStreamCom extends PluginForDecrypt {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((\\?op=user_public\\&|user_public\\?)hash=[a-f0-9]{16}\\&folder=\\d+|(?:iframe/)?([a-z0-9]{12})(/([^/]+))?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(.*?hash=[a-f0-9]{16,}\\&folder=\\d+|(?:iframe/)?([a-z0-9]{12})(/([^/]+))?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -90,7 +90,7 @@ public class UpToStreamCom extends PluginForDecrypt {
             final String folderID = query.get("folder");
             if (hash == null || folderID == null) {
                 /* This should never happen */
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             UpToBoxCom.prepBrowserStatic(br);
             int pageMax = 1;
