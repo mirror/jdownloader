@@ -97,8 +97,8 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         for (final String fileupDomain : getFileUpDomains()) {
             ret.add("https?://(?:www\\.)?" + Pattern.quote(fileupDomain) + "/users/[a-z0-9_]+(?:/[^\\?\r\n]+)?");
         }
-        for (final String fileupDomain : getUploadboyDomains()) {
-            ret.add("https?://(?:www\\.)?" + Pattern.quote(fileupDomain) + "/(users/[a-z0-9_]+(?:/[^\\?\r\n]+)?|ur-.+)");
+        for (final String uploadboyDomain : getUploadboyDomains()) {
+            ret.add("https?://(?:www\\.)?" + Pattern.quote(uploadboyDomain) + "/(users/[a-z0-9_]+(?:/[^\\?\r\n]+)?|ur-.+)");
         }
         /*
          * Now add special patterns - this might be ugly but usually we do not get new specialDomains! Keep in mind that their patterns have
@@ -304,6 +304,10 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         String[] links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost(true)) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
         if (links == null || links.length == 0) {
             links = br.getRegex("href=(\"|')(https?://(?:www\\.)?" + Pattern.quote(br.getHost(false)) + "/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
+        }
+        if (links == null || links.length == 0) {
+            /* Final attempt: Don't care about domain in links [e.g. uploadboy.com]. */
+            links = br.getRegex("href=(\"|')(https?://(?:www\\.)?[^/]+/[a-z0-9]{12}(?:/.*?)?)\\1").getColumn(1);
         }
         if (links != null && links.length > 0) {
             String html = br.toString();

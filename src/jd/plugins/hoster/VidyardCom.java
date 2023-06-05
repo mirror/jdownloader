@@ -75,7 +75,7 @@ public class VidyardCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (!link.isNameSet()) {
@@ -89,18 +89,30 @@ public class VidyardCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         String fallback_sd_url = this.br.getRegex("property=\"og:video\" content=\"(https[^<>\"]+)\"").getMatch(0);
         this.br.getPage("https://play.vidyard.com/player/" + this.getFID(link) + ".json");
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-        final Map<String, Object> videomap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/vyContext/chapterAttributes/{0}");
-        final Map<String, Object> video_data = (Map<String, Object>) videomap.get("video_data");
-        title = (String) video_data.get("name");
-        final String description = (String) video_data.get("description");
+        final Map<String, Object> videomapv1 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/chapters/{0}");
+        final Map<String, Object> videomapv2 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/vyContext/chapterAttributes/{0}");
+        if (videomapv1 == null && videomapv2 == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String title = null;
+        String description = null;
+        final List<Map<String, Object>> ressourcelist;
+        if (videomapv1 != null) {
+            title = (String) videomapv1.get("name");
+            description = (String) videomapv1.get("description");
+            ressourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(videomapv1, "sources/mp4");
+        } else {
+            final Map<String, Object> video_data = (Map<String, Object>) videomapv2.get("video_data");
+            title = (String) video_data.get("name");
+            description = (String) video_data.get("description");
+            ressourcelist = (List<Map<String, Object>>) videomapv2.get("video_files");
+        }
         if (!StringUtils.isEmpty(description) && link.getComment() == null) {
             link.setComment(description);
         }
-        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) videomap.get("video_files");
         if (ressourcelist == null || ressourcelist.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -147,30 +159,31 @@ public class VidyardCom extends PluginForHost {
         } else {
             ext = ".mp4";
         }
-        dllink = Encoding.htmlDecode(dllink);
         if (!StringUtils.isEmpty(title)) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
             title = encodeUnicode(title);
             link.setFinalFileName(title + ext);
         }
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } else {
-                server_issues = true;
-            }
-        } finally {
+        if (!StringUtils.isEmpty(dllink)) {
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } else {
+                    server_issues = true;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -181,7 +194,7 @@ public class VidyardCom extends PluginForHost {
         requestFileInformation(link);
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);

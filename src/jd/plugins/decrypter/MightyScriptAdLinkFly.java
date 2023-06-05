@@ -279,7 +279,9 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 } else if (captchaType == null) {
                     captchaFailed = false;
                     break;
-                } else if (requiresCaptchaWhichCanFail && this.br.containsHTML("(?i)The CAPTCHA was incorrect")) {
+                } else if (!requiresCaptchaWhichCanFail) {
+                    break;
+                } else if (this.br.containsHTML("(?i)The CAPTCHA was incorrect")) {
                     captchaFailed = true;
                     continue;
                 } else {
