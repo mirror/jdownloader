@@ -713,6 +713,8 @@ public class HLSDownloader extends DownloadInterface {
                             break;
                         } catch (FFMpegException e) {
                             if (FFMpegException.ERROR.UNKNOWN.equals(e.getError()) && StringUtils.containsIgnoreCase(e.getStdErr(), "Codec 'mp3'") && Boolean.TRUE.equals(putRetryMapValue("aac_adtstoasc", Boolean.FALSE, false))) {
+                                // [aac_adtstoasc @ 0x6b34f00] Codec 'mp3' (86017) is not supported by the bitstream filter 'aac_adtstoasc'.
+                                // Supported codecs are: aac (86018)
                                 logger.log(e);
                                 continue;
                             }

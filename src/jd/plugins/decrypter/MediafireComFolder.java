@@ -18,9 +18,6 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -40,6 +37,9 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.HashInfo;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re|m\\.)/(watch/|listen/|imageview|folder/|view/|i/\\?|\\?sharekey=|view/\\?|view\\?|\\?|(?!download|file|file_premium|\\?JDOWNLOADER|imgbnc\\.php))([a-z0-9]{12}/)?[a-z0-9,#]+" })
 public class MediafireComFolder extends PluginForDecrypt {
     public MediafireComFolder(PluginWrapper wrapper) {
@@ -55,6 +55,44 @@ public class MediafireComFolder extends PluginForDecrypt {
     private static final String LINKPART_SINGLE = "https://www.mediafire.com/download.php?";
     private String              subFolder       = "";
 
+    private Boolean checkFolder(Browser br, final String contentID) throws IOException {
+        try {
+            /* check if id is a folder */
+            apiRequest(this.br, "https://www.mediafire.com/api/folder/get_info.php", "?folder_key=" + contentID);
+            if ("111".equals(ERRORCODE)) {
+                // ERROR_MISSING_QUICKKEY: Quick Key is missing.
+                return null;
+            } else if ("112".equals(this.ERRORCODE)) {
+                return false;
+            } else {
+                return true;
+            }
+        } catch (final BrowserException e) {
+            logger.severe(e.getMessage());
+        }
+        return null;
+    }
+
+    private Boolean checkFile(Browser br, final String contentID) throws IOException {
+        try {
+            /* check if id is a file */
+            apiRequest(this.br, "https://www.mediafire.com/api/file/get_info.php", "?quick_key=" + contentID);
+            if ("111".equals(ERRORCODE)) {
+                // ERROR_MISSING_QUICKKEY: Quick Key is missing.
+                return null;
+            } else if ("110".equals(this.ERRORCODE)) {
+                // ERROR_INVALID_QUICKKEY: Unknown or Invalid QuickKey.
+                return false;
+            } else {
+                return true;
+            }
+        } catch (final BrowserException e) {
+            logger.severe(e.getMessage());
+        }
+        return null;
+    }
+
+    // https://www.mediafire.com/developers/core_api/1.5/getting_started/#error_codes
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("mfi.re/", "mediafire.com/").trim();
@@ -162,29 +200,26 @@ public class MediafireComFolder extends PluginForDecrypt {
             // Check if we have a single link or multiple folders/files
             Boolean isFile = null;
             Boolean isFolder = null;
-            try {
-                /* check if id is a file */
-                apiRequest(this.br, "https://www.mediafire.com/api/file/get_info.php", "?quick_key=" + contentID);
-                if ("110".equals(this.ERRORCODE)) {
+            if (StringUtils.contains(parameter, "/folder/" + contentID)) {
+                isFolder = checkFolder(br, contentID);
+                if (isFolder == null) {
+                    isFolder = false;
+                }
+                if (Boolean.TRUE.equals(isFolder)) {
                     isFile = false;
-                } else {
-                    isFile = true;
                 }
-            } catch (final BrowserException e) {
-                logger.severe(e.getMessage());
             }
-            if (Boolean.FALSE.equals(isFile) || isFile == null) {
-                try {
-                    /* check if id is a folder */
-                    apiRequest(this.br, "https://www.mediafire.com/api/folder/get_info.php", "?folder_key=" + contentID);
-                    if ("112".equals(this.ERRORCODE)) {
-                        isFolder = false;
-                    } else {
-                        isFolder = true;
-                    }
-                } catch (final BrowserException e) {
-                    logger.severe(e.getMessage());
+            if (isFile == null) {
+                isFile = checkFile(br, contentID);
+                if (isFile == null) {
+                    isFile = false;
                 }
+                if (Boolean.TRUE.equals(isFolder)) {
+                    isFolder = false;
+                }
+            }
+            if (!Boolean.TRUE.equals(isFile) && isFolder == null) {
+                isFolder = checkFolder(br, contentID);
             }
             if (Boolean.TRUE.equals(isFile)) {
                 final DownloadLink link = createSingleDownloadlink(contentID);

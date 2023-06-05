@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
@@ -85,6 +87,7 @@ public class FreeM3DownloadNet extends PluginForHost {
     /* 2021-09-06: Only allow one download as a captcha may be required once per session. */
     private static final int                  FREE_MAXDOWNLOADS    = 20;
     private static final String               PROPERTY_PREFER_FLAC = "prefer_flac";
+    private static final String               API_QUERIED          = "api_queried";
     protected static HashMap<String, Cookies> antiCaptchaCookies   = new HashMap<String, Cookies>();
     /* don't touch the following! */
     private static Map<String, AtomicInteger> freeRunning          = new HashMap<String, AtomicInteger>();
@@ -119,13 +122,13 @@ public class FreeM3DownloadNet extends PluginForHost {
         }
     }
 
-    private String getFallbackFilename(final DownloadLink link) throws MalformedURLException {
+    private String getFallbackFilename(final DownloadLink link) throws MalformedURLException, UnsupportedEncodingException {
         final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
         final String searchTermB64 = query.get("q");
-        String title;
         final String fid = this.getFID(link);
+        String title;
         if (searchTermB64 != null) {
-            title = fid + "_" + Encoding.htmlDecode(Encoding.Base64Decode(searchTermB64));
+            title = fid + "_" + Encoding.htmlDecode(Encoding.htmlDecode(Encoding.Base64Decode(searchTermB64)));
         } else {
             title = fid;
         }
@@ -158,14 +161,30 @@ public class FreeM3DownloadNet extends PluginForHost {
          * 2022-09-14: In browser they're loading this information from search context so for us filename will usually not be available here
          * until download is started.
          */
-        String filename = br.getRegex("(?i)<p>Name\\s*:([^<>\"]+)</p>").getMatch(0);
+        String filename = link.getStringProperty(API_QUERIED, null);
+        if (filename == null) {
+            filename = br.getRegex("(?i)<p>Name\\s*:([^<>\"]+)</p>").getMatch(0);
+            if (filename == null && !link.hasProperty(API_QUERIED)) {
+                final String fid = getFID(link);
+                try {
+                    final Browser brc = br.cloneBrowser();
+                    brc.setRequest(null);
+                    brc.getPage("https://api.deezer.com/track/" + fid + "?output=jsonp&callback=jQuery3100841955649896573_" + System.currentTimeMillis() + "&_=" + System.currentTimeMillis());
+                    filename = PluginJSonUtils.getJson(brc, "title");
+                    link.setProperty(API_QUERIED, StringUtils.valueOrEmpty(filename));
+                } catch (Exception e) {
+                    logger.log(e);
+                    link.setProperty(API_QUERIED, "");
+                }
+            }
+        }
         final String filesizeStr;
         if (getPreferFlac(link)) {
             filesizeStr = br.getRegex("(?i)>\\s*FLAC \\((\\d+(\\.\\d{1,2})? [^<]*)\\)\\s*<").getMatch(0);
         } else {
             filesizeStr = br.getRegex("(?i)>\\s*MP3 \\((\\d+(\\.\\d{1,2})? [^<]*)\\)\\s*<").getMatch(0);
         }
-        if (filename != null) {
+        if (StringUtils.isNotEmpty(filename)) {
             filename = Encoding.htmlDecode(filename).trim();
             final String ext;
             if (PluginJsonConfig.get(FreeM3DownloadNetConfig.class).isPreferFLAC()) {
@@ -193,7 +212,7 @@ public class FreeM3DownloadNet extends PluginForHost {
             synchronized (antiCaptchaCookies) {
                 requestFileInformation(link);
                 final HashMap<String, Object> postdata = new HashMap<String, Object>();
-                postdata.put("i", Integer.parseInt(this.getFID(link)));
+                postdata.put("i", Long.parseLong(this.getFID(link)));
                 /* Random 20 char lowercase string --> We'll just use an UUID */
                 // final String str = UUID.randomUUID().toString();
                 // postdata.put("ch", str);
@@ -350,6 +369,7 @@ public class FreeM3DownloadNet extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
         link.removeProperty(PROPERTY_PREFER_FLAC);
+        link.removeProperty(API_QUERIED);
     }
 
     @Override
