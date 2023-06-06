@@ -39,11 +39,11 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -70,9 +70,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
-    private static final String ALLOW_BEST           = "ALLOW_BEST";
-    private static final String ALLOW_OTHERS         = "ALLOW_OTHERS";
-    public static final String  ALLOW_AUDIO          = "ALLOW_AUDIO";
     private static final String TYPE_DAILY_SHORTENER = "https?://(?:www\\.)?dai\\.ly/.+";
     private static final String TYPE_PLAYLIST        = "https?://(?:www\\.)?dailymotion\\.com/playlist/[A-Za-z0-9\\-_]+(?:/\\d+)?.*?";
     private static final String TYPE_USER            = "https?://(?:www\\.)?dailymotion\\.com/(user/[A-Za-z0-9_\\-]+/\\d+|[^/]+/videos)";
@@ -82,7 +79,6 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private static final short  api_limit_items      = 100;
     private static final short  api_limit_pages      = 100;
     public final static boolean defaultAllowAudio    = true;
-    private boolean             acc_in_use           = false;
     private static Object       ctrlLock             = new Object();
 
     @Override
@@ -97,11 +93,10 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         DailyMotionCom.prepBrowser(this.br);
         synchronized (ctrlLock) {
             /* Login if account available */
-            final DailyMotionCom dailymotionHosterplugin = (DailyMotionCom) this.getNewPluginForHostInstance(this.getHost());
-            final Account aa = AccountController.getInstance().getValidAccount(getHost());
-            if (aa != null) {
-                dailymotionHosterplugin.login(aa, false);
-                acc_in_use = true;
+            final Account account = AccountController.getInstance().getValidAccount(getHost());
+            if (account != null) {
+                final DailyMotionCom dailymotionHosterplugin = (DailyMotionCom) this.getNewPluginForHostInstance(this.getHost());
+                dailymotionHosterplugin.login(account, false);
             }
             /* Login end... */
             br.getPage(contenturl);
@@ -114,18 +109,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                     contenturl = br.getURL();
                 }
             }
-            /* 404 */
-            if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)") || this.br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* 403 */
-            if (br.containsHTML("class=\"forbidden\">Access forbidden</h3>|>You don\\'t have permission to access the requested URL") || this.br.getHttpConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* 410 */
-            if (br.getHttpConnection().getResponseCode() == 410) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            checkErrors(br);
             /* video == 'video_item', user == 'user_home' */
             final String route_name = PluginJSonUtils.getJson(this.br, "route_name");
             if (contenturl.matches(TYPE_PLAYLIST)) {
@@ -133,7 +117,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             } else if (contenturl.matches(TYPE_USER) || "user_home".equalsIgnoreCase(route_name)) {
                 return crawlUser(contenturl);
             } else if (contenturl.matches(TYPE_VIDEO)) {
-                return crawlSingleVideo(param, contenturl);
+                return crawlSingleVideo(param, contenturl, SubConfiguration.getConfig(this.getHost()), false);
             } else if (contenturl.matches(TYPE_USER_SEARCH)) {
                 return crawlUserSearch(contenturl);
             } else {
@@ -141,6 +125,17 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 logger.info("Unsupported linktype: " + contenturl);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        }
+    }
+
+    private void checkErrors(final Browser br) throws PluginException {
+        /* 404 */
+        if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"forbidden\">Access forbidden</h3>|>You don\\'t have permission to access the requested URL") || this.br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
@@ -155,9 +150,9 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
          * we'll stick to that.
          */
         logger.info("Crawling user profile: " + contenturl);
-        String username = new Regex(contenturl, "dailymotion\\.com/user/([A-Za-z0-9\\-_]+)").getMatch(0);
+        String username = new Regex(contenturl, "(?i)dailymotion\\.com/user/([A-Za-z0-9\\-_]+)").getMatch(0);
         if (username == null) {
-            username = new Regex(contenturl, "dailymotion\\.com/([^/]+)").getMatch(0);
+            username = new Regex(contenturl, "(?i)dailymotion\\.com/([^/]+)").getMatch(0);
         }
         if (username == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -297,7 +292,10 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         final String traffic_segment = brg.getRegex("window\\.__TS__ = (\\d+)").getMatch(0);
         final String client_id = br.getRegex("var r=\"([a-f0-9]{20})").getMatch(0);
         final String client_secret = br.getRegex("o=\"([a-f0-9]{20,})").getMatch(0);
-        final String visitor_id = br.getRegex("2v1st%22%3A%22([a-f0-9\\-]+)%22%").getMatch(0);
+        String visitor_id = br.getRegex("2v1st%22%3A%22([a-f0-9\\-]+)%22%").getMatch(0);
+        if (visitor_id == null) {
+            visitor_id = brg.getCookie(brg.getHost(), "v1st", Cookies.NOTDELETEDPATTERN);
+        }
         if (StringUtils.isEmpty(traffic_segment) || StringUtils.isEmpty(client_id) || StringUtils.isEmpty(client_secret) || StringUtils.isEmpty(visitor_id)) {
             throw new DecrypterException();
         }
@@ -398,41 +396,25 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
      * but really slow/often run into timeouts --> I auto-reset settings, disabled http downloads by default and preferred HLS!
      */
     @SuppressWarnings("deprecation")
-    protected ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param, final String contenturl) throws Exception {
+    public ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param, final String contenturl, final SubConfiguration cfg, final boolean accessContenturl) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        boolean grab_subtitle = cfg.getBooleanProperty(DailyMotionCom.ALLOW_SUBTITLE, DailyMotionCom.default_ALLOW_SUBTITLE);
+        boolean grab_subtitle = cfg != null ? cfg.getBooleanProperty(DailyMotionCom.ALLOW_SUBTITLE, DailyMotionCom.default_ALLOW_SUBTITLE) : true;
         logger.info("Decrypting single video: " + contenturl);
+        if (accessContenturl) {
+            br.getPage(contenturl);
+            this.checkErrors(br);
+        }
         // We can't download live streams
         if (br.containsHTML("DMSTREAMMODE=live")) {
             throw new DecrypterRetryException(RetryReason.UNSUPPORTED_LIVESTREAM);
         }
-        /** Decrypt start */
-        /** Decrypt external links START */
-        String externID = br.getRegex("player\\.hulu\\.com/express/(\\d+)").getMatch(0);
-        if (externID != null) {
-            ret.add(createDownloadlink("http://www.hulu.com/watch/" + externID));
-            return ret;
-        }
-        externID = br.getRegex("name=\"movie\" value=\"(https?://(www\\.)?embed\\.5min\\.com/\\d+)").getMatch(0);
-        if (externID != null) {
-            ret.add(createDownloadlink(externID));
-            return ret;
-        }
-        externID = br.getRegex("\"(https?://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+)").getMatch(0);
-        if (externID != null) {
-            ret.add(createDownloadlink(externID));
-            return ret;
-        }
-        /** Decrypt external links END */
-        /** Find videolinks START */
+        final String actualVideoURL = br.getURL();
         final String videoID = new Regex(contenturl, "(?i)dailymotion\\.com/video/([a-z0-9]+)").getMatch(0);
         if (videoID == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String channelName = null;
-        String title = null;
         String passCode = null;
         final String idForGrabbingVideosource;
         if (br.containsHTML("(?i)<title>\\s*Password Protected Video")) {
@@ -457,157 +439,223 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             }
         } else {
             channelName = br.getRegex("\"owner\":\"([^<>\"]*?)\"").getMatch(0);
-            title = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
-            if (title == null) {
-                title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            }
             idForGrabbingVideosource = videoID;
         }
-        final String videoSource;
         final Browser brc = br.cloneBrowser();
         brc.setFollowRedirects(true);
-        brc.getPage("https://www.dailymotion.com/player/metadata/video/" + idForGrabbingVideosource + "?integration=inline&GK_PV5_NEON=1");
-        if (brc.getHttpConnection().isOK() && StringUtils.containsIgnoreCase(brc.getHttpConnection().getContentType(), "json")) {
-            videoSource = brc.getRequest().getHtmlCode();
-        } else {
-            brc.setRequest(null);
-            brc.getPage("https://www.dailymotion.com/embed/video/" + idForGrabbingVideosource);
-            videoSource = brc.getRegex("var\\s*config\\s*=\\s*(\\{.*?};)\\s*window").getMatch(0);
+        final UrlQuery query = new UrlQuery();
+        query.add("embedder", Encoding.urlEncode(actualVideoURL));
+        query.add("locale", "");
+        final String visitor_id = brc.getCookie(brc.getHost(), "v1st", Cookies.NOTDELETEDPATTERN);
+        if (visitor_id != null) {
+            query.add("dmV1st", Encoding.urlEncode(visitor_id));
         }
+        final String ts = br.getCookie(br.getHost(), "ts", Cookies.NOTDELETEDPATTERN);
+        if (ts != null) {
+            query.add("dmTs", ts);
+        }
+        query.add("is_native_app", "0");
+        query.add("app", "com.dailymotion.neon");
+        query.add("client_type", "website");
+        query.add("section_type", "player");
+        query.add("component_style", "_");
+        brc.getPage("https://www.dailymotion.com/player/metadata/video/" + idForGrabbingVideosource + "?" + query.toString());
         /* Collect more video metadata */
         Long date = null;
         String dateFormatted = null;
-        // channel might not be present above, but is within videoSource
-        if (videoSource != null) {
-            final Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(videoSource);
+        final Map<String, Object> map = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        if (channelName == null) {
+            channelName = (String) JavaScriptEngineFactory.walkJson(map, "metadata/owner/username");
             if (channelName == null) {
-                channelName = (String) JavaScriptEngineFactory.walkJson(json, "metadata/owner/username");
+                channelName = (String) JavaScriptEngineFactory.walkJson(map, "owner/username");
                 if (channelName == null) {
-                    channelName = (String) JavaScriptEngineFactory.walkJson(json, "owner/username");
-                    if (channelName == null) {
-                        /* 2021-06-17 */
-                        channelName = (String) JavaScriptEngineFactory.walkJson(json, "owner/screenname");
-                    }
+                    /* 2021-06-17 */
+                    channelName = (String) JavaScriptEngineFactory.walkJson(map, "owner/screenname");
                 }
             }
-            final Number created_time = (Number) JavaScriptEngineFactory.walkJson(json, "created_time");
-            if (created_time != null) {
-                dateFormatted = new SimpleDateFormat("yyyy-MM-ddHH:mm:ssz", Locale.ENGLISH).format(new Date(created_time.intValue() * 1000l));
-                date = created_time.longValue() * 1000;
-            }
-            if (title == null) {
-                title = (String) json.get("title");
-            }
         }
-        final Map<String, Object> map = videoSource != null ? JSonStorage.restoreFromString(videoSource, TypeRef.HASHMAP) : null;
-        final Map<String, Object> error = map != null ? (Map<String, Object>) map.get("error") : null;
-        if (error != null) {
-            final String errorTitle = StringUtils.valueOfOrNull(error.get("title"));
-            final Number statusCode = (Number) error.get("status_code");
-            final Object code = error.get("code");
+        final Number created_time = (Number) map.get("created_time");
+        if (created_time != null) {
+            dateFormatted = new SimpleDateFormat("yyyy-MM-ddHH:mm:ssz", Locale.ENGLISH).format(new Date(created_time.intValue() * 1000l));
+            date = created_time.longValue() * 1000;
+        }
+        final String title = (String) map.get("title");
+        final Map<String, Object> errormap = (Map<String, Object>) map.get("error");
+        if (errormap != null) {
+            final String errorTitle = StringUtils.valueOfOrNull(errormap.get("title"));
+            final Number statusCode = (Number) errormap.get("status_code");
+            final Object code = errormap.get("code");
             if ("Video geo-restricted by the owner.".equals(errorTitle) || "DM007".equals(code)) {
                 // status_code=403
                 throw new DecrypterRetryException(RetryReason.GEO, "Geo-Restricted by owner - " + title + ".mp4");
-            } else if ("Channel offline.".equals(errorTitle)) {
-                throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "Channel offline - " + title + ".mp4");
-            } else if ("Private content.".equals(errorTitle) || "DM010".equals(code)) {
-                // status_code=403
-                throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "Private content - " + title + ".mp4");
-            } else if ("Content deleted.".endsWith(errorTitle) || "DM002".equals(code)) {
-                // status_code=410
-                throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "Content deleted - " + title + ".mp4");
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown error:" + errorTitle);
+                throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "Error:" + errorTitle + "_" + title + ".mp4");
             }
-        }
-        title = Encoding.htmlDecode(title).trim();
-        /* Some errorhandling */
-        if (new Regex(videoSource, "(?i)(Dein Land nicht abrufbar|this content is not available for your country|This video has not been made available in your country by the owner|\"Video not available due to geo\\-restriction)").matches()) {
-            throw new DecrypterRetryException(RetryReason.GEO, "Geo restricted video - " + title + ".mp4");
-        } else if (new Regex(videoSource, "(?i)(this content as suitable for mature audiences only|You must be logged in, over 18 years old, and set your family filter OFF, in order to watch it)").matches() && !acc_in_use) {
-            throw new AccountRequiredException();
-        } else if (new Regex(videoSource, "(?i)\"message\":\"Publication of this video is in progress").matches()) {
-            throw new DecrypterRetryException(RetryReason.HOST, "Publication of this video is in progress - " + title + ".mp4");
-        } else if (new Regex(videoSource, "(?i)\"encodingMessage\":\"Encoding in progress\\.\\.\\.\"").matches()) {
-            throw new DecrypterRetryException(RetryReason.HOST, "Encoding in progress - " + title + ".mp4");
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        /** Decrypt subtitles if available and user wants to have it */
-        String subsource = new Regex(videoSource, "\"recorded\",(.*?\\}\\})").getMatch(0);
-        if (subsource != null && grab_subtitle) {
-            subsource = subsource.replace("\\/", "/");
-            final String[] subtitles = new Regex(subsource, "\"(https?://static\\d+(-ssl)?\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt(?:\\?\\d+)?)\"").getColumn(0);
-            if (subtitles != null && subtitles.length != 0) {
-                final FilePackage fpSub = FilePackage.getInstance();
-                fpSub.setName(title + "_Subtitles");
-                for (final String subtitle : subtitles) {
-                    final DownloadLink dl = createDownloadlink(br.getURL("//dailymotiondecrypted.com/video/" + videoID).toString());
-                    dl.setContentUrl(contenturl);
-                    final String language = new Regex(subtitle, ".*?\\d+:subtitle_(.{1,4}).srt.*?").getMatch(0);
-                    String qualityname = "subtitle";
-                    if (language != null) {
-                        qualityname += "_" + language;
-                    }
-                    dl.setProperty("directlink", subtitle);
-                    dl.setProperty("type_subtitle", true);
-                    dl.setProperty("qualityname", qualityname);
-                    dl.setProperty("mainlink", contenturl);
-                    dl.setProperty("plain_videoname", title);
-                    dl.setProperty("plain_ext", ".srt");
-                    dl.setProperty("plain_videoid", videoID);
-                    dl.setLinkID("dailymotioncom" + videoID + "_" + qualityname);
-                    final String formattedFilename = DailyMotionCom.getFormattedFilename(dl);
-                    dl.setName(formattedFilename);
-                    fpSub.add(dl);
-                    ret.add(dl);
+        final boolean useNewHandling = true;
+        if (useNewHandling) {
+            // TODO: Add subtitle support
+            final boolean best = cfg != null ? cfg.getBooleanProperty(DailyMotionCom.ALLOW_BEST, false) : false;
+            final List<Integer> selectedQualities = new ArrayList<Integer>();
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_240)) {
+                selectedQualities.add(240);
+            }
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_380)) {
+                selectedQualities.add(380);
+            }
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_480)) {
+                selectedQualities.add(480);
+            }
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_720)) {
+                selectedQualities.add(720);
+            }
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_1080)) {
+                selectedQualities.add(1080);
+            }
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_1440)) {
+                selectedQualities.add(1440);
+            }
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_2160)) {
+                selectedQualities.add(2160);
+            }
+            if (selectedQualities.isEmpty() && !best) {
+                throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "USER_DISABLED_ALL_QUALITIES");
+            }
+            final Map<String, Object> qualitiesmap = (Map<String, Object>) map.get("qualities");
+            String hlsMaster = null;
+            final Map<String, Object> qualityAuto = (Map<String, Object>) JavaScriptEngineFactory.walkJson(qualitiesmap, "auto/{0}");
+            final String autoType = qualityAuto.get("type").toString();
+            if (autoType.equals("application/x-mpegURL")) {
+                hlsMaster = qualityAuto.get("url").toString();
+            }
+            if (StringUtils.isEmpty(hlsMaster)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            brc.setFollowRedirects(true);
+            brc.getPage(hlsMaster);
+            final ArrayList<DownloadLink> selectedFoundQualities = new ArrayList<DownloadLink>();
+            final List<HlsContainer> hlsqualities = HlsContainer.getHlsQualities(brc);
+            DownloadLink bestQuality = null;
+            int highestHeight = -1;
+            for (final HlsContainer hlsquality : hlsqualities) {
+                final int height = hlsquality.getHeight();
+                // if (height <= 0) {
+                // continue;
+                // }
+                final DownloadLink dl = createDownloadlink("https://dailymotion.com/video/" + videoID);
+                dl.setProperty(DailyMotionCom.PROPERTY_TYPE, DailyMotionCom.TYPE_VIDEO);
+                dl.setProperty(DailyMotionCom.PROPERTY_HLS_MASTER, hlsMaster);
+                dl.setProperty(DailyMotionCom.PROPERTY_DIRECTURL, hlsquality.getDownloadurl());
+                dl.setProperty(DailyMotionCom.PROPERTY_QUALITY_NAME, hlsquality.getResolution());
+                dl.setProperty(DailyMotionCom.PROPERTY_QUALITY_HEIGHT, height);
+                dl.setProperty(DailyMotionCom.PROPERTY_CONTENT_URL, contenturl);
+                dl.setProperty(DailyMotionCom.PROPERTY_TITLE, title);
+                dl.setProperty("plain_ext", ".mp4");
+                dl.setProperty(DailyMotionCom.PROPERTY_VIDEO_ID, videoID);
+                final String formattedFilename = DailyMotionCom.getFormattedFilename(dl);
+                dl.setName(formattedFilename);
+                dl.setAvailable(true);
+                dl.setContentUrl(contenturl);
+                if (bestQuality == null || height > highestHeight) {
+                    bestQuality = dl;
+                    highestHeight = height;
+                }
+                if (selectedQualities.contains(height)) {
+                    selectedFoundQualities.add(dl);
                 }
             }
-        }
-        final LinkedHashMap<String, String[]> foundQualities = findVideoQualities(this, this.br, contenturl, videoSource);
-        if (foundQualities.isEmpty() && ret.size() == 0) {
-            logger.warning("Found no quality for link: " + contenturl);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /** Find videolinks END */
-        /** Pick qualities, selected by the user START */
-        final ArrayList<String> selectedQualities = new ArrayList<String>();
-        final boolean best = cfg.getBooleanProperty(ALLOW_BEST, false);
-        boolean mp4 = cfg.getBooleanProperty(DailyMotionCom.ALLOW_MP4, DailyMotionCom.default_ALLOW_MP4);
-        boolean hls = cfg.getBooleanProperty(DailyMotionCom.ALLOW_HLS, DailyMotionCom.default_ALLOW_HLS);
-        if (!mp4 && !hls) {
-            hls = true;
-            mp4 = true;
-        }
-        int numberOfSelectedQualities = 0;
-        for (final String quality : new String[] { "7", "6", "5", "4", "3", "2", "1", "0" }) {
-            if (cfg.getBooleanProperty("ALLOW_" + quality, true)) {
-                numberOfSelectedQualities++;
+            if (best) {
+                ret.add(bestQuality);
+            } else if (selectedFoundQualities.isEmpty()) {
+                logger.info("Fallback to BEST video quality because none of users selected qualities were found");
+                ret.add(bestQuality);
+            } else {
+                ret.addAll(selectedFoundQualities);
             }
-        }
-        for (final String quality : new String[] { "7", "6", "5", "4", "3", "2", "1", "0" }) {
-            if (selectedQualities.size() > 0 && best) {
-                break;
-            }
-            for (String foundQuality : foundQualities.keySet()) {
-                if (foundQuality.startsWith(quality) && (best || numberOfSelectedQualities == 0 || cfg.getBooleanProperty("ALLOW_" + quality, true))) {
-                    if (!mp4 && foundQuality.endsWith("_MP4")) {
-                        continue;
-                    } else if (!hls && foundQuality.endsWith("_HLS")) {
-                        continue;
+        } else {
+            final String videoSource = brc.getRequest().getHtmlCode();
+            /** Crawl subtitles if available and user wants to have it */
+            String subsource = new Regex(videoSource, "\"recorded\",(.*?\\}\\})").getMatch(0);
+            if (subsource != null && grab_subtitle && !true) {
+                // TODO: Fix this
+                subsource = subsource.replace("\\/", "/");
+                final String[] subtitles = new Regex(subsource, "\"(https?://static\\d+(-ssl)?\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt(?:\\?\\d+)?)\"").getColumn(0);
+                if (subtitles != null && subtitles.length != 0) {
+                    final FilePackage fpSub = FilePackage.getInstance();
+                    fpSub.setName(title + "_Subtitles");
+                    for (final String subtitle : subtitles) {
+                        final DownloadLink dl = createDownloadlink(br.getURL("//dailymotion.com/video/" + videoID).toString());
+                        dl.setContentUrl(contenturl);
+                        final String language = new Regex(subtitle, ".*?\\d+:subtitle_(.{1,4}).srt.*?").getMatch(0);
+                        String qualityname = "subtitle";
+                        if (language != null) {
+                            qualityname += "_" + language;
+                        }
+                        dl.setProperty("directlink", subtitle);
+                        dl.setProperty("type_subtitle", true);
+                        dl.setProperty("qualityname", qualityname);
+                        dl.setProperty("mainlink", contenturl);
+                        dl.setProperty("plain_videoname", title);
+                        dl.setProperty("plain_ext", ".srt");
+                        dl.setProperty("plain_videoid", videoID);
+                        dl.setLinkID("dailymotioncom" + videoID + "_" + qualityname);
+                        final String formattedFilename = DailyMotionCom.getFormattedFilename(dl);
+                        dl.setName(formattedFilename);
+                        fpSub.add(dl);
+                        ret.add(dl);
                     }
-                    selectedQualities.add(foundQuality);
                 }
             }
-        }
-        for (final String selectedQuality : selectedQualities) {
-            final DownloadLink dl = setVideoDownloadlink(foundQualities, videoID, selectedQuality, title, contenturl);
-            if (dl == null) {
-                continue;
+            LinkedHashMap<String, String[]> QUALITIES = new LinkedHashMap<String, String[]>();
+            final String[][] qualities = { { "hd1080URL", "5" }, { "hd720URL", "4" }, { "hqURL", "3" }, { "sdURL", "2" }, { "ldURL", "1" }, { "video_url", "6" } };
+            for (final String quality[] : qualities) {
+                final String qualityName = quality[0];
+                final String qualityNumber = quality[1];
+                final String currentQualityUrl = PluginJSonUtils.getJsonValue(videoSource, qualityName);
+                if (currentQualityUrl != null) {
+                    final String[] dlinfo = new String[4];
+                    dlinfo[0] = currentQualityUrl;
+                    dlinfo[1] = null;
+                    dlinfo[2] = qualityName;
+                    dlinfo[3] = qualityNumber;
+                    QUALITIES.put(qualityNumber, dlinfo);
+                }
             }
-            dl.setContentUrl(contenturl);
-            fp.add(dl);
-            ret.add(dl);
+            QUALITIES = findVideoQualities(this, br, contenturl, videoSource);
+            if (QUALITIES.isEmpty() && ret.size() == 0) {
+                logger.warning("Found no quality for link: " + contenturl);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /** Find videolinks END */
+            /** Pick qualities, selected by the user START */
+            final ArrayList<String> selectedQualities = new ArrayList<String>();
+            final boolean best = cfg != null ? cfg.getBooleanProperty(DailyMotionCom.ALLOW_BEST, false) : false;
+            int numberOfSelectedQualities = 0;
+            for (final String quality : new String[] { "7", "6", "5", "4", "3", "2", "1", "0" }) {
+                if (cfg != null ? cfg.getBooleanProperty("ALLOW_" + quality, true) : true) {
+                    numberOfSelectedQualities++;
+                }
+            }
+            for (final String quality : new String[] { "7", "6", "5", "4", "3", "2", "1", "0" }) {
+                if (selectedQualities.size() > 0 && best) {
+                    break;
+                }
+                for (String foundQuality : QUALITIES.keySet()) {
+                    if (foundQuality.startsWith(quality) && (best || numberOfSelectedQualities == 0 || cfg == null || cfg.getBooleanProperty("ALLOW_" + quality, true))) {
+                        selectedQualities.add(foundQuality);
+                    }
+                }
+            }
+            for (final String selectedQuality : selectedQualities) {
+                final DownloadLink dl = setVideoDownloadlink(QUALITIES, videoID, selectedQuality, title, contenturl);
+                if (dl == null) {
+                    continue;
+                }
+                dl.setContentUrl(contenturl);
+                ret.add(dl);
+            }
         }
         /** Pick qualities, selected by the user END */
         if (ret.size() == 0) {
@@ -616,14 +664,14 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
         /* Set some additional properties */
         for (final DownloadLink dl : ret) {
+            dl.setContentUrl(contenturl);
             if (passCode != null) {
                 dl.setPasswordProtected(true);
                 dl.setDownloadPassword(passCode);
             }
-            dl.setProperty("plain_channel", channelName);
-            if (date != null) {
-                dl.setProperty("plain_date", Long.toString(date));
-            }
+            dl.setProperty(DailyMotionCom.PROPERTY_CHANNEL, channelName);
+            dl.setProperty(DailyMotionCom.PROPERTY_DATE_TIMESTAMP, date);
+            dl._setFilePackage(fp);
         }
         return ret;
     }
@@ -775,7 +823,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         String directlinkinfo[] = foundqualities.get(qualityValue);
         if (directlinkinfo != null) {
             final String directlink = Encoding.htmlDecode(directlinkinfo[0]);
-            final DownloadLink dl = createDownloadlink("https://dailymotiondecrypted.com/video/" + videoID);
+            final DownloadLink dl = createDownloadlink("https://dailymotion.com/video/" + videoID);
             String qualityName = directlinkinfo[1]; // qualityName is dlinfo[2]
             if (qualityName == null) {
                 /* For hls urls */
@@ -813,12 +861,10 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-            final String originalQualityName = directlinkinfo[2];
             final String qualityNumber = directlinkinfo[3];
             dl.setProperty("directlink", directlink);
             dl.setProperty("qualityvalue", qualityValue);
             dl.setProperty("qualityname", qualityName);
-            dl.setProperty("originalqualityname", originalQualityName);
             dl.setProperty("qualitynumber", qualityNumber);
             dl.setProperty("mainlink", contenturl);
             dl.setProperty("plain_videoname", title);

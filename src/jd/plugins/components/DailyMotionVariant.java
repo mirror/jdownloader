@@ -2,34 +2,26 @@ package jd.plugins.components;
 
 import javax.swing.Icon;
 
-import jd.plugins.DownloadLink;
-
 import org.appwork.storage.Storable;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.hoster.DailyMotionCom;
+
 public class DailyMotionVariant implements Storable, LinkVariant {
     private static final Icon VIDEO = new AbstractIcon(IconKey.ICON_VIDEO, 16);
     private static final Icon AUDIO = new AbstractIcon(IconKey.ICON_AUDIO, 16);
-    private String            link;
-    private String            qValue;
+    private String            directlink;
     private String            qName;
 
     public String getLink() {
-        return link;
+        return directlink;
     }
 
     public void setLink(String link) {
-        this.link = link;
-    }
-
-    public String getqValue() {
-        return qValue;
-    }
-
-    public void setqValue(String qValue) {
-        this.qValue = qValue;
+        this.directlink = link;
     }
 
     public String getqName() {
@@ -40,23 +32,14 @@ public class DailyMotionVariant implements Storable, LinkVariant {
         this.qName = qName;
     }
 
-    public String getOrgQName() {
-        return orgQName;
+    private int videoHeight;
+
+    public int getVideoHeight() {
+        return videoHeight;
     }
 
-    public void setOrgQName(String orgQName) {
-        this.orgQName = orgQName;
-    }
-
-    private String orgQName;
-    private int    qrate;
-
-    public int getQrate() {
-        return qrate;
-    }
-
-    public void setQrate(int qrate) {
-        this.qrate = qrate;
+    public void setVideoHeight(int num) {
+        this.videoHeight = num;
     }
 
     private String convertTo = null;
@@ -73,15 +56,11 @@ public class DailyMotionVariant implements Storable, LinkVariant {
     }
 
     public DailyMotionVariant(DownloadLink dl) {
-        link = dl.getStringProperty("directlink");
+        directlink = DailyMotionCom.getDirectlink(dl);
+        // 1920x1080
+        qName = dl.getStringProperty(DailyMotionCom.PROPERTY_QUALITY_NAME);
         // "5"
-        qValue = dl.getStringProperty("qualityvalue");
-        // H264-320x240
-        qName = dl.getStringProperty("qualityname");
-        // stream_h264_ld_url
-        orgQName = dl.getStringProperty("originalqualityname");
-        // "5"
-        qrate = Integer.parseInt(dl.getStringProperty("qualitynumber"));
+        videoHeight = DailyMotionCom.getQualityHeight(dl);
         displayName = qName;
     }
 
@@ -95,19 +74,17 @@ public class DailyMotionVariant implements Storable, LinkVariant {
         this.displayName = displayName;
     }
 
-    public DailyMotionVariant(DailyMotionVariant bestVi, String convert, String qualityName, String name) {
-        link = bestVi.link;
-        qValue = bestVi.qValue;
+    public DailyMotionVariant(final DailyMotionVariant bestVi, String convert, String qualityName, String name) {
+        directlink = bestVi.directlink;
         qName = name;
-        orgQName = bestVi.orgQName;
-        qrate = bestVi.qrate;
+        videoHeight = bestVi.videoHeight;
         this.convertTo = convert;
         displayName = name;
     }
 
     @Override
     public String _getUniqueId() {
-        return convertTo == null ? orgQName : (orgQName + "->" + convertTo);
+        return convertTo == null ? displayName : (displayName + "->" + convertTo);
     }
 
     @Override

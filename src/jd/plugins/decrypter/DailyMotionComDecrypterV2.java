@@ -30,6 +30,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.DailyMotionVariant;
+import jd.plugins.hoster.DailyMotionCom;
 import jd.plugins.hoster.DailyMotionComV2;
 
 //Decrypts embedded videos from dailymotion
@@ -45,53 +46,47 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
     }
 
     @Override
-    protected ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param, final String contenturl) throws Exception {
-        final ArrayList<DownloadLink> ret = super.crawlSingleVideo(param, contenturl);
-        ArrayList<DownloadLink> mp4s = new ArrayList<DownloadLink>();
-        ArrayList<DailyMotionVariant> variantInfos = new ArrayList<DailyMotionVariant>();
+    public ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param, final String contenturl, final SubConfiguration cfg, final boolean accessContenturl) throws Exception {
+        final ArrayList<DownloadLink> ret = super.crawlSingleVideo(param, contenturl, cfg, accessContenturl);
+        final ArrayList<DownloadLink> videos = new ArrayList<DownloadLink>();
+        final ArrayList<DailyMotionVariant> variantInfos = new ArrayList<DailyMotionVariant>();
         DownloadLink variantLink = null;
         DailyMotionVariant bestVi = null;
         for (DownloadLink dl : ret) {
             String type = dl.getStringProperty("plain_ext");
             if (".mp4".equals(type)) {
-                mp4s.add(dl);
-                if ("hds".equals(dl.getStringProperty("qualityname"))) {
-                    // hds is not possible yet
-                    continue;
-                }
-                DailyMotionVariant vi;
-                variantInfos.add(vi = new DailyMotionVariant(dl));
-                if (bestVi == null || vi.getQrate() > bestVi.getQrate()) {
+                videos.add(dl);
+                final DailyMotionVariant vi = new DailyMotionVariant(dl);
+                variantInfos.add(vi);
+                if (bestVi == null || vi.getVideoHeight() > bestVi.getVideoHeight()) {
                     bestVi = vi;
                     variantLink = dl;
                 }
             }
         }
-        ret.removeAll(mp4s);
+        ret.removeAll(videos);
         ret.clear();
         if (variantLink != null) {
             ret.add(variantLink);
             Collections.sort(variantInfos, new Comparator<DailyMotionVariant>() {
                 @Override
                 public int compare(DailyMotionVariant o1, DailyMotionVariant o2) {
-                    return Integer.compare(o2.getQrate(), o1.getQrate());
+                    return Integer.compare(o2.getVideoHeight(), o1.getVideoHeight());
                 }
             });
             variantLink.setVariants(variantInfos);
             // variantLink.setProperty("directlink", bestVi.getLink());
-            // variantLink.setProperty("qualityvalue", bestVi.getqValue());
             // variantLink.setProperty("qualityname", bestVi.getqName());
-            // variantLink.setProperty("originalqualityname", bestVi.getOrgQName());
             // variantLink.setProperty("qualitynumber", bestVi.getqNumber());
             //
             // final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(variantLink);
             // variantLink.setFinalFileName(formattedFilename);
             variantLink.setVariantSupport(true);
-            variantLink.setLinkID("dailymotioncom" + variantLink.getStringProperty("plain_videoid") + "_" + bestVi.getqName());
+            variantLink.setLinkID("dailymotioncom" + variantLink.getStringProperty(DailyMotionCom.PROPERTY_VIDEO_ID) + "_" + bestVi.getqName());
             DailyMotionComV2.setActiveVariant(variantLink, bestVi);
-            final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
-            if (cfg.getBooleanProperty(ALLOW_AUDIO, defaultAllowAudio)) {
-                final DownloadLink audio = createDownloadlink(variantLink.getDownloadURL());
+            if (cfg == null || cfg.getBooleanProperty(DailyMotionCom.ALLOW_AUDIO, defaultAllowAudio)) {
+                final DownloadLink audio = createDownloadlink(variantLink.getPluginPatternMatcher());
+                /* Inherit all properties of source-item. */
                 final Map<String, Object> props = variantLink.getProperties();
                 if (props != null) {
                     for (Entry<String, Object> es : props.entrySet()) {
@@ -107,7 +102,7 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
                 audio.setVariantSupport(true);
                 // audio.setUrlDownload(audio.getDownloadURL() + );
                 audio.setProperty("qualityname", chosenVariant.getqName());
-                audio.setLinkID("dailymotioncom" + variantLink.getStringProperty("plain_videoid") + "_" + chosenVariant.getDisplayName());
+                audio.setLinkID("dailymotioncom" + variantLink.getStringProperty(DailyMotionCom.PROPERTY_VIDEO_ID) + "_" + chosenVariant.getDisplayName());
                 variantLink.getFilePackage().add(audio);
                 final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(audio);
                 audio.setFinalFileName(formattedFilename);
