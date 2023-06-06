@@ -111,7 +111,6 @@ public class FiveSixSevenFileCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            /* 72bbb.com definitly returns 404 on url offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*文件不存在或已删除")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

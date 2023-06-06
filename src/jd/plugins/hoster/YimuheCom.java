@@ -45,18 +45,9 @@ public class YimuheCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 1;
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
+    private final boolean FREE_RESUME       = false;
+    private final int     FREE_MAXCHUNKS    = 1;
+    private final int     FREE_MAXDOWNLOADS = 1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -72,18 +63,21 @@ public class YimuheCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private String getContentURL(final DownloadLink link) {
+        return "https://www." + this.getHost() + "/file-" + this.getFID(link) + ".html";
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(getContentURL(link));
         if (br.getHttpConnection().getResponseCode() == 404) {
-            /* 72bbb.com definitly returns 404 on url offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String sha1 = this.br.getRegex("(?i)SHA1:([^<>]+)<").getMatch(0);
-        final String md5 = this.br.getRegex("(?i)MD5:([^<>]+)<").getMatch(0);
+        final String md5 = this.br.getRegex("(?i)MD5\\s*:\\s*([a-f0-9]{32})").getMatch(0);
         String filename = br.getRegex("\\.AddFavorite\\(\\'[^\\']*?\\',\\'([^<>\"\\']+)\\'\\)").getMatch(0);
-        String filesize = br.getRegex("文件大小：\\s*</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
+        String filesize = br.getRegex("(?i)文件大小：\\s*</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("文件大小：\\s*</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
         }
@@ -136,8 +130,11 @@ public class YimuheCom extends PluginForHost {
             query1.add("id", fid);
             query1.add("code", code);
             this.br.postPage("/n_downcode.php", query1);
-            if (!this.br.toString().equals("1")) {
+            if (br.getRequest().getHtmlCode().equals("0")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else if (!br.getRequest().getHtmlCode().equals("1")) {
+                /* This should never happen. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unexpected captcha response: Website broken or file temporarily unavailable");
             }
             final String userlogin = js_params[1];
             final String p = js_params[5];

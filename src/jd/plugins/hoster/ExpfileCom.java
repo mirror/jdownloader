@@ -111,7 +111,6 @@ public class ExpfileCom extends PluginForHost {
             br.getPage("/down2-" + this.getFID(link) + ".html");
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
-            /* 72bbb.com definitly returns 404 on url offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<h2>文件名：([^<]+)</h2>").getMatch(0);

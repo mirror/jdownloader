@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -96,7 +97,7 @@ public class FotografDe extends PluginForDecrypt {
                     logger.info("Link is offline");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
-                    /* E.g. https://www.fotograf.de/agb/ or https://www.fotograf.de/preise */
+                    /* User added invalid link for example: https://www.fotograf.de/agb/ or https://www.fotograf.de/preise */
                     logger.info("Link seems to be offline");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -114,8 +115,9 @@ public class FotografDe extends PluginForDecrypt {
             }
         }
         if (br.containsHTML("(?i)Wir verleihen Ihren Fotos gerade den letzten Schliff")) {
-            throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "GALLERY_IS_NOT_YET_READY_" + passCode, "This gallery is not yet ready. Try again later. Password: " + passCode);
+            throw new DecrypterRetryException(RetryReason.HOST, "GALLERY_IS_NOT_YET_READY_" + passCode, "This gallery is not yet ready. Try again later. Password: " + passCode);
         } else if (photoOverviewURL == null) {
+            /* User entered invalid password. */
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
         br.getPage(photoOverviewURL);
@@ -140,13 +142,16 @@ public class FotografDe extends PluginForDecrypt {
         /* Get list of all photoIDs */
         final String[] photoIDs = br.getRegex("/shop/photo/([a-f0-9\\-]+)\"").getColumn(0);
         /*
-         * Pick randm photoID and access single photo page to get json containing information about all images of whole gallery -> This way
+         * Pick random photoID and access single photo page to get json containing information about all images of whole gallery -> This way
          * we don't have to deal with pagination.
          */
         final String randomChosenPhotoID = photoIDs[new Random().nextInt(photoIDs.length)];
-        br.getPage(getPhotoContentURL(randomChosenPhotoID));
+        final String urlToRandomPhoto = getPhotoContentURL(randomChosenPhotoID);
+        logger.info("Accessing random photo to extract metadata: " + urlToRandomPhoto);
+        br.getPage(urlToRandomPhoto);
         final String photoJson = br.getRegex("Photo\\.setData\\((\\[.*?\\])\\);\\n").getMatch(0);
         final List<Map<String, Object>> photos = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(photoJson);
+        boolean hqFailure = false;
         for (final Map<String, Object> photoinfo : photos) {
             final String photoID = photoinfo.get("id").toString();
             String url = photoinfo.get("photoUrlL").toString();
@@ -155,6 +160,7 @@ public class FotografDe extends PluginForDecrypt {
                 url = url.replaceFirst("_l\\.jpg", "_xl.jpg");
             } else {
                 logger.warning("Unable to find best quality for image: " + url + " | ID: " + photoID);
+                hqFailure = true;
             }
             String title = photoinfo.get("photoName").toString();
             final String photoDescription = (String) photoinfo.get("photoDescription");
@@ -164,12 +170,15 @@ public class FotografDe extends PluginForDecrypt {
                 /* 2022-06-11: File-extension should always be .jpg */
                 String ext = Plugin.getFileNameExtensionFromURL(url);
                 if (ext == null) {
+                    /* Fallback */
                     ext = ".jpg";
                 }
                 final String finalFilename = this.correctOrApplyFileNameExtension(title, ext);
                 photo.setFinalFileName(finalFilename);
+                /* Make sure that this filename will never change even if the user resets that item. */
                 photo.setProperty(DirectHTTP.FIXNAME, finalFilename);
             }
+            /* We know that this item is downloadable -> Set AvailableStatus right away. */
             photo.setAvailable(true);
             if (!StringUtils.isEmpty(photoDescription)) {
                 photo.setComment(photoDescription);
@@ -178,7 +187,6 @@ public class FotografDe extends PluginForDecrypt {
             }
             /* Do not set contentURL because we need to login in browser to access it. Rather use directURLs here. */
             // final String contentURL = getPhotoContentURL(photoID);
-            // photo.setContentUrl("");
             // photo.setContentUrl(url);
             /* We do not really need this password anymore but let's set it for completion to be able to view it later. */
             if (passCode != null) {
@@ -191,13 +199,19 @@ public class FotografDe extends PluginForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(packagename);
             if (passCode != null) {
-                fp.setComment("Gallery password: " + passCode);
+                String text = "Gallery password: " + passCode;
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && hqFailure) {
+                    /* This should never happen! */
+                    text += "\r\n!!HQFAILURE!!";
+                }
+                fp.setComment(text);
             }
             fp.addLinks(ret);
         }
         return ret;
     }
 
+    /** Returns relative contentURL for given photoID. */
     private static String getPhotoContentURL(final String photoID) {
         return "/shop/photo/" + photoID;
     }
