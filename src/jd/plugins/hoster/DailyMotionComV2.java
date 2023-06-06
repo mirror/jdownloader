@@ -22,13 +22,11 @@ import java.util.List;
 
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -36,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.DailyMotionVariant;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "https?://dailymotiondecrypted\\.com/video/\\w+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "https?://dailymotion\\.com/video/\\w+" })
 public class DailyMotionComV2 extends DailyMotionCom {
     public DailyMotionComV2(PluginWrapper wrapper) {
         super(wrapper);
@@ -123,74 +121,7 @@ public class DailyMotionComV2 extends DailyMotionCom {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        // checkFFmpeg(downloadLink, _GUI.T.YoutubeDash_handleDownload_youtube_demux());
         return super.requestFileInformation(downloadLink);
-    }
-
-    protected boolean checkDirectLink(final DownloadLink downloadLink) throws PluginException {
-        if (dllink != null) {
-            br.setFollowRedirects(false);
-            try {
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openGetConnection(dllink);
-                    if (con.getResponseCode() == 302) {
-                        br.followConnection();
-                        dllink = br.getRedirectLocation().replace("#cell=core&comment=", "");
-                        br.getHeaders().put("Referer", dllink);
-                        con = br.openGetConnection(dllink);
-                    }
-                    if (con.getResponseCode() != 200 || con.getContentType().contains("html")) {
-                        return false;
-                    }
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                    if (downloadLink.hasVariantSupport()) {
-                        final DailyMotionVariant var = downloadLink.getVariant(DailyMotionVariant.class);
-                        if (var != null && var.getConvertTo() != null) {
-                            if (downloadLink.getProperty("FFP_BITRATE") == null) {
-                                checkFFProbe(downloadLink, _JDT.T.plugin_for_host_reason_for_ffmpeg_demux());
-                                StreamInfo streamInfo = getFFProbe(br.cloneBrowser(), downloadLink).getStreamInfo(dllink);
-                                downloadLink.setProperty("FFP_BITRATE", streamInfo.getFormat().getBit_rate());
-                                downloadLink.setProperty("FFP_DURATION", streamInfo.getFormat().getDuration());
-                                downloadLink.setProperty("FFP_V_HEIGHT", streamInfo.getStreams().get(0).getHeight());
-                                downloadLink.setProperty("FFP_V_WIDTH", streamInfo.getStreams().get(0).getWidth());
-                                if (streamInfo.getStreams().size() > 1) {
-                                    downloadLink.setProperty("FFP_A_CODEC", streamInfo.getStreams().get(1).getCodec_name());
-                                    downloadLink.setProperty("FFP_A_BITRATE", streamInfo.getStreams().get(1).getBit_rate());
-                                } else {
-                                    // no Audio
-                                }
-                            }
-                            if (downloadLink.getProperty("FFP_A_BITRATE") != null) {
-                                if (var.getConvertTo().equals("aac")) {
-                                    var.setDisplayName("AAC Audio " + (Integer.parseInt(downloadLink.getStringProperty("FFP_A_BITRATE")) / 1024) + "kbit/s");
-                                } else {
-                                    var.setDisplayName("M4A Audio " + (Integer.parseInt(downloadLink.getStringProperty("FFP_A_BITRATE")) / 1024) + "kbit/s");
-                                }
-                                var.setqName((Integer.parseInt(downloadLink.getStringProperty("FFP_A_BITRATE")) / 1024) + "kbits");
-                                setActiveVariantByLink(downloadLink, var);
-                            } else {
-                                throw new NoAudioException();
-                            }
-                        }
-                    }
-                    // LinkVariant v = getActiveVariantByLink(downloadLink);
-                    // ((DailyMotionVariant)v).setqName(qName);
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (Throwable e) {
-                    }
-                }
-            } catch (final NoAudioException e) {
-                throw e;
-            } catch (final Exception e) {
-                getLogger().log(e);
-                return false;
-            }
-            return true;
-        }
-        return false;
     }
 
     public class NoAudioException extends PluginException {
@@ -204,29 +135,27 @@ public class DailyMotionComV2 extends DailyMotionCom {
         }
     }
 
-    public static void setActiveVariant(DownloadLink downloadLink, DailyMotionVariant dmv) {
-        if (dmv != null) {
-            try {
-                downloadLink.setProperty("directlink", dmv.getLink());
-                downloadLink.setProperty("qualityvalue", dmv.getqValue());
-                downloadLink.setProperty("qualityname", dmv.getqName());
-                downloadLink.setProperty("originalqualityname", dmv.getOrgQName());
-                downloadLink.setProperty("qualitynumber", dmv.getQrate() + "");
-                if (dmv.getConvertTo() != null) {
-                    downloadLink.setProperty("plain_ext", "." + dmv.getConvertTo());
-                }
-                final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(downloadLink);
-                downloadLink.setFinalFileName(formattedFilename);
-                downloadLink.setLinkID("dailymotioncom" + downloadLink.getStringProperty("plain_videoid") + "_" + dmv.getDisplayName());
-                downloadLink.setVariant(dmv);
-                if (dmv.getConvertTo() != null) {
-                    downloadLink.setInternalTmpFilenameAppend(".tmp");
-                } else {
-                    downloadLink.setInternalTmpFilenameAppend(null);
-                }
-            } catch (ParseException e) {
-                e.printStackTrace();
+    public static void setActiveVariant(final DownloadLink link, final DailyMotionVariant dmv) {
+        if (dmv == null) {
+            return;
+        }
+        try {
+            link.setProperty(DailyMotionCom.PROPERTY_DIRECTURL, dmv.getLink());
+            link.setProperty(DailyMotionCom.PROPERTY_QUALITY_NAME, dmv.getqName());
+            link.setProperty(DailyMotionCom.PROPERTY_QUALITY_HEIGHT, dmv.getVideoHeight());
+            if (dmv.getConvertTo() != null) {
+                link.setProperty("plain_ext", "." + dmv.getConvertTo());
             }
+            final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(link);
+            link.setFinalFileName(formattedFilename);
+            link.setVariant(dmv);
+            if (dmv.getConvertTo() != null) {
+                link.setInternalTmpFilenameAppend(".tmp");
+            } else {
+                link.setInternalTmpFilenameAppend(null);
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
         }
     }
 

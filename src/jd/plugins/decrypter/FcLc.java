@@ -463,7 +463,7 @@ public class FcLc extends antiDDoSForDecrypt {
             /*
              * 2018-07-18: For 'recaptcha', key is in "reCAPTCHA_site_key"; for 'invisible-recaptcha', key is in
              * "invisible_reCAPTCHA_site_key" --> We can usually use "reCAPTCHA_site_key" as well (tested with urle.co) ... but it is better
-             * to use the correct one instead - especially because sometimes only that one is available (e.g. kingurl.net).
+             * to use the correct one instead - especially because sometimes only that one is available.
              */
             return CaptchaType.reCaptchaV2;
         } else if (captchaTypeStr.equalsIgnoreCase("invisible-recaptcha")) {
