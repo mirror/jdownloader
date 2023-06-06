@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -15,16 +16,19 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
@@ -37,7 +41,7 @@ public class OrfAt extends PluginForDecrypt {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING, LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     public static List<String[]> getPluginDomains() {
@@ -66,6 +70,7 @@ public class OrfAt extends PluginForDecrypt {
             String pattern = "https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(";
             pattern += "(?:player|programm)/\\d+/[a-zA-Z0-9]+";
             pattern += "|artikel/\\d+/[a-zA-Z0-9]+";
+            pattern += "|program/(\\w+)/(\\w+)\\.html";
             pattern += "|.*collection/(\\d+)(/(\\d+)(/[a-z0-9\\-]+)?)?";
             pattern += "|(podcasts?/[a-z0-9]+/[a-z0-9\\-]+(/[A-Za-z0-9\\-]+)?|[a-z0-9]+/\\d+/[a-zA-Z0-9]+)";
             pattern += ")";
@@ -74,11 +79,12 @@ public class OrfAt extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private final String                                      PATTERN_BROADCAST_OLD = "https?://([a-z0-9]+)\\.orf\\.at/(?:player|programm)/(\\d+)/([a-zA-Z0-9]+)";
-    private final String                                      PATTERN_BROADCAST_NEW = "https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
-    private final String                                      PATTERN_ARTICLE       = "https?://([a-z0-9]+)\\.orf\\.at/artikel/(\\d+)/([a-zA-Z0-9]+)";
-    private final String                                      PATTERN_PODCAST       = "https?://[^/]+/podcasts?/([a-z0-9]+)/([A-Za-z0-9\\-]+)(/([a-z0-9\\-]+))?";
-    private final String                                      PATTERN_COLLECTION    = "^(https?://.*(?:/collection|podcast/highlights))/(\\d+)(/(\\d+)(/[a-z0-9\\-]+)?)?";
+    private final String                                      PATTERN_BROADCAST_OLD = "(?i)https?://([a-z0-9]+)\\.orf\\.at/(?:player|programm)/(\\d+)/([a-zA-Z0-9]+)";
+    private final String                                      PATTERN_BROADCAST_NEW = "(?i)https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
+    private final String                                      PATTERN_ARTICLE       = "(?i)https?://([a-z0-9]+)\\.orf\\.at/artikel/(\\d+)/([a-zA-Z0-9]+)";
+    private final String                                      PATTERN_PODCAST       = "(?i)https?://[^/]+/podcasts?/([a-z0-9]+)/([A-Za-z0-9\\-]+)(/([a-z0-9\\-]+))?";
+    private final String                                      PATTERN_COLLECTION    = "(?i)^(https?://.*(?:/collection|podcast/highlights))/(\\d+)(/(\\d+)(/[a-z0-9\\-]+)?)?";
+    private final String                                      PATTERN_VIDEO         = "(?i)^https?://[^/]+/program/(\\w+)/(\\w+)\\.html";
     private final String                                      API_BASE              = "https://audioapi.orf.at";
     private final String                                      PROPERTY_SLUG         = "slug";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
@@ -116,6 +122,8 @@ public class OrfAt extends PluginForDecrypt {
             return this.crawlPodcast(param);
         } else if (param.getCryptedUrl().matches(PATTERN_BROADCAST_OLD) || param.getCryptedUrl().matches(PATTERN_BROADCAST_NEW)) {
             return crawlProgramm(param);
+        } else if (param.getCryptedUrl().matches(PATTERN_VIDEO)) {
+            return crawlVideo(param);
         } else {
             /* Unsupported URL -> Developer mistake */
             logger.info("Unsupported URL:" + param);
@@ -610,6 +618,75 @@ public class OrfAt extends PluginForDecrypt {
         link.setDownloadSize(calculateFilesize(((Number) payload.get("duration")).longValue()));
         link.setAvailable(true);
         return link;
+    }
+
+    private ArrayList<DownloadLink> crawlVideo(final CryptedLink param) throws Exception {
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final HashSet<String> dupes = new HashSet<String>();
+        final String[] programIDs = br.getRegex("data-ppid=\"([a-f0-9\\-]+)\"").getColumn(0);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        for (final String programID : programIDs) {
+            if (dupes.add(programID)) {
+                ret.addAll(crawlVideoProgramID(programID));
+            }
+        }
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlVideoProgramID(final String programID) throws Exception {
+        if (StringUtils.isEmpty(programID)) {
+            throw new IllegalArgumentException();
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.getHeaders().put("Origin", "https://tv.orf.at");
+        br.getHeaders().put("Referer", "https://tv.orf.at/");
+        br.getPage("https://api-tvthek.orf.at/api/v4.2/public/content-by-dds-programplanguid/" + programID);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> episode = (Map<String, Object>) entries.get("episode");
+        // if(Boolean.TRUE.equals(episode.get("is_drm_protected"))) {
+        //
+        // }
+        final String title = episode.get("title").toString();
+        final String description = episode.get("description").toString();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        fp.setComment(description);
+        /* There are multiple HLS sources available. Looks like mirrors. */
+        final Map<String, Object> hlsmap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(episode, "sources/hls/{0}");
+        final String hlsMaster = hlsmap.get("src").toString();
+        final Browser brc = br.cloneBrowser();
+        brc.setFollowRedirects(true);
+        brc.getPage(hlsMaster);
+        final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(brc);
+        for (final HlsContainer hlsContainer : hlsContainers) {
+            final DownloadLink video = this.createDownloadlink(hlsContainer.getDownloadurl());
+            video.setFinalFileName(title + "_" + hlsContainer.getHeight() + "p.mp4");
+            ret.add(video);
+        }
+        final String thumbnailurl = (String) episode.get("related_audiodescription_episode_image_url");
+        if (thumbnailurl != null) {
+            final DownloadLink thumbnail = this.createDownloadlink(thumbnailurl);
+            thumbnail.setFinalFileName(title + Plugin.getFileNameExtensionFromURL(thumbnailurl));
+            thumbnail.setAvailable(true);
+            ret.add(thumbnail);
+        }
+        final Map<String, Object> subtitlemap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(episode, "_embedded/subtitle");
+        final String subtitleURL = subtitlemap != null ? (String) subtitlemap.get("srt_url") : null;
+        if (!StringUtils.isEmpty(subtitleURL)) {
+            final DownloadLink subtitle = this.createDownloadlink(subtitleURL);
+            subtitle.setFinalFileName(title + ".srt");
+            subtitle.setAvailable(true);
+            ret.add(subtitle);
+        }
+        fp.addLinks(ret);
+        return ret;
     }
 
     private String toSlug(final String str) {
