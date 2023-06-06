@@ -1693,7 +1693,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Matches" })
     String ViewTestResultTableModel_initColumns_matches_();
 
-    @Default(lngs = { "en" }, values = { "Packigizer Rule Test: \"%s1\"" })
+    @Default(lngs = { "en" }, values = { "Packagizer Rule Test: \"%s1\"" })
     String PackagizerRuleDialog_runTest_title_(String string);
 
     @Default(lngs = { "en" }, values = { "Matches" })
