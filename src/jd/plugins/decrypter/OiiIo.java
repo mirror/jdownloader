@@ -68,7 +68,7 @@ public class OiiIo extends MightyScriptAdLinkFly {
             if (captchaType == CaptchaType.reCaptchaV2 || captchaType == CaptchaType.reCaptchaV2_invisible) {
                 handleRecaptcha(captchaType, br, captcha2);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported:" + captchaType);
             }
             submitForm(captcha2);
         }
