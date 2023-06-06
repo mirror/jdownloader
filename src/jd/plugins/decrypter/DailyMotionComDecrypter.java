@@ -819,6 +819,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
     }
 
+    @Deprecated
     private DownloadLink setVideoDownloadlink(final LinkedHashMap<String, String[]> foundqualities, final String videoID, final String qualityValue, final String title, final String contenturl) throws ParseException {
         String directlinkinfo[] = foundqualities.get(qualityValue);
         if (directlinkinfo != null) {
@@ -877,6 +878,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             final String formattedFilename = DailyMotionCom.getFormattedFilename(dl);
             dl.setName(formattedFilename);
             dl.setContentUrl(contenturl);
+            dl.setAvailable(true);
             logger.info("Creating: " + directlinkinfo[2] + "/" + qualityName + " link");
             logger.info(directlink);
             return dl;

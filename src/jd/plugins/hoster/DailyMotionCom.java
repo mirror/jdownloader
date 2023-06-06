@@ -243,10 +243,9 @@ public class DailyMotionCom extends PluginForHost {
         if (isHLS(link)) {
             /* Make sure to follow redirects! */
             this.br.setFollowRedirects(true);
-            final String directurl = getDirectlink(link);
+            String directurl = getDirectlink(link);
             if (directurl == null) {
-                /* TODO: Obtain fresh directurl */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                directurl = this.findFreshDirectlink(link);
             }
             checkFFmpeg(link, "Check a HLS Stream");
             final Browser brc = br.cloneBrowser();
@@ -265,6 +264,11 @@ public class DailyMotionCom extends PluginForHost {
             }
         } else if (isSubtitle(link)) {
             /* Do not check - assume that subtitle URLs are always online. */
+            final String directurl = getDirectlink(link);
+            if (directurl == null) {
+                /* This should never happen. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         } else {
             /* Old/unsupported HTTP URLs. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -328,7 +332,7 @@ public class DailyMotionCom extends PluginForHost {
         final ArrayList<DownloadLink> results = crawler.crawlSingleVideo(new CryptedLink(contentURL), contentURL, null, true);
         DownloadLink fresh = null;
         for (final DownloadLink result : results) {
-            if (StringUtils.equals(result.getLinkID(), link.getLinkID())) {
+            if (StringUtils.equals(this.getLinkID(result), this.getLinkID(link))) {
                 fresh = result;
                 break;
             }
@@ -338,9 +342,8 @@ public class DailyMotionCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         onNewDirectLink(link, dllink);
-        // TODO: Inherit properties of fresh DownloadLink.
-        // link.setProperties(fresh.getProperties());
-        return getDirectlink(fresh);
+        link.setProperties(fresh.getProperties());
+        return getDirectlink(link);
     }
 
     protected void onNewDirectLink(DownloadLink dl, String freshDirectlink) {
@@ -461,9 +464,15 @@ public class DailyMotionCom extends PluginForHost {
         return br;
     }
 
-    private boolean isHLS(final DownloadLink dl) {
-        final String directLink = getDirectlink(dl);
-        return StringUtils.contains(directLink, ".m3u8");
+    private boolean isHLS(final DownloadLink link) {
+        final String directlink = getDirectlink(link);
+        if (directlink != null && StringUtils.containsIgnoreCase(directlink, ".m3u8")) {
+            return true;
+        } else if (getHlsMaster(link) != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
