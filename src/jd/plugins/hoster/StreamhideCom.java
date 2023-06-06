@@ -49,7 +49,7 @@ public class StreamhideCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamhide.to", "streamhide.com", "guccihide.com", "streamhide.com", "streamtb.me", "louishide.com" });
+        ret.add(new String[] { "streamhide.to", "streamhide.com", "guccihide.com", "streamhide.com", "streamtb.me", "louishide.com", "ahvsh.com" });
         return ret;
     }
 

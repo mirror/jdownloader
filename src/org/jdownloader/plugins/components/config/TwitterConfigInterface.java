@@ -2,8 +2,10 @@ package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -15,7 +17,8 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     public static final TRANSLATION TRANSLATION                                              = new TRANSLATION();
     final String                    text_UseOriginalFilenames                                = "Use original filename instead of plugin filenames?";
     final String                    text_MarkTweetRepliesViaFilename                         = "Append '_reply' to filenames of tweets that are replies to other tweets?";
-    final String                    text_AddTweetTextAsTextfile                              = "Add tweet text as textfile?";
+    final String                    text_SingleTweetCrawlerAddTweetTextAsTextfile            = "Single Tweet crawler: Add tweet text as textfile?";
+    final String                    text_SingleTweetCrawlerCrawlMode                         = "Single Tweet crawler: Crawl mode";
     final String                    text_CrawlURLsInsideTweetText                            = "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
     final String                    text_CrawlRetweetsV2                                     = "Crawl retweets?";
     final String                    text_CrawlVideoThumbnail                                 = "Crawl video thumbnail?";
@@ -38,8 +41,12 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
             return text_MarkTweetRepliesViaFilename;
         }
 
-        public String getAddTweetTextAsTextfile_label() {
-            return text_AddTweetTextAsTextfile;
+        public String getSingleTweetCrawlerAddTweetTextAsTextfile_label() {
+            return text_SingleTweetCrawlerAddTweetTextAsTextfile;
+        }
+
+        public String getSingleTweetCrawlerCrawlMode_label() {
+            return text_SingleTweetCrawlerCrawlMode;
         }
 
         public String getCrawlURLsInsideTweetText_label() {
@@ -98,11 +105,40 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    @DescriptionForConfigEntry(text_AddTweetTextAsTextfile)
+    @DescriptionForConfigEntry(text_SingleTweetCrawlerAddTweetTextAsTextfile)
     @Order(30)
-    boolean isAddTweetTextAsTextfile();
+    boolean isSingleTweetCrawlerAddTweetTextAsTextfile();
 
-    void setAddTweetTextAsTextfile(boolean b);
+    void setSingleTweetCrawlerAddTweetTextAsTextfile(boolean b);
+
+    public static enum SingleTweetCrawlerMode implements LabelInterface {
+        AUTO {
+            @Override
+            public String getLabel() {
+                return "Auto";
+            }
+        },
+        OLD_API {
+            @Override
+            public String getLabel() {
+                return "Old API";
+            }
+        },
+        NEW_API {
+            @Override
+            public String getLabel() {
+                return "New API";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("AUTO")
+    @Order(31)
+    @DescriptionForConfigEntry(text_SingleTweetCrawlerCrawlMode)
+    SingleTweetCrawlerMode getSingleTweetCrawlerCrawlMode();
+
+    void setSingleTweetCrawlerCrawlMode(final SingleTweetCrawlerMode mode);
 
     @DefaultBooleanValue(false)
     @AboutConfig
