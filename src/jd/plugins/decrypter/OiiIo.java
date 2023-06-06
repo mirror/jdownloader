@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
@@ -65,11 +64,10 @@ public class OiiIo extends MightyScriptAdLinkFly {
     protected void hookAfterCaptcha(final Browser br, Form form) throws Exception {
         // TODO
         /* A 2nd captcha can be required. */
-        final Form captcha2 = br.getFormbyProperty("id", "InvisibleRecaptchaFRM");
-        if (captcha2 != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE && CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(captcha2)) {
-            final String recaptchaV2Response2 = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            captcha2.put("f_n", "slc");
-            captcha2.put("ref", "");
+        final Form captcha2 = br.getFormbyProperty("id", "link-view");
+        final String sitekey = br.getRegex("\"reCAPTCHA_site_key\"\\s*:\\s*\"([^\"]+)").getMatch(0);
+        if (captcha2 != null && sitekey != null) {
+            final String recaptchaV2Response2 = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, sitekey).getToken();
             captcha2.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response2));
             submitForm(captcha2);
         }
