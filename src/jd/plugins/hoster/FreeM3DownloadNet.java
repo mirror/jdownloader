@@ -24,6 +24,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FreeM3DownloadNetConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,15 +45,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.FreeM3DownloadNetConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FreeM3DownloadNet extends PluginForHost {
@@ -128,7 +128,7 @@ public class FreeM3DownloadNet extends PluginForHost {
         final String fid = this.getFID(link);
         String title;
         if (searchTermB64 != null) {
-            title = fid + "_" + Encoding.htmlDecode(Encoding.htmlDecode(Encoding.Base64Decode(searchTermB64)));
+            title = fid + "_" + Encoding.htmlDecode(Encoding.htmlDecode(Encoding.Base64Decode(searchTermB64)).trim());
         } else {
             title = fid;
         }
@@ -169,31 +169,25 @@ public class FreeM3DownloadNet extends PluginForHost {
                 try {
                     final Browser brc = br.cloneBrowser();
                     brc.setRequest(null);
-                    brc.getPage("https://api.deezer.com/track/" + fid + "?output=jsonp&callback=jQuery3100841955649896573_" + System.currentTimeMillis() + "&_=" + System.currentTimeMillis());
-                    filename = PluginJSonUtils.getJson(brc, "title");
+                    brc.getPage("https://api.deezer.com/track/" + fid + "?output=jsonp&callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&_=" + System.currentTimeMillis());
+                    final String json = brc.getRegex("jQuery\\d+_\\d+\\((\\{.+\\})\\)").getMatch(0);
+                    final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+                    final Map<String, Object> artist = (Map<String, Object>) entries.get("artist");
+                    filename = artist.get("name") + " - " + entries.get("title").toString();
                     link.setProperty(API_QUERIED, StringUtils.valueOrEmpty(filename));
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     logger.log(e);
                     link.setProperty(API_QUERIED, "");
+                    logger.info("API query failed");
                 }
             }
         }
-        final String filesizeStr;
-        if (getPreferFlac(link)) {
-            filesizeStr = br.getRegex("(?i)>\\s*FLAC \\((\\d+(\\.\\d{1,2})? [^<]*)\\)\\s*<").getMatch(0);
-        } else {
-            filesizeStr = br.getRegex("(?i)>\\s*MP3 \\((\\d+(\\.\\d{1,2})? [^<]*)\\)\\s*<").getMatch(0);
-        }
+        final String[] formatInfo = getFormatInfo(br);
         if (StringUtils.isNotEmpty(filename)) {
             filename = Encoding.htmlDecode(filename).trim();
-            final String ext;
-            if (PluginJsonConfig.get(FreeM3DownloadNetConfig.class).isPreferFLAC()) {
-                ext = ".flac";
-            } else {
-                ext = ".mp3";
-            }
-            link.setFinalFileName(filename + ext);
+            link.setFinalFileName(filename + "." + formatInfo[3]);
         }
+        final String filesizeStr = formatInfo[2];
         if (filesizeStr != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         }
@@ -203,11 +197,51 @@ public class FreeM3DownloadNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link);
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
+    /** Returns array with information about preferred format. */
+    private String[] getFormatInfo(final Browser br) throws PluginException {
+        final String[] formathtmls = br.getRegex("(<input[^<>]*name=\"format-type\".*?</label>)").getColumn(0);
+        final String[] flacInfo = new String[4];
+        flacInfo[3] = "flac";
+        final String[] mp3Info = new String[4];
+        mp3Info[3] = "mp3";
+        for (final String formathtml : formathtmls) {
+            final String id = new Regex(formathtml, "id=\"([^\"]+)\"").getMatch(0);
+            if (id == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Regex labelAndFilesize = new Regex(formathtml, "class=\"quality-label\"[^>]*>([^<>]+) \\((\\d+(\\.\\d{1,2})? [^<]*)\\)</label>");
+            final String label = labelAndFilesize.getMatch(0);
+            final String filesizeStr = labelAndFilesize.getMatch(1);
+            if (id.equalsIgnoreCase("flac")) {
+                flacInfo[0] = id;
+                flacInfo[1] = label;
+                flacInfo[2] = filesizeStr;
+            } else {
+                /* MP3 can be available in multiple qualities. Last = Best/highest bitrate. */
+                mp3Info[0] = id;
+                mp3Info[1] = label;
+                mp3Info[2] = filesizeStr;
+            }
+        }
+        if (PluginJsonConfig.get(FreeM3DownloadNetConfig.class).isPreferFLAC()) {
+            return flacInfo;
+        } else {
+            return mp3Info;
+        }
+    }
+
+    private void handleDownload(final DownloadLink link) throws Exception, PluginException {
+        final boolean preferFlac = this.getPreferFlac(link);
+        final String directlinkproperty;
+        if (preferFlac) {
+            directlinkproperty = "directurl_flac";
+        } else {
+            directlinkproperty = "directurl_mp3";
+        }
+        if (!attemptStoredDownloadurlDownload(link, directlinkproperty, FREE_RESUME, FREE_MAXCHUNKS)) {
             String dllink = null;
             synchronized (antiCaptchaCookies) {
                 requestFileInformation(link);
@@ -216,19 +250,19 @@ public class FreeM3DownloadNet extends PluginForHost {
                 /* Random 20 char lowercase string --> We'll just use an UUID */
                 // final String str = UUID.randomUUID().toString();
                 // postdata.put("ch", str);
-                if (getPreferFlac(link)) {
-                    postdata.put("f", "flac");
-                    link.setProperty(PROPERTY_PREFER_FLAC, true);
-                } else {
-                    postdata.put("f", "mp3");
+                final String[] formatInfo = getFormatInfo(br);
+                final String f = formatInfo[0];
+                if (f == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                boolean captchaRequired;
+                postdata.put("f", Encoding.urlEncode(f));
+                boolean captchaRequiredInThisRun;
                 if (br.containsHTML("class=\"g-recaptcha\"")) {
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    captchaRequired = true;
+                    captchaRequiredInThisRun = true;
                     postdata.put("h", recaptchaV2Response);
                 } else {
-                    captchaRequired = false;
+                    captchaRequiredInThisRun = false;
                     postdata.put("h", "");
                 }
                 br.postPageRaw("/dl.php?", JSonStorage.serializeToJson(postdata));
@@ -237,18 +271,26 @@ public class FreeM3DownloadNet extends PluginForHost {
                     dllink = br.getRequest().getHtmlCode();
                 }
                 if (StringUtils.isEmpty(dllink)) {
-                    if (br.containsHTML("^https?://free-mp3-download.net/?$")) {
+                    if (br.containsHTML("^https?://free-mp3-download\\.net/?$")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
                         logger.warning("Failed to find final downloadurl");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                if (captchaRequired) {
+                if (captchaRequiredInThisRun) {
                     antiCaptchaCookies.put(this.getHost(), br.getCookies(br.getHost()));
                 }
+                if (preferFlac) {
+                    /*
+                     * Set property so next time flac will be auto preferred so user can't change preferred format to mp3 and then resume a
+                     * previously started flac download which would result in a corrupt file.
+                     */
+                    link.setProperty(PROPERTY_PREFER_FLAC, true);
+                }
+                link.setProperty(directlinkproperty, dllink);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 403) {
@@ -259,11 +301,10 @@ public class FreeM3DownloadNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
+        /* add a download slot */
+        controlMaxFreeDownloads(null, link, +1);
         try {
-            /* add a download slot */
-            controlMaxFreeDownloads(null, link, +1);
             /* start the dl */
             dl.startDownload();
         } finally {
