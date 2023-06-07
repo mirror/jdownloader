@@ -70,7 +70,7 @@ public class StileProjectCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+|videos/\\d+/[a-z0-9\\-_]+/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -200,6 +200,9 @@ public class StileProjectCom extends PluginForHost {
         String directurl = br.getRegex("<source src=\"(https?://[^<>\"]+)[^<>]+type='video/mp4'").getMatch(0);
         if (StringUtils.isEmpty(directurl)) {
             directurl = br.getRegex("var desktopFile\\s*=\\s*'(https?://[^<>\"\\']+)").getMatch(0);
+        }
+        if (StringUtils.isEmpty(directurl)) {
+            directurl = br.getRegex("\"contentUrl\"\\s*:\\s*\"(http[^\"]+)").getMatch(0);
         }
         if (directurl == null) {
             final Regex videoMETA = br.getRegex("(VideoFile|VideoMeta)_(\\d+)");
