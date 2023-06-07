@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +46,13 @@ public class OneTwoThreePanCom extends PluginForHost {
     public OneTwoThreePanCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -88,7 +96,7 @@ public class OneTwoThreePanCom extends PluginForHost {
     public static final String PROPERTY_S3KEYFLAG      = "s3keyflag";
     public static final String PROPERTY_SIZEBYTES      = "sizebytes";
     public static final String PROPERTY_PARENT_FILE_ID = "parent_file_id";
-    private final String       PROPERTY_DIRECTURL      = "directurl";
+    public static final String PROPERTY_DIRECTURL      = "directurl";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -121,26 +129,29 @@ public class OneTwoThreePanCom extends PluginForHost {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.setFollowRedirects(true);
         final Map<String, Object> postdata = new HashMap<String, Object>();
         postdata.put("Etag", etag);
         postdata.put("FileID", getFileID(link));
-        postdata.put("S3keyFlag", PROPERTY_S3KEYFLAG);
+        postdata.put("S3keyFlag", s3keyflag);
         postdata.put("ShareKey", getShareKey(link));
         postdata.put("Size", sizebytes);
         br.postPageRaw(OneTwoThreePanComFolder.API_BASE + "/share/download/info", JSonStorage.serializeToJson(postdata));
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) entries.get("data");
-        final String directurl = data.get("DownloadURL").toString();
-        link.setProperty(PROPERTY_DIRECTURL, directurl);
-        final String filenameFromWebAPI = link.getStringProperty(PROPERTY_FILENAME);
-        String filenameFromURL = null;
-        final UrlQuery query1 = UrlQuery.parse(directurl);
-        final String paramsStr = query1.get("params");
-        if (paramsStr != null) {
-            final UrlQuery query2 = UrlQuery.parse(Encoding.Base64Decode(paramsStr));
-            filenameFromURL = query2.get("filename");
+        if (data == null) {
+            /* E.g. {"code":400,"message":"非法请求,源文件不存在","data":null} */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String url = data.get("DownloadURL").toString();
+        if (StringUtils.isEmpty(url)) {
+            /* This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setProperty(PROPERTY_DIRECTURL, url);
+        final String directurl = getStoredDirecturl(link);
+        final String filenameFromWebAPI = link.getStringProperty(PROPERTY_FILENAME);
+        final UrlQuery query2 = UrlQuery.parse(directurl);
+        final String filenameFromURL = query2.get("filename");
         if (filenameFromURL != null) {
             link.setFinalFileName(Encoding.htmlDecode(filenameFromURL).trim());
         } else {
@@ -154,23 +165,56 @@ public class OneTwoThreePanCom extends PluginForHost {
         handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
+    public static void setEtag(final DownloadLink link, final String etag) {
+        link.setProperty(PROPERTY_ETAG, etag);
+        link.setMD5Hash(etag);
+    }
+
+    private String getStoredDirecturl(final DownloadLink link) throws MalformedURLException {
+        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
+        if (StringUtils.isEmpty(url)) {
+            return null;
+        }
+        final UrlQuery query = UrlQuery.parse(url);
+        final String urlBase64 = query.get("params");
+        if (urlBase64 != null) {
+            return Encoding.Base64Decode(urlBase64);
+        } else {
+            /* This might potentially lead to a failure. */
+            logger.warning("Couldn't find expected base64 String inside stored DownloadUrl");
+            return url;
+        }
+    }
+
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
-        if (!attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL)) {
+        final String storedDirecturl = getStoredDirecturl(link);
+        String dllink;
+        if (storedDirecturl != null) {
+            dllink = storedDirecturl;
+        } else {
             requestFileInformation(link, true);
-            String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+            dllink = getStoredDirecturl(link);
             if (StringUtils.isEmpty(dllink)) {
+                /* This should never happen! */
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
+            if (storedDirecturl != null) {
+                /* Remove property so next retry a new directurl will be obtained. */
+                link.removeProperty(PROPERTY_DIRECTURL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+            } else {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl.startDownload();
@@ -179,30 +223,6 @@ public class OneTwoThreePanCom extends PluginForHost {
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return false;
-    }
-
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty) throws Exception {
-        final String url = link.getStringProperty(directlinkproperty);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, FREE_RESUME, FREE_MAXCHUNKS);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                return true;
-            } else {
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
-            return false;
-        }
     }
 
     @Override

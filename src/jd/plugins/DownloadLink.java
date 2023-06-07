@@ -1644,7 +1644,24 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return getStringProperty(PROPERTY_PASS, null);
     }
 
-    public void setDownloadPassword(String pass) {
+    public void setDownloadPassword(final String pass) {
+        setDownloadPassword(pass, null);
+    }
+
+    /**
+     * Use this to set the download password needed to download this item. <br>
+     * Users can pre-set download passwords on any items so setting a password doesn't necessarily mean that the item is password protected
+     * nor that that password is valid. </br>
+     *
+     * @param pass:
+     *            The download password.
+     *
+     * @param isPasswordProtected:
+     *            Set this to true if you know that the item is password protected.
+     *
+     *
+     */
+    public void setDownloadPassword(final String pass, final Boolean isPasswordProtected) {
         final String oldPassword = getDownloadPassword();
         if (StringUtils.equals(pass, oldPassword) || (StringUtils.isEmpty(pass) && StringUtils.isEmpty(oldPassword))) {
             return;
@@ -1653,6 +1670,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             this.removeProperty(PROPERTY_PASS);
         } else {
             this.setProperty(PROPERTY_PASS, pass);
+        }
+        if (isPasswordProtected != null) {
+            setPasswordProtected(isPasswordProtected.booleanValue());
         }
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.DOWNLOAD_PASSWORD, pass));

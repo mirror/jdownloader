@@ -76,7 +76,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
     }
 
     private static final String TYPE_USER  = "https?://[^/]+/(?:users|profile)/([^/]+)(/videos)?";
-    private static final String TYPE_VIDEO = "https?://[^/]+/videos?/[A-Za-z0-9]+";
+    private static final String TYPE_VIDEO = "https?://[^/]+/videos?/([A-Za-z0-9]+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
@@ -131,14 +131,13 @@ public class IwaraTvCrawler extends PluginForDecrypt {
             final List<Map<String, Object>> results = (List<Map<String, Object>>) entries2.get("results");
             int foundNumberofNewItemsThisPage = 0;
             int numberofSkippedExternalLinksThisPage = 0;
-            final boolean allowFastLinkcheckInProfileCrawler = cfg.isProfileCrawlerEnableFastLinkcheck() && !cfg.isScanForDownloadableLinksInContentDescription();
             for (final Map<String, Object> result : results) {
                 final String videoID = result.get("id").toString();
                 if (!dupes.add(videoID) || "thumbnails".equals(videoID)) {
                     continue;
                 }
                 /* Assume all items are selfhosted and thus do not have to go through this crawler again. */
-                final String videoURL = "https://" + br.getHost(true) + "/video/" + videoID;
+                final String videoURL = "https://" + br.getHost() + "/video/" + videoID;
                 /*
                  * Do not process these URLs again via hosterplugin! We know that it's selfhosted plugin thus we use use the constructor in
                  * which we can provide a PluginForHost.
@@ -147,26 +146,32 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                 dl.setContentUrl(videoURL);
                 dl.setProperty(IwaraTv.PROPERTY_VIDEOID, videoID);
                 IwaraTv.parseFileInfo(dl, result);
-                final String embedUrl = dl.getStringProperty(IwaraTv.PROPERTY_EMBED_URL);
-                if (embedUrl != null) {
-                    /* Video is not hosted on iwara.tv but on a 3rd party website. */
-                    if (cfg.isProfileCrawlerSkipExternalURLs()) {
-                        logger.info("Skipping externally hosted item: " + embedUrl);
-                        numberofSkippedExternalLinksThisPage++;
+                if (!cfg.isScanForDownloadableLinksInContentDescription()) {
+                    /*
+                     * Only scan for additional info and do fast linkcheck if user does not want us to scan for external URLs in
+                     * video-description.
+                     */
+                    final String embedUrl = dl.getStringProperty(IwaraTv.PROPERTY_EMBED_URL);
+                    if (embedUrl != null) {
+                        /* Video is not hosted on iwara.tv but on a 3rd party website. */
+                        if (cfg.isProfileCrawlerSkipExternalURLs()) {
+                            logger.info("Skipping externally hosted item: " + embedUrl);
+                            numberofSkippedExternalLinksThisPage++;
+                        } else {
+                            final DownloadLink externalVideo = this.createDownloadlink(embedUrl);
+                            ret.add(externalVideo);
+                            distribute(externalVideo);
+                        }
                     } else {
-                        final DownloadLink externalVideo = this.createDownloadlink(embedUrl);
-                        ret.add(externalVideo);
-                        distribute(externalVideo);
+                        dl.setName(IwaraTv.getFilename(dl));
+                        if (cfg.isProfileCrawlerEnableFastLinkcheck()) {
+                            dl.setAvailable(true);
+                        }
                     }
-                } else {
-                    dl.setName(IwaraTv.getFilename(dl));
-                    if (allowFastLinkcheckInProfileCrawler) {
-                        dl.setAvailable(true);
-                    }
-                    dl._setFilePackage(fp);
-                    ret.add(dl);
-                    distribute(dl);
                 }
+                dl._setFilePackage(fp);
+                ret.add(dl);
+                distribute(dl);
                 foundNumberofNewItemsThisPage++;
             }
             numberofSkippedExternalLinks += numberofSkippedExternalLinksThisPage;

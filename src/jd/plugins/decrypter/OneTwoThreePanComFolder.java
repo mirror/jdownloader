@@ -129,20 +129,25 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
                 if (((Number) item.get("Type")).intValue() == 0) {
                     /* File */
                     final long filesizeBytes = ((Number) item.get("Size")).longValue();
+                    final String directurl = (String) item.get("DownloadUrl");
                     link.setFinalFileName(itemTitle);
                     link.setVerifiedFileSize(filesizeBytes);
                     link.setAvailable(true);
+                    OneTwoThreePanCom.setEtag(link, item.get("Etag").toString());
                     link.setProperty(OneTwoThreePanCom.PROPERTY_FILENAME, itemTitle);
-                    link.setProperty(OneTwoThreePanCom.PROPERTY_ETAG, item.get("Etag").toString());
                     link.setProperty(OneTwoThreePanCom.PROPERTY_S3KEYFLAG, item.get("S3KeyFlag").toString());
                     link.setProperty(OneTwoThreePanCom.PROPERTY_SIZEBYTES, filesizeBytes);
                     link.setProperty(OneTwoThreePanCom.PROPERTY_PARENT_FILE_ID, item.get("ParentFileId"));
+                    /* 2023-06-07: Directurl is not given here atm but the field exists so we're taking advantage of it. */
+                    if (!StringUtils.isEmpty(directurl)) {
+                        link.setProperty(OneTwoThreePanCom.PROPERTY_DIRECTURL, directurl);
+                    }
+                    link.setMD5Hash(item.get("Etag").toString());
                 } else {
                     /* Folder */
                 }
                 if (passCode != null) {
-                    link.setPasswordProtected(true);
-                    link.setDownloadPassword(passCode);
+                    link.setDownloadPassword(passCode, Boolean.TRUE);
                 }
                 /* Do not set relative path and FilePackage for single file items without a folder. */
                 if (!StringUtils.isEmpty(path) && !StringUtils.equals(itemTitle, currentFolderName)) {
