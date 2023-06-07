@@ -117,6 +117,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
         // final String baseURL = "https://" + Browser.getHost(param.getCryptedUrl(), true) + "/users/" + usernameSlug + "/videos";
         final String usernameForFilename = user.get("name").toString();
         final FilePackage fp = FilePackage.getInstance();
+        fp.setAllowInheritance(true);
         fp.setName(usernameForFilename);
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         int numberofSkippedExternalLinks = 0;
@@ -139,18 +140,17 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                 /* Assume all items are selfhosted and thus do not have to go through this crawler again. */
                 final String videoURL = "https://" + br.getHost() + "/video/" + videoID;
                 /*
-                 * Do not process these URLs again via hosterplugin! We know that it's selfhosted plugin thus we use use the constructor in
-                 * which we can provide a PluginForHost.
+                 * Only scan for additional info and do fast linkcheck if user does not want us to scan for external URLs in
+                 * video-description.
                  */
-                final DownloadLink dl = new DownloadLink(plg, this.getHost(), this.getHost(), videoURL, true);
-                dl.setContentUrl(videoURL);
-                dl.setProperty(IwaraTv.PROPERTY_VIDEOID, videoID);
-                IwaraTv.parseFileInfo(dl, result);
-                if (!cfg.isScanForDownloadableLinksInContentDescription()) {
-                    /*
-                     * Only scan for additional info and do fast linkcheck if user does not want us to scan for external URLs in
-                     * video-description.
-                     */
+                final DownloadLink dl;
+                if (cfg.isScanForDownloadableLinksInContentDescription()) {
+                    dl = this.createDownloadlink(videoURL);
+                } else {
+                    dl = new DownloadLink(plg, this.getHost(), this.getHost(), videoURL, true);
+                    dl.setContentUrl(videoURL);
+                    dl.setProperty(IwaraTv.PROPERTY_VIDEOID, videoID);
+                    IwaraTv.parseFileInfo(dl, result);
                     final String embedUrl = dl.getStringProperty(IwaraTv.PROPERTY_EMBED_URL);
                     if (embedUrl != null) {
                         /* Video is not hosted on iwara.tv but on a 3rd party website. */
