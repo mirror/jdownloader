@@ -26,6 +26,19 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.appwork.storage.flexijson.FlexiJSONParser;
+import org.appwork.storage.flexijson.FlexiJSonNode;
+import org.appwork.storage.flexijson.FlexiUtils;
+import org.appwork.storage.flexijson.ParsingError;
+import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
+import org.appwork.storage.flexijson.mapper.interfacestorage.InterfaceStorage;
+import org.appwork.utils.CompareUtils;
+import org.appwork.utils.ConcatIterator;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -54,19 +67,6 @@ import jd.plugins.components.gopro.ReflectData;
 import jd.plugins.components.gopro.SearchResponse;
 import jd.plugins.components.gopro.Variation;
 import jd.plugins.hoster.GoProCloud;
-
-import org.appwork.storage.flexijson.FlexiJSONParser;
-import org.appwork.storage.flexijson.FlexiJSonNode;
-import org.appwork.storage.flexijson.FlexiUtils;
-import org.appwork.storage.flexijson.ParsingError;
-import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
-import org.appwork.storage.flexijson.mapper.interfacestorage.InterfaceStorage;
-import org.appwork.utils.CompareUtils;
-import org.appwork.utils.ConcatIterator;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gopro.com" }, urls = { "(https?://plus.gopro.com/media-library/[a-zA-Z0-9]+|https?://plus\\.gopro\\.com/media-library/?$|https?://(?:www\\.)?gopro.com/v/[A-Za-z0-9]+/?(?:[A-Za-z0-9]+)?$)" })
 @PluginDependencies(dependencies = { GoProCloud.class })
@@ -235,6 +235,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                             return;
                         }
                     } else if (!toCrawl.contains(GoProType.valueOf(media.getType()))) {
+                        logger.info("Skipped MediaType: " + media.getType() + " (Disabled in Config)");
                         return;
                     }
                 } catch (IllegalArgumentException e) {
@@ -301,7 +302,7 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                         decryptedLinks.add(link);
                         dupe.add(v.getUrl());
                     }
-                } else if ("Video".equals(media.getType()) || "TimeLapseVideo".equals(media.getType()) || "BurstVideo".equals(media.getType())) {
+                } else if ("Video".equals(media.getType()) || "TimeLapseVideo".equals(media.getType()) || "BurstVideo".equals(media.getType()) || "MultiClipEdit".equals(media.getType())) {
                     if (hostConfig.isCrawlDownscaledVariants()) {
                         final FlexiJSonNodeResponse responseMediaDownload = GoProCloud.getDownloadResponse(this, account, br, id, cacheSource);
                         final Download download = mapper.jsonToObject(responseMediaDownload.jsonNode, Download.TYPEREF);
@@ -316,21 +317,28 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                             if (isAbort()) {
                                 return;
                             }
-                            final String variantID = v.getLabel();
+                            final String variantID = GoProCloud.createVideoVariantID(v, media);
                             if (StringUtils.isEmpty(variantID)) {
                                 continue;
-                            } else if (dupe.contains(Integer.toString(v.getHeight()))) {
+                            } else if (dupe.contains(Integer.toString(v.getHeight()) + "_" + Integer.toString(v.getItem_number()))) {
                                 continue;
                             }
-                            if (hostConfig.isUseOriginalGoProFileNames()) {
-                                final GoProVariant newVariant = (new GoProVariant(v.getHeight() + "p" + "_" + variantID, variantID + "_" + v.getHeight()));
+                            if ("concat".equals(v.getLabel())) {
+                                final GoProVariant sourceVariant = (new GoProVariant("Highest(" + v.getHeight() + "p" + ")" + " (Merged full length)", variantID + "_" + v.getHeight()));
+                                variants.add(sourceVariant);
+                            } else if (v.getItem_number() > 0) {
+                                final GoProVariant newVariant = (new GoProVariant(v.getHeight() + "p" + " (Part " + v.getItem_number() + "/" + media.getItem_count() + ")", variantID + "_" + v.getHeight()));
+                                variants.add(newVariant);
+                            } else if (media.getItem_count() > 1 && v.getItem_number() == 0) {
+                                final GoProVariant newVariant = (new GoProVariant(v.getHeight() + "p" + " (Merged full length)", variantID + "_" + v.getHeight()));
                                 variants.add(newVariant);
                             } else {
-                                if ("source".equals(variantID)) {
-                                    final GoProVariant sourceVariant = (new GoProVariant("Highest(Source)", "source"));
+                                if (variantID.contains("source")) {
+                                    // source, baked_source,...
+                                    final GoProVariant sourceVariant = (new GoProVariant("Highest(" + v.getHeight() + "p" + ")", "source"));
                                     variants.add(sourceVariant);
                                 }
-                                final GoProVariant newVariant = (new GoProVariant(v.getHeight() + "p", v.getHeight() + "p"));
+                                final GoProVariant newVariant = (new GoProVariant(v.getHeight() + "p", variantID + "_" + v.getHeight()));
                                 variants.add(newVariant);
                             }
                             if (hostConfig.isAddEachVariantAsExtraLink()) {
@@ -356,14 +364,30 @@ public class GoProCloudDecrypter extends antiDDoSForDecrypt {
                             GoProCloud.setCache(link, responseMedia != null ? responseMedia.jsonString : null, responseMediaDownload != null ? responseMediaDownload.jsonString : null);
                             setContentUrl(cryptedLink, id, access, link);
                             link.setFinalFileName(media.getFilename());
-                            link.setVariantSupport(true);
+                            link.setVariantSupport(variants.size() > 1);
                             fp.add(link);
                             link.setVariants(variants);
                             link.setAvailable(true);
-                            link.setDownloadSize(media.getFile_size());
-                            GoProCloud.setFinalFileName(this, hostConfig, media, link, download.getEmbedded().getVariations().get(0));
-                            link.setVariant(variants.get(0));
-                            link.setLinkID(jd.plugins.hoster.GoProCloud.createLinkID(link, variants.get(0)));
+                            GoProVariant activeVariant = variants.get(0);
+                            for (Variation v : download.getEmbedded().getVariations()) {
+                                String variantID = v.getLabel() + "_" + v.getItem_number();
+                                variantID += "_" + v.getHeight();
+                                if (StringUtils.equals(variantID, activeVariant.getId())) {
+                                    GoProCloud.setFinalFileName(this, hostConfig, media, link, v);
+                                    if (media.getFile_size() > 0) {
+                                        if (v.getItem_number() == 0) {
+                                            link.setDownloadSize(media.getFile_size());
+                                        }
+                                    }
+                                } else if ("source".equals(activeVariant.getId()) && variantID.contains("source")) {
+                                    GoProCloud.setFinalFileName(this, hostConfig, media, link, v);
+                                    if (media.getFile_size() > 0) {
+                                        link.setDownloadSize(media.getFile_size());
+                                    }
+                                }
+                            }
+                            link.setVariant(activeVariant);
+                            link.setLinkID(jd.plugins.hoster.GoProCloud.createLinkID(link, activeVariant));
                             decryptedLinks.add(link);
                         }
                     } else {

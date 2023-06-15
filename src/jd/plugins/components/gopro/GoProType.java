@@ -6,6 +6,7 @@ import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 public enum GoProType {
     Photo,
     Video,
+    MultiClipEdit,
     TimeLapseAsZipPackage("TimeLapse"),
     TimeLapseAsSingleImages("TimeLapse"),
     TimeLapseVideo,
@@ -17,6 +18,7 @@ public enum GoProType {
     Continuous,
     ExternalVideo,
     Session;
+
     public final String apiID;
 
     private GoProType() {

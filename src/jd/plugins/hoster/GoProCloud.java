@@ -23,6 +23,23 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.flexijson.FlexiJSONParser;
+import org.appwork.storage.flexijson.FlexiJSonNode;
+import org.appwork.storage.flexijson.FlexiParserException;
+import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
+import org.appwork.storage.flexijson.mapper.FlexiMapperException;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -45,30 +62,14 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.gopro.Download;
 import jd.plugins.components.gopro.FlexiJSonNodeResponse;
 import jd.plugins.components.gopro.GoProConfig;
+import jd.plugins.components.gopro.GoProType;
 import jd.plugins.components.gopro.GoProVariant;
 import jd.plugins.components.gopro.Media;
 import jd.plugins.components.gopro.Variation;
 import jd.plugins.decrypter.GoProCloudDecrypter;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.flexijson.FlexiJSONParser;
-import org.appwork.storage.flexijson.FlexiJSonNode;
-import org.appwork.storage.flexijson.FlexiParserException;
-import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
-import org.appwork.storage.flexijson.mapper.FlexiMapperException;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gopro.com" }, urls = { GoProCloud.HTTPS_GOPRO_COM_DOWNLOAD_PREMIUM_FREE })
-public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler */{
+public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler */ {
     public static final String MEDIA                                 = "media";
     public static final String MEDIA_DOWNLOAD                        = "media/download";
     public static final String HTTPS_GOPRO_COM_DOWNLOAD_PREMIUM_FREE = "https?://gopro\\.com/download(?:premium|free)/([^/]+)/([^/]+)";
@@ -161,7 +162,8 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
                                     // {"_errors":[{"code":401,"description":"Invalid username/password combination."}],"statusCode":401}
                                     throw new AccountInvalidException("Invalid username/password combination");
                                 case 4014:
-                                    // {"_errors":[{"code":4014,"id":"","description":"Invalid Two-Factor Authentication Code. Please try again or request a new code"}],"statusCode":401}
+                                    // {"_errors":[{"code":4014,"id":"","description":"Invalid Two-Factor Authentication Code. Please try
+                                    // again or request a new code"}],"statusCode":401}
                                     logger.info("2FA code required");
                                     final Browser brc = br.cloneBrowser();
                                     brc.getPage("https://gopro.com/2fa-code?email=" + URLEncode.encodeURIComponent(account.getUser()));
@@ -266,6 +268,19 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
                 final GoProVariant activeVariant = (GoProVariant) getActiveVariantByLink(link);
                 for (Variation v : resp.getEmbedded().getVariations()) {
                     if (activeVariant._getUniqueId().equals(v.getLabel())) {
+                        // compatibility to old links in linklist/decrypter
+                        // source
+                        source = v;
+                        break;
+                    }
+                    if ("source".equals(activeVariant._getUniqueId()) && "source".equals(v.getLabel()) || "baked_source".equals(v.getLabel())) {
+                      //  baked_source  --> EditMultiClip type.
+                        // source
+                        source = v;
+                        break;
+                    }
+                    String vid = createVideoVariantID(v, media) + "_" + v.getHeight();
+                    if (activeVariant._getUniqueId().equals(vid)) {
                         // source
                         source = v;
                         break;
@@ -297,7 +312,17 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
             }
             if (source == null) {
                 for (Variation v : resp.getEmbedded().getVariations()) {
-                    if (variant.equals(v.getLabel())) {
+                    if ("source".equals(variant) && "concat".equals(v.getLabel())) {
+                        // do not scan downscaled variants
+                        source = v;
+                        break;
+                    }
+                    if (variant.contains("source") && v.getLabel().contains("source")) {
+                        // baked_source for editClips
+                        source = v;
+                        break;
+                    }
+                    if (variant.equals(v.getLabel()) || variant.equals(createVideoVariantID(v, media))) {
                         source = v;
                         break;
                     }
@@ -340,11 +365,18 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
         }
         String fileExtension = media.getFile_extension();
         if (source != null) {
+            // if (source.getItem_number() > 0) {
+            // name = name.replaceAll("\\.[^\\.]+$", "_part_" + source.getItem_number() + "_" + media.getItem_count() + "$0");
+            // }
             if ("gpr".equals(source.getType())) {
                 fileExtension = "gpr";
             } else if ("zip".equals(source.getType())) {
                 fileExtension = "zip";
             }
+        }
+        if ("json".equals(fileExtension) && GoProType.MultiClipEdit.name().equals(media.getType())) {
+            // bug for MultiClipEdit videos - gopro api reports json as file extension instead of mp4
+            fileExtension = "mp4";
         }
         if (StringUtils.isNotEmpty(fileExtension)) {
             name = plugin.correctOrApplyFileNameExtension(name, "." + fileExtension);
@@ -353,8 +385,17 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
             link.setFinalFileName(name);
         } else {
             String variant = "";
-            if (source != null && "source".equals(source.getLabel()) && !"Photo".equals(media.getType()) && !"Burst".equals(media.getType()) && !"TimeLapse".equals(media.getType())) {
+            if (source != null && "concat".equals(source.getLabel()) && !"Photo".equals(media.getType()) && !"Burst".equals(media.getType()) && !"TimeLapse".equals(media.getType())) {
+                variant = "_source_merged_full_length";
+            } else if (source != null && "source".equals(source.getLabel()) && !"Photo".equals(media.getType()) && !"Burst".equals(media.getType()) && !"TimeLapse".equals(media.getType())) {
                 variant = "_source";
+                if (source.getItem_number() > 0) {
+                    // Big splitted videos (>10gb?)
+                    int digits = (int) (Math.log10(media.getItem_count()) + 1);
+                    variant = "_" + Files.getFileNameWithoutExtension(media.getFilename()) + "_part_" + StringUtils.fillPre(source.getItem_number() + "", "0", digits);
+                } else if (media.getItem_count() > 0) {
+                    variant = "_full_length";
+                }
             } else if ((source != null && source.getLabel() == null) || "Burst".equals(media.getType()) || "TimeLapse".equals(media.getType())) {
                 if (!name.toLowerCase(Locale.ROOT).endsWith(".zip")) {
                     // burst or timelapse image
@@ -578,4 +619,9 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
     // }
     // return null;
     // }
+
+    public static String createVideoVariantID(Variation v, Media media) {
+        final int digits = (int) (Math.log10(media.getItem_count()) + 1);
+        return v.getLabel() + "_" + StringUtils.fillPre(v.getItem_number() + "", "0", digits);
+    }
 }
