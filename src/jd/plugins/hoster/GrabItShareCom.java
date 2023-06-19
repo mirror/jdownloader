@@ -16,12 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 import jd.PluginWrapper;
@@ -86,18 +88,18 @@ public class GrabItShareCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
-        br.getPage(parameter.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         String newlink = br.getRegex("<p>The document has moved <a href=\"(.*?)\">here</a>\\.</p>").getMatch(0);
         if (newlink != null) {
             logger.info("This link has moved, trying to find and set the new link...");
             newlink = newlink.replaceAll("(\\&amp;|setlang=en)", "");
-            parameter.setUrlDownload(newlink);
+            link.setUrlDownload(newlink);
             br.getPage(newlink);
         }
         checkOffline();
@@ -115,15 +117,15 @@ public class GrabItShareCom extends PluginForHost {
         if (filename == null || filename.matches("")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        parameter.setFinalFileName(filename.trim());
+        link.setFinalFileName(filename.trim());
         if (filesize != null) {
-            parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
     }
 
     private void checkOffline() throws PluginException {
-        if (br.containsHTML("(Your requested file is not found|No file found)")) {
+        if (br.containsHTML("(?i)(Your requested file is not found|No file found)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
@@ -223,11 +225,25 @@ public class GrabItShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        checkErrorsAfterDownloadAttempt();
         dl.startDownload();
+    }
+
+    private void checkErrorsAfterDownloadAttempt() throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
+            final UrlQuery query = UrlQuery.parse(br.getURL());
+            final String errorStr = query.get("code");
+            if (errorStr != null) {
+                if (errorStr.equalsIgnoreCase("DL_FileNotFound")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, errorStr);
+                }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -310,12 +326,7 @@ public class GrabItShareCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
+        login(account, true);
         br.getPage(COOKIE_HOST + "/en/members.php");
         String expired = getData("Aktivno");
         if (expired != null) {
@@ -344,14 +355,14 @@ public class GrabItShareCom extends PluginForHost {
         return ai;
     }
 
-    public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, true);
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        br.getPage(parameter.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         checkOffline();
         if (account.getType() == AccountType.FREE) {
-            doFree(parameter);
+            doFree(link);
         } else {
             String finalLink = null;
             if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("access_key=") || br.getRedirectLocation().contains("getfile.php"))) {
@@ -367,11 +378,11 @@ public class GrabItShareCom extends PluginForHost {
                     if (pwform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    if (parameter.getStringProperty("pass", null) == null) {
-                        passCode = getUserInput("Password?", parameter);
+                    if (link.getStringProperty("pass", null) == null) {
+                        passCode = getUserInput("Password?", link);
                     } else {
                         /* gespeicherten PassCode holen */
-                        passCode = parameter.getStringProperty("pass", null);
+                        passCode = link.getStringProperty("pass", null);
                     }
                     pwform.put("downloadpw", passCode);
                     br.submitForm(pwform);
@@ -381,22 +392,19 @@ public class GrabItShareCom extends PluginForHost {
                 }
                 if (br.containsHTML("Password Error")) {
                     logger.warning("Wrong password!");
-                    parameter.setProperty("pass", null);
+                    link.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 if (passCode != null) {
-                    parameter.setProperty("pass", passCode);
+                    link.setProperty("pass", passCode);
                 }
                 finalLink = findLink(br);
             }
             if (finalLink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, finalLink, true, -5);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, -5);
+            checkErrorsAfterDownloadAttempt();
             dl.startDownload();
         }
     }

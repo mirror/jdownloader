@@ -88,6 +88,7 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
         String currentFolderName = null;
         // TODO: Add support for password protected items
         String passCode = param.getDecrypterPassword();
+        boolean isPasswordProtected = false;
         if (preGivenFileID != null) {
             /* Access WebAPI right away. */
             entries = accessPageViaWebAPI(br, shareKey, preGivenFileID, null);
@@ -101,10 +102,12 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
             final Map<String, Object> root = restoreFromString(json, TypeRef.MAP);
             final Map<String, Object> folderinfomap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "res/data");
             if (Boolean.TRUE.equals(folderinfomap.get("HasPwd"))) {
+                // TODO: Add support for password protected items
                 logger.info("Password protected items are not yet supported");
+                isPasswordProtected = true;
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* If we have a single file only, thiks is the name of the single file! */
+            /* If we have a single file only, this is the name of the single file. */
             currentFolderName = folderinfomap.get("ShareName").toString();
             entries = (Map<String, Object>) root.get("reslist");
             if (path == null) {
@@ -112,6 +115,9 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
             } else {
                 path = "/" + currentFolderName;
             }
+        }
+        if (isPasswordProtected) {
+            // TODO: Add support for password protected items
         }
         FilePackage fp = null;
         if (!StringUtils.isEmpty(path)) {
@@ -143,16 +149,26 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
                         link.setProperty(OneTwoThreePanCom.PROPERTY_DIRECTURL, directurl);
                     }
                     link.setMD5Hash(item.get("Etag").toString());
+                    /* Do not set relative path and FilePackage for single file items without a folder. */
+                    if (!StringUtils.isEmpty(path) && !StringUtils.equals(itemTitle, currentFolderName)) {
+                        link.setRelativeDownloadFolderPath(path);
+                        link._setFilePackage(fp);
+                    }
                 } else {
                     /* Folder */
+                    if (!StringUtils.isEmpty(path) && !StringUtils.equals(itemTitle, currentFolderName)) {
+                        /*
+                         * X-th item in crawl-chain: Remember folder-structure as API always only provides title of folders we can currently
+                         * see but not the previous folder structure.
+                         */
+                        link.setRelativeDownloadFolderPath(path + "/" + itemTitle);
+                    } else {
+                        /* First folder in crawl-chain. */
+                        link.setRelativeDownloadFolderPath(itemTitle);
+                    }
                 }
                 if (passCode != null) {
                     link.setDownloadPassword(passCode, Boolean.TRUE);
-                }
-                /* Do not set relative path and FilePackage for single file items without a folder. */
-                if (!StringUtils.isEmpty(path) && !StringUtils.equals(itemTitle, currentFolderName)) {
-                    link.setRelativeDownloadFolderPath(path);
-                    link._setFilePackage(fp);
                 }
                 ret.add(link);
                 distribute(link);

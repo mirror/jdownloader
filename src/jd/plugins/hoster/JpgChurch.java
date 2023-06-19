@@ -67,7 +67,7 @@ public class JpgChurch extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "jpg.fishing", "jpg.fish", "jpg.church" });
+        ret.add(new String[] { "jpg.pet", "jpg.fishing", "jpg.fish", "jpg.church" });
         return ret;
     }
 
@@ -90,7 +90,8 @@ public class JpgChurch extends PluginForHost {
 
     @Override
     public String rewriteHost(final String host) {
-        /* 2023-02-21: Main domain changed from "jpg.church" to "jpg.fish". */
+        /* 2023-02-21: Main domain changed from jpg.church to jpg.fish. */
+        /* 2023-06-20: Main domain changed from jpg.fishing to jpg.pet. */
         return this.rewriteHost(getPluginDomains(), host);
     }
 

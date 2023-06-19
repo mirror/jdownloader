@@ -157,17 +157,24 @@ public class GigafileNu extends PluginForHost {
                     /* Single file -> Download that, else .zip of all files. */
                     final Map<String, Object> filemap = (Map<String, Object>) ressourcelist.get(0);
                     fileIDForDownload = filemap.get("file").toString();
+                    logger.info("Downloading single file: " + fileIDForDownload);
+                } else {
+                    logger.info("This is a folder containing " + ressourcelist.size() + " files --> Download .zip file containing all files");
                 }
             }
+            final String dllink;
             if (fileIDForDownload == null) {
-                fileIDForDownload = mainFileID;
+                /* .zip download */
+                if (mainFileID == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dllink = "/dl_zip.php?file=" + mainFileID;
+            } else {
+                /* Single file download */
+                dllink = "/download.php?file=" + fileIDForDownload;
             }
             // final String fileiidFromURL = new Regex(br.getURL(), "https?://[^/]+/(.+)").getMatch(0);
-            if (fileIDForDownload == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             // final String dllink = "/dl_zip.php?file=" + fileiidFromURL;
-            final String dllink = "/download.php?file=" + fileIDForDownload;
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
