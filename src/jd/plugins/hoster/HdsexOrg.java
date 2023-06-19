@@ -49,7 +49,7 @@ public class HdsexOrg extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "hdsex.org" });
+        ret.add(new String[] { "hdsex.org", "hdsex2.com" });
         return ret;
     }
 

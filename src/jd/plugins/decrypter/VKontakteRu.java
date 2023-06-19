@@ -1707,7 +1707,6 @@ public class VKontakteRu extends PluginForDecrypt {
         final int maxEntriesPerRequest = 20;
         int offset = 0;
         int page = 0;
-        int totalItemsCrawledFromThisPost = 0;
         int totalNumberOfItems = 0;
         logger.info("Crawling single wall post");
         final ArrayList<DownloadLink> ret = this.getReturnArray();
@@ -1725,13 +1724,12 @@ public class VKontakteRu extends PluginForDecrypt {
             final String htmlReplies = br.getRegex("<div class=\"replies\"(.+)").getMatch(0);
             if (htmlReplies != null && this.vkwall_comments_grab_comments) {
                 /* Grab media inside replies/comments to users' post if wished by user. */
-                ret.addAll(websiteCrawlContent(param.getCryptedUrl(), br.toString(), fp, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, false, this.vkwall_comment_grablink, this.photos_store_picture_directurls));
+                ret.addAll(websiteCrawlContent(param.getCryptedUrl(), br.getRequest().getHtmlCode(), fp, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, false, this.vkwall_comment_grablink, this.photos_store_picture_directurls));
             }
             final int numberofItemsAddedThisLoop = ret.size() - numberofFoundItemsOld;
             logger.info("Offset " + offset + " contained " + numberofItemsAddedThisLoop + " items in total so far (including inside replies)");
             offset += maxEntriesPerRequest;
             logger.info("Number of NEW added items: " + numberofItemsAddedThisLoop);
-            totalItemsCrawledFromThisPost += numberofItemsAddedThisLoop;
             /* Avoid this sleep time if we stop after the current */
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
@@ -1784,7 +1782,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
             }
         } while (true);
-        logger.info("Found " + totalItemsCrawledFromThisPost + " items");
+        logger.info("Found " + ret.size() + " items");
         return ret;
     }
 

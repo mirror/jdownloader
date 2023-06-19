@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.Files;
@@ -72,8 +73,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
 import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -123,7 +122,10 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final String  VKWALL_USE_API                                                              = "VKWALL_USE_API_2019_07";
     public static final String  VKWALL_STORE_PICTURE_DIRECTURLS                                             = "VKWALL_STORE_PICTURE_DIRECTURLS";
     public static final String  VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS                    = "VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS";
-    public static final String  VKADVANCED_USER_AGENT                                                       = "VKADVANCED_USER_AGENT";
+    /* Dummy default value for user agent setting */
+    public static final String  default_VKADVANCED_USER_AGENT                                               = "JDDEFAULT";
+    public static final String  VKADVANCED_USER_AGENT                                                       = "VKADVANCED_USER_AGENT_NEW_06_2023";
+    public static final String  default_user_agent                                                          = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
     public static Object        LOCK                                                                        = new Object();
     private String              finalUrl                                                                    = null;
     private String              ownerID                                                                     = null;
@@ -1309,9 +1311,11 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     public static Browser prepBrowser(final Browser br) {
-        final String useragent = SubConfiguration.getConfig("vk.com").getStringProperty(VKADVANCED_USER_AGENT, "");
-        if (!StringUtils.isEmpty(useragent) && useragent.length() > 3) {
-            br.getHeaders().put("User-Agent", useragent);
+        final String useragent = SubConfiguration.getConfig("vk.com").getStringProperty(VKADVANCED_USER_AGENT, default_VKADVANCED_USER_AGENT);
+        if (!StringUtils.isEmpty(useragent) && !StringUtils.equals(useragent, default_VKADVANCED_USER_AGENT)) {
+            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, useragent);
+        } else {
+            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, default_user_agent);
         }
         /* Set prefer English language */
         br.setCookie(DOMAIN, "remixlang", "3");
@@ -1776,7 +1780,6 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final boolean  default_VKWALL_USE_API                                                              = false;
     public static final boolean  default_VKWALL_STORE_PICTURE_DIRECTURLS                                             = false;
     public static final boolean  default_VKWALL_STORE_PICTURE_DIRECTURLS_PREFER_STORED_DIRECTURLS                    = false;
-    public static final String   default_user_agent                                                                  = UserAgents.stringUserAgent(BrowserName.Firefox);
     public static final long     defaultSLEEP_PAGINATION_GENERAL                                                     = 1000;
     public static final long     defaultSLEEP_TOO_MANY_REQUESTS                                                      = 3000;
 
@@ -1964,7 +1967,7 @@ public class VKontakteRuHoster extends PluginForHost {
         /* 2019-08-06: Disabled API setting for now as API requires authorization which we do not (yet) support! */
         // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(),
         // VKWALL_USE_API, "For 'vk.com/wall' links: Use API?").setDefaultValue(default_VKWALL_USE_API));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKADVANCED_USER_AGENT, "User-Agent: ").setDefaultValue(default_user_agent));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKADVANCED_USER_AGENT, "User-Agent: ").setDefaultValue(default_VKADVANCED_USER_AGENT));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SLEEP_PAGINATION_GENERAL, JDL.L("plugins.hoster.sleep.paginationGeneral", "Define sleep time for general pagination"), 500, 15000, 500).setDefaultValue(defaultSLEEP_PAGINATION_GENERAL));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SLEEP_TOO_MANY_REQUESTS, JDL.L("plugins.hoster.sleep.tooManyRequests", "Define sleep time for 'Temp Blocked' event"), (int) defaultSLEEP_TOO_MANY_REQUESTS, 15000, 500).setDefaultValue(defaultSLEEP_TOO_MANY_REQUESTS));
     }

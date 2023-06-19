@@ -45,8 +45,6 @@ public class Etsy extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        ArrayList<String> links = new ArrayList<String>();
         getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -65,6 +63,8 @@ public class Etsy extends antiDDoSForDecrypt {
             }
         }
         // Detail page images
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        ArrayList<String> links = new ArrayList<String>();
         Collections.addAll(links, br.getRegex("<img[^>]+class\\s*=\\s*\"[^\"]*carousel[^\"]*\"[^>]+data-src-zoom-image\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0));
         for (String link : links) {
             ret.add(createDownloadlink(Encoding.htmlDecode(link)));

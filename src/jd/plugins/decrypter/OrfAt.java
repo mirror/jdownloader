@@ -650,6 +650,13 @@ public class OrfAt extends PluginForDecrypt {
         }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> episode = (Map<String, Object>) entries.get("episode");
+        if (episode == null) {
+            /*
+             * Item does not exist anymore or hasn't aired yet. Website may show a preview-image and a description but no streamable video
+             * content.
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // if(Boolean.TRUE.equals(episode.get("is_drm_protected"))) {
         //
         // }

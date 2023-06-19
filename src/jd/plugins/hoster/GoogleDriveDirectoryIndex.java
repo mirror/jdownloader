@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -31,9 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
@@ -82,8 +82,8 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
 
     /**
      * Host plugin that can handle instances of this project:
-     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md </br> Be sure to add all domains to crawler
-     * plugin GoogleDriveDirectoryIndex.java too!
+     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md </br>
+     * Be sure to add all domains to crawler plugin GoogleDriveDirectoryIndex.java too!
      */
     /* Connection stuff */
     private final boolean FREE_RESUME               = true;
@@ -116,7 +116,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
             if (con.getResponseCode() == 401) {
                 br.followConnection(true);
                 throw new AccountRequiredException();
-            } else if (!con.isContentDisposition()) {
+            } else if (!this.looksLikeDownloadableContent(con)) {
                 br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
@@ -146,7 +146,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), resumable, maxchunks);
-        if (!dl.getConnection().isContentDisposition()) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 401) {
                 /* Account required or existent account is missing rights to access that content! */

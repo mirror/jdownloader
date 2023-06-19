@@ -55,7 +55,7 @@ import jd.plugins.decrypter.AbbyWintersComGallery;
 public class AbbyWintersCom extends PluginForHost {
     public AbbyWintersCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.abbywinters.com/tour");
+        this.enablePremium("https://www.abbywinters.com/tour");
     }
 
     @Override
