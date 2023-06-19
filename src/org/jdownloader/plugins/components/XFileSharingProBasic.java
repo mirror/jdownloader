@@ -1001,17 +1001,23 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                  * 2. Missing filename.
                  */
                 if (!StringUtils.isEmpty(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && this.internal_supports_availablecheck_filename_abuse()) {
-                    logger.warning("filename length is larrrge");
+                    logger.warning("Found filename is crippled by website -> Looking for full length filename");
                     final String betterFilename = this.getFnameViaAbuseLink(altbr, link);
                     if (betterFilename != null) {
+                        logger.info("Found full length filename: " + betterFilename);
                         fileInfo[0] = betterFilename;
+                    } else {
+                        logger.info("Failed to find full length filename");
                     }
                 } else if (StringUtils.isEmpty(fileInfo[0]) && this.internal_supports_availablecheck_filename_abuse()) {
                     /* We failed to find the filename via html --> Try getFnameViaAbuseLink as workaround */
-                    logger.info("Failed to find filename, trying getFnameViaAbuseLink");
+                    logger.info("Failed to find any filename, trying to obtain filename via getFnameViaAbuseLink");
                     final String betterFilename = this.getFnameViaAbuseLink(altbr, link);
                     if (betterFilename != null) {
+                        logger.info("Found filename: " + betterFilename);
                         fileInfo[0] = betterFilename;
+                    } else {
+                        logger.info("Failed to find any filename -> Fallback will be used");
                     }
                 }
             }

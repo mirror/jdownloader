@@ -63,7 +63,7 @@ public class IndiShareMe extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "indishare.org", "indishare.cc", "indi-share.com", "indishare.co", "indishare.com", "indishare.me", "india-share.com", "news4town.com" });
+        ret.add(new String[] { "indishare.org", "indishare.cc", "indi-share.com", "indishare.co", "indishare.com", "indishare.me", "india-share.com", "news4town.com", "down-indi1.com" });
         return ret;
     }
 

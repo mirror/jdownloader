@@ -373,30 +373,30 @@ public class GrabItShareCom extends PluginForHost {
                 }
                 String passCode = null;
                 if (br.containsHTML("downloadpw")) {
-                    logger.info("The file you're trying to download seems to be password protected...");
+                    logger.info("The file you're trying to download is password protected...");
+                    link.setPasswordProtected(true);
                     Form pwform = br.getFormbyProperty("name", "myform");
                     if (pwform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    if (link.getStringProperty("pass", null) == null) {
+                    if (link.getDownloadPassword() == null) {
                         passCode = getUserInput("Password?", link);
                     } else {
                         /* gespeicherten PassCode holen */
-                        passCode = link.getStringProperty("pass", null);
+                        passCode = link.getDownloadPassword();
                     }
-                    pwform.put("downloadpw", passCode);
+                    pwform.put("downloadpw", Encoding.urlEncode(passCode));
                     br.submitForm(pwform);
                 }
                 if (br.containsHTML("You have got max allowed download sessions from the same IP")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
                 }
                 if (br.containsHTML("Password Error")) {
-                    logger.warning("Wrong password!");
-                    link.setProperty("pass", null);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                    link.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
                 }
                 if (passCode != null) {
-                    link.setProperty("pass", passCode);
+                    link.setDownloadPassword(passCode);
                 }
                 finalLink = findLink(br);
             }

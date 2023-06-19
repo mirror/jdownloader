@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -31,14 +34,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.HashInfo;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re|m\\.)/(watch/|listen/|imageview|folder/|view/|i/\\?|\\?sharekey=|view/\\?|view\\?|\\?|(?!download|file|file_premium|\\?JDOWNLOADER|imgbnc\\.php))([a-z0-9]{12}/)?[a-z0-9,#]+" })
 public class MediafireComFolder extends PluginForDecrypt {
@@ -94,8 +96,8 @@ public class MediafireComFolder extends PluginForDecrypt {
 
     // https://www.mediafire.com/developers/core_api/1.5/getting_started/#error_codes
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("mfi.re/", "mediafire.com/").trim();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String parameter = param.getCryptedUrl().replace("mfi.re/", "mediafire.com/").trim();
         if (parameter.matches("https?://(\\w+\\.)?mediafire\\.com/view/\\?.+")) {
             /* Single view-streams (documents) --> Change to download links (normal file) */
             parameter = parameter.replaceFirst("/view", "");
@@ -107,11 +109,9 @@ public class MediafireComFolder extends PluginForDecrypt {
             parameter = parameter.replaceFirst("/listen", "/download");
         }
         if (parameter.endsWith("mediafire.com") || parameter.endsWith("mediafire.com/")) {
-            return decryptedLinks;
+            return ret;
         } else if (parameter.matches(INVALIDLINKS)) {
-            logger.info("Link offline: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         subFolder = getAdoptedCloudFolderStructure();
         if (subFolder == null) {
@@ -129,8 +129,8 @@ public class MediafireComFolder extends PluginForDecrypt {
             }
             if (ID != null) {
                 DownloadLink link = createSingleDownloadlink(ID);
-                decryptedLinks.add(link);
-                return decryptedLinks;
+                ret.add(link);
+                return ret;
             }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -138,16 +138,16 @@ public class MediafireComFolder extends PluginForDecrypt {
             String fileID = new Regex(parameter, "\\.com/.*?quickkey=(.+)").getMatch(0);
             if (fileID != null) {
                 final DownloadLink link = createSingleDownloadlink(fileID);
-                decryptedLinks.add(link);
-                return decryptedLinks;
+                ret.add(link);
+                return ret;
             }
             return null;
         } else if (parameter.contains("/i/?")) {
             String fileID = new Regex(parameter, "\\.com/i/\\?(.+)").getMatch(0);
             if (fileID != null) {
                 final DownloadLink link = createSingleDownloadlink(fileID);
-                decryptedLinks.add(link);
-                return decryptedLinks;
+                ret.add(link);
+                return ret;
             }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -170,9 +170,9 @@ public class MediafireComFolder extends PluginForDecrypt {
                 } else {
                     link = createSingleDownloadlink(key);
                 }
-                decryptedLinks.add(link);
+                ret.add(link);
             }
-            return decryptedLinks;
+            return ret;
         } else {
             // Private link? Login needed!
             if (getUserLogin()) {
@@ -190,8 +190,7 @@ public class MediafireComFolder extends PluginForDecrypt {
                 contentID = new Regex(br.getURL(), "([a-z0-9]+)$").getMatch(0);
                 if (contentID == null || contentID.equals(old_sharekey)) {
                     logger.warning("Unable to find new 'quick_key' --> URL might be offline");
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 logger.info("Found new 'quick_key': " + contentID);
             } else {
@@ -245,8 +244,8 @@ public class MediafireComFolder extends PluginForDecrypt {
                     link.setVerifiedFileSize(sizeLong);
                 }
                 link.setAvailable(true);
-                decryptedLinks.add(link);
-                return decryptedLinks;
+                ret.add(link);
+                return ret;
             } else if (Boolean.TRUE.equals(isFolder)) {
                 String browser = br.toString();
                 final String currentFolderName = getXML("name", browser);
@@ -305,7 +304,7 @@ public class MediafireComFolder extends PluginForDecrypt {
                                 if (fp != null) {
                                     fp.add(link);
                                 }
-                                decryptedLinks.add(link);
+                                ret.add(link);
                             }
                         }
                         if (files == null || files.length < 100) {
@@ -324,7 +323,7 @@ public class MediafireComFolder extends PluginForDecrypt {
                         if (subFolders != null) {
                             for (final String folderID : subFolders) {
                                 final DownloadLink link = createDownloadlink("https://www.mediafire.com/folder/" + folderID);
-                                decryptedLinks.add(link);
+                                ret.add(link);
                             }
                         }
                         if (subFolders == null || subFolders.length < 100) {
@@ -338,12 +337,12 @@ public class MediafireComFolder extends PluginForDecrypt {
                         link.setProperty("privatefolder", true);
                         link.setName(contentID);
                         link.setAvailable(true);
-                        decryptedLinks.add(link);
-                        return decryptedLinks;
+                        ret.add(link);
+                        return ret;
                     }
                     return null;
                 }
-                return decryptedLinks;
+                return ret;
             }
             if ("112".equals(this.ERRORCODE) || (isFile != null && isFolder == null)) {
                 // new pages can be folders, and do not work as UID from API. only way thing todo is find the uid and reprobe!
@@ -360,16 +359,16 @@ public class MediafireComFolder extends PluginForDecrypt {
                 if (uid != null && !contentID.equalsIgnoreCase(uid)) {
                     // lets return back into itself, and hope we don't create a infinite loop!
                     final DownloadLink link = createDownloadlink("https://www.mediafire.com/folder/" + uid);
-                    decryptedLinks.add(link);
-                    return decryptedLinks;
+                    ret.add(link);
+                    return ret;
                 }
             }
             final DownloadLink link = createSingleDownloadlink(contentID);
             link.setAvailable(false);
             link.setProperty("offline", true);
             link.setName(contentID);
-            decryptedLinks.add(link);
-            return decryptedLinks;
+            ret.add(link);
+            return ret;
         }
     }
 
