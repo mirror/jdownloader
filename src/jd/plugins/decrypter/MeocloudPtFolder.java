@@ -30,6 +30,8 @@ import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -83,11 +85,13 @@ public class MeocloudPtFolder extends PluginForDecrypt {
         if (folderPath == null) {
             /* Developer mistake! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (br.containsHTML("(?i)>\\s*Pasta Vazia")) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
         final Form pwform = MeocloudPtFolder.getPasswordProtectedForm(br);
         if (pwform != null) {
             /* 2020-02-18: PW protected URLs are not yet supported. */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not yet supported: Contact support and ask for implementation", 8 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not yet supported: Contact support and ask for implementation.", 8 * 60 * 1000l);
         }
         final PluginForHost hosterPlugin = this.getNewPluginForHostInstance(this.getHost());
         final String[] fileDownloadurls = br.getRegex("data-url-download=\"(http[^\"]+)").getColumn(0);

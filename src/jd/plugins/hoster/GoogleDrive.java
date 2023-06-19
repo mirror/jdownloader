@@ -663,7 +663,10 @@ public class GoogleDrive extends PluginForHost {
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = br.getRegex(".*(\\{.+\\})$").getMatch(0);
+        final String json = br.getRegex(".*?(\\{.+\\})$").getMatch(0);
+        if (json == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
         final String filename = (String) entries.get("fileName");
         final Number filesizeO = (Number) entries.get("sizeBytes");
