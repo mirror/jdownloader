@@ -21,6 +21,7 @@ import java.util.Collections;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,14 +33,19 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "etsy.com" }, urls = { "https?://www\\.?etsy\\.com/[^/]+/listing/([^/]+)(/[^/]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "etsy.com" }, urls = { "https?://(?:www\\.)?etsy\\.com/[^/]+/listing/[0-9]+/[a-z0-9\\-]+" })
 public class Etsy extends antiDDoSForDecrypt {
     public Etsy(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ArrayList<String> links = new ArrayList<String>();
         getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -61,13 +67,20 @@ public class Etsy extends antiDDoSForDecrypt {
         // Detail page images
         Collections.addAll(links, br.getRegex("<img[^>]+class\\s*=\\s*\"[^\"]*carousel[^\"]*\"[^>]+data-src-zoom-image\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0));
         for (String link : links) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+            ret.add(createDownloadlink(Encoding.htmlDecode(link)));
+        }
+        if (ret.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        for (final DownloadLink result : ret) {
+            /* We know that all items are online -> Skip availablecheck */
+            result.setAvailable(true);
         }
         if (StringUtils.isNotEmpty(title)) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(title).trim());
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
