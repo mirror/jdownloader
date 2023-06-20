@@ -1,10 +1,11 @@
 package org.jdownloader.controlling.ffmpeg.json;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 
 public class Format implements Storable {
+    @StorableAllowPrivateAccessModifier
     private Format(/* STorable */) {
-
     }
 
     private Tags tags;
@@ -77,7 +78,7 @@ public class Format implements Storable {
 
     public int parseBitrate() {
         try {
-            return (int) Integer.parseInt(getBit_rate());
+            return Integer.parseInt(getBit_rate());
         } catch (Throwable e) {
             return -1;
         }
@@ -91,7 +92,7 @@ public class Format implements Storable {
 
     public long parseSize() {
         try {
-            return (long) Long.parseLong(getSize());
+            return Long.parseLong(getSize());
         } catch (Throwable e) {
             return -1;
         }

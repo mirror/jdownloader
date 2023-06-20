@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.solver.dbc;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -9,6 +10,7 @@ public class DBCUploadResponse implements Storable {
     public static final TypeRef<DBCUploadResponse> TYPE = new TypeRef<DBCUploadResponse>() {
     };
 
+    @StorableAllowPrivateAccessModifier
     private DBCUploadResponse(/* Storable */) {
     }
 

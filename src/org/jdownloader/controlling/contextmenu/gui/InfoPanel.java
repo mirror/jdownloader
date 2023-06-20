@@ -44,7 +44,6 @@ import org.appwork.utils.KeyUtils;
 import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.images.SVGIO;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
@@ -150,7 +149,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                         if ("fav".equals(name) && f.isDirectory()) {
                             return false;
                         } else {
-                            if (name.endsWith(".png") || (SVGIO.isSupported() && name.endsWith(".svg"))) {
+                            if (name.endsWith(".png") || (IconIO.getSvgFactory() != null && name.endsWith(".svg"))) {
                                 files.add(f);
                             }
                             return true;

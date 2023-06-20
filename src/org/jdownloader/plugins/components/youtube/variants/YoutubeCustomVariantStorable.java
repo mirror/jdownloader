@@ -2,13 +2,14 @@ package org.jdownloader.plugins.components.youtube.variants;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 
 public class YoutubeCustomVariantStorable implements Storable {
-
     public static void main(String[] args) {
         System.out.println(JSonStorage.serializeToJson(new YoutubeCustomVariantStorable()));
     }
 
+    @StorableAllowPrivateAccessModifier
     private YoutubeCustomVariantStorable(/* storable */) {
     }
 
@@ -97,14 +98,11 @@ public class YoutubeCustomVariantStorable implements Storable {
     }
 
     private String       typeID;
-
     private VariantGroup group;
-
     private double       qualityRating;
     private String       name;
     private String       nameTag;
     private String       extension;
     private String       binary;
     private String[]     parameters;
-
 }

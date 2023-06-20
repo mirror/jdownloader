@@ -9,13 +9,14 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageControllerComparator;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.controlling.Priority;
 
 public class CrawledPackageStorable implements Storable {
     public static final TypeRef<CrawledPackageStorable> TYPEREF = new TypeRef<CrawledPackageStorable>() {
-    };
+                                                                };
 
     public static enum TYPE {
         NORMAL,
@@ -88,6 +89,7 @@ public class CrawledPackageStorable implements Storable {
     }
 
     @SuppressWarnings("unused")
+    @StorableAllowPrivateAccessModifier
     private CrawledPackageStorable(/* storable */) {
         this(new CrawledPackage(), false);
     }

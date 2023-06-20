@@ -1,11 +1,11 @@
 package org.jdownloader.controlling.ffmpeg.json;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 
 public class Tags implements Storable {
-
+    @StorableAllowPrivateAccessModifier
     private Tags(/* Storable */) {
-
     }
 
     private String major_brand;
@@ -73,5 +73,4 @@ public class Tags implements Storable {
     }
 
     private String album;
-
 }

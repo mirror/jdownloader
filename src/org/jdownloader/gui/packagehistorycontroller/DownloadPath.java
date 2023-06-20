@@ -1,12 +1,13 @@
 package org.jdownloader.gui.packagehistorycontroller;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 import org.appwork.utils.StringUtils;
 
 public class DownloadPath implements Storable, HistoryEntry {
     @SuppressWarnings("unused")
+    @StorableAllowPrivateAccessModifier
     private DownloadPath(/* Storable */) {
-
     }
 
     public DownloadPath(String myPath) {
@@ -15,7 +16,6 @@ public class DownloadPath implements Storable, HistoryEntry {
     }
 
     public String getName() {
-
         return name;
     }
 
@@ -56,5 +56,4 @@ public class DownloadPath implements Storable, HistoryEntry {
     public int compareTo(HistoryEntry o) {
         return compare(getTime(), o.getTime());
     }
-
 }

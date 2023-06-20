@@ -6,9 +6,9 @@ import java.util.List;
 import jd.plugins.Account;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 
 public class AccountRuleStorable implements Storable {
-
     private String hoster;
 
     public String getHoster() {
@@ -38,6 +38,7 @@ public class AccountRuleStorable implements Storable {
     private boolean                         enabled;
     private ArrayList<AccountGroupStorable> accounts;
 
+    @StorableAllowPrivateAccessModifier
     private AccountRuleStorable(/* Storable */) {
     }
 
@@ -55,10 +56,11 @@ public class AccountRuleStorable implements Storable {
         ArrayList<AccountGroup> list = new ArrayList<AccountGroup>(accounts.size());
         for (AccountGroupStorable ags : accounts) {
             AccountGroup ag = ags.restore(getHoster(), availableAccounts);
-            if (ag != null) list.add(ag);
+            if (ag != null) {
+                list.add(ag);
+            }
         }
         ret.set(isEnabled(), list);
         return ret;
     }
-
 }

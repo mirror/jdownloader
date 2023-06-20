@@ -3,6 +3,7 @@ package org.jdownloader.api.accounts;
 import jd.plugins.Account;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 import org.appwork.storage.StorableDeprecatedSince;
 import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 import org.jdownloader.myjdownloader.client.json.JsonMap;
@@ -40,6 +41,7 @@ public class AccountAPIStorable implements Storable {
     }
 
     @SuppressWarnings("unused")
+    @StorableAllowPrivateAccessModifier
     private AccountAPIStorable(/* Storable */) {
     }
 

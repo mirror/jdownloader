@@ -12,6 +12,7 @@ import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
@@ -26,6 +27,7 @@ public class BytesMappedFileManager {
         private String   name        = null;
         private long     finalSize   = -1;
 
+        @StorableAllowPrivateAccessModifier
         private BytesMappedFileStorable(/* Storable */) {
         }
 

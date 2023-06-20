@@ -3,21 +3,23 @@ package jd.controlling.downloadcontroller;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
-import org.appwork.storage.Storable;
-import org.appwork.swing.exttable.ExtColumn;
-
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.PackageControllerComparator;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkStorable;
 import jd.plugins.FilePackage;
 
+import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
+import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
+import org.appwork.swing.exttable.ExtColumn;
+
 public class FilePackageStorable implements Storable {
     private FilePackage                          filePackage;
     private java.util.List<DownloadLinkStorable> links;
 
     @SuppressWarnings("unused")
+    @StorableAllowPrivateAccessModifier
     private FilePackageStorable(/* Storable */) {
         this.filePackage = FilePackage.getInstance();
         links = new ArrayList<DownloadLinkStorable>();

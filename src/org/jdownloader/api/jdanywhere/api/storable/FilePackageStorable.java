@@ -3,12 +3,13 @@ package org.jdownloader.api.jdanywhere.api.storable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.storage.Storable;
-import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
-
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 
 @StorableValidatorIgnoresMissingSetter
 public class FilePackageStorable implements Storable {
@@ -19,12 +20,12 @@ public class FilePackageStorable implements Storable {
     public long getId() {
         return pkg.getUniqueID().getID();
     }
+
     // public String getComment() {
     // String comment = pkg.getComment();
     // if (comment == null || comment.length() == 0) return "";
     // return comment;
     // }
-
     public long getAdded() {
         return pkg.getCreated();
     }
@@ -54,6 +55,7 @@ public class FilePackageStorable implements Storable {
         }
         return finished;
     }
+
     // public String getDirectory() {
     // return pkg.getDownloadDirectory();
     // }
@@ -68,7 +70,6 @@ public class FilePackageStorable implements Storable {
     // if (password == null || password.length() == 0 || password.equals("---")) return "";
     // return password;
     // }
-
     public List<String> getHoster() {
         List<String> links = new ArrayList<String>(pkg.size());
         for (DownloadLink link : pkg.getChildren()) {
@@ -104,17 +105,18 @@ public class FilePackageStorable implements Storable {
         }
         return enabled;
     }
+
     // public List<DownloadLinkAPIStorable> getLinks() {
     // return links;
     // }
     // public void setLinks(List<DownloadLinkAPIStorable> links) {
     // this.links = links;
     // }
-
     // private List<DownloadLinkAPIStorable> links;
     private FilePackage pkg;
 
     @SuppressWarnings("unused")
+    @StorableAllowPrivateAccessModifier
     private FilePackageStorable() {
     }
 

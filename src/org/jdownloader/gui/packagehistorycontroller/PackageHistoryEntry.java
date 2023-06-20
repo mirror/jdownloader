@@ -1,12 +1,13 @@
 package org.jdownloader.gui.packagehistorycontroller;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 import org.appwork.utils.StringUtils;
 
 public class PackageHistoryEntry implements Storable, HistoryEntry {
     @SuppressWarnings("unused")
+    @StorableAllowPrivateAccessModifier
     private PackageHistoryEntry(/* Storable */) {
-
     }
 
     public PackageHistoryEntry(String name) {

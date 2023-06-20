@@ -3,11 +3,12 @@ package org.jdownloader.api.jdanywhere.api.storable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.storage.Storable;
-import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
-
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+
+import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 
 @StorableValidatorIgnoresMissingSetter
 public class FilePackageInfoStorable implements Storable {
@@ -56,6 +57,7 @@ public class FilePackageInfoStorable implements Storable {
     private FilePackage pkg;
 
     @SuppressWarnings("unused")
+    @StorableAllowPrivateAccessModifier
     private FilePackageInfoStorable() {
     }
 

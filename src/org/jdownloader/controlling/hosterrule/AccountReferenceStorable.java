@@ -5,6 +5,7 @@ import java.util.List;
 import jd.plugins.Account;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.UniqueAlltimeID;
 
@@ -47,6 +48,7 @@ public class AccountReferenceStorable implements Storable {
         this.id = id;
     }
 
+    @StorableAllowPrivateAccessModifier
     private AccountReferenceStorable(/* storable */) {
     }
 

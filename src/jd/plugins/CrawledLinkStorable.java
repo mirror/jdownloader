@@ -9,12 +9,13 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 import org.appwork.storage.TypeRef;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 
 public class CrawledLinkStorable implements Storable {
     public static final TypeRef<CrawledLinkStorable> TYPEREF = new TypeRef<CrawledLinkStorable>() {
-    };
+                                                             };
     private CrawledLink                              link;
     private String                                   id      = null;
     private long                                     UID     = -1;
@@ -44,6 +45,7 @@ public class CrawledLinkStorable implements Storable {
     }
 
     @SuppressWarnings("unused")
+    @StorableAllowPrivateAccessModifier
     private CrawledLinkStorable(/* Storable */) {
         this.link = new CrawledLink((String) null);
     }

@@ -1,8 +1,10 @@
 package org.jdownloader.controlling.filter;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 
 public class CompiledFilesizeFilter extends FilesizeFilter implements Storable {
+    @StorableAllowPrivateAccessModifier
     private CompiledFilesizeFilter() {
     }
 

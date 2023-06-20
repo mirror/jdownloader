@@ -2,6 +2,7 @@ package org.jdownloader.api.plugins;
 
 import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowProtectedAccessModifier;
 import org.appwork.storage.StorableDeprecatedSince;
 import org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStorable;
 
@@ -12,6 +13,7 @@ public class PluginAPIStorable extends AdvancedConfigEntryDataStorable implement
     private String pattern;
     private String version;
 
+    @StorableAllowProtectedAccessModifier
     protected PluginAPIStorable() {
     }
 

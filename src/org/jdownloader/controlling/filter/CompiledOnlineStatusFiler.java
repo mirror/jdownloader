@@ -1,11 +1,13 @@
 package org.jdownloader.controlling.filter;
 
-import org.appwork.storage.Storable;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter;
 
+import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+
 public class CompiledOnlineStatusFiler extends OnlineStatusFilter implements Storable {
+    @StorableAllowPrivateAccessModifier
     private CompiledOnlineStatusFiler() {
     }
 

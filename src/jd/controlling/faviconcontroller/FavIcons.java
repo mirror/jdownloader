@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.Transparency;
 import java.awt.geom.Rectangle2D;
@@ -55,7 +56,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.images.SVGIO;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.PublicSuffixList;
@@ -778,7 +778,10 @@ public class FavIcons {
             BufferedImage ret = null;
             if (StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), ".svg")) {
                 try {
-                    ret = SVGIO.getImageFromSVG(is, 32, 32, null);
+                    final Image img = IconIO.getSvgFactory().getImageFromSVG(is, 32, 32, null);
+                    if (img != null) {
+                        ret = IconIO.toBufferedImage(img);
+                    }
                 } catch (IOException e) {
                     logger.log(e);
                 }

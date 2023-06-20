@@ -1,9 +1,10 @@
 package org.jdownloader.api.jdanywhere.api.storable;
 
-import org.appwork.storage.Storable;
-import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
-
 import jd.plugins.DownloadLink;
+
+import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
 
 @StorableValidatorIgnoresMissingSetter
 public class DownloadLinkInfoStorable implements Storable {
@@ -43,6 +44,7 @@ public class DownloadLinkInfoStorable implements Storable {
     private DownloadLink link;
 
     @SuppressWarnings("unused")
+    @StorableAllowPrivateAccessModifier
     private DownloadLinkInfoStorable() {
     }
 

@@ -3,12 +3,13 @@ package org.jdownloader.api.jdanywhere.api.storable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.storage.Storable;
-import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
-import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
-
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+
+import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
+import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 
 @StorableValidatorIgnoresMissingSetter
 public class CrawledPackageStorable implements Storable {
@@ -108,6 +109,7 @@ public class CrawledPackageStorable implements Storable {
     private CrawledPackage             pkg;
 
     @SuppressWarnings("unused")
+    @StorableAllowPrivateAccessModifier
     private CrawledPackageStorable() {
     }
 

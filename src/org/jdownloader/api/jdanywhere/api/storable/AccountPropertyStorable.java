@@ -1,16 +1,18 @@
 package org.jdownloader.api.jdanywhere.api.storable;
 
+import jd.plugins.AccountProperty;
+
 import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 import org.appwork.storage.StorableValidatorIgnoresMissingSetter;
-
-import jd.plugins.AccountProperty;
 
 @StorableValidatorIgnoresMissingSetter
 public class AccountPropertyStorable implements Storable {
     private AccountProperty accountProperty;
 
     @SuppressWarnings("unused")
+    @StorableAllowPrivateAccessModifier
     private AccountPropertyStorable() {
         this.accountProperty = null;
     }

@@ -112,6 +112,7 @@ public class ContentAPIImplV2 implements ContentAPIV2 {
     }
 
     public void getFavIcon(RemoteAPIRequest request, RemoteAPIResponse response, String hostername) throws InternalApiException, APIFileNotFoundException {
+        // hier reinhängen, http links
         DomainInfo info = DomainInfo.getInstance(hostername);
         Icon favIcon = info.getFavIcon(false);
         if (favIcon == null) {

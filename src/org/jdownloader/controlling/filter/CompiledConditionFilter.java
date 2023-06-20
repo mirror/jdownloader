@@ -1,12 +1,14 @@
 package org.jdownloader.controlling.filter;
 
-import org.appwork.storage.Storable;
-
 import jd.controlling.linkcollector.VariousCrawledLinkFlags;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.ConditionFilter;
 
+import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
+
 public class CompiledConditionFilter extends ConditionFilter implements Storable {
+    @StorableAllowPrivateAccessModifier
     private CompiledConditionFilter(/* Storable */) {
     }
 

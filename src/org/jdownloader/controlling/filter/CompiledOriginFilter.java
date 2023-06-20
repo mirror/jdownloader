@@ -9,8 +9,10 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OriginFilter;
 
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorableAllowPrivateAccessModifier;
 
 public class CompiledOriginFilter extends OriginFilter implements Storable {
+    @StorableAllowPrivateAccessModifier
     private CompiledOriginFilter() {
     }
 

@@ -114,8 +114,12 @@ public class ParameterHandler implements InstanceMessageListener {
 
     public void onStartup(String[] args) {
         logger.info("Startup: " + Arrays.toString(args));
-        ParameterParser startupParameters = RestartController.getInstance().getParameterParser(args);
-        startupParameters.parse(null);
+        final ParameterParser startupParameters = RestartController.getInstance().getParameterParser(args);
+        try {
+            startupParameters.parse(null);
+        } catch (Throwable e) {
+            logger.log(e);
+        }
         execute(startupParameters, true);
         if (!startupParameters.hasCommandSwitch("console") && Application.isJared(SecondLevelLaunch.class)) {
             logger.info("Remove ConsoleHandler");
@@ -127,7 +131,11 @@ public class ParameterHandler implements InstanceMessageListener {
     public void onIncommingMessage(ResponseSender callback, String[] message) {
         logger.info("Incomming Message: " + Arrays.toString(message));
         final ParameterParser pp = new ParameterParser(message);
-        pp.parse(null);
+        try {
+            pp.parse(null);
+        } catch (Throwable e) {
+            logger.log(e);
+        }
         execute(pp, false);
         if (callback != null) {
             try {
