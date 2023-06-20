@@ -194,6 +194,10 @@ public abstract class Plugin implements ActionListener {
         } else {
             final HashMap<String, String> map = new HashMap<String, String>();
             map.put("application/x-7z-compressed", "7z");
+            map.put("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx");
+            map.put("application/vnd.openxmlformats-officedocument.wordprocessingml.template", "dotx");
+            map.put("application/vnd.ms-word.document.macroEnabled.12", "docm");
+            map.put("application/vnd.ms-word.template.macroEnabled.12", "dotm");
             map.put("image/gif", "gif");
             map.put("image/jpg", "jpg");
             map.put("image/jpeg", "jpg");

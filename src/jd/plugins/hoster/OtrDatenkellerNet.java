@@ -16,17 +16,23 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.Time;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -34,6 +40,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -56,11 +63,9 @@ public class OtrDatenkellerNet extends PluginForHost {
         }
     }
 
-    private final String        DOWNLOADAVAILABLE = "onclick=\"startCount";
-    private final String        MAINPAGE          = "http://otr.datenkeller.net";
-    private final String        API_BASE_URL      = "https://otr.datenkeller.net/api.php";
-    private static final String APIVERSION        = "1";
-    private String              api_waitaws_url   = null;
+    private final String        MAINPAGE     = "http://otr.datenkeller.net";
+    private final String        API_BASE_URL = "https://otr.datenkeller.net/api.php";
+    private static final String APIVERSION   = "1";
 
     public static interface OtrDatenKellerInterface extends PluginConfigInterface {
         @AboutConfig
@@ -74,7 +79,6 @@ public class OtrDatenkellerNet extends PluginForHost {
     public OtrDatenkellerNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
-        this.setStartIntervall(60 * 1000l);
     }
 
     private String getContentURL(final DownloadLink link) {
@@ -90,26 +94,16 @@ public class OtrDatenkellerNet extends PluginForHost {
     }
 
     @Override
-    public String rewriteHost(String host) {
-        if ("otr.datenkeller.at".equals(getHost())) {
-            if (host == null || "otr.datenkeller.at".equals(host)) {
-                return "otr.datenkeller.net";
-            }
-        }
-        return super.rewriteHost(host);
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         checkLinks(new DownloadLink[] { link });
         if (!link.isAvailabilityStatusChecked()) {
             return AvailableStatus.UNCHECKED;
-        }
-        if (link.isAvailabilityStatusChecked() && !link.isAvailable()) {
+        } else if (!link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            return AvailableStatus.TRUE;
         }
-        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -118,8 +112,7 @@ public class OtrDatenkellerNet extends PluginForHost {
             return false;
         }
         try {
-            final Browser br = new Browser();
-            api_prepBrowser();
+            api_prepBrowser(br);
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -135,23 +128,33 @@ public class OtrDatenkellerNet extends PluginForHost {
                     index++;
                 }
                 sb.delete(0, sb.capacity());
-                sb.append("api_version=" + APIVERSION + "&action=validate&file=");
                 for (final DownloadLink dl : links) {
-                    sb.append(Encoding.urlEncode(getFname(dl)));
+                    sb.append(Encoding.urlEncode(getFilenameFromURL(dl)));
                     sb.append("%2C");
                 }
-                br.postPage(API_BASE_URL, sb.toString());
-                for (final DownloadLink dllink : links) {
-                    final String current_filename = getFname(dllink);
-                    final String online_source = br.getRegex("(\\{\"filesize\":\"\\d+\",\"filename\":\"" + current_filename + "\"\\})").getMatch(0);
-                    if (online_source == null) {
-                        dllink.setAvailable(false);
+                final UrlQuery query = new UrlQuery();
+                query.add("api_version", APIVERSION);
+                query.add("action", "validate");
+                query.add("file", sb.toString());
+                br.postPage(API_BASE_URL, query);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                /* If all checked files are offline, "file_ok" field does not exist. */
+                final Map<String, Object> file_okMap = (Map<String, Object>) entries.get("file_ok");
+                for (final DownloadLink link : links) {
+                    final String filenameFromURL = getFilenameFromURL(link);
+                    final Map<String, Object> fileinfomap = file_okMap != null ? (Map<String, Object>) file_okMap.get(filenameFromURL) : null;
+                    if (fileinfomap == null) {
+                        link.setAvailable(false);
                     } else {
-                        final String filesize = getJson(online_source, "filesize");
-                        dllink.setAvailable(true);
-                        dllink.setDownloadSize(Long.parseLong(filesize));
+                        link.setAvailable(true);
+                        final Object filesizeO = fileinfomap.get("filesize");
+                        if (filesizeO instanceof String) {
+                            link.setVerifiedFileSize(Long.parseLong(filesizeO.toString()));
+                        } else {
+                            link.setVerifiedFileSize(((Number) filesizeO).longValue());
+                        }
                     }
-                    dllink.setFinalFileName(Encoding.htmlDecode(current_filename));
+                    link.setFinalFileName(Encoding.htmlDecode(filenameFromURL));
                 }
                 if (index == urls.length) {
                     break;
@@ -163,7 +166,7 @@ public class OtrDatenkellerNet extends PluginForHost {
         return true;
     }
 
-    public String getDllink() throws Exception, PluginException {
+    public String getDllink(final Browser br) throws Exception, PluginException {
         final Regex allMatches = br.getRegex("onclick=\"startCount\\(\\d+ +, +\\d+, +\\'([^<>\"\\']+)\\', +\\'([^<>\"\\']+)\\', +\\'([^<>\"\\']+)\\'\\)");
         String firstPart = allMatches.getMatch(1);
         String secondPart = allMatches.getMatch(0);
@@ -177,8 +180,10 @@ public class OtrDatenkellerNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 5;
     }
+
+    private final String WEBAPI_BASE = "https://waitaws.lastverteiler.net/api.php";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -188,10 +193,10 @@ public class OtrDatenkellerNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.clearCookies(null);
         br.getHeaders().put("User-Agent", getUserAgent());
-        final String dlPage = getDlpage(link);
-        String dllink = checkDirectLink(link, "free_finallink");
+        final String directlinkproperty = "free_finallink";
+        String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            getPage(this.br, dlPage);
+            final String dlPageURL = "/?getFile=" + Encoding.urlEncode(this.getFilenameFromURL(link));
             // if (br.containsHTML("(?i)\"action needs to specified")) {
             // /**
             // * 2023-06-19: Looks like they've disabled API downloads without account(?) </br>
@@ -200,7 +205,7 @@ public class OtrDatenkellerNet extends PluginForHost {
             // */
             // throw new AccountRequiredException();
             // }
-            /* Not needed, also their limits are based on cookies only */
+            /* Check for limit is not needed, also their limits are based on cookies only */
             // if (br.containsHTML(">Du kannst höchstens \\d+ Download Links pro Stunde anfordern")) {
             // final String waitUntil = br.getRegex("bitte warte bis (\\d{1,2}:\\d{1,2}) zum nächsten Download").getMatch(0);
             // if (waitUntil != null) {
@@ -209,136 +214,141 @@ public class OtrDatenkellerNet extends PluginForHost {
             // }
             // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
             // }
-            String position;
-            String site_lowSpeedLink;
-            Browser br2 = br.cloneBrowser();
+            String positionStr = null;
+            String site_lowSpeedLink = null;
+            final Browser br2 = br.cloneBrowser();
             String api_otrUID = null;
-            final String finalfilenameurlencoded = Encoding.urlEncode(link.getFinalFileName());
+            final String finalfilenameurlencoded = Encoding.urlEncode(this.getFilenameFromURL(link));
+            final boolean alsoUseWebAPI = false;
             boolean api_otrUID_used = false;
             boolean api_failed = false;
-            if (br.containsHTML(DOWNLOADAVAILABLE)) {
-                dllink = getDllink();
-            } else {
+            // final String jscounturl = br.getRegex("(https?://[^\"]+/countMe\\.js\\?\\d+)").getMatch(0);
+            // br2.getPage("http://staticaws.lastverteiler.net/otrfuncs/countMe.js");
+            link.getLinkStatus().setStatusText("Waiting for ticket...");
+            final int userDefinedMaxWaitMinutes = PluginJsonConfig.get(OtrDatenKellerInterface.class).getWaitForTicket();
+            int loops = 0;
+            final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
+            while (true) {
+                getPage(this.br, dlPageURL);
+                final String refreshSecondsStr = br.getRegex("http-equiv=\"refresh\" content=\"(\\d{1,2})").getMatch(0);
+                final int refreshSeconds;
+                if (refreshSecondsStr != null) {
+                    refreshSeconds = Integer.parseInt(refreshSecondsStr);
+                } else {
+                    refreshSeconds = 20;
+                }
                 site_lowSpeedLink = br.getRegex("\"(\\?lowSpeed=[^<>\\'\"]+)\"").getMatch(0);
                 if (site_lowSpeedLink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br2.getPage("https://staticaws.lastverteiler.net/images/style.css");
-                br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/combo.js?r300613");
-                br2.getPage("https://otr.datenkeller.net/otrfuncs/xajax_js/xajax_core.js");
-                br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery-ui-1.8.16.custom.min.js");
-                br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery.jmNotify.js");
-                br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/jquery.cookie.js");
-                br2.openGetConnection("https://staticaws.lastverteiler.net/images/favicon.ico");
-                br2.openGetConnection("https://otr.datenkeller.net/images/de.gif");
-                br2.getPage("https://staticaws.lastverteiler.net/otrfuncs/countMe.js");
-                link.getLinkStatus().setStatusText("Waiting for ticket...");
-                final int minutes = PluginJsonConfig.get(OtrDatenKellerInterface.class).getWaitForTicket();
-                /* Try up to 10 hours = 2250 loops */
-                final int maxloops = 2250 / 10 * minutes / 60; // wait x minutes
-                for (int i = 1; i <= maxloops; i++) {
-                    br2 = br.cloneBrowser();
-                    /* Whenever we got an otrUID the first time, we can use it for the whole process */
-                    if (api_otrUID == null) {
-                        api_otrUID = br.getRegex("waitaws\\.lastverteiler\\.net/([^<>\"]*?)/").getMatch(0);
-                    }
-                    if (api_otrUID == null) {
-                        /* Basically the same/not relevant */
-                        api_otrUID = br.getCookie("http://otr.datenkeller.net/", "otrUID");
-                    }
-                    if (api_otrUID != null) {
-                        logger.info("Newway: New way active");
-                        if (!api_otrUID_used) {
-                            api_otrUID_used = true;
-                            logger.info("NewwayUsing free API the first time...");
-                            api_waitaws_url = "https://waitaws.lastverteiler.net/" + api_otrUID + "/" + finalfilenameurlencoded;
-                            getPage(this.br, api_waitaws_url);
-                            br2.getPage("https://waitaws.lastverteiler.net/style2.css");
-                            br2.getPage("https://waitaws.lastverteiler.net/functions.js");
-                            api_postPage(this.br, "https://waitaws.lastverteiler.net/api.php", "action=validate&otrUID=" + api_otrUID + "&file=" + finalfilenameurlencoded);
-                            if (br.containsHTML("\"status\":\"fail\",\"reason\":\"user\"")) {
-                                /* One retry is usually enough if the first attempt to use the API fails! */
-                                if (api_failed) {
-                                    /* This should never happen */
-                                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "FATAL API failure", 30 * 60 * 1000l);
-                                }
-                                logger.info("Newway: Failed to start queue - refreshing api_otrUID");
-                                br.clearCookies("http://otr.datenkeller.net/");
-                                br.getPage("https://otr.datenkeller.net/");
-                                br.getPage(this.getContentURL(link));
-                                br.getPage(dlPage);
-                                api_otrUID_used = false;
-                                api_otrUID = null;
-                                api_failed = true;
-                                continue;
+                if (looksLikeDownloadIsAvailable(br)) {
+                    dllink = getDllink(br);
+                    break;
+                }
+                if (api_otrUID == null) {
+                    api_otrUID = br.getRegex("waitaws\\.lastverteiler\\.net/([^<>\"]*?)/").getMatch(0);
+                }
+                if (api_otrUID == null) {
+                    /* Basically the same/not relevant */
+                    api_otrUID = br.getCookie(br.getHost(), "otrUID", Cookies.NOTDELETEDPATTERN);
+                }
+                positionStr = br.getRegex("(?i)Deine Position in der Warteschlange\\s*:\\s*</td><td>~(\\d+)</td>").getMatch(0);
+                if (api_otrUID != null && alsoUseWebAPI) {
+                    logger.info("Newway: New way active");
+                    if (!api_otrUID_used) {
+                        api_otrUID_used = true;
+                        logger.info("NewwayUsing free API the first time...");
+                        final String api_waitaws_url = "https://waitaws.lastverteiler.net/" + api_otrUID + "/" + finalfilenameurlencoded;
+                        getPage(this.br, api_waitaws_url);
+                        // TODO: Remove the following two lines
+                        api_postPage(this.br, WEBAPI_BASE, "action=validate&otrUID=" + api_otrUID + "&file=" + finalfilenameurlencoded);
+                        if (br.containsHTML("\"status\":\"fail\",\"reason\":\"user\"")) {
+                            /* One retry is usually enough if the first attempt to use the API fails! */
+                            if (api_failed) {
+                                /* This should never happen */
+                                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "FATAL API failure", 30 * 60 * 1000l);
                             }
-                            api_postPage(this.br, "https://waitaws.lastverteiler.net/api.php", "action=wait&status=ok&valid=ok&file=" + finalfilenameurlencoded + "&otrUID=" + api_otrUID);
+                            logger.info("Newway: Failed to start queue - refreshing api_otrUID");
+                            br.clearCookies(null);
+                            br.getPage("https://" + this.getHost() + "/");
+                            br.getPage(this.getContentURL(link));
+                            br.getPage(dlPageURL);
+                            api_otrUID_used = false;
+                            api_otrUID = null;
+                            api_failed = true;
+                            continue;
                         }
-                        sleep(16 * 1000l, link);
-                        String postData = "";
-                        String[] params = br.toString().split(",");
-                        if (params == null || params.length == 0) {
-                            logger.warning("Failed to get API postparameters");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        for (final String postPair : params) {
-                            final String key = new Regex(postPair, "\"([^<>\"]*?)\"").getMatch(0);
-                            String value = new Regex(postPair, "\"([^<>\"]*?)\":\"([^<>\"]*?)\"").getMatch(1);
-                            if (value == null) {
-                                value = new Regex(postPair, "\"([^<>\"]*?)\":(null|true|false|\\d+)").getMatch(1);
-                            }
-                            postData += key + "=" + Encoding.urlEncode(value) + "&";
-                        }
-                        api_postPage(this.br, "https://waitaws.lastverteiler.net/api.php", postData);
-                        position = br.getRegex("\"wait_pos\":\"(\\d+)\"").getMatch(0);
-                        dllink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
-                    } else {
-                        logger.info("Oldway: Old way active");
-                        sleep(27 * 1000l, link);
-                        getPage(this.br, dlPage);
-                        position = br.getRegex("Deine Position in der Warteschlange: </td><td>~(\\d+)</td>").getMatch(0);
-                        if (br.containsHTML(DOWNLOADAVAILABLE)) {
-                            logger.info("Oldway: dllink should be available, trying to get it");
-                            dllink = getDllink();
-                            break;
-                        }
+                        api_postPage(this.br, WEBAPI_BASE, "action=wait&status=ok&valid=ok&file=" + finalfilenameurlencoded + "&otrUID=" + api_otrUID);
                     }
-                    if (position != null) {
-                        link.getLinkStatus().setStatusText("Warten auf Ticket...Position in der Warteschlange: " + position);
+                    String postData = "";
+                    String[] params = br.toString().split(",");
+                    if (params == null || params.length == 0) {
+                        logger.warning("Failed to get API postparameters");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    sleep(refreshSeconds * 1000l, link);
+                    for (final String postPair : params) {
+                        final String key = new Regex(postPair, "\"([^<>\"]*?)\"").getMatch(0);
+                        String value = new Regex(postPair, "\"([^<>\"]*?)\":\"([^<>\"]*?)\"").getMatch(1);
+                        if (value == null) {
+                            value = new Regex(postPair, "\"([^<>\"]*?)\":(null|true|false|\\d+)").getMatch(1);
+                        }
+                        postData += key + "=" + Encoding.urlEncode(value) + "&";
+                    }
+                    api_postPage(this.br, WEBAPI_BASE, postData);
+                    positionStr = br.getRegex("\"wait_pos\":\"(\\d+)\"").getMatch(0);
+                    dllink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                }
+                sleep(refreshSeconds * 1000l, link);
+                link.getLinkStatus().setStatusText("Warten auf Ticket...Position in der Warteschlange: " + positionStr);
+                if (loops > 400 && site_lowSpeedLink != null) {
+                    logger.info("Waited too long - trying to use low speed downloadlink");
+                    getPage(br2, site_lowSpeedLink);
+                    dllink = br2.getRegex("(?i)>\\s*Dein Download Link:<br>\\s*<a href=\"(http://[^<>\\'\"]+)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br2.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/low/[a-z0-9]+/[^<>\\'\"]+)\"").getMatch(0);
                     }
                     if (dllink != null) {
-                        logger.info("Found dllink");
+                        logger.info("Using lowspeed link for downloadlink: " + link.getDownloadURL());
                         break;
+                    } else {
+                        logger.warning("Failed to find low speed link, continuing to look for downloadticket...");
                     }
-                    if (i > 400 && site_lowSpeedLink != null) {
-                        getPage(br2, "https://otr.datenkeller.net/" + site_lowSpeedLink);
-                        dllink = br2.getRegex(">Dein Download Link:<br>[\t\n\r ]+<a href=\"(http://[^<>\\'\"]+)\"").getMatch(0);
-                        if (dllink == null) {
-                            dllink = br2.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/low/[a-z0-9]+/[^<>\\'\"]+)\"").getMatch(0);
-                        }
-                        if (dllink != null) {
-                            logger.info("Using lowspeed link for downloadlink: " + link.getDownloadURL());
-                            break;
-                        } else {
-                            logger.warning("Failed to find low speed link, continuing to look for downloadticket...");
-                        }
-                    }
-                    logger.info("Didn't get a ticket on try " + i + "/" + maxloops + ". Retrying...Position: " + position);
+                }
+                logger.info("Didn't get a ticket on try " + loops + ". Retrying...Position: " + positionStr);
+                if (Time.systemIndependentCurrentJVMTimeMillis() - timeBefore > userDefinedMaxWaitMinutes * 60 * 1000) {
+                    logger.info("Stopping because: Did not get a ticket");
+                    break;
                 }
             }
             if (dllink == null) {
-                logger.info("Didn't get a ticket --> Wait 30 minutes till next try");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Didn't get a ticket", 30 * 60 * 1000l);
             }
             dllink = dllink.replace("\\", "");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        checkErrorsAfterDownloadstart();
+        link.setProperty(directlinkproperty, dllink);
+        dl.startDownload();
+    }
+
+    private void checkErrorsAfterDownloadstart() throws IOException, PluginException {
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("(?i)>\\s*Maximale Anzahl an Verbindungen verbraucht")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections");
+            } else if (br.containsHTML("(?i)wurde wegen Missbrauch geblockt")) {
+                throw new AccountInvalidException("Account wurde wegen Missbrauch geblockt");
+            } else if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+            }
         }
-        link.setProperty("free_finallink", dllink);
-        dl.startDownload();
+    }
+
+    private boolean looksLikeDownloadIsAvailable(final Browser br) {
+        return br.containsHTML("onclick=\"startCount");
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
@@ -373,7 +383,7 @@ public class OtrDatenkellerNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     private void login(Account account, boolean force) throws Exception {
         br.setCookiesExclusive(true);
-        api_prepBrowser();
+        api_prepBrowser(br);
         String apikey = getAPIKEY(account);
         boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
         if (acmatch) {
@@ -409,12 +419,18 @@ public class OtrDatenkellerNet extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.postPage(API_BASE_URL, "api_version=" + APIVERSION + "&action=getpremlink&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&apikey=" + Encoding.urlEncode(getAPIKEY(account)) + "&filename=" + getFname(link));
+        final UrlQuery query = new UrlQuery();
+        query.add("api_version", APIVERSION);
+        query.add("action", "getpremlink");
+        query.add("username", Encoding.urlEncode(account.getUser()));
+        query.add("password", Encoding.urlEncode(account.getPass()));
+        query.add("apikey", Encoding.urlEncode(getAPIKEY(account)));
+        query.add("filename", Encoding.urlEncode(getFilenameFromURL(link)));
+        br.postPage(API_BASE_URL, query);
         String dllink = getJson(br.toString(), "dllink");
         if (dllink == null) {
             handleErrors();
@@ -423,18 +439,7 @@ public class OtrDatenkellerNet extends PluginForHost {
         }
         dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 1);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            if (br.containsHTML("wurde wegen Missbrauch geblockt")) {
-                logger.info("Account wurde wegen Missbrauch geblockt.");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-        }
+        checkErrorsAfterDownloadstart();
         dl.startDownload();
     }
 
@@ -459,29 +464,24 @@ public class OtrDatenkellerNet extends PluginForHost {
         }
     }
 
-    private void api_prepBrowser() {
+    private void api_prepBrowser(final Browser br) {
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
     }
 
     private void api_Free_prepBrowser(final Browser br) {
-        br.getHeaders().put("Referer", api_waitaws_url);
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         br.getHeaders().put("Accept-Charset", null);
     }
 
-    final String getFname(final DownloadLink link) {
-        return new Regex(getContentURL(link), "otr\\.datenkeller\\.net/\\?file=(.+)").getMatch(0);
-    }
-
-    private String getDlpage(final DownloadLink link) {
-        return getContentURL(link).replace("?file=", "?getFile=");
+    final String getFilenameFromURL(final DownloadLink link) throws MalformedURLException {
+        return UrlQuery.parse(getContentURL(link)).get("file");
     }
 
     private String getAPIKEY(final Account acc) {
-        String apikey = acc.getStringProperty("apikey", null);
+        String apikey = acc.getStringProperty("apikey");
         if (apikey != null) {
             apikey = apikey.replace("\\", "");
         }
@@ -502,13 +502,11 @@ public class OtrDatenkellerNet extends PluginForHost {
 
     private void getPage(final Browser br, final String url) throws IOException {
         br.getPage(url);
-        // correctBR(br);
     }
 
     @SuppressWarnings("unused")
     private void postPage(final Browser br, final String url, final String data) throws IOException {
         br.postPage(url, data);
-        // correctBR(br);
     }
 
     private void api_postPage(final Browser br, final String url, final String data) throws IOException {
@@ -516,19 +514,14 @@ public class OtrDatenkellerNet extends PluginForHost {
         br.postPage(url, data);
     }
 
-    // private void correctBR(final Browser br) {
-    // final String remove = br.getRegex("(<a href=\"#\" msgToJD=.*?href=\"#\")").getMatch(0);
-    // if (remove != null) {
-    // br.getRequest().setHtmlCode(br.toString().replace(remove, ""));
-    // }
-    // }
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /*
          * Admin told us limit = 12 but when we checked it, only 7 with a large wait time in between were possible - anyways, works best
          * with only one
          */
-        return 1;
+        /* 2023-06-20: Changed limit from 1 to 5. */
+        return 5;
     }
 
     @Override
@@ -540,7 +533,7 @@ public class OtrDatenkellerNet extends PluginForHost {
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
     }
 }

@@ -15,6 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -33,10 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "furaffinity.net" }, urls = { "https?://(?:www\\.)?furaffinity\\.net/view/(\\d+)" })
 public class FuraffinityNet extends antiDDoSForHost {
     public FuraffinityNet(PluginWrapper wrapper) {
@@ -54,7 +54,6 @@ public class FuraffinityNet extends antiDDoSForHost {
     private static final int     free_maxchunks             = 0;
     private static final int     free_maxdownloads          = -1;
     private String               dllink                     = null;
-    private boolean              server_issues              = false;
     private boolean              accountRequired            = false;
     private boolean              enableAdultContentRequired = false;
 
@@ -85,7 +84,6 @@ public class FuraffinityNet extends antiDDoSForHost {
             link.setName(this.getFID(link));
         }
         dllink = null;
-        server_issues = false;
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 503 });
         getPage(link.getPluginPatternMatcher());
@@ -124,7 +122,7 @@ public class FuraffinityNet extends antiDDoSForHost {
                 br2.setFollowRedirects(true);
                 con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
                 if (!this.looksLikeDownloadableContent(con)) {
-                    server_issues = true;
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken media file?");
                 } else {
                     link.setDownloadSize(con.getCompleteContentLength());
                 }
@@ -136,6 +134,17 @@ public class FuraffinityNet extends antiDDoSForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        /** 2023-06-20: Added special check. TODO: Move this into upper handling and remove this here. */
+        final String contentType = urlConnection.getContentType();
+        if (StringUtils.equalsIgnoreCase(contentType, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")) {
+            return true;
+        } else {
+            return super.looksLikeDownloadableContent(urlConnection);
+        }
     }
 
     @Override
@@ -153,9 +162,8 @@ public class FuraffinityNet extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Adult content disabled in account", 2 * 60 * 60 * 1000l);
             }
-        } else if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        }
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
@@ -181,12 +189,12 @@ public class FuraffinityNet extends antiDDoSForHost {
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     this.br.setCookies(this.getHost(), cookies);
-                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
-                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                    if (!force) {
+                        /* Do not validate cookies. */
                         return false;
                     }
                     br.getPage("https://" + this.getHost() + "/");
-                    if (this.isLoggedin()) {
+                    if (this.isLoggedin(br)) {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -220,7 +228,7 @@ public class FuraffinityNet extends antiDDoSForHost {
                 loginform.put("name", Encoding.urlEncode(account.getUser()));
                 loginform.put("pass", Encoding.urlEncode(account.getPass()));
                 br.submitForm(loginform);
-                if (!isLoggedin()) {
+                if (!isLoggedin(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
@@ -234,7 +242,7 @@ public class FuraffinityNet extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedin() {
+    private boolean isLoggedin(final Browser br) {
         return br.containsHTML("/logout");
     }
 

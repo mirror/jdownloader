@@ -35,12 +35,14 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "furaffinity.net" }, urls = { "https?://(?:www\\.)?furaffinity\\.net/(gallery|scraps|user)/([^/]+)" })
-public class FuraffinityNet extends PluginForDecrypt {
-    public FuraffinityNet(PluginWrapper wrapper) {
+public class FuraffinityNetCrawler extends PluginForDecrypt {
+    public FuraffinityNetCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -51,19 +53,19 @@ public class FuraffinityNet extends PluginForDecrypt {
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
-        /* 2020-08-19: Avoid 503 rate limit */
+        /* 2020-08-19: Avoid http error-response 503 rate limit */
         return 1;
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String type = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String username = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
         if (type.equalsIgnoreCase("user")) {
             /* These will go back into this crawler! */
-            decryptedLinks.add(this.createDownloadlink("https://www." + this.getHost() + "/gallery/" + username));
-            decryptedLinks.add(this.createDownloadlink("https://www." + this.getHost() + "/scraps/" + username));
+            ret.add(this.createDownloadlink("https://www." + this.getHost() + "/gallery/" + username));
+            ret.add(this.createDownloadlink("https://www." + this.getHost() + "/scraps/" + username));
         } else {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(username + " - " + type);
@@ -77,11 +79,9 @@ public class FuraffinityNet extends PluginForDecrypt {
             }
             br.setFollowRedirects(true);
             do {
-                logger.info("Crawling page " + page);
                 br.getPage(parameter + "/" + page);
                 if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*System Message")) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 final String json = br.getRegex("var descriptions = (\\{.*?\\});").getMatch(0);
                 final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
@@ -108,11 +108,11 @@ public class FuraffinityNet extends PluginForDecrypt {
                     distribute(dl);
                     itemsCounter += 1;
                 }
-                logger.info("Number of items on current page: " + itemsCounter);
+                logger.info("Crawled page + " + page + " | Number of items on current page: " + itemsCounter + " | Results so far: " + ret.size());
                 page++;
                 hasNextPage = br.containsHTML("/" + username + "/" + page);
             } while (!this.isAbort() && hasNextPage);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
