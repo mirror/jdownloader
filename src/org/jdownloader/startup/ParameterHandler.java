@@ -1,5 +1,6 @@
 package org.jdownloader.startup;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -116,7 +117,7 @@ public class ParameterHandler implements InstanceMessageListener {
         logger.info("Startup: " + Arrays.toString(args));
         final ParameterParser startupParameters = RestartController.getInstance().getParameterParser(args);
         try {
-            startupParameters.parse(null);
+            startupParameters.parse((File) null);
         } catch (Throwable e) {
             logger.log(e);
         }
@@ -132,7 +133,7 @@ public class ParameterHandler implements InstanceMessageListener {
         logger.info("Incomming Message: " + Arrays.toString(message));
         final ParameterParser pp = new ParameterParser(message);
         try {
-            pp.parse(null);
+            pp.parse((File) null);
         } catch (Throwable e) {
             logger.log(e);
         }
