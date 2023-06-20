@@ -68,12 +68,21 @@ public class OtrDatenkellerNet extends PluginForHost {
     private static final String APIVERSION   = "1";
 
     public static interface OtrDatenKellerInterface extends PluginConfigInterface {
-        @AboutConfig
-        @DefaultIntValue(10 * 60)
-        @DescriptionForConfigEntry("Wait for Ticket (min)")
-        int getWaitForTicket();
+        final String                    text_MaxWaitMinutesForTicket = "Max wait for ticket (minutes)";
+        public static final TRANSLATION TRANSLATION                  = new TRANSLATION();
 
-        void setWaitForTicket(int min);
+        public static class TRANSLATION {
+            public String getMaxWaitMinutesForTicket_label() {
+                return text_MaxWaitMinutesForTicket;
+            }
+        }
+
+        @AboutConfig
+        @DefaultIntValue(600)
+        @DescriptionForConfigEntry(text_MaxWaitMinutesForTicket)
+        int getMaxWaitMinutesForTicket();
+
+        void setMaxWaitMinutesForTicket(int i);
     }
 
     public OtrDatenkellerNet(PluginWrapper wrapper) {
@@ -225,7 +234,7 @@ public class OtrDatenkellerNet extends PluginForHost {
             // final String jscounturl = br.getRegex("(https?://[^\"]+/countMe\\.js\\?\\d+)").getMatch(0);
             // br2.getPage("http://staticaws.lastverteiler.net/otrfuncs/countMe.js");
             link.getLinkStatus().setStatusText("Waiting for ticket...");
-            final int userDefinedMaxWaitMinutes = PluginJsonConfig.get(OtrDatenKellerInterface.class).getWaitForTicket();
+            final int userDefinedMaxWaitMinutes = PluginJsonConfig.get(OtrDatenKellerInterface.class).getMaxWaitMinutesForTicket();
             int loops = 0;
             final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
             while (true) {
@@ -395,7 +404,7 @@ public class OtrDatenkellerNet extends PluginForHost {
         }
         br.setFollowRedirects(false);
         br.postPage(API_BASE_URL, "api_version=" + APIVERSION + "&action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        handleErrors();
+        handleErrorsAPI();
         apikey = getJson(br.toString(), "apikey");
         if (apikey == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -409,9 +418,16 @@ public class OtrDatenkellerNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         login(account, true);
-        final String expires = getJson(br.toString(), "expires");
-        if (expires != null && expires.matches("\\d+")) {
-            ai.setValidUntil(Long.parseLong(expires) * 1000);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Object expiresO = entries.get("expires");
+        if (expiresO == null) {
+            ai.setExpired(true);
+            return ai;
+        }
+        if (expiresO instanceof Number) {
+            ai.setValidUntil(((Number) expiresO).longValue() * 1000);
+        } else {
+            ai.setValidUntil(Long.parseLong(expiresO.toString()) * 1000);
         }
         account.setType(AccountType.PREMIUM);
         account.setConcurrentUsePossible(true);
@@ -433,7 +449,7 @@ public class OtrDatenkellerNet extends PluginForHost {
         br.postPage(API_BASE_URL, query);
         String dllink = getJson(br.toString(), "dllink");
         if (dllink == null) {
-            handleErrors();
+            handleErrorsAPI();
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -443,8 +459,26 @@ public class OtrDatenkellerNet extends PluginForHost {
         dl.startDownload();
     }
 
+    private Map<String, Object> checkErrorsAPI(final Browser br) throws PluginException {
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String status = getJson("status");
+        final String message = getJson("message");
+        if ("fail".equals(status)) {
+            /* TODO: Add support for more failure cases here */
+            if (message.equalsIgnoreCase("failed to login due to wrong credentials, missing or wrong apikey")) {
+                throw new AccountInvalidException();
+            } else if (message.equalsIgnoreCase("failed to login due to wrong credentials or expired account")) {
+                throw new AccountInvalidException();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FATAL, message);
+            }
+        }
+        return entries;
+    }
+
     /* Handles API errors */
-    private void handleErrors() throws PluginException {
+    @Deprecated
+    private void handleErrorsAPI() throws PluginException {
         final String status = getJson("status");
         final String message = getJson("message");
         if ("fail".equals(status) && message != null) {

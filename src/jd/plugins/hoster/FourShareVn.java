@@ -103,7 +103,7 @@ public class FourShareVn extends PluginForHost {
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        final String md5 = br.getRegex("MD5\\s*:?\\s*([a-f0-9]{32})").getMatch(0);
+        final String md5 = br.getRegex("(?i)MD5\\s*:?\\s*([a-f0-9]{32})").getMatch(0);
         if (md5 != null) {
             link.setMD5Hash(md5);
         }
@@ -120,7 +120,7 @@ public class FourShareVn extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         synchronized (account) {
             login(account, true);
             getPage("/member");
@@ -161,7 +161,7 @@ public class FourShareVn extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://up.4share.vn/?act=terms";
+        return "https://up.4share.vn/?act=terms";
     }
 
     @Override

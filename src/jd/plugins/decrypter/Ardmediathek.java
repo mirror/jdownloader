@@ -28,6 +28,28 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.ArdConfigInterface;
+import org.jdownloader.plugins.components.config.DasersteConfig;
+import org.jdownloader.plugins.components.config.EurovisionConfig;
+import org.jdownloader.plugins.components.config.MdrDeConfig;
+import org.jdownloader.plugins.components.config.MediathekProperties;
+import org.jdownloader.plugins.components.config.SandmannDeConfig;
+import org.jdownloader.plugins.components.config.SportschauConfig;
+import org.jdownloader.plugins.components.config.SputnikDeConfig;
+import org.jdownloader.plugins.components.config.TagesschauDeConfig;
+import org.jdownloader.plugins.components.config.WDRConfig;
+import org.jdownloader.plugins.components.config.WDRMausConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -48,31 +70,7 @@ import jd.plugins.components.MediathekHelper;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.ARDMediathek;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.ArdConfigInterface;
-import org.jdownloader.plugins.components.config.DasersteConfig;
-import org.jdownloader.plugins.components.config.EurovisionConfig;
-import org.jdownloader.plugins.components.config.MdrDeConfig;
-import org.jdownloader.plugins.components.config.MediathekDasersteConfig;
-import org.jdownloader.plugins.components.config.MediathekProperties;
-import org.jdownloader.plugins.components.config.SandmannDeConfig;
-import org.jdownloader.plugins.components.config.SportschauConfig;
-import org.jdownloader.plugins.components.config.SputnikDeConfig;
-import org.jdownloader.plugins.components.config.TagesschauDeConfig;
-import org.jdownloader.plugins.components.config.WDRConfig;
-import org.jdownloader.plugins.components.config.WDRMausConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "mediathek.daserste.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de", "tagesschau.de" }, urls = { "https?://(?:[A-Z0-9]+\\.)?ardmediathek\\.de/.+", "https?://(?:www\\.)?mediathek\\.daserste\\.de/.*?documentId=\\d+[^/]*?", "https?://www\\.daserste\\.de/.*?\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:[a-z0-9]+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:www\\.)?wdrmaus\\.de/.+", "https?://(?:www\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?ndr\\.de/[^<>\"]+\\.html",
-"https?://(?:www\\.)?tagesschau\\.de/[^<>\"]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "daserste.de", "sandmann.de", "wdr.de", "sportschau.de", "wdrmaus.de", "eurovision.de", "sputnik.de", "mdr.de", "ndr.de", "tagesschau.de" }, urls = { "https?://(?:\\w+\\.)?ardmediathek\\.de/.+", "https?://(?:\\w+\\.)?daserste\\.de/.*?\\.html", "https?://(?:www\\.)?sandmann\\.de/.+", "https?://(?:\\w+\\.)?wdr\\.de/[^<>\"]+\\.html|https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js", "https?://(?:\\w+\\.)?sportschau\\.de/.*?\\.html", "https?://(?:\\w+\\.)?wdrmaus\\.de/.+", "https?://(?:\\w+\\.)?eurovision\\.de/[^<>\"]+\\.html", "https?://(?:\\w+\\.)?sputnik\\.de/[^<>\"]+\\.html", "https?://(?:www\\.)?mdr\\.de/[^<>\"]+\\.html", "https?://(?:\\w+\\.)?ndr\\.de/[^<>\"]+\\.html", "https?://(?:\\w+\\.)?tagesschau\\.de/[^<>\"]+\\.html" })
 public class Ardmediathek extends PluginForDecrypt {
     /* Constants */
     private static final String  type_embedded                          = "https?://deviceids-[a-z0-9\\-]+\\.wdr\\.de/ondemand/\\d+/\\d+\\.js";
@@ -99,8 +97,6 @@ public class Ardmediathek extends PluginForDecrypt {
             return ArdConfigInterface.class;
         } else if ("daserste.de".equalsIgnoreCase(getHost())) {
             return DasersteConfig.class;
-        } else if ("mediathek.daserste.de".equalsIgnoreCase(getHost())) {
-            return MediathekDasersteConfig.class;
         } else if ("wdrmaus.de".equalsIgnoreCase(getHost())) {
             return WDRMausConfig.class;
         } else if ("wdr.de".equalsIgnoreCase(getHost())) {
@@ -544,9 +540,10 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     /**
-     * Searches for videos in ardmediathek that match the given search term. </br> This is mostly used as a workaround to find stuff that is
-     * hosted on their other website on ardmediathek instead as ardmediathek is providing a fairly stable API while other websites hosting
-     * the same content such as sportschau.de can be complicated to parse. </br> This does not (yet) support pagination!
+     * Searches for videos in ardmediathek that match the given search term. </br>
+     * This is mostly used as a workaround to find stuff that is hosted on their other website on ardmediathek instead as ardmediathek is
+     * providing a fairly stable API while other websites hosting the same content such as sportschau.de can be complicated to parse. </br>
+     * This does not (yet) support pagination!
      */
     private ArrayList<DownloadLink> crawlARDMediathekSearchResultsVOD(final String searchTerm, final int maxResults) throws Exception {
         if (StringUtils.isEmpty(searchTerm)) {
@@ -659,8 +656,8 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         metadata.setChannel(trackerData.get("trackerClipCategory").toString());
         /**
-         * 2022-03-10: Do not use trackerClipId as unique ID as there can be different IDs for the same streams. </br> Let the handling go
-         * into fallback and use the final downloadurls as unique trait!
+         * 2022-03-10: Do not use trackerClipId as unique ID as there can be different IDs for the same streams. </br>
+         * Let the handling go into fallback and use the final downloadurls as unique trait!
          */
         // metadata.setContentID(trackerData.get("trackerClipId").toString());
         metadata.setRequiresContentIDToBeSet(false);
@@ -911,7 +908,8 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     /**
-     * Handling for older ARD websites. </br> INFORMATION: network = akamai or limelight == RTMP </br>
+     * Handling for older ARD websites. </br>
+     * INFORMATION: network = akamai or limelight == RTMP </br>
      */
     private ArrayList<DownloadLink> crawlDasersteVideo(final CryptedLink param) throws Exception {
         br.getPage(param.getCryptedUrl());
@@ -1691,6 +1689,7 @@ public class Ardmediathek extends PluginForDecrypt {
         P_270(480, 270),
         P_180(320, 180),
         P_144(256, 144);
+
         private int height;
         private int width;
 
