@@ -154,8 +154,6 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "bdsmx.tube" });
         /* 2022-01-16 */
         ret.add(new String[] { "thebussybandit.com" });
-        /* 2023-04-17 */
-        ret.add(new String[] { "x-x-x.tube" });
         /* 2023-05-16 */
         ret.add(new String[] { "baddiesonly.tv" });
         ret.add(new String[] { "shemale6.com" });

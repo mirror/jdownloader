@@ -897,7 +897,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
-    /** If this returns true we for sure got a private video. */
+    /** If this returns true we for sure got a private video or paid content which can only be viewed with a paid account. */
     protected boolean isPrivateVideoWebsite(final Browser br) {
         /* 2020-10-09: Tested for pornyeah.com, anyporn.com, camwhoreshd.com */
         if (br.containsHTML("(?i)>\\s*Cette vidéo est privée d'utilisateur|Seulement les utilisateurs enregistrés du site peuvent avoir accès à des vidéos privées")) {

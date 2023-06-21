@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -35,6 +36,7 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -63,9 +65,9 @@ public class OtrDatenkellerNet extends PluginForHost {
         }
     }
 
-    private final String        MAINPAGE     = "http://otr.datenkeller.net";
-    private final String        API_BASE_URL = "https://otr.datenkeller.net/api.php";
-    private static final String APIVERSION   = "1";
+    private final String MAINPAGE     = "http://otr.datenkeller.net";
+    private final String API_BASE_URL = "https://otr.datenkeller.net/api.php";
+    private final String APIVERSION   = "1";
 
     public static interface OtrDatenKellerInterface extends PluginConfigInterface {
         final String                    text_MaxWaitMinutesForTicket = "Max wait for ticket (minutes)";
@@ -393,6 +395,7 @@ public class OtrDatenkellerNet extends PluginForHost {
     private void login(Account account, boolean force) throws Exception {
         br.setCookiesExclusive(true);
         api_prepBrowser(br);
+        final boolean useAPIV2 = false;
         String apikey = getAPIKEY(account);
         boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
         if (acmatch) {
@@ -403,15 +406,26 @@ public class OtrDatenkellerNet extends PluginForHost {
             return;
         }
         br.setFollowRedirects(false);
-        br.postPage(API_BASE_URL, "api_version=" + APIVERSION + "&action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        handleErrorsAPI();
-        apikey = getJson(br.toString(), "apikey");
+        if (useAPIV2) {
+            // TODO
+            final Calendar cal = Calendar.getInstance();
+            final UrlQuery query = new UrlQuery();
+            query.add("jdlAPI", "");
+            query.add("account", Encoding.urlEncode(account.getUser()));
+            query.add("password", Encoding.urlEncode(account.getPass()));
+            query.add("auth", JDHash.getMD5(Calendar.DAY_OF_MONTH + account.getUser() + cal.get(Calendar.MONTH) + account.getPass()));
+            br.getPage("https://otr.datenkeller.net/?" + query.toString());
+        } else {
+            br.postPage(API_BASE_URL, "api_version=" + APIVERSION + "&action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            handleErrorsAPI();
+            apikey = getJson(br.toString(), "apikey");
+        }
         if (apikey == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         account.setProperty("name", Encoding.urlEncode(account.getUser()));
         account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-        account.setProperty("apikey", apikey);
+        this.setApikey(account, apikey);
     }
 
     @Override
@@ -514,8 +528,12 @@ public class OtrDatenkellerNet extends PluginForHost {
         return UrlQuery.parse(getContentURL(link)).get("file");
     }
 
-    private String getAPIKEY(final Account acc) {
-        String apikey = acc.getStringProperty("apikey");
+    private void setApikey(final Account account, final String apikey) {
+        account.setProperty("apikey_" + account.getUser(), apikey);
+    }
+
+    private String getAPIKEY(final Account account) {
+        String apikey = account.getStringProperty("apikey_" + account.getUser());
         if (apikey != null) {
             apikey = apikey.replace("\\", "");
         }
