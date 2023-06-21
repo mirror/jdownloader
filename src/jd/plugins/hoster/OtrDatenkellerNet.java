@@ -19,13 +19,19 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -35,7 +41,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -43,6 +48,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -50,8 +56,32 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "otr.datenkeller.net" }, urls = { "https?://otr\\.datenkeller\\.(?:at|net)/\\?(?:file|getFile)=.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OtrDatenkellerNet extends PluginForHost {
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "otr.datenkeller.net", "otr.datenkeller.at" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://" + buildHostsPatternPart(domains) + "/\\?(?:file|getFile)=.+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     public static AtomicReference<String> agent = new AtomicReference<String>(null);
 
     private String getUserAgent() {
@@ -65,9 +95,12 @@ public class OtrDatenkellerNet extends PluginForHost {
         }
     }
 
-    private final String MAINPAGE     = "http://otr.datenkeller.net";
-    private final String API_BASE_URL = "https://otr.datenkeller.net/api.php";
-    private final String APIVERSION   = "1";
+    private final String            API_BASE_URL                 = "https://otr.datenkeller.net/api.php";
+    private final String            APIVERSION                   = "1";
+    private static final AtomicLong timestampLastDownloadStarted = new AtomicLong(0);
+    /* Don't touch the following! */
+    private static AtomicInteger    freeRunning                  = new AtomicInteger(0);
+    private static AtomicInteger    accountRunning               = new AtomicInteger(0);
 
     public static interface OtrDatenKellerInterface extends PluginConfigInterface {
         final String                    text_MaxWaitMinutesForTicket = "Max wait for ticket (minutes)";
@@ -89,19 +122,16 @@ public class OtrDatenkellerNet extends PluginForHost {
 
     public OtrDatenkellerNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium();
+        this.enablePremium("https://" + this.getHost() + "/payment");
     }
 
-    private String getContentURL(final DownloadLink link) {
-        String url = link.getPluginPatternMatcher().replaceFirst("http://", "https://");
-        url = url.replaceFirst("otr\\.datenkeller\\.at/", "otr.datenkeller.net/");
-        url = url.replace("getFile", "file").replaceAll("\\&referer=otrkeyfinder\\&lang=[a-z]+", "");
-        return url;
+    private String getContentURL(final DownloadLink link) throws MalformedURLException {
+        return "https://otr.datenkeller.net/?getFile=" + this.getFilenameFromURL(link);
     }
 
     @Override
     public String getAGBLink() {
-        return MAINPAGE;
+        return "https://" + this.getHost() + "/";
     }
 
     @Override
@@ -191,10 +221,23 @@ public class OtrDatenkellerNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        final int max = 5;
+        final int running = freeRunning.get();
+        final int ret = Math.min(running + 1, max);
+        return ret;
     }
 
     private final String WEBAPI_BASE = "https://waitaws.lastverteiler.net/api.php";
+
+    private void preDownloadWaitHandling(final DownloadLink link) throws PluginException {
+        synchronized (timestampLastDownloadStarted) {
+            final long waitMillisBetweenDownloads = 30 * 1000l;
+            final long passedTimeMillisSinceLastDownload = Time.systemIndependentCurrentJVMTimeMillis() - timestampLastDownloadStarted.get();
+            if (passedTimeMillisSinceLastDownload < waitMillisBetweenDownloads) {
+                this.sleep(waitMillisBetweenDownloads - passedTimeMillisSinceLastDownload, link);
+            }
+        }
+    }
 
     @SuppressWarnings("deprecation")
     @Override
@@ -205,9 +248,13 @@ public class OtrDatenkellerNet extends PluginForHost {
         br.clearCookies(null);
         br.getHeaders().put("User-Agent", getUserAgent());
         final String directlinkproperty = "free_finallink";
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
-            final String dlPageURL = "/?getFile=" + Encoding.urlEncode(this.getFilenameFromURL(link));
+        final String storedDirecturl = link.getStringProperty(directlinkproperty);
+        String dllink = null;
+        if (storedDirecturl != null) {
+            logger.info("Re-using stored directurl: " + storedDirecturl);
+            dllink = storedDirecturl;
+        } else {
+            final String dlPageURL = this.getContentURL(link);
             // if (br.containsHTML("(?i)\"action needs to specified")) {
             // /**
             // * 2023-06-19: Looks like they've disabled API downloads without account(?) </br>
@@ -266,14 +313,16 @@ public class OtrDatenkellerNet extends PluginForHost {
                 positionStr = br.getRegex("(?i)Deine Position in der Warteschlange\\s*:\\s*</td><td>~(\\d+)</td>").getMatch(0);
                 if (api_otrUID != null && alsoUseWebAPI) {
                     logger.info("Newway: New way active");
+                    final Browser brc = br.cloneBrowser();
+                    api_Free_prepBrowser(brc);
                     if (!api_otrUID_used) {
                         api_otrUID_used = true;
                         logger.info("NewwayUsing free API the first time...");
                         final String api_waitaws_url = "https://waitaws.lastverteiler.net/" + api_otrUID + "/" + finalfilenameurlencoded;
                         getPage(this.br, api_waitaws_url);
                         // TODO: Remove the following two lines
-                        api_postPage(this.br, WEBAPI_BASE, "action=validate&otrUID=" + api_otrUID + "&file=" + finalfilenameurlencoded);
-                        if (br.containsHTML("\"status\":\"fail\",\"reason\":\"user\"")) {
+                        brc.postPage(api_waitaws_url, "action=validate&otrUID=" + api_otrUID + "&file=" + finalfilenameurlencoded);
+                        if (brc.containsHTML("\"status\":\"fail\",\"reason\":\"user\"")) {
                             /* One retry is usually enough if the first attempt to use the API fails! */
                             if (api_failed) {
                                 /* This should never happen */
@@ -289,10 +338,10 @@ public class OtrDatenkellerNet extends PluginForHost {
                             api_failed = true;
                             continue;
                         }
-                        api_postPage(this.br, WEBAPI_BASE, "action=wait&status=ok&valid=ok&file=" + finalfilenameurlencoded + "&otrUID=" + api_otrUID);
+                        brc.postPage(WEBAPI_BASE, "action=wait&status=ok&valid=ok&file=" + finalfilenameurlencoded + "&otrUID=" + api_otrUID);
                     }
                     String postData = "";
-                    String[] params = br.toString().split(",");
+                    String[] params = brc.toString().split(",");
                     if (params == null || params.length == 0) {
                         logger.warning("Failed to get API postparameters");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -306,9 +355,12 @@ public class OtrDatenkellerNet extends PluginForHost {
                         }
                         postData += key + "=" + Encoding.urlEncode(value) + "&";
                     }
-                    api_postPage(this.br, WEBAPI_BASE, postData);
-                    positionStr = br.getRegex("\"wait_pos\":\"(\\d+)\"").getMatch(0);
-                    dllink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                    brc.postPage(WEBAPI_BASE, postData);
+                    positionStr = brc.getRegex("\"wait_pos\":\"(\\d+)\"").getMatch(0);
+                    dllink = brc.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
+                    if (dllink != null) {
+                        dllink = dllink.replace("\\", "");
+                    }
                 }
                 sleep(refreshSeconds * 1000l, link);
                 link.getLinkStatus().setStatusText("Warten auf Ticket...Position in der Warteschlange: " + positionStr);
@@ -335,19 +387,31 @@ public class OtrDatenkellerNet extends PluginForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Didn't get a ticket", 30 * 60 * 1000l);
             }
-            dllink = dllink.replace("\\", "");
+            link.setProperty(directlinkproperty, dllink);
         }
+        this.preDownloadWaitHandling(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        checkErrorsAfterDownloadstart();
-        link.setProperty(directlinkproperty, dllink);
-        dl.startDownload();
+        if (storedDirecturl != null && !this.looksLikeDownloadableContent(dl.getConnection())) {
+            link.removeProperty(directlinkproperty);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+        }
+        checkErrorsAfterDownloadAttempt();
+        synchronized (timestampLastDownloadStarted) {
+            timestampLastDownloadStarted.set(Time.systemIndependentCurrentJVMTimeMillis());
+        }
+        controlSlot(link, null, +1);
+        try {
+            dl.startDownload();
+        } finally {
+            controlSlot(link, null, -1);
+        }
     }
 
-    private void checkErrorsAfterDownloadstart() throws IOException, PluginException {
+    private void checkErrorsAfterDownloadAttempt() throws IOException, PluginException {
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (br.containsHTML("(?i)>\\s*Maximale Anzahl an Verbindungen verbraucht")) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections");
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections", 1 * 60 * 1000l);
             } else if (br.containsHTML("(?i)wurde wegen Missbrauch geblockt")) {
                 throw new AccountInvalidException("Account wurde wegen Missbrauch geblockt");
             } else if (dl.getConnection().getResponseCode() == 403) {
@@ -362,58 +426,27 @@ public class OtrDatenkellerNet extends PluginForHost {
         return br.containsHTML("onclick=\"startCount");
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    return dllink;
-                } else {
-                    throw new IOException();
-                }
-            } catch (final Exception e) {
-                link.removeProperty(property);
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
-        }
-        return null;
-    }
-
     @SuppressWarnings("deprecation")
     private void login(Account account, boolean force) throws Exception {
         br.setCookiesExclusive(true);
         api_prepBrowser(br);
         final boolean useAPIV2 = false;
         String apikey = getAPIKEY(account);
-        boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-        if (acmatch) {
-            acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-        }
-        if (acmatch && !force && apikey != null) {
+        if (!force && apikey != null) {
             /* Re-use existing apikey */
             return;
         }
         br.setFollowRedirects(false);
-        if (useAPIV2) {
+        if (useAPIV2 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             // TODO
             final Calendar cal = Calendar.getInstance();
             final UrlQuery query = new UrlQuery();
             query.add("jdlAPI", "");
             query.add("account", Encoding.urlEncode(account.getUser()));
             query.add("password", Encoding.urlEncode(account.getPass()));
-            query.add("auth", JDHash.getMD5(Calendar.DAY_OF_MONTH + account.getUser() + cal.get(Calendar.MONTH) + account.getPass()));
+            final String str = cal.get(Calendar.DAY_OF_MONTH) + account.getUser() + account.getPass();
+            System.out.println("String to hash: " + str);
+            query.add("auth", JDHash.getMD5(str));
             br.getPage("https://otr.datenkeller.net/?" + query.toString());
         } else {
             br.postPage(API_BASE_URL, "api_version=" + APIVERSION + "&action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
@@ -423,14 +456,12 @@ public class OtrDatenkellerNet extends PluginForHost {
         if (apikey == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        account.setProperty("name", Encoding.urlEncode(account.getUser()));
-        account.setProperty("pass", Encoding.urlEncode(account.getPass()));
         this.setApikey(account, apikey);
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         login(account, true);
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Object expiresO = entries.get("expires");
@@ -451,8 +482,8 @@ public class OtrDatenkellerNet extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
         login(account, false);
+        final Browser brc = br.cloneBrowser();
         final UrlQuery query = new UrlQuery();
         query.add("api_version", APIVERSION);
         query.add("action", "getpremlink");
@@ -460,31 +491,68 @@ public class OtrDatenkellerNet extends PluginForHost {
         query.add("password", Encoding.urlEncode(account.getPass()));
         query.add("apikey", Encoding.urlEncode(getAPIKEY(account)));
         query.add("filename", Encoding.urlEncode(getFilenameFromURL(link)));
-        br.postPage(API_BASE_URL, query);
-        String dllink = getJson(br.toString(), "dllink");
-        if (dllink == null) {
-            handleErrorsAPI();
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        brc.postPage(API_BASE_URL, query);
+        final Map<String, Object> resp = this.checkErrorsAPI(brc, link, account);
+        final String dllink = (String) resp.get("dllink");
+        if (StringUtils.isEmpty(dllink)) {
+            /* This should never happen. */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
         }
-        dllink = dllink.replace("\\", "");
+        this.preDownloadWaitHandling(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 1);
-        checkErrorsAfterDownloadstart();
-        dl.startDownload();
+        checkErrorsAfterDownloadAttempt();
+        synchronized (timestampLastDownloadStarted) {
+            timestampLastDownloadStarted.set(Time.systemIndependentCurrentJVMTimeMillis());
+        }
+        controlSlot(link, account, +1);
+        try {
+            dl.startDownload();
+        } finally {
+            controlSlot(link, account, -1);
+        }
     }
 
-    private Map<String, Object> checkErrorsAPI(final Browser br) throws PluginException {
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final String status = getJson("status");
-        final String message = getJson("message");
+    private void controlSlot(final DownloadLink link, final Account account, final int num) {
+        if (account == null) {
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        } else {
+            synchronized (accountRunning) {
+                final int before = accountRunning.get();
+                final int after = before + num;
+                accountRunning.set(after);
+                logger.info("accountRunning(" + link.getName() + ")|max:" + getMaxSimultanPremiumDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
+    }
+
+    private Map<String, Object> checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        Map<String, Object> entries = null;
+        try {
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        } catch (final JSonMapperException jse) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response");
+        }
+        final String status = (String) entries.get("status");
+        final String message = (String) entries.get("message");
         if ("fail".equals(status)) {
-            /* TODO: Add support for more failure cases here */
             if (message.equalsIgnoreCase("failed to login due to wrong credentials, missing or wrong apikey")) {
                 throw new AccountInvalidException();
             } else if (message.equalsIgnoreCase("failed to login due to wrong credentials or expired account")) {
                 throw new AccountInvalidException();
+            } else if (message.equalsIgnoreCase("wrong filename supplied")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, message);
+                /* Unknown error */
+                if (link == null) {
+                    throw new AccountUnavailableException(message, 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, message);
+                }
             }
         }
         return entries;
@@ -496,7 +564,6 @@ public class OtrDatenkellerNet extends PluginForHost {
         final String status = getJson("status");
         final String message = getJson("message");
         if ("fail".equals(status) && message != null) {
-            /* TODO: Add support for more failure cases here */
             if (message.equalsIgnoreCase("failed to login due to wrong credentials, missing or wrong apikey")) {
                 /* This should never happen. */
                 /* Temp disable --> We will get a new apikey next full login --> Maybe that will help */
@@ -525,7 +592,12 @@ public class OtrDatenkellerNet extends PluginForHost {
     }
 
     final String getFilenameFromURL(final DownloadLink link) throws MalformedURLException {
-        return UrlQuery.parse(getContentURL(link)).get("file");
+        final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
+        String filename = query.get("getFile");
+        if (filename == null) {
+            filename = query.get("file");
+        }
+        return filename;
     }
 
     private void setApikey(final Account account, final String apikey) {
@@ -556,16 +628,6 @@ public class OtrDatenkellerNet extends PluginForHost {
         br.getPage(url);
     }
 
-    @SuppressWarnings("unused")
-    private void postPage(final Browser br, final String url, final String data) throws IOException {
-        br.postPage(url, data);
-    }
-
-    private void api_postPage(final Browser br, final String url, final String data) throws IOException {
-        this.api_Free_prepBrowser(br);
-        br.postPage(url, data);
-    }
-
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /*
@@ -573,7 +635,10 @@ public class OtrDatenkellerNet extends PluginForHost {
          * with only one
          */
         /* 2023-06-20: Changed limit from 1 to 5. */
-        return 5;
+        final int max = 5;
+        final int running = accountRunning.get();
+        final int ret = Math.min(running + 1, max);
+        return ret;
     }
 
     @Override
