@@ -519,7 +519,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
             @Override
             public void actionPerformed(ActionEvent e) {
                 ClipboardMonitoring.getINSTANCE().setCurrentContent(getName());
-                if (StringUtils.startsWithCaseInsensitive(url, "http") && CrossSystem.isOpenBrowserSupported()) {
+                if (url != null && url.matches("(?i)https?://.+") && CrossSystem.isOpenBrowserSupported()) {
                     CrossSystem.openURL(url);
                 } else {
                     BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
