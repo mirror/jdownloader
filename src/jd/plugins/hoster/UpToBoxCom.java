@@ -25,24 +25,6 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -62,6 +44,24 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends PluginForHost {
@@ -106,7 +106,7 @@ public class UpToBoxCom extends PluginForHost {
 
     /** Returns list of domains DNS blocked by any ISP. */
     protected List<String> getDNSBlockedDomains() {
-        /* Keep this list updated! */
+        /* Keep this list updated, it might be useful in the future. */
         final List<String> list = new ArrayList<String>();
         list.add("uptobox.com");
         list.add("uptobox.fr");
@@ -161,6 +161,7 @@ public class UpToBoxCom extends PluginForHost {
     private String getPreferredDomain(final String url) {
         final String userPreferredDomain = getConfiguredDomain();
         final List<String> deadDomains = this.getDeadDomains();
+        final boolean ignoreIfDomainLooksToBeDNSBlocked = false;
         final List<String> dnsBlockedDomains = this.getDNSBlockedDomains();
         final String chosenDomain;
         /* Enable this to prefer domain from given URL as long as it is not "blacklisted". */
@@ -182,7 +183,7 @@ public class UpToBoxCom extends PluginForHost {
         if (deadDomains != null && deadDomains.contains(chosenDomain)) {
             /* Fallback 1 */
             return UpToBoxComConfig.PreferredDomain.DEFAULT.getDomain();
-        } else if (dnsBlockedDomains != null && dnsBlockedDomains.contains(chosenDomain)) {
+        } else if (ignoreIfDomainLooksToBeDNSBlocked && dnsBlockedDomains != null && dnsBlockedDomains.contains(chosenDomain)) {
             /* Fallback 2 */
             return UpToBoxComConfig.PreferredDomain.DEFAULT.getDomain();
         } else {

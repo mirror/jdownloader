@@ -32,6 +32,8 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -57,7 +59,8 @@ public class MediafireComFolder extends PluginForDecrypt {
     private static final String LINKPART_SINGLE = "https://www.mediafire.com/download.php?";
     private String              subFolder       = "";
 
-    private Boolean checkFolder(Browser br, final String contentID) throws IOException {
+    /** Checks if given contentID is a folder. */
+    private Boolean checkFolder(final Browser br, final String contentID) throws IOException {
         try {
             /* check if id is a folder */
             apiRequest(this.br, "https://www.mediafire.com/api/folder/get_info.php", "?folder_key=" + contentID);
@@ -75,6 +78,7 @@ public class MediafireComFolder extends PluginForDecrypt {
         return null;
     }
 
+    /** Checks if given contentID is a single file. */
     private Boolean checkFile(Browser br, final String contentID) throws IOException {
         try {
             /* check if id is a file */
@@ -95,7 +99,7 @@ public class MediafireComFolder extends PluginForDecrypt {
     }
 
     // https://www.mediafire.com/developers/core_api/1.5/getting_started/#error_codes
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String parameter = param.getCryptedUrl().replace("mfi.re/", "mediafire.com/").trim();
         if (parameter.matches("https?://(\\w+\\.)?mediafire\\.com/view/\\?.+")) {
@@ -123,17 +127,15 @@ public class MediafireComFolder extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36");
         if (parameter.matches("http://download\\d+\\.mediafire.+")) {
             /* direct download */
-            String ID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
-            if (ID == null) {
-                ID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
+            String fileID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
+            if (fileID == null) {
+                fileID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
             }
-            if (ID != null) {
-                DownloadLink link = createSingleDownloadlink(ID);
-                ret.add(link);
-                return ret;
+            if (fileID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            ret.add(createSingleDownloadlink(fileID));
+            return ret;
         } else if (parameter.contains("imageview.php")) {
             String fileID = new Regex(parameter, "\\.com/.*?quickkey=(.+)").getMatch(0);
             if (fileID != null) {
@@ -174,6 +176,7 @@ public class MediafireComFolder extends PluginForDecrypt {
             }
             return ret;
         } else {
+            /* ost likely we got a folder -> Crawl all files of that folder. */
             // Private link? Login needed!
             if (getUserLogin()) {
                 logger.info("Decrypting with logindata...");
@@ -247,19 +250,22 @@ public class MediafireComFolder extends PluginForDecrypt {
                 ret.add(link);
                 return ret;
             } else if (Boolean.TRUE.equals(isFolder)) {
-                String browser = br.toString();
-                final String currentFolderName = getXML("name", browser);
-                String file_count = getXML("file_count", browser);
-                String folder_count = getXML("folder_count", browser);
-                String privacy = getXML("privacy", browser);
-                long filesNum = -1;
-                long foldersNum = -1;
+                final String xml = br.getRequest().getHtmlCode();
+                final String currentFolderName = getXML("name", xml);
+                final String filesNumStr = getXML("file_count", xml);
+                final String foldersNumStr = getXML("folder_count", xml);
+                final String privacy = getXML("privacy", xml);
+                final int filesNum = filesNumStr != null ? Integer.parseInt(filesNumStr) : -1;
+                final int foldersNum = foldersNumStr != null ? Integer.parseInt(foldersNumStr) : null;
+                if (filesNum == 0 && foldersNum == 0) {
+                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+                }
                 if (currentFolderName != null) {
                     subFolder += "/" + currentFolderName;
                 } else {
-                    logger.info("Current folder has no name(?)");
+                    logger.info("Current folder has no name");
                 }
-                if (file_count != null && (filesNum = Long.parseLong(file_count)) > 0) {
+                if (filesNum > 0) {
                     FilePackage fp = null;
                     if (currentFolderName != null) {
                         fp = FilePackage.getInstance();
@@ -312,7 +318,7 @@ public class MediafireComFolder extends PluginForDecrypt {
                         }
                     }
                 }
-                if (folder_count != null && (foldersNum = Long.parseLong(folder_count)) > 0) {
+                if (foldersNum > 0) {
                     for (int i = 1; i <= 100; i++) {
                         try {
                             apiRequest(this.br, "https://www.mediafire.com/api/folder/get_content.php?folder_key=", contentID + "&content_type=folders&chunk=" + i);
@@ -395,9 +401,7 @@ public class MediafireComFolder extends PluginForDecrypt {
         return ret;
     }
 
-    /**
-     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
-     */
+    @Override
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
     }
