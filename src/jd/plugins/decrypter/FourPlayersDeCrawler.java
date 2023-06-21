@@ -26,28 +26,24 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4players.de" }, urls = { "https?://(?:www\\.)?4players\\.de/\\S*/download/([0-9]+)/([01]/)?index\\.html?" })
-public class FourPlayersDe extends PluginForDecrypt {
-    public FourPlayersDe(PluginWrapper wrapper) {
+public class FourPlayersDeCrawler extends PluginForDecrypt {
+    public FourPlayersDeCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String fileid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         // Open URL which redirects immediately to the file
         br.setFollowRedirects(false);
         br.getPage("https://www.4players.de/cs.php/download_start/-/download/" + fileid + "/0/index.html");
         br.getPage("/download_start/-/download/" + fileid + "/1/index.html");
         // final String finallink = br.getRedirectLocation();
-        final String finallink = "https://www." + this.getHost() + "/cs.php/download_start/-/download/" + fileid + "/1/index.html";
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + param.toString());
-            return null;
-        }
+        final String directlink = "https://www." + this.getHost() + "/cs.php/download_start/-/download/" + fileid + "/1/index.html";
         // Add to decrypted links - we use http://ftp.freenet instead of
         // ftp://freenet which works
-        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
-        return decryptedLinks;
+        ret.add(createDownloadlink("directhttp://" + directlink));
+        return ret;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {

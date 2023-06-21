@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -26,8 +28,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4players.de" }, urls = { "https?://(?:www\\.)?4players\\.de/4players\\.php/download_info/Downloads/Download/(\\d+)/([^<>\"]*?)\\.html" })
 public class FourPlayersDe extends PluginForHost {
@@ -59,11 +59,13 @@ public class FourPlayersDe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("download_start/Downloads/Download/\\.html\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("download_start/Downloads/Download/\\.html\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("class=\"infoval filename\">([^<>\"]*?)</div>").getMatch(0);
-        final String filesize = br.getRegex("Dateigröße:</label>\\s*<div[^>]*class=\"infoval\"[^>]*>([^<>\"]*?)</div>").getMatch(0);
+        final String filesize = br.getRegex("(?i)Dateigröße\\s*:\\s*</label>\\s*<div[^>]*class=\"infoval\"[^>]*>([^<>\"]*?)</div>").getMatch(0);
         if (filename != null) {
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         }
@@ -76,8 +78,8 @@ public class FourPlayersDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        final String dllink = "https://www.4players.de/services/downloadmanager/download.php?action=start_now&DOWNLOADID=" + getFID(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        final String directlink = "/services/downloadmanager/download.php?action=start_now&DOWNLOADID=" + getFID(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directlink, true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -23,20 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.plugins.Account;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.ArteTv;
-import jd.plugins.hoster.DirectHTTP;
-
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
@@ -50,6 +36,20 @@ import org.jdownloader.plugins.components.config.ArteMediathekConfig.QualitySele
 import org.jdownloader.plugins.components.config.ArteMediathekConfig.ThumbnailFilenameMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.plugins.Account;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.ArteTv;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 4, names = {}, urls = {})
 public class ArteMediathekV3 extends PluginForDecrypt {
@@ -80,7 +80,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z]{2}/videos/\\d+-\\d+-[ADF]+(/([a-z0-9\\-]+)/?)?|embeds/[a-z]{2}/\\d+-\\d+-[ADF]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z]{2}/videos/\\d+-\\d+-[ADFK]+(/([a-z0-9\\-]+)/?)?|embeds/[a-z]{2}/\\d+-\\d+-[ADFK]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -92,16 +92,16 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     private final String        PROPERTY_TITLE_AND_SUBTITLE = "title_and_subtitle";
     private final String        PROPERTY_DATE               = "date";
     private final String        PROPERTY_ORIGINAL_FILENAME  = "original_filename";
-    private final String        PROPERTY_AUDIO_CODE         = "audio_code";                                                             // ex
+    private final String        PROPERTY_AUDIO_CODE         = "audio_code";                                                              // ex
                                                                                                                                          // versionCode
                                                                                                                                          // e.g.
                                                                                                                                          // VF,
                                                                                                                                          // VF-STA,
                                                                                                                                          // VA
-    private final String        PROPERTY_AUDIO_SHORT_LABEL  = "audioShortLabel";                                                        // e.g.
+    private final String        PROPERTY_AUDIO_SHORT_LABEL  = "audioShortLabel";                                                         // e.g.
                                                                                                                                          // DE,
                                                                                                                                          // FR
-    private final String        PROPERTY_AUDIO_LABEL        = "audioLabel";                                                             // e.g.
+    private final String        PROPERTY_AUDIO_LABEL        = "audioLabel";                                                              // e.g.
                                                                                                                                          // Deutsch,
                                                                                                                                          // Französisch
     private final String        PROPERTY_WIDTH              = "width";
@@ -109,8 +109,8 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     private final String        PROPERTY_BITRATE            = "bitrate";
     private final String        PROPERTY_PLATFORM           = "platform";
     private final String        PROPERTY_TYPE               = "type";
-    private final String        TYPE_NORMAL                 = "https?://[^/]+/([a-z]{2})/videos/(\\d+-\\d+-[ADF]+)(/([a-z0-9\\-]+)/?)?";
-    private final String        TYPE_EMBED                  = "https?://[^/]+/embeds/([a-z]{2})/(\\d+-\\d+-[ADF]+)";
+    private final String        TYPE_NORMAL                 = "https?://[^/]+/([a-z]{2})/videos/(\\d+-\\d+-[ADFK]+)(/([a-z0-9\\-]+)/?)?";
+    private final String        TYPE_EMBED                  = "https?://[^/]+/embeds/([a-z]{2})/(\\d+-\\d+-[ADFK]+)";
 
     private static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("Authorization", "Bearer Nzc1Yjc1ZjJkYjk1NWFhN2I2MWEwMmRlMzAzNjI5NmU3NWU3ODg4ODJjOWMxNTMxYzEzZGRjYjg2ZGE4MmIwOA");
@@ -354,7 +354,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 link.setProperty(PROPERTY_PLATFORM, platform);
                 link.setProperty(PROPERTY_ORIGINAL_FILENAME, videoStream.get("filename"));
                 final VersionInfo versionInfo = parseVersionInfo(audioCode);
-                /* Do not modify those linkIDs to try to keep backward compatibility! remove the -[ADF] to be same as old vpi */
+                /* Do not modify those linkIDs to try to keep backward compatibility! remove the -[ADFK] to be same as old vpi */
                 link.setContentUrl(param.getCryptedUrl());
                 link.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, getHost());
                 link.setLinkID(getHost() + "://" + new Regex(videoID, "(\\d+-\\d+)").getMatch(0) + "/" + versionInfo.toString() + "/" + "http_" + bitrate);
@@ -675,6 +675,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         FULL,
         PARTIAL,
         HEARING_IMPAIRED;
+
         private static SubtitleType parse(final String apiosCode) {
             if (apiosCode.matches(".*?AUD.*?")) {
                 /* E.g. "VFAUD" or "VAAUD" */
@@ -702,6 +703,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         NON_ORIGINAL_FRANCAIS,
         NON_ORIGINAL_GERMAN,
         FOREIGN;
+
         private static VersionType parse(final String apiosCode) {
             if (StringUtils.startsWithCaseInsensitive(apiosCode, "VOF")) {
                 return ORIGINAL_FRANCAIS;

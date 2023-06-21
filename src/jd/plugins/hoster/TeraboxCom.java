@@ -91,6 +91,7 @@ public class TeraboxCom extends PluginForHost {
     public static final String PROPERTY_DIRECTURL       = "directurl";
     public static final String PROPERTY_PASSWORD_COOKIE = "password_cookie";
     public static final String PROPERTY_PAGINATION_PAGE = "pagination_page";
+    public static final String PROPERTY_JS_TOKEN        = "js_token";
     public static final String PROPERTY_ACCOUNT_TOKEN   = "token";
 
     @Override
@@ -316,7 +317,8 @@ public class TeraboxCom extends PluginForHost {
             this.requestFileInformation(link, account);
             final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh expired directurl", 3 * 60 * 1000l);
+                /* This should never happen. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh expired directurl", 5 * 60 * 1000l);
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, getDownloadLinkDownloadable(link), br.createGetRequest(dllink), this.isResumeable(link, account), this.getMaxChunks(account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {

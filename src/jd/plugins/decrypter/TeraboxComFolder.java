@@ -110,7 +110,6 @@ public class TeraboxComFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> crawlFolder(final CryptedLink param, final Account account, final String targetFileID) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final UrlQuery paramsOfAddedURL = UrlQuery.parse(param.getCryptedUrl());
         String surl;
         String preGivenPath = null;
@@ -158,13 +157,31 @@ public class TeraboxComFolder extends PluginForDecrypt {
          * TODO: That is not enough -> We might have to re-use all cookies and/or maybe always store current/new session on account. </br>
          * It is only possible to use one "passwordCookie" at the same time!
          */
-        String passwordCookie = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(TeraboxCom.PROPERTY_PASSWORD_COOKIE) : null;
+        final DownloadLink parent = param.getDownloadLink();
+        String passwordCookie = parent != null ? param.getDownloadLink().getStringProperty(TeraboxCom.PROPERTY_PASSWORD_COOKIE) : null;
         if (passwordCookie != null) {
             setPasswordCookie(this.br, this.br.getHost(), passwordCookie);
+        }
+        String jstoken = parent != null ? param.getDownloadLink().getStringProperty(TeraboxCom.PROPERTY_JS_TOKEN) : null;
+        if (jstoken == null) {
+            logger.info("Looking for jstoken im html code");
+            br.getPage(param.getCryptedUrl());
+            jstoken = br.getRegex("window\\.jsToken%20%3D%20a%7D%3Bfn%28%22([A-F0-9]{128})").getMatch(0);
+        }
+        if (account != null && jstoken == null) {
+            logger.warning("Failed to find jstoken while account is given -> Download of crawled items may fail!");
         }
         int page = 1;
         final int maxItemsPerPage = 20;
         final UrlQuery queryFolder = new UrlQuery();
+        queryFolder.add("app_id", getAppID());
+        queryFolder.add("web", "1");
+        queryFolder.add("channel", getChannel());
+        queryFolder.add("clienttype", getClientType());
+        /* 2023-06-21: jstoken is mandatory when account is given. */
+        queryFolder.add("jsToken", jstoken != null ? jstoken : "");
+        queryFolder.add("dp-logid", "");
+        queryFolder.add("site_referer", "");
         queryFolder.add("order", "time");
         queryFolder.add("desc", "1");
         queryFolder.add("shorturl", surl);
@@ -173,17 +190,13 @@ public class TeraboxComFolder extends PluginForDecrypt {
         } else {
             queryFolder.add("root", "1");
         }
-        /* 2021-04-14 */
-        queryFolder.add("app_id", getAppID());
-        queryFolder.add("web", "1");
-        queryFolder.add("channel", getChannel());
-        queryFolder.add("clienttype", getClientType());
         Map<String, Object> entries = null;
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
         br.setFollowRedirects(true);
         if (targetFileID != null) {
             logger.info("Trying to find item with the following fs_id ONLY: " + targetFileID);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         do {
             logger.info("Crawling page: " + page);
             queryFolder.addAndReplace("page", Integer.toString(page));
@@ -279,18 +292,19 @@ public class TeraboxComFolder extends PluginForDecrypt {
                 /* 2021-04-14: 'category' is represented as a String. */
                 final long category = JavaScriptEngineFactory.toLong(entries.get("category"), -1);
                 if (JavaScriptEngineFactory.toLong(entries.get("isdir"), -1) == 1) {
+                    /* Folder */
                     final String url = "https://www." + this.getHost() + "/web/share/link?surl=" + surl + "&path=" + Encoding.urlEncode(path);
                     final DownloadLink folder = this.createDownloadlink(url);
                     if (passCode != null) {
                         folder.setDownloadPassword(passCode);
                     }
                     /* Saving- and re-using this can save us some time later. */
-                    if (passwordCookie != null) {
-                        folder.setProperty(TeraboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookie);
-                    }
+                    folder.setProperty(TeraboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookie);
+                    folder.setProperty(TeraboxCom.PROPERTY_JS_TOKEN, jstoken);
                     distribute(folder);
-                    decryptedLinks.add(folder);
+                    ret.add(folder);
                 } else {
+                    /* File */
                     final String serverfilename = (String) entries.get("server_filename");
                     // final long fsid = JavaScriptEngineFactory.toLong(entries.get("fs_id"), -1);
                     final String fsidStr = Long.toString(JavaScriptEngineFactory.toLong(entries.get("fs_id"), -1));
@@ -322,9 +336,8 @@ public class TeraboxComFolder extends PluginForDecrypt {
                         dl.setDownloadPassword(passCode);
                     }
                     /* Saving- and re-using this can save us some time later. */
-                    if (passwordCookie != null) {
-                        dl.setProperty(TeraboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookie);
-                    }
+                    dl.setProperty(TeraboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookie);
+                    dl.setProperty(TeraboxCom.PROPERTY_JS_TOKEN, jstoken);
                     /* This can be useful to refresh directurls a lot quicker. */
                     dl.setProperty(TeraboxCom.PROPERTY_PAGINATION_PAGE, page);
                     if (realpath.length() > 1) {
@@ -336,16 +349,16 @@ public class TeraboxComFolder extends PluginForDecrypt {
                     if (targetFileID == null) {
                         /* We want to crawl all items. */
                         distribute(dl);
-                        decryptedLinks.add(dl);
+                        ret.add(dl);
                     } else if (!StringUtils.equalsIgnoreCase(fsidStr, targetFileID)) {
                         /* we' re looking for a single item but this is not it. */
-                        decryptedLinks.add(dl);
+                        ret.add(dl);
                     } else {
                         /* We're looking for a single item and found it! */
-                        decryptedLinks.clear();
-                        decryptedLinks.add(dl);
+                        ret.clear();
+                        ret.add(dl);
                         logger.info("Stopping because: Found item matching target fileID: " + targetFileID);
-                        return decryptedLinks;
+                        return ret;
                     }
                 }
             }
@@ -358,6 +371,6 @@ public class TeraboxComFolder extends PluginForDecrypt {
                 continue;
             }
         } while (!this.isAbort());
-        return decryptedLinks;
+        return ret;
     }
 }
