@@ -897,8 +897,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final Map<String, String> selectedQualities = getSelectedVideoQualities(foundAndSortedQualities, qualitySelectionMode, getPreferredQualityString());
         if (selectedQualities.isEmpty()) {
-            logger.info("User has selected unavailable qualities only (or only unknown qualities are available)");
-            return ret;
+            throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "BAD_QUALITY_SELECTION_PLUGIN_SETTINGS_" + titleToUse, "You've selected only qualities which do not exist for this video. Adjust your plugin settings and try again.");
         }
         final boolean fastLinkcheck = cfg.getBooleanProperty(VKontakteRuHoster.FASTLINKCHECK_VIDEO, true);
         final PluginForHost plugin = getNewPluginForHostInstance(getHost());

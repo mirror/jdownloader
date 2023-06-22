@@ -30,12 +30,14 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -90,7 +92,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 import jd.plugins.hoster.YoutubeDashV2;
@@ -1019,9 +1020,6 @@ public class TbCmV2 extends PluginForDecrypt {
         final String INNERTUBE_CLIENT_VERSION = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CLIENT_VERSION")) : "2.20230620.01.00";
         final Set<String> playListDupes = new HashSet<String>();
         do {
-            if (this.isAbort()) {
-                throw new InterruptedException();
-            }
             String nextPageJSON = null, nextPageHTML = null, nextPageToken = null;
             checkErrors(pbr);
             // this will speed up searches. we know this wont be present..
@@ -1040,143 +1038,65 @@ public class TbCmV2 extends PluginForDecrypt {
                 nextPageHTML = pbr.getRegex("<a href=(\"|')(/playlist\\?list=" + playlistID + "\\&amp;page=\\d+)\\1[^\r\n]+>Next").getMatch(1);
             } else {
                 isJson = true;
+                final Map<String, Object> rootMap;
+                final List<Map<String, Object>> pl;
                 if (round == 0) {
-                    final Map<String, Object> ytInitialData = helper.getYtInitialData();
-                    if (ytInitialData != null) {
-                        final List<Object> pl = (List<Object>) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnBrowseResultsRenderer/tabs/{}/tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
-                        if (pl != null) {
-                            for (final Object p : pl) {
-                                final Map<String, Object> vid = (Map<String, Object>) p;
-                                final String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
-                                /* Typically last item (item 101) will contain the continuationToken. */
-                                final String continuationToken = (String) JavaScriptEngineFactory.walkJson(vid, "continuationItemRenderer/continuationEndpoint/continuationCommand/token");
-                                if (id != null) {
-                                    playListDupes.add(id);
-                                    ret.add(new YoutubeClipData(id, counter++));
-                                } else if (continuationToken != null) {
-                                    // TODO: Make use of this
-                                    nextPageToken = continuationToken;
-                                }
-                            }
-                            // continuation
-                            final Map<String, Object> c = (Map<String, Object>) JavaScriptEngineFactory.walkJson(ytInitialData, "contents/twoColumnBrowseResultsRenderer/tabs/{}/tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/continuations/{0}/nextContinuationData");
-                            if (c != null) {
-                                final String ctoken = (String) c.get("continuation");
-                                final String itct = (String) c.get("clickTrackingParams");
-                                if (ctoken != null && itct != null) {
-                                    nextPageJSON = "/browse_ajax?ctoken=" + Encoding.urlEncode(ctoken) + "&itct=" + Encoding.urlEncode(itct);
-                                }
-                            }
-                            if (helper.getYtCfgSet() != null) {
-                                if (PAGE_CL == null && helper.getYtCfgSet().containsKey("PAGE_CL")) {
-                                    PAGE_CL = String.valueOf(helper.getYtCfgSet().get("PAGE_CL"));
-                                }
-                                if (PAGE_BUILD_LABEL == null && helper.getYtCfgSet().containsKey("PAGE_BUILD_LABEL")) {
-                                    PAGE_BUILD_LABEL = String.valueOf(helper.getYtCfgSet().get("PAGE_BUILD_LABEL"));
-                                }
-                                if (VARIANTS_CHECKSUM == null && helper.getYtCfgSet().containsKey("VARIANTS_CHECKSUM")) {
-                                    VARIANTS_CHECKSUM = String.valueOf(helper.getYtCfgSet().get("VARIANTS_CHECKSUM"));
-                                }
-                                if (INNERTUBE_CONTEXT_CLIENT_VERSION == null && helper.getYtCfgSet().containsKey("INNERTUBE_CONTEXT_CLIENT_VERSION")) {
-                                    INNERTUBE_CONTEXT_CLIENT_VERSION = String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_VERSION"));
-                                }
-                                if (INNERTUBE_CONTEXT_CLIENT_NAME == null && helper.getYtCfgSet().containsKey("INNERTUBE_CONTEXT_CLIENT_NAME")) {
-                                    INNERTUBE_CONTEXT_CLIENT_NAME = String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_NAME"));
-                                }
-                            }
-                        }
-                    }
+                    rootMap = helper.getYtInitialData();
+                    pl = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnBrowseResultsRenderer/tabs/{}/tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
                 } else {
-                    // secondary pages are pure json
-                    final Object object = JavaScriptEngineFactory.jsonToJavaObject(pbr.toString());
-                    if (object == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final Map<String, Object> map;
-                    if (object instanceof Map) {
-                        map = (Map<String, Object>) object;
-                    } else if (object instanceof List) {
-                        final List<Object> list = (List<Object>) object;
-                        Map<String, Object> found = null;
-                        for (final Object entry : list) {
-                            if (entry instanceof Map && ((Map) entry).containsKey("response")) {
-                                found = (Map<String, Object>) entry;
-                                break;
-                            }
-                        }
-                        if (found != null) {
-                            map = found;
+                    rootMap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                    pl = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "onResponseReceivedActions/{0}/appendContinuationItemsAction/continuationItems");
+                }
+                if (pl == null) {
+                    /* This should never happen. */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (pl != null) {
+                    for (final Map<String, Object> vid : pl) {
+                        final String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
+                        /* Typically last item (item 101) will contain the continuationToken. */
+                        final String continuationToken = (String) JavaScriptEngineFactory.walkJson(vid, "continuationItemRenderer/continuationEndpoint/continuationCommand/token");
+                        if (id != null) {
+                            playListDupes.add(id);
+                            ret.add(new YoutubeClipData(id, counter++));
+                        } else if (continuationToken != null) {
+                            /* Typically last item contains token for next page */
+                            nextPageToken = continuationToken;
                         } else {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            logger.info("Found unknown playlist item: " + vid);
                         }
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final List<Object> pl = (List<Object>) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/contents");
-                    if (pl != null) {
-                        for (final Object p : pl) {
-                            final Map<String, Object> vid = (Map<String, Object>) p;
-                            final String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
-                            if (id != null) {
-                                playListDupes.add(id);
-                                ret.add(new YoutubeClipData(id, counter++));
-                            }
+                    if (helper.getYtCfgSet() != null) {
+                        if (PAGE_CL == null && helper.getYtCfgSet().containsKey("PAGE_CL")) {
+                            PAGE_CL = String.valueOf(helper.getYtCfgSet().get("PAGE_CL"));
                         }
-                        // continuation
-                        final String continuation = (String) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/continuations/{}/nextContinuationData/continuation");
-                        if (continuation != null) {
-                            final String clickTrackingParams = (String) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/continuations/{}/nextContinuationData/clickTrackingParams");
-                            if (clickTrackingParams != null) {
-                                nextPageJSON = "/browse_ajax?ctoken=" + URLEncode.encodeURIComponent(continuation) + "&itct=" + URLEncode.encodeURIComponent(clickTrackingParams);
-                            }
+                        if (PAGE_BUILD_LABEL == null && helper.getYtCfgSet().containsKey("PAGE_BUILD_LABEL")) {
+                            PAGE_BUILD_LABEL = String.valueOf(helper.getYtCfgSet().get("PAGE_BUILD_LABEL"));
                         }
-                        if (nextPageJSON == null) {
-                            final String url = (String) JavaScriptEngineFactory.walkJson(map, "endpoint/urlEndpoint/url");
-                            if (url != null) {
-                                nextPageJSON = url;
-                            }
+                        if (VARIANTS_CHECKSUM == null && helper.getYtCfgSet().containsKey("VARIANTS_CHECKSUM")) {
+                            VARIANTS_CHECKSUM = String.valueOf(helper.getYtCfgSet().get("VARIANTS_CHECKSUM"));
+                        }
+                        if (INNERTUBE_CONTEXT_CLIENT_VERSION == null && helper.getYtCfgSet().containsKey("INNERTUBE_CONTEXT_CLIENT_VERSION")) {
+                            INNERTUBE_CONTEXT_CLIENT_VERSION = String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_VERSION"));
+                        }
+                        if (INNERTUBE_CONTEXT_CLIENT_NAME == null && helper.getYtCfgSet().containsKey("INNERTUBE_CONTEXT_CLIENT_NAME")) {
+                            INNERTUBE_CONTEXT_CLIENT_NAME = String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_NAME"));
                         }
                     }
                 }
             }
             /* Check for some abort conditions */
-            logger.info("Crawled page " + "TODO" + " | Found items so far: " + playListDupes.size());
-            if (playListDupes.size() == before) {
+            logger.info("Crawled page " + round + " | Found items so far: " + playListDupes.size() + " | nextPageHTML = " + nextPageHTML + " | nextPageToken = " + nextPageToken);
+            if (this.isAbort()) {
+                throw new InterruptedException();
+            } else if (playListDupes.size() == before) {
                 logger.info("Stopping because: No new videoIDs found");
                 break;
-            } else if (nextPageJSON == null && nextPageHTML == null && nextPageToken == null) {
+            } else if (nextPageHTML == null && nextPageToken == null) {
                 logger.info("Stopping because: No next page found");
                 break;
             }
-            // Several Pages: http://www.youtube.com/playlist?list=FL9_5aq5ZbPm9X1QH0K6vOLQ
-            if (nextPageJSON != null) {
-                nextPageJSON = HTMLEntities.unhtmlentities(nextPageJSON);
-                pbr = br.cloneBrowser();
-                if (PAGE_CL != null) {
-                    pbr.getHeaders().put("X-YouTube-Page-CL", PAGE_CL);
-                }
-                if (PAGE_BUILD_LABEL != null) {
-                    pbr.getHeaders().put("X-YouTube-Page-Label", PAGE_BUILD_LABEL);
-                }
-                if (VARIANTS_CHECKSUM != null) {
-                    pbr.getHeaders().put("X-YouTube-Variants-Checksum", VARIANTS_CHECKSUM);
-                }
-                if (INNERTUBE_CONTEXT_CLIENT_VERSION != null) {
-                    pbr.getHeaders().put("X-YouTube-Client-Version", INNERTUBE_CONTEXT_CLIENT_VERSION);
-                }
-                if (INNERTUBE_CONTEXT_CLIENT_NAME != null) {
-                    pbr.getHeaders().put("X-YouTube-Client-Name", INNERTUBE_CONTEXT_CLIENT_NAME);
-                }
-                // anti ddos
-                round = antiDdosSleep(round);
-                helper.getPage(pbr, nextPageJSON);
-                if (!isJson) {
-                    String output = pbr.toString();
-                    output = PluginJSonUtils.unescape(output);
-                    output = output.replaceAll("\\s+", " ");
-                    pbr.getRequest().setHtmlCode(output);
-                }
-            } else if (nextPageToken != null) {
+            if (nextPageToken != null) {
                 if (StringUtils.isEmpty(INNERTUBE_API_KEY)) {
                     /* This should never happen. */
                     logger.info("Stopping because: Pagination is broken due to missing INNERTUBE_API_KEY");
@@ -1191,11 +1111,12 @@ public class TbCmV2 extends PluginForDecrypt {
                 final Map<String, Object> paginationPostData = new HashMap<String, Object>();
                 paginationPostData.put("context", context);
                 paginationPostData.put("continuation", nextPageToken);
-                // TODO: Make this work
-                // br.postPageRaw("/youtubei/v1/browse?key=" + INNERTUBE_API_KEY + "&prettyPrint=false",
-                // JSonStorage.serializeToJson(paginationPostData));
-                logger.info("Stopping because: Pagination is broken");
-                break;
+                if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    logger.info("Stopping because: Pagination is broken");
+                    break;
+                }
+                round = antiDdosSleep(round);
+                br.postPageRaw("/youtubei/v1/browse?key=" + INNERTUBE_API_KEY + "&prettyPrint=false", JSonStorage.serializeToJson(paginationPostData));
             } else {
                 // OLD! doesn't always present. Depends on server playlist backend code.!
                 nextPageHTML = HTMLEntities.unhtmlentities(nextPageHTML);

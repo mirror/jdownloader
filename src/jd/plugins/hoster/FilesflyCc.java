@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -87,6 +88,15 @@ public class FilesflyCc extends XFileSharingProBasic {
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
+        }
+    }
+
+    @Override
+    public boolean isPremiumOnly(final Browser br) {
+        if (br.containsHTML("(?i)You don't have sufficient funds in your account to cover this purchase")) {
+            return true;
+        } else {
+            return super.isPremiumOnly(br);
         }
     }
 
