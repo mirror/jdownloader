@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -27,8 +29,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filetransfer.io" }, urls = { "https?://(?:www\\.)?filetransfer\\.io/data\\-package/([A-Za-z0-9]+)" })
 public class FiletransferIo extends PluginForHost {
@@ -44,7 +44,7 @@ public class FiletransferIo extends PluginForHost {
     /* Connection stuff */
     private final boolean FREE_RESUME       = true;
     private final int     FREE_MAXCHUNKS    = -2;
-    private final int     FREE_MAXDOWNLOADS = 20;
+    private final int     FREE_MAXDOWNLOADS = -1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -76,6 +76,9 @@ public class FiletransferIo extends PluginForHost {
         final String filesizeStr = br.getRegex("(?i)Size:\\s*<span[^>]*>([^<>\"]+)</span>").getMatch(0);
         if (filetitle != null) {
             filetitle = Encoding.htmlDecode(filetitle).trim();
+            if (filetitle.equalsIgnoreCase("Data package deleted")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (filetitle.endsWith(".") || !filetitle.contains(".")) {
                 link.setName(filetitle + ".zip");
             } else {
@@ -92,7 +95,7 @@ public class FiletransferIo extends PluginForHost {
          * 2021-10-21: For some deleted items they will not return error 404. They will still return the file information along with the
          * offline errormessage so first set file info, then check for this message.
          */
-        if (br.containsHTML("(?i)The data package cannot be downloaded anymore, it was deleted from the server")) {
+        if (br.containsHTML("(?i)>\\s*(The data package cannot be downloaded anymore, it was deleted from the server|This data package cannot be downloaded anymore because)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             return AvailableStatus.TRUE;

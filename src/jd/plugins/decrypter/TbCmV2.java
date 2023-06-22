@@ -284,6 +284,8 @@ public class TbCmV2 extends PluginForDecrypt {
         globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_ID, playlistID);
         globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_ID, channelID);
         globalPropertiesForDownloadLink.put(YoutubeHelper.YT_USER_ID, userID);
+        final boolean paginationIsBroken = true;
+        final short maxItemsPerPage = 100;
         synchronized (DIALOGLOCK) {
             if (this.isAbort()) {
                 logger.info("Thread Aborted!");
@@ -306,7 +308,15 @@ public class TbCmV2 extends PluginForDecrypt {
                         dialogTitle = "Channel | " + channelID;
                     }
                     if (playListAction == IfUrlisAPlaylistAction.ASK) {
-                        ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, dialogTitle, JDL.L("plugins.host.youtube.isplaylist.question.message", "This URL is a " + humanReadableTypeOfUrlToCrawl + ". What would you like to do?\r\nJDownloader can only crawl the first 100 items automatically.\r\nIf there are more than 100 items, you need to use external tools to grab the single URLs to all videos and add those to JD manually."), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", "Process " + humanReadableTypeOfUrlToCrawl), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do nothing?")) {
+                        String messageDialogText = "This URL is a " + humanReadableTypeOfUrlToCrawl + ". What would you like to do?";
+                        final String buttonTextCrawlPlaylist;
+                        if (paginationIsBroken) {
+                            messageDialogText += "\r\nJDownloader can only crawl the first " + maxItemsPerPage + " items automatically.\r\nIf there are more than " + maxItemsPerPage + " items, you need to use external tools to grab the single URLs to all videos and add those to JD manually.";
+                            buttonTextCrawlPlaylist = humanReadableTypeOfUrlToCrawl + " [max first " + maxItemsPerPage + " items]";
+                        } else {
+                            buttonTextCrawlPlaylist = "Playlist";
+                        }
+                        ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, dialogTitle, JDL.L("plugins.host.youtube.isplaylist.question.message", messageDialogText), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", buttonTextCrawlPlaylist), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do nothing?")) {
                             @Override
                             public ModalityType getModalityType() {
                                 return ModalityType.MODELESS;
@@ -343,7 +353,13 @@ public class TbCmV2 extends PluginForDecrypt {
                 IfUrlisAVideoAndPlaylistAction PlaylistVideoAction = cfg.getLinkIsVideoAndPlaylistUrlAction();
                 if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(watch_videos)) && StringUtils.isNotEmpty(videoID)) {
                     if (PlaylistVideoAction == IfUrlisAVideoAndPlaylistAction.ASK) {
-                        ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video and a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", "Playlist [max first 100 items]")) {
+                        final String crawlPlaylistButtonText;
+                        if (paginationIsBroken) {
+                            crawlPlaylistButtonText = "Playlist [max first " + maxItemsPerPage + " items]";
+                        } else {
+                            crawlPlaylistButtonText = "Playlist";
+                        }
+                        ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video and a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", crawlPlaylistButtonText)) {
                             @Override
                             public ModalityType getModalityType() {
                                 return ModalityType.MODELESS;
@@ -999,17 +1015,20 @@ public class TbCmV2 extends PluginForDecrypt {
         String VARIANTS_CHECKSUM = br.getRegex("'VARIANTS_CHECKSUM': \"(.*?)\"").getMatch(0);
         String INNERTUBE_CONTEXT_CLIENT_VERSION = br.getRegex("INNERTUBE_CONTEXT_CLIENT_VERSION: \"(.*?)\"").getMatch(0);
         String INNERTUBE_CONTEXT_CLIENT_NAME = br.getRegex("INNERTUBE_CONTEXT_CLIENT_NAME: \"(.*?)\"").getMatch(0);
+        final String INNERTUBE_API_KEY = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_API_KEY")) : null;
+        final String INNERTUBE_CLIENT_VERSION = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CLIENT_VERSION")) : "2.20230620.01.00";
         final Set<String> playListDupes = new HashSet<String>();
-        while (true) {
+        do {
             if (this.isAbort()) {
                 throw new InterruptedException();
             }
-            String jsonPage = null, nextPage = null;
+            String nextPageJSON = null, nextPageHTML = null, nextPageToken = null;
             checkErrors(pbr);
             // this will speed up searches. we know this wont be present..
             final String[] videos = round > 0 && isJson ? null : pbr.getRegex("href=(\"|')(/watch\\?v=" + VIDEO_ID_PATTERN + ".*?)\\1").getColumn(1);
             int before = playListDupes.size();
             if (videos != null && videos.length > 0) {
+                /* Old way: Results from HTML */
                 for (String relativeUrl : videos) {
                     if (relativeUrl.contains("list=" + playlistID)) {
                         final String id = getVideoIDByUrl(relativeUrl);
@@ -1017,8 +1036,8 @@ public class TbCmV2 extends PluginForDecrypt {
                         ret.add(new YoutubeClipData(id, counter++));
                     }
                 }
-                jsonPage = pbr.getRegex("/browse_ajax\\?action_continuation=\\d+&amp;continuation=[a-zA-Z0-9%]+").getMatch(-1);
-                nextPage = pbr.getRegex("<a href=(\"|')(/playlist\\?list=" + playlistID + "\\&amp;page=\\d+)\\1[^\r\n]+>Next").getMatch(1);
+                nextPageJSON = pbr.getRegex("/browse_ajax\\?action_continuation=\\d+&amp;continuation=[a-zA-Z0-9%]+").getMatch(-1);
+                nextPageHTML = pbr.getRegex("<a href=(\"|')(/playlist\\?list=" + playlistID + "\\&amp;page=\\d+)\\1[^\r\n]+>Next").getMatch(1);
             } else {
                 isJson = true;
                 if (round == 0) {
@@ -1029,9 +1048,14 @@ public class TbCmV2 extends PluginForDecrypt {
                             for (final Object p : pl) {
                                 final Map<String, Object> vid = (Map<String, Object>) p;
                                 final String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
+                                /* Typically last item (item 101) will contain the continuationToken. */
+                                final String continuationToken = (String) JavaScriptEngineFactory.walkJson(vid, "continuationItemRenderer/continuationEndpoint/continuationCommand/token");
                                 if (id != null) {
                                     playListDupes.add(id);
                                     ret.add(new YoutubeClipData(id, counter++));
+                                } else if (continuationToken != null) {
+                                    // TODO: Make use of this
+                                    nextPageToken = continuationToken;
                                 }
                             }
                             // continuation
@@ -1040,7 +1064,7 @@ public class TbCmV2 extends PluginForDecrypt {
                                 final String ctoken = (String) c.get("continuation");
                                 final String itct = (String) c.get("clickTrackingParams");
                                 if (ctoken != null && itct != null) {
-                                    jsonPage = "/browse_ajax?ctoken=" + Encoding.urlEncode(ctoken) + "&itct=" + Encoding.urlEncode(itct);
+                                    nextPageJSON = "/browse_ajax?ctoken=" + Encoding.urlEncode(ctoken) + "&itct=" + Encoding.urlEncode(itct);
                                 }
                             }
                             if (helper.getYtCfgSet() != null) {
@@ -1065,6 +1089,9 @@ public class TbCmV2 extends PluginForDecrypt {
                 } else {
                     // secondary pages are pure json
                     final Object object = JavaScriptEngineFactory.jsonToJavaObject(pbr.toString());
+                    if (object == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     final Map<String, Object> map;
                     if (object instanceof Map) {
                         map = (Map<String, Object>) object;
@@ -1085,43 +1112,45 @@ public class TbCmV2 extends PluginForDecrypt {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    if (map != null) {
-                        final List<Object> pl = (List<Object>) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/contents");
-                        if (pl != null) {
-                            for (final Object p : pl) {
-                                final Map<String, Object> vid = (Map<String, Object>) p;
-                                final String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
-                                if (id != null) {
-                                    playListDupes.add(id);
-                                    ret.add(new YoutubeClipData(id, counter++));
-                                }
+                    final List<Object> pl = (List<Object>) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/contents");
+                    if (pl != null) {
+                        for (final Object p : pl) {
+                            final Map<String, Object> vid = (Map<String, Object>) p;
+                            final String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
+                            if (id != null) {
+                                playListDupes.add(id);
+                                ret.add(new YoutubeClipData(id, counter++));
                             }
-                            // continuation
-                            final String continuation = (String) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/continuations/{}/nextContinuationData/continuation");
-                            if (continuation != null) {
-                                final String clickTrackingParams = (String) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/continuations/{}/nextContinuationData/clickTrackingParams");
-                                if (clickTrackingParams != null) {
-                                    jsonPage = "/browse_ajax?ctoken=" + URLEncode.encodeURIComponent(continuation) + "&itct=" + URLEncode.encodeURIComponent(clickTrackingParams);
-                                }
+                        }
+                        // continuation
+                        final String continuation = (String) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/continuations/{}/nextContinuationData/continuation");
+                        if (continuation != null) {
+                            final String clickTrackingParams = (String) JavaScriptEngineFactory.walkJson(map, "response/continuationContents/playlistVideoListContinuation/continuations/{}/nextContinuationData/clickTrackingParams");
+                            if (clickTrackingParams != null) {
+                                nextPageJSON = "/browse_ajax?ctoken=" + URLEncode.encodeURIComponent(continuation) + "&itct=" + URLEncode.encodeURIComponent(clickTrackingParams);
                             }
-                            if (jsonPage == null) {
-                                final String url = (String) JavaScriptEngineFactory.walkJson(map, "endpoint/urlEndpoint/url");
-                                if (url != null) {
-                                    jsonPage = url;
-                                }
+                        }
+                        if (nextPageJSON == null) {
+                            final String url = (String) JavaScriptEngineFactory.walkJson(map, "endpoint/urlEndpoint/url");
+                            if (url != null) {
+                                nextPageJSON = url;
                             }
                         }
                     }
                 }
             }
+            /* Check for some abort conditions */
+            logger.info("Crawled page " + "TODO" + " | Found items so far: " + playListDupes.size());
             if (playListDupes.size() == before) {
-                logger.info("no new video found, abort");
-                // no videos in the last round. we are probably done here
+                logger.info("Stopping because: No new videoIDs found");
+                break;
+            } else if (nextPageJSON == null && nextPageHTML == null && nextPageToken == null) {
+                logger.info("Stopping because: No next page found");
                 break;
             }
             // Several Pages: http://www.youtube.com/playlist?list=FL9_5aq5ZbPm9X1QH0K6vOLQ
-            if (jsonPage != null) {
-                jsonPage = HTMLEntities.unhtmlentities(jsonPage);
+            if (nextPageJSON != null) {
+                nextPageJSON = HTMLEntities.unhtmlentities(nextPageJSON);
                 pbr = br.cloneBrowser();
                 if (PAGE_CL != null) {
                     pbr.getHeaders().put("X-YouTube-Page-CL", PAGE_CL);
@@ -1140,24 +1169,41 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 // anti ddos
                 round = antiDdosSleep(round);
-                helper.getPage(pbr, jsonPage);
+                helper.getPage(pbr, nextPageJSON);
                 if (!isJson) {
                     String output = pbr.toString();
                     output = PluginJSonUtils.unescape(output);
                     output = output.replaceAll("\\s+", " ");
                     pbr.getRequest().setHtmlCode(output);
                 }
-            } else if (nextPage != null) {
-                // OLD! doesn't always present. Depends on server playlist backend code.!
-                nextPage = HTMLEntities.unhtmlentities(nextPage);
-                round = antiDdosSleep(round);
-                helper.getPage(pbr, nextPage);
-            } else {
-                logger.info("no next page found, abort");
+            } else if (nextPageToken != null) {
+                if (StringUtils.isEmpty(INNERTUBE_API_KEY)) {
+                    /* This should never happen. */
+                    logger.info("Stopping because: Pagination is broken due to missing INNERTUBE_API_KEY");
+                    break;
+                }
+                final Map<String, Object> context = new HashMap<String, Object>();
+                final Map<String, Object> client = new HashMap<String, Object>();
+                client.put("clientName", "WEB");
+                client.put("clientVersion", INNERTUBE_CLIENT_VERSION);
+                client.put("originalUrl", "TODO");
+                context.put("client", client);
+                final Map<String, Object> paginationPostData = new HashMap<String, Object>();
+                paginationPostData.put("context", context);
+                paginationPostData.put("continuation", nextPageToken);
+                // TODO: Make this work
+                // br.postPageRaw("/youtubei/v1/browse?key=" + INNERTUBE_API_KEY + "&prettyPrint=false",
+                // JSonStorage.serializeToJson(paginationPostData));
+                logger.info("Stopping because: Pagination is broken");
                 break;
+            } else {
+                // OLD! doesn't always present. Depends on server playlist backend code.!
+                nextPageHTML = HTMLEntities.unhtmlentities(nextPageHTML);
+                round = antiDdosSleep(round);
+                helper.getPage(pbr, nextPageHTML);
             }
-        }
-        logger.info("parsePlaylist method returns: " + ret.size() + " VideoID's!");
+        } while (true);
+        logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs");
         return ret;
     }
 
