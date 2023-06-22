@@ -4352,7 +4352,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1" })
     String YoutubeDash_getName_subtitles_filename(String displayName);
 
-    @Default(lngs = { "en" }, values = { "If Link contains Video & Play-List Information" })
+    @Default(lngs = { "en" }, values = { "If link contains Video & Playlist Information" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_contains_video_and_playlist();
 
     @Default(lngs = { "en" }, values = { "If Link equals Play-List or Channel-List or User-List" })

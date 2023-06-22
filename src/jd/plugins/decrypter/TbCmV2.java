@@ -30,31 +30,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNodeVisitor;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
-import jd.plugins.hoster.YoutubeDashV2;
-import jd.utils.locale.JDL;
-
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -95,6 +70,31 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNodeVisitor;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
+import jd.parser.Regex;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
+import jd.plugins.hoster.YoutubeDashV2;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://(?:www\\.)?youtube-nocookie\\.com/embed/.+", "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|shorts/|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[%A-Za-z0-9\\-_]+(.*?index=\\d+)?(.*?page=\\d+)?(.*?list=[%A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[%A-Za-z0-9\\-_]+(\\#variant=\\S+)?", "https?://([a-z]+\\.)?youtube\\.com/@[^/]+" })
 public class TbCmV2 extends PluginForDecrypt {
@@ -262,19 +262,23 @@ public class TbCmV2 extends PluginForDecrypt {
         if (!cleanedurl.matches(".+youtube\\.com/(?:channel/|c/).+")) {
             playlistID = getListIDByUrls(cleanedurl);
         }
-        String userChannel = new Regex(cleanedurl, "/c/([^/\\?]+)").getMatch(0);
+        final String userChannel = new Regex(cleanedurl, "/c/([^/\\?]+)").getMatch(0);
         userID = new Regex(cleanedurl, "/user/([^/\\?]+)").getMatch(0);
         if (userID == null) {
             userID = new Regex(cleanedurl, "youtube.com/@([^/\\?]+)").getMatch(0);
         }
         channelID = new Regex(cleanedurl, "/channel/([^/\\?]+)").getMatch(0);
         if (StringUtils.isEmpty(channelID) && StringUtils.isNotEmpty(userChannel)) {
+            logger.info("Trying to find channelID");
             helper.getPage(br, "https://www.youtube.com/c/" + userChannel);
             channelID = br.getRegex("/channel/(UC[A-Za-z0-9\\-_]+)/videos").getMatch(0);
             if (StringUtils.isEmpty(channelID)) {
                 // its within meta tags multiple times (ios/ipad/iphone) also
                 helper.parserJson();
                 channelID = getChannelID(helper, br);
+            }
+            if (StringUtils.isEmpty(channelID)) {
+                logger.warning("Failed to find channelID");
             }
         }
         globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_ID, playlistID);
@@ -289,8 +293,20 @@ public class TbCmV2 extends PluginForDecrypt {
                 // Prevents accidental decrypting of entire Play-List or Channel-List or User-List.
                 IfUrlisAPlaylistAction playListAction = cfg.getLinkIsPlaylistUrlAction();
                 if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(channelID) || StringUtils.isNotEmpty(userID)) && StringUtils.isEmpty(videoID)) {
+                    final String humanReadableTypeOfUrlToCrawl;
+                    final String dialogTitle;
+                    if (playlistID != null) {
+                        humanReadableTypeOfUrlToCrawl = "Playlist";
+                        dialogTitle = "Playlist | " + playlistID;
+                    } else if (userID != null) {
+                        humanReadableTypeOfUrlToCrawl = "User";
+                        dialogTitle = "User | " + userID;
+                    } else {
+                        humanReadableTypeOfUrlToCrawl = "Channel";
+                        dialogTitle = "Channel | " + channelID;
+                    }
                     if (playListAction == IfUrlisAPlaylistAction.ASK) {
-                        ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isplaylist.question.message", "This link is a Play-List or Channel-List or User-List. What would you like to do?"), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", "Process Playlist?"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do Nothing?")) {
+                        ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, dialogTitle, JDL.L("plugins.host.youtube.isplaylist.question.message", "This URL is a " + humanReadableTypeOfUrlToCrawl + ". What would you like to do?\r\nJDownloader can only crawl the first 100 items automatically.\r\nIf there are more than 100 items, you need to use external tools to grab the single URLs to all videos and add those to JD manually."), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", "Process " + humanReadableTypeOfUrlToCrawl), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do nothing?")) {
                             @Override
                             public ModalityType getModalityType() {
                                 return ModalityType.MODELESS;
@@ -327,7 +343,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 IfUrlisAVideoAndPlaylistAction PlaylistVideoAction = cfg.getLinkIsVideoAndPlaylistUrlAction();
                 if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(watch_videos)) && StringUtils.isNotEmpty(videoID)) {
                     if (PlaylistVideoAction == IfUrlisAVideoAndPlaylistAction.ASK) {
-                        ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video and a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", "Complete playlist")) {
+                        ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video and a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", "Playlist [max first 100 items]")) {
                             @Override
                             public ModalityType getModalityType() {
                                 return ModalityType.MODELESS;
