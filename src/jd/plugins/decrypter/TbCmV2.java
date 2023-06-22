@@ -1106,7 +1106,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 final Map<String, Object> client = new HashMap<String, Object>();
                 client.put("clientName", "WEB");
                 client.put("clientVersion", INNERTUBE_CLIENT_VERSION);
-                client.put("originalUrl", "TODO");
+                client.put("originalUrl", referenceUrl);
                 context.put("client", client);
                 final Map<String, Object> paginationPostData = new HashMap<String, Object>();
                 paginationPostData.put("context", context);
