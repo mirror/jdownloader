@@ -1468,6 +1468,7 @@ YoutubeHelper_getDescription_itag_video_name=Nome do stream de vídeo (ex.: DASH
 YoutubeHelper_getDescription_language=Idioma da legenda. *lng*->EN *lng[display]* -> Inglês
 YoutubeHelper_getDescription_playlist_id=ID da playlist (ex.: PLD3J3Pup7M00BeAyuplpWoGRFpT3enHPq)
 YoutubeHelper_getDescription_playlist_name=Nome da playlist (ex.: Animais brasileiros)
+YoutubeHelper_getDescription_playlist_size=Tamanho da playlist
 YoutubeHelper_getDescription_quality=Tag variante. ex.: '1080p'
 YoutubeHelper_getDescription_replacetags=Substiruir espaço em branco por sublinhado: Anexar [SU]. Exemplos: *videoname[UC][SU]* ou *channelname[SU]*
 YoutubeHelper_getDescription_resolution=Resolução (ex.: 1080p, 1440x1080, ...)
