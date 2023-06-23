@@ -26,6 +26,19 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -45,19 +58,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FikperCom extends PluginForHost {
@@ -259,13 +259,37 @@ public class FikperCom extends PluginForHost {
             /* {"code":404,"message":"The file might be deleted."} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        link.setFinalFileName(entries.get("name").toString());
-        final String filesize = StringUtils.valueOfOrNull(entries.get("size"));
+        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        String filename = (String) entries.get("name");
+        String filesize = StringUtils.valueOfOrNull(entries.get("size"));
+        final String message = (String) entries.get("message");
+        if (filename == null && filesize == null && message != null && message.startsWith("{")) {
+            /**
+             * 2023-06-23: Workaround for very strange API response: </br>
+             * {"code":403,"message":"{\"message\":\"To download this file you should be premium
+             * user.\",\"data\":{\"name\":\"filetitle.rar\",\"size\":\"123456\",\"mimeType\":\"application/x-rar-compressed\"}}"} </br>
+             * Devs: see https://board.jdownloader.org/showthread.php?t=93766
+             */
+            final Map<String, Object> entries2 = restoreFromString(message, TypeRef.MAP);
+            final Map<String, Object> data = (Map<String, Object>) entries2.get("data");
+            filename = (String) data.get("name");
+            filesize = StringUtils.valueOfOrNull(data.get("size"));
+            /* Fix map for later errorhandling. */
+            if (!entries2.containsKey("code")) {
+                entries2.put("code", entries.get("code"));
+            }
+            entries = entries2;
+        }
+        if (!StringUtils.isEmpty(filename)) {
+            link.setFinalFileName(filename);
+        }
         if (filesize != null && filesize.matches("\\d+")) {
             link.setVerifiedFileSize(Long.parseLong(filesize));
         }
-        link.setPasswordProtected(((Boolean) entries.get("password")).booleanValue());
+        final Boolean pwProtectedStatus = (Boolean) entries.get("password");
+        if (pwProtectedStatus != null) {
+            link.setPasswordProtected(pwProtectedStatus.booleanValue());
+        }
         return entries;
     }
 
@@ -296,6 +320,7 @@ public class FikperCom extends PluginForHost {
                 if (fileSize >= SIZEUNIT.GB.to(SIZEUNIT.B, 2)) {
                     throw new AccountRequiredException("You can download files up to 2GB in free mode");
                 }
+                this.checkErrorsAPI(br, link, account, entries);
                 final String remainingDelay = StringUtils.valueOfOrNull(entries.get("remainingDelay"));
                 if (remainingDelay != null) {
                     /* Downloadlimit has been reached */
@@ -304,7 +329,7 @@ public class FikperCom extends PluginForHost {
                 }
                 final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
                 final int waitBeforeDownloadMillis = ((Number) entries.get("delayTime")).intValue();
-                final boolean skipPreDownloadWaittime = true; // 2022-11-14: Waittime is skippable
+                final boolean skipPreDownloadWaittime = true; // 2022-11-14: Wait time is skippable
                 final boolean useHcaptcha = true;
                 final Map<String, Object> postdata = new HashMap<String, Object>();
                 if (useHcaptcha) {
@@ -490,7 +515,17 @@ public class FikperCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         default:
-            throw new AccountUnavailableException(message, 1 * 60 * 1000l);
+            /* Check for common errormessages */
+            if (message.equalsIgnoreCase("To download this file you should be premium user.")) {
+                throw new AccountRequiredException();
+            } else {
+                /* Last resort for unknown errormessages. */
+                if (link == null) {
+                    throw new AccountUnavailableException(message, 1 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, message);
+                }
+            }
         }
     }
 
