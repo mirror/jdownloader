@@ -15,10 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,6 +32,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "furaffinity.net" }, urls = { "https?://(?:www\\.)?furaffinity\\.net/view/(\\d+)" })
 public class FuraffinityNet extends antiDDoSForHost {
@@ -134,17 +134,6 @@ public class FuraffinityNet extends antiDDoSForHost {
             }
         }
         return AvailableStatus.TRUE;
-    }
-
-    @Override
-    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-        /** 2023-06-20: Added special check. TODO: Move this into upper handling and remove this here. */
-        final String contentType = urlConnection.getContentType();
-        if (StringUtils.equalsIgnoreCase(contentType, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")) {
-            return true;
-        } else {
-            return super.looksLikeDownloadableContent(urlConnection);
-        }
     }
 
     @Override

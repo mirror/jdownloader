@@ -4,6 +4,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.DownloadConnectionVerifier;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -13,13 +20,6 @@ import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
-
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.DownloadConnectionVerifier;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
 
 public abstract class LinkCrawlerDeepInspector {
     /**
@@ -89,11 +89,11 @@ public abstract class LinkCrawlerDeepInspector {
             } else if (filePathName != null && filePathName.matches("(?i).+\\.srt") && isPlainTextContent(urlConnection) && (!hasContentLength || completeContentLength > 512 || hasEtag)) {
                 /*
                  * Accept-Ranges: bytes
-                 *
+                 * 
                  * Content-Type: text/plain
-                 *
+                 * 
                  * ETag: "11968........"
-                 *
+                 * 
                  * Content-Length: 28...
                  */
                 looksLike = true;
@@ -155,7 +155,7 @@ public abstract class LinkCrawlerDeepInspector {
             return false;
         } else {
             final String contentType = urlConnection.getContentType();
-            return contentType != null && (contentType.matches("(?i)application/[^ ;]*(json|xml).*") || contentType.matches("(?i)text/xml.*"));
+            return contentType != null && (contentType.matches("(?i)application/(?!vnd)[^ ;]*(json|xml).*") || contentType.matches("(?i)text/xml.*"));
         }
     }
 
