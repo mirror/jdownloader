@@ -8,15 +8,15 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
-import jd.plugins.AccountRequiredException;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.translate._JDT;
+
+import jd.plugins.AccountRequiredException;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 public class ClipDataCache {
     public static final String  THE_DOWNLOAD_IS_NOT_AVAILABLE_IN_YOUR_COUNTRY = "The Download is not available in your country";
@@ -107,7 +107,7 @@ public class ClipDataCache {
                 }
                 // private video.. login is required! assumption that account hasn't been used.. or wrong account has been used...
                 if (StringUtils.containsIgnoreCase(cachedData.clipData.error, "This Video is Private")) {
-                    if (helper.getLoggedIn()) {
+                    if (helper.getAccountLoggedIn() != null) {
                         // wrong account used?? try next??
                         // TODO: confirm with jiaz that this this type of exception will try the next account
                     }

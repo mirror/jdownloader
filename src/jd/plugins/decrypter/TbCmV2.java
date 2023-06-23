@@ -43,6 +43,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.plugins.components.youtube.ClipDataCache;
 import org.jdownloader.plugins.components.youtube.Projection;
 import org.jdownloader.plugins.components.youtube.StreamCollection;
@@ -84,6 +85,7 @@ import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
@@ -262,7 +264,7 @@ public class TbCmV2 extends PluginForDecrypt {
          * https://www.youtube.com/channel/UCOSGEokQQcdAVFuL_Aq8dlg, it will find list=PLc-T0ryHZ5U_FtsfHQopuvQugBvRoVR3j which only
          * contains 27 videos not the entire channels 112
          */
-        if (!cleanedurl.matches(".+youtube\\.com/(?:channel/|c/).+")) {
+        if (!cleanedurl.matches("(?i).+youtube\\.com/(?:channel/|c/).+")) {
             playlistID = getListIDByUrls(cleanedurl);
         }
         final String userChannel = new Regex(cleanedurl, "/c/([^/\\?]+)").getMatch(0);
@@ -1003,7 +1005,7 @@ public class TbCmV2 extends PluginForDecrypt {
         super.setBrowser(brr);
     }
 
-    private ArrayList<YoutubeClipData> parseListedPlaylist(YoutubeHelper helper, final Browser br, final String videoID, final String playlistID, final String referenceUrl) throws Exception {
+    private ArrayList<YoutubeClipData> parseListedPlaylist(final YoutubeHelper helper, final Browser br, final String videoID, final String playlistID, final String referenceUrl) throws Exception {
         final ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         // user list it's not a playlist.... just a channel decryption. this can return incorrect information.
         final String playListTitleHTML = extractWebsiteTitle(br);
@@ -1015,16 +1017,15 @@ public class TbCmV2 extends PluginForDecrypt {
         Browser pbr = br.cloneBrowser();
         int videoPositionCounter = 1;
         int round = 0;
-        String PAGE_CL = br.getRegex("'PAGE_CL': (\\d+)").getMatch(0);
-        String PAGE_BUILD_LABEL = br.getRegex("'PAGE_BUILD_LABEL': \"(.*?)\"").getMatch(0);
-        String VARIANTS_CHECKSUM = br.getRegex("'VARIANTS_CHECKSUM': \"(.*?)\"").getMatch(0);
-        String INNERTUBE_CONTEXT_CLIENT_VERSION = br.getRegex("INNERTUBE_CONTEXT_CLIENT_VERSION: \"(.*?)\"").getMatch(0);
-        String INNERTUBE_CONTEXT_CLIENT_NAME = br.getRegex("INNERTUBE_CONTEXT_CLIENT_NAME: \"(.*?)\"").getMatch(0);
+        final String INNERTUBE_CLIENT_NAME = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_NAME")) : null;
         final String INNERTUBE_API_KEY = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_API_KEY")) : null;
-        final String INNERTUBE_CLIENT_VERSION = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CLIENT_VERSION")) : "2.20230620.01.00";
+        final String INNERTUBE_CLIENT_VERSION = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CLIENT_VERSION")) : null;
+        /* Now stuff that is required when user is logged in. */
+        final String DELEGATED_SESSION_ID = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("DELEGATED_SESSION_ID")) : null;
         final Set<String> playListDupes = new HashSet<String>();
         int numberofItems = -1;
         do {
+            /* First try old HTML handling though by now [June 2023] all data is provided via json. */
             String nextPageHTML = null, nextPageToken = null;
             checkErrors(pbr);
             final String[] videos = round > 0 && isJson ? null : pbr.getRegex("href=(\"|')(/watch\\?v=" + VIDEO_ID_PATTERN + ".*?)\\1").getColumn(1);
@@ -1095,28 +1096,11 @@ public class TbCmV2 extends PluginForDecrypt {
                             logger.info("Found unknown playlist item: " + vid);
                         }
                     }
-                    if (helper.getYtCfgSet() != null) {
-                        if (PAGE_CL == null && helper.getYtCfgSet().containsKey("PAGE_CL")) {
-                            PAGE_CL = String.valueOf(helper.getYtCfgSet().get("PAGE_CL"));
-                        }
-                        if (PAGE_BUILD_LABEL == null && helper.getYtCfgSet().containsKey("PAGE_BUILD_LABEL")) {
-                            PAGE_BUILD_LABEL = String.valueOf(helper.getYtCfgSet().get("PAGE_BUILD_LABEL"));
-                        }
-                        if (VARIANTS_CHECKSUM == null && helper.getYtCfgSet().containsKey("VARIANTS_CHECKSUM")) {
-                            VARIANTS_CHECKSUM = String.valueOf(helper.getYtCfgSet().get("VARIANTS_CHECKSUM"));
-                        }
-                        if (INNERTUBE_CONTEXT_CLIENT_VERSION == null && helper.getYtCfgSet().containsKey("INNERTUBE_CONTEXT_CLIENT_VERSION")) {
-                            INNERTUBE_CONTEXT_CLIENT_VERSION = String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_VERSION"));
-                        }
-                        if (INNERTUBE_CONTEXT_CLIENT_NAME == null && helper.getYtCfgSet().containsKey("INNERTUBE_CONTEXT_CLIENT_NAME")) {
-                            INNERTUBE_CONTEXT_CLIENT_NAME = String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_NAME"));
-                        }
-                    }
                 }
             }
             /* Check for some abort conditions */
             final int numberofNewItemsThisRun = playListDupes.size() - playListDupesSizeOld;
-            logger.info("Crawled page " + round + " | Found items on tis page: " + numberofNewItemsThisRun + " | Found items so far: " + playListDupes.size() + "/" + numberofItems + " | nextPageHTML = " + nextPageHTML + " | nextPageToken = " + nextPageToken);
+            logger.info("Crawled page " + round + " | Found items on this page: " + numberofNewItemsThisRun + " | Found items so far: " + playListDupes.size() + "/" + numberofItems + " | nextPageHTML = " + nextPageHTML + " | nextPageToken = " + nextPageToken);
             if (this.isAbort()) {
                 throw new InterruptedException();
             } else if (numberofNewItemsThisRun == 0) {
@@ -1127,14 +1111,14 @@ public class TbCmV2 extends PluginForDecrypt {
                 break;
             }
             if (nextPageToken != null) {
-                if (StringUtils.isEmpty(INNERTUBE_API_KEY) || StringUtils.isEmpty(INNERTUBE_CLIENT_VERSION)) {
+                if (StringUtils.isEmpty(INNERTUBE_CLIENT_NAME) || StringUtils.isEmpty(INNERTUBE_API_KEY) || StringUtils.isEmpty(INNERTUBE_CLIENT_VERSION)) {
                     /* This should never happen. */
-                    logger.info("Stopping because: Pagination is broken due to missing INNERTUBE_API_KEY or INNERTUBE_CLIENT_VERSION");
+                    logger.info("Stopping because: Pagination is broken due to missing 'INNERTUBE' variable");
                     break;
                 }
                 final Map<String, Object> context = new HashMap<String, Object>();
                 final Map<String, Object> client = new HashMap<String, Object>();
-                client.put("clientName", "WEB");
+                client.put("clientName", INNERTUBE_CLIENT_NAME);
                 client.put("clientVersion", INNERTUBE_CLIENT_VERSION);
                 client.put("originalUrl", referenceUrl);
                 context.put("client", client);
@@ -1146,6 +1130,11 @@ public class TbCmV2 extends PluginForDecrypt {
                     break;
                 }
                 round = antiDdosSleep(round);
+                /* Set headers on every run as some tokens (Authorization header!) contain timestamps so they can expire. */
+                prepBrowserWebAPI(br, helper.getAccountLoggedIn());
+                if (DELEGATED_SESSION_ID != null) {
+                    br.getHeaders().put("X-Goog-Pageid", DELEGATED_SESSION_ID);
+                }
                 br.postPageRaw("/youtubei/v1/browse?key=" + INNERTUBE_API_KEY + "&prettyPrint=false", JSonStorage.serializeToJson(paginationPostData));
             } else {
                 // OLD! doesn't always present. Depends on server playlist backend code.!
@@ -1154,12 +1143,32 @@ public class TbCmV2 extends PluginForDecrypt {
                 helper.getPage(pbr, nextPageHTML);
             }
         } while (true);
-        logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs");
+        int missingVideos = 0;
+        if (numberofItems != -1) {
+            missingVideos = numberofItems - ret.size();
+        }
+        logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs | Number of possibly missing videos [due to private/offrline/GEO-block]: " + missingVideos);
         return ret;
     }
 
-    private ArrayList<YoutubeClipData> parseUnlistedPlaylist(YoutubeHelper helper, final Browser br, final String videoID, final String playlistID, final String referenceUrl) throws Exception {
-        return null;
+    public static Browser prepBrowserWebAPI(final Browser br, final Account account) throws PluginException {
+        final String domain = "youtube.com";
+        final String domainWithProtocol = "https://www." + domain;
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("Origin", domainWithProtocol);
+        br.getHeaders().put("X-Referer", domainWithProtocol);
+        br.getHeaders().put("X-Origin", domainWithProtocol);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Content-Type", "application/json");
+        if (account != null) {
+            /* For logged in users: */
+            final String sapisidhash = GoogleHelper.getSAPISidHash(br, domainWithProtocol);
+            if (sapisidhash != null) {
+                br.getHeaders().put("Authorization", "SAPISIDHASH " + sapisidhash);
+            }
+            br.getHeaders().put("X-Goog-Authuser", "0");
+        }
+        return br;
     }
 
     /**
@@ -1180,7 +1189,7 @@ public class TbCmV2 extends PluginForDecrypt {
             /* Developer mistake */
             return null;
         }
-        if (!helper.getLoggedIn()) {
+        if (helper.getAccountLoggedIn() == null) {
             /*
              * Only set User-Agent if we're not logged in because login session can be bound to User-Agent and tinkering around with
              * different User-Agents and the same cookies is just a bad idea!
@@ -1191,14 +1200,7 @@ public class TbCmV2 extends PluginForDecrypt {
         br.getHeaders().put("Accept-Charset", null);
         Browser brc = br.cloneBrowser();
         helper.getPage(brc, getBase() + "/playlist?list=" + playlistID);
-        if (brc.containsHTML("\"This playlist type is unviewable")) {
-            // TODO: Check if this check is still needed.
-            brc = br.cloneBrowser();
-            helper.getPage(brc, referenceUrl);
-            return parseUnlistedPlaylist(helper, brc, videoID, playlistID, referenceUrl);
-        } else {
-            return parseListedPlaylist(helper, brc, videoID, playlistID, referenceUrl);
-        }
+        return parseListedPlaylist(helper, brc, videoID, playlistID, referenceUrl);
     }
 
     protected String extractWebsiteTitle(final Browser br) {

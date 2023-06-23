@@ -3,7 +3,10 @@ package org.jdownloader.plugins.components.google;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map.Entry;
 
 import javax.swing.JComponent;
 import javax.swing.text.AbstractDocument;
@@ -40,7 +43,9 @@ import org.w3c.dom.Node;
 
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
@@ -842,4 +847,32 @@ public class GoogleHelper {
     //
     // }
     // }
+
+    /**
+     * See https://stackoverflow.com/questions/16907352/reverse-engineering-javascript-behind-google-button
+     *
+     * @throws PluginException
+     */
+    public static String getSAPISidHash(final Browser br, final String url) throws PluginException {
+        String sapisid = null;
+        /* Get that cookie from any domain [most commonly google.com or youtube.com]. */
+        final HashMap<String, Cookies> cookiemap = br.getCookies();
+        final Iterator<Entry<String, Cookies>> iterator = cookiemap.entrySet().iterator();
+        itloop: while (iterator.hasNext()) {
+            final Entry<String, Cookies> entry = iterator.next();
+            final Cookies cookies = entry.getValue();
+            for (final Cookie cookie : cookies.getCookies()) {
+                if (cookie.getKey().equalsIgnoreCase("SAPISID")) {
+                    sapisid = cookie.getValue();
+                    break itloop;
+                }
+            }
+        }
+        if (sapisid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            final long timeMillis = System.currentTimeMillis() / 1000;
+            return timeMillis + "_" + JDHash.getSHA1(timeMillis + " " + sapisid + " " + url);
+        }
+    }
 }

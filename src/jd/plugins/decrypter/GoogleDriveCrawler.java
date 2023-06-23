@@ -159,9 +159,9 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
                 offlineFolder.setComment("This folder is empty, a private folder or a folder-shortcut.\r\nIn case this folder is a folder shortcut: Disable API and re-add this URL.\r\nIn case this is a private folder:\r\n" + privateFoldersUnsupportedInfoText);
                 ret.add(offlineFolder);
             } else if (gde.getGdriveStatus() == GdriveFolderStatus.FOLDER_PRIVATE) {
-                throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, gde.getOfflineTitle(), "This folder is private!\r\n" + privateFoldersUnsupportedInfoText, null);
+                throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, gde.getOfflineTitle(), "This is a private folder!\r\n" + privateFoldersUnsupportedInfoText, null);
             } else if (gde.getGdriveStatus() == GdriveFolderStatus.FOLDER_PRIVATE_NO_ACCESS) {
-                throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "PERMISSIONS_MISSING_" + gde.getOfflineTitle(), "This folder is private!\r\nYour currently added Google Drive account doesn't have the required permission to access this folder.\r\nGet the required permissions or add an account which has the required permissions.\r\nAlso note this:\r\n" + privateFoldersUnsupportedInfoText, null);
+                throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "PERMISSIONS_MISSING_" + gde.getOfflineTitle(), "This is a private folder!\r\nYour currently added Google Drive account doesn't have the required permission to access this folder.\r\nGet the required permissions or add an account which has the required permissions.\r\nAlso note this:\r\n" + privateFoldersUnsupportedInfoText, null);
             } else {
                 /* Developer mistake!! */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -459,12 +459,13 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
         String nextPageToken = null;
         int page = 0;
         final Browser brc = br.cloneBrowser();
-        GoogleDrive.prepBrowserWebAPI(brc, account);
         if (folderResourceKey != null) {
             setResourceKeyHeaderAPI(brc, folderID, folderResourceKey);
         }
         logger.info("Start folder crawl process via WebAPI");
         do {
+            /* Set headers on every run as some tokens (Authorization header!) contain timestamps so they can expire. */
+            GoogleDrive.prepBrowserWebAPI(brc, account);
             page++;
             /* Most common reason of failure: teamDriveID was not found thus the request is wrong! */
             if (account != null) {

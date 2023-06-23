@@ -964,7 +964,7 @@ public class YoutubeHelper {
     private HashSet<StreamMap>                       fmtMaps;
     private LinkedHashSet<StreamMap>                 mpdUrls;
     private HashMap<String, String>                  videoInfo;
-    private boolean                                  loggedIn;
+    private Account                                  account;
     private final boolean                            hlsEnabled          = true;
     private final boolean                            dashMpdEnabled      = true;
     private final boolean                            adaptiveFmtsEnabled = true;
@@ -1005,8 +1005,9 @@ public class YoutubeHelper {
         return ytCfgSet;
     }
 
-    public final boolean getLoggedIn() {
-        return loggedIn;
+    /** Returns account in which we are logged in at this moment. */
+    public final Account getAccountLoggedIn() {
+        return account;
     }
 
     String descrambleSignature(final String sig) throws IOException, PluginException {
@@ -1873,14 +1874,11 @@ public class YoutubeHelper {
         return false;
     }
 
-    private final String ageRestricted = "Sign in to confirm your age";
-
     public void refreshVideo(final YoutubeClipData vid) throws Exception {
-        loggedIn = login(logger, false);
+        account = login(logger, false);
         this.vid = vid;
         final Map<YoutubeITAG, StreamCollection> ret = new HashMap<YoutubeITAG, StreamCollection>();
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
-        boolean loggedIn = br.getCookie("https://youtube.com", "LOGIN_INFO") != null;
         br.setFollowRedirects(true);
         /* this cookie makes html5 available and skip controversy check */
         br.setCookie("youtube.com", "PREF", "f1=50000000&hl=en");
@@ -2860,16 +2858,18 @@ public class YoutubeHelper {
             br.setCookiesExclusive(true);
             // delete all cookies
             br.clearCookies(null);
-            final GoogleHelper helper = new GoogleHelper(br);
-            helper.setLogger(br.getLogger());
+            final GoogleHelper googlehelper = new GoogleHelper(br);
+            googlehelper.setLogger(br.getLogger());
             // helper.setLogger(this.getLogger());
             final Thread thread = Thread.currentThread();
             final boolean forceUpdateAndBypassCache = thread instanceof AccountCheckerThread && ((AccountCheckerThread) thread).getJob().isForce();
             if (forceUpdateAndBypassCache) {
-                helper.login(account, true);
+                googlehelper.login(account, true);
             } else {
-                helper.login(account, refresh);
+                googlehelper.login(account, refresh);
             }
+            /* No Exception -> Success */
+            this.account = account;
         }
     }
 
@@ -2899,7 +2899,8 @@ public class YoutubeHelper {
         }
     }
 
-    public boolean login(LogInterface logger, final boolean refresh) {
+    /** Logs into valid youtube account. */
+    public Account login(LogInterface logger, final boolean refresh) {
         final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
         { // debug
             List<Account> debug = AccountController.getInstance().getAllAccounts("google.com");
@@ -2919,18 +2920,18 @@ public class YoutubeHelper {
                     try {
                         this.login(n, refresh);
                         if (n.isValid()) {
-                            return true;
+                            return n;
                         }
                     } catch (final Exception e) {
                         logger.log(e);
                         n.setValid(false);
                         // should we not try other accounts??
-                        return false;
+                        return null;
                     }
                 }
             }
         }
-        return false;
+        return null;
     }
 
     public static final String YT_LENGTH_SECONDS          = "YT_LENGTH_SECONDS";

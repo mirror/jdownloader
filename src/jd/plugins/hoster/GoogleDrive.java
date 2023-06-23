@@ -56,7 +56,6 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -255,17 +254,18 @@ public class GoogleDrive extends PluginForHost {
     }
 
     public static Browser prepBrowserWebAPI(final Browser br, final Account account) throws PluginException {
-        br.getHeaders().put("X-Referer", "https://drive.google.com");
-        br.getHeaders().put("X-Origin", "https://drive.google.com");
+        final String domainWithProtocol = "https://drive.google.com";
+        br.getHeaders().put("X-Referer", domainWithProtocol);
+        br.getHeaders().put("X-Origin", domainWithProtocol);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("x-javascript-user-agent", "google-api-javascript-client/1.1.0");
         if (account != null) {
             /* For logged in users: */
-            final String sapisidhash = getSAPISidHash(br, "https://drive.google.com");
+            final String sapisidhash = GoogleHelper.getSAPISidHash(br, domainWithProtocol);
             if (sapisidhash != null) {
                 br.getHeaders().put("Authorization", "SAPISIDHASH " + sapisidhash);
             }
-            br.getHeaders().put("x-goog-authuser", "0");
+            br.getHeaders().put("X-Goog-Authuser", "0");
         }
         return br;
     }
@@ -835,21 +835,6 @@ public class GoogleDrive extends PluginForHost {
         this.handleErrorsAPI(br, link, account);
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         parseFileInfoAPIAndWebsiteWebAPI(this, JsonSchemeType.WEBSITE, link, trustAndSetFileInfo, trustAndSetFileInfo, trustAndSetFileInfo, entries);
-    }
-
-    /**
-     * See https://stackoverflow.com/questions/16907352/reverse-engineering-javascript-behind-google-button
-     *
-     * @throws PluginException
-     */
-    public static String getSAPISidHash(final Browser br, final String url) throws PluginException {
-        final String sapisid = br.getCookie("google.com", "SAPISID");
-        if (sapisid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            final String timeMillis = Long.toString(System.currentTimeMillis());
-            return timeMillis + "_" + JDHash.getSHA1(timeMillis + " " + sapisid + " " + url);
-        }
     }
 
     /** Returns directurl for original file download items and google document items. */
