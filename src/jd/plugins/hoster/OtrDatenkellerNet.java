@@ -243,9 +243,9 @@ public class OtrDatenkellerNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        /* Use random UA again here because we do not use the same API as in linkcheck for free downloads */
         br.setFollowRedirects(true);
         br.clearCookies(null);
+        /* Use random UA here because we use website for downloading and they determine the limits based on UA + cookies(?) */
         br.getHeaders().put("User-Agent", getUserAgent());
         final String directlinkproperty = "free_finallink";
         final String storedDirecturl = link.getStringProperty(directlinkproperty);
@@ -255,23 +255,6 @@ public class OtrDatenkellerNet extends PluginForHost {
             dllink = storedDirecturl;
         } else {
             final String dlPageURL = this.getContentURL(link);
-            // if (br.containsHTML("(?i)\"action needs to specified")) {
-            // /**
-            // * 2023-06-19: Looks like they've disabled API downloads without account(?) </br>
-            // * {"status":"fail","reason":"api","message":"action needs to specified, it can be one of 'validate, login, getpremlink,
-            // * getServers'"}
-            // */
-            // throw new AccountRequiredException();
-            // }
-            /* Check for limit is not needed, also their limits are based on cookies only */
-            // if (br.containsHTML(">Du kannst höchstens \\d+ Download Links pro Stunde anfordern")) {
-            // final String waitUntil = br.getRegex("bitte warte bis (\\d{1,2}:\\d{1,2}) zum nächsten Download").getMatch(0);
-            // if (waitUntil != null) {
-            // final long wtime = TimeFormatter.getMilliSeconds(waitUntil, "HH:mm", Locale.GERMANY);
-            // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wtime);
-            // }
-            // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
-            // }
             String positionStr = null;
             String site_lowSpeedLink = null;
             final Browser br2 = br.cloneBrowser();
@@ -320,7 +303,6 @@ public class OtrDatenkellerNet extends PluginForHost {
                         logger.info("NewwayUsing free API the first time...");
                         final String api_waitaws_url = "https://waitaws.lastverteiler.net/" + api_otrUID + "/" + finalfilenameurlencoded;
                         getPage(this.br, api_waitaws_url);
-                        // TODO: Remove the following two lines
                         brc.postPage(api_waitaws_url, "action=validate&otrUID=" + api_otrUID + "&file=" + finalfilenameurlencoded);
                         if (brc.containsHTML("\"status\":\"fail\",\"reason\":\"user\"")) {
                             /* One retry is usually enough if the first attempt to use the API fails! */
@@ -426,19 +408,19 @@ public class OtrDatenkellerNet extends PluginForHost {
         return br.containsHTML("onclick=\"startCount");
     }
 
-    @SuppressWarnings("deprecation")
-    private void login(Account account, boolean force) throws Exception {
+    private Map<String, Object> login(Account account, boolean force) throws Exception {
         br.setCookiesExclusive(true);
         api_prepBrowser(br);
         final boolean useAPIV2 = false;
         String apikey = getAPIKEY(account);
         if (!force && apikey != null) {
             /* Re-use existing apikey */
-            return;
+            return null;
         }
         br.setFollowRedirects(false);
+        Map<String, Object> userinfo = null;
         if (useAPIV2 && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            // TODO
+            // 2023-06-23: Unfinished code. The other API is nicer as it returns json and this one returns line based results.
             final Calendar cal = Calendar.getInstance();
             final UrlQuery query = new UrlQuery();
             query.add("jdlAPI", "");
@@ -448,23 +430,29 @@ public class OtrDatenkellerNet extends PluginForHost {
             System.out.println("String to hash: " + str);
             query.add("auth", JDHash.getMD5(str));
             br.getPage("https://otr.datenkeller.net/?" + query.toString());
+            apikey = "TODO";
         } else {
-            br.postPage(API_BASE_URL, "api_version=" + APIVERSION + "&action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            handleErrorsAPI();
-            apikey = getJson(br.toString(), "apikey");
+            final UrlQuery query = new UrlQuery();
+            query.add("api_version", APIVERSION);
+            query.add("action", "login");
+            query.add("username", Encoding.urlEncode(account.getUser()));
+            query.add("password", Encoding.urlEncode(account.getPass()));
+            br.postPage(API_BASE_URL, query);
+            userinfo = this.checkErrorsAPI(br, null, account);
+            apikey = (String) userinfo.get("apikey");
         }
-        if (apikey == null) {
+        if (StringUtils.isEmpty(apikey)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.setApikey(account, apikey);
+        return userinfo;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final Object expiresO = entries.get("expires");
+        final Map<String, Object> userinfo = login(account, true);
+        final Object expiresO = userinfo.get("expires");
         if (expiresO == null) {
             ai.setExpired(true);
             return ai;
@@ -472,6 +460,7 @@ public class OtrDatenkellerNet extends PluginForHost {
         if (expiresO instanceof Number) {
             ai.setValidUntil(((Number) expiresO).longValue() * 1000);
         } else {
+            /* Field can be given as String. */
             ai.setValidUntil(Long.parseLong(expiresO.toString()) * 1000);
         }
         account.setType(AccountType.PREMIUM);
@@ -541,9 +530,9 @@ public class OtrDatenkellerNet extends PluginForHost {
         final String message = (String) entries.get("message");
         if ("fail".equals(status)) {
             if (message.equalsIgnoreCase("failed to login due to wrong credentials, missing or wrong apikey")) {
-                throw new AccountInvalidException();
+                throw new AccountInvalidException(message);
             } else if (message.equalsIgnoreCase("failed to login due to wrong credentials or expired account")) {
-                throw new AccountInvalidException();
+                throw new AccountInvalidException(message);
             } else if (message.equalsIgnoreCase("wrong filename supplied")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
@@ -551,32 +540,11 @@ public class OtrDatenkellerNet extends PluginForHost {
                 if (link == null) {
                     throw new AccountUnavailableException(message, 5 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, message);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message);
                 }
             }
         }
         return entries;
-    }
-
-    /* Handles API errors */
-    @Deprecated
-    private void handleErrorsAPI() throws PluginException {
-        final String status = getJson("status");
-        final String message = getJson("message");
-        if ("fail".equals(status) && message != null) {
-            if (message.equalsIgnoreCase("failed to login due to wrong credentials, missing or wrong apikey")) {
-                /* This should never happen. */
-                /* Temp disable --> We will get a new apikey next full login --> Maybe that will help */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            } else if (message.equalsIgnoreCase("failed to login due to wrong credentials or expired account")) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            }
-            logger.warning("Unknown API errorstate");
-        }
     }
 
     private void api_prepBrowser(final Browser br) {
