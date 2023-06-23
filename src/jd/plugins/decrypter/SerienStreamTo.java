@@ -23,13 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.SerienStreamToConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -43,6 +36,13 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.SerienStreamToConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SerienStreamTo extends PluginForDecrypt {
@@ -71,7 +71,7 @@ public class SerienStreamTo extends PluginForDecrypt {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^/]+/.*");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(anime|serie|redirect)/.*");
         }
         return ret.toArray(new String[0]);
     }
@@ -294,8 +294,8 @@ public class SerienStreamTo extends PluginForDecrypt {
                 if (dup.add(videoURL)) {
                     logger.info("Working on item " + index + "/" + urlsToProcess.size());
                     final Browser br2 = br.cloneBrowser();
+                    br2.setFollowRedirects(false);
                     videoURL = br.getURL(Encoding.htmlDecode(videoURL)).toString();
-                    br2.setFollowRedirects(true);
                     String redirectPage = br2.getPage(videoURL);
                     if (br2.getRedirectLocation() != null) {
                         videoURL = br2.getRedirectLocation();
