@@ -86,6 +86,8 @@ import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
@@ -233,7 +235,7 @@ public class TbCmV2 extends PluginForDecrypt {
         };
         br = new Browser();
         br.setFollowRedirects(true);
-        br.setCookie("http://youtube.com", "PREF", "hl=en-GB");
+        br.setCookie(this.getHost(), "PREF", "hl=en-GB");
         String cleanedurl = Encoding.urlDecode(cryptedLink, false);
         cleanedurl = cleanedurl.replace("youtube.jd", "youtube.com");
         String requestedVariantString = new Regex(cleanedurl, "\\#variant=(\\S*)").getMatch(0);
@@ -275,7 +277,7 @@ public class TbCmV2 extends PluginForDecrypt {
             channelID = br.getRegex("/channel/(UC[A-Za-z0-9\\-_]+)/videos").getMatch(0);
             if (StringUtils.isEmpty(channelID)) {
                 // its within meta tags multiple times (ios/ipad/iphone) also
-                helper.parserJson();
+                helper.parse();
                 channelID = getChannelID(helper, br);
             }
             if (StringUtils.isEmpty(channelID)) {
@@ -408,7 +410,7 @@ public class TbCmV2 extends PluginForDecrypt {
                  * instead
                  */
                 helper.getPage(br, "https://www.youtube.com/@" + userID + "/featured");
-                helper.parserJson();
+                helper.parse();
                 // channel title isn't user_name. user_name is /user/ reference. check logic in YoutubeHelper.extractData()!
                 globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_TITLE, extractWebsiteTitle(br));
                 globalPropertiesForDownloadLink.put(YoutubeHelper.YT_USER_NAME, userID);
@@ -1004,12 +1006,14 @@ public class TbCmV2 extends PluginForDecrypt {
     private ArrayList<YoutubeClipData> parseListedPlaylist(YoutubeHelper helper, final Browser br, final String videoID, final String playlistID, final String referenceUrl) throws Exception {
         final ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         // user list it's not a playlist.... just a channel decryption. this can return incorrect information.
-        final String playListTitle = extractWebsiteTitle(br);
-        globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, playListTitle);
-        helper.parserJson();
+        final String playListTitleHTML = extractWebsiteTitle(br);
+        if (playListTitleHTML != null) {
+            globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, Encoding.htmlDecode(playListTitleHTML).trim());
+        }
+        helper.parse();
         boolean isJson = false;
         Browser pbr = br.cloneBrowser();
-        int counter = 1;
+        int videoPositionCounter = 1;
         int round = 0;
         String PAGE_CL = br.getRegex("'PAGE_CL': (\\d+)").getMatch(0);
         String PAGE_BUILD_LABEL = br.getRegex("'PAGE_BUILD_LABEL': \"(.*?)\"").getMatch(0);
@@ -1019,30 +1023,52 @@ public class TbCmV2 extends PluginForDecrypt {
         final String INNERTUBE_API_KEY = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_API_KEY")) : null;
         final String INNERTUBE_CLIENT_VERSION = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CLIENT_VERSION")) : "2.20230620.01.00";
         final Set<String> playListDupes = new HashSet<String>();
+        int numberofItems = -1;
         do {
-            String nextPageJSON = null, nextPageHTML = null, nextPageToken = null;
+            String nextPageHTML = null, nextPageToken = null;
             checkErrors(pbr);
-            // this will speed up searches. we know this wont be present..
             final String[] videos = round > 0 && isJson ? null : pbr.getRegex("href=(\"|')(/watch\\?v=" + VIDEO_ID_PATTERN + ".*?)\\1").getColumn(1);
-            int before = playListDupes.size();
+            final int playListDupesSizeOld = playListDupes.size();
             if (videos != null && videos.length > 0) {
                 /* Old way: Results from HTML */
                 for (String relativeUrl : videos) {
                     if (relativeUrl.contains("list=" + playlistID)) {
                         final String id = getVideoIDByUrl(relativeUrl);
                         playListDupes.add(id);
-                        ret.add(new YoutubeClipData(id, counter++));
+                        ret.add(new YoutubeClipData(id, videoPositionCounter++));
                     }
                 }
-                nextPageJSON = pbr.getRegex("/browse_ajax\\?action_continuation=\\d+&amp;continuation=[a-zA-Z0-9%]+").getMatch(-1);
                 nextPageHTML = pbr.getRegex("<a href=(\"|')(/playlist\\?list=" + playlistID + "\\&amp;page=\\d+)\\1[^\r\n]+>Next").getMatch(1);
             } else {
                 isJson = true;
                 final Map<String, Object> rootMap;
-                final List<Map<String, Object>> pl;
+                List<Map<String, Object>> pl = null;
                 if (round == 0) {
                     rootMap = helper.getYtInitialData();
-                    pl = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnBrowseResultsRenderer/tabs/{}/tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
+                    pl = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnBrowseResultsRenderer/tabs/{0}/tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
+                    /* This message can also contain information like "2 unavailable videos won't be displayed in this list". */
+                    final String errormessage = (String) JavaScriptEngineFactory.walkJson(rootMap, "alerts/{0}/alertRenderer/text/runs/{0}/text");
+                    if (pl == null && errormessage != null) {
+                        throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "CHANNEL_OR_PLAYLIST_OFFLINE_" + this.playlistID, errormessage);
+                    }
+                    final Map<String, Object> playlistHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/playlistHeaderRenderer");
+                    if (playlistHeaderRenderer != null) {
+                        String numberofItemsStr = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "numVideosText/runs/{0}/text");
+                        if (numberofItemsStr != null) {
+                            numberofItemsStr = numberofItemsStr.replaceAll("(\\.|,)", "");
+                            if (numberofItemsStr.matches("\\d+")) {
+                                numberofItems = Integer.parseInt(numberofItemsStr);
+                                globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_SIZE, numberofItems);
+                            }
+                        }
+                        /* This is the better source for playlist title than html. */
+                        final String playlistTitle = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "title/simpleText");
+                        if (playlistTitle != null) {
+                            globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, playlistTitle);
+                        }
+                    } else {
+                        logger.warning("Failed to find additional metadata via playlistHeaderRenderer");
+                    }
                 } else {
                     rootMap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     pl = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "onResponseReceivedActions/{0}/appendContinuationItemsAction/continuationItems");
@@ -1053,12 +1079,15 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 if (pl != null) {
                     for (final Map<String, Object> vid : pl) {
-                        final String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
+                        String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
+                        if (id == null) {
+                            id = (String) JavaScriptEngineFactory.walkJson(vid, "richItemRenderer/content/reelItemRenderer/videoId");
+                        }
                         /* Typically last item (item 101) will contain the continuationToken. */
                         final String continuationToken = (String) JavaScriptEngineFactory.walkJson(vid, "continuationItemRenderer/continuationEndpoint/continuationCommand/token");
                         if (id != null) {
                             playListDupes.add(id);
-                            ret.add(new YoutubeClipData(id, counter++));
+                            ret.add(new YoutubeClipData(id, videoPositionCounter++));
                         } else if (continuationToken != null) {
                             /* Typically last item contains token for next page */
                             nextPageToken = continuationToken;
@@ -1086,20 +1115,21 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
             /* Check for some abort conditions */
-            logger.info("Crawled page " + round + " | Found items so far: " + playListDupes.size() + " | nextPageHTML = " + nextPageHTML + " | nextPageToken = " + nextPageToken);
+            final int numberofNewItemsThisRun = playListDupes.size() - playListDupesSizeOld;
+            logger.info("Crawled page " + round + " | Found items on tis page: " + numberofNewItemsThisRun + " | Found items so far: " + playListDupes.size() + "/" + numberofItems + " | nextPageHTML = " + nextPageHTML + " | nextPageToken = " + nextPageToken);
             if (this.isAbort()) {
                 throw new InterruptedException();
-            } else if (playListDupes.size() == before) {
-                logger.info("Stopping because: No new videoIDs found");
+            } else if (numberofNewItemsThisRun == 0) {
+                logger.info("Stopping because: No new videoIDs found on current page");
                 break;
             } else if (nextPageHTML == null && nextPageToken == null) {
                 logger.info("Stopping because: No next page found");
                 break;
             }
             if (nextPageToken != null) {
-                if (StringUtils.isEmpty(INNERTUBE_API_KEY)) {
+                if (StringUtils.isEmpty(INNERTUBE_API_KEY) || StringUtils.isEmpty(INNERTUBE_CLIENT_VERSION)) {
                     /* This should never happen. */
-                    logger.info("Stopping because: Pagination is broken due to missing INNERTUBE_API_KEY");
+                    logger.info("Stopping because: Pagination is broken due to missing INNERTUBE_API_KEY or INNERTUBE_CLIENT_VERSION");
                     break;
                 }
                 final Map<String, Object> context = new HashMap<String, Object>();
@@ -1144,29 +1174,31 @@ public class TbCmV2 extends PluginForDecrypt {
      * @throws IOException
      * @throws InterruptedException
      */
-    public ArrayList<YoutubeClipData> parsePlaylist(YoutubeHelper helper, final String videoID, final String playlistID, final String referenceUrl) throws Exception {
+    public ArrayList<YoutubeClipData> parsePlaylist(final YoutubeHelper helper, final String videoID, final String playlistID, final String referenceUrl) throws Exception {
         // this returns the html5 player
-        if (StringUtils.isNotEmpty(playlistID)) {
-            if (!helper.getLoggedIn()) {
-                /*
-                 * Only set User-Agent if we're not logged in because login session can be bound to User-Agent and tinkering around with
-                 * different User-Agents and the same cookies is just a bad idea!
-                 */
-                // firefox gets different result than chrome! lets hope switching wont cause issue.
-                br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
-            }
-            br.getHeaders().put("Accept-Charset", null);
-            Browser brc = br.cloneBrowser();
-            helper.getPage(brc, getBase() + "/playlist?list=" + playlistID);
-            if (brc.containsHTML("\"This playlist type is unviewable")) {
-                brc = br.cloneBrowser();
-                helper.getPage(brc, referenceUrl);
-                return parseUnlistedPlaylist(helper, brc, videoID, playlistID, referenceUrl);
-            } else {
-                return parseListedPlaylist(helper, brc, videoID, playlistID, referenceUrl);
-            }
+        if (StringUtils.isEmpty(playlistID)) {
+            /* Developer mistake */
+            return null;
         }
-        return null;
+        if (!helper.getLoggedIn()) {
+            /*
+             * Only set User-Agent if we're not logged in because login session can be bound to User-Agent and tinkering around with
+             * different User-Agents and the same cookies is just a bad idea!
+             */
+            // firefox gets different result than chrome! lets hope switching wont cause issue.
+            br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
+        }
+        br.getHeaders().put("Accept-Charset", null);
+        Browser brc = br.cloneBrowser();
+        helper.getPage(brc, getBase() + "/playlist?list=" + playlistID);
+        if (brc.containsHTML("\"This playlist type is unviewable")) {
+            // TODO: Check if this check is still needed.
+            brc = br.cloneBrowser();
+            helper.getPage(brc, referenceUrl);
+            return parseUnlistedPlaylist(helper, brc, videoID, playlistID, referenceUrl);
+        } else {
+            return parseListedPlaylist(helper, brc, videoID, playlistID, referenceUrl);
+        }
     }
 
     protected String extractWebsiteTitle(final Browser br) {
