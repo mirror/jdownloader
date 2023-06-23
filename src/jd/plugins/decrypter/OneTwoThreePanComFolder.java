@@ -32,6 +32,8 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -105,7 +107,7 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
                 // TODO: Add support for password protected items
                 logger.info("Password protected items are not yet supported");
                 isPasswordProtected = true;
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new DecrypterRetryException(RetryReason.PLUGIN_DEFECT, "PASSWORD_PROTECTED_ITEMS_ARE_NOT_YET_SUPPORTED_" + shareKey, "Contact JDownloader support and ask for implementation.");
             }
             /* If we have a single file only, this is the name of the single file. */
             currentFolderName = folderinfomap.get("ShareName").toString();
@@ -185,6 +187,9 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
                 break;
             }
         } while (true);
+        if (ret.isEmpty()) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_FOLDER_" + shareKey);
+        }
         return ret;
     }
 
