@@ -44,7 +44,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.BangbrosComCrawler;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com", "mygf.com" }, urls = { "bangbrosdecrypted://.+", "mygfdecrypted://.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbrosold.com", "mygf.com" }, urls = { "bangbrosdecrypted://.+", "mygfdecrypted://.+" })
 public class BangbrosCom extends PluginForHost {
     public BangbrosCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -131,7 +131,7 @@ public class BangbrosCom extends PluginForHost {
                         /* This should never happen! */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    this.br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/product/" + productid + "/movie/" + fid + "/" + qualityIdentifier);
+                    this.br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + getHostInternal() + "/product/" + productid + "/movie/" + fid + "/" + qualityIdentifier);
                     if (BangbrosComCrawler.isOffline(this.br, mainlink)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
@@ -243,7 +243,14 @@ public class BangbrosCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public void login(Browser br, final Account account, final boolean force) throws Exception {
+    private String getHostInternal() {
+        /*
+         * 2023-06-26: Workaround as bangbros.com changed their login system and is currently running the old and new systems in parallel.
+         */
+        return this.getHost().replace("bangbrosold.com", "bangbros.com");
+    }
+
+    public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
@@ -251,7 +258,7 @@ public class BangbrosCom extends PluginForHost {
                 final Cookies userCookies = account.loadUserCookies();
                 if (userCookies != null) {
                     logger.info("Performing user-cookie login");
-                    br.setCookies(account.getHoster(), userCookies);
+                    br.setCookies(getHostInternal(), userCookies);
                     if (!force) {
                         logger.info("Trust cookies without check");
                         return;
@@ -274,14 +281,14 @@ public class BangbrosCom extends PluginForHost {
                      * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g.
                      * when the user logs in via browser.
                      */
-                    br.setCookies(account.getHoster(), cookies);
+                    br.setCookies(getHostInternal(), cookies);
                     if (!force) {
                         logger.info("Trust cookies without check");
                         return;
                     }
                     if (checkLogin(br)) {
                         logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
+                        account.saveCookies(br.getCookies(getHostInternal()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
@@ -302,7 +309,7 @@ public class BangbrosCom extends PluginForHost {
                  * 2020-08-21: Not all websites support https e.g. mygf.com doesn't so we rather use http here and let them redirect us to
                  * https if available.
                  */
-                br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/login");
+                br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + this.getHostInternal() + "/login");
                 final Form loginform = br.getForm(0);
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -313,7 +320,7 @@ public class BangbrosCom extends PluginForHost {
                 if (loginform.containsHTML("g-recaptcha")) {
                     final DownloadLink dlinkbefore = this.getDownloadLink();
                     if (dlinkbefore == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
+                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHostInternal(), "https://" + account.getHoster(), true));
                     }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     if (dlinkbefore != null) {
@@ -337,7 +344,7 @@ public class BangbrosCom extends PluginForHost {
     }
 
     private boolean checkLogin(final Browser br) throws IOException {
-        br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + this.getHost() + "/library");
+        br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + this.getHostInternal() + "/library");
         if (isLoggedin(br)) {
             return true;
         } else {
@@ -350,7 +357,7 @@ public class BangbrosCom extends PluginForHost {
         // final String logincookie2 = br.getCookie(account.getHoster(), "st_login");
         // final boolean isLoggedin = (logincookie != null && !"deleted".equalsIgnoreCase(logincookie)) || (logincookie2 != null &&
         // !"deleted".equalsIgnoreCase(logincookie2));
-        return br.containsHTML("all_purchased_switcher") || br.getCookie(this.getHost(), "bangbros_remember_me", Cookies.NOTDELETEDPATTERN) != null;
+        return br.containsHTML("all_purchased_switcher") || br.getCookie(this.getHostInternal(), "bangbros_remember_me", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     @Override

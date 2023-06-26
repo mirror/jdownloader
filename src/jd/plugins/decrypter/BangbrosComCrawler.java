@@ -39,7 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BangbrosCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbros.com", "mygf.com" }, urls = { "https?://members\\.bangbros\\.com/product/\\d+/movie/\\d+|https?://(?:bangbrothers\\.(?:com|net)|bangbros\\.com)/video\\d+/[a-z0-9\\-]+", "https?://members\\.mygf\\.com/product/\\d+/movie/\\d+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bangbrosold.com", "mygf.com" }, urls = { "https?://members\\.bangbros\\.com/product/\\d+/movie/\\d+|https?://(?:bangbrothers\\.(?:com|net)|bangbros\\.com)/video\\d+/[a-z0-9\\-]+", "https?://members\\.mygf\\.com/product/\\d+/movie/\\d+" })
 public class BangbrosComCrawler extends PluginForDecrypt {
     public BangbrosComCrawler(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,8 +48,12 @@ public class BangbrosComCrawler extends PluginForDecrypt {
     public static final String type_userinput_video_couldbe_trailer = ".+/video\\d+/[a-z0-9\\-]+";
     public static final String type_decrypted_zip                   = ".+\\.zip.*?";
 
+    /**
+     * 2023-06-26: old.bangbros.com was added as they've moved to a new system ("pornportal") which is incompatible with the old stuff thus
+     * the "old." domain is used JDownloader-plugin-internally.
+     */
     protected DownloadLink createDownloadlink(String url, final String fid, final String productid, final String quality) {
-        final String hostpart = this.getHost().split("\\.")[0];
+        final String hostpart = this.getHost().replace("old.", "").split("\\.")[0];
         url = url.replaceAll("https?://", hostpart + "decrypted://");
         final DownloadLink dl = super.createDownloadlink(url, true);
         dl.setProperty(BangbrosCom.PROPERTY_FID, fid);

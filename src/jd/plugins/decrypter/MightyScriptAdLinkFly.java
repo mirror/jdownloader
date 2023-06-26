@@ -214,9 +214,9 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         Form lastSubmitForm = null;
         if (evalulateCaptcha(captchaType, param.getCryptedUrl())) {
             logger.info("Looks like captcha might be required");
-            boolean requiresCaptchaWhichCanFail = false;
-            boolean captchaFailed = false;
-            for (int i = 0; i <= 2; i++) {
+            Boolean requiresCaptchaWhichCanFail = null;
+            Boolean captchaFailed = null;
+            captchaLoop: for (int i = 0; i <= 2; i++) {
                 final Form form = getCaptchaForm(br, param);
                 if (form == null) {
                     if (getLinksGoForm(param, br) != null) {
@@ -285,12 +285,16 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 appVars = regexAppVars(this.br);
                 captchaType = getCaptchaType(null);
                 if (getLinksGoForm(param, br) != null) {
+                    /* Fail-safe */
+                    logger.info("Quit captcha loop because: Final Form is present in html");
                     captchaFailed = false;
                     break;
                 } else if (captchaType == null) {
+                    logger.info("Quit captcha loop because: No captcha needed");
                     captchaFailed = false;
                     break;
-                } else if (!requiresCaptchaWhichCanFail) {
+                } else if (Boolean.FALSE.equals(requiresCaptchaWhichCanFail)) {
+                    logger.info("Quit captcha loop because: Required captcha only needs one attempt");
                     break;
                 } else if (this.br.containsHTML("(?i)The CAPTCHA was incorrect")) {
                     captchaFailed = true;
@@ -300,7 +304,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     continue;
                 }
             }
-            if (requiresCaptchaWhichCanFail && captchaFailed) {
+            if (requiresCaptchaWhichCanFail && Boolean.TRUE.equals(captchaFailed)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
