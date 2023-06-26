@@ -74,10 +74,9 @@ public class Rule34Xxx extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("<h1>\\s*Nobody here but us chickens")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        // redirect to base list page of all content/tags.. we don't want to decrypt the entire site
-        if (br.getURL().endsWith("/index.php?page=post&s=list&tags=all")) {
-            return ret;
+        } else if (br.getURL().endsWith("/index.php?page=post&s=list&tags=all")) {
+            // redirect to base list page of all content/tags.. we don't want to crawl the entire website
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final boolean preferServerFilenames = PluginJsonConfig.get(this.getConfigInterface()).isPreferServerFilenamesOverPluginDefaultFilenames();
         if (parameter.contains("&s=view&")) {
@@ -131,51 +130,62 @@ public class Rule34Xxx extends PluginForDecrypt {
                 }
                 dl.setContentUrl(parameter);
                 ret.add(dl);
-                return ret;
             }
-        }
-        String fpName = new Regex(parameter, "tags=(.+)&?").getMatch(0);
-        FilePackage fp = null;
-        if (fpName != null) {
-            fp = FilePackage.getInstance();
-            fp.setName(fpName);
-        }
-        final HashSet<String> loop = new HashSet<String>();
-        loop: do {
-            if (this.isAbort()) {
-                logger.info("Decryption aborted by user");
-                return ret;
+        } else {
+            /* Crawl tags */
+            String fpName = new Regex(parameter, "tags=(.+)&?").getMatch(0);
+            FilePackage fp = null;
+            if (fpName != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(fpName);
             }
-            // from list to post page
-            final String[] links = br.getRegex("<a id=\"p\\d+\" href=('|\")(index\\.php\\?page=post&(:?amp;)?s=view&(:?amp;)?id=\\d+)\\1").getColumn(1);
-            if (links != null && links.length != 0) {
+            final HashSet<String> pages = new HashSet<String>();
+            final HashSet<String> dupes = new HashSet<String>();
+            loop: do {
+                // from list to post page
+                final String[] links = br.getRegex("<a id=\"p\\d+\" href=('|\")(/?index\\.php\\?page=post&(:?amp;)?s=view&(:?amp;)?id=\\d+)\\1").getColumn(1);
+                if (links == null || links.length == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                int numberofNewItems = 0;
                 for (String link : links) {
                     link = HTMLEntities.unhtmlentities(link);
-                    final DownloadLink dl = createDownloadlink(Request.getLocation(link, br.getRequest()));
-                    if (fp != null) {
-                        fp.add(dl);
+                    if (dupes.add(link)) {
+                        numberofNewItems++;
+                        final DownloadLink dl = createDownloadlink(Request.getLocation(link, br.getRequest()));
+                        if (fp != null) {
+                            fp.add(dl);
+                        }
+                        // we should set temp filename also
+                        final String id = new Regex(link, "id=(\\d+)").getMatch(0);
+                        dl.setLinkID(prefixLinkID + id);
+                        dl.setName(id);
+                        distribute(dl);
+                        ret.add(dl);
                     }
-                    // we should set temp filename also
-                    final String id = new Regex(link, "id=(\\d+)").getMatch(0);
-                    dl.setLinkID(prefixLinkID + id);
-                    dl.setName(id);
-                    distribute(dl);
-                    ret.add(dl);
                 }
-            } else {
-                // no links found we should break!
-                return null;
-            }
-            final String nexts[] = br.getRegex("<a href=\"(\\?page=post&(:?amp;)?s=list&(:?amp;)?tags=[a-zA-Z0-9_\\-%\\.\\+]+&(:?amp;)?pid=\\d+)\"").getColumn(0);
-            for (final String next : nexts) {
-                if (loop.add(next)) {
-                    sleep(1000, param);
-                    br.getPage(HTMLEntities.unhtmlentities(next));
-                    continue loop;
+                logger.info("Crawled page " + br.getURL() + " | Found items so far: " + ret.size());
+                final String nexts[] = br.getRegex("<a href=\"(\\?page=post&(:?amp;)?s=list&(:?amp;)?tags=[a-zA-Z0-9_\\-%\\.\\+]+&(:?amp;)?pid=\\d+)\"").getColumn(0);
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user");
+                    break;
+                } else if (numberofNewItems == 0) {
+                    logger.info("Stopping because: Failed to find any new items on current page");
+                    break;
+                } else if (nexts == null || nexts.length == 0) {
+                    logger.info("Stopping because: Failed to find next page -> Reached end(?)");
+                    break;
+                } else {
+                    for (final String next : nexts) {
+                        if (pages.add(next)) {
+                            sleep(1000, param);
+                            br.getPage(HTMLEntities.unhtmlentities(next));
+                            continue loop;
+                        }
+                    }
                 }
-            }
-            break;
-        } while (true);
+            } while (true);
+        }
         return ret;
     }
 

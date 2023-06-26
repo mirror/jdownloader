@@ -301,9 +301,7 @@ public class TeraboxCom extends PluginForHost {
             } else {
                 account.setType(AccountType.FREE);
             }
-            /* Access website to find jstoken */
-            br.getPage("/");
-            final String jstoken = br.getRegex("window\\.jsToken%20%3D%20a%7D%3Bfn%28%22([A-F0-9]{128})").getMatch(0);
+            final String jstoken = getJsToken(br, br.getHost());
             if (jstoken != null) {
                 account.setProperty(PROPERTY_ACCOUNT_JS_TOKEN, jstoken);
             } else {
@@ -311,9 +309,17 @@ public class TeraboxCom extends PluginForHost {
                 account.removeProperty(PROPERTY_ACCOUNT_JS_TOKEN);
             }
             ai.setUnlimitedTraffic();
-            // account.saveCookies(br.getCookies(br.getHost()), "");
             return ai;
         }
+    }
+
+    public static String getJsToken(final Browser br, final String host) throws IOException {
+        br.getPage("https://www." + host + "/");
+        return regexJsToken(br);
+    }
+
+    public static String regexJsToken(final Browser br) {
+        return br.getRegex("window\\.jsToken%20%3D%20a%7D%3Bfn%28%22([A-F0-9]{128})").getMatch(0);
     }
 
     private void errorAccountInvalid(final Account account) throws AccountInvalidException {

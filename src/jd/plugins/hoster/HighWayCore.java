@@ -594,7 +594,7 @@ public abstract class HighWayCore extends UseNet {
                 }
                 /* Wait and re-check */
                 final int retryInSeconds = Math.min(retryInSecondsThisRound, maxWaitSeconds - secondsWaited);
-                this.sleep(retryInSeconds * 1000l, link);
+                this.sleep(retryInSeconds * 1000l, link, textForJD);
                 secondsWaited += retryInSeconds;
                 final int currentProgress = ((Number) entries.get("percentage_Complete")).intValue();
                 link.addPluginProgress(waitProgress);

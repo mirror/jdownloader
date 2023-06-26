@@ -18,10 +18,12 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -40,7 +42,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.TeraboxCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -72,7 +73,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(web/share/(?:link|init)\\?surl=[A-Za-z0-9\\-_]+(\\&path=[^/]+)?|web/share/videoPlay\\?surl=[A-Za-z0-9\\-_]+\\&dir=[^\\&]+|s/[A-Za-z0-9\\-_]+|(?:[a-z0-9]+/)?sharing/link\\?surl=[A-Za-z0-9\\-_]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(web/share/(?:init|link|filelist)\\?surl=[A-Za-z0-9\\-_]+(\\&path=[^/]+)?|web/share/videoPlay\\?surl=[A-Za-z0-9\\-_]+\\&dir=[^\\&]+|s/[A-Za-z0-9\\-_]+|(?:[a-z0-9]+/)?sharing/link\\?surl=[A-Za-z0-9\\-_]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -99,10 +100,12 @@ public class TeraboxComFolder extends PluginForDecrypt {
         br.setCookie(host, "BOXCLND", passwordCookie);
     }
 
-    private static final String TYPE_SHORT        = "https?://[^/]+/s/(.+)";
-    private static final String TYPE_SHORT_NEW    = "https?://[^/]+/(?:[a-z0-9]+/)?sharing/link\\?surl=([A-Za-z0-9\\-_]+)";
+    private static final String     TYPE_SHORT                = "https?://[^/]+/s/(.+)";
+    private static final String     TYPE_SHORT_NEW            = "https?://[^/]+/(?:[a-z0-9]+/)?sharing/link\\?surl=([A-Za-z0-9\\-_]+)";
     /* For such URLs leading to single files we'll crawl all items of the folder that file is in -> Makes it easier */
-    private static final String TYPE_SINGLE_VIDEO = "https?://[^/]+/web/share/videoPlay\\?surl=([A-Za-z0-9\\-_]+)\\&dir=([^\\&]+)";
+    private static final String     TYPE_SINGLE_VIDEO         = "https?://[^/]+/web/share/videoPlay\\?surl=([A-Za-z0-9\\-_]+)\\&dir=([^\\&]+)";
+    private static final AtomicLong anonymousJstokenTimestamp = new AtomicLong(-1);
+    private static String           anonymousJstoken          = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
@@ -113,43 +116,30 @@ public class TeraboxComFolder extends PluginForDecrypt {
         final UrlQuery paramsOfAddedURL = UrlQuery.parse(param.getCryptedUrl());
         String surl;
         String preGivenPath = null;
-        /*
-         * ContainerURL is really important for the single file items we crawl! It should go to the folder the file is in -> We can't just
-         * use the URL which the user has added!
-         */
-        final String containerURL;
         if (param.getCryptedUrl().matches(TYPE_SHORT)) {
             surl = new Regex(param.getCryptedUrl(), TYPE_SHORT).getMatch(0);
-            containerURL = param.getCryptedUrl();
         } else if (param.getCryptedUrl().matches(TYPE_SHORT_NEW)) {
             surl = new Regex(param.getCryptedUrl(), TYPE_SHORT_NEW).getMatch(0);
-            containerURL = param.getCryptedUrl();
         } else if (param.getCryptedUrl().matches(TYPE_SINGLE_VIDEO)) {
             surl = paramsOfAddedURL.get("surl");
             preGivenPath = paramsOfAddedURL.get("dir");
-            containerURL = "https://www." + this.getHost() + "/web/share/link?surl=" + surl + "&path=" + preGivenPath;
         } else {
             surl = paramsOfAddedURL.get("surl");
-            preGivenPath = paramsOfAddedURL.get("path");
-            containerURL = param.getCryptedUrl();
+            preGivenPath = paramsOfAddedURL.get("dir");
+            if (preGivenPath == null) {
+                preGivenPath = paramsOfAddedURL.get("path");
+            }
         }
         if (!Encoding.isUrlCoded(preGivenPath)) {
             preGivenPath = Encoding.urlEncode(preGivenPath);
         }
-        /*
-         * Fix surl value - website would usually do this via redirect. Just really strange that whenever that value starts with "1" they
-         * just remove this in order to be able to use that id as a param for ajax requests.
-         */
-        if (surl.startsWith("1")) {
-            surl = surl.substring(1, surl.length());
-        }
-        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        final TeraboxCom plg = (TeraboxCom) this.getNewPluginForHostInstance(this.getHost());
         /*
          * Login whenever possible. This way we will get direct downloadable URLs right away which we can store --> Saves a LOT of time- and
          * http requests later on!
          */
         if (account != null) {
-            ((jd.plugins.hoster.TeraboxCom) plg).login(account, false);
+            plg.login(account, false);
         }
         String passCode = param.getDecrypterPassword();
         boolean trustPassword = passCode != null;
@@ -163,10 +153,55 @@ public class TeraboxComFolder extends PluginForDecrypt {
             setPasswordCookie(this.br, this.br.getHost(), passwordCookie);
         }
         String jstoken = null;
+        /*
+         * Fix surl value - website would usually do this via redirect. Just really strange that whenever that value starts with "1" they
+         * just remove this in order to be able to use that id as a param for ajax requests.
+         */
+        /* 2023-06-26: Looks like this is not needed anymore. */
+        boolean useStrangeSUrlWorkaround = false;
+        if (parent == null && surl.startsWith("1")) {
+            useStrangeSUrlWorkaround = true;
+            // surl = surl.substring(1, surl.length());
+        }
+        br.getHeaders().put("Accept", "application/json, text/plain, */*");
+        br.setFollowRedirects(true);
+        Browser surlbrowser = null;
         if (account != null) {
             jstoken = account.getStringProperty(TeraboxCom.PROPERTY_ACCOUNT_JS_TOKEN);
             if (jstoken == null) {
                 logger.warning("Failed to find jstoken while account is given -> Download of crawled item(s) may fail!");
+            }
+            if (useStrangeSUrlWorkaround) {
+                surlbrowser = br.cloneBrowser();
+                surlbrowser.getPage(param.getCryptedUrl());
+            }
+        } else {
+            synchronized (anonymousJstokenTimestamp) {
+                if (Time.systemIndependentCurrentJVMTimeMillis() - anonymousJstokenTimestamp.get() < 5 * 60 * 1000 || anonymousJstoken == null || useStrangeSUrlWorkaround) {
+                    logger.info("Obtaining fresh anonymous jstoken");
+                    final String newJstoken;
+                    if (useStrangeSUrlWorkaround) {
+                        surlbrowser = br.cloneBrowser();
+                        surlbrowser.getPage(param.getCryptedUrl());
+                        newJstoken = TeraboxCom.regexJsToken(surlbrowser);
+                    } else {
+                        newJstoken = TeraboxCom.getJsToken(br, this.getHost());
+                    }
+                    if (newJstoken != null) {
+                        anonymousJstoken = newJstoken;
+                        anonymousJstokenTimestamp.set(Time.systemIndependentCurrentJVMTimeMillis());
+                        jstoken = newJstoken;
+                    }
+                } else {
+                    jstoken = anonymousJstoken;
+                }
+            }
+        }
+        if (surlbrowser != null) {
+            final String newSurlValue = UrlQuery.parse(surlbrowser.getURL()).get("surl");
+            if (newSurlValue != null && !newSurlValue.equals(surl)) {
+                logger.info("Found new surl value (mostly only number 1 at beginning is missing): Old" + surl + " | New: " + newSurlValue);
+                surl = newSurlValue;
             }
         }
         int page = 1;
@@ -189,8 +224,6 @@ public class TeraboxComFolder extends PluginForDecrypt {
             queryFolder.add("root", "1");
         }
         Map<String, Object> entries = null;
-        br.getHeaders().put("Accept", "application/json, text/plain, */*");
-        br.setFollowRedirects(true);
         if (targetFileID != null) {
             logger.info("Trying to find item with the following fs_id ONLY: " + targetFileID);
         }
@@ -199,7 +232,8 @@ public class TeraboxComFolder extends PluginForDecrypt {
             logger.info("Crawling page: " + page);
             queryFolder.addAndReplace("page", Integer.toString(page));
             queryFolder.addAndReplace("num", Integer.toString(maxItemsPerPage));
-            br.getPage("https://www." + this.getHost() + "/share/list?" + queryFolder.toString());
+            final String requesturl = "https://www." + this.getHost() + "/share/list?" + queryFolder.toString();
+            br.getPage(requesturl);
             entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
             int errno = ((Number) entries.get("errno")).intValue();
             if (errno == -9) {
@@ -264,15 +298,15 @@ public class TeraboxComFolder extends PluginForDecrypt {
                         throw new DecrypterException(DecrypterException.PASSWORD);
                     }
                 }
-                setPasswordCookie(this.br, this.br.getHost(), passwordCookie);
+                setPasswordCookie(br, br.getHost(), passwordCookie);
                 /*
                  * Let's assume that dubox can ask again for password/captchas withing a long pagination -> Don't ask for password again as
                  * we know it!
                  */
                 trustPassword = true;
                 /* Repeat the first request -> We should be able to access the folder now. */
-                br.getPage("https://www." + this.getHost() + "/share/list?" + queryFolder.toString());
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                br.getPage(requesturl);
+                entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
             }
             errno = ((Number) entries.get("errno")).intValue();
             if (errno != 0 || !entries.containsKey("list")) {
@@ -317,19 +351,18 @@ public class TeraboxComFolder extends PluginForDecrypt {
                     thisparams.appendEncoded("dir", realpath);// only the path!
                     thisparams.add("fsid", fsidStr);
                     thisparams.appendEncoded("fileName", serverfilename);
-                    final String url = "https://www." + this.getHost() + "/web/share/?" + thisparams.toString();
+                    final String url = "https://www." + this.getHost() + "/sharing/link?" + thisparams.toString();
                     final String contentURL;
                     if (category == 1) {
                         thisparams.add("page", Integer.toString(page));
-                        contentURL = "https://www." + this.getHost() + "/web/share/videoPlay?" + thisparams.toString();
+                        contentURL = "https://www." + this.getHost() + "/sharing/videoPlay?" + thisparams.toString();
                     } else {
                         /* No URL available that points directly to that file! */
                         contentURL = param.toString();
                     }
                     final DownloadLink dl = new DownloadLink(plg, "dubox", this.getHost(), url, true);
                     dl.setContentUrl(contentURL);
-                    dl.setContainerUrl(containerURL);
-                    jd.plugins.hoster.TeraboxCom.parseFileInformation(dl, entries);
+                    TeraboxCom.parseFileInformation(dl, entries);
                     if (passCode != null) {
                         dl.setDownloadPassword(passCode);
                     }
