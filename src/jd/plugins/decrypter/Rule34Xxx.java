@@ -19,6 +19,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.plugins.components.config.Rule34xxxConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,14 +36,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.plugins.components.config.Rule34xxxConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 /**
  *
@@ -64,17 +66,18 @@ public class Rule34Xxx extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = Encoding.htmlDecode(param.toString());
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = Encoding.htmlDecode(param.getCryptedUrl());
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">No Images Found<|>This post was deleted")) {
-            decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*No Images Found\\s*<|>\\s*This post was deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("<h1>\\s*Nobody here but us chickens")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // redirect to base list page of all content/tags.. we don't want to decrypt the entire site
         if (br.getURL().endsWith("/index.php?page=post&s=list&tags=all")) {
-            return decryptedLinks;
+            return ret;
         }
         final boolean preferServerFilenames = PluginJsonConfig.get(this.getConfigInterface()).isPreferServerFilenamesOverPluginDefaultFilenames();
         if (parameter.contains("&s=view&")) {
@@ -127,8 +130,8 @@ public class Rule34Xxx extends PluginForDecrypt {
                     dl.setFinalFileName("rule34xxx-" + id + extension);
                 }
                 dl.setContentUrl(parameter);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
+                ret.add(dl);
+                return ret;
             }
         }
         String fpName = new Regex(parameter, "tags=(.+)&?").getMatch(0);
@@ -141,7 +144,7 @@ public class Rule34Xxx extends PluginForDecrypt {
         loop: do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
-                return decryptedLinks;
+                return ret;
             }
             // from list to post page
             final String[] links = br.getRegex("<a id=\"p\\d+\" href=('|\")(index\\.php\\?page=post&(:?amp;)?s=view&(:?amp;)?id=\\d+)\\1").getColumn(1);
@@ -157,7 +160,7 @@ public class Rule34Xxx extends PluginForDecrypt {
                     dl.setLinkID(prefixLinkID + id);
                     dl.setName(id);
                     distribute(dl);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
             } else {
                 // no links found we should break!
@@ -173,7 +176,7 @@ public class Rule34Xxx extends PluginForDecrypt {
             }
             break;
         } while (true);
-        return decryptedLinks;
+        return ret;
     }
 
     /* NO OVERRIDE!! */
