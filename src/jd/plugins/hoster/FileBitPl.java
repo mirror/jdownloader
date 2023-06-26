@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -67,8 +69,7 @@ public class FileBitPl extends PluginForHost {
         return "https://filebit.pl/regulamin";
     }
 
-    private Browser newBrowserAPI() {
-        br = new Browser();
+    private Browser prepBrowserAPI(final Browser br) {
         br.setCookiesExclusive(true);
         br.getHeaders().put("Accept", "application/json");
         br.getHeaders().put("User-Agent", "JDownloader");
@@ -131,11 +132,11 @@ public class FileBitPl extends PluginForHost {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 mhm.handleErrorGeneric(account, link, "403dlerror", 20);
-            }
-            if (br.containsHTML("<title>FileBit\\.pl \\- Error</title>")) {
+            } else if (br.containsHTML("<title>FileBit\\.pl \\- Error</title>")) {
                 mhm.handleErrorGeneric(account, link, "dlerror_known_but_unsure", 20);
+            } else {
+                mhm.handleErrorGeneric(account, link, "dlerror_unknown", 50);
             }
-            mhm.handleErrorGeneric(account, link, "dlerror_unknown", 50);
         }
         this.dl.startDownload();
     }
@@ -315,6 +316,7 @@ public class FileBitPl extends PluginForHost {
                     return dllink;
                 }
             } catch (final Exception e) {
+                link.removeProperty(property);
                 logger.log(e);
                 return null;
             } finally {
@@ -328,7 +330,7 @@ public class FileBitPl extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.br = newBrowserAPI();
+        this.prepBrowserAPI(br);
         if (USE_API) {
             return fetchAccountInfoAPI(account);
         } else {
@@ -342,31 +344,29 @@ public class FileBitPl extends PluginForHost {
         br.getPage(API_BASE + "?a=accountStatus&sessident=" + sessionID);
         handleAPIErrors(br, account, null);
         account.setConcurrentUsePossible(true);
-        final String accountDescription = PluginJSonUtils.getJson(br, "acctype");
-        String premium = PluginJSonUtils.getJson(this.br, "premium");
-        final String expire = PluginJSonUtils.getJson(this.br, "expires");
-        if (expire != null) {
-            final Long expirelng = Long.parseLong(expire);
-            if (expirelng == -1) {
-                ai.setValidUntil(expirelng);
-            } else {
-                ai.setValidUntil(System.currentTimeMillis() + expirelng);
-            }
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        final String accountDescription = data.get("acctype").toString();
+        final String premium = data.get("premium").toString();
+        final Number expires = (Number) data.get("expires");
+        if (expires != null) {
+            ai.setValidUntil(System.currentTimeMillis() + expires.longValue());
         }
-        final String trafficleft_bytes = PluginJSonUtils.getJson(this.br, "transferLeft");
-        if (trafficleft_bytes != null) {
-            ai.setTrafficLeft(trafficleft_bytes);
+        final Number transferLeftBytes = (Number) data.get("transferLeft");
+        if (transferLeftBytes != null) {
+            ai.setTrafficLeft(transferLeftBytes.longValue());
         } else {
             ai.setUnlimitedTraffic();
         }
-        int maxSimultanDls = Integer.parseInt(PluginJSonUtils.getJson(this.br, "maxsin"));
+        final Number maxSimultanDlsO = (Number) data.get("maxsin");
+        int maxSimultanDls = maxSimultanDlsO != null ? maxSimultanDlsO.intValue() : -1;
         if (maxSimultanDls < 1) {
             maxSimultanDls = 1;
         } else if (maxSimultanDls > 20) {
             maxSimultanDls = 0;
         }
         account.setMaxSimultanDownloads(maxSimultanDls);
-        long maxChunks = Integer.parseInt(PluginJSonUtils.getJson(this.br, "maxcon"));
+        long maxChunks = ((Number) data.get("maxcon")).intValue();
         if (maxChunks > 1) {
             maxChunks = -maxChunks;
         }
@@ -474,42 +474,56 @@ public class FileBitPl extends PluginForHost {
     private void loginAPI(final Account account) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
             try {
-                newBrowserAPI();
+                this.prepBrowserAPI(br);
                 sessionID = account.getStringProperty("sessionid");
                 final long session_expire = account.getLongProperty("sessionexpire", 0);
-                if (StringUtils.isEmpty(sessionID) || System.currentTimeMillis() > session_expire) {
-                    if (!StringUtils.isEmpty(sessionID)) {
-                        try {
-                            br.getPage(API_BASE + "?a=accountStatus&sessident=" + sessionID);
-                            handleAPIErrors(br, account, null);
-                            sessionID = account.getStringProperty("sessionid");
-                            if (!StringUtils.isEmpty(sessionID)) {
-                                logger.info("Validated stored sessionID");
-                                account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
-                                return;
-                            }
-                        } catch (PluginException e) {
-                            logger.log(e);
-                        }
-                    }
-                    logger.info("Performing full login");
-                    br.getPage(API_BASE + "?a=login&apikey=" + Encoding.Base64Decode(APIKEY) + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getMD5(account.getPass()));
-                    handleAPIErrors(br, account, null);
-                    sessionID = PluginJSonUtils.getJson(this.br, "sessident");
-                    if (StringUtils.isEmpty(sessionID)) {
-                        if (br.getHttpConnection().getResponseCode() == 500) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                        } else {
-                            /* This should never happen */
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
-                    /* According to API documentation, sessionIDs are valid for 60 minutes */
-                    account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
-                    account.setProperty("sessionid", sessionID);
-                } else {
-                    logger.info("Trusting stored sessionID");
+                if (!StringUtils.isEmpty(sessionID) && System.currentTimeMillis() < session_expire) {
+                    /* Trust session to be valid */
+                    return;
                 }
+                if (!StringUtils.isEmpty(sessionID)) {
+                    logger.info("Checking sessionID");
+                    try {
+                        br.getPage(API_BASE + "?a=accountStatus&sessident=" + sessionID);
+                        handleAPIErrors(br, account, null);
+                        sessionID = account.getStringProperty("sessionid");
+                        if (!StringUtils.isEmpty(sessionID)) {
+                            logger.info("Validated stored sessionID");
+                            account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
+                            return;
+                        }
+                    } catch (PluginException e) {
+                        logger.log(e);
+                    }
+                }
+                logger.info("Performing full login");
+                /* 2023-06-26: They've switched from md5 pw to plaintext. */
+                final boolean useMd5PW = false;
+                final String pwvalue;
+                if (useMd5PW) {
+                    pwvalue = JDHash.getMD5(account.getPass());
+                } else {
+                    pwvalue = account.getPass();
+                }
+                final UrlQuery query = new UrlQuery();
+                query.add("a", "login");
+                query.add("apikey", Encoding.urlEncode(Encoding.Base64Decode(APIKEY)));
+                query.add("login", Encoding.urlEncode(account.getUser()));
+                query.add("password", Encoding.urlEncode(pwvalue));
+                br.getPage(API_BASE + "?" + query.toString());
+                handleAPIErrors(br, account, null);
+                sessionID = PluginJSonUtils.getJson(this.br, "sessident");
+                if (StringUtils.isEmpty(sessionID)) {
+                    if (br.getHttpConnection().getResponseCode() == 500) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    } else {
+                        /* This should never happen */
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                /* According to API documentation, sessionIDs are valid for 60 minutes */
+                account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
+                account.setProperty("sessionid", sessionID);
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     dumpSessionID(account);
