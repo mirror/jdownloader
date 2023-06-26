@@ -161,6 +161,7 @@ public class RosefileNet extends PluginForHost {
             if (br.containsHTML("(?i)>\\s*This file is available for Premium Users only")) {
                 throw new AccountRequiredException();
             }
+            final String fileURL = br.getURL();
             final String internalFileID = br.getRegex("add_ref\\((\\d+)\\);").getMatch(0);
             if (internalFileID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -187,7 +188,37 @@ public class RosefileNet extends PluginForHost {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+            final ArrayList<String> mirrorurls = new ArrayList<String>();
+            final String[] mirrors = ajax.getRegex("<a href=\"(https?[^\"]+)").getColumn(0);
+            if (mirrors != null && mirrors.length > 0) {
+                for (final String mirror : mirrors) {
+                    mirrorurls.add(mirror);
+                }
+            } else {
+                mirrorurls.add(dllink);
+            }
+            for (int i = 0; i < mirrorurls.size(); i++) {
+                if (this.isAbort()) {
+                    throw new InterruptedException();
+                }
+                final String directurl = mirrorurls.get(i);
+                logger.info("Trying mirror " + i + " | " + directurl);
+                br.getHeaders().put("Referer", fileURL);
+                try {
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, resumable, maxchunks);
+                    if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                        break;
+                    }
+                } catch (final Throwable e) {
+                    if (i == mirrorurls.size() - 1) {
+                        /* Last item -> Throw exception */
+                        throw e;
+                    } else {
+                        logger.info("Mirror failed due to exception");
+                        continue;
+                    }
+                }
+            }
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 if (br.containsHTML("(?i)The file does not exist")) {

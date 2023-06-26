@@ -20,6 +20,7 @@ import java.util.Map;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -45,6 +46,11 @@ public class BangbrosComCrawler extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
     public static final String type_userinput_video_couldbe_trailer = ".+/video\\d+/[a-z0-9\\-]+";
     public static final String type_decrypted_zip                   = ".+\\.zip.*?";
 
@@ -53,7 +59,7 @@ public class BangbrosComCrawler extends PluginForDecrypt {
      * the "old." domain is used JDownloader-plugin-internally.
      */
     protected DownloadLink createDownloadlink(String url, final String fid, final String productid, final String quality) {
-        final String hostpart = this.getHost().replace("old.", "").split("\\.")[0];
+        final String hostpart = BangbrosCom.getHostInternal(this.getHost()).split("\\.")[0];
         url = url.replaceAll("https?://", hostpart + "decrypted://");
         final DownloadLink dl = super.createDownloadlink(url, true);
         dl.setProperty(BangbrosCom.PROPERTY_FID, fid);

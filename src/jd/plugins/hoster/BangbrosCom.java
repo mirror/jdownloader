@@ -21,6 +21,7 @@ import java.util.Random;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -50,6 +51,11 @@ public class BangbrosCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("https://www.bangbrosnetwork.com/bangbrothers/join");
         setConfigElements();
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     @Override
@@ -131,7 +137,7 @@ public class BangbrosCom extends PluginForHost {
                         /* This should never happen! */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    this.br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + getHostInternal() + "/product/" + productid + "/movie/" + fid + "/" + qualityIdentifier);
+                    this.br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + getHostInternal(this.getHost()) + "/product/" + productid + "/movie/" + fid + "/" + qualityIdentifier);
                     if (BangbrosComCrawler.isOffline(this.br, mainlink)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
@@ -231,7 +237,7 @@ public class BangbrosCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("free_directlink", this.dllink);
@@ -243,11 +249,11 @@ public class BangbrosCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private String getHostInternal() {
+    public static String getHostInternal(final String host) {
         /*
          * 2023-06-26: Workaround as bangbros.com changed their login system and is currently running the old and new systems in parallel.
          */
-        return this.getHost().replace("bangbrosold.com", "bangbros.com");
+        return host.replace("bangbrosold.com", "bangbros.com");
     }
 
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
@@ -256,9 +262,9 @@ public class BangbrosCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 prepBR(br);
                 final Cookies userCookies = account.loadUserCookies();
-                if (userCookies != null) {
+                if (userCookies != null && !userCookies.isEmpty()) {
                     logger.info("Performing user-cookie login");
-                    br.setCookies(getHostInternal(), userCookies);
+                    br.setCookies(getHostInternal(this.getHost()), userCookies);
                     if (!force) {
                         logger.info("Trust cookies without check");
                         return;
@@ -276,19 +282,19 @@ public class BangbrosCom extends PluginForHost {
                     }
                 }
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
+                if (cookies != null && !cookies.isEmpty()) {
                     /*
                      * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g.
                      * when the user logs in via browser.
                      */
-                    br.setCookies(getHostInternal(), cookies);
+                    br.setCookies(getHostInternal(this.getHost()), cookies);
                     if (!force) {
                         logger.info("Trust cookies without check");
                         return;
                     }
                     if (checkLogin(br)) {
                         logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(getHostInternal()), "");
+                        account.saveCookies(br.getCookies(getHostInternal(this.getHost())), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
@@ -309,7 +315,7 @@ public class BangbrosCom extends PluginForHost {
                  * 2020-08-21: Not all websites support https e.g. mygf.com doesn't so we rather use http here and let them redirect us to
                  * https if available.
                  */
-                br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + this.getHostInternal() + "/login");
+                br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + getHostInternal(this.getHost()) + "/login");
                 final Form loginform = br.getForm(0);
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -320,7 +326,7 @@ public class BangbrosCom extends PluginForHost {
                 if (loginform.containsHTML("g-recaptcha")) {
                     final DownloadLink dlinkbefore = this.getDownloadLink();
                     if (dlinkbefore == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHostInternal(), "https://" + account.getHoster(), true));
+                        this.setDownloadLink(new DownloadLink(this, "Account", getHostInternal(this.getHost()), "https://" + account.getHoster(), true));
                     }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     if (dlinkbefore != null) {
@@ -335,7 +341,7 @@ public class BangbrosCom extends PluginForHost {
                 if (!isLoggedin(br) || !br.getURL().contains("/library")) {
                     throw new AccountInvalidException();
                 }
-                account.saveCookies(br.getCookies(account.getHoster()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -344,7 +350,7 @@ public class BangbrosCom extends PluginForHost {
     }
 
     private boolean checkLogin(final Browser br) throws IOException {
-        br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + this.getHostInternal() + "/library");
+        br.getPage("https://" + DOMAIN_PREFIX_PREMIUM + getHostInternal(this.getHost()) + "/library");
         if (isLoggedin(br)) {
             return true;
         } else {
@@ -357,7 +363,7 @@ public class BangbrosCom extends PluginForHost {
         // final String logincookie2 = br.getCookie(account.getHoster(), "st_login");
         // final boolean isLoggedin = (logincookie != null && !"deleted".equalsIgnoreCase(logincookie)) || (logincookie2 != null &&
         // !"deleted".equalsIgnoreCase(logincookie2));
-        return br.containsHTML("all_purchased_switcher") || br.getCookie(this.getHostInternal(), "bangbros_remember_me", Cookies.NOTDELETEDPATTERN) != null;
+        return br.containsHTML("all_purchased_switcher") || br.getCookie(getHostInternal(this.getHost()), "bangbros_remember_me", Cookies.NOTDELETEDPATTERN) != null;
     }
 
     @Override
@@ -379,9 +385,9 @@ public class BangbrosCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premium_directlink", dllink);
