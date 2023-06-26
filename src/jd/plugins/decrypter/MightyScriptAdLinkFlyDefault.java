@@ -125,8 +125,6 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             "wicr.me", "wi.cr",
             /** cutwin.com domains */
             "cutwin.com", "cutwin.us",
-            /** hitfile short links */
-            "hil.to", "hitf.to", "hitf.cc", "hif.to",
             /** linkawynet.xyz links */
             "linkawynet.xyz",
             /** shortawy.com links */

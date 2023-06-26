@@ -21,6 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -556,7 +557,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 fp.setComment(tweetText);
             }
         }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> retInternal = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> retExternal = new ArrayList<DownloadLink>();
         final String urlToTweet = createTwitterPostURL(username, tweetID);
         fp.setAllowInheritance(true);
@@ -575,11 +576,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
         if (medias != null && medias.size() > 0) {
             mediaLists.add(medias);
         }
-        String lastFoundOriginalFilename = null;
         int mediaIndex = 0;
         int videoIndex = 0;
         if (mediaLists.size() > 0) {
-            final String mediaTypeVideo = "video";
+            final List<String> mediaTypesVideo = Arrays.asList(new String[] { "animated_gif", "video" });
             final String mediaTypePhoto = "photo";
             final Set<String> foundMediaTypes = new HashSet<String>();
             final Map<String, DownloadLink> mediaResultMap = new HashMap<String, DownloadLink>();
@@ -599,10 +599,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     foundMediaTypes.add(mediaType);
                     String filename = null;
                     final DownloadLink dl;
-                    if (mediaType.equals(mediaTypeVideo) || mediaType.equals("animated_gif")) {
-                        if (mediaType.equals(mediaTypeVideo)) {
-                            videoIDs.add(mediaIDStr);
-                        }
+                    if (mediaTypesVideo.contains(mediaType)) {
+                        videoIDs.add(mediaIDStr);
                         /* Animated_gif will usually only have one .mp4 version available with bitrate "0". */
                         int highestBitrate = -1;
                         final List<Map<String, Object>> videoVariants = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(media, "video_info/variants");
@@ -628,9 +626,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         }
                         dl = this.createDownloadlink(createVideourlSpecific(username, tweetID, (videoIndex + 1)));
                         dl.setProperty(PROPERTY_TYPE, "video");
-                        lastFoundOriginalFilename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(streamURL));
-                        if (cfg.isUseOriginalFilenames()) {
-                            filename = lastFoundOriginalFilename;
+                        final String originalFilename = Plugin.getFileNameFromURL(new URL(streamURL));
+                        if (cfg.isUseOriginalFilenames() && originalFilename != null) {
+                            filename = originalFilename;
                         } else if (mediasExtended.size() > 1) {
                             filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + "_" + mediaIndex + ".mp4";
                         } else {
@@ -657,9 +655,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         }
                         dl = this.createDownloadlink(photoURL);
                         dl.setProperty(PROPERTY_TYPE, "photo");
-                        lastFoundOriginalFilename = tweetID + "_" + Plugin.getFileNameFromURL(new URL(photoURL));
-                        if (cfg.isUseOriginalFilenames()) {
-                            filename = lastFoundOriginalFilename;
+                        dl.setProperty(TwitterCom.PROPERTY_DIRECTURL, photoURL);
+                        final String originalFilename = Plugin.getFileNameFromURL(new URL(photoURL));
+                        if (cfg.isUseOriginalFilenames() && originalFilename != null) {
+                            filename = originalFilename;
                         } else if (mediasExtended.size() > 1) {
                             filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + "_" + mediaIndex + Plugin.getFileNameExtensionFromURL(photoURL);
                         } else {
@@ -693,7 +692,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
             logger.info("Found media types: " + foundMediaTypes);
             /* Add results to list to be returned later. */
-            ret.addAll(mediaResultMap.values());
+            retInternal.addAll(mediaResultMap.values());
         }
         /* Check for fallback video source if no video item has been found until now. */
         final boolean foundMedia;
@@ -708,9 +707,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
             singleVideo.setProperty(PROPERTY_MEDIA_INDEX, 0);
             singleVideo.setProperty(PROPERTY_TYPE, "video");
             singleVideo.setAvailable(true);
-            ret.add(singleVideo);
+            retInternal.add(singleVideo);
             foundMedia = true;
-        } else if (ret.size() > 0) {
+        } else if (retInternal.size() > 0) {
             foundMedia = true;
         } else {
             foundMedia = false;
@@ -728,6 +727,21 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
             /* Crawl tweet as text if wanted by user or if tweet contains only text. */
             if (cfg.isSingleTweetCrawlerAddTweetTextAsTextfile() || !foundMedia) {
+                /*
+                 * Determine last found original filename now/here because after collecting those items we're removing non-thumbnails if not
+                 * wanted by user so this is the only place to determine the last used original filename.
+                 */
+                String lastFoundOriginalFilename = null;
+                for (final DownloadLink result : retInternal) {
+                    final String directurl = result.getStringProperty(TwitterCom.PROPERTY_DIRECTURL);
+                    if (directurl != null) {
+                        final String originalFilename = Plugin.getFileNameFromURL(new URL(directurl));
+                        if (originalFilename != null) {
+                            lastFoundOriginalFilename = originalFilename;
+                            break;
+                        }
+                    }
+                }
                 final DownloadLink text = this.createDownloadlink(urlToTweet);
                 final String filename;
                 if (cfg.isUseOriginalFilenames() && lastFoundOriginalFilename != null) {
@@ -748,13 +762,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 text.setProperty(PROPERTY_MEDIA_INDEX, 0);
                 text.setProperty(PROPERTY_TYPE, "text");
                 text.setAvailable(true);
-                ret.add(text);
+                retInternal.add(text);
             } else {
                 itemsSkippedDueToPluginSettings++;
             }
         }
         /* Add remaining plugin properties */
-        for (final DownloadLink dl : ret) {
+        for (final DownloadLink dl : retInternal) {
             dl.setProperty(PROPERTY_USERNAME, username);
             dl.setProperty(PROPERTY_TWEET_ID, tweetID);
             dl.setProperty(PROPERTY_DATE, formattedDate);
@@ -779,17 +793,17 @@ public class TwitterComCrawler extends PluginForDecrypt {
         if (fp != null) {
             fp.addLinks(retExternal);
         }
-        ret.addAll(retExternal);
+        retInternal.addAll(retExternal);
         this.distribute(retExternal);
         /* Logger just in case nothing was added. */
-        if (ret.isEmpty()) {
+        if (retInternal.isEmpty()) {
             if (itemsSkippedDueToPluginSettings == 0) {
                 logger.info("Failed to find any crawlable content in tweet: " + tweetID);
             } else {
                 logger.info("Failed to find any crawlable content because of user settings. Crawlable but skipped " + itemsSkippedDueToPluginSettings + " item(s) due to users' plugin settings.");
             }
         }
-        return ret;
+        return retInternal;
     }
 
     private static long getTimestampTwitterDate(String created_at) {
