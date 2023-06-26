@@ -88,11 +88,11 @@ public class TeraboxCom extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    public static final String PROPERTY_DIRECTURL       = "directurl";
-    public static final String PROPERTY_PASSWORD_COOKIE = "password_cookie";
-    public static final String PROPERTY_PAGINATION_PAGE = "pagination_page";
-    public static final String PROPERTY_JS_TOKEN        = "js_token";
-    public static final String PROPERTY_ACCOUNT_TOKEN   = "token";
+    public static final String PROPERTY_DIRECTURL        = "directurl";
+    public static final String PROPERTY_PASSWORD_COOKIE  = "password_cookie";
+    public static final String PROPERTY_PAGINATION_PAGE  = "pagination_page";
+    public static final String PROPERTY_ACCOUNT_JS_TOKEN = "js_token";
+    public static final String PROPERTY_ACCOUNT_TOKEN    = "token";
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -253,8 +253,21 @@ public class TeraboxCom extends PluginForHost {
             if (!force) {
                 return null;
             }
+            // boolean userHasAddedCookiesFromInternalMainDomain = false;
+            // for (final Cookie cookie : userCookies.getCookies()) {
+            // if (cookie.getHost().equals(this.getHost())) {
+            // userHasAddedCookiesFromInternalMainDomain = true;
+            // break;
+            // }
+            // }
             logger.info("Performing full user-cookie login");
-            br.setCookies(userCookies);
+            /* Set given cookies for all domains we know. */
+            final List<String[]> domains = TeraboxComFolder.getPluginDomains();
+            for (final String[] domainsarray : domains) {
+                for (final String domain : domainsarray) {
+                    br.setCookies(domain, userCookies);
+                }
+            }
             br.getPage("https://www." + this.getHost() + "/disk/home");
             final String bdstoken = br.getRegex("\"bdstoken\":\"([a-f0-9]{32})\"").getMatch(0);
             if (bdstoken == null) {
@@ -287,6 +300,15 @@ public class TeraboxCom extends PluginForHost {
                 }
             } else {
                 account.setType(AccountType.FREE);
+            }
+            /* Access website to find jstoken */
+            br.getPage("/");
+            final String jstoken = br.getRegex("window\\.jsToken%20%3D%20a%7D%3Bfn%28%22([A-F0-9]{128})").getMatch(0);
+            if (jstoken != null) {
+                account.setProperty(PROPERTY_ACCOUNT_JS_TOKEN, jstoken);
+            } else {
+                logger.warning("Failed to find jstoken");
+                account.removeProperty(PROPERTY_ACCOUNT_JS_TOKEN);
             }
             ai.setUnlimitedTraffic();
             // account.saveCookies(br.getCookies(br.getHost()), "");

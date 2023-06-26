@@ -74,7 +74,13 @@ public class EroProfileComGallery extends PluginForDecrypt {
         } else if (br.containsHTML(EroProfileCom.NOACCESS)) {
             logger.info("No cookies, login maybe failed: " + url);
             return ret;
-        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Album not found<|>\\s*No photos found|^No htmlCode read$")) {
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*Album not found\\s*<|>\\s*No photos found|^No htmlCode read$")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*No albums found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*No videos found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final boolean isProfile = param.getCryptedUrl().matches("(?i).*eroprofile\\.com/[A-Za-z0-9\\-_]+$");
@@ -136,7 +142,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
                     }
                 }
             }
-            if (ret.size() == 0) {
+            if (ret.isEmpty()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (isProfile) {

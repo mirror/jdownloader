@@ -20,6 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -39,12 +45,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "" })
 public class FileBitPl extends PluginForHost {
@@ -287,8 +287,8 @@ public class FileBitPl extends PluginForHost {
     }
 
     /**
-     * 2019-08-19: Keep in mind: This may waste traffic as it is not (yet) able to re-use previously generated "filebit.pl fileIDs".</br> DO
-     * NOT USE THIS AS LONG AS THEIR API IS WORKING FINE!!!
+     * 2019-08-19: Keep in mind: This may waste traffic as it is not (yet) able to re-use previously generated "filebit.pl fileIDs".</br>
+     * DO NOT USE THIS AS LONG AS THEIR API IS WORKING FINE!!!
      */
     private String getDllinkWebsite(final Account account, final DownloadLink link) throws Exception {
         this.loginWebsite(account);
@@ -442,10 +442,8 @@ public class FileBitPl extends PluginForHost {
         }
         if (!isPremium) {
             account.setType(AccountType.FREE);
-            ai.setStatus("Free Account");
         } else {
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium Account");
         }
         final String hostTableText = br.getRegex("<ul class=\"wykazLista\">(.*?)</ul>").getMatch(0);
         if (hostTableText == null) {

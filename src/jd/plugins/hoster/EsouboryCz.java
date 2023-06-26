@@ -176,6 +176,11 @@ public class EsouboryCz extends PluginForHost {
                 filesize = filesize.replace(",", ".");
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
             }
+            /* Check for other offline traits after collecting file information. */
+            /* 2023-06-26: Some files have their file-information (filesize/filename) given but are offline. */
+            if (br.containsHTML("(?i)>\\s*File is not available anymore")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         return AvailableStatus.TRUE;
     }

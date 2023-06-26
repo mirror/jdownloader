@@ -104,6 +104,10 @@ public class ExpfileCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String fileID = this.getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(fileID);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
@@ -111,6 +115,9 @@ public class ExpfileCom extends PluginForHost {
             br.getPage("/down2-" + this.getFID(link) + ".html");
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.containsHTML(fileID)) {
+            /* Invalid link / file has been deleted. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("<h2>文件名：([^<]+)</h2>").getMatch(0);

@@ -700,11 +700,11 @@ public class TiktokComCrawler extends PluginForDecrypt {
                         }
                         final String chosenImageURL;
                         if (StringUtils.isNotEmpty(preferredImageURL)) {
-                            /* Fallback - this should never be required! */
+                            chosenImageURL = preferredImageURL;
+                        } else {
+                            /* Fallback */
                             chosenImageURL = urlList.get(0);
                             logger.info("Failed to find preferred image format -> Fallback: " + chosenImageURL);
-                        } else {
-                            chosenImageURL = preferredImageURL;
                         }
                         final DownloadLink picture = new DownloadLink(hostPlg, this.getHost(), contentURL);
                         picture.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, false);

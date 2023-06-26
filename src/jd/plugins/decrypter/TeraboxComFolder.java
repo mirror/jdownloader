@@ -162,14 +162,12 @@ public class TeraboxComFolder extends PluginForDecrypt {
         if (passwordCookie != null) {
             setPasswordCookie(this.br, this.br.getHost(), passwordCookie);
         }
-        String jstoken = parent != null ? param.getDownloadLink().getStringProperty(TeraboxCom.PROPERTY_JS_TOKEN) : null;
-        if (jstoken == null) {
-            logger.info("Looking for jstoken im html code");
-            br.getPage(param.getCryptedUrl());
-            jstoken = br.getRegex("window\\.jsToken%20%3D%20a%7D%3Bfn%28%22([A-F0-9]{128})").getMatch(0);
-        }
-        if (account != null && jstoken == null) {
-            logger.warning("Failed to find jstoken while account is given -> Download of crawled items may fail!");
+        String jstoken = null;
+        if (account != null) {
+            jstoken = account.getStringProperty(TeraboxCom.PROPERTY_ACCOUNT_JS_TOKEN);
+            if (jstoken == null) {
+                logger.warning("Failed to find jstoken while account is given -> Download of crawled item(s) may fail!");
+            }
         }
         int page = 1;
         final int maxItemsPerPage = 20;
@@ -202,7 +200,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
             queryFolder.addAndReplace("page", Integer.toString(page));
             queryFolder.addAndReplace("num", Integer.toString(maxItemsPerPage));
             br.getPage("https://www." + this.getHost() + "/share/list?" + queryFolder.toString());
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
             int errno = ((Number) entries.get("errno")).intValue();
             if (errno == -9) {
                 /* Password protected folder */
@@ -300,7 +298,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
                     }
                     /* Saving- and re-using this can save us some time later. */
                     folder.setProperty(TeraboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookie);
-                    folder.setProperty(TeraboxCom.PROPERTY_JS_TOKEN, jstoken);
+                    folder.setProperty(TeraboxCom.PROPERTY_ACCOUNT_JS_TOKEN, jstoken);
                     distribute(folder);
                     ret.add(folder);
                 } else {
@@ -337,7 +335,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
                     }
                     /* Saving- and re-using this can save us some time later. */
                     dl.setProperty(TeraboxCom.PROPERTY_PASSWORD_COOKIE, passwordCookie);
-                    dl.setProperty(TeraboxCom.PROPERTY_JS_TOKEN, jstoken);
+                    dl.setProperty(TeraboxCom.PROPERTY_ACCOUNT_JS_TOKEN, jstoken);
                     /* This can be useful to refresh directurls a lot quicker. */
                     dl.setProperty(TeraboxCom.PROPERTY_PAGINATION_PAGE, page);
                     if (realpath.length() > 1) {

@@ -363,6 +363,9 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
             finallink = (String) entries.get("url");
             logger.info("finallink from json: " + finallink);
+            if (finallink != null && finallink.startsWith("/")) {
+                logger.warning("finallink looks to be a relative URL --> Looks like something went wrong");
+            }
         } else {
             finallink = br.getRegex("<a href=(\"|')(.*?)\\1[^>]+>\\s*Get\\s*Link\\s*</a>").getMatch(1);
             if (StringUtils.isEmpty(finallink)) {

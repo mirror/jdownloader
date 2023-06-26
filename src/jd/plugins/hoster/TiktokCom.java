@@ -241,14 +241,8 @@ public class TiktokCom extends PluginForHost {
             }
             dllink = getStoredDirecturl(result);
             link.setProperties(result.getProperties());
-            if (mediaTypeWorkaroundActive) {
-                /*
-                 * Workaround for audio-only items which were not downloadable with old handling as this could only download videos -> Use
-                 * audio download for those.
-                 */
-                logger.info("Media type of this item was changed from null to " + TYPE_AUDIO);
-                setFilename(link);
-            }
+            /* Properties might have changed -> Set final filename again. */
+            setFilename(link);
         }
         if (!StringUtils.isEmpty(dllink) && !link.isSizeSet() && !isDownload) {
             URLConnectionAdapter con = null;
