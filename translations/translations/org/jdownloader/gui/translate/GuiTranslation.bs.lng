@@ -1468,6 +1468,7 @@ YoutubeHelper_getDescription_itag_video_name=Ime Video Stream-a. npr. DASH_WEBM_
 YoutubeHelper_getDescription_language=Jezik titla. *lng*->EN *lng[display]* -> English
 YoutubeHelper_getDescription_playlist_id=ID playliste, npr. PLD3J3Pup7M00BeAyuplpWoGRFpT3enHPq
 YoutubeHelper_getDescription_playlist_name=Ime playliste, npr. Bosanska Muzika
+YoutubeHelper_getDescription_playlist_size=Veličina Playliste
 YoutubeHelper_getDescription_quality=Promjenljiv tag. npr. '1080p'
 YoutubeHelper_getDescription_replacetags=Zamijeni prazno mjesto donjom crtom: Dodaj [SU]. Primjeri: *imevidea[UC][SU]* ili *imekanala[SU]*
 YoutubeHelper_getDescription_resolution=Rezolucija (npr. 1080p, 1440x1080,...)
