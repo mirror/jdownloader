@@ -28,6 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -35,8 +36,9 @@ import jd.plugins.hoster.GenericM3u8;
 import jd.plugins.hoster.MetArtCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class MetArt extends PluginForDecrypt {
-    public MetArt(PluginWrapper wrapper) {
+@PluginDependencies(dependencies = { MetArtCom.class })
+public class MetArtCrawler extends PluginForDecrypt {
+    public MetArtCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -47,23 +49,7 @@ public class MetArt extends PluginForDecrypt {
 
     /** Sync this list for hoster + crawler plugin! */
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "metart.com" });
-        ret.add(new String[] { "sexart.com" });
-        ret.add(new String[] { "alsscan.com" });
-        ret.add(new String[] { "domai.com" });
-        ret.add(new String[] { "eroticbeauty.com" });
-        ret.add(new String[] { "errotica-archives.com" });
-        ret.add(new String[] { "eternaldesire.com" });
-        ret.add(new String[] { "goddessnudes.com" });
-        ret.add(new String[] { "lovehairy.com" });
-        ret.add(new String[] { "metartx.com" });
-        ret.add(new String[] { "rylskyart.com" });
-        ret.add(new String[] { "stunning18.com" });
-        ret.add(new String[] { "thelifeerotic.com" });
-        ret.add(new String[] { "vivthomas.com" });
-        return ret;
+        return MetArtCom.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -125,10 +111,9 @@ public class MetArt extends PluginForDecrypt {
             if (PluginJsonConfig.get(getLazyC(), MetartConfig.class).getPhotoCrawlMode() == PhotoCrawlMode.ZIP_BEST) {
                 br.getPage("https://www." + this.getHost() + "/api/gallery?name=" + galleryname + "&date=" + date + "&mediaFirst=42&page=1");
                 if (br.getHttpConnection().getResponseCode() == 404) {
-                    ret.add(this.createOfflinelink(param.getCryptedUrl()));
-                    return ret;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                 final String uuid = (String) entries.get("UUID");
                 entries = (Map<String, Object>) entries.get("files");
                 entries = (Map<String, Object>) entries.get("sizes");
@@ -152,10 +137,9 @@ public class MetArt extends PluginForDecrypt {
             } else {
                 br.getPage("https://www." + this.getHost() + "/api/image?name=" + galleryname + "&date=" + date + "&order=5&mediaType=gallery");
                 if (br.getHttpConnection().getResponseCode() == 404) {
-                    ret.add(this.createOfflinelink(param.getCryptedUrl()));
-                    return ret;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                 final List<Object> imagesO = (List<Object>) entries.get("media");
                 for (final Object imageO : imagesO) {
                     entries = (Map<String, Object>) imageO;
@@ -183,28 +167,32 @@ public class MetArt extends PluginForDecrypt {
             final String modelname = urlinfo.getMatch(0);
             final String date = urlinfo.getMatch(1);
             final String galleryname = urlinfo.getMatch(2);
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(modelname + " - " + date + " - " + galleryname);
             br.getPage("https://www." + this.getHost() + "/api/movie?name=" + galleryname + "&date=" + date);
             if (br.getHttpConnection().getResponseCode() == 404) {
-                ret.add(this.createOfflinelink(param.getCryptedUrl()));
-                return ret;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(modelname + " - " + date + " - " + galleryname);
+            fp.setComment(entries.get("description").toString());
             final String title = (String) entries.get("name");
             final String description = (String) entries.get("description");
             final String uuid = (String) entries.get("UUID");
             if (StringUtils.isEmpty(title) || StringUtils.isEmpty(uuid)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            entries = (Map<String, Object>) entries.get("files");
-            final List<Object> teasersO = (List<Object>) entries.get("teasers");
-            Map<String, Object> sizes = (Map<String, Object>) entries.get("sizes");
-            final List<Object> videoQualitiesO = (List<Object>) sizes.get("videos");
-            for (final Object videoO : videoQualitiesO) {
-                entries = (Map<String, Object>) videoO;
-                final String id = (String) entries.get("id");
-                final String filesizeStr = (String) entries.get("size");
+            final Map<String, Object> files = (Map<String, Object>) entries.get("files");
+            final List<Object> teasersO = (List<Object>) files.get("teasers");
+            final Map<String, Object> sizes = (Map<String, Object>) files.get("sizes");
+            final List<Map<String, Object>> videoQualities = (List<Map<String, Object>>) sizes.get("videos");
+            final ArrayList<DownloadLink> crawledVideos = new ArrayList<DownloadLink>();
+            // TODO: Add setting to return best quality only
+            final boolean bestOnly = false;
+            long bestFilesize = -1;
+            DownloadLink bestQuality = null;
+            for (final Map<String, Object> video : videoQualities) {
+                final String id = (String) video.get("id");
+                final String filesizeStr = (String) video.get("size");
                 if (StringUtils.isEmpty(id) || StringUtils.isEmpty(filesizeStr)) {
                     /* Skip invalid objects */
                     continue;
@@ -218,7 +206,7 @@ public class MetArt extends PluginForDecrypt {
                     /* E.g. avi, wmv */
                     ext = id;
                 }
-                final String downloadurl = "https://www.metart.com/api/download-media/" + uuid + "/film/" + id;
+                final String downloadurl = "https://www." + this.getHost() + "/api/download-media/" + uuid + "/film/" + id;
                 String filename = modelname + " - " + title;
                 /* Do not e.g. generate filenames like "title_avi.avi" */
                 if (!ext.equals(id)) {
@@ -226,7 +214,8 @@ public class MetArt extends PluginForDecrypt {
                 }
                 filename += "." + ext;
                 final DownloadLink dl = new DownloadLink(plg, filename, this.getHost(), downloadurl, true);
-                dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+                final long filesize = SizeFormatter.getSize(filesizeStr);
+                dl.setDownloadSize(filesize);
                 dl.setAvailable(true);
                 /* Prefer server-filename which will be set on downloadstart. */
                 // dl.setFinalFileName(modelname + " - " + title + "_" + id + "." + ext);
@@ -236,7 +225,16 @@ public class MetArt extends PluginForDecrypt {
                 dl._setFilePackage(fp);
                 dl.setProperty(MetArtCom.PROPERTY_UUID, uuid);
                 dl.setProperty(MetArtCom.PROPERTY_QUALITY, id);
-                ret.add(dl);
+                crawledVideos.add(dl);
+                if (bestQuality == null || filesize > bestFilesize) {
+                    bestFilesize = filesize;
+                    bestQuality = dl;
+                }
+            }
+            if (bestOnly) {
+                ret.add(bestQuality);
+            } else {
+                ret.addAll(crawledVideos);
             }
             if (ret.isEmpty() && !teasersO.isEmpty()) {
                 /* No downloads found -> Fallback to trailer download */
@@ -248,8 +246,7 @@ public class MetArt extends PluginForDecrypt {
             } else if (ret.isEmpty()) {
                 /* Rare case */
                 logger.info("Failed to find any downloadable content");
-                ret.add(this.createOfflinelink(param.getCryptedUrl()));
-                return ret;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
             /* Unsupported URL */
