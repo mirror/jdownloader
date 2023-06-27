@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +24,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoStreamsbNet;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -40,7 +42,11 @@ import jd.plugins.PluginException;
 public class StreamsbNet extends XFileSharingProBasic {
     public StreamsbNet(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPurchasePremiumURL());
+        /**
+         * 2023-06-27: Removed login support as there are no download-advantages for premium users. </br>
+         * Also logging in is only possible via their "upload-domain" streamsb.com.
+         */
+        // this.enablePremium(super.getPurchasePremiumURL());
     }
 
     @Override
@@ -71,9 +77,36 @@ public class StreamsbNet extends XFileSharingProBasic {
          * </br>
          * streamsb.com is basically only a dummy entry here as no downloadlinks exist that can be used via this domain.
          */
-        ret.add(new String[] { "streamsb.com" });
-        ret.add(new String[] { "sblanh.com", "streamsb.net", "embedsb.com", "sbembed.com", "sbembed1.com", "sbembed2.com", "sbcloud1.com", "tubesb.com", "sbvideo.net", "playersb.com", "sbplay2.com", "sbplay2.xyz", "sbembed4.com", "javside.com", "watchsb.com", "sbfast.com", "sbfull.com", "javplaya.com", "streamsss.net", "kbjrecord.com", "lvturbo.com", "sbface.com", "sbrapid.com" });
+        ret.add(new String[] { "streamsb.com", "sblanh.com", "streamsb.net", "embedsb.com", "sbembed.com", "sbembed1.com", "sbembed2.com", "sbcloud1.com", "tubesb.com", "sbvideo.net", "playersb.com", "sbplay2.com", "sbplay2.xyz", "sbembed4.com", "javside.com", "watchsb.com", "sbfast.com", "sbfull.com", "javplaya.com", "streamsss.net", "kbjrecord.com", "lvturbo.com", "sbface.com", "sbrapid.com", "sblona.com" });
         return ret;
+    }
+
+    protected String[] getDownloadDomains() {
+        return new String[] { "sblanh.com", "streamsb.net", "embedsb.com", "sbembed.com", "sbembed1.com", "sbembed2.com", "sbcloud1.com", "tubesb.com", "sbvideo.net", "playersb.com", "sbplay2.com", "sbplay2.xyz", "sbembed4.com", "javside.com", "watchsb.com", "sbfast.com", "sbfull.com", "javplaya.com", "streamsss.net", "kbjrecord.com", "lvturbo.com", "sbface.com", "sbrapid.com", "sblona.com" };
+    }
+
+    private boolean isDownloadDomain(final String domain) {
+        final String[] downloadDomains = getDownloadDomains();
+        if (downloadDomains == null) {
+            return true;
+        } else {
+            for (final String downloadDomain : downloadDomains) {
+                if (domain.equalsIgnoreCase(downloadDomain)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    @Override
+    protected String getPreferredHost(final DownloadLink link, URL url) {
+        final String[] downloadDomains = getDownloadDomains();
+        if (isDownloadDomain(url.getHost()) || downloadDomains == null) {
+            return url.getHost();
+        } else {
+            return downloadDomains[0];
+        }
     }
 
     private final String EXTENDED_FILENAME_RESULT   = "extended_filename_result";
@@ -87,9 +120,8 @@ public class StreamsbNet extends XFileSharingProBasic {
     @Override
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         /* Beware! This is full of nasty workarounds! */
-        AvailableStatus result = null;
         final String contentURL = this.getContentURL(link);
-        result = super.requestFileInformationWebsite(link, account, isDownload);
+        AvailableStatus result = super.requestFileInformationWebsite(link, account, isDownload);
         String specialFilenameResult = null;
         final Boolean isOfficiallyDownloadable = (Boolean) link.getProperty(IS_OFFICIALLY_DOWNLOADABLE);
         if (contentURL.matches("https?://[^/]+/c/[a-z0-9]{12}.*") && Boolean.FALSE.equals(isOfficiallyDownloadable)) {
@@ -118,7 +150,7 @@ public class StreamsbNet extends XFileSharingProBasic {
                 link.setPluginPatternMatcher(pluginpatternmatcherOld);
             }
         }
-        if (br.getURL().matches("https?://[^/]+/d/[a-z0-9]{12}.*") && !link.hasProperty(EXTENDED_FILENAME_RESULT) && StringUtils.isEmpty(specialFilenameResult)) {
+        if (br.getURL().matches("(?i)https?://[^/]+/d/[a-z0-9]{12}.*") && !link.hasProperty(EXTENDED_FILENAME_RESULT) && StringUtils.isEmpty(specialFilenameResult)) {
             /*
              * 2021-11-18: Workaround e.g. for items for which uploader has disabled download button because upper handling will fail to
              * find a nice filename.
@@ -148,6 +180,7 @@ public class StreamsbNet extends XFileSharingProBasic {
 
     @Override
     public String rewriteHost(final String host) {
+        /* This host is frequently changing its' main domain. */
         return this.rewriteHost(getPluginDomains(), host);
     }
 
@@ -242,7 +275,7 @@ public class StreamsbNet extends XFileSharingProBasic {
         String videoQualityStr = null;
         String videoHash = null;
         String targetHTML = null;
-        final String userSelectedQualityValue = getPreferredDownloadQuality();
+        final String userSelectedQualityValue = getPreferredDownloadQualityStr();
         boolean foundUserSelectedQuality = false;
         if (userSelectedQualityValue == null) {
             logger.info("Trying to find highest quality for official video download");
@@ -321,7 +354,11 @@ public class StreamsbNet extends XFileSharingProBasic {
              * Last chance attempt to find filesize for selected quality. Only allow units "MB" and "GB" as most filesizes will have one of
              * these units.
              */
-            final String[] filesizeCandidates = br.getRegex("(\\d+(?:\\.\\d{1,2})? *(MB|GB))").getColumn(0);
+            String[] filesizeCandidates = br.getRegex("(\\d+(?:\\.\\d{1,2})? *(MB|GB))\\)\\s*</span>").getColumn(0);
+            if (filesizeCandidates == null || filesizeCandidates.length == 0) {
+                /* Wider attempt */
+                filesizeCandidates = br.getRegex("(\\d+(?:\\.\\d{1,2})? *(MB|GB))").getColumn(0);
+            }
             /* Are there as many filesizes available as there are video qualities --> Chose correct filesize by index */
             if (filesizeCandidates.length == videoQualityHTMLs.length) {
                 filesizeStr = filesizeCandidates[selectedQualityIndex];
@@ -399,5 +436,10 @@ public class StreamsbNet extends XFileSharingProBasic {
     @Override
     protected boolean isShortURL(final DownloadLink link) {
         return false;
+    }
+
+    @Override
+    public Class<? extends XFSConfigVideoStreamsbNet> getConfigInterface() {
+        return XFSConfigVideoStreamsbNet.class;
     }
 }

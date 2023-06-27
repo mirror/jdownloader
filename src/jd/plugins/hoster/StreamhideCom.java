@@ -179,7 +179,7 @@ public class StreamhideCom extends XFileSharingProBasic {
         String filesizeStrSelected = null;
         String videoURLBest = null;
         String videoURLSelected = null;
-        final String userSelectedQualityValue = getPreferredDownloadQuality();
+        final String userSelectedQualityValue = getPreferredDownloadQualityStr();
         if (userSelectedQualityValue == null) {
             logger.info("Trying to find highest quality for official video download");
         } else {

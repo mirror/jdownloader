@@ -1969,7 +1969,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         String videoQualityStr = null;
         String videoHash = null;
         String targetHTML = null;
-        final String userSelectedQualityValue = getPreferredDownloadQuality();
+        final String userSelectedQualityValue = getPreferredDownloadQualityStr();
         boolean foundUserSelectedQuality = false;
         if (userSelectedQualityValue == null) {
             logger.info("Trying to find highest quality for official video download");
@@ -2116,7 +2116,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      *         l = low </br>
      *         null = No selection/Grab BEST available
      */
-    protected String getPreferredDownloadQuality() {
+    protected String getPreferredDownloadQualityStr() {
         final Class<? extends XFSConfigVideo> cfgO = getVideoConfigInterface();
         if (cfgO != null) {
             final XFSConfigVideo cfg = PluginJsonConfig.get(cfgO);

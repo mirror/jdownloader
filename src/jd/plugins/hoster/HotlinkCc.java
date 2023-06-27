@@ -418,7 +418,7 @@ public class HotlinkCc extends XFileSharingProBasic {
         String filesizeStr = null;
         String videoQualityStr = null;
         String targetHTML = null;
-        final String userSelectedQualityValue = getPreferredDownloadQuality();
+        final String userSelectedQualityValue = getPreferredDownloadQualityStr();
         boolean foundUserSelectedQuality = false;
         if (userSelectedQualityValue == null) {
             logger.info("Trying to find highest quality for official video download");
