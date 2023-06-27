@@ -339,7 +339,6 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
         if (folderID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
         Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null && CAN_HANDLE_PRIVATE_FOLDERS) {
             logger.info("Account available -> Logging in");
@@ -347,7 +346,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
         } else {
             logger.info("Account available -> Can't login (disabled by developer)");
             account = null;
-            ((jd.plugins.hoster.GoogleDrive) hostPlugin).prepBrowser(this.br);
+            GoogleDrive.prepBrowser(this.br);
         }
         br.setFollowRedirects(true);
         /* 2021-05-31: Folders can redirect to other folderIDs. Most likely we got a "Shortcut" then --> Very rare case */
@@ -522,13 +521,14 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
     }
 
     private static String getCurrentFolderTitleWebsite(final Browser br) {
-        String currentFolderTitle = br.getRegex("\"title\":\"([^\"]+)\",\"urlPrefix\"").getMatch(0);
-        if (currentFolderTitle == null) {
-            currentFolderTitle = br.getRegex("<title>([^<>\"]*?) (-|–) Google Drive</title>").getMatch(0);
+        String title = br.getRegex("\"title\":\"([^\"]+)\",\"urlPrefix\"").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
         }
-        if (!StringUtils.isEmpty(currentFolderTitle)) {
-            currentFolderTitle = Encoding.htmlDecode(currentFolderTitle).trim();
-            return currentFolderTitle;
+        if (!StringUtils.isEmpty(title)) {
+            title = Encoding.htmlDecode(title).trim();
+            title = title.replaceFirst(" (?:–|\\-) Google Drive$", "");
+            return title;
         } else {
             return null;
         }
@@ -682,8 +682,8 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
     }
 
     public void loginWebsite(final Browser br, final Account account) throws Exception {
-        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-        ((jd.plugins.hoster.GoogleDrive) plg).loginWebsite(this.br, account, false);
+        final GoogleDrive plg = (GoogleDrive) this.getNewPluginForHostInstance(this.getHost());
+        plg.loginWebsite(this.br, account, false);
     }
 
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {

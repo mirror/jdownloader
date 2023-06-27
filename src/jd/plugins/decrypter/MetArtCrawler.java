@@ -13,6 +13,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.MetartConfig;
 import org.jdownloader.plugins.components.config.MetartConfig.PhotoCrawlMode;
+import org.jdownloader.plugins.components.config.MetartConfig.VideoCrawlMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -31,7 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.GenericM3u8;
 import jd.plugins.hoster.MetArtCom;
 
@@ -96,10 +96,11 @@ public class MetArtCrawler extends PluginForDecrypt {
         if (useAcc == null) {
             throw new AccountRequiredException();
         }
-        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        final MetArtCom plg = (MetArtCom) this.getNewPluginForHostInstance(this.getHost());
         plg.setBrowser(this.br);
-        ((jd.plugins.hoster.MetArtCom) plg).login(useAcc, false);
+        plg.login(useAcc, false);
         br.setFollowRedirects(true);
+        final MetartConfig cfg = PluginJsonConfig.get(getLazyC(), MetartConfig.class);
         if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
             /* New 2020-12-07 */
             final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_GALLERY);
@@ -108,7 +109,7 @@ public class MetArtCrawler extends PluginForDecrypt {
             final String galleryname = urlinfo.getMatch(2);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(modelname + " - " + date + " - " + galleryname);
-            if (PluginJsonConfig.get(getLazyC(), MetartConfig.class).getPhotoCrawlMode() == PhotoCrawlMode.ZIP_BEST) {
+            if (cfg.getPhotoCrawlMode() == PhotoCrawlMode.ZIP_BEST) {
                 br.getPage("https://www." + this.getHost() + "/api/gallery?name=" + galleryname + "&date=" + date + "&mediaFirst=42&page=1");
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -139,16 +140,11 @@ public class MetArtCrawler extends PluginForDecrypt {
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
-                final List<Object> imagesO = (List<Object>) entries.get("media");
-                for (final Object imageO : imagesO) {
-                    entries = (Map<String, Object>) imageO;
-                    final String uuid = (String) entries.get("UUID");
-                    final String url = (String) JavaScriptEngineFactory.walkJson(entries, "src_downloadable/high");
-                    if (StringUtils.isEmpty(url) || StringUtils.isEmpty(uuid)) {
-                        /* Skip invalid objects */
-                        continue;
-                    }
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final List<Map<String, Object>> imagesO = (List<Map<String, Object>>) entries.get("media");
+                for (final Map<String, Object> image : imagesO) {
+                    final String uuid = image.get("UUID").toString();
+                    final String url = JavaScriptEngineFactory.walkJson(image, "src_downloadable/high").toString();
                     final String filenameURL = UrlQuery.parse(url).get("filename");
                     final DownloadLink dl = new DownloadLink(plg, filenameURL, this.getHost(), url, true);
                     dl.setAvailable(true);
@@ -186,17 +182,10 @@ public class MetArtCrawler extends PluginForDecrypt {
             final Map<String, Object> sizes = (Map<String, Object>) files.get("sizes");
             final List<Map<String, Object>> videoQualities = (List<Map<String, Object>>) sizes.get("videos");
             final ArrayList<DownloadLink> crawledVideos = new ArrayList<DownloadLink>();
-            // TODO: Add setting to return best quality only
-            final boolean bestOnly = false;
             long bestFilesize = -1;
             DownloadLink bestQuality = null;
             for (final Map<String, Object> video : videoQualities) {
-                final String id = (String) video.get("id");
-                final String filesizeStr = (String) video.get("size");
-                if (StringUtils.isEmpty(id) || StringUtils.isEmpty(filesizeStr)) {
-                    /* Skip invalid objects */
-                    continue;
-                }
+                final String id = video.get("id").toString();
                 final String ext;
                 if (id.matches("\\d+p")) {
                     ext = "mp4";
@@ -214,7 +203,7 @@ public class MetArtCrawler extends PluginForDecrypt {
                 }
                 filename += "." + ext;
                 final DownloadLink dl = new DownloadLink(plg, filename, this.getHost(), downloadurl, true);
-                final long filesize = SizeFormatter.getSize(filesizeStr);
+                final long filesize = SizeFormatter.getSize(video.get("size").toString());
                 dl.setDownloadSize(filesize);
                 dl.setAvailable(true);
                 /* Prefer server-filename which will be set on downloadstart. */
@@ -231,7 +220,7 @@ public class MetArtCrawler extends PluginForDecrypt {
                     bestQuality = dl;
                 }
             }
-            if (bestOnly) {
+            if (cfg.getVideoCrawlMode() == VideoCrawlMode.BEST) {
                 ret.add(bestQuality);
             } else {
                 ret.addAll(crawledVideos);

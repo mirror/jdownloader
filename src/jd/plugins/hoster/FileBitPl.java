@@ -113,7 +113,7 @@ public class FileBitPl extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 0;
+        return -1;
     }
 
     @Override
@@ -152,11 +152,9 @@ public class FileBitPl extends PluginForHost {
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
-                mhm.handleErrorGeneric(account, link, "403dlerror", 20);
-            } else if (br.containsHTML("<title>FileBit\\.pl \\- Error</title>")) {
-                mhm.handleErrorGeneric(account, link, "dlerror_known_but_unsure", 20);
+                mhm.handleErrorGeneric(account, link, "Server error 403", 50);
             } else {
-                mhm.handleErrorGeneric(account, link, "dlerror_unknown", 50);
+                mhm.handleErrorGeneric(account, link, "Final downloadlink did not lead to file", 50);
             }
         }
         this.dl.startDownload();
@@ -174,22 +172,22 @@ public class FileBitPl extends PluginForHost {
 
     private String getDllinkAPI(final Account account, final DownloadLink link) throws Exception {
         this.loginAPI(account);
-        long total_numberof_waittime_loops_for_current_fileID = 0;
-        final long max_total_numberof_waittime_loops_for_current_fileID = 200;
         String fileID = link.getStringProperty("filebitpl_fileid");
         final String sessionid = this.getSessionID(account);
+        final boolean isFreshlyGeneratedFileID;
+        long loopCounter = 0;
         if (!StringUtils.isEmpty(fileID)) {
             /*
              * 2019-08-19: If a downloadlink has previously been created successfully with that fileID and upper handling fails to re-use
              * that generated directURL, re-using the old fileID to generate a new downloadurl will not use up any traffic of the users'
              * account either!!
              */
-            logger.info("Found saved fileID: " + fileID);
+            loopCounter = link.getLongProperty("filebitpl_fileid_total_numberof_waittime_loops", 0);
+            logger.info("Re-using saved fileID: " + fileID + " | loopCounter=" + loopCounter);
             logger.info("--> We've tried to download this URL before --> Trying to re-use old fileID as an attempt not to waste any traffic (this multihoster has a bad traffic-counting-system)");
-            total_numberof_waittime_loops_for_current_fileID = link.getLongProperty("filebitpl_fileid_total_numberof_waittime_loops", 0);
-            logger.info("Stored fileID already went through serverside-download-loops in the past for x-times: " + total_numberof_waittime_loops_for_current_fileID);
+            isFreshlyGeneratedFileID = false;
         } else {
-            /* This initiates a serverside download. The user will be charged for the full amount of traffic immediately! */
+            /* This initiates a serverside download. The user will be charged for the full amount of traffic immediately. */
             logger.info("Failed to find any old fileID --> Initiating a new serverside queue-download");
             br.getPage(API_BASE + "?a=addNewFile&sessident=" + sessionid + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             final Map<String, Object> resp = handleAPIErrors(br, account, link);
@@ -198,12 +196,13 @@ public class FileBitPl extends PluginForHost {
             fileID = data.get("fileId").toString();
             if (StringUtils.isEmpty(fileID)) {
                 /* This should never happen */
-                mhm.handleErrorGeneric(account, link, "Failed to find fileID", 20);
+                mhm.handleErrorGeneric(account, link, "Failed to find serverside fileID", 20);
             }
             /* Save this ID so that in case of an error or aborted downloads we can re-use it without wasting the users' traffic. */
             link.setProperty("filebitpl_fileid", fileID);
+            isFreshlyGeneratedFileID = true;
         }
-        int loop = 0;
+        final int maxLoops = 200;
         int lastProgressValue = 0;
         int timesWithoutProgressChange = 0;
         final int timesWithoutProgressChangeMax = 10;
@@ -216,48 +215,50 @@ public class FileBitPl extends PluginForHost {
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                     link.removeProperty("filebitpl_fileid");
-                    mhm.handleErrorGeneric(account, link, "Cached fileID is not available anymore", 20);
+                    if (isFreshlyGeneratedFileID) {
+                        mhm.handleErrorGeneric(account, link, "Freshly generated fileID is unavailable", 20);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Cached fileID is not available anymore");
+                    }
                 } else {
                     throw e;
                 }
             }
             final int status = ((Number) resp.get("status")).intValue();
-            serverDownloadFinished = status == 3;
             if (status == 3) {
                 serverDownloadFinished = true;
                 break;
-            } else {
-                /* Progress is only available when status == 2 */
-                int progressPercentTemp = 0;
-                final Object progressO = resp.get("progress");
-                String info = resp.get("info").toString();
-                info += ": %s%%";
-                final String progressHumanReadable;
-                if (progressO != null && progressO.toString().matches("\\d+")) {
-                    final String progressStr = progressO.toString();
-                    progressPercentTemp = Integer.parseInt(progressStr);
-                    progressHumanReadable = progressStr;
-                } else {
-                    progressHumanReadable = "?";
-                }
-                if (progressPercentTemp == lastProgressValue) {
-                    timesWithoutProgressChange++;
-                    logger.info("No progress change in loop number: " + timesWithoutProgressChange);
-                } else {
-                    lastProgressValue = progressPercentTemp;
-                    /* Reset counter */
-                    timesWithoutProgressChange = 0;
-                }
-                info = String.format(info, progressHumanReadable);
-                sleep(5000l, link, info);
-                loop++;
             }
+            /* Progress is only available when status == 2 */
+            int progressPercentTemp = 0;
+            final Object progressO = resp.get("progress");
+            String infotext = resp.get("info").toString();
+            infotext += ": %s%%";
+            final String progressHumanReadable;
+            if (progressO != null && progressO.toString().matches("\\d+")) {
+                final String progressStr = progressO.toString();
+                progressPercentTemp = Integer.parseInt(progressStr);
+                progressHumanReadable = progressStr;
+            } else {
+                progressHumanReadable = "?";
+            }
+            if (progressPercentTemp == lastProgressValue) {
+                timesWithoutProgressChange++;
+                logger.info("No progress change in loop number: " + timesWithoutProgressChange);
+            } else {
+                lastProgressValue = progressPercentTemp;
+                /* Reset counter */
+                timesWithoutProgressChange = 0;
+            }
+            logger.info("Loop " + loopCounter + " | " + infotext);
             if (timesWithoutProgressChange >= timesWithoutProgressChangeMax) {
                 logger.info("No progress change in " + timesWithoutProgressChangeMax + " loops: Giving up");
                 break;
             }
-            logger.info("total_numberof_waittime_loops_for_current_fileID: " + total_numberof_waittime_loops_for_current_fileID);
-            if (total_numberof_waittime_loops_for_current_fileID >= max_total_numberof_waittime_loops_for_current_fileID) {
+            infotext = String.format(infotext, progressHumanReadable);
+            sleep(5000l, link, infotext);
+            loopCounter++;
+            if (loopCounter >= maxLoops) {
                 /*
                  * Too many attempts for current fileID --> Next retry will create a new fileID which will charge the full amount of traffic
                  * for this file (again).
@@ -266,14 +267,11 @@ public class FileBitPl extends PluginForHost {
                 logger.info("Next attempt will charge traffic again");
                 link.removeProperty("filebitpl_fileid");
                 link.removeProperty("filebitpl_fileid_total_numberof_waittime_loops");
+                break;
             }
-            /*
-             * Only display this logger and save filebitpl_fileid_total_numberof_waittime_loops if we did over 0 loops for this
-             * download-attempt!
-             */
-            link.setProperty("filebitpl_fileid_total_numberof_waittime_loops", total_numberof_waittime_loops_for_current_fileID);
-            total_numberof_waittime_loops_for_current_fileID++;
-        } while (!serverDownloadFinished && loop <= 200);
+            link.setProperty("filebitpl_fileid_total_numberof_waittime_loops", loopCounter);
+            loopCounter++;
+        } while (!serverDownloadFinished && loopCounter <= maxLoops);
         if (!serverDownloadFinished) {
             /* Rare case */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server transfer retry count exhausted", 5 * 60 * 1000l);
@@ -281,13 +279,14 @@ public class FileBitPl extends PluginForHost {
         // final String expires = getJson("expires");
         link.setProperty("filebitpl_resumable", resp.get("resume"));
         link.setProperty("filebitpl_maxconnections", resp.get("chunks"));
-        return resp.get("downloadurl").toString();
+        return resp.get("downloadUrl").toString();
     }
 
     /**
      * 2019-08-19: Keep in mind: This may waste traffic as it is not (yet) able to re-use previously generated "filebit.pl fileIDs".</br>
      * DO NOT USE THIS AS LONG AS THEIR API IS WORKING FINE!!!
      */
+    @Deprecated
     private String getDllinkWebsite(final Account account, final DownloadLink link) throws Exception {
         this.loginWebsite(account);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -524,14 +523,17 @@ public class FileBitPl extends PluginForHost {
         return account.getStringProperty("sessionid");
     }
 
+    /** Deletes session information of given account. */
     private void dumpSessionID(final Account account) {
         account.removeProperty("sessionid");
     }
 
+    @Deprecated
     private boolean isLoggedinHTMLWebsite() {
         return br.containsHTML("class=\"wyloguj\"");
     }
 
+    @Deprecated
     private void loginWebsite(final Account account) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
             try {
@@ -565,21 +567,14 @@ public class FileBitPl extends PluginForHost {
                         /* 2018-02-13: Fallback-key */
                         reCaptchaKey = "6Lcu5AcUAAAAAC9Hkb6eFqM2P_YLMbI39eYi7KUm";
                     }
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    if (dlinkbefore == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
-                    }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey).getToken();
-                    if (dlinkbefore != null) {
-                        this.setDownloadLink(dlinkbefore);
-                    }
                     loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     br.submitForm(loginform);
                     final String redirect = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;URL=(http[^<>\"]+)\" />").getMatch(0);
                     if (redirect != null) {
                         br.getPage(redirect);
                     }
-                    final String sessionID = this.br.getCookie(this.br.getHost(), "PHPSESSID");
+                    final String sessionID = this.br.getCookie(this.br.getHost(), "PHPSESSID", Cookies.NOTDELETEDPATTERN);
                     if (sessionID == null || !isLoggedinHTMLWebsite()) {
                         // This should never happen
                         throw new AccountInvalidException();
@@ -620,16 +615,17 @@ public class FileBitPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             case 100:
                 dumpSessionID(account);
-                throw new AccountUnavailableException("Session expired #1", 1 * 60 * 1000l);
+                msg = "Session expired #1";
+                throw new AccountUnavailableException(msg, 1 * 60 * 1000l);
             case 200:
                 /* SessionID expired --> Refresh on next full login */
-                msg = "Invalid sessionID";
+                msg = "Session expired #2";
                 dumpSessionID(account);
-                throw new AccountUnavailableException("Session expired #2", 1 * 60 * 1000l);
+                throw new AccountUnavailableException(msg, 1 * 60 * 1000l);
             case 201:
                 /* MOCH server maintenance */
                 msg = "Server maintenance";
-                mhm.handleErrorGeneric(account, link, "server_maintenance", 10);
+                mhm.handleErrorGeneric(account, link, msg, 10);
             case 202:
                 /* Login/PW missing (should never happen) */
                 throw new AccountInvalidException(msg);
@@ -654,16 +650,16 @@ public class FileBitPl extends PluginForHost {
             case 211:
                 /* Host not supported -> Remove it from hostList */
                 msg = "Host not supported";
-                mhm.handleErrorGeneric(account, link, "Hoster unsupported", 5);
+                mhm.handleErrorGeneric(account, link, msg, 10);
             case 212:
                 /* Host offline -> Disable for 5 minutes */
                 msg = "Host offline";
-                mhm.handleErrorGeneric(account, link, "Hoster offline", 5);
+                mhm.handleErrorGeneric(account, link, msg, 5);
             case 213:
-                /* one day hosting links count limit reached. */
+                /* Daily links count limit reached. */
                 /* Przekroczyłeś dzienny limit ilości pobranych plików z tego hostingu. Spróbuj z linkami z innego hostingu. */
                 msg = "Daily limit reached";
-                mhm.handleErrorGeneric(account, link, "Daily limit reached", 1);
+                mhm.handleErrorGeneric(account, link, msg, 1);
             default:
                 /* unknown error, do not try again with this multihoster */
                 msg = "Unknown API error code: " + statuscode;

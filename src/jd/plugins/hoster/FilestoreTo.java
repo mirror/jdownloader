@@ -19,6 +19,12 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.FilestoreToConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -38,12 +44,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.FilestoreToConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "https?://(?:www\\.)?filestore\\.to/\\?d=([A-Z0-9]+)" })
 public class FilestoreTo extends PluginForHost {
@@ -333,9 +333,9 @@ public class FilestoreTo extends PluginForHost {
             checkErrors(link);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* Add a download slot */
+        controlMaxFreeDownloads(account, link, +1);
         try {
-            /* Add a download slot */
-            controlMaxFreeDownloads(account, link, +1);
             /* Start download */
             dl.startDownload();
         } finally {

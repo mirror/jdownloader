@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
@@ -58,6 +59,8 @@ public class LeechallIo extends PluginForHost {
     private final String                 PROPERTY_ACCOUNT_ACCESS_TOKEN      = "access_token";
     private final String                 PROPERTY_ACCOUNT_RECAPTCHA_SITEKEY = "recaptchasitekey";
     private final String                 RECAPTCHA_SITEKEY_STATIC           = "6LdqV7AiAAAAAK50kHwrESPTEwVuBpAX0MCrVI0e"; /* 2023-06-27 */
+    /* Don't touch the following! */
+    private static final AtomicInteger   runningDls                         = new AtomicInteger(0);
 
     public LeechallIo(PluginWrapper wrapper) {
         super(wrapper);
@@ -165,7 +168,30 @@ public class LeechallIo extends PluginForHost {
                 mhm.handleErrorGeneric(account, link, "Final downloadurl did not lead to file", 2, 5 * 60 * 1000l);
             }
         }
-        this.dl.startDownload();
+        /* Add a download slot */
+        controlMaxSimultaneousDownloads(account, link, +1);
+        try {
+            /* Start download */
+            dl.startDownload();
+        } finally {
+            /* Remove download slot */
+            controlMaxSimultaneousDownloads(account, link, -1);
+        }
+    }
+
+    protected void controlMaxSimultaneousDownloads(final Account account, final DownloadLink link, final int num) {
+        synchronized (runningDls) {
+            final int before = runningDls.get();
+            final int after = before + num;
+            runningDls.set(after);
+            logger.info("runningDls(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+        }
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /* 2023-06-28: Start downloads sequentially to avoid the need to solve multiple of those nasty captchas for premium users lol */
+        return runningDls.get() + 1;
     }
 
     @Override
@@ -174,6 +200,7 @@ public class LeechallIo extends PluginForHost {
         login(account, true);
         final Map<String, Object> resp;
         if (br.getURL().endsWith("/user/account")) {
+            /* Page we need has already been accessed before. */
             resp = this.checkErrorsWebapi(br, null, true);
         } else {
             resp = this.getUserInfoMap(br);
@@ -196,9 +223,8 @@ public class LeechallIo extends PluginForHost {
              */
             ai.setExpired(true);
         }
-        account.setType(AccountType.PREMIUM);
         final String expiredate = (String) data.get("expired_at");
-        if (expiredate != null) {
+        if (!StringUtils.isEmpty(expiredate)) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", Locale.US), br);
         }
         ai.setStatus(account.getType().getLabel() + " | Total downloaded: " + SizeFormatter.formatBytes(total_downloadedBytes.longValue()) + " | Files: " + total_files);
