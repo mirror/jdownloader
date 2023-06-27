@@ -1172,7 +1172,7 @@ public class TbCmV2 extends PluginForDecrypt {
     }
 
     /**
-     * Parse a playlist id and return all found video ids
+     * Parse a playlist id and return all found videoIDs.
      *
      * @param decryptedLinks
      * @param dupeCheckSet
@@ -1198,9 +1198,8 @@ public class TbCmV2 extends PluginForDecrypt {
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
         }
         br.getHeaders().put("Accept-Charset", null);
-        Browser brc = br.cloneBrowser();
-        helper.getPage(brc, getBase() + "/playlist?list=" + playlistID);
-        return parseListedPlaylist(helper, brc, videoID, playlistID, referenceUrl);
+        helper.getPage(br, getBase() + "/playlist?list=" + playlistID);
+        return parseListedPlaylist(helper, br, videoID, playlistID, referenceUrl);
     }
 
     protected String extractWebsiteTitle(final Browser br) {

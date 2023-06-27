@@ -147,7 +147,7 @@ public class LinkgenVip extends PluginForHost {
                     br.getPage("https://" + this.getHost() + "/");
                     if (isLoggedin(br)) {
                         logger.info("Cookie login successful");
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(this.br.getCookies(br.getHost()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
