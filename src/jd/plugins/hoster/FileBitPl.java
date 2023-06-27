@@ -39,6 +39,8 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -46,18 +48,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "" })
 public class FileBitPl extends PluginForHost {
-    private static final String          APIKEY    = "YWI3Y2E2NWM3OWQxYmQzYWJmZWU3NTRiNzY0OTM1NGQ5ODI3ZjlhNmNkZWY3OGE1MjQ0ZjU4NmM5NTNiM2JjYw==";
-    private static final String          API_BASE  = "https://filebit.pl/api/index.php";
-    private String                       sessionID = null;
+    private static final String          APIKEY   = "YWI3Y2E2NWM3OWQxYmQzYWJmZWU3NTRiNzY0OTM1NGQ5ODI3ZjlhNmNkZWY3OGE1MjQ0ZjU4NmM5NTNiM2JjYw==";
+    private static final String          API_BASE = "https://filebit.pl/api/index.php";
     /*
      * 2018-02-13: Their API is broken and only returns 404. Support did not respond which is why we now have website- and API support ...
      */
-    private static final boolean         USE_API   = true;
-    private static MultiHosterManagement mhm       = new MultiHosterManagement("filebit.pl");
+    private static final boolean         USE_API  = true;
+    private static MultiHosterManagement mhm      = new MultiHosterManagement("filebit.pl");
 
     public FileBitPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,16 +77,17 @@ public class FileBitPl extends PluginForHost {
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         br.setAllowedResponseCodes(new int[] { 401, 204, 403, 404, 497, 500, 503 });
+        br.setFollowRedirects(true);
         return br;
     }
 
-    private Browser newBrowserWebsite() {
-        br = new Browser();
+    private Browser prepBrowserWebsite(final Browser br) {
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
+        br.setFollowRedirects(true);
         return br;
     }
 
@@ -121,26 +122,6 @@ public class FileBitPl extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        /* we want to follow redirects in final stage */
-        br.setFollowRedirects(true);
-        br.setCurrentURL(null);
-        final int maxChunks = (int) account.getLongProperty("maxconnections", 1);
-        link.setProperty("filebitpldirectlink", dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                mhm.handleErrorGeneric(account, link, "403dlerror", 20);
-            } else if (br.containsHTML("<title>FileBit\\.pl \\- Error</title>")) {
-                mhm.handleErrorGeneric(account, link, "dlerror_known_but_unsure", 20);
-            } else {
-                mhm.handleErrorGeneric(account, link, "dlerror_unknown", 50);
-            }
-        }
-        this.dl.startDownload();
-    }
-
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
@@ -158,10 +139,27 @@ public class FileBitPl extends PluginForHost {
             /* request Download */
             dllink = getDllink(account, link);
             if (StringUtils.isEmpty(dllink)) {
-                mhm.handleErrorGeneric(account, link, "dllinknull", 20);
+                mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 50);
             }
         }
-        handleDL(account, link, dllink);
+        br.setCurrentURL(null);
+        int maxChunks = (int) account.getLongProperty("filebitpl_maxconnections", 1);
+        if (maxChunks > 1) {
+            maxChunks = -maxChunks;
+        }
+        link.setProperty("filebitpldirectlink", dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), maxChunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
+            if (dl.getConnection().getResponseCode() == 403) {
+                mhm.handleErrorGeneric(account, link, "403dlerror", 20);
+            } else if (br.containsHTML("<title>FileBit\\.pl \\- Error</title>")) {
+                mhm.handleErrorGeneric(account, link, "dlerror_known_but_unsure", 20);
+            } else {
+                mhm.handleErrorGeneric(account, link, "dlerror_unknown", 50);
+            }
+        }
+        this.dl.startDownload();
     }
 
     private String getDllink(final Account account, final DownloadLink link) throws Exception {
@@ -178,28 +176,29 @@ public class FileBitPl extends PluginForHost {
         this.loginAPI(account);
         long total_numberof_waittime_loops_for_current_fileID = 0;
         final long max_total_numberof_waittime_loops_for_current_fileID = 200;
-        String fileID = link.getStringProperty("filebitpl_fileid", null);
+        String fileID = link.getStringProperty("filebitpl_fileid");
+        final String sessionid = this.getSessionID(account);
         if (!StringUtils.isEmpty(fileID)) {
             /*
              * 2019-08-19: If a downloadlink has previously been created successfully with that fileID and upper handling fails to re-use
              * that generated directURL, re-using the old fileID to generate a new downloadurl will not use up any traffic of the users'
              * account either!!
              */
-            logger.info("Found saved fileID:  + fileID");
+            logger.info("Found saved fileID: " + fileID);
             logger.info("--> We've tried to download this URL before --> Trying to re-use old fileID as an attempt not to waste any traffic (this multihoster has a bad traffic-counting-system)");
             total_numberof_waittime_loops_for_current_fileID = link.getLongProperty("filebitpl_fileid_total_numberof_waittime_loops", 0);
             logger.info("Stored fileID already went through serverside-download-loops in the past for x-times: " + total_numberof_waittime_loops_for_current_fileID);
         } else {
             /* This initiates a serverside download. The user will be charged for the full amount of traffic immediately! */
             logger.info("Failed to find any old fileID --> Initiating a new serverside queue-download");
-            br.getPage(API_BASE + "?a=addNewFile&sessident=" + sessionID + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-            handleAPIErrors(br, account, link);
+            br.getPage(API_BASE + "?a=addNewFile&sessident=" + sessionid + "&url=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            final Map<String, Object> resp = handleAPIErrors(br, account, link);
+            final Map<String, Object> data = (Map<String, Object>) resp.get("data");
             /* Serverside fileID which refers to the current serverside download-process. */
-            fileID = PluginJSonUtils.getJson(br, "fileId");
+            fileID = data.get("fileId").toString();
             if (StringUtils.isEmpty(fileID)) {
                 /* This should never happen */
-                logger.warning("Failed to find fileID");
-                mhm.handleErrorGeneric(account, link, "fileidnull", 20);
+                mhm.handleErrorGeneric(account, link, "Failed to find fileID", 20);
             }
             /* Save this ID so that in case of an error or aborted downloads we can re-use it without wasting the users' traffic. */
             link.setProperty("filebitpl_fileid", fileID);
@@ -209,58 +208,55 @@ public class FileBitPl extends PluginForHost {
         int timesWithoutProgressChange = 0;
         final int timesWithoutProgressChangeMax = 10;
         boolean serverDownloadFinished = false;
-        try {
-            do {
-                br.getPage(API_BASE + "?a=checkFileStatus&sessident=" + sessionID + "&fileId=" + fileID);
-                final String error = PluginJSonUtils.getJson(br, "error");
-                final String errno = PluginJSonUtils.getJson(br, "errno");
-                if ("1".equals(error)) {
-                    if ("207".equals(errno)) {
-                        mhm.putError(account, link, 30 * 60 * 1000l, "Not enough traffic");
-                    } else if ("213".equals(errno)) {
-                        mhm.putError(account, link, 1 * 60 * 1000l, "Daily limit reached");
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String status = PluginJSonUtils.getJson(br, "status");
-                serverDownloadFinished = "3".equals(status);
-                if (serverDownloadFinished) {
-                    break;
+        Map<String, Object> resp = null;
+        do {
+            br.getPage(API_BASE + "?a=checkFileStatus&sessident=" + sessionid + "&fileId=" + fileID);
+            try {
+                resp = handleAPIErrors(br, account, link);
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    link.removeProperty("filebitpl_fileid");
+                    mhm.handleErrorGeneric(account, link, "Cached fileID is not available anymore", 20);
                 } else {
-                    /* Progress is only available when status == 2 */
-                    int progressTemp = 0;
-                    String progressStr = PluginJSonUtils.getJson(br, "progress");
-                    String info = PluginJSonUtils.getJson(br, "info");
-                    if (StringUtils.isEmpty(info)) {
-                        info = "File is in queue to be prepared";
-                    }
-                    info += ": %s%%";
-                    if (StringUtils.isEmpty(progressStr)) {
-                        progressStr = "0";
-                    }
-                    if (progressStr.matches("\\d+")) {
-                        progressTemp = Integer.parseInt(progressStr);
-                    }
-                    if (progressTemp == lastProgressValue) {
-                        timesWithoutProgressChange++;
-                        logger.info("No progress change in loop number: " + timesWithoutProgressChange);
-                    } else {
-                        lastProgressValue = progressTemp;
-                        /* Reset counter */
-                        timesWithoutProgressChange = 0;
-                    }
-                    info = String.format(info, progressStr);
-                    sleep(5000l, link, info);
-                    loop++;
+                    throw e;
                 }
-                if (timesWithoutProgressChange >= timesWithoutProgressChangeMax) {
-                    logger.info("No progress change in " + timesWithoutProgressChangeMax + " loops: Giving up");
-                    break;
+            }
+            final int status = ((Number) resp.get("status")).intValue();
+            serverDownloadFinished = status == 3;
+            if (status == 3) {
+                serverDownloadFinished = true;
+                break;
+            } else {
+                /* Progress is only available when status == 2 */
+                int progressPercentTemp = 0;
+                final Object progressO = resp.get("progress");
+                String info = resp.get("info").toString();
+                info += ": %s%%";
+                final String progressHumanReadable;
+                if (progressO != null && progressO.toString().matches("\\d+")) {
+                    final String progressStr = progressO.toString();
+                    progressPercentTemp = Integer.parseInt(progressStr);
+                    progressHumanReadable = progressStr;
+                } else {
+                    progressHumanReadable = "?";
                 }
-                logger.info("total_numberof_waittime_loops_for_current_fileID: " + total_numberof_waittime_loops_for_current_fileID);
-                total_numberof_waittime_loops_for_current_fileID++;
-            } while (!serverDownloadFinished && loop <= 200);
-        } finally {
+                if (progressPercentTemp == lastProgressValue) {
+                    timesWithoutProgressChange++;
+                    logger.info("No progress change in loop number: " + timesWithoutProgressChange);
+                } else {
+                    lastProgressValue = progressPercentTemp;
+                    /* Reset counter */
+                    timesWithoutProgressChange = 0;
+                }
+                info = String.format(info, progressHumanReadable);
+                sleep(5000l, link, info);
+                loop++;
+            }
+            if (timesWithoutProgressChange >= timesWithoutProgressChangeMax) {
+                logger.info("No progress change in " + timesWithoutProgressChangeMax + " loops: Giving up");
+                break;
+            }
+            logger.info("total_numberof_waittime_loops_for_current_fileID: " + total_numberof_waittime_loops_for_current_fileID);
             if (total_numberof_waittime_loops_for_current_fileID >= max_total_numberof_waittime_loops_for_current_fileID) {
                 /*
                  * Too many attempts for current fileID --> Next retry will create a new fileID which will charge the full amount of traffic
@@ -270,21 +266,22 @@ public class FileBitPl extends PluginForHost {
                 logger.info("Next attempt will charge traffic again");
                 link.removeProperty("filebitpl_fileid");
                 link.removeProperty("filebitpl_fileid_total_numberof_waittime_loops");
-            } else if (loop > 0) {
-                /*
-                 * Only display this logger and save filebitpl_fileid_total_numberof_waittime_loops if we did over 0 loops for this
-                 * download-attempt!
-                 */
-                logger.info("Current fileID went through this many loops: " + total_numberof_waittime_loops_for_current_fileID);
-                link.setProperty("filebitpl_fileid_total_numberof_waittime_loops", total_numberof_waittime_loops_for_current_fileID);
             }
-        }
+            /*
+             * Only display this logger and save filebitpl_fileid_total_numberof_waittime_loops if we did over 0 loops for this
+             * download-attempt!
+             */
+            link.setProperty("filebitpl_fileid_total_numberof_waittime_loops", total_numberof_waittime_loops_for_current_fileID);
+            total_numberof_waittime_loops_for_current_fileID++;
+        } while (!serverDownloadFinished && loop <= 200);
         if (!serverDownloadFinished) {
             /* Rare case */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server transfer retry count exhausted", 5 * 60 * 1000l);
         }
         // final String expires = getJson("expires");
-        return PluginJSonUtils.getJson(this.br, "downloadurl");
+        link.setProperty("filebitpl_resumable", resp.get("resume"));
+        link.setProperty("filebitpl_maxconnections", resp.get("chunks"));
+        return resp.get("downloadurl").toString();
     }
 
     /**
@@ -302,6 +299,11 @@ public class FileBitPl extends PluginForHost {
         // final String downloadlink_expires = (String) entries.get("expire");
         // final String internal_id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
         return (String) entries.get("download");
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return link.getBooleanProperty("filebitpl_resumable", false);
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
@@ -341,11 +343,9 @@ public class FileBitPl extends PluginForHost {
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         loginAPI(account);
-        br.getPage(API_BASE + "?a=accountStatus&sessident=" + sessionID);
-        handleAPIErrors(br, account, null);
-        account.setConcurrentUsePossible(true);
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        br.getPage(API_BASE + "?a=accountStatus&sessident=" + this.getSessionID(account));
+        final Map<String, Object> resp = handleAPIErrors(br, account, null);
+        final Map<String, Object> data = (Map<String, Object>) resp.get("data");
         final String accountDescription = data.get("acctype").toString();
         final String premium = data.get("premium").toString();
         final Number expires = (Number) data.get("expires");
@@ -370,47 +370,40 @@ public class FileBitPl extends PluginForHost {
         if (maxChunks > 1) {
             maxChunks = -maxChunks;
         }
-        account.setProperty("maxconnections", maxChunks);
+        account.setProperty("filebitpl_maxconnections", maxChunks);
         br.getPage(API_BASE + "?a=getHostList");
-        handleAPIErrors(br, account, null);
+        final Map<String, Object> resp2 = handleAPIErrors(br, account, null);
+        final List<Map<String, Object>> domaininfos = (List<Map<String, Object>>) resp2.get("data");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[] hostDomains = br.getRegex("\"hostdomains\":\\[(.*?)\\]").getColumn(0);
-        for (final String domains : hostDomains) {
-            final String[] realDomains = new Regex(domains, "\"(.*?)\"").getColumn(0);
-            for (final String realDomain : realDomains) {
-                supportedHosts.add(realDomain);
+        for (final Map<String, Object> domaininfo : domaininfos) {
+            final List<String> domains = (List<String>) domaininfo.get("hostdomains");
+            for (final String domain : domains) {
+                supportedHosts.add(domain);
             }
+        }
+        if (!"1".equals(premium)) {
+            account.setType(AccountType.FREE);
+        } else {
+            account.setType(AccountType.PREMIUM);
         }
         if (!StringUtils.isEmpty(accountDescription)) {
-            account.setType(AccountType.FREE);
             ai.setStatus(accountDescription);
-        } else {
-            if (!"1".equals(premium)) {
-                account.setType(AccountType.FREE);
-                ai.setStatus("Free Account");
-            } else {
-                account.setType(AccountType.PREMIUM);
-                ai.setStatus("Premium Account");
-            }
         }
         ai.setMultiHostSupport(this, supportedHosts);
+        account.setConcurrentUsePossible(true);
         return ai;
     }
 
+    @Deprecated
     public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        newBrowserWebsite();
+        prepBrowserWebsite(br);
         final AccountInfo ai = new AccountInfo();
         loginWebsite(account);
         br.getPage("/wykaz");
         account.setConcurrentUsePossible(true);
-        final boolean isPremium = br.containsHTML("KONTO <span>PREMIUM</span>");
+        final boolean isPremium = br.containsHTML("(?i)KONTO\\s*<span>\\s*PREMIUM\\s*</span>");
         if (!isPremium) {
-            final String lang = System.getProperty("user.language");
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            throw new AccountInvalidException("Unsupported account type!");
         }
         long timeleftMilliseconds = 0;
         final Regex timeleftHoursMinutes = br.getRegex("class=\"name\">(\\d+) godzin, (\\d+) minut</p>");
@@ -471,27 +464,24 @@ public class FileBitPl extends PluginForHost {
     // loginWebsite(account);
     // }
     // }
-    private void loginAPI(final Account account) throws IOException, PluginException, InterruptedException {
+    private Map<String, Object> loginAPI(final Account account) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
             try {
                 this.prepBrowserAPI(br);
-                sessionID = account.getStringProperty("sessionid");
+                String sessionID = getSessionID(account);
                 final long session_expire = account.getLongProperty("sessionexpire", 0);
                 if (!StringUtils.isEmpty(sessionID) && System.currentTimeMillis() < session_expire) {
                     /* Trust session to be valid */
-                    return;
+                    return null;
                 }
                 if (!StringUtils.isEmpty(sessionID)) {
                     logger.info("Checking sessionID");
                     try {
                         br.getPage(API_BASE + "?a=accountStatus&sessident=" + sessionID);
-                        handleAPIErrors(br, account, null);
-                        sessionID = account.getStringProperty("sessionid");
-                        if (!StringUtils.isEmpty(sessionID)) {
-                            logger.info("Validated stored sessionID");
-                            account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
-                            return;
-                        }
+                        final Map<String, Object> userinfo = handleAPIErrors(br, account, null);
+                        logger.info("Validated stored sessionID");
+                        account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
+                        return userinfo;
                     } catch (PluginException e) {
                         logger.log(e);
                     }
@@ -511,19 +501,16 @@ public class FileBitPl extends PluginForHost {
                 query.add("login", Encoding.urlEncode(account.getUser()));
                 query.add("password", Encoding.urlEncode(pwvalue));
                 br.getPage(API_BASE + "?" + query.toString());
-                handleAPIErrors(br, account, null);
-                sessionID = PluginJSonUtils.getJson(this.br, "sessident");
+                final Map<String, Object> resp = handleAPIErrors(br, account, null);
+                final Map<String, Object> data = (Map<String, Object>) resp.get("data");
+                sessionID = (String) data.get("sessident");
                 if (StringUtils.isEmpty(sessionID)) {
-                    if (br.getHttpConnection().getResponseCode() == 500) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    } else {
-                        /* This should never happen */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new AccountUnavailableException("Unknown error", 5 * 60 * 1000);
                 }
                 /* According to API documentation, sessionIDs are valid for 60 minutes */
                 account.setProperty("sessionexpire", System.currentTimeMillis() + 40 * 60 * 60 * 1000);
                 account.setProperty("sessionid", sessionID);
+                return resp;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     dumpSessionID(account);
@@ -531,6 +518,10 @@ public class FileBitPl extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private String getSessionID(final Account account) {
+        return account.getStringProperty("sessionid");
     }
 
     private void dumpSessionID(final Account account) {
@@ -588,10 +579,10 @@ public class FileBitPl extends PluginForHost {
                     if (redirect != null) {
                         br.getPage(redirect);
                     }
-                    sessionID = this.br.getCookie(this.br.getHost(), "PHPSESSID");
+                    final String sessionID = this.br.getCookie(this.br.getHost(), "PHPSESSID");
                     if (sessionID == null || !isLoggedinHTMLWebsite()) {
                         // This should never happen
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException();
                     }
                 }
                 account.saveCookies(br.getCookies(account.getHoster()), "");
@@ -604,18 +595,23 @@ public class FileBitPl extends PluginForHost {
         }
     }
 
-    private void handleAPIErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
-        String statusCode = br.getRegex("\"errno\"\\s*:\\s*(\\d+)").getMatch(0);
-        if (statusCode == null && br.containsHTML("\"result\":true")) {
-            statusCode = "999";
-        } else if (statusCode == null) {
-            statusCode = "0";
+    private Map<String, Object> handleAPIErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Object statuscodeO = entries.get("errno");
+        if (statuscodeO == null) {
+            /* No error */
+            return entries;
         }
-        String statusMessage = PluginJSonUtils.getJson(br, "error");
+        final int statuscode;
+        if (statuscodeO instanceof Number) {
+            statuscode = ((Number) statuscodeO).intValue();
+        } else {
+            statuscode = Integer.parseInt(statuscodeO.toString());
+        }
+        String msg = (String) entries.get("error");
         try {
             /* Should never happen: {"result":false,"errno":99,"error":"function not found"} */
-            int status = Integer.parseInt(statusCode);
-            switch (status) {
+            switch (statuscode) {
             case 0:
                 /* Everything ok */
                 break;
@@ -624,57 +620,64 @@ public class FileBitPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             case 100:
                 dumpSessionID(account);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException("Session expired #1", 1 * 60 * 1000l);
             case 200:
                 /* SessionID expired --> Refresh on next full login */
-                statusMessage = "Invalid sessionID";
+                msg = "Invalid sessionID";
                 dumpSessionID(account);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException("Session expired #2", 1 * 60 * 1000l);
             case 201:
                 /* MOCH server maintenance */
-                statusMessage = "Server maintenance";
+                msg = "Server maintenance";
                 mhm.handleErrorGeneric(account, link, "server_maintenance", 10);
             case 202:
                 /* Login/PW missing (should never happen) */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException(msg);
             case 203:
-                if (StringUtils.containsIgnoreCase(statusMessage, "Twoje IP zostalo zablokowane")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (StringUtils.containsIgnoreCase(msg, "Twoje IP zostalo zablokowane")) {
+                    // IP blocked
+                    throw new AccountUnavailableException(msg, 1 * 60 * 60 * 1000l);
+                } else {
+                    /* Invalid API key (should never happen) */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                /* Invalid API key (should never happen) */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             case 204:
-                /* Login/PW wrong or account temporary blocked (should never happen) */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /* Login/PW wrong or account temporary blocked */
+                throw new AccountInvalidException(msg);
             case 207:
                 /* Custom API error */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException(msg, 5 * 60 * 1000l);
             case 210:
                 /* Link offline */
-                statusMessage = "Link offline";
+                msg = "File offline";
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 211:
                 /* Host not supported -> Remove it from hostList */
-                statusMessage = "Host not supported";
-                mhm.handleErrorGeneric(account, link, "hoster_unsupported", 5);
+                msg = "Host not supported";
+                mhm.handleErrorGeneric(account, link, "Hoster unsupported", 5);
             case 212:
                 /* Host offline -> Disable for 5 minutes */
-                statusMessage = "Host offline";
-                mhm.handleErrorGeneric(account, link, "hoster_offline", 5);
+                msg = "Host offline";
+                mhm.handleErrorGeneric(account, link, "Hoster offline", 5);
             case 213:
                 /* one day hosting links count limit reached. */
                 /* Przekroczyłeś dzienny limit ilości pobranych plików z tego hostingu. Spróbuj z linkami z innego hostingu. */
-                statusMessage = "Daily limit reached";
-                mhm.handleErrorGeneric(account, link, "daily_limit_reached", 1);
+                msg = "Daily limit reached";
+                mhm.handleErrorGeneric(account, link, "Daily limit reached", 1);
             default:
                 /* unknown error, do not try again with this multihoster */
-                statusMessage = "Unknown API error code, please inform JDownloader Development Team";
-                mhm.handleErrorGeneric(account, link, "unknown_api_error", 20);
+                msg = "Unknown API error code: " + statuscode;
+                if (link == null) {
+                    throw new AccountUnavailableException(msg, 5 * 60 * 1000l);
+                } else {
+                    mhm.handleErrorGeneric(account, link, msg, 20);
+                }
             }
         } catch (final PluginException e) {
-            logger.info("Exception: statusCode: " + statusCode + " statusMessage: " + statusMessage);
+            logger.info("Exception: statusCode: " + statuscode + " statusMessage: " + msg);
             throw e;
         }
+        return entries;
     }
 
     @Override
