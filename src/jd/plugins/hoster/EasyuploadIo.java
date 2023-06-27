@@ -50,7 +50,7 @@ public class EasyuploadIo extends PluginForHost {
         return "https://easyupload.io/terms-of-use";
     }
 
-    private static List<String[]> getPluginDomains() {
+    public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "easyupload.io" });
@@ -77,7 +77,7 @@ public class EasyuploadIo extends PluginForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final int     FREE_MAXDOWNLOADS = -1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -100,9 +100,16 @@ public class EasyuploadIo extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*FILE NOT FOUND")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*FILE NOT FOUND")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        parseFileInfo(br, link);
+        return AvailableStatus.TRUE;
+    }
+
+    public static void parseFileInfo(final Browser br, final DownloadLink link) throws PluginException {
         String filename = br.getRegex("<h4>([^<>\"]+)</h4>").getMatch(0);
         String filesize = br.getRegex("(?i)\\s*Size:\\s*(\\d+(\\.\\d+)? [^ \"\\|]+)").getMatch(0);
         if (filename != null) {
@@ -116,7 +123,6 @@ public class EasyuploadIo extends PluginForHost {
             /* E.g. invalid URLs such as easyupload.io/login */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -134,7 +140,7 @@ public class EasyuploadIo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String passCode = null;
-            if (br.containsHTML("\\| Password Protected")) {
+            if (br.containsHTML("(?i)\\| Password Protected")) {
                 link.setPasswordProtected(true);
                 passCode = link.getDownloadPassword();
                 if (StringUtils.isEmpty(passCode)) {
