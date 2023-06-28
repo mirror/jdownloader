@@ -19,19 +19,10 @@ public interface Downloadable {
     Browser getContextBrowser();
 
     @Deprecated
-    String getMD5Hash();
-
-    @Deprecated
     public long[] getChunksProgress();
 
     @Deprecated
     public void setChunksProgress(long[] ls);
-
-    @Deprecated
-    String getSha1Hash();
-
-    @Deprecated
-    String getSha256Hash();
 
     LogInterface getLogger();
 
