@@ -32,6 +32,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,13 +67,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DepositFiles extends antiDDoSForHost {
@@ -121,6 +121,13 @@ public class DepositFiles extends antiDDoSForHost {
         return ret;
     }
 
+    /* Keep this updated and make use of it [in the future]. */
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("dfiles.ru");
+        return deadDomains;
+    }
+
     // private final String SETTING_PREFER_SOLVEMEDIA = "SETTING_PREFER_SOLVEMEDIA";
     // @Override
     // public String[] siteSupportedNames() {
@@ -133,12 +140,11 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     @Override
-    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
+    public String buildExternalDownloadURL(final DownloadLink link, PluginForHost buildForThisPlugin) {
         if (StringUtils.equals(getHost(), buildForThisPlugin.getHost())) {
-            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+            return super.buildExternalDownloadURL(link, buildForThisPlugin);
         } else {
-            final String fileID = new Regex(downloadLink.getPluginPatternMatcher(), "/files/([\\w]+)").getMatch(0);
-            return "https://dfiles.eu/files/" + fileID;
+            return "https://dfiles.eu/files/" + this.getFID(link);
         }
     }
 
@@ -188,20 +194,21 @@ public class DepositFiles extends antiDDoSForHost {
         }
     }
 
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
+    private String getContentURL(final DownloadLink link) {
         setMainpage();
-        final String currentDomain = Browser.getHost(link.getPluginPatternMatcher(), false);
-        if (!currentDomain.matches(DOMAINS)) {
+        String url = link.getPluginPatternMatcher();
+        final List<String> deadDomains = this.getDeadDomains();
+        final String domainFromURL = Browser.getHost(url, false);
+        if (!domainFromURL.matches(DOMAINS) || deadDomains.contains(domainFromURL)) {
             // this is needed to fix old users bad domain name corrections (say hotpspots/gateways)
             String mainPage = MAINPAGE.get();
             if (mainPage != null) {
                 mainPage = mainPage.replaceFirst("https://", "").replace("http://", "");
-                link.setUrlDownload(link.getPluginPatternMatcher().replace(currentDomain, mainPage));
+                url = url.replace(domainFromURL, mainPage);
             }
         }
-        final String newLink = link.getPluginPatternMatcher().replaceAll(DOMAINS + "(/.*?)?/files", MAINPAGE.get().replaceAll("https?://(www\\.)?", "") + "/de/files");
-        link.setUrlDownload(fixLinkSSL(newLink));
+        url = url.replaceAll(DOMAINS + "(/.*?)?/files", MAINPAGE.get().replaceAll("https?://(www\\.)?", "") + "/de/files");
+        return url;
     }
 
     @Override
@@ -210,8 +217,6 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
-        // correctlink fixes https|not https, and sets mainpage! no need to duplicate in other download areas!.
-        correctDownloadLink(link);
         setBrowserExclusive();
         if (account != null) {
             this.webLogin(account, false);
@@ -222,7 +227,7 @@ public class DepositFiles extends antiDDoSForHost {
         /* Needed so the download gets counted,any referer should work */
         // br.getHeaders().put("Referer", "http://www.google.de");
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(this.getContentURL(link));
         if (br.containsHTML("class=\"no_download_msg\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(downloadLimitReached)) {
@@ -779,7 +784,7 @@ public class DepositFiles extends antiDDoSForHost {
             logger.info(account.getUser() + " @ Gold Account :: Web download method in use");
             requestFileInformation(link);
             webLogin(account, false);
-            String url = link.getPluginPatternMatcher();
+            String url = this.getContentURL(link);
             br.setFollowRedirects(false);
             br.getPage(url);
             if (br.getRedirectLocation() != null) {
@@ -1152,7 +1157,7 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        String result = new Regex(link.getPluginPatternMatcher(), "files/([^/]+)").getMatch(0);
+        String result = new Regex(link.getPluginPatternMatcher(), "(?i)/files/([^/]+)").getMatch(0);
         return result;
     }
 

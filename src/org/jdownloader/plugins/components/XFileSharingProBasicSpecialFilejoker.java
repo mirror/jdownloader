@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -23,10 +27,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
@@ -107,18 +107,23 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
         handleSecurityVerification(br);
     }
 
+    protected boolean isSecurityVerificationRequired(final Browser br) {
+        if (StringUtils.containsIgnoreCase(br.getURL(), "op=captcha&id=") || br.containsHTML("(?i)<h1>\\s*Security Verification\\s*</h1>")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /* 2019-08-20: Special */
     protected void handleSecurityVerification(final Browser br) throws Exception {
-        if (br.getURL() != null && br.getURL().contains("op=captcha&id=")) {
+        if (isSecurityVerificationRequired(br)) {
             /*
              * 2019-01-23: Special - this may also happen in premium mode! This will only happen when accessing downloadurl. It gets e.g.
              * triggered when accessing a lot of different downloadurls in a small timeframe.
              */
             /* Tags: XFS_IP_CHECK /ip_check/ */
-            Form securityVerification = br.getFormbyProperty("name", "F1");
-            if (securityVerification == null) {
-                securityVerification = br.getFormbyProperty("id", "f1");
-            }
+            final Form securityVerification = getSecurityVerificationForm(br);
             if (securityVerification != null && securityVerification.containsHTML("data-sitekey")) {
                 logger.info("Handling securityVerification");
                 if (containsHCaptcha(getCorrectBR(br))) {
@@ -128,15 +133,28 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final boolean redirectSetting = br.isFollowingRedirects();
+                final boolean redirectBehavior = br.isFollowingRedirects();
                 br.setFollowRedirects(true);
                 try {
                     submitForm(br, securityVerification);
                 } finally {
-                    br.setFollowRedirects(redirectSetting);
+                    br.setFollowRedirects(redirectBehavior);
                 }
+                if (this.isSecurityVerificationRequired(br)) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            } else {
+                logger.warning("Failed to process security verification - subsequent handling may fail");
             }
         }
+    }
+
+    protected Form getSecurityVerificationForm(final Browser br) {
+        Form form = br.getFormbyProperty("name", "F1");
+        if (form == null) {
+            form = br.getFormbyProperty("id", "f1");
+        }
+        return form;
     }
 
     protected boolean useRandomUserAgentWebsite() {
@@ -157,8 +175,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     /**
      * Turns on/off special API for (Free-)Account Login & Download. Keep this activated whenever possible as it will solve a lot of
-     * issues/complicated handling which is required for website login and download! </br> Sidenote: API Cookies will work fine for the
-     * website too so if enabled- and later disabled, login-captchas should still be avoided!
+     * issues/complicated handling which is required for website login and download! </br>
+     * Sidenote: API Cookies will work fine for the website too so if enabled- and later disabled, login-captchas should still be avoided!
      */
     protected boolean useAPIZeusCloudManager(final Account account) {
         if (account != null) {
@@ -180,7 +198,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     /**
      * API login may avoid the need of login captchas. If enabled, ZeusCloudManagerAPI login will be tried even if API is disabled and
-     * resulting cookies will be used in website mode. Only enable this if tested! </br> default = false
+     * resulting cookies will be used in website mode. Only enable this if tested! </br>
+     * default = false
      */
     protected boolean tryAPILoginInWebsiteMode(final Account account) {
         return false;
@@ -188,8 +207,9 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
 
     /**
      * If enabled [and tryAPILoginInWebsiteMode enabled], API can be used to login- and obtain account information even if API is disabled
-     * and downloads will be executed via website. </br> If disabled [and tryAPILoginInWebsiteMode enabled], API can be used to login in
-     * website mode but account information will be obtained from website.
+     * and downloads will be executed via website. </br>
+     * If disabled [and tryAPILoginInWebsiteMode enabled], API can be used to login in website mode but account information will be obtained
+     * from website.
      */
     protected boolean tryAPILoginInWebsiteMode_get_account_info_from_api(final Account account) {
         return true;
@@ -232,7 +252,8 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
     }
 
     /**
-     * @return true = verified cookies/session </br> false = did not verify cookies/session
+     * @return true = verified cookies/session </br>
+     *         false = did not verify cookies/session
      */
     private final boolean loginAPIZeusCloudManager(final Browser apibr, final Account account, final boolean validateSession) throws Exception {
         synchronized (account) {
