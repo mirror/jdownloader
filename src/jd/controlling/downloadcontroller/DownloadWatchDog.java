@@ -1104,22 +1104,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     private Boolean hasSameHash(final DownloadLink linkCandidate, final DownloadLink mirrorCandidate) {
-        final String md5A = linkCandidate.getMD5Hash();
-        final String md5B = mirrorCandidate.getMD5Hash();
-        if (md5A != null && md5B != null) {
-            return md5A.equalsIgnoreCase(md5B);
+        final HashInfo hashInfoA = linkCandidate.getHashInfo();
+        final HashInfo hashInfoB = hashInfoA != null ? mirrorCandidate.getHashInfo() : null;
+        if (hashInfoA != null && hashInfoB != null && hashInfoA.getType() == hashInfoB.getType()) {
+            return hashInfoA.equals(hashInfoB);
+        } else {
+            return null;
         }
-        final String sha1A = linkCandidate.getSha1Hash();
-        final String sha1B = mirrorCandidate.getSha1Hash();
-        if (sha1A != null && sha1B != null) {
-            return sha1A.equalsIgnoreCase(sha1B);
-        }
-        final String sha256A = linkCandidate.getSha256Hash();
-        final String sha256B = mirrorCandidate.getSha256Hash();
-        if (sha256A != null && sha256B != null) {
-            return sha256A.equalsIgnoreCase(sha256B);
-        }
-        return null;
     }
 
     private List<DownloadLink> findDownloadLinkMirrors(final DownloadLink link, final MirrorDetectionDecision mirrorDetectionDecision, final boolean includeDisabledLinks) {
