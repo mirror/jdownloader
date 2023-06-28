@@ -216,4 +216,10 @@ public class EasyBytezCom extends XFileSharingProBasic {
         }
         return loginform;
     }
+
+    @Override
+    protected boolean requiresWWW() {
+        /* 2023-06-28 */
+        return true;
+    }
 }
