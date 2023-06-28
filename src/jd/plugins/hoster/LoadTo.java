@@ -21,6 +21,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -34,11 +37,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load.to" }, urls = { "https?://(www\\.)?load\\.to/[A-Za-z0-9]+/" })
 public class LoadTo extends PluginForHost {
@@ -131,7 +132,7 @@ public class LoadTo extends PluginForHost {
                     if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)") || br.getURL().contains("load.to/?e=3")) {
                         /* Try to avoid block (loop) on captcha reload */
                         br.clearCookies("http://load.to/");
-                        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+                        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
                         br.getPage(downloadLink.getDownloadURL());
                         continue;
                     }
@@ -168,7 +169,7 @@ public class LoadTo extends PluginForHost {
                     if (br.containsHTML("solvemedia\\.com/papi/") || br.getURL().contains("load.to/?e=3")) {
                         /* Try to avoid block (loop) on captcha reload */
                         br.clearCookies("http://load.to/");
-                        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+                        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
                         br.getPage(downloadLink.getDownloadURL());
                         logger.info("Invalid captcha answer");
                         continue;
@@ -226,7 +227,7 @@ public class LoadTo extends PluginForHost {
         if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
-            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            agent.set(UserAgents.stringUserAgent());
         }
         br.getHeaders().put("User-Agent", agent.get());
     }

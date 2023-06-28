@@ -38,7 +38,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "https?://8tracksdecrypted\\.com/\\d+" })
 public class EightTracksCom extends antiDDoSForHost {
@@ -537,8 +537,7 @@ public class EightTracksCom extends antiDDoSForHost {
         }
         if (dl.getBooleanProperty("change_ua")) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            ua = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            ua = UserAgents.stringUserAgent();
             dl.setProperty("change_ua", false);
         }
         br.getHeaders().put("User-Agent", ua);

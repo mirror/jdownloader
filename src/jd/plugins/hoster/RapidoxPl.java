@@ -42,7 +42,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidox.pl" }, urls = { "" })
 public class RapidoxPl extends PluginForHost {
@@ -359,8 +359,7 @@ public class RapidoxPl extends PluginForHost {
                     Thread.sleep(3000l);
                     logger.info("Trying to prevent captcha by changing User-Agent " + captcha_prevention_counter + " / " + captcha_prevention_counter_max);
                     /* we first have to load the plugin, before we can reference it */
-                    JDUtilities.getPluginForHost("mediafire.com");
-                    agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+                    agent.set(UserAgents.stringUserAgent());
                     if (br.getCookies(br.getHost()) != null) {
                         br.clearCookies(br.getHost());
                     }

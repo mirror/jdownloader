@@ -15,18 +15,18 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -37,368 +37,232 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.download.HashInfo;
-import jd.utils.JDUtilities;
+import jd.plugins.hoster.MediafireCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re|m\\.)/(watch/|listen/|imageview|folder/|view/|i/\\?|\\?sharekey=|view/\\?|view\\?|\\?|(?!download|file|file_premium|\\?JDOWNLOADER|imgbnc\\.php))([a-z0-9]{12}/)?[a-z0-9,#]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MediafireComFolder extends PluginForDecrypt {
     public MediafireComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String              SESSIONTOKEN    = null;
-    /* keep updated with hoster */
-    private final String        APIKEY          = "czQ1cDd5NWE3OTl2ZGNsZmpkd3Q1eXZhNHcxdzE4c2Zlbmt2djdudw==";
-    private final String        APPLICATIONID   = "27112";
-    private String              ERRORCODE       = null;
-    private static final String INVALIDLINKS    = "https?://(download|blog)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/(select_account_type\\.php|reseller|policies|tell_us_what_you_think\\.php|about\\.php|lost_password\\.php|blank\\.html|js/|common_questions/|software/|error\\.php|favicon|acceptable_use_policy\\.php|privacy_policy\\.php|terms_of_service\\.php).*?";
-    private static final String LINKPART_SINGLE = "https://www.mediafire.com/download.php?";
-    private String              subFolder       = "";
-
-    /** Checks if given contentID is a folder. */
-    private Boolean checkFolder(final Browser br, final String contentID) throws IOException {
-        try {
-            /* check if id is a folder */
-            apiRequest(this.br, "https://www.mediafire.com/api/folder/get_info.php", "?folder_key=" + contentID);
-            if ("111".equals(ERRORCODE)) {
-                // ERROR_MISSING_QUICKKEY: Quick Key is missing.
-                return null;
-            } else if ("112".equals(this.ERRORCODE)) {
-                return false;
-            } else {
-                return true;
-            }
-        } catch (final BrowserException e) {
-            logger.severe(e.getMessage());
-        }
-        return null;
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "mediafire.com", "mfi.re" });
+        return ret;
     }
 
-    /** Checks if given contentID is a single file. */
-    private Boolean checkFile(Browser br, final String contentID) throws IOException {
-        try {
-            /* check if id is a file */
-            apiRequest(this.br, "https://www.mediafire.com/api/file/get_info.php", "?quick_key=" + contentID);
-            if ("111".equals(ERRORCODE)) {
-                // ERROR_MISSING_QUICKKEY: Quick Key is missing.
-                return null;
-            } else if ("110".equals(this.ERRORCODE)) {
-                // ERROR_INVALID_QUICKKEY: Unknown or Invalid QuickKey.
-                return false;
-            } else {
-                return true;
-            }
-        } catch (final BrowserException e) {
-            logger.severe(e.getMessage());
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static final String  TYPE_DIRECT        = "(?i)https?://download\\d+.mediafire(?:cdn)?\\.com/[^/]+/([a-z0-9]+)/([^/\"']+)";
+    private static final String PATTERN_CONTENT_ID = "[a-z0-9]+";
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            final String hostPatternPart = buildHostsPatternPart(domains);
+            String pattern = "https?://(?:www\\.)?" + hostPatternPart + "/.+";
+            pattern += "|" + TYPE_DIRECT;
+            ret.add(pattern);
         }
-        return null;
+        return ret.toArray(new String[0]);
     }
 
     // https://www.mediafire.com/developers/core_api/1.5/getting_started/#error_codes
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String parameter = param.getCryptedUrl().replace("mfi.re/", "mediafire.com/").trim();
-        if (parameter.matches("https?://(\\w+\\.)?mediafire\\.com/view/\\?.+")) {
-            /* Single view-streams (documents) --> Change to download links (normal file) */
-            parameter = parameter.replaceFirst("/view", "");
-        } else if (parameter.matches("https?://(\\w+\\.)?mediafire\\.com/watch/.*?")) {
-            /* Single video streams --> Change to download links (normal file) */
-            parameter = parameter.replaceFirst("/watch", "");
-        } else if (parameter.matches("https?://(\\w+\\.)?mediafire\\.com/listen/.*?")) {
-            /* Single audio streams --> Change to download links (normal file) */
-            parameter = parameter.replaceFirst("/listen", "/download");
+        final String parameter = param.getCryptedUrl();
+        String directurl = null;
+        final String fid = getFileIDFRomURL(parameter);
+        final Regex direct = new Regex(parameter, TYPE_DIRECT);
+        if (direct.matches()) {
+            directurl = parameter;
         }
-        if (parameter.endsWith("mediafire.com") || parameter.endsWith("mediafire.com/")) {
-            return ret;
-        } else if (parameter.matches(INVALIDLINKS)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        subFolder = getAdoptedCloudFolderStructure();
-        if (subFolder == null) {
-            subFolder = "";
-        }
-        parameter = parameter.replaceAll("(&.+)", "");
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36");
-        if (parameter.matches("http://download\\d+\\.mediafire.+")) {
-            /* direct download */
-            String fileID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
-            if (fileID == null) {
-                fileID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
-            }
-            if (fileID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            ret.add(createSingleDownloadlink(fileID));
-            return ret;
-        } else if (parameter.contains("imageview.php")) {
-            String fileID = new Regex(parameter, "\\.com/.*?quickkey=(.+)").getMatch(0);
-            if (fileID != null) {
-                final DownloadLink link = createSingleDownloadlink(fileID);
-                ret.add(link);
-                return ret;
-            }
-            return null;
-        } else if (parameter.contains("/i/?")) {
-            String fileID = new Regex(parameter, "\\.com/i/\\?(.+)").getMatch(0);
-            if (fileID != null) {
-                final DownloadLink link = createSingleDownloadlink(fileID);
-                ret.add(link);
-                return ret;
-            }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        } else if (parameter.contains(",")) {
-            // Multiple files in one link
-            final String linksText = new Regex(parameter, "mediafire\\.com/(\\?|folder/)([a-z0-9,]+)").getMatch(1);
-            if (linksText == null) {
-                logger.warning("Unhandled case for link: " + parameter);
-                return null;
-            }
-            final String[] contentIDs = linksText.split(",");
-            if (contentIDs == null || contentIDs.length == 0) {
-                logger.warning("Unhandled case for link: " + parameter);
-                return null;
-            }
-            for (final String key : contentIDs) {
+        final String multipleContentIDsCommaSeparated = new Regex(param.getCryptedUrl(), "mediafire\\.com/(\\?|folder/)([a-z0-9,]+)").getMatch(1);
+        if (multipleContentIDsCommaSeparated != null && multipleContentIDsCommaSeparated.contains(",")) {
+            // TODO: Check if this case still exists
+            /* Multiple files in one link */
+            final String[] contentIDs = multipleContentIDsCommaSeparated.split(",");
+            for (final String contentID : contentIDs) {
                 final DownloadLink link;
-                if (key.matches("[A-Za-z0-9]{13}")) {
-                    link = this.createDownloadlink("https://www.mediafire.com/folder/" + key);
+                if (contentID.matches("[A-Za-z0-9]{13}")) {
+                    link = this.createDownloadlink("https://www.mediafire.com/folder/" + contentID);
                 } else {
-                    link = createSingleDownloadlink(key);
+                    link = createSingleFileDownloadlink(contentID, null);
                 }
                 ret.add(link);
+            }
+            return ret;
+        } else if (fid != null) {
+            /* Single file */
+            final String filenameFromURL = Plugin.getFileNameFromURL(param.getCryptedUrl());
+            final DownloadLink file = createSingleFileDownloadlink(fid, filenameFromURL);
+            ret.add(file);
+            if (directurl != null) {
+                MediafireCom.storeDirecturl(file, null, directurl);
             }
             return ret;
         } else {
-            /* ost likely we got a folder -> Crawl all files of that folder. */
-            // Private link? Login needed!
-            if (getUserLogin()) {
-                logger.info("Decrypting with logindata...");
-            } else {
-                logger.info("Decrypting without logindata...");
-            }
-            final UrlQuery query = UrlQuery.parse(parameter);
-            final String old_sharekey = query.get("sharekey");
-            String contentID = null;
-            if (old_sharekey != null) {
-                logger.info("Detected old sharekey --> Trying to get corresponding new 'quick_key'");
-                br.setFollowRedirects(true);
-                br.getPage(parameter);
-                contentID = new Regex(br.getURL(), "([a-z0-9]+)$").getMatch(0);
-                if (contentID == null || contentID.equals(old_sharekey)) {
-                    logger.warning("Unable to find new 'quick_key' --> URL might be offline");
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                logger.info("Found new 'quick_key': " + contentID);
-            } else {
-                contentID = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
-            }
-            // Check if we have a single link or multiple folders/files
-            Boolean isFile = null;
-            Boolean isFolder = null;
-            if (StringUtils.contains(parameter, "/folder/" + contentID)) {
-                isFolder = checkFolder(br, contentID);
-                if (isFolder == null) {
-                    isFolder = false;
-                }
-                if (Boolean.TRUE.equals(isFolder)) {
-                    isFile = false;
-                }
-            }
-            if (isFile == null) {
-                isFile = checkFile(br, contentID);
-                if (isFile == null) {
-                    isFile = false;
-                }
-                if (Boolean.TRUE.equals(isFolder)) {
-                    isFolder = false;
-                }
-            }
-            if (!Boolean.TRUE.equals(isFile) && isFolder == null) {
-                isFolder = checkFolder(br, contentID);
-            }
-            if (Boolean.TRUE.equals(isFile)) {
-                final DownloadLink link = createSingleDownloadlink(contentID);
-                final String browser = br.toString();
-                final String name = getXML("filename", browser);
-                final String size = getXML("size", browser);
-                if (name != null) {
-                    link.setFinalFileName(Encoding.htmlDecode(name));
-                } else {
-                    link.setName(contentID);
-                }
-                final String hash = getXML("hash", browser);
-                if (!StringUtils.isEmpty(hash)) {
-                    link.setHashInfo(HashInfo.parse(hash));
-                }
-                final String pass = getXML("password_protected", browser);
-                if (!StringUtils.isEmpty(pass) && PluginJSonUtils.parseBoolean(pass)) {
-                    link.setPasswordProtected(true);
-                }
-                if (size != null) {
-                    final long sizeLong = Long.parseLong(size);
-                    link.setDownloadSize(sizeLong);
-                    link.setVerifiedFileSize(sizeLong);
-                }
-                link.setAvailable(true);
-                ret.add(link);
-                return ret;
-            } else if (Boolean.TRUE.equals(isFolder)) {
-                final String xml = br.getRequest().getHtmlCode();
-                final String currentFolderName = getXML("name", xml);
-                final String filesNumStr = getXML("file_count", xml);
-                final String foldersNumStr = getXML("folder_count", xml);
-                final String privacy = getXML("privacy", xml);
-                final int filesNum = filesNumStr != null ? Integer.parseInt(filesNumStr) : -1;
-                final int foldersNum = foldersNumStr != null ? Integer.parseInt(foldersNumStr) : null;
-                if (filesNum == 0 && foldersNum == 0) {
-                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
-                }
-                if (currentFolderName != null) {
-                    subFolder += "/" + currentFolderName;
-                } else {
-                    logger.info("Current folder has no name");
-                }
-                if (filesNum > 0) {
-                    FilePackage fp = null;
-                    if (currentFolderName != null) {
-                        fp = FilePackage.getInstance();
-                        fp.setName(Encoding.htmlDecode(currentFolderName));
-                    } else {
-                    }
-                    for (int i = 1; i <= 100; i++) {
-                        try {
-                            apiRequest(this.br, "https://www.mediafire.com/api/folder/get_content.php", "?folder_key=" + contentID + "&content_type=files&chunk=" + i);
-                        } catch (final BrowserException e) {
-                            logger.severe(e.getMessage());
-                            break;
-                        }
-                        final String[] files = br.getRegex("<file>(.*?)</file>").getColumn(0);
-                        if (files != null) {
-                            for (final String fileInfo : files) {
-                                final DownloadLink link = createSingleDownloadlink(getXML("quickkey", fileInfo));
-                                final String size = getXML("size", fileInfo);
-                                if (size != null) {
-                                    final long sizeLong = Long.parseLong(size);
-                                    link.setDownloadSize(sizeLong);
-                                    link.setVerifiedFileSize(sizeLong);
-                                }
-                                final String name = getXML("filename", fileInfo);
-                                if (name != null) {
-                                    link.setFinalFileName(Encoding.htmlDecode(name));
-                                } else {
-                                    link.setName(contentID);
-                                }
-                                if ("private".equals(privacy)) {
-                                    link.setProperty("privatefile", true);
-                                }
-                                final String hash = getXML("hash", fileInfo);
-                                if (!StringUtils.isEmpty(hash)) {
-                                    link.setHashInfo(HashInfo.parse(hash));
-                                }
-                                final String pass = getXML("password_protected", fileInfo);
-                                if (!StringUtils.isEmpty(pass) && PluginJSonUtils.parseBoolean(pass)) {
-                                    link.setPasswordProtected(true);
-                                }
-                                link.setAvailable(true);
-                                if (fp != null) {
-                                    fp.add(link);
-                                }
-                                ret.add(link);
-                            }
-                        }
-                        if (files == null || files.length < 100) {
-                            break;
-                        }
-                    }
-                }
-                if (foldersNum > 0) {
-                    for (int i = 1; i <= 100; i++) {
-                        try {
-                            apiRequest(this.br, "https://www.mediafire.com/api/folder/get_content.php?folder_key=", contentID + "&content_type=folders&chunk=" + i);
-                        } catch (final BrowserException e) {
-                            logger.severe(e.getMessage());
-                        }
-                        final String[] subFolders = br.getRegex("<folderkey>([a-z0-9]+)</folderkey>").getColumn(0);
-                        if (subFolders != null) {
-                            for (final String folderID : subFolders) {
-                                final DownloadLink link = createDownloadlink("https://www.mediafire.com/folder/" + folderID);
-                                ret.add(link);
-                            }
-                        }
-                        if (subFolders == null || subFolders.length < 100) {
-                            break;
-                        }
-                    }
-                }
-                if (foldersNum == -1 && filesNum == -1) {
-                    if ("114".equals(ERRORCODE)) {
-                        final DownloadLink link = createSingleDownloadlink(new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
-                        link.setProperty("privatefolder", true);
-                        link.setName(contentID);
-                        link.setAvailable(true);
-                        ret.add(link);
-                        return ret;
-                    }
-                    return null;
-                }
-                return ret;
-            }
-            if ("112".equals(this.ERRORCODE) || (isFile != null && isFolder == null)) {
-                // new pages can be folders, and do not work as UID from API. only way thing todo is find the uid and reprobe!
-                final Browser br2 = new Browser();
-                br2.setFollowRedirects(true);
-                br2.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36");
-                br2.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
-                br2.getHeaders().put("Connection", "keep-alive");
-                br2.getHeaders().put("Accept-Charset", null);
-                br2.getHeaders().put("Pragma", null);
-                br2.getPage(parameter);
-                final String uid = br2.getRegex("(?-i)afI=[ ]*?(?:\\'|\")([^\\'\"]+)").getMatch(0);
-                /* Make sure the ID we found is different from our original ID to prevent decryption loops! */
-                if (uid != null && !contentID.equalsIgnoreCase(uid)) {
-                    // lets return back into itself, and hope we don't create a infinite loop!
-                    final DownloadLink link = createDownloadlink("https://www.mediafire.com/folder/" + uid);
-                    ret.add(link);
-                    return ret;
-                }
-            }
-            final DownloadLink link = createSingleDownloadlink(contentID);
-            link.setAvailable(false);
-            link.setProperty("offline", true);
-            link.setName(contentID);
-            ret.add(link);
-            return ret;
+            return crawlFolder(param);
         }
     }
 
-    private DownloadLink createSingleDownloadlink(final String id) {
-        if (StringUtils.isEmpty(id)) {
-            return null;
+    /** Returnes fileID if given URL is any supported single file download URL. */
+    public static String getFileIDFRomURL(final String url) throws MalformedURLException {
+        final UrlQuery query = UrlQuery.parse(url);
+        String fid = query.get("quickkey");
+        if (fid == null) {
+            fid = new Regex(url, "(?i)https?://[^/]+/(?:download|file|file_premium|listen|watch|view)/(" + PATTERN_CONTENT_ID + ")").getMatch(0);
+            if (fid == null) {
+                fid = new Regex(url, "(?i)https?://[^/]+/i\\?(" + PATTERN_CONTENT_ID + ")").getMatch(0);
+                if (fid == null) {
+                    fid = new Regex(url, "(?i)https?://[^/]+/\\?(" + PATTERN_CONTENT_ID + ")").getMatch(0);
+                    if (fid == null) {
+                        fid = new Regex(url, TYPE_DIRECT).getMatch(0);
+                    }
+                }
+            }
         }
-        final DownloadLink link = createDownloadlink(LINKPART_SINGLE + id);
-        if (StringUtils.isNotEmpty(subFolder)) {
-            link.setRelativeDownloadFolderPath(subFolder);
-        }
-        return link;
+        return fid;
     }
 
-    @Override
-    protected DownloadLink createDownloadlink(final String link) {
-        if (StringUtils.isEmpty(link)) {
-            return null;
+    private ArrayList<DownloadLink> crawlFolder(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        this.setBrowserExclusive();
+        final String folderurl = param.getCryptedUrl();
+        final String sharekeyPattern = "[a-z0-9]+";
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        final MediafireCom hosterplugin = (MediafireCom) this.getNewPluginForHostInstance(this.getHost());
+        if (account != null) {
+            hosterplugin.login(br, account, false);
         }
-        final DownloadLink ret = super.createDownloadlink(link);
-        if (StringUtils.isNotEmpty(subFolder)) {
-            ret.setRelativeDownloadFolderPath(subFolder);
+        String newSharekey = new Regex(folderurl, "(?i)/folder/(" + sharekeyPattern + ")").getMatch(0);
+        if (newSharekey == null) {
+            logger.info("Detected old sharekey --> Trying to get corresponding new sharekey");
+            br.setFollowRedirects(true);
+            br.getPage(folderurl);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            newSharekey = br.getRegex("sharekey=(" + sharekeyPattern + ")").getMatch(0);
+            if (newSharekey == null) {
+                newSharekey = br.getRegex("afI\\s*=\\s*\"(" + sharekeyPattern + ")\"").getMatch(0);
+            }
+            if (newSharekey == null) {
+                logger.warning("Unable to find new 'quick_key' --> URL must be offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                logger.info("Found new 'sharekey': " + newSharekey);
+            }
+        }
+        final UrlQuery fileFolderQuery = new UrlQuery().add("folder_key", Encoding.urlEncode(newSharekey));
+        // apiRequest(this.br, "https://www.mediafire.com/api/folder/get_info.php", fquery);
+        final Map<String, Object> foldermap = hosterplugin.apiCommand(account, "folder/get_info.php", fileFolderQuery);
+        final Map<String, Object> folder_info = (Map<String, Object>) foldermap.get("folder_info");
+        final String folderDescription = (String) folder_info.get("description");
+        final String currentFolderName = folder_info.get("name").toString();
+        final int filesNum = Integer.parseInt(folder_info.get("file_count").toString());
+        final int foldersNum = Integer.parseInt(folder_info.get("folder_count").toString());
+        if (filesNum == 0 && foldersNum == 0) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+        }
+        String subFolderPath = getAdoptedCloudFolderStructure();
+        if (subFolderPath == null) {
+            subFolderPath = currentFolderName;
+        } else {
+            subFolderPath += "/" + currentFolderName;
+        }
+        /* Crawl files */
+        if (filesNum > 0) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(subFolderPath);
+            if (!StringUtils.isEmpty(folderDescription)) {
+                fp.setComment(folderDescription);
+            }
+            final ArrayList<DownloadLink> filearray = new ArrayList<DownloadLink>();
+            int page = 1;
+            fileFolderQuery.addAndReplace("content_type", "files");
+            do {
+                fileFolderQuery.addAndReplace("chunk", Integer.toString(page));
+                final Map<String, Object> resp = hosterplugin.apiCommand(account, "folder/get_content.php", fileFolderQuery);
+                final Map<String, Object> folder_content = (Map<String, Object>) resp.get("folder_content");
+                final List<Map<String, Object>> files = (List<Map<String, Object>>) folder_content.get("files");
+                for (final Map<String, Object> file : files) {
+                    final String url = JavaScriptEngineFactory.walkJson(file, "links/normal_download").toString();
+                    final DownloadLink link = createDownloadlink(url);
+                    MediafireCom.parseFileInfo(link, file);
+                    link.setProperty(MediafireCom.PROPERTY_FILE_ID, file.get("quickkey"));
+                    link.setRelativeDownloadFolderPath(subFolderPath);
+                    link._setFilePackage(fp);
+                    filearray.add(link);
+                    distribute(link);
+                }
+                logger.info("Crawled files page " + page + " | Found files: " + filearray.size() + "/" + filesNum);
+                if (this.isAbort()) {
+                    logger.info("Stopping because: Aborted by user");
+                    break;
+                } else if (!"yes".equalsIgnoreCase(folder_content.get("more_chunks").toString())) {
+                    logger.info("Stopping because: Reached last page");
+                    break;
+                } else {
+                    page++;
+                }
+            } while (true);
+            ret.addAll(filearray);
+        }
+        /* Crawl subfolders */
+        if (foldersNum > 0) {
+            final ArrayList<DownloadLink> folderarray = new ArrayList<DownloadLink>();
+            int page = 1;
+            fileFolderQuery.addAndReplace("content_type", "folders");
+            do {
+                fileFolderQuery.addAndReplace("chunk", Integer.toString(page));
+                final Map<String, Object> resp = hosterplugin.apiCommand(account, "folder/get_content.php", fileFolderQuery);
+                final Map<String, Object> folder_content = (Map<String, Object>) resp.get("folder_content");
+                final List<Map<String, Object>> folders = (List<Map<String, Object>>) folder_content.get("folders");
+                for (final Map<String, Object> folder : folders) {
+                    final DownloadLink link = createDownloadlink("https://www.mediafire.com/folder/" + folder.get("folderkey"));
+                    link.setRelativeDownloadFolderPath(subFolderPath);
+                    folderarray.add(link);
+                    distribute(link);
+                }
+                logger.info("Crawled folders page " + page + " | Found subfolders: " + folderarray.size() + "/" + foldersNum);
+                if (this.isAbort()) {
+                    logger.info("Stopping because: Aborted by user");
+                    break;
+                } else if (!"yes".equalsIgnoreCase(folder_content.get("more_chunks").toString())) {
+                    logger.info("Stopping because: Reached last page");
+                    break;
+                } else {
+                    page++;
+                }
+            } while (true);
+            ret.addAll(folderarray);
         }
         return ret;
+    }
+
+    private DownloadLink createSingleFileDownloadlink(final String fileID, final String filename) {
+        if (StringUtils.isEmpty(fileID)) {
+            return null;
+        }
+        String url = "https://www.mediafire.com/file/" + fileID;
+        if (!StringUtils.isEmpty(filename)) {
+            url += "/" + Encoding.urlEncode(filename);
+        }
+        final DownloadLink link = createDownloadlink(url);
+        link.setProperty(MediafireCom.PROPERTY_FILE_ID, fileID);
+        return link;
     }
 
     @Override
@@ -406,52 +270,7 @@ public class MediafireComFolder extends PluginForDecrypt {
         return false;
     }
 
-    private boolean getUserLogin() throws Exception {
-        /*
-         * we have to load the plugins first! we must not reference a plugin class without loading it before
-         */
-        final PluginForHost hosterPlugin = JDUtilities.getPluginForHost("mediafire.com");
-        final Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
-        if (aa != null) {
-            // Try to re-use session token as long as possible (it's valid for
-            // 10 minutes)
-            final String savedusername = this.getPluginConfig().getStringProperty("username");
-            final String savedpassword = this.getPluginConfig().getStringProperty("password");
-            final String sessiontokenCreateDateObject = this.getPluginConfig().getStringProperty("sessiontokencreated2");
-            long sessiontokenCreateDate = -1;
-            if (sessiontokenCreateDateObject != null && sessiontokenCreateDateObject.length() > 0) {
-                sessiontokenCreateDate = Long.parseLong(sessiontokenCreateDateObject);
-            }
-            if ((savedusername != null && savedusername.matches(aa.getUser())) && (savedpassword != null && savedpassword.matches(aa.getPass())) && System.currentTimeMillis() - sessiontokenCreateDate < 600000) {
-                SESSIONTOKEN = this.getPluginConfig().getStringProperty("sessiontoken");
-            } else {
-                // Get token for user account
-                apiRequest(br, "https://www.mediafire.com/api/user/get_session_token.php", "?email=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()) + "&application_id=" + APPLICATIONID + "&signature=" + JDHash.getSHA1(aa.getUser() + aa.getPass() + APPLICATIONID + Encoding.Base64Decode(APIKEY)) + "&version=1");
-                SESSIONTOKEN = getXML("session_token", br.toString());
-                this.getPluginConfig().setProperty("username", aa.getUser());
-                this.getPluginConfig().setProperty("password", aa.getPass());
-                this.getPluginConfig().setProperty("sessiontoken", SESSIONTOKEN);
-                this.getPluginConfig().setProperty("sessiontokencreated2", "" + System.currentTimeMillis());
-                this.getPluginConfig().save();
-            }
-        }
-        return false;
-    }
-
-    private void apiRequest(final Browser br, final String url, final String data) throws IOException {
-        if (SESSIONTOKEN == null) {
-            br.getPage(url + data);
-        } else {
-            br.getPage(url + data + "&session_token=" + SESSIONTOKEN);
-        }
-        ERRORCODE = getXML("error", br.toString());
-    }
-
-    private String getXML(final String parameter, final String source) {
-        return new Regex(source, "<" + parameter + ">([^<>\"]*?)</" + parameter + ">").getMatch(0);
-    }
-
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

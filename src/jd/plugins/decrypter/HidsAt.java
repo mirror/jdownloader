@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hides.at" }, urls = { "https?://(www\\.)?hides\\.at/(link/)?[a-f0-9]{32}" })
 public class HidsAt extends PluginForDecrypt {
@@ -44,8 +44,7 @@ public class HidsAt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (agent == null) {
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent = UserAgents.stringUserAgent();
         }
         br.getHeaders().put("User-Agent", agent);
         br.setFollowRedirects(true);

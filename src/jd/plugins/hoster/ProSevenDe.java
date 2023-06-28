@@ -31,7 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "7tv.de" }, urls = { "http://7tvdecrypted\\.de/\\d+" })
 public class ProSevenDe extends PluginForHost {
@@ -41,7 +41,6 @@ public class ProSevenDe extends PluginForHost {
     private static final String            URLTEXT_NO_FLASH         = "no_flash_de";
     private static final String            URLTEXT_COUNTRYBLOCKED_1 = "/not_available_";
     private static final String            URLTEXT_COUNTRYBLOCKED_2 = "wrong_cc_de_en_";
-    private static AtomicReference<String> agent_hbbtv              = new AtomicReference<String>(null);
     private static AtomicReference<String> agent_normal             = new AtomicReference<String>(null);
     private String                         json                     = null;
     private static final String[][]        bitrate_info             = { { "tp12", "" }, { "tp11", "2628" }, { "tp10", "2328" }, { "tp09", "1896" }, { "tp08", "" }, { "tp07", "" }, { "tp06", "1296" }, { "tp05", "664" }, { "tp04", "" }, { "tp03", "" }, { "tp02", "" }, { "tp01", "" } };
@@ -61,15 +60,9 @@ public class ProSevenDe extends PluginForHost {
     }
 
     private void prepareBrowser() {
-        if (agent_hbbtv.get() == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent_hbbtv.set(jd.plugins.hoster.MediafireCom.hbbtvUserAgent());
-        }
         if (agent_normal.get() == null) {
             /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent_normal.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            agent_normal.set(UserAgents.stringUserAgent());
         }
     }
 
@@ -150,7 +143,7 @@ public class ProSevenDe extends PluginForHost {
          */
         this.br = new Browser();
         /* User-Agent not necessarily needed */
-        br.getHeaders().put("User-Agent", agent_hbbtv.get());
+        // br.getHeaders().put("User-Agent", agent_hbbtv.get());
         /* method=6 needed so that the Highest quality-trick works see 'getDllink' method */
         br.getPage("http://vas.sim-technik.de/video/video.jsonp?clipid=" + clip_id + "&app=hbbtv&type=1&method=6&callback=video" + clip_id);
         getDllink();

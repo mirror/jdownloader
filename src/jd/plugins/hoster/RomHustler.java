@@ -38,6 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.UserAgents;
 import jd.plugins.decrypter.RomHustlerCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -83,8 +84,7 @@ public class RomHustler extends PluginForHost {
     public Browser createNewBrowserInstance() {
         final Browser br = new Browser();
         if (agent.get() == null) {
-            /* we first have to load the plugin, before we can reference it */
-            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            agent.set(UserAgents.stringUserAgent());
         }
         br.getHeaders().put("User-Agent", agent.get());
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");

@@ -38,6 +38,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.UserAgents;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(?:www\\.)?filesmonster\\.com/(?:download\\.php\\?id=[A-Za-z0-9_-]+(?:\\&wbst=[^\\&]+)?|player/v\\d+/video/[A-Za-z0-9_-]+|dl/[A-Za-z0-9_-]+/free/.+)" })
 public class FilesMonsterDecrypter extends PluginForDecrypt {
@@ -125,7 +126,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             browserReferrer = new Regex(browserReferrer, "https?://[^/]+/").getMatch(-1);
             br.setCurrentURL(browserReferrer);
         }
-        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         jd.plugins.hoster.FilesMonsterCom.prepBR(br);
         if (referer_url != null) {
             logger.info("Accessing URL with referer: " + referer_url);

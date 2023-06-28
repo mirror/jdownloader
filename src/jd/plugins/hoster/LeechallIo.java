@@ -156,13 +156,17 @@ public class LeechallIo extends PluginForHost {
             link.setProperty(directurlproperty, dllink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
+        try {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
+                mhm.handleErrorGeneric(account, link, "Final downloadurl did not lead to file", 2, 5 * 60 * 1000l);
+            }
+        } catch (final Exception e) {
             if (storedDirecturl != null) {
                 link.removeProperty(directurlproperty);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired?");
             } else {
-                mhm.handleErrorGeneric(account, link, "Final downloadurl did not lead to file", 2, 5 * 60 * 1000l);
+                throw e;
             }
         }
         /* Add a download slot */

@@ -247,8 +247,8 @@ public class OtrDatenkellerNet extends PluginForHost {
         br.clearCookies(null);
         /* Use random UA here because we use website for downloading and they determine the limits based on UA + cookies(?) */
         br.getHeaders().put("User-Agent", getUserAgent());
-        final String directlinkproperty = "free_finallink";
-        final String storedDirecturl = link.getStringProperty(directlinkproperty);
+        final String directurlproperty = "free_finallink";
+        final String storedDirecturl = link.getStringProperty(directurlproperty);
         String dllink = null;
         if (storedDirecturl != null) {
             logger.info("Re-using stored directurl: " + storedDirecturl);
@@ -369,15 +369,20 @@ public class OtrDatenkellerNet extends PluginForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Didn't get a ticket", 30 * 60 * 1000l);
             }
-            link.setProperty(directlinkproperty, dllink);
+            link.setProperty(directurlproperty, dllink);
         }
         this.preDownloadWaitHandling(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (storedDirecturl != null && !this.looksLikeDownloadableContent(dl.getConnection())) {
-            link.removeProperty(directlinkproperty);
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            checkErrorsAfterDownloadAttempt();
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(directurlproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired?");
+            } else {
+                throw e;
+            }
         }
-        checkErrorsAfterDownloadAttempt();
         synchronized (timestampLastDownloadStarted) {
             timestampLastDownloadStarted.set(Time.systemIndependentCurrentJVMTimeMillis());
         }

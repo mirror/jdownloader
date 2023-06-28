@@ -55,6 +55,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.components.UserAgents;
 import jd.plugins.hoster.FlickrCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flickr.com" }, urls = { "https?://(?:secure\\.|www\\.)?flickr\\.com/(?:photos|groups)/.+" })
@@ -680,7 +681,7 @@ public class FlickrComCrawler extends PluginForDecrypt {
     }
 
     private Browser prepBrowserWebsite(final Browser br) {
-        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "localization", "en-us%3Bus%3Bde");
         br.setCookie(this.getHost(), "fldetectedlang", "en-us");

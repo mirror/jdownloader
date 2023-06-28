@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -100,12 +101,12 @@ public class TeraboxComFolder extends PluginForDecrypt {
         br.setCookie(host, "BOXCLND", passwordCookie);
     }
 
-    private static final String     TYPE_SHORT                = "https?://[^/]+/s/(.+)";
-    private static final String     TYPE_SHORT_NEW            = "https?://[^/]+/(?:[a-z0-9]+/)?sharing/link\\?surl=([A-Za-z0-9\\-_]+)";
+    private static final String            TYPE_SHORT                = "https?://[^/]+/s/(.+)";
+    private static final String            TYPE_SHORT_NEW            = "https?://[^/]+/(?:[a-z0-9]+/)?sharing/link\\?surl=([A-Za-z0-9\\-_]+)";
     /* For such URLs leading to single files we'll crawl all items of the folder that file is in -> Makes it easier */
-    private static final String     TYPE_SINGLE_VIDEO         = "https?://[^/]+/web/share/videoPlay\\?surl=([A-Za-z0-9\\-_]+)\\&dir=([^\\&]+)";
-    private static final AtomicLong anonymousJstokenTimestamp = new AtomicLong(-1);
-    private static String           anonymousJstoken          = null;
+    private static final String            TYPE_SINGLE_VIDEO         = "https?://[^/]+/web/share/videoPlay\\?surl=([A-Za-z0-9\\-_]+)\\&dir=([^\\&]+)";
+    private static final AtomicLong        anonymousJstokenTimestamp = new AtomicLong(-1);
+    private static AtomicReference<String> anonymousJstoken          = new AtomicReference<String>(null);
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
@@ -177,7 +178,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
             }
         } else {
             synchronized (anonymousJstokenTimestamp) {
-                if (Time.systemIndependentCurrentJVMTimeMillis() - anonymousJstokenTimestamp.get() < 5 * 60 * 1000 || anonymousJstoken == null || useStrangeSUrlWorkaround) {
+                if (anonymousJstoken.get() == null || Time.systemIndependentCurrentJVMTimeMillis() - anonymousJstokenTimestamp.get() < 5 * 60 * 1000 || useStrangeSUrlWorkaround) {
                     logger.info("Obtaining fresh anonymous jstoken");
                     final String newJstoken;
                     if (useStrangeSUrlWorkaround) {
@@ -188,12 +189,12 @@ public class TeraboxComFolder extends PluginForDecrypt {
                         newJstoken = TeraboxCom.getJsToken(br, this.getHost());
                     }
                     if (newJstoken != null) {
-                        anonymousJstoken = newJstoken;
+                        anonymousJstoken.set(newJstoken);
                         anonymousJstokenTimestamp.set(Time.systemIndependentCurrentJVMTimeMillis());
                         jstoken = newJstoken;
                     }
                 } else {
-                    jstoken = anonymousJstoken;
+                    jstoken = anonymousJstoken.get();
                 }
             }
         }
