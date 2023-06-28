@@ -137,7 +137,7 @@ public class RecurbateCom extends PluginForHost {
             dateStr = br.getRegex("(?i)show on (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
         }
         setDate(link, dateStr);
-        String performer = br.getRegex("/performer/([^/\"<>]+)").getMatch(0);
+        String performer = br.getRegex("(?i)/performer/([^/\"<>]+)").getMatch(0);
         if (performer != null) {
             performer = Encoding.htmlDecode(performer).trim();
             link.setProperty(PROPERTY_USER, performer);
@@ -198,9 +198,10 @@ public class RecurbateCom extends PluginForHost {
              * Official downloadlinks are only available for "Ultimate" users. Those can download much faster and with an "unlimited"
              * amount.
              */
-            final String officialDownloadlink = br.getRegex("recu-link download\" href=\"(https?://[^\"]+)").getMatch(0);
-            if (officialDownloadlink != null) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, officialDownloadlink, RESUMABLE, MAXCHUNKS);
+            final String officialHighspeedDownloadlink = br.getRegex("recu-link download\"\\s*href=\"(https?://[^\"]+)").getMatch(0);
+            if (officialHighspeedDownloadlink != null) {
+                logger.info("Found highspeed downloadurl: " + officialHighspeedDownloadlink);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, officialHighspeedDownloadlink, RESUMABLE, MAXCHUNKS);
             } else {
                 final String token = br.getRegex("data-token\\s*=\\s*\"([a-f0-9]{32,})\"\\s*data-video-id").getMatch(0);
                 if (token == null) {

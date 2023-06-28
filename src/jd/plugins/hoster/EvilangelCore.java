@@ -728,6 +728,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 if (br.containsHTML("(?i)>\\s*We are experiencing some problems\\!<")) {
                     throw new AccountInvalidException("Your IP is banned. Please re-connect to get a new IP to be able to log-in!");
                 }
+                final String realLoginURL = br.getURL();
                 final Form login = br.getFormbyProperty("id", "loginForm");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -781,6 +782,13 @@ public abstract class EvilangelCore extends PluginForHost {
                     login.put(remembermeCookieKey, "1");
                 }
                 br.submitForm(login);
+                if (br.getURL().contains("/compliance/terms")) {
+                    /* 2023-06-28: dfxtra.com */
+                    logger.warning("!DEVELOPER! This step hasn't been implemented yet! Login will most likely fail now!");
+                    final String url = br.getRegex("(/api/compliance/terms/acknowledgement)").getMatch(0);
+                    final String uuid = br.getRegex("'uuid'\\s*:\\s*'([^<>\"\\']+)").getMatch(0);
+                    // br.getPage(realLoginURL);
+                }
                 /* TODO: 2021-09-01: Add support for 2FA login (security code gets sent via mail) */
                 if (br.containsHTML("(?i)>\\s*Your account is deactivated for abuse")) {
                     throw new AccountInvalidException("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");

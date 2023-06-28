@@ -341,7 +341,7 @@ public class MediafireCom extends PluginForHost {
             link.setProperty(directurlproperty, finalDownloadurl);
         }
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalDownloadurl, true, -15);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalDownloadurl, true, this.getMaxChunks(account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 handleServerErrors();
