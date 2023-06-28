@@ -180,11 +180,10 @@ public class FileBitPl extends PluginForHost {
             /*
              * 2019-08-19: If a downloadlink has previously been created successfully with that fileID and upper handling fails to re-use
              * that generated directURL, re-using the old fileID to generate a new downloadurl will not use up any traffic of the users'
-             * account either!!
+             * account.
              */
             loopCounter = link.getLongProperty("filebitpl_fileid_total_numberof_waittime_loops", 0);
             logger.info("Re-using saved fileID: " + fileID + " | loopCounter=" + loopCounter);
-            logger.info("--> We've tried to download this URL before --> Trying to re-use old fileID as an attempt not to waste any traffic (this multihoster has a bad traffic-counting-system)");
             isFreshlyGeneratedFileID = false;
         } else {
             /* This initiates a serverside download. The user will be charged for the full amount of traffic immediately. */
@@ -254,11 +253,7 @@ public class FileBitPl extends PluginForHost {
             if (timesWithoutProgressChange >= timesWithoutProgressChangeMax) {
                 logger.info("No progress change in " + timesWithoutProgressChangeMax + " loops: Giving up");
                 break;
-            }
-            infotext = String.format(infotext, progressHumanReadable);
-            sleep(5000l, link, infotext);
-            loopCounter++;
-            if (loopCounter >= maxLoops) {
+            } else if (loopCounter >= maxLoops) {
                 /*
                  * Too many attempts for current fileID --> Next retry will create a new fileID which will charge the full amount of traffic
                  * for this file (again).
@@ -268,15 +263,18 @@ public class FileBitPl extends PluginForHost {
                 link.removeProperty("filebitpl_fileid");
                 link.removeProperty("filebitpl_fileid_total_numberof_waittime_loops");
                 break;
+            } else {
+                infotext = String.format(infotext, progressHumanReadable);
+                sleep(5000l, link, infotext);
+                loopCounter++;
+                link.setProperty("filebitpl_fileid_total_numberof_waittime_loops", loopCounter);
+                loopCounter++;
             }
-            link.setProperty("filebitpl_fileid_total_numberof_waittime_loops", loopCounter);
-            loopCounter++;
-        } while (!serverDownloadFinished && loopCounter <= maxLoops);
+        } while (!this.isAbort());
         if (!serverDownloadFinished) {
             /* Rare case */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server transfer retry count exhausted", 5 * 60 * 1000l);
         }
-        // final String expires = getJson("expires");
         link.setProperty("filebitpl_resumable", resp.get("resume"));
         link.setProperty("filebitpl_maxconnections", resp.get("chunks"));
         return resp.get("downloadUrl").toString();
@@ -347,9 +345,9 @@ public class FileBitPl extends PluginForHost {
         final Map<String, Object> data = (Map<String, Object>) resp.get("data");
         final String accountDescription = data.get("acctype").toString();
         final String premium = data.get("premium").toString();
-        final Number expires = (Number) data.get("expires");
-        if (expires != null) {
-            ai.setValidUntil(System.currentTimeMillis() + expires.longValue());
+        final Number expireTimestamp = (Number) data.get("expires");
+        if (expireTimestamp != null) {
+            ai.setValidUntil(System.currentTimeMillis() + expireTimestamp.longValue());
         }
         final Number transferLeftBytes = (Number) data.get("transferLeft");
         if (transferLeftBytes != null) {

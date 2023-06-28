@@ -122,7 +122,7 @@ public class LeechallIo extends PluginForHost {
         final String storedDirecturl = link.getStringProperty(directurlproperty);
         final String dllink;
         if (storedDirecturl != null) {
-            logger.info("Re-using stored directurl: " + storedDirecturl);
+            logger.info("Trying to re-use stored directurl: " + storedDirecturl);
             dllink = storedDirecturl;
         } else {
             logger.info("Generating fresh directurl");
@@ -132,23 +132,20 @@ public class LeechallIo extends PluginForHost {
             if (link.getDownloadPassword() != null) {
                 postdata.put("password", link.getDownloadPassword());
             }
-            final String urlLinkgenerator = this.WEBAPI_BASE + "/user/generator";
-            br.postPageRaw(urlLinkgenerator, JSonStorage.serializeToJson(postdata));
-            Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String urlLinkgenerator = "/user/generator";
+            Map<String, Object> resp = this.accessAPI(link, urlLinkgenerator, postdata, false);
             final String message = (String) resp.get("message");
             if (StringUtils.equalsIgnoreCase(message, "Please verify to continue.")) {
                 /* Special case: Captcha required */
                 final Map<String, Object> postdata2 = new HashMap<String, Object>();
                 final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, account.getStringProperty(PROPERTY_ACCOUNT_RECAPTCHA_SITEKEY, RECAPTCHA_SITEKEY_STATIC)).getToken();
                 postdata2.put("g-recaptcha-response", recaptchaV2Response);
-                br.postPageRaw(WEBAPI_BASE + "/user/generator/verify", JSonStorage.serializeToJson(postdata2));
-                this.checkErrorsWebapi(br, link, false);
+                resp = this.accessAPI(link, "/user/generator/verify", postdata2, true);
                 /* Try again */
-                br.postPageRaw(urlLinkgenerator, JSonStorage.serializeToJson(postdata));
-                resp = this.checkErrorsWebapi(br, link, false);
+                resp = this.accessAPI(link, urlLinkgenerator, postdata, true);
             } else {
                 /* No captcha required -> Check for errors as we didn't do that yet. */
-                this.checkErrorsWebapi(resp, link, false);
+                this.checkErrorsWebapi(resp, link);
             }
             final Map<String, Object> file = (Map<String, Object>) resp.get("file");
             dllink = file.get("dllink").toString();
@@ -197,11 +194,11 @@ public class LeechallIo extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        final Map<String, Object> loginmap = login(account, true);
         final Map<String, Object> resp;
         if (br.getURL().endsWith("/user/account")) {
             /* Page we need has already been accessed before. */
-            resp = this.checkErrorsWebapi(br, null, true);
+            resp = loginmap;
         } else {
             resp = this.getUserInfoMap(br);
         }
@@ -228,16 +225,14 @@ public class LeechallIo extends PluginForHost {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", Locale.US), br);
         }
         ai.setStatus(account.getType().getLabel() + " | Total downloaded: " + SizeFormatter.formatBytes(total_downloadedBytes.longValue()) + " | Files: " + total_files);
-        br.getPage(WEBAPI_BASE + "/user/bandwidth");
-        final Map<String, Object> respbandwidth = this.checkErrorsWebapi(br, null, true);
+        final Map<String, Object> respbandwidth = this.accessAPI("/user/bandwidth");
         final Map<String, Object> bandwidth = (Map<String, Object>) respbandwidth.get("bandwidth");
         final long dailytrafficmaxbytes = Long.parseLong(bandwidth.get("maximum").toString());
         final long dailytrafficusedbytes = Long.parseLong(bandwidth.get("usage").toString());
         ai.setTrafficMax(dailytrafficmaxbytes);
         ai.setTrafficLeft(dailytrafficmaxbytes - dailytrafficusedbytes);
-        /* Collect file hosts where used has reached limits so we can skip them later. */
-        br.getPage(WEBAPI_BASE + "/user/limits");
-        final Map<String, Object> resplimits = this.checkErrorsWebapi(br, null, true);
+        /* Collect file hosts where used has reached limits so we can skip them later and log that. */
+        final Map<String, Object> resplimits = this.accessAPI("/user/limits");
         final List<Map<String, Object>> limitlist = (List<Map<String, Object>>) resplimits.get("data");
         final ArrayList<String> hostsLimitReachedBandwidth = new ArrayList<String>();
         final ArrayList<String> hostsLimitReachedFileNum = new ArrayList<String>();
@@ -252,10 +247,9 @@ public class LeechallIo extends PluginForHost {
                 hostsLimitReachedFileNum.add(host);
             }
         }
-        /* Now collect all supported hosts. */
-        br.getPage(WEBAPI_BASE + "/app/status");
+        /* Now collect all supported- and working hosts. */
+        final Map<String, Object> respsupportedhosts = this.accessAPI("/app/status");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final Map<String, Object> respsupportedhosts = this.checkErrorsWebapi(br, null, true);
         final List<Map<String, Object>> hostlist = (List<Map<String, Object>>) respsupportedhosts.get("data");
         for (final Map<String, Object> hostinfo : hostlist) {
             final String host = hostinfo.get("host").toString();
@@ -295,13 +289,16 @@ public class LeechallIo extends PluginForHost {
                         account.saveCookies(this.br.getCookies(br.getHost()), "");
                         return userinfomap;
                     } catch (final Exception e) {
+                        logger.log(e);
                         logger.info("Cookie login failed");
                         br.clearCookies(null);
                     }
                 }
-                br.getPage("https://" + this.getHost() + "/login");
+                /* Get reCaptcha siteKey */
+                final String websiteloginurl = "https://" + this.getHost() + "/login";
                 final Browser brc = br.cloneBrowser();
-                brc.getPage("/js/chunk-06b4b5f5.38692513.js");
+                brc.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, websiteloginurl);
+                brc.getPage("https://" + this.getHost() + "/js/chunk-06b4b5f5.38692513.js");
                 String reCaptchaSitekey = brc.getRegex("sitekey\\s*:\"([^\"]+)").getMatch(0);
                 if (reCaptchaSitekey == null) {
                     logger.warning("Failed to find reCaptchaSitekey --> Fallback to hardcoded value");
@@ -310,13 +307,13 @@ public class LeechallIo extends PluginForHost {
                 final Map<String, Object> postdata = new HashMap<String, Object>();
                 postdata.put("email", account.getUser());
                 postdata.put("password", account.getPass());
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaSitekey).getToken();
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc, reCaptchaSitekey).getToken();
                 postdata.put("g-recaptcha-response", recaptchaV2Response);
-                br.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + this.getHost() + "/login");
-                br.postPageRaw(WEBAPI_BASE + "/auth/login", JSonStorage.serializeToJson(postdata));
-                final Map<String, Object> resp = this.checkErrorsWebapi(br, null, true);
+                br.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, websiteloginurl);
+                final Map<String, Object> resp = this.accessAPI(null, "/auth/login", postdata, true);
                 access_token = (String) resp.get("access_token");
                 if (StringUtils.isEmpty(access_token)) {
+                    /* This should never happen. */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.setCookie(br.getHost(), "access_token", access_token);
@@ -332,12 +329,37 @@ public class LeechallIo extends PluginForHost {
         }
     }
 
-    private Map<String, Object> getUserInfoMap(final Browser br) throws IOException, PluginException, InterruptedException {
-        br.getPage(this.WEBAPI_BASE + "/user/account");
-        return this.checkErrorsWebapi(br, null, true);
+    /** API GET request with global browser. */
+    private Map<String, Object> accessAPI(final String url) throws IOException, PluginException, InterruptedException {
+        return accessAPI(br, null, url, null, true);
     }
 
-    private Map<String, Object> checkErrorsWebapi(final Browser br, final DownloadLink link, final boolean islogin) throws PluginException, InterruptedException {
+    private Map<String, Object> accessAPI(final DownloadLink link, final String url) throws IOException, PluginException, InterruptedException {
+        return accessAPI(br, link, url, null, true);
+    }
+
+    private Map<String, Object> accessAPI(final DownloadLink link, final String url, final Map<String, Object> postdata) throws IOException, PluginException, InterruptedException {
+        return accessAPI(br, link, url, postdata, true);
+    }
+
+    private Map<String, Object> accessAPI(final DownloadLink link, final String url, final Map<String, Object> postdata, final boolean checkJsonErrors) throws IOException, PluginException, InterruptedException {
+        return accessAPI(br, link, url, postdata, true);
+    }
+
+    private Map<String, Object> accessAPI(final Browser br, final DownloadLink link, final String url, final Map<String, Object> postdata, final boolean checkJsonErrors) throws IOException, PluginException, InterruptedException {
+        if (postdata != null) {
+            br.postPageRaw(this.WEBAPI_BASE + url, JSonStorage.serializeToJson(postdata));
+        } else {
+            br.getPage(this.WEBAPI_BASE + url);
+        }
+        return this.checkErrorsWebapi(br, link, checkJsonErrors);
+    }
+
+    private Map<String, Object> getUserInfoMap(final Browser br) throws IOException, PluginException, InterruptedException {
+        return this.accessAPI(br, null, "/user/account", null, true);
+    }
+
+    private Map<String, Object> checkErrorsWebapi(final Browser br, final DownloadLink link, final boolean checkJsonErrors) throws PluginException, InterruptedException {
         if (br.getHttpConnection().getResponseCode() == 401) {
             throw new AccountInvalidException("Session expired");
         }
@@ -347,14 +369,18 @@ public class LeechallIo extends PluginForHost {
         } catch (final JSonMapperException jse) {
             throw new AccountUnavailableException("Bad API answer", 1 * 60 * 1000l);
         }
-        return checkErrorsWebapi(entries, link, islogin);
+        if (checkJsonErrors) {
+            return checkErrorsWebapi(entries, link);
+        } else {
+            return entries;
+        }
     }
 
-    private Map<String, Object> checkErrorsWebapi(final Map<String, Object> entries, final DownloadLink link, final boolean islogin) throws PluginException, InterruptedException {
+    private Map<String, Object> checkErrorsWebapi(final Map<String, Object> entries, final DownloadLink link) throws PluginException, InterruptedException {
         final Boolean success = (Boolean) entries.get("success");
         if (Boolean.FALSE.equals(success)) {
             final String errormessage = entries.get("message").toString();
-            if (islogin || link == null) {
+            if (link == null) {
                 /* Account error */
                 throw new AccountInvalidException(errormessage);
             } else if (errormessage.matches("(?i).*Invalid email or password.*")) {
