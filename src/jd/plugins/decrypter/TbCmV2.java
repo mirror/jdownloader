@@ -30,33 +30,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNodeVisitor;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.nutils.encoding.Encoding;
-import jd.nutils.encoding.HTMLEntities;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DecrypterRetryException;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
-import jd.plugins.hoster.YoutubeDashV2;
-import jd.utils.locale.JDL;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -101,6 +74,33 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNodeVisitor;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
+import jd.plugins.hoster.YoutubeDashV2;
+import jd.utils.locale.JDL;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://(?:www\\.)?youtube-nocookie\\.com/embed/.+", "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|shorts/|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[%A-Za-z0-9\\-_]+(.*?index=\\d+)?(.*?page=\\d+)?(.*?list=[%A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[%A-Za-z0-9\\-_]+(\\#variant=\\S+)?", "https?://([a-z]+\\.)?youtube\\.com/@[^/]+" })
 public class TbCmV2 extends PluginForDecrypt {
     private static final int DDOS_WAIT_MAX        = Application.isJared(null) ? 1000 : 10;
@@ -116,9 +116,9 @@ public class TbCmV2 extends PluginForDecrypt {
     }
 
     /**
-     * Returns host from provided String.f
+     * Returns host from provided String.
      */
-    static String getBase() {
+    public static String getBase() {
         return "https://www.youtube.com";
     }
 
@@ -227,7 +227,7 @@ public class TbCmV2 extends PluginForDecrypt {
             return ret;
         }
         final String finalContainerURL = cryptedLink;
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>() {
             @Override
             public boolean add(DownloadLink e) {
                 e.setContainerUrl(finalContainerURL);
@@ -291,10 +291,11 @@ public class TbCmV2 extends PluginForDecrypt {
         globalPropertiesForDownloadLink.put(YoutubeHelper.YT_USER_ID, userID);
         final boolean paginationIsBroken = true;
         final short maxItemsPerPage = 100;
+        final ArrayList<YoutubeClipData> videoIdsToAdd = new ArrayList<YoutubeClipData>();
         synchronized (DIALOGLOCK) {
             if (this.isAbort()) {
                 logger.info("Thread Aborted!");
-                return decryptedLinks;
+                return ret;
             }
             {
                 // Prevents accidental decrypting of entire Play-List or Channel-List or User-List.
@@ -321,7 +322,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         } else {
                             buttonTextCrawlPlaylist = "Playlist";
                         }
-                        ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, dialogTitle, JDL.L("plugins.host.youtube.isplaylist.question.message", messageDialogText), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", buttonTextCrawlPlaylist), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do nothing?")) {
+                        final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, dialogTitle, JDL.L("plugins.host.youtube.isplaylist.question.message", messageDialogText), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", buttonTextCrawlPlaylist), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do nothing?")) {
                             @Override
                             public ModalityType getModalityType() {
                                 return ModalityType.MODELESS;
@@ -349,7 +350,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         break;
                     case NOTHING:
                     default:
-                        return decryptedLinks;
+                        return ret;
                     }
                 }
             }
@@ -389,100 +390,97 @@ public class TbCmV2 extends PluginForDecrypt {
                     logger.info("LinkIsVideoAndPlaylistUrlAction:" + PlaylistVideoAction);
                     switch (PlaylistVideoAction) {
                     case PLAYLIST_ONLY:
-                        // videoID = null;
                         break;
                     case VIDEO_ONLY:
-                        playlistID = null;
-                        watch_videos = null;
+                        videoIdsToAdd.add(new org.jdownloader.plugins.components.youtube.YoutubeClipData(videoID));
                         break;
                     default:
-                        return decryptedLinks;
+                        return ret;
                     }
                 }
             }
         }
-        final ArrayList<YoutubeClipData> videoIdsToAdd = new ArrayList<YoutubeClipData>();
         boolean reversePlaylistNumber = false;
-        try {
-            Boolean userWorkaround = null;
-            Boolean channelWorkaround = null;
-            if (StringUtils.isNotEmpty(userID) && StringUtils.isEmpty(playlistID)) {
-                /*
-                 * the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this playlist
-                 * instead
-                 */
-                helper.getPage(br, "https://www.youtube.com/@" + userID + "/featured");
-                helper.parse();
-                // channel title isn't user_name. user_name is /user/ reference. check logic in YoutubeHelper.extractData()!
-                globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_TITLE, extractWebsiteTitle(br));
-                globalPropertiesForDownloadLink.put(YoutubeHelper.YT_USER_NAME, userID);
-                // you can convert channelid UC[STATICHASH] (UserChanel) ? to UU[STATICHASH] (UsersUpload) which is covered below
-                channelID = getChannelID(helper, br);
-                if (channelID != null) {
-                    globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_ID, channelID);
-                    playlistID = "UU" + channelID.substring(2);
-                    userWorkaround = Boolean.valueOf(StringUtils.isNotEmpty(playlistID));
-                }
-            }
-            if (StringUtils.isNotEmpty(channelID) && StringUtils.isEmpty(playlistID)) {
-                /*
-                 * you can not use this with /c or /channel based urls, it will pick up false positives. see
-                 * https://www.youtube.com/channel/UCOSGEokQQcdAVFuL_Aq8dlg, it will find list=PLc-T0ryHZ5U_FtsfHQopuvQugBvRoVR3j which only
-                 * contains 27 videos not the entire channels 112
-                 */
-                if (!cleanedurl.matches(".+youtube\\.com/(?:channel/|c/).+")) {
+        if (videoIdsToAdd.isEmpty()) {
+            try {
+                Boolean userWorkaround = null;
+                Boolean channelWorkaround = null;
+                if (StringUtils.isNotEmpty(userID) && StringUtils.isEmpty(playlistID)) {
                     /*
                      * the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this
                      * playlist instead
                      */
-                    helper.getPage(br, "https://www.youtube.com/channel/" + channelID);
-                    playlistID = br.getRegex("list=([A-Za-z0-9\\-_]+)\"[^<>]+play-all-icon-btn").getMatch(0);
+                    helper.getPage(br, "https://www.youtube.com/@" + userID + "/featured");
+                    helper.parse();
+                    // channel title isn't user_name. user_name is /user/ reference. check logic in YoutubeHelper.extractData()!
+                    globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_TITLE, extractWebsiteTitle(br));
+                    globalPropertiesForDownloadLink.put(YoutubeHelper.YT_USER_NAME, userID);
+                    // you can convert channelid UC[STATICHASH] (UserChanel) ? to UU[STATICHASH] (UsersUpload) which is covered below
+                    channelID = getChannelID(helper, br);
+                    if (channelID != null) {
+                        globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_ID, channelID);
+                        playlistID = "UU" + channelID.substring(2);
+                        userWorkaround = Boolean.valueOf(StringUtils.isNotEmpty(playlistID));
+                    }
                 }
-                if (StringUtils.isEmpty(playlistID) && channelID.startsWith("UC")) {
-                    // channel has no play all button.
-                    // like https://www.youtube.com/channel/UCbmRs17gtQxFXQyvIo5k6Ag/feed
-                    playlistID = "UU" + channelID.substring(2);
+                if (StringUtils.isNotEmpty(channelID) && StringUtils.isEmpty(playlistID)) {
+                    /*
+                     * you can not use this with /c or /channel based urls, it will pick up false positives. see
+                     * https://www.youtube.com/channel/UCOSGEokQQcdAVFuL_Aq8dlg, it will find list=PLc-T0ryHZ5U_FtsfHQopuvQugBvRoVR3j which
+                     * only contains 27 videos not the entire channels 112
+                     */
+                    if (!cleanedurl.matches(".+youtube\\.com/(?:channel/|c/).+")) {
+                        /*
+                         * the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this
+                         * playlist instead
+                         */
+                        helper.getPage(br, "https://www.youtube.com/channel/" + channelID);
+                        playlistID = br.getRegex("list=([A-Za-z0-9\\-_]+)\"[^<>]+play-all-icon-btn").getMatch(0);
+                    }
+                    if (StringUtils.isEmpty(playlistID) && channelID.startsWith("UC")) {
+                        // channel has no play all button.
+                        // like https://www.youtube.com/channel/UCbmRs17gtQxFXQyvIo5k6Ag/feed
+                        playlistID = "UU" + channelID.substring(2);
+                    }
+                    channelWorkaround = Boolean.valueOf(StringUtils.isNotEmpty(playlistID));
                 }
-                channelWorkaround = Boolean.valueOf(StringUtils.isNotEmpty(playlistID));
+                final ArrayList<YoutubeClipData> playlist = parsePlaylist(helper, videoID, playlistID, cleanedurl);
+                if (playlist != null) {
+                    videoIdsToAdd.addAll(playlist);
+                }
+                if (videoIdsToAdd.size() == 0 && Boolean.TRUE.equals(channelWorkaround)) {
+                    videoIdsToAdd.addAll(parseChannelgrid(helper, channelID));
+                    Collections.reverse(videoIdsToAdd);
+                    reversePlaylistNumber = true;
+                }
+                if (videoIdsToAdd.size() == 0 && Boolean.TRUE.equals(userWorkaround)) {
+                    videoIdsToAdd.addAll(parseUsergrid(helper, userID));
+                    Collections.reverse(videoIdsToAdd);
+                    reversePlaylistNumber = true;
+                }
+                // some unknown playlist type?
+                if (videoIdsToAdd.size() == 0 && StringUtils.isNotEmpty(playlistID)) {
+                    videoIdsToAdd.addAll(parseGeneric(helper, cleanedurl));
+                }
+                videoIdsToAdd.addAll(parseVideoIds(watch_videos));
+                if (videoIdsToAdd.size() == 0) {
+                    videoIdsToAdd.addAll(parseGeneric(helper, cleanedurl));
+                }
+                // /user/username/videos and /channel/[a-zA-Z0-9_-]+/videos are inverted (newest to oldest), we should always return oldest
+                // >
+                // newest so playlist counter is correct.
+                // userworkaround == true == newest to oldest
+                // channelworkaround == true == newest to oldest.
+            } catch (InterruptedException e) {
+                logger.log(e);
+                return ret;
             }
-            final ArrayList<YoutubeClipData> playlist = parsePlaylist(helper, videoID, playlistID, cleanedurl);
-            if (playlist != null) {
-                videoIdsToAdd.addAll(playlist);
-            }
-            if (videoIdsToAdd.size() == 0 && Boolean.TRUE.equals(channelWorkaround)) {
-                videoIdsToAdd.addAll(parseChannelgrid(helper, channelID));
-                Collections.reverse(videoIdsToAdd);
-                reversePlaylistNumber = true;
-            }
-            if (videoIdsToAdd.size() == 0 && Boolean.TRUE.equals(userWorkaround)) {
-                videoIdsToAdd.addAll(parseUsergrid(helper, userID));
-                Collections.reverse(videoIdsToAdd);
-                reversePlaylistNumber = true;
-            }
-            // some unknown playlist type?
-            if (videoIdsToAdd.size() == 0 && StringUtils.isNotEmpty(playlistID)) {
-                videoIdsToAdd.addAll(parseGeneric(helper, cleanedurl));
-            }
-            videoIdsToAdd.addAll(parseVideoIds(watch_videos));
-            if (StringUtils.isNotEmpty(videoID)) {
-                videoIdsToAdd.add(new org.jdownloader.plugins.components.youtube.YoutubeClipData(videoID));
-            }
-            if (videoIdsToAdd.size() == 0) {
-                videoIdsToAdd.addAll(parseGeneric(helper, cleanedurl));
-            }
-            // /user/username/videos and /channel/[a-zA-Z0-9_-]+/videos are inverted (newest to oldest), we should always return oldest >
-            // newest so playlist counter is correct.
-            // userworkaround == true == newest to oldest
-            // channelworkaround == true == newest to oldest.
-        } catch (InterruptedException e) {
-            logger.log(e);
-            return decryptedLinks;
         }
         final Set<String> videoIDsdupeCheck = new HashSet<String>();
         for (YoutubeClipData vid : videoIdsToAdd) {
             if (this.isAbort()) {
                 logger.info("Aborted!");
-                return decryptedLinks;
+                return ret;
             } else if (isCrawlDupeCheckEnabled && linkCollectorContainsEntryByID(vid.videoID)) {
                 logger.info("CrawlDupeCheck skip:" + vid.videoID);
                 continue;
@@ -525,12 +523,12 @@ public class TbCmV2 extends PluginForDecrypt {
                     vid.error = emsg;
                 }
                 if (vid.streams == null || StringUtils.isNotEmpty(vid.error)) {
-                    decryptedLinks.add(createOfflinelink(YoutubeDashV2.generateContentURL(vid.videoID), "Error - " + vid.videoID + (vid.title != null ? " [" + vid.title + "]:" : "") + " " + vid.error, vid.error));
+                    ret.add(createOfflinelink(YoutubeDashV2.generateContentURL(vid.videoID), "Error - " + vid.videoID + (vid.title != null ? " [" + vid.title + "]:" : "") + " " + vid.error, vid.error));
                     continue;
                 }
             }
             if (vid.streams == null || StringUtils.isNotEmpty(vid.error)) {
-                decryptedLinks.add(createOfflinelink(YoutubeDashV2.generateContentURL(vid.videoID), "Error - " + vid.videoID + (vid.title != null ? " [" + vid.title + "]:" : "") + " " + vid.error, vid.error));
+                ret.add(createOfflinelink(YoutubeDashV2.generateContentURL(vid.videoID), "Error - " + vid.videoID + (vid.title != null ? " [" + vid.title + "]:" : "") + " " + vid.error, vid.error));
                 if (vid.streams == null) {
                     continue;
                 }
@@ -741,7 +739,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     // }
                     if (linkVariants.size() > 0) {
                         DownloadLink lnk = createLink(l, linkVariants.get(0), cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants);
-                        decryptedLinks.add(lnk);
+                        ret.add(lnk);
                         if (linkVariants.get(0).getVariant().getGroup() == VariantGroup.SUBTITLES) {
                             List<String> extras = CFG_YOUTUBE.CFG.getExtraSubtitles();
                             if (extras != null) {
@@ -751,10 +749,10 @@ public class TbCmV2 extends PluginForDecrypt {
                                             if (vi.getVariant() instanceof SubtitleVariant) {
                                                 if ("*".equals(s)) {
                                                     lnk = createLink(l, vi, cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants);
-                                                    decryptedLinks.add(lnk);
+                                                    ret.add(lnk);
                                                 } else if (StringUtils.equalsIgnoreCase(((SubtitleVariant) vi.getVariant()).getGenericInfo().getLanguage(), s)) {
                                                     lnk = createLink(l, vi, cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants);
-                                                    decryptedLinks.add(lnk);
+                                                    ret.add(lnk);
                                                     break;
                                                 }
                                             }
@@ -798,11 +796,11 @@ public class TbCmV2 extends PluginForDecrypt {
                     ArrayList<VariantInfo> lst = new ArrayList<VariantInfo>();
                     lst.add(vi);
                     DownloadLink lnk = createLink(new YoutubeVariantCollection(), vi, lst);
-                    decryptedLinks.add(lnk);
+                    ret.add(lnk);
                 }
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private String getChannelID(YoutubeHelper helper, Browser br) {
@@ -898,9 +896,6 @@ public class TbCmV2 extends PluginForDecrypt {
             final YoutubeHelper helper = new YoutubeHelper(br, getLogger());
             ClipDataCache.referenceLink(helper, ret, clip);
             // thislink.setAvailable(true);
-            if (cfg.isSetCustomUrlEnabled()) {
-                ret.setCustomURL(getBase() + "/watch?v=" + clip.videoID);
-            }
             ret.setContentUrl(getBase() + "/watch?v=" + clip.videoID + "#variant=" + Encoding.urlEncode(Base64.encode(variantInfo.getVariant().getStorableString())));
             // thislink.setProperty(key, value)
             ret.setProperty(YoutubeHelper.YT_ID, clip.videoID);

@@ -190,6 +190,22 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     }
 
     @Override
+    public String getPluginContentURL(final DownloadLink link) {
+        final String videoID = link.getStringProperty(YoutubeHelper.YT_ID);
+        final String playlistID = link.getStringProperty(YoutubeHelper.YT_PLAYLIST_ID);
+        final boolean tryToReturnUrlInPlaylistContext = true;
+        if (tryToReturnUrlInPlaylistContext && DebugMode.TRUE_IN_IDE_ELSE_FALSE && playlistID != null) {
+            /* 2023-06-28: Debug-test */
+            return "https://www.youtube.com/watch?v=" + videoID + "&list=" + playlistID;
+        }
+        if (PluginJsonConfig.get(YoutubeConfig.class).isSetCustomUrlEnabled()) {
+            return generateContentURL(videoID);
+        } else {
+            return super.getPluginContentURL(link);
+        }
+    }
+
+    @Override
     public PluginForHost assignPlugin(PluginFinder pluginFinder, final DownloadLink link) {
         final PluginForHost ret = super.assignPlugin(pluginFinder, link);
         final long convertTimestamp = 1650639863343l;
@@ -243,7 +259,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return -1;
     }
 
     public static final class DashDownloadPluginProgress extends DownloadPluginProgress {
@@ -311,7 +327,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         final String id = downloadLink.getStringProperty(YoutubeHelper.YT_ID);
-        final YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
+        // final YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
         final YoutubeHelper helper = new YoutubeHelper(br, getLogger());
         helper.setupProxy();
         final AbstractVariant variant = getVariant(downloadLink);
