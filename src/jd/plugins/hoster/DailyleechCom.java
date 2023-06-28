@@ -26,11 +26,6 @@ import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -51,6 +46,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailyleech.com" }, urls = { "" })
 public class DailyleechCom extends PluginForHost {
@@ -137,7 +137,7 @@ public class DailyleechCom extends PluginForHost {
         } catch (final Exception e) {
             if (storedDirecturl != null) {
                 link.removeProperty(directurlproperty);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired?");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired?", e);
             } else {
                 throw e;
             }
@@ -160,9 +160,8 @@ public class DailyleechCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Cannot download URLs without filename");
             }
             /**
-             * Okay this website is an absolute chaos: </br>
-             * We need to generate downloadlinks through a chatbox ... after adding new URLs, we need to try to find our downloadlinks by
-             * going through the chat and need to identify our file by filename! </br>
+             * Okay this website is an absolute chaos: </br> We need to generate downloadlinks through a chatbox ... after adding new URLs,
+             * we need to try to find our downloadlinks by going through the chat and need to identify our file by filename! </br>
              * Direct-downloadurls can be broken so we need to ignore the ones we know are broken to speed-up the process of finding the
              * correct one.
              */
@@ -324,8 +323,7 @@ public class DailyleechCom extends PluginForHost {
                 /* same linkID */
                 /**
                  * This extra check is necessary because in theory this website may display the submitted URL in a slightly modified version
-                 * than the original. </br>
-                 * Using the linkIDs for comparison might increase our chances of finding a result.
+                 * than the original. </br> Using the linkIDs for comparison might increase our chances of finding a result.
                  */
                 logger.info("Matched post via linkID");
             } else if (StringUtils.equals(filename, link.getName())) {
