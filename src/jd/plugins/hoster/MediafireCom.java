@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -450,12 +451,11 @@ public class MediafireCom extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 250);
     }
 
-    public Map<String, Object> login(final Browser brLogin, final Account account, boolean force) throws Exception {
+    public Map<String, Object> login(final Browser br, final Account account, boolean force) throws Exception {
         try {
-            // at this stage always trusting cookies
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
-                brLogin.setCookies(this.getHost(), cookies);
+                br.setCookies(this.getHost(), cookies);
                 if (!force) {
                     logger.info("Trust cookie without check");
                     return null;
@@ -466,18 +466,24 @@ public class MediafireCom extends PluginForHost {
                     final String email = (String) JavaScriptEngineFactory.walkJson(resp, "user_info/email");
                     if (StringUtils.equalsIgnoreCase(email, account.getUser())) {
                         logger.info("Cookie login successful");
-                        account.saveCookies(brLogin.getCookies(br.getHost()), "");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return resp;
                     } else {
                         logger.info("Cookie login failed");
                         br.clearCookies(null);
+                        /** Don't do this. Upper errorhandling does this if necessary. */
+                        // this.dumpSession(account);
                     }
                 } catch (final PluginException ignore) {
+                    /*
+                     * E.g. {"response":{"action":"user\/get_info","message":"The supplied Session Token is expired or invalid","error":105,
+                     * "result":"Error","current_api_version":"1.5"}}
+                     */
                     logger.exception("API returned error -> Full login required", ignore);
                 }
             }
             logger.info("Performing full login");
-            this.setBrowserExclusive();
+            this.setBrowserExclusive(); // Important
             if (!looksLikeValidMailAdress(account.getUser())) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new AccountInvalidException("\r\nBitte trage deine E-Mail Adresse in das 'Name'-Feld ein.");
@@ -485,17 +491,17 @@ public class MediafireCom extends PluginForHost {
                     throw new AccountInvalidException("\r\nPlease enter your e-mail adress in the 'Name'-field.");
                 }
             }
-            brLogin.getPage("https://www." + this.getHost() + "/login/");
-            final Browser brLogin2 = brLogin.cloneBrowser();
-            brLogin2.getPage("/templates/login_signup/login_signup.php?dc=loginPath");
-            Form form = brLogin2.getFormbyProperty("id", "form_login1");
+            final Browser br2 = br.cloneBrowser();
+            br2.getPage("https://www." + this.getHost() + "/login/");
+            br2.getPage("/templates/login_signup/login_signup.php?dc=loginPath");
+            Form form = br2.getFormbyProperty("id", "form_login1");
             if (form == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (form.getAction() == null) {
                 form.setAction("/dynamic/client_login/mediafire.php");
             }
-            final String security = brLogin2.getRegex("security:\"([^\"]+)").getMatch(0);
+            final String security = br2.getRegex("security\\s*:\\s*\"([^\"]+)").getMatch(0);
             if (security != null) {
                 form.put("security", security);
             }
@@ -504,16 +510,16 @@ public class MediafireCom extends PluginForHost {
             form.put("login_email", Encoding.urlEncode(account.getUser()));
             form.put("login_pass", Encoding.urlEncode(account.getPass()));
             // submit via the same browser
-            brLogin2.submitForm(form);
+            br2.submitForm(form);
             /* 2021-04-29: This might return an error via json but as long as we get the cookie all is fine! */
-            final String cookie = brLogin2.getCookie(br.getHost(), "user", Cookies.NOTDELETEDPATTERN);
+            final String cookie = br2.getCookie(br2.getHost(), "user", Cookies.NOTDELETEDPATTERN);
             if (cookie == null || cookie.equalsIgnoreCase("x")) {
                 throw new AccountInvalidException();
             }
-            brLogin.getPage("/myaccount/");
-            String sessionToken = br.getRegex("parent\\.bqx\\(\"([a-f0-9]+)\"\\)").getMatch(0);
+            br2.getPage("/myaccount/");
+            String sessionToken = br2.getRegex("parent\\.bqx\\(\"([a-f0-9]+)\"\\)").getMatch(0);
             if (sessionToken == null) {
-                sessionToken = br.getRegex("LoadIframeLightbox\\('/templates/tos\\.php\\?token=([a-f0-9]+)").getMatch(0);
+                sessionToken = br2.getRegex("LoadIframeLightbox\\('/templates/tos\\.php\\?token=([a-f0-9]+)").getMatch(0);
             }
             if (StringUtils.isEmpty(sessionToken)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -521,7 +527,7 @@ public class MediafireCom extends PluginForHost {
             account.setProperty(PROPERTY_ACCOUNT_SESSION_TOKEN, sessionToken);
             // apiCommand(account, "device/get_status.php", null);
             final Map<String, Object> resp = apiCommand(account, "user/get_info.php", null);
-            account.saveCookies(brLogin.getCookies(br.getHost()), "");
+            account.saveCookies(br.getCookies(br.getHost()), "");
             return resp;
         } catch (PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -567,6 +573,8 @@ public class MediafireCom extends PluginForHost {
         final Map<String, Object> resp = (Map<String, Object>) entries.get("response");
         final String result = (String) resp.get("result");
         if (StringUtils.equalsIgnoreCase(result, "Error")) {
+            // TODO: Implement more errorcodes: Separate them for the different types of errors, then handle them.
+            final List<Integer> fatal = Arrays.asList(new Integer[] { 100, 101, 102, 103 });
             final String errormessage = resp.get("message").toString();
             final int errorcode = ((Number) resp.get("error")).intValue();
             /* List of errorcodes: https://www.mediafire.com/developers/core_api/1.5/getting_started/#error_codes */
