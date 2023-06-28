@@ -22,6 +22,7 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -114,6 +115,7 @@ public class DatanodesTo extends XFileSharingProBasic {
             /* 2023-02-21 */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Not allowed from domain you're coming from");
         }
+        super.checkErrors(br, html, link, account, checkAll);
     }
 
     @Override
@@ -124,5 +126,20 @@ public class DatanodesTo extends XFileSharingProBasic {
             prepBr.getHeaders().put("Referer", "https://datanodes.to/users");
         }
         return prepBr;
+    }
+
+    @Override
+    public boolean isPremiumOnly(final Browser br) {
+        Form freeform = null;
+        try {
+            freeform = this.findFormDownload1Free(br);
+        } catch (final Exception ignore) {
+            ignore.printStackTrace();
+        }
+        if (br.containsHTML("/premium") && freeform == null) {
+            return true;
+        } else {
+            return super.isPremiumOnly(br);
+        }
     }
 }

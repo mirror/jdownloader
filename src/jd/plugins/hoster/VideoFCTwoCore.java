@@ -481,7 +481,7 @@ public abstract class VideoFCTwoCore extends PluginForHost {
                 /* Even premium accounts won't be able to watch such content - it has to be bought separately! */
                 logger.info("This content needs to be purchased individually otherwise only a trailer is available!");
                 // throw new AccountRequiredException();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Only trailer available. Enable trailer download in settings to allow trailer downloads.");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Only trailer available. Enable trailer download in Settings -> Plugins -> " + this.getHost());
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
