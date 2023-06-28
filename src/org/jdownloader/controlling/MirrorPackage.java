@@ -3,15 +3,17 @@ package org.jdownloader.controlling;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Map;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.download.HashInfo;
 
+import org.appwork.storage.simplejson.MinimalMemoryMap;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.FinalLinkState;
 
 public class MirrorPackage {
-
     private final String                  id;
     private final ArrayList<DownloadLink> list     = new ArrayList<DownloadLink>();
     private boolean                       finished = false;
@@ -24,16 +26,14 @@ public class MirrorPackage {
         return bytesLoaded;
     }
 
-    private long                     bytesLoaded = 0;
-    private long                     bytesTotal  = -1;
-    private boolean                  online      = false;
-    private boolean                  offline     = true;
-    private boolean                  enabled     = false;
-    private String                   md5         = null;
-    private String                   sha1        = null;
-    private String                   sha256      = null;
-    private long                     speed;
-    private final MirrorPackageSetup setup;
+    private long                       bytesLoaded = 0;
+    private long                       bytesTotal  = -1;
+    private boolean                    online      = false;
+    private boolean                    offline     = true;
+    private boolean                    enabled     = false;
+    private Map<HashInfo.TYPE, String> knownHashes = null;
+    private long                       speed;
+    private final MirrorPackageSetup   setup;
 
     public boolean isOffline() {
         return offline;
@@ -59,31 +59,19 @@ public class MirrorPackage {
             // size mismatch
             return id + "/" + linkBytesTotal;
         }
-        final String linkMD5 = link.getMD5Hash();
-        if (StringUtils.isNotEmpty(md5) && StringUtils.isNotEmpty(linkMD5) && !StringUtils.equalsIgnoreCase(md5, linkMD5)) {
-            // hash mismatch
-            return id + "/" + linkMD5.toLowerCase(Locale.ENGLISH);
+        final HashInfo hashInfo = link.getHashInfo();
+        if (hashInfo != null) {
+            if (knownHashes == null) {
+                knownHashes = new MinimalMemoryMap<HashInfo.TYPE, String>();
+            }
+            final String existing = knownHashes.get(hashInfo.getType());
+            if (existing == null) {
+                knownHashes.put(hashInfo.getType(), hashInfo.getHash());
+            } else if (!existing.equals(hashInfo.getHash())) {
+                // hash mismatch
+                return id + "/" + hashInfo.getHash().toLowerCase(Locale.ENGLISH);
+            }
         }
-        final String linkSHA1 = link.getSha1Hash();
-        if (StringUtils.isNotEmpty(sha1) && StringUtils.isNotEmpty(linkSHA1) && !StringUtils.equalsIgnoreCase(sha1, linkSHA1)) {
-            // hash mismatch
-            return id + "/" + linkSHA1.toLowerCase(Locale.ENGLISH);
-        }
-        final String linkSHA256 = link.getSha256Hash();
-        if (StringUtils.isNotEmpty(sha256) && StringUtils.isNotEmpty(linkSHA256) && !StringUtils.equalsIgnoreCase(sha256, linkSHA256)) {
-            // hash mismatch
-            return id + "/" + linkSHA256.toLowerCase(Locale.ENGLISH);
-        }
-        if (StringUtils.isEmpty(md5)) {
-            md5 = linkMD5;
-        }
-        if (StringUtils.isEmpty(sha1)) {
-            sha1 = linkSHA1;
-        }
-        if (StringUtils.isEmpty(sha256)) {
-            sha256 = linkSHA256;
-        }
-
         final boolean isFinished = FinalLinkState.CheckFinished(link.getFinalLinkState());
         if (isFinished) {
             finished = true;
@@ -105,7 +93,6 @@ public class MirrorPackage {
             bytesLoaded = Math.max(bytesLoaded, view.getBytesLoaded());
         }
         bytesTotal = Math.max(bytesTotal, view.getBytesTotal());
-
         if (link.getAvailableStatus() == AvailableStatus.TRUE) {
             online = true;
         } else {
@@ -136,5 +123,4 @@ public class MirrorPackage {
     public long getSpeed() {
         return speed;
     }
-
 }
