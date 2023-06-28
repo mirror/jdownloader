@@ -20,10 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -43,6 +39,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RosefileNet extends PluginForHost {
@@ -209,12 +209,13 @@ public class RosefileNet extends PluginForHost {
                     if (this.looksLikeDownloadableContent(dl.getConnection())) {
                         break;
                     }
-                } catch (final Throwable e) {
+                } catch (final Exception e) {
                     if (i == mirrorurls.size() - 1) {
                         /* Last item -> Throw exception */
                         throw e;
                     } else {
                         logger.info("Mirror failed due to exception");
+                        logger.log(e);
                         continue;
                     }
                 }

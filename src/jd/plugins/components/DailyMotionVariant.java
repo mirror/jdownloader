@@ -7,9 +7,6 @@ import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 
-import jd.plugins.DownloadLink;
-import jd.plugins.hoster.DailyMotionCom;
-
 public class DailyMotionVariant implements Storable, LinkVariant {
     private static final Icon VIDEO = new AbstractIcon(IconKey.ICON_VIDEO, 16);
     private static final Icon AUDIO = new AbstractIcon(IconKey.ICON_AUDIO, 16);
@@ -55,15 +52,6 @@ public class DailyMotionVariant implements Storable, LinkVariant {
     public DailyMotionVariant(/* storable */) {
     }
 
-    public DailyMotionVariant(DownloadLink dl) {
-        directlink = DailyMotionCom.getDirectlink(dl);
-        // 1920x1080
-        qName = dl.getStringProperty(DailyMotionCom.PROPERTY_QUALITY_NAME);
-        // "5"
-        videoHeight = DailyMotionCom.getQualityHeight(dl);
-        displayName = qName;
-    }
-
     private String displayName;
 
     public String getDisplayName() {
@@ -74,10 +62,14 @@ public class DailyMotionVariant implements Storable, LinkVariant {
         this.displayName = displayName;
     }
 
-    public DailyMotionVariant(final DailyMotionVariant bestVi, String convert, String qualityName, String name) {
-        directlink = bestVi.directlink;
-        qName = name;
-        videoHeight = bestVi.videoHeight;
+    public DailyMotionVariant(DailyMotionVariant variant, String convert, String qualityName, String name) {
+        this(variant.getLink(), variant.getVideoHeight(), convert, qualityName, name);
+    }
+
+    public DailyMotionVariant(String directlink, int videoHeight, String convert, String qualityName, String name) {
+        this.directlink = directlink;
+        qName = qualityName;
+        this.videoHeight = videoHeight;
         this.convertTo = convert;
         displayName = name;
     }

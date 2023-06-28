@@ -21,8 +21,6 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -32,6 +30,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.components.DailyMotionVariant;
 import jd.plugins.hoster.DailyMotionCom;
 import jd.plugins.hoster.DailyMotionComV2;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 //Decrypts embedded videos from dailymotion
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailymotion.com" }, urls = { "https?://(?:www\\.)?(dailymotion\\.com|dai\\.ly)/.+" })
@@ -45,6 +45,11 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
+    private DailyMotionVariant getDailyMotionVariant(DownloadLink link) {
+        final String name = link.getStringProperty(DailyMotionCom.PROPERTY_QUALITY_NAME);
+        return new DailyMotionVariant(DailyMotionCom.getDirectlink(link), DailyMotionCom.getQualityHeight(link), null, name, name);
+    }
+
     @Override
     public ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param, final String contenturl, final SubConfiguration cfg, final boolean accessContenturl) throws Exception {
         final ArrayList<DownloadLink> ret = super.crawlSingleVideo(param, contenturl, cfg, accessContenturl);
@@ -52,11 +57,11 @@ public class DailyMotionComDecrypterV2 extends DailyMotionComDecrypter {
         final ArrayList<DailyMotionVariant> variantInfos = new ArrayList<DailyMotionVariant>();
         DownloadLink variantLink = null;
         DailyMotionVariant bestVi = null;
-        for (DownloadLink dl : ret) {
-            String type = dl.getStringProperty("plain_ext");
+        for (final DownloadLink dl : ret) {
+            final String type = dl.getStringProperty("plain_ext");
             if (".mp4".equals(type)) {
                 videos.add(dl);
-                final DailyMotionVariant vi = new DailyMotionVariant(dl);
+                final DailyMotionVariant vi = getDailyMotionVariant(dl);
                 variantInfos.add(vi);
                 if (bestVi == null || vi.getVideoHeight() > bestVi.getVideoHeight()) {
                     bestVi = vi;

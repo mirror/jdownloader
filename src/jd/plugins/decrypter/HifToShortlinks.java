@@ -28,15 +28,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class TurbobitHitfileShorturls extends PluginForDecrypt {
-    public TurbobitHitfileShorturls(PluginWrapper wrapper) {
+public class HifToShortlinks extends PluginForDecrypt {
+    public HifToShortlinks(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "hif.to", "hil.to", "hitf.to", "hitf.cc", "trbbt.net" });
+        ret.add(new String[] { "hif.to", "hil.to", "hitf.to", "hitf.cc", "trbbt.net", "turb.pw" });
         return ret;
     }
 
@@ -56,7 +56,7 @@ public class TurbobitHitfileShorturls extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[A-Za-z0-9]+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^/]+(/.+)?");
         }
         return ret.toArray(new String[0]);
     }
