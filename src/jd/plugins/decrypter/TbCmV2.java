@@ -270,13 +270,13 @@ public class TbCmV2 extends PluginForDecrypt {
         final String userChannel = new Regex(cleanedurl, "/c/([^/\\?]+)").getMatch(0);
         userID = new Regex(cleanedurl, "/user/([^/\\?]+)").getMatch(0);
         if (userID == null) {
-            userID = new Regex(cleanedurl, "youtube.com/@([^/\\?]+)").getMatch(0);
+            userID = new Regex(cleanedurl, "(?i)https?://[^/]+/@([^/\\?]+)").getMatch(0);
         }
         channelID = new Regex(cleanedurl, "/channel/([^/\\?]+)").getMatch(0);
         if (StringUtils.isEmpty(channelID) && StringUtils.isNotEmpty(userChannel)) {
             logger.info("Trying to find channelID");
             helper.getPage(br, "https://www.youtube.com/c/" + userChannel);
-            channelID = br.getRegex("/channel/(UC[A-Za-z0-9\\-_]+)/videos").getMatch(0);
+            channelID = br.getRegex("(?i)/channel/(UC[A-Za-z0-9\\-_]+)/videos").getMatch(0);
             if (StringUtils.isEmpty(channelID)) {
                 // its within meta tags multiple times (ios/ipad/iphone) also
                 helper.parse();
@@ -292,110 +292,116 @@ public class TbCmV2 extends PluginForDecrypt {
         final boolean paginationIsBroken = true;
         final short maxItemsPerPage = 100;
         final ArrayList<YoutubeClipData> videoIdsToAdd = new ArrayList<YoutubeClipData>();
-        synchronized (DIALOGLOCK) {
-            if (this.isAbort()) {
-                logger.info("Thread Aborted!");
-                return ret;
-            }
-            {
-                // Prevents accidental decrypting of entire Play-List or Channel-List or User-List.
-                IfUrlisAPlaylistAction playListAction = cfg.getLinkIsPlaylistUrlAction();
-                if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(channelID) || StringUtils.isNotEmpty(userID)) && StringUtils.isEmpty(videoID)) {
-                    final String humanReadableTypeOfUrlToCrawl;
-                    final String dialogTitle;
-                    if (playlistID != null) {
-                        humanReadableTypeOfUrlToCrawl = "Playlist";
-                        dialogTitle = "Playlist | " + playlistID;
-                    } else if (userID != null) {
-                        humanReadableTypeOfUrlToCrawl = "User";
-                        dialogTitle = "User | " + userID;
-                    } else {
-                        humanReadableTypeOfUrlToCrawl = "Channel";
-                        dialogTitle = "Channel | " + channelID;
-                    }
-                    if (playListAction == IfUrlisAPlaylistAction.ASK) {
-                        String messageDialogText = "This URL is a " + humanReadableTypeOfUrlToCrawl + ". What would you like to do?";
-                        final String buttonTextCrawlPlaylist;
-                        if (paginationIsBroken) {
-                            messageDialogText += "\r\nJDownloader can only crawl the first " + maxItemsPerPage + " items automatically.\r\nIf there are more than " + maxItemsPerPage + " items, you need to use external tools to grab the single URLs to all videos and add those to JD manually.";
-                            buttonTextCrawlPlaylist = humanReadableTypeOfUrlToCrawl + " [max first " + maxItemsPerPage + " items]";
+        if (StringUtils.isEmpty(playlistID) && StringUtils.isEmpty(userID) && StringUtils.isEmpty(userChannel) && !StringUtils.isEmpty(videoID)) {
+            /* Single video */
+            videoIdsToAdd.add(new org.jdownloader.plugins.components.youtube.YoutubeClipData(videoID));
+        } else {
+            /* Channel/Playlist/User or Video + playlist in one URL. */
+            synchronized (DIALOGLOCK) {
+                if (this.isAbort()) {
+                    logger.info("Thread Aborted!");
+                    return ret;
+                }
+                {
+                    // Prevents accidental decrypting of entire Play-List or Channel-List or User-List.
+                    IfUrlisAPlaylistAction playListAction = cfg.getLinkIsPlaylistUrlAction();
+                    if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(channelID) || StringUtils.isNotEmpty(userID)) && StringUtils.isEmpty(videoID)) {
+                        final String humanReadableTypeOfUrlToCrawl;
+                        final String dialogTitle;
+                        if (playlistID != null) {
+                            humanReadableTypeOfUrlToCrawl = "Playlist";
+                            dialogTitle = "Playlist | " + playlistID;
+                        } else if (userID != null) {
+                            humanReadableTypeOfUrlToCrawl = "User";
+                            dialogTitle = "User | " + userID;
                         } else {
-                            buttonTextCrawlPlaylist = "Playlist";
+                            humanReadableTypeOfUrlToCrawl = "Channel";
+                            dialogTitle = "Channel | " + channelID;
                         }
-                        final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, dialogTitle, JDL.L("plugins.host.youtube.isplaylist.question.message", messageDialogText), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", buttonTextCrawlPlaylist), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do nothing?")) {
-                            @Override
-                            public ModalityType getModalityType() {
-                                return ModalityType.MODELESS;
+                        if (playListAction == IfUrlisAPlaylistAction.ASK) {
+                            String messageDialogText = "This URL is a " + humanReadableTypeOfUrlToCrawl + ". What would you like to do?";
+                            final String buttonTextCrawlPlaylist;
+                            if (paginationIsBroken) {
+                                messageDialogText += "\r\nJDownloader can only crawl the first " + maxItemsPerPage + " items automatically.\r\nIf there are more than " + maxItemsPerPage + " items, you need to use external tools to grab the single URLs to all videos and add those to JD manually.";
+                                buttonTextCrawlPlaylist = humanReadableTypeOfUrlToCrawl + " [max first " + maxItemsPerPage + " items]";
+                            } else {
+                                buttonTextCrawlPlaylist = "Playlist";
                             }
+                            final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, dialogTitle, JDL.L("plugins.host.youtube.isplaylist.question.message", messageDialogText), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", buttonTextCrawlPlaylist), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do nothing?")) {
+                                @Override
+                                public ModalityType getModalityType() {
+                                    return ModalityType.MODELESS;
+                                }
 
-                            @Override
-                            public boolean isRemoteAPIEnabled() {
-                                return true;
+                                @Override
+                                public boolean isRemoteAPIEnabled() {
+                                    return true;
+                                }
+                            };
+                            try {
+                                UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
+                                playListAction = IfUrlisAPlaylistAction.PROCESS;
+                            } catch (DialogCanceledException e) {
+                                logger.log(e);
+                                playListAction = IfUrlisAPlaylistAction.NOTHING;
+                            } catch (DialogClosedException e) {
+                                logger.log(e);
+                                playListAction = IfUrlisAPlaylistAction.NOTHING;
                             }
-                        };
-                        try {
-                            UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
-                            playListAction = IfUrlisAPlaylistAction.PROCESS;
-                        } catch (DialogCanceledException e) {
-                            logger.log(e);
-                            playListAction = IfUrlisAPlaylistAction.NOTHING;
-                        } catch (DialogClosedException e) {
-                            logger.log(e);
-                            playListAction = IfUrlisAPlaylistAction.NOTHING;
                         }
-                    }
-                    logger.info("LinkIsPlaylistUrlAction:" + playListAction);
-                    switch (playListAction) {
-                    case PROCESS:
-                        break;
-                    case NOTHING:
-                    default:
-                        return ret;
+                        logger.info("LinkIsPlaylistUrlAction:" + playListAction);
+                        switch (playListAction) {
+                        case PROCESS:
+                            break;
+                        case NOTHING:
+                        default:
+                            return ret;
+                        }
                     }
                 }
-            }
-            {
-                // Check if link contains a video and a playlist
-                IfUrlisAVideoAndPlaylistAction PlaylistVideoAction = cfg.getLinkIsVideoAndPlaylistUrlAction();
-                if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(watch_videos)) && StringUtils.isNotEmpty(videoID)) {
-                    if (PlaylistVideoAction == IfUrlisAVideoAndPlaylistAction.ASK) {
-                        final String crawlPlaylistButtonText;
-                        if (paginationIsBroken) {
-                            crawlPlaylistButtonText = "Playlist [max first " + maxItemsPerPage + " items]";
-                        } else {
-                            crawlPlaylistButtonText = "Playlist";
-                        }
-                        ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video and a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", crawlPlaylistButtonText)) {
-                            @Override
-                            public ModalityType getModalityType() {
-                                return ModalityType.MODELESS;
+                {
+                    // Check if link contains a video and a playlist
+                    IfUrlisAVideoAndPlaylistAction PlaylistVideoAction = cfg.getLinkIsVideoAndPlaylistUrlAction();
+                    if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(watch_videos)) && StringUtils.isNotEmpty(videoID)) {
+                        if (PlaylistVideoAction == IfUrlisAVideoAndPlaylistAction.ASK) {
+                            final String crawlPlaylistButtonText;
+                            if (paginationIsBroken) {
+                                crawlPlaylistButtonText = "Playlist [max first " + maxItemsPerPage + " items]";
+                            } else {
+                                crawlPlaylistButtonText = "Playlist";
                             }
+                            ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video and a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", crawlPlaylistButtonText)) {
+                                @Override
+                                public ModalityType getModalityType() {
+                                    return ModalityType.MODELESS;
+                                }
 
-                            @Override
-                            public boolean isRemoteAPIEnabled() {
-                                return true;
+                                @Override
+                                public boolean isRemoteAPIEnabled() {
+                                    return true;
+                                }
+                            };
+                            try {
+                                UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
+                                PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.VIDEO_ONLY;
+                            } catch (DialogCanceledException e) {
+                                logger.log(e);
+                                PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.PLAYLIST_ONLY;
+                            } catch (DialogClosedException e) {
+                                logger.log(e);
+                                PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.NOTHING;
                             }
-                        };
-                        try {
-                            UIOManager.I().show(ConfirmDialogInterface.class, confirm).throwCloseExceptions();
-                            PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.VIDEO_ONLY;
-                        } catch (DialogCanceledException e) {
-                            logger.log(e);
-                            PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.PLAYLIST_ONLY;
-                        } catch (DialogClosedException e) {
-                            logger.log(e);
-                            PlaylistVideoAction = IfUrlisAVideoAndPlaylistAction.NOTHING;
                         }
-                    }
-                    logger.info("LinkIsVideoAndPlaylistUrlAction:" + PlaylistVideoAction);
-                    switch (PlaylistVideoAction) {
-                    case PLAYLIST_ONLY:
-                        break;
-                    case VIDEO_ONLY:
-                        videoIdsToAdd.add(new org.jdownloader.plugins.components.youtube.YoutubeClipData(videoID));
-                        break;
-                    default:
-                        return ret;
+                        logger.info("LinkIsVideoAndPlaylistUrlAction:" + PlaylistVideoAction);
+                        switch (PlaylistVideoAction) {
+                        case PLAYLIST_ONLY:
+                            break;
+                        case VIDEO_ONLY:
+                            videoIdsToAdd.add(new org.jdownloader.plugins.components.youtube.YoutubeClipData(videoID));
+                            break;
+                        default:
+                            return ret;
+                        }
                     }
                 }
             }
