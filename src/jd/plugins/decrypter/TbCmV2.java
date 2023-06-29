@@ -1047,7 +1047,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 nextPageHTML = pbr.getRegex("<a href=(\"|')(/playlist\\?list=" + playlistID + "\\&amp;page=\\d+)\\1[^\r\n]+>Next").getMatch(1);
             } else {
                 if (!isJson) {
-                    logger.info("Kumping into json handling");
+                    logger.info("Jumping into json handling");
                     isJson = true;
                 }
                 final Map<String, Object> rootMap;
