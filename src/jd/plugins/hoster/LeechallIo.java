@@ -23,6 +23,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -38,16 +48,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "leechall.io" }, urls = { "" })
 public class LeechallIo extends PluginForHost {
@@ -219,7 +219,8 @@ public class LeechallIo extends PluginForHost {
             account.setType(AccountType.FREE);
             /**
              * Free users cannot download anything thus adding such accounts to JDownloader doesn't make any sense -> Mark them as expired.
-             * </br> Website says: https://leechall.io/downloader --> "Please upgrade premium to use this service."
+             * </br>
+             * Website says: https://leechall.io/downloader --> "Please upgrade premium to use this service."
              */
             ai.setExpired(true);
         }
@@ -391,7 +392,14 @@ public class LeechallIo extends PluginForHost {
                 throw new AccountInvalidException(errormessage);
             } else {
                 /* Download error */
-                mhm.handleErrorGeneric(null, link, errormessage, 50);
+                /* First check for specific errors, then jump into generic errorhandling. */
+                if (errormessage.equalsIgnoreCase("Can not get file size. Folder not supported. Check your link or try again.")) {
+                    /* Should never happens. Can only happen if a wrong mega.nz link is supplied. */
+                    logger.warning("Somehow a wrong mega(?) link was sent to " + this.getHost());
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+                } else {
+                    mhm.handleErrorGeneric(null, link, errormessage, 50);
+                }
             }
         }
         return entries;
