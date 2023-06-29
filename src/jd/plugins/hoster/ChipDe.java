@@ -21,6 +21,15 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.ChipDeConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,14 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.config.ChipDeConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chip.de" }, urls = { "https?://(?:www\\.)?(?:chip\\.de/downloads|download\\.chip\\.(?:eu|asia)/.{2})/[A-Za-z0-9_\\-]+_\\d+\\.html|https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html" })
 public class ChipDe extends PluginForHost {
@@ -69,8 +70,9 @@ public class ChipDe extends PluginForHost {
 
     /**
      * <b>Information for file (software)-downloads:</b> <br />
-     * <b>Example URL:</b> <a
-     * href="http://www.chip.de/downloads/Firefox-32-Bit_13014344.html">http://www.chip.de/downloads/Firefox-32-Bit_13014344.html</a> <br />
+     * <b>Example URL:</b>
+     * <a href="http://www.chip.de/downloads/Firefox-32-Bit_13014344.html">http://www.chip.de/downloads/Firefox-32-Bit_13014344.html</a>
+     * <br />
      * <b>1.</b> Links are language dependant. Unfortunately we cannot just force a specified language as content is different for each
      * country. <br />
      * That means we have to make RegExes that can handle all languages. <br />
@@ -78,8 +80,8 @@ public class ChipDe extends PluginForHost {
      * installers (usually without any adware). <br />
      *
      * <b>Information for video downloads:</b> <br />
-     * <b>Example URL:</b> <a
-     * href="http://www.chip.de/video/DSLR-fuer-die-Hosentasche-DxO-One-im-Test-Video_85225530.html">http://www.chip.de
+     * <b>Example URL:</b>
+     * <a href="http://www.chip.de/video/DSLR-fuer-die-Hosentasche-DxO-One-im-Test-Video_85225530.html">http://www.chip.de
      * /video/DSLR-fuer-die-Hosentasche-DxO-One-im-Test-Video_85225530.html</a> <br />
      * <b>Videoid or how they call it "containerIdBeitrag": 85225530</b><br />
      *
@@ -253,9 +255,9 @@ public class ChipDe extends PluginForHost {
         if (link.getPluginPatternMatcher().matches(type_chip_de_video)) {
             requestFileInformation(link);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 handleServerErrors();
-                br.followConnection();
+                br.followConnection(true);
                 /* We use APIs which we can trust so retrying is okay ;) */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
             }
@@ -306,7 +308,7 @@ public class ChipDe extends PluginForHost {
                 if (isExternalDownload(link)) {
                     errorExternalDownloadImpossible();
                 }
-                String step1 = br.getRegex("\"https?://x\\.chip\\.de/intern/dl/\\?url=(http[^<>\"]*?)\"").getMatch(0);
+                final String step1 = br.getRegex("class=\"download_button[^\"]+\"[^>]*><a rel=\"nofollow\" href=\"(https?://[^\"]+)").getMatch(0);
                 if (step1 == null) {
                     /*
                      * 2021-07-22: Treat such files as non-downloadable although this could also mean there is a plugin failure. Some items
@@ -316,8 +318,14 @@ public class ChipDe extends PluginForHost {
                     // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     throw new PluginException(LinkStatus.ERROR_FATAL, "No download button available");
                 }
-                step1 = Encoding.htmlDecode(step1);
-                br.getPage(step1);
+                final boolean useStep1Better = false;
+                final String step1decoded = URLEncode.decodeURIComponent(step1);
+                final String step1better = new Regex(step1decoded, "(https?://[^/]+/downloads/c1_downloads_auswahl_.*s=[^&]+)").getMatch(0);
+                if (step1better != null && useStep1Better) {
+                    br.getPage(step1better);
+                } else {
+                    br.getPage(step1decoded);
+                }
                 String step2 = br.getRegex("\"(https?://(www\\.)?chip\\.de/downloads/c1_downloads_hs_getfile[^<>\"]*?)\"").getMatch(0);
                 if (step2 != null) {
                     step2 = Encoding.htmlDecode(step2);
