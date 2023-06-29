@@ -142,7 +142,7 @@ public class Rule34Xxx extends PluginForDecrypt {
                 fp.setName(fpName);
             }
             final HashSet<String> dupes = new HashSet<String>();
-            int maxIndex = getMaxPage(br);
+            int maxIndex = getMaxIndex(br);
             int page = 0;
             int index = 0;
             final String relativeURLWithoutParams = br._getURL().getPath();
@@ -173,7 +173,7 @@ public class Rule34Xxx extends PluginForDecrypt {
                 }
                 logger.info("Crawled page " + page + "  Index: " + index + "/" + maxIndex + " | Found items so far: " + ret.size());
                 if (page == maxIndex) {
-                    final int newMaxIndex = this.getMaxPage(br);
+                    final int newMaxIndex = this.getMaxIndex(br);
                     if (newMaxIndex > maxIndex) {
                         logger.info("Found new maxIndex | Old: " + maxIndex + " | New: " + newMaxIndex);
                         maxIndex = newMaxIndex;
@@ -181,8 +181,6 @@ public class Rule34Xxx extends PluginForDecrypt {
                 }
                 index += numberofNewItems;
                 final boolean hasNextPage = br.containsHTML("pid=" + index);
-                // final String nexts[] = br.getRegex("<a
-                // href=\"(\\?page=post&(:?amp;)?s=list&(:?amp;)?tags=[a-zA-Z0-9_\\-%\\.\\+]+&(:?amp;)?pid=\\d+)\"").getColumn(0);
                 if (this.isAbort()) {
                     logger.info("Decryption aborted by user");
                     break;
@@ -204,7 +202,7 @@ public class Rule34Xxx extends PluginForDecrypt {
         return ret;
     }
 
-    private int getMaxPage(final Browser br) {
+    private int getMaxIndex(final Browser br) {
         int maxPage = 0;
         final String[] pages = br.getRegex("pid=(\\d+)").getColumn(0);
         for (final String pageStr : pages) {
