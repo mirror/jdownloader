@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -27,11 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cnet.com" }, urls = { "https?://(?:www\\.)?download\\.cnet\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+-(\\d+)\\.html" })
 public class CnetCom extends PluginForHost {
@@ -99,7 +99,7 @@ public class CnetCom extends PluginForHost {
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        if (br.containsHTML("(?i)>\\s*Visit Site<")) {
+        if (br.containsHTML("(?i)>\\s*Visit Site\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable (external download, see browser)");
         }
         return AvailableStatus.TRUE;
@@ -113,13 +113,17 @@ public class CnetCom extends PluginForHost {
         String dllink = null;
         if (useAPI) {
             /* 2021-10-06: See https://download.cnet.com/a/neutron/7dbdf09.modern.js */
-            final String apikey = "6zDmakBWMyKV8oS6mCrigTAO08QxiVsK";
+            String apikey = br.getRegex("(?i)apikey=([A-Za-z0-9\\-_]+)").getMatch(0);
+            if (apikey == null) {
+                /* 2023-06-29 */
+                apikey = "ZHqYnHs4B8F0aQnLAwylfp2rWfPhBfqC";
+            }
             final Browser brc = br.cloneBrowser();
             brc.getPage("https://cmg-prod.apigee.net/v1/xapi/products/signedurl/download/" + this.getFID(link) + "/web?apiKey=" + apikey);
             if (brc.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable (external download, see browser)");
             }
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.getRequest().getHtmlCode());
             dllink = JavaScriptEngineFactory.walkJson(entries, "data/item/url").toString();
         } else {
             /* Try to get installer without adware */
@@ -151,8 +155,9 @@ public class CnetCom extends PluginForHost {
             br.followConnection(true);
             if (br.containsHTML("(?i)File not found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String serverFilename = getFileNameFromHeader(dl.getConnection());
         if (!StringUtils.isEmpty(serverFilename)) {
