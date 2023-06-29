@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.plugins.components.config.Rule34xxxConfig;
@@ -133,15 +134,19 @@ public class Rule34Xxx extends PluginForDecrypt {
             }
         } else {
             /* Crawl tags */
-            String fpName = new Regex(parameter, "tags=(.+)&?").getMatch(0);
+            final UrlQuery query = UrlQuery.parse(br.getURL());
+            String fpName = query.get("tags");
             FilePackage fp = null;
             if (fpName != null) {
                 fp = FilePackage.getInstance();
                 fp.setName(fpName);
             }
-            final HashSet<String> pages = new HashSet<String>();
             final HashSet<String> dupes = new HashSet<String>();
-            loop: do {
+            int maxIndex = getMaxPage(br);
+            int page = 0;
+            int index = 0;
+            final String relativeURLWithoutParams = br._getURL().getPath();
+            do {
                 // from list to post page
                 final String[] links = br.getRegex("<a id=\"p\\d+\" href=('|\")(/?index\\.php\\?page=post&(:?amp;)?s=view&(:?amp;)?id=\\d+)\\1").getColumn(1);
                 if (links == null || links.length == 0) {
@@ -160,36 +165,58 @@ public class Rule34Xxx extends PluginForDecrypt {
                         final String id = new Regex(link, "id=(\\d+)").getMatch(0);
                         dl.setLinkID(prefixLinkID + id);
                         dl.setName(id);
+                        /* Don't do this as items need to go through this crawler once again. */
+                        // dl.setAvailable(true);
                         distribute(dl);
                         ret.add(dl);
                     }
                 }
-                logger.info("Crawled page " + br.getURL() + " | Found items so far: " + ret.size());
-                final String nexts[] = br.getRegex("<a href=\"(\\?page=post&(:?amp;)?s=list&(:?amp;)?tags=[a-zA-Z0-9_\\-%\\.\\+]+&(:?amp;)?pid=\\d+)\"").getColumn(0);
+                logger.info("Crawled page " + page + "  Index: " + index + "/" + maxIndex + " | Found items so far: " + ret.size());
+                if (page == maxIndex) {
+                    final int newMaxIndex = this.getMaxPage(br);
+                    if (newMaxIndex > maxIndex) {
+                        logger.info("Found new maxIndex | Old: " + maxIndex + " | New: " + newMaxIndex);
+                        maxIndex = newMaxIndex;
+                    }
+                }
+                index += numberofNewItems;
+                final boolean hasNextPage = br.containsHTML("pid=" + index);
+                // final String nexts[] = br.getRegex("<a
+                // href=\"(\\?page=post&(:?amp;)?s=list&(:?amp;)?tags=[a-zA-Z0-9_\\-%\\.\\+]+&(:?amp;)?pid=\\d+)\"").getColumn(0);
                 if (this.isAbort()) {
                     logger.info("Decryption aborted by user");
                     break;
                 } else if (numberofNewItems == 0) {
                     logger.info("Stopping because: Failed to find any new items on current page");
                     break;
-                } else if (nexts == null || nexts.length == 0) {
-                    logger.info("Stopping because: Failed to find next page -> Reached end(?)");
+                } else if (!hasNextPage) {
+                    logger.info("Stopping because: Reached last page: " + page + " | Index: " + maxIndex);
                     break;
                 } else {
-                    for (final String next : nexts) {
-                        if (pages.add(next)) {
-                            sleep(1000, param);
-                            br.getPage(HTMLEntities.unhtmlentities(next));
-                            continue loop;
-                        }
-                    }
+                    sleep(1000, param);
+                    page++;
+                    query.addAndReplace("pid", Integer.toString(index));
+                    br.getPage(relativeURLWithoutParams + "?" + query.toString());
+                    continue;
                 }
             } while (true);
         }
         return ret;
     }
 
-    /* NO OVERRIDE!! */
+    private int getMaxPage(final Browser br) {
+        int maxPage = 0;
+        final String[] pages = br.getRegex("pid=(\\d+)").getColumn(0);
+        for (final String pageStr : pages) {
+            final int pageInt = Integer.parseInt(pageStr);
+            if (pageInt > maxPage) {
+                maxPage = pageInt;
+            }
+        }
+        return maxPage;
+    }
+
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

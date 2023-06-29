@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.YetiShareCore;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.YetiShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CyberfileSu extends YetiShareCore {
@@ -83,13 +83,13 @@ public class CyberfileSu extends YetiShareCore {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 0;
+            return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 
