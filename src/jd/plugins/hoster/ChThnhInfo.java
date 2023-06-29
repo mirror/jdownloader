@@ -15,6 +15,8 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -22,8 +24,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "https?://(www\\.)?chauthanh\\.info/(animeDownload/(download|new)/\\d+/[^<>\"/]+/[^<>\"/]+|animeOST/download/[a-z0-9\\-_]+/[a-z0-9\\-_\\.]+|[a-z]+/download/[^<>\"]+\\.html)" })
 public class ChThnhInfo extends antiDDoSForHost {
@@ -87,7 +87,7 @@ public class ChThnhInfo extends antiDDoSForHost {
         if (!dllink.contains("chauthanh.info")) {
             dllink = "http://chauthanh.info" + dllink;
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         return AvailableStatus.TRUE;
     }
 

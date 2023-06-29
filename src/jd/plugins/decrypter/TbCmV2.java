@@ -132,13 +132,13 @@ public class TbCmV2 extends PluginForDecrypt {
     public final static String VIDEO_ID_PATTERN = "([A-Za-z0-9\\-_]{11})";
 
     private String getVideoIDByUrl(String URL) {
-        String vuid = new Regex(URL, "v=" + VIDEO_ID_PATTERN).getMatch(0);
+        String vuid = new Regex(URL, "(?i)v=" + VIDEO_ID_PATTERN).getMatch(0);
         if (vuid == null) {
-            vuid = new Regex(URL, "v/" + VIDEO_ID_PATTERN).getMatch(0);
+            vuid = new Regex(URL, "(?i)v/" + VIDEO_ID_PATTERN).getMatch(0);
             if (vuid == null) {
-                vuid = new Regex(URL, "shorts/" + VIDEO_ID_PATTERN).getMatch(0);
+                vuid = new Regex(URL, "(?i)shorts/" + VIDEO_ID_PATTERN).getMatch(0);
                 if (vuid == null) {
-                    vuid = new Regex(URL, "embed/(?!videoseries\\?)" + VIDEO_ID_PATTERN).getMatch(0);
+                    vuid = new Regex(URL, "(?i)embed/(?!videoseries\\?)" + VIDEO_ID_PATTERN).getMatch(0);
                 }
             }
         }
@@ -238,13 +238,13 @@ public class TbCmV2 extends PluginForDecrypt {
         br = new Browser();
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "PREF", "hl=en-GB");
-        String cleanedurl = Encoding.urlDecode(cryptedLink, false);
+        String cleanedurl = Encoding.urlDecode(cryptedLink, true);
         cleanedurl = cleanedurl.replace("youtube.jd", "youtube.com");
         String requestedVariantString = new Regex(cleanedurl, "\\#variant=(\\S*)").getMatch(0);
         if (StringUtils.isNotEmpty(requestedVariantString)) {
             requestedVariant = AbstractVariant.get(Base64.decodeToString(requestedVariantString));
+            cleanedurl = cleanedurl.replaceAll("\\#variant=\\S+", "");
         }
-        cleanedurl = cleanedurl.replaceAll("\\#variant=\\S+", "");
         cleanedurl = cleanedurl.replace("/embed/", "/watch?v=");
         cleanedurl = cleanedurl.replace("/shorts/", "/watch?v=");
         videoID = getVideoIDByUrl(cleanedurl);
@@ -408,6 +408,7 @@ public class TbCmV2 extends PluginForDecrypt {
         }
         boolean reversePlaylistNumber = false;
         if (videoIdsToAdd.isEmpty()) {
+            /* Playlist / Channel */
             try {
                 Boolean userWorkaround = null;
                 Boolean channelWorkaround = null;
@@ -1029,11 +1030,14 @@ public class TbCmV2 extends PluginForDecrypt {
             /* First try old HTML handling though by now [June 2023] all data is provided via json. */
             String nextPageHTML = null, nextPageToken = null;
             checkErrors(pbr);
-            final String[] videos = round > 0 && isJson ? null : pbr.getRegex("href=(\"|')(/watch\\?v=" + VIDEO_ID_PATTERN + ".*?)\\1").getColumn(1);
             final int playListDupesSizeOld = playListDupes.size();
-            if (videos != null && videos.length > 0) {
+            String[] videourls = null;
+            if (round == 0 && !isJson) {
+                videourls = pbr.getRegex("href=(\"|')(/watch\\?v=" + VIDEO_ID_PATTERN + ".*?)\\1").getColumn(1);
+            }
+            if (videourls != null && videourls.length > 0) {
                 /* Old way: Results from HTML */
-                for (String relativeUrl : videos) {
+                for (String relativeUrl : videourls) {
                     if (relativeUrl.contains("list=" + playlistID)) {
                         final String id = getVideoIDByUrl(relativeUrl);
                         playListDupes.add(id);
@@ -1042,11 +1046,35 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 nextPageHTML = pbr.getRegex("<a href=(\"|')(/playlist\\?list=" + playlistID + "\\&amp;page=\\d+)\\1[^\r\n]+>Next").getMatch(1);
             } else {
-                isJson = true;
+                if (!isJson) {
+                    logger.info("Kumping into json handling");
+                    isJson = true;
+                }
                 final Map<String, Object> rootMap;
                 List<Map<String, Object>> pl = null;
                 if (round == 0) {
                     rootMap = helper.getYtInitialData();
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        // TODO: Add generic handling for shorts/channel/playlist
+                        Map<String, Object> shortstab = null;
+                        Map<String, Object> playlisttab = null;
+                        final List<Map<String, Object>> tabs = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnBrowseResultsRenderer/tabs");
+                        for (final Map<String, Object> tab : tabs) {
+                            /* We will get this one if a real playlist is our currently opened tab. */
+                            final Object probePlaylist = JavaScriptEngineFactory.walkJson(tab, "tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
+                            final String tabTitle = (String) tab.get("title");
+                            if (StringUtils.isEmpty(tabTitle)) {
+                                continue;
+                            }
+                            if (tabTitle.equalsIgnoreCase("Shorts")) {
+                                shortstab = tab;
+                            } else if (tabTitle.equalsIgnoreCase("Playlist")) {
+                                playlisttab = tab;
+                            } else {
+                                /* Other tab -> Ignore */
+                            }
+                        }
+                    }
                     pl = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnBrowseResultsRenderer/tabs/{0}/tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
                     /* This message can also contain information like "2 unavailable videos won't be displayed in this list". */
                     final String errormessage = (String) JavaScriptEngineFactory.walkJson(rootMap, "alerts/{0}/alertRenderer/text/runs/{0}/text");
@@ -1083,6 +1111,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     for (final Map<String, Object> vid : pl) {
                         String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
                         if (id == null) {
+                            /* Reel */
                             id = (String) JavaScriptEngineFactory.walkJson(vid, "richItemRenderer/content/reelItemRenderer/videoId");
                         }
                         /* Typically last item (item 101) will contain the continuationToken. */
@@ -1101,7 +1130,7 @@ public class TbCmV2 extends PluginForDecrypt {
             }
             /* Check for some abort conditions */
             final int numberofNewItemsThisRun = playListDupes.size() - playListDupesSizeOld;
-            logger.info("Crawled page " + round + " | Found items on this page: " + numberofNewItemsThisRun + " | Found items so far: " + playListDupes.size() + "/" + numberofItems + " | nextPageHTML = " + nextPageHTML + " | nextPageToken = " + nextPageToken);
+            logger.info("Crawled page " + round + " | Found items on this page [== pagination_size]: " + numberofNewItemsThisRun + " | Found items so far: " + playListDupes.size() + "/" + numberofItems + " | nextPageHTML = " + nextPageHTML + " | nextPageToken = " + nextPageToken);
             if (this.isAbort()) {
                 throw new InterruptedException();
             } else if (numberofNewItemsThisRun == 0) {

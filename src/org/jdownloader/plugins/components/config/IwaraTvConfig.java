@@ -3,6 +3,7 @@ package org.jdownloader.plugins.components.config;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.Order;
@@ -12,13 +13,14 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "iwara.tv", type = Type.HOSTER)
 public interface IwaraTvConfig extends PluginConfigInterface {
-    public static final IwaraTvConfig.TRANSLATION TRANSLATION                                       = new TRANSLATION();
-    final String                                  text_ProfileCrawlerEnableFastLinkcheck            = "Enable fast linkcheck for videos found via profile crawler?";
-    final String                                  text_PreferredFilenameSchemeType                  = "Select preferred filename scheme type";
-    final String                                  text_PreferredFilenameScheme                      = "Select preferred filename scheme";
-    final String                                  text_FindFilesizeDuringAvailablecheck             = "Find filesize during linkcheck?\r\nWarning: Can slow down linkcheck!";
-    final String                                  text_ProfileCrawlerSkipExternalURLs               = "Profile crawler: Skip externally hosted videos e.g. youtube.com URLs?";
-    final String                                  text_ScanForDownloadableLinksInContentDescription = "Scan for downloadable URLs in content description?";
+    public static final IwaraTvConfig.TRANSLATION TRANSLATION                                           = new TRANSLATION();
+    final String                                  text_ProfileCrawlerEnableFastLinkcheck                = "Enable fast linkcheck for videos found via profile crawler?";
+    final String                                  text_PreferredFilenameSchemeType                      = "Select preferred filename scheme type";
+    final String                                  text_PreferredFilenameScheme                          = "Select preferred filename scheme";
+    final String                                  text_FindFilesizeDuringAvailablecheck                 = "Find filesize during linkcheck?\r\nWarning: Can slow down linkcheck!";
+    final String                                  text_ProfileCrawlerSkipExternalURLs                   = "Profile crawler: Skip externally hosted videos e.g. youtube.com URLs?";
+    final String                                  text_ScanForDownloadableLinksInContentDescription     = "Scan for URLs in content description?";
+    final String                                  text_RegexWhitelistForCrawledUrlsInContentDescription = "RegEx whitelist for crawled URLs from content description e.g. '(?i).*(site\\.tld|site2\\.tld).*' [Empty = Allow all URLs]";
 
     public static class TRANSLATION {
         public String getProfileCrawlerEnableFastLinkcheck_label() {
@@ -43,6 +45,10 @@ public interface IwaraTvConfig extends PluginConfigInterface {
 
         public String getScanForDownloadableLinksInContentDescription_label() {
             return text_ScanForDownloadableLinksInContentDescription;
+        }
+
+        public String getRegexWhitelistForCrawledUrlsInContentDescription_label() {
+            return text_RegexWhitelistForCrawledUrlsInContentDescription;
         }
     }
 
@@ -147,4 +153,12 @@ public interface IwaraTvConfig extends PluginConfigInterface {
     boolean isScanForDownloadableLinksInContentDescription();
 
     void setScanForDownloadableLinksInContentDescription(boolean b);
+
+    @AboutConfig
+    @DefaultStringValue("")
+    @DescriptionForConfigEntry(text_RegexWhitelistForCrawledUrlsInContentDescription)
+    @Order(60)
+    String getRegexWhitelistForCrawledUrlsInContentDescription();
+
+    void setRegexWhitelistForCrawledUrlsInContentDescription(String str);
 }

@@ -19,8 +19,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.IwaraTvConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -200,6 +203,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlSingleVideo(final CryptedLink param, final Account account) throws Exception {
+        final IwaraTvConfig cfg = PluginJsonConfig.get(IwaraTvConfig.class);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final DownloadLink maybeSelfhostedVideo = this.createDownloadlink(param.getCryptedUrl());
         PluginException pluginExceptionDuringAvailablecheck = null;
@@ -209,19 +213,55 @@ public class IwaraTvCrawler extends PluginForDecrypt {
         } catch (final PluginException e) {
             pluginExceptionDuringAvailablecheck = e;
         }
+        final ArrayList<String> skippedUrls = new ArrayList<String>();
         final String descriptionText = maybeSelfhostedVideo.getStringProperty(IwaraTv.PROPERTY_DESCRIPTION);
         if (descriptionText != null && PluginJsonConfig.get(IwaraTvConfig.class).isScanForDownloadableLinksInContentDescription()) {
             final String[] urls = HTMLParser.getHttpLinks(descriptionText, null);
             if (urls != null && urls.length > 0) {
+                final String whitelistRegexStr = cfg.getRegexWhitelistForCrawledUrlsInContentDescription();
+                Pattern whitelistPattern = null;
+                if (!StringUtils.isEmpty(whitelistRegexStr)) {
+                    try {
+                        whitelistPattern = Pattern.compile(whitelistRegexStr.trim(), Pattern.CASE_INSENSITIVE);
+                    } catch (final PatternSyntaxException pse) {
+                        logger.info("User entered invalid whitelist regex, ignoring it. Regex: " + whitelistRegexStr);
+                    }
+                }
                 for (final String url : urls) {
-                    ret.add(this.createDownloadlink(url));
+                    if (whitelistPattern == null || new Regex(url, whitelistPattern).matches()) {
+                        ret.add(this.createDownloadlink(url));
+                    } else {
+                        skippedUrls.add(url);
+                    }
+                }
+                if (skippedUrls.size() > 0) {
+                    String logtext = "Skipped URLs due du users' whitelist pattern: ";
+                    if (skippedUrls.size() == urls.length) {
+                        logtext += "ALL";
+                    } else {
+                        logtext += skippedUrls;
+                    }
+                    logger.info(logtext);
                 }
             }
         }
         final String embedUrl = maybeSelfhostedVideo.getStringProperty(IwaraTv.PROPERTY_EMBED_URL);
         if (embedUrl != null) {
             /* Video is not hosted on iwara.tv but on a 3rd party website. */
-            ret.add(this.createDownloadlink(embedUrl));
+            final DownloadLink parent = param.getDownloadLink();
+            boolean allowReturnExternallyHostedVideoURLs = true;
+            if (parent != null && parent.getContainerUrl() != null && parent.getContainerUrl().matches(TYPE_USER) && cfg.isProfileCrawlerSkipExternalURLs()) {
+                /*
+                 * Single video URL was returned as part of profile crawl process and user disabled externally hosted content when videos
+                 * got returned by profile crawler.
+                 */
+                allowReturnExternallyHostedVideoURLs = false;
+            }
+            if (allowReturnExternallyHostedVideoURLs) {
+                ret.add(this.createDownloadlink(embedUrl));
+            } else {
+                skippedUrls.add(embedUrl);
+            }
         } else {
             /* Looks like content is selfhosted. */
             if (pluginExceptionDuringAvailablecheck != null && pluginExceptionDuringAvailablecheck.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
@@ -241,6 +281,9 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                     result._setFilePackage(fp);
                 }
             }
+        }
+        if (skippedUrls.size() > 0) {
+            logger.info("Items skipped due to users' settings: " + skippedUrls);
         }
         return ret;
     }
