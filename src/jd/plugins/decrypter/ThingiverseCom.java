@@ -56,8 +56,11 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             fpName = br.getRegex("<title>\\s*([^<]+?)\\s*-\\s*Thingiverse").getMatch(0);
-            final String thingID = new Regex(br.getURL(), "thing:(\\d+).*").getMatch(0);
-            final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin("https://cdn.thingiverse.com/tv-zip/" + thingID));
+            final String thingID = new Regex(br.getURL(), "(?i)thing:(\\d+).*").getMatch(0);
+            if (thingID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin(String.format("https://www.thingiverse.com//thing:%s/zip", thingID)));
             if (fpName != null) {
                 fpName = Encoding.htmlOnlyDecode(fpName);
                 link.setFinalFileName(fpName + ".zip");
