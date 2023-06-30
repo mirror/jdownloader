@@ -304,7 +304,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                     continue;
                 }
             }
-            if (requiresCaptchaWhichCanFail && Boolean.TRUE.equals(captchaFailed)) {
+            if (Boolean.TRUE.equals(requiresCaptchaWhichCanFail) && Boolean.TRUE.equals(captchaFailed)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }

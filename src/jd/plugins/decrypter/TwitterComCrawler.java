@@ -398,6 +398,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"code\"\\s*:\\s*34")) {
                     logger.log(e);
+                    /* Double-check down below. */
+                    logger.info("Tweet looks to be offline");
                     looksLikeOfflineError34 = true;
                 } else {
                     throw e;
