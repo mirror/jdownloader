@@ -15,11 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,12 +30,16 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EasyBytezCom extends XFileSharingProBasic {
     public EasyBytezCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
+
+    public final static String MAIN_DOMAIN = "easybytez.eu";
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
@@ -48,8 +51,13 @@ public class EasyBytezCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "easybytez.com", "easybytez.co", "easybytez.to", "zingload.com", "easyload.to", "ezbytez.com", "ebytez.com", "easybytez.eu" });
+        ret.add(new String[] { MAIN_DOMAIN, "easybytez.com", "easybytez.co", "easybytez.to", "zingload.com", "easyload.to", "ezbytez.com", "ebytez.com" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override
@@ -62,6 +70,11 @@ public class EasyBytezCom extends XFileSharingProBasic {
         deadDomains.add("easybytez.to");
         deadDomains.add("easybytez.co");
         return deadDomains;
+    }
+
+    @Override
+    protected String getPreferredHost(final DownloadLink link, URL url) {
+        return MAIN_DOMAIN;
     }
 
     public static String[] getAnnotationNames() {
