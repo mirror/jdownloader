@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +30,10 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginForHost;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EasyBytezCom extends XFileSharingProBasic {
@@ -102,6 +105,28 @@ public class EasyBytezCom extends XFileSharingProBasic {
             } finally {
                 LASTREQUESTFILEINFORMATION.set(System.currentTimeMillis());
             }
+        }
+    }
+
+    private boolean isMULTIHOST(PluginForHost plugin) {
+        return plugin != null && plugin.hasFeature(LazyPlugin.FEATURE.MULTIHOST);
+    }
+
+    @Override
+    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
+        if (isMULTIHOST(buildForThisPlugin)) {
+            String ret = super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
+            try {
+                final String host = new URL(ret).getHost();
+                if (!MAIN_DOMAIN.equalsIgnoreCase(host)) {
+                    ret = ret.replace(host, "easybytez.com");
+                }
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+            return ret;
+        } else {
+            return super.buildExternalDownloadURL(downloadLink, buildForThisPlugin);
         }
     }
 
