@@ -300,11 +300,6 @@ public class PanBaiduCom extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        String md5 = getMD5FromDispositionHeader(dl.getConnection());
-        if (md5 != null) {
-            /* There is also a case where MD5 is not present. Setting only if there is MD5. */
-            downloadLink.setMD5Hash(md5);
-        }
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         try {
             // add a download slot
@@ -334,10 +329,6 @@ public class PanBaiduCom extends PluginForHost {
         logger.info("maxFree was = " + maxFree.get());
         maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
         logger.info("maxFree now = " + maxFree.get());
-    }
-
-    private String getMD5FromDispositionHeader(final URLConnectionAdapter urlConnection) {
-        return urlConnection.getHeaderField("Content-MD5");
     }
 
     private void getPage(final Browser br, final String url) throws IOException, PluginException {

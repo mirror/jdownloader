@@ -3,6 +3,8 @@ package jd.plugins.download;
 import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.formatter.HexFormatter;
 
 public class HashInfo {
     public static enum TYPE {
@@ -16,7 +18,6 @@ public class HashInfo {
         CRC32C("CRC32C", 8, false),
         CRC32("CRC32", 8),
         NONE("NONE", 0, false);
-
         private final String  digest;
         private final int     size;
         private final boolean autoMode;
@@ -127,22 +128,38 @@ public class HashInfo {
         return null;
     }
 
-    public HashInfo(String hash, TYPE type, boolean trustworthy, boolean forced) {
+    public HashInfo(final String hash, TYPE type, boolean trustworthy, boolean forced) {
         if (type == null) {
             throw new IllegalArgumentException("type is missing");
+        } else {
+            this.type = type;
         }
-        this.type = type;
         if (TYPE.NONE.equals(type)) {
             this.hash = "";
         } else {
+            final String hexHash;
             if (StringUtils.isEmpty(hash)) {
-                throw new IllegalArgumentException("hash is empty");
-            } else if (hash.length() < type.getSize()) {
-                hash = String.format("%0" + (type.getSize() - hash.length()) + "d%s", 0, hash);
-            } else if (hash.length() > type.getSize()) {
-                throw new IllegalArgumentException("invalid hash size");
+                throw new IllegalArgumentException("hash is empty:" + type + "-" + hash);
+            } else if (hash.matches("^[a-fA-f0-9]{2,}$")) {
+                hexHash = hash;
+            } else if (hash.matches("^[a-zA-Z0-9\\+/=]+$")) {
+                final byte[] raw = Base64.decode(hash);
+                hexHash = raw != null ? HexFormatter.byteArrayToHex(raw) : null;
+                if (hexHash == null || hexHash.length() != type.getSize()) {
+                    throw new IllegalArgumentException("invalid hash size:" + type + "-" + hash);
+                }
+            } else {
+                throw new IllegalArgumentException("unsupported encoding:" + type + "-" + hash);
             }
-            this.hash = hash.toLowerCase(Locale.ENGLISH);
+            if (StringUtils.isEmpty(hexHash)) {
+                throw new IllegalArgumentException("hash is empty:" + type + "-" + hash);
+            } else if (hexHash.length() < type.getSize()) {
+                this.hash = String.format("%0" + (type.getSize() - hexHash.length()) + "d%s", 0, hexHash);
+            } else if (hexHash.length() > type.getSize()) {
+                throw new IllegalArgumentException("invalid hash size:" + type + "-" + hash);
+            } else {
+                this.hash = hexHash.toLowerCase(Locale.ENGLISH);
+            }
         }
         this.trustworthy = trustworthy;
         this.forced = forced;

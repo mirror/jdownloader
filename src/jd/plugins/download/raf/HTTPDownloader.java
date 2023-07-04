@@ -29,24 +29,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.plugins.DownloadPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.translate._JDT;
-import org.jdownloader.updatev2.InternetConnectionSettings;
-
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
@@ -70,6 +52,22 @@ import jd.plugins.download.HashResult;
 import jd.plugins.download.raf.BytesMappedFile.BytesMappedFileCallback;
 import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
 import jd.plugins.download.raf.HTTPChunk.ERROR;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.InternetConnectionSettings;
 
 public class HTTPDownloader extends DownloadInterface implements FileBytesCacheFlusher, BytesMappedFileCallback {
     public static enum STATEFLAG {
@@ -406,11 +404,11 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
             }
             final long verifiedFileSize = getVerifiedFileSize();
             if (verifiedFileSize >= 0) {
-                final long connectionLength = getCompleteContentLength(validatingConnection, true);
+                final long connectionLength = getCompleteContentLength(logger, validatingConnection, true);
                 if (connectionLength >= 0 && verifiedFileSize != connectionLength) {
                     logger.severe("sameContent: FALSE|verifiedFileSize:'" + verifiedFileSize + "'<->'" + connectionLength + "'");
                     result.setFailed(VALIDATION.VERIFIED_SIZE);
-                } else if (connectionLength < 0 && getCompleteContentLength(initialConnection, true) >= 0) {
+                } else if (connectionLength < 0 && getCompleteContentLength(logger, initialConnection, true) >= 0) {
                     logger.severe("sameContent: FALSE|missingContentLength");
                     result.setFailed(VALIDATION.CONTENT_LENGTH);
                 } else {
@@ -441,7 +439,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         return connect();
     }
 
-    protected long[] parseRequestRange(String bytes) {
+    protected static long[] parseRequestRange(String bytes) {
         return HTTPConnectionUtils.parseRequestRange(bytes);
     }
 
@@ -611,6 +609,17 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         if (hashInfo == null) {
             hashInfo = HTTPDownloader.parseAmazonHash(logger, con);
         }
+        if (hashInfo == null) {
+            /* only trust contentHash from noneRanged & noneEncoded */
+            final String contentEncoding = con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
+            final String requestContentRange = con.getRequestProperty(HTTPConstants.HEADER_REQUEST_RANGE);
+            if (con.getHeaderField("X-Mod-H264-Streaming") == null && isNoneContentEncoding(contentEncoding) && requestContentRange == null && getCompleteContentLength(logger, con, false) >= 0) {
+                final String contentSHA1 = con.getHeaderField("Content-SHA1");
+                final String contentMD5 = con.getHeaderField("Content-MD5");
+                hashInfo = contentSHA1 != null ? HashInfo.newInstanceSafe(contentSHA1, TYPE.SHA1) : null;
+                hashInfo = hashInfo == null ? (contentMD5 != null ? HashInfo.newInstanceSafe(contentMD5, TYPE.MD5) : null) : hashInfo;
+            }
+        }
         return hashInfo;
     }
 
@@ -624,14 +633,12 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
                         // https://cloud.google.com/storage/docs/hashes-etags
                         // Hashes are base64 encoded. Multiple hashes can be given.
                         // https://cloud.google.com/storage/docs/xml-api/reference-headers#xgooghash
-                        String crc32c = new Regex(googleHash, "crc32c=([^,]+)").getMatch(0);
-                        String md5 = new Regex(googleHash, "md5=([^,]+)").getMatch(0);
+                        final String md5 = new Regex(googleHash, "md5\\s*=\\s*([^,]+)").getMatch(0);
+                        final String crc32c = new Regex(googleHash, "crc32c\\s*=\\s*([^,]+)").getMatch(0);
                         final HashInfo hashInfo;
                         if (md5 != null) {
-                            md5 = HexFormatter.byteArrayToHex(Base64.decode(md5));
                             hashInfo = HashInfo.newInstanceSafe(md5, HashInfo.TYPE.MD5);
                         } else if (crc32c != null) {
-                            crc32c = HexFormatter.byteArrayToHex(Base64.decode(crc32c));
                             hashInfo = HashInfo.newInstanceSafe(crc32c, HashInfo.TYPE.CRC32C);
                         } else {
                             continue;
@@ -692,7 +699,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
             }
             downloadable.setAvailable(AvailableStatus.TRUE);
             downloadable.updateFinalFileName();
-            final long contentLength = getCompleteContentLength(connection, true);
+            final long contentLength = getCompleteContentLength(logger, connection, true);
             final String requestContentRange = connection.getRequestProperty(HTTPConstants.HEADER_REQUEST_RANGE);
             final long[] requestedRange = parseRequestRange(requestContentRange);
             final String responseContentEncoding = connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
@@ -745,20 +752,6 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
                     if (requestedRange[0] >= 0 && requestedRange[0] != 0) {
                         throw new WTFException("UNSUPPORTED: resume content-Encoding");
                     }
-                }
-            } else if (requestContentRange == null && getCompleteContentLength(connection, false) >= 0) {
-                /* only trust contentHash from noneRanged & noneEncoded */
-                final String contentSHA1 = connection.getHeaderField("Content-SHA1");
-                HashInfo hashInfo = null;
-                if (contentSHA1 != null && contentSHA1.matches("^[a-fA-F0-9]{40}$")) {
-                    hashInfo = new HashInfo(contentSHA1, TYPE.SHA1);
-                }
-                final String contentMD5 = connection.getHeaderField("Content-MD5");
-                if (hashInfo == null && contentMD5 != null && contentMD5.matches("^[a-fA-F0-9]{32}$")) {
-                    hashInfo = new HashInfo(contentMD5, TYPE.MD5);
-                }
-                if (hashInfo != null) {
-                    downloadable.setHashInfo(hashInfo);
                 }
             }
             /* Get- and set file hashes from headers. */
@@ -887,11 +880,11 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         }
     }
 
-    private boolean isNoneContentEncoding(String contentEncoding) {
+    private static boolean isNoneContentEncoding(String contentEncoding) {
         return contentEncoding == null || "none".equalsIgnoreCase(contentEncoding);
     }
 
-    protected long getCompleteContentLength(URLConnectionAdapter connection, boolean forceTrustContentLength) {
+    protected static long getCompleteContentLength(final LogInterface logger, URLConnectionAdapter connection, boolean forceTrustContentLength) {
         if (connection != null) {
             final String contentEncoding = connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
             final String h264StreamingMod = connection.getHeaderField("X-Mod-H264-Streaming");
@@ -921,7 +914,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         if (verifiedFileSize >= 0) {
             return verifiedFileSize;
         } else if (connection != null) {
-            return getCompleteContentLength(connection, false);
+            return getCompleteContentLength(logger, connection, false);
         } else {
             return -1;
         }
@@ -1297,7 +1290,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
     protected void updateCacheMapSize(final URLConnectionAdapter connection) {
         final long verifiedFileSize = downloadable.getVerifiedFileSize();
         if (verifiedFileSize < 0) {
-            final long completeContentLength = getCompleteContentLength(connection, false);
+            final long completeContentLength = getCompleteContentLength(logger, connection, false);
             if (completeContentLength > 0 && completeContentLength >= cacheMap.getMarkedBytes()) {
                 logger.info("Update VerifiedFileSize(" + completeContentLength + ") from URLConnection:\r\n" + connection);
                 cacheMap.setFinalSize(completeContentLength);
