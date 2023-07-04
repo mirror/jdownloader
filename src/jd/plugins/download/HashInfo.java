@@ -142,7 +142,7 @@ public class HashInfo {
                 throw new IllegalArgumentException("hash is empty:" + type + "-" + hash);
             } else if (hash.matches("^[a-fA-f0-9]{2,}$")) {
                 hexHash = hash;
-            } else if (hash.matches("^[a-zA-Z0-9\\+/=]+$")) {
+            } else if (hash.matches("^[a-zA-Z0-9\\+/]+={0,2}$")) {
                 final byte[] raw = Base64.decode(hash);
                 hexHash = raw != null ? HexFormatter.byteArrayToHex(raw) : null;
                 if (hexHash == null || hexHash.length() != type.getSize()) {
