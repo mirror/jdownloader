@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -83,6 +84,7 @@ public class DepositFiles extends antiDDoSForHost {
     private static Map<Account, Set<DownloadLink>> RUNNING                  = new WeakHashMap<Account, Set<DownloadLink>>();
     private static AtomicBoolean                   useAPI                   = new AtomicBoolean(true);
     private final String                           SETTING_SSL_CONNECTION   = "SSL_CONNECTION";
+    private final String                           API_BASE                 = "https://depositfiles.com/api";
 
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
@@ -838,6 +840,10 @@ public class DepositFiles extends antiDDoSForHost {
         return "key" + (int) (Math.random() * 10000.0D) + "=val" + new Date().getTime();
     }
 
+    private void applyApiKeyVal(final UrlQuery query) {
+        query.add("key" + (int) (Math.random() * 10000.0D), "val" + new Date().getTime());
+    }
+
     private final AtomicBoolean newVC = new AtomicBoolean(false);
 
     @SuppressWarnings("unused")
@@ -846,7 +852,7 @@ public class DepositFiles extends antiDDoSForHost {
             return true;
         } else {
             br.getHeaders().put("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0");
-            br.getPage("http://depositfiles.com/api/update/check?" + apiKeyVal() + "&appkey=dfmanager2&version=" + newAppVersion);
+            this.apiGetPage(API_BASE + "/update/check?" + apiKeyVal() + "&appkey=dfmanager2&version=" + newAppVersion);
             br.getHeaders().put("Cache-Control", "no-cache");
             if (br.containsHTML("\"data\":\\{\"status\":\"UpToDate\"\\}")) {
                 return true;
@@ -878,8 +884,7 @@ public class DepositFiles extends antiDDoSForHost {
         }
     }
 
-    private void apiGetPage(String url) throws Exception {
-        br = new Browser();
+    private void apiGetPage(final String url) throws Exception {
         apiPrepBr(br);
         br.getPage(fixLinkSSL(url));
     }
@@ -905,7 +910,7 @@ public class DepositFiles extends antiDDoSForHost {
         return result.replace("%2F", "/");
     }
 
-    private Browser apiPrepBr(Browser ibr) {
+    private Browser apiPrepBr(final Browser ibr) {
         ibr.getHeaders().put("User-Agent", "Java/" + System.getProperty("java.version"));
         ibr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         ibr.getHeaders().put("Accept", "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2");
@@ -913,6 +918,7 @@ public class DepositFiles extends antiDDoSForHost {
         ibr.getHeaders().put("Accept-Charset", null);
         ibr.getHeaders().put("Accept-Encoding", null);
         ibr.getHeaders().put("Pragma", null);
+        ibr.setFollowRedirects(true);
         return ibr;
     }
 
@@ -923,35 +929,29 @@ public class DepositFiles extends antiDDoSForHost {
      */
     private AccountInfo apiFetchAccountInfo(final Account account) throws Exception {
         logger.info("apiFetchAccountInfo method in use!");
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         // this shouldn't be needed!
         // if (versionCheck()) {
         try {
-            apiGetPage("http://depositfiles.com/api/user/login?" + "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&" + apiKeyVal());
+            final UrlQuery query = new UrlQuery();
+            query.add("login", Encoding.urlEncode(account.getUser()));
+            query.add("password", Encoding.urlEncode(account.getPass()));
+            this.applyApiKeyVal(query);
+            apiGetPage(API_BASE + "/user/login?" + query.toString());
             if (br.containsHTML("\"error\":\"CaptchaRequired\"")) {
-                for (int i = 0; i <= 2; i++) {
-                    if (getDownloadLink() == null) {
-                        final DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), MAINPAGE.get(), true);
-                        setDownloadLink(dummyLink);
-                    }
-                    final String c = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdyfgcTAAAAAArE1fk9cGyExtKfT4a12dWcViye").getToken();
-                    if (c == null || c.equals("")) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    br.getPage("http://depositfiles.com/api/user/login?recaptcha_challenge_field=null&g-recaptcha-response=" + Encoding.urlEncode(c) + "&" + apiKeyVal() + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                    if (br.containsHTML("\"error\":\"CaptchaInvalid\"")) {
-                        logger.info("Invalid Captcha response!");
-                    } else {
-                        break;
-                    }
+                final String c = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdyfgcTAAAAAArE1fk9cGyExtKfT4a12dWcViye").getToken();
+                if (c == null || c.equals("")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
+                query.add("recaptcha_challenge_field", "null");
+                query.add("g-recaptcha-response", Encoding.urlEncode(c));
+                apiGetPage(API_BASE + "/user/login?" + query.toString());
             }
             if (br.containsHTML("\"error\":\"LoginInvalid\"")) {
                 logger.warning("Invalid Login (user:password)!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            if (br.containsHTML("\"error\":\"CaptchaInvalid\"")) {
-                logger.info("Invalid Captcha response! Exhausted retry count");
+            } else if (br.containsHTML("\"error\":\"CaptchaInvalid\"")) {
+                logger.info("Invalid Captcha response!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             String token = PluginJSonUtils.getJsonValue(br, "token");
@@ -1031,7 +1031,7 @@ public class DepositFiles extends antiDDoSForHost {
             apiChunks = 0;
         }
         // atm they share the same dl routine that I can see. Download program indicates captcha!
-        apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + getFID(link) + "&" + apiKeyVal() + (passCode != null ? "&file_password=" + Encoding.urlEncode(passCode) : ""));
+        apiGetPage(API_BASE + "/download/file?token=" + getToken(account) + "&file_id=" + getFID(link) + "&" + apiKeyVal() + (passCode != null ? "&file_password=" + Encoding.urlEncode(passCode) : ""));
         if ("FileIsPasswordProtected".equalsIgnoreCase(getError())) {
             link.setPasswordProtected(true);
             logger.info("This file seems to be password protected.");
@@ -1039,7 +1039,7 @@ public class DepositFiles extends antiDDoSForHost {
                 if (passCode == null) {
                     passCode = getUserInput(null, link);
                 }
-                apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + getFID(link) + "&" + apiKeyVal() + "&file_password=" + passCode);
+                apiGetPage(API_BASE + "/download/file?token=" + getToken(account) + "&file_id=" + getFID(link) + "&" + apiKeyVal() + "&file_password=" + passCode);
                 if ("FilePasswordIsIncorrect".equalsIgnoreCase(getError())) {
                     passCode = null;
                     continue;
@@ -1069,7 +1069,7 @@ public class DepositFiles extends antiDDoSForHost {
             } else {
                 int delay = Integer.parseInt(delayStr);
                 sleep(delay * 1001, link);
-                apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + getFID(link) + "&" + apiKeyVal() + (passCode != null ? "&file_password=" + Encoding.urlEncode(passCode) : "") + "&download_token=" + dlToken);
+                apiGetPage(API_BASE + "/download/file?token=" + getToken(account) + "&file_id=" + getFID(link) + "&" + apiKeyVal() + (passCode != null ? "&file_password=" + Encoding.urlEncode(passCode) : "") + "&download_token=" + dlToken);
                 if ("CaptchaRequired".equalsIgnoreCase(getError())) {
                     for (int i = 0; i <= 2; i++) {
                         final Recaptcha rc = new Recaptcha(br, this);
@@ -1081,7 +1081,7 @@ public class DepositFiles extends antiDDoSForHost {
                             logger.warning("User aborted/cancelled captcha");
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
-                        apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + getFID(link) + "&" + apiKeyVal() + (passCode != null ? "&file_password=" + Encoding.urlEncode(passCode) : "") + "&download_token=" + dlToken + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                        apiGetPage(API_BASE + "/download/file?token=" + getToken(account) + "&file_id=" + getFID(link) + "&" + apiKeyVal() + (passCode != null ? "&file_password=" + Encoding.urlEncode(passCode) : "") + "&download_token=" + dlToken + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                         if ("CaptchaInvalid".equalsIgnoreCase(getError())) {
                             logger.info("Invalid Captcha response!");
                         } else {
@@ -1207,7 +1207,7 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     private boolean checkSsl() {
-        return true;// getPluginConfig().getBooleanProperty(SETTING_SSL_CONNECTION, false);
+        return true;// getPluginConfig().getBooleanProperty(SETTING_SSL_CONNECTION, true);
     }
 
     private String fixLinkSSL(String link) {
@@ -1220,7 +1220,7 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     private void setConfigElements() {
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_SSL_CONNECTION, JDL.L("plugins.hoster.DepositFiles.com.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_SSL_CONNECTION, "Use Secure Communication over SSL (HTTPS://)").setDefaultValue(true));
         // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_PREFER_SOLVEMEDIA,
         // JDL.L("plugins.hoster.DepositFiles.com.preferSolvemediaCaptcha",
         // "Prefer solvemedia captcha over reCaptcha V2?")).setDefaultValue(true));

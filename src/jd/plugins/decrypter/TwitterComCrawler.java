@@ -109,6 +109,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     public static final String             PROPERTY_TWEET_ID                                                = "tweetid";
     private final String                   API_BASE_v2                                                      = "https://api.twitter.com/2";
     private final String                   API_BASE_GRAPHQL                                                 = "https://twitter.com/i/api/graphql";
+    public static final boolean            ACCOUNT_IS_ALWAYS_REQUIRED                                       = true;
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -188,6 +189,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
             logger.info("Account available and we're logged in");
         } else {
             logger.info("No account available or login failed");
+            if (ACCOUNT_IS_ALWAYS_REQUIRED) {
+                throw new AccountRequiredException();
+            }
         }
         if (param.getCryptedUrl().matches(TYPE_CARD)) {
             return this.crawlCard(param, account);

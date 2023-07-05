@@ -47,6 +47,17 @@ public class AsmfileCom extends XFileSharingProBasic {
         return ret;
     }
 
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        /*
+         * 2023-07-05: This domain mostly redirects to asmfile.com but it doesn't support https thus the easiest way to work around issues
+         * with added links with that domain is to mark it as dead.
+         */
+        deadDomains.add("filetut.com");
+        return deadDomains;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }

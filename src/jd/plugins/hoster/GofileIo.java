@@ -24,6 +24,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -42,15 +51,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:\\?c=|d/)[A-Za-z0-9]+(?:#file=[a-f0-9]+)?" })
 public class GofileIo extends PluginForHost {
     public GofileIo(PluginWrapper wrapper) {
@@ -63,11 +63,11 @@ public class GofileIo extends PluginForHost {
         return "https://gofile.io/";
     }
 
-    private String getFolderID(final DownloadLink link) {
+    private String getFolderIDFromURL(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), "(?:c=|/d/)([A-Za-z0-9]+)").getMatch(0);
     }
 
-    private String getFileID(final DownloadLink link) throws PluginException {
+    private String getShortFileIDFromURL(final DownloadLink link) throws PluginException {
         return new Regex(link.getPluginPatternMatcher(), "#file=([a-f0-9]+)").getMatch(0);
     }
 
@@ -154,7 +154,7 @@ public class GofileIo extends PluginForHost {
             logger.info("Availablecheck via directurl complete");
             return AvailableStatus.TRUE;
         }
-        final String folderID = getFolderID(link);
+        final String folderID = getFolderIDFromURL(link);
         if (folderID == null) {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -219,20 +219,33 @@ public class GofileIo extends PluginForHost {
              * have a single file.
              */
             final String internalFileID = link.getStringProperty(PROPERTY_INTERNAL_FILEID);
-            if (internalFileID == null) {
-                /* This should never happen */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            final String shortFileID = getShortFileIDFromURL(link);
             final Map<String, Object> data = (Map<String, Object>) response.get("data");
             final Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("contents");
+            if (files == null || files.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            Map<String, Object> result = null;
+            Map<String, Object> resultByShortFileID = null;
             for (Entry<String, Map<String, Object>> file : files.entrySet()) {
                 final String id = file.getKey();
+                final Map<String, Object> map = file.getValue();
                 if (internalFileID != null && id.toString().equals(internalFileID)) {
-                    final Map<String, Object> entry = file.getValue();
-                    parseFileInfo(link, entry);
-                    return AvailableStatus.TRUE;
+                    result = map;
+                    break;
+                } else if (id.startsWith(shortFileID)) {
+                    resultByShortFileID = map;
                 }
             }
+            if (result == null && resultByShortFileID != null) {
+                logger.info("Using resultByShortFileID");
+                result = resultByShortFileID;
+            }
+            if (result == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            parseFileInfo(link, result);
+            return AvailableStatus.TRUE;
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }

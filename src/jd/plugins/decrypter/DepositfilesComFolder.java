@@ -23,6 +23,8 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -68,7 +70,7 @@ public class DepositfilesComFolder extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (MAINPAGE == null || DOMAINS == null) {
             /* we first have to load the plugin, before we can reference it */
             final PluginForHost depositfilesPlugin = this.getNewPluginForHostInstance(this.getHost());
@@ -81,7 +83,7 @@ public class DepositfilesComFolder extends PluginForDecrypt {
             }
         }
         String url = param.getCryptedUrl();
-        final String folderSlug = new Regex(url, this.getSupportedLinks()).getMatch(0);
+        // final String folderSlug = new Regex(url, this.getSupportedLinks()).getMatch(0);
         int pagecount = 1;
         String id = new Regex(url, "folders/(.+)").getMatch(0);
         url = MAINPAGE + "/de/folders/" + id;
@@ -105,17 +107,16 @@ public class DepositfilesComFolder extends PluginForDecrypt {
             br.getPage(url + "?page=" + x + "&format=text");
             String[] finalLinks = br.getRegex("(https?://" + DOMAINS + "/files/[0-9a-z]+)").getColumn(0);
             for (String data : finalLinks) {
-                decryptedLinks.add(createDownloadlink(data));
+                ret.add(createDownloadlink(data));
             }
         }
-        if (decryptedLinks.size() == 0) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + folderSlug, "This folder is empty."));
-            return decryptedLinks;
+        if (ret.isEmpty()) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
-        return decryptedLinks;
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

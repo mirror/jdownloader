@@ -243,7 +243,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
         do {
             br.getPage(GoogleDrive.API_BASE + "/files?" + queryFolder.toString());
             ((jd.plugins.hoster.GoogleDrive) hostPlugin).handleErrorsAPI(br, null, account);
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             /* 2020-12-10: This will return "Offline folder" for private items too! */
             final Object filesO = entries.get("files");
             if (filesO == null || ((List<Object>) filesO).size() == 0) {
@@ -527,7 +527,10 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
         }
         if (!StringUtils.isEmpty(title)) {
             title = Encoding.htmlDecode(title).trim();
-            title = title.replaceFirst(" (?:–|\\-) Google Drive$", "");
+            /* Different country = different variation of that title-ending. */
+            title = title.replaceFirst(" - Google Drive$", "");
+            title = title.replaceFirst(" – Google Drive$", "");
+            title = title.replaceFirst(" – Google Drive$", "");
             return title;
         } else {
             return null;
