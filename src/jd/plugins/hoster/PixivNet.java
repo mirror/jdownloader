@@ -24,6 +24,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Files;
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.PixivNetConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -47,17 +58,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.PixivNetGallery;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Files;
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.PixivNetConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PixivNet extends PluginForHost {
@@ -124,27 +124,25 @@ public class PixivNet extends PluginForHost {
     }
 
     /* Extension which will be used if no correct extension is found */
-    public static final String  default_extension            = ".jpg";
+    public static final String  default_extension      = ".jpg";
     /* Connection stuff */
-    private final boolean       FREE_RESUME                  = true;
-    private final int           FREE_MAXCHUNKS               = 1;
-    private final int           FREE_MAXDOWNLOADS            = 20;
-    private final boolean       ACCOUNT_FREE_RESUME          = true;
-    private final int           ACCOUNT_FREE_MAXCHUNKS       = 1;
-    // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 1;
-    private final int           ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private String              downloadSource               = null;
+    private final boolean       FREE_RESUME            = true;
+    private final int           FREE_MAXCHUNKS         = 1;
+    private final boolean       ACCOUNT_FREE_RESUME    = true;
+    private final int           ACCOUNT_FREE_MAXCHUNKS = 1;
+    private String              downloadSource         = null;
     /* DownloadLink Properties / Packagizer properties */
-    public static final String  PROPERTY_MAINLINK            = "mainlink";
-    public static final String  PROPERTY_GALLERYID           = "galleryid";
-    public static final String  PROPERTY_GALLERYURL          = "galleryurl";
-    public static final String  PROPERTY_UPLOADDATE          = "createdate";
-    public static final String  PROPERTY_UPLOADER            = "uploader";
-    public static final String  ANIMATION_META               = "animation_meta";
-    private static final String TYPE_ANIMATION_META          = "https?://[^/]+/ajax/illust/(\\d+)/ugoira_meta";
-    private static final String TYPE_NOVEL                   = "https?://[^/]+/novel/show\\.php\\?id=(\\d+)";
+    public static final String  PROPERTY_MAINLINK      = "mainlink";
+    public static final String  PROPERTY_CONTENT_ID    = "contentid";
+    public static final String  PROPERTY_GALLERYID     = "galleryid";
+    public static final String  PROPERTY_GALLERYURL    = "galleryurl";
+    public static final String  PROPERTY_UPLOADDATE    = "createdate";
+    public static final String  PROPERTY_TITLE         = "title";
+    public static final String  PROPERTY_UPLOADER      = "uploader";
+    public static final String  ANIMATION_META         = "animation_meta";
+    public static final String  PROPERTY_ORDER_ID      = "orderid";
+    private static final String TYPE_ANIMATION_META    = "(?i)https?://[^/]+/ajax/illust/(\\d+)/ugoira_meta";
+    private static final String TYPE_NOVEL             = "(?i)https?://[^/]+/novel/show\\.php\\?id=(\\d+)";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -395,7 +393,7 @@ public class PixivNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     public void login(final Account account, final boolean validateCookies) throws Exception {
@@ -437,7 +435,8 @@ public class PixivNet extends PluginForHost {
                 }
                 /**
                  * 2022-06-08: TODO: Full login via website is broken (captcha fails) --> Inform user to use cookie login in the meanwhile
-                 * </br> RE ticket https://svn.jdownloader.org/issues/90125
+                 * </br>
+                 * RE ticket https://svn.jdownloader.org/issues/90125
                  */
                 if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     showCookieLoginInfo();
@@ -585,9 +584,6 @@ public class PixivNet extends PluginForHost {
         }
         /* 2017-02-06: So far there are only free accounts available for this host. */
         account.setType(AccountType.FREE);
-        /* free accounts can still have captcha */
-        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-        account.setConcurrentUsePossible(false);
         return ai;
     }
 
@@ -600,7 +596,7 @@ public class PixivNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return -1;
     }
 
     @Override

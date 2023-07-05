@@ -18,23 +18,28 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BoxCaCom extends PluginForHost {
@@ -67,7 +72,7 @@ public class BoxCaCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]{12})/[^/]+/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]{12})(/([^/]+)/?)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -117,8 +122,10 @@ public class BoxCaCom extends PluginForHost {
         if (StringUtils.isEmpty(filename)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setName(filename);
+        }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -127,33 +134,38 @@ public class BoxCaCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            /* 2020-08-06: TODO: Fix this */
-            final boolean pluginBroken = true;
-            if (pluginBroken) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = br.getRegex("").getMatch(0);
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            requestFileInformation(link);
+            final Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br2.getHeaders().put("X-Csrftoken", br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN));
+            br2.getHeaders().put("Origin", "https://www." + br.getHost());
+            final String dwid = generateDW_ID();
+            final UrlQuery query = new UrlQuery();
+            query.add("dw_id", dwid);
+            query.add("file_code", this.getFID(link));
+            br2.postPage("/create_dw_link/", query);
+            /* Expect- and parse json response */
+            final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+            dllink = "/download/" + dwid + "/" + URLEncode.encodeURIComponent(link.getName());
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
@@ -184,17 +196,20 @@ public class BoxCaCom extends PluginForHost {
         return dllink;
     }
 
+    private String generateDW_ID() {
+        return generateRandomString("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 12);
+    }
+
+    public static String generateRandomString(final String chars, final int length) {
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(new Random().nextInt(chars.length())));
+        }
+        return sb.toString();
+    }
+
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        }
-        /* Premium accounts do not have captchas */
         return false;
     }
 

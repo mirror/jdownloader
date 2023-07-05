@@ -21,6 +21,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.PixivNetConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -42,14 +50,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.PixivNet;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.PixivNetConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PixivNet.class })
@@ -172,6 +172,10 @@ public class PixivNetGallery extends PluginForDecrypt {
                     illustTitle = itemID;
                 }
                 final String singleLink = (String) JavaScriptEngineFactory.walkJson(body, "urls/regular");
+                if (singleLink == null) {
+                    /* Most likely NSFW content for which account is required. */
+                    throw new AccountRequiredException();
+                }
                 ret.add(generateDownloadLink(param.getCryptedUrl(), itemID, illustTitle, illustUploadDate, username, tags, singleLink));
                 if (pagecount > 1) {
                     /* == click on "Load more" */
@@ -402,14 +406,16 @@ public class PixivNetGallery extends PluginForDecrypt {
         if (title == null) {
             title = contentID;
         }
-        final String filename_url = new Regex(directurl, "/([^/]+\\.[a-z]+)$").getMatch(0);
+        final String filename_url = directurl != null ? new Regex(directurl, "/([^/]+\\.[a-z]+)$").getMatch(0) : null;
         String filename;
         final String picNumberStr = new Regex(directurl, "/[^/]+_p(\\d+)[^/]*\\.[a-z]+$").getMatch(0);
         if (picNumberStr != null) {
             filename = this.generateFilename(contentID, title, username, tags, picNumberStr, null);
-        } else {
+        } else if (filename_url != null) {
             /* Fallback - just use the given filename (minus extension)! */
             filename = filename_url.substring(0, filename_url.lastIndexOf("."));
+        } else {
+            filename = title;
         }
         if (StringUtils.isEmpty(filename)) {
             return null;
@@ -424,6 +430,8 @@ public class PixivNetGallery extends PluginForDecrypt {
         filename += ext;
         final DownloadLink dl = createDownloadlink(directurl.replaceAll("https?://", "decryptedpixivnet://"));
         dl.setProperty(PixivNet.PROPERTY_MAINLINK, parameter);
+        dl.setProperty(PixivNet.PROPERTY_TITLE, title);
+        dl.setProperty(PixivNet.PROPERTY_CONTENT_ID, contentID);
         // dl.setProperty(PixivNet.PROPERTY_GALLERYID, userid);
         dl.setProperty(PixivNet.PROPERTY_GALLERYURL, br.getURL());
         if (!StringUtils.isEmpty(uploadDate)) {
@@ -432,6 +440,10 @@ public class PixivNetGallery extends PluginForDecrypt {
         if (!StringUtils.isEmpty(username)) {
             /* Packagizer property */
             dl.setProperty(PixivNet.PROPERTY_UPLOADER, username);
+        }
+        if (picNumberStr != null) {
+            /* Packagizer property */
+            dl.setProperty(PixivNet.PROPERTY_ORDER_ID, picNumberStr);
         }
         dl.setContentUrl(parameter);
         dl.setFinalFileName(filename);

@@ -101,7 +101,10 @@ public class BestcamTv extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
+        String title = br.getRegex("class=\"breadcrumb-item active\" aria-current=\"page\">([^<]+)</li>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
+        }
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
@@ -115,7 +118,7 @@ public class BestcamTv extends PluginForHost {
         requestFileInformation(link);
         String dllink = null;
         final String js = br.getRegex("jwplayer\\.key = \"[^\"]+\";\\s*(\\(function.+;\\})").getMatch(0);
-        final String jsParam = br.getRegex("f\\(\"([^\"]+)").getMatch(0);
+        final String jsParam = br.getRegex("f\\(\"([^\"]{10,})").getMatch(0);
         if (js == null || jsParam == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

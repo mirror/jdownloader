@@ -47,7 +47,7 @@ public class DlPrteCom extends antiDDoSForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "dl-protect.info" });
+        ret.add(new String[] { "dl-protect.net", "dl-protect.info", "dl-protect.link" });
         return ret;
     }
 
@@ -169,7 +169,7 @@ public class DlPrteCom extends antiDDoSForDecrypt {
         /* Error handling */
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Page Not Found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">\\s*Lien introuvable")) {
+        } else if (br.containsHTML("(?i)>\\s*Lien introuvable")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         {
