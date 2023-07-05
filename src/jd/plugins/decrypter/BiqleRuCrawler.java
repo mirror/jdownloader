@@ -148,6 +148,12 @@ public class BiqleRuCrawler extends PluginForDecrypt {
             } else if (br.containsHTML("(?i)>\\s*An error has occurred")) {
                 /* 2022-10-14: artsporn.com e.g.: https://artsporn.com/watch/-123456_123456 */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML(">Попробуйте еще раз")) {
+                /**
+                 * "Try again" </br>
+                 * https://biqle.ru/watch/-163698164_456239521
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String title = Encoding.htmlOnlyDecode(br.getRegex("<title>\\s*(.*?)\\s*(—\\s*BIQLE.*?)?</title>").getMatch(0));
             FilePackage fp = null;
@@ -178,7 +184,8 @@ public class BiqleRuCrawler extends PluginForDecrypt {
                 brc.getPage(daxabEmbedURL);
                 final String cdn_filesString = brc.getRegex("cdn_files\\s*:\\s*(\\{.*?\\})").getMatch(0);
                 if (cdn_filesString != null) {
-                    final String server = Base64.decodeToString(new StringBuilder(brc.getRegex("server\\s*:\\s*\"(.*?)\"").getMatch(0)).reverse().toString());
+                    final String serverOrig = brc.getRegex("server\\s*:\\s*\"(.*?)\"").getMatch(0);
+                    final String server = Base64.decodeToString(new StringBuilder(serverOrig).reverse().toString());
                     final String cdn_id = brc.getRegex("cdn_id\\s*:\\s*\"(-?\\d+_\\d+)\"").getMatch(0);
                     final Map<String, Object> cdn_files = restoreFromString(cdn_filesString, TypeRef.MAP);
                     for (Entry<String, Object> cdn_file : cdn_files.entrySet()) {
@@ -210,7 +217,12 @@ public class BiqleRuCrawler extends PluginForDecrypt {
                         }
                     }
                 } else {
-                    final String server = Base64.decodeToString(new StringBuilder(brc.getRegex("server\\s*:\\s*\"(.*?)\"").getMatch(0)).reverse().toString());
+                    final boolean looksLikeAdvertisementURL = !brc.getHost().equals(Browser.getHost(daxabEmbedURL));
+                    final String serverOrig = brc.getRegex("server\\s*:\\s*\"(.*?)\"").getMatch(0);
+                    if (serverOrig == null && looksLikeAdvertisementURL) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final String server = Base64.decodeToString(new StringBuilder(serverOrig).reverse().toString());
                     final String accessToken = brc.getRegex("access_token\\s*:\\s*\"(.*?)\"").getMatch(0);
                     final String videoId = brc.getRegex("id\\s*:\\s*\"(.*?)\"").getMatch(0);
                     // final String sig = brc.getRegex("sig\\s*:\\s*\"(.*?)\"").getMatch(0);

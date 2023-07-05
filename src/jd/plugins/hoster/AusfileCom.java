@@ -156,4 +156,13 @@ public class AusfileCom extends XFileSharingProBasic {
         }
         return ttt;
     }
+
+    @Override
+    public boolean isPremiumOnly(final Browser br) {
+        if (br.containsHTML("(?i)which is available for direct purchases only|Please select one of options below in order to purchase an access to this file")) {
+            return true;
+        } else {
+            return super.isPremiumOnly(br);
+        }
+    }
 }

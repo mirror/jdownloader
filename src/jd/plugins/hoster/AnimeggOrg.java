@@ -17,6 +17,14 @@ package jd.plugins.hoster;
 
 import java.util.LinkedHashMap;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.AnimeggOrgConfig;
+import org.jdownloader.plugins.components.config.AnimeggOrgConfig.Quality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,12 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.AnimeggOrgConfig;
-import org.jdownloader.plugins.components.config.AnimeggOrgConfig.Quality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 /**
  *
@@ -50,6 +52,11 @@ public class AnimeggOrg extends antiDDoSForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://www.animegg.org/";
     }
@@ -60,35 +67,43 @@ public class AnimeggOrg extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
         // not yet available. We can only say offline!
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<img src=\"\\.\\./images/animegg-unavailable.jpg\" style=\"width: 100%\">")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("<img src=\"\\.\\./images/animegg-unavailable.jpg\" style=\"width: 100%\">")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (!br.getURL().matches(".+/embed/\\d+")) {
-            final String embed = br.getRegex("<iframe [^>]*src=(\"|')(.*?/embed/\\d+)\\1").getMatch(1);
-            if (embed == null) {
+            final String[] embedurls = br.getRegex("<iframe [^>]*src=(\"|')(.*?/embed/\\d+)\\1").getColumn(1);
+            if (embedurls == null || embedurls.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            getPage(embed);
+            int brokenStreamSources = 0;
+            for (int index = 0; index < embedurls.length; index++) {
+                final String embedurl = embedurls[index];
+                logger.info("Checking embedurl " + (index + 1) + "/" + embedurls.length + " | " + embedurl);
+                getPage(embedurl);
+                final String vsources = getVideosourcesString(br);
+                if (StringUtils.isEmpty(vsources) || vsources.equals("[]")) {
+                    logger.info("Found broken videosource: " + embedurl);
+                    brokenStreamSources++;
+                } else {
+                    break;
+                }
+                index++;
+            }
+            if (brokenStreamSources == embedurls.length) {
+                /* All sources are brokn */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video stream?");
+            }
         }
         final String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
         // multiple qualities.
-        final String vidquals = br.getRegex("videoSources\\s*=\\s*(\\[.*?\\]);").getMatch(0);
+        final String vidquals = br.getRegex("(?i)videoSources\\s*=\\s*(\\[.*?\\]);").getMatch(0);
         final LinkedHashMap<Integer, String> results = new LinkedHashMap<Integer, String>();
         final String[] quals = PluginJSonUtils.getJsonResultsFromArray(vidquals);
         String bestQualityDownloadurl = null;
@@ -144,6 +159,21 @@ public class AnimeggOrg extends antiDDoSForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getVideosourcesString(final Browser br) {
+        return br.getRegex("(?i)videoSources\\s*=\\s*(\\[.*?\\]);").getMatch(0);
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     private int getUserPreferredquality() {

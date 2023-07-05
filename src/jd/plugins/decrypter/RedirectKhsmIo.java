@@ -37,7 +37,7 @@ public class RedirectKhsmIo extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "redirect.khsm.io" });
+        ret.add(new String[] { "khsm.io" });
         return ret;
     }
 
@@ -57,7 +57,7 @@ public class RedirectKhsmIo extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/link/(\\d+)");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/link/(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
