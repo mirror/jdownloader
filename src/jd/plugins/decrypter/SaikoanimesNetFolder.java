@@ -19,13 +19,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SaikoanimesNetFolder extends PluginForDecrypt {
@@ -62,11 +68,66 @@ public class SaikoanimesNetFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        /* Dummy crawler to translate from one linkformat to another one. */
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
+        /* 2023-07-06: It is not possible anymore to use that old WebAPI -> We need to find all required information in html code. */
+        final boolean useOldCrawlerWhichUsesAPI = false;
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        ret.add(createDownloadlink("https://download.saikoanimes.net/drive/s/" + folderID));
+        if (useOldCrawlerWhichUsesAPI) {
+            ret.add(createDownloadlink("https://download.saikoanimes.net/drive/s/" + folderID));
+        } else {
+            br.setFollowRedirects(true);
+            br.getPage(param.getCryptedUrl());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String subfolderpath = this.getAdoptedCloudFolderStructure(folderID);
+            FilePackage fp = null;
+            if (subfolderpath != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(subfolderpath);
+            }
+            final String[] htmls = br.getRegex("<nav class='container-down'.*?</nav>").getColumn(-1);
+            for (final String html : htmls) {
+                final String url = new Regex(html, "data-url='(http[^\\']+)").getMatch(0);
+                final String filename = new Regex(html, "down-icon'></i>([^<]+)<").getMatch(0);
+                final String filesizeStr = new Regex(html, "class='tumbup'[^>]*>(\\d+ [^<]+)").getMatch(0);
+                if (url.contains("folderr")) {
+                    final String foldername = new Regex(html, "down-folder'[^>]*></i>([^<]+)</div>").getMatch(0);
+                    final DownloadLink folder = this.createDownloadlink(url);
+                    if (foldername != null) {
+                        if (subfolderpath != null) {
+                            folder.setRelativeDownloadFolderPath(subfolderpath + "/" + foldername);
+                        } else {
+                            folder.setRelativeDownloadFolderPath(foldername);
+                        }
+                    }
+                    ret.add(folder);
+                } else {
+                    final DownloadLink file = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
+                    file.setAvailable(true);
+                    if (filename != null) {
+                        file.setName(Encoding.htmlDecode(filename).trim());
+                    }
+                    if (filesizeStr != null) {
+                        file.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+                    }
+                    if (subfolderpath != null) {
+                        file.setRelativeDownloadFolderPath(subfolderpath);
+                    }
+                    if (fp != null) {
+                        file._setFilePackage(fp);
+                    }
+                    ret.add(file);
+                }
+            }
+            if (ret.isEmpty()) {
+                /**
+                 * 2023-07-06: At this moment they do not display any error message to indicate that content is offline. </br>
+                 * Example: https://saikoanimes.net/baixarr/?=blablablub
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
         return ret;
     }
 }

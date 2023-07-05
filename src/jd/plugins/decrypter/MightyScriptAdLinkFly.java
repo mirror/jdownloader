@@ -603,9 +603,9 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             final String formRecaptchaSiteKey = form.getRegex("data-sitekey\\s*=\\s*\"(" + AbstractRecaptchaV2.apiKeyRegex + ")\"").getMatch(0);
             final String reCAPTCHA_site_key = getAppVarsResult("reCAPTCHA_site_key");
             final String invisible_reCAPTCHA_site_key = getAppVarsResult("invisible_reCAPTCHA_site_key");
-            if (StringUtils.equals(formRecaptchaSiteKey, reCAPTCHA_site_key)) {
+            if (formRecaptchaSiteKey != null && StringUtils.equals(formRecaptchaSiteKey, reCAPTCHA_site_key)) {
                 captchaTypeStr = "recaptcha";
-            } else if (StringUtils.equals(formRecaptchaSiteKey, invisible_reCAPTCHA_site_key)) {
+            } else if (formRecaptchaSiteKey != null && StringUtils.equals(formRecaptchaSiteKey, invisible_reCAPTCHA_site_key)) {
                 captchaTypeStr = "invisible-recaptcha";
             }
         }

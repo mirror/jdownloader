@@ -1013,6 +1013,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         } else if (continueform.containsHTML("(?i)" + Pattern.quote(continue_link))) {
             return continueform;
         } else {
+            /* Manually build / complete form. */
             final Form ret = new Form();
             ret.setMethod(continueform.getMethod());
             ret.setAction(continue_link);
@@ -1020,7 +1021,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             ret.put("submitted", "1");
             ret.put("d", "1");
             for (final InputField field : continueform.getInputFields()) {
-                if (ret.getInputField(field.getKey()) != null) {
+                if (field.getKey() != null && ret.getInputField(field.getKey()) != null) {
                     ret.addInputField(field);
                 }
             }
