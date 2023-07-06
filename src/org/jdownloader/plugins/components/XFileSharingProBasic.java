@@ -4663,7 +4663,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     protected void handleDownload(final DownloadLink link, final Account account, final String officialVideoDownloadURL, final String directurl, final Request req) throws Exception {
         final DownloadMode mode = this.getPreferredDownloadModeFromConfig();
         String finalDownloadlink;
-        if (!StringUtils.isEmpty(officialVideoDownloadURL) && (mode == DownloadMode.ORIGINAL || StringUtils.isEmpty(directurl))) {
+        if (!StringUtils.isEmpty(officialVideoDownloadURL) && (mode == null || mode == DownloadMode.ORIGINAL || StringUtils.isEmpty(directurl))) {
             /* Official video download */
             finalDownloadlink = officialVideoDownloadURL;
         } else {
@@ -5336,7 +5336,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     protected final DownloadMode getPreferredDownloadModeFromConfig() {
         final Class<? extends XFSConfigVideo> cfgO = getVideoConfigInterface();
         if (cfgO == null) {
-            return null;
+            return DownloadMode.ORIGINAL;
         } else {
             return PluginJsonConfig.get(cfgO).getPreferredDownloadMode();
         }

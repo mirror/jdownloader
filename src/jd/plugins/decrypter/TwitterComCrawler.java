@@ -33,6 +33,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -98,12 +100,18 @@ public class TwitterComCrawler extends PluginForDecrypt {
     private static final String            PROPERTY_DATE                                                    = "date";
     private static final String            PROPERTY_DATE_TIMESTAMP                                          = "date_timestamp";
     public static final String             PROPERTY_MEDIA_INDEX                                             = "mediaindex";
+    /* Number of media items in the source-tweet. */
+    public static final String             PROPERTY_MEDIA_NUM                                               = "media_num";
     public static final String             PROPERTY_MEDIA_ID                                                = "mediaid";
     public static final String             PROPERTY_BITRATE                                                 = "bitrate";
     public static final String             PROPERTY_TWEET_TEXT                                              = "tweet_text";
+    @Deprecated
     public static final String             PROPERTY_FILENAME_FROM_CRAWLER                                   = "crawlerfilename";
     public static final String             PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY = "video_direct_urls_are_available_via_api_extended_entity";
     public static final String             PROPERTY_TYPE                                                    = "type";
+    public static final String             TYPE_PHOTO                                                       = "photo";
+    public static final String             TYPE_TEXT                                                        = "text";
+    public static final String             TYPE_VIDEO                                                       = "video";
     public static final String             PROPERTY_REPLY                                                   = "reply";
     public static final String             PROPERTY_RETWEET                                                 = "retweet";
     public static final String             PROPERTY_TWEET_ID                                                = "tweetid";
@@ -563,8 +571,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 fp.setComment(tweetText);
             }
         }
-        final ArrayList<DownloadLink> retInternal = new ArrayList<DownloadLink>();
-        final ArrayList<DownloadLink> retExternal = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> retMedia = new ArrayList<DownloadLink>();
         final String urlToTweet = createTwitterPostURL(username, tweetID);
         fp.setAllowInheritance(true);
         fp.setAllowMerge(true);
@@ -593,10 +600,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
             for (final List<Map<String, Object>> mediaList : mediaLists) {
                 for (final Map<String, Object> media : mediaList) {
                     final String mediaType = media.get("type").toString();
-                    // process media in fixed order to make sure all videos are processed first before checking for video thumbnails
-                    // if (!processType.equals(mediaType)) {
-                    // continue;
-                    // }
                     final String mediaIDStr = media.get("id_str").toString();
                     final String keyForMap = mediaType + "_" + mediaIDStr;
                     if (mediaResultMap.containsKey(keyForMap)) {
@@ -631,7 +634,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         dl = this.createDownloadlink(createVideourlSpecific(username, tweetID, (videoIndex + 1)));
-                        dl.setProperty(PROPERTY_TYPE, "video");
+                        dl.setProperty(PROPERTY_TYPE, TYPE_VIDEO);
                         final String originalFilename = Plugin.getFileNameFromURL(new URL(streamURL));
                         if (cfg.isUseOriginalFilenames() && originalFilename != null) {
                             filename = originalFilename;
@@ -660,7 +663,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         dl = this.createDownloadlink(photoURL);
-                        dl.setProperty(PROPERTY_TYPE, "photo");
+                        dl.setProperty(PROPERTY_TYPE, TYPE_PHOTO);
                         dl.setProperty(TwitterCom.PROPERTY_DIRECTURL, photoURL);
                         final String originalFilename = Plugin.getFileNameFromURL(new URL(photoURL));
                         if (cfg.isUseOriginalFilenames() && originalFilename != null) {
@@ -680,6 +683,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     }
                     dl.setAvailable(true);
                     dl.setProperty(PROPERTY_MEDIA_INDEX, mediaIndex);
+                    dl.setProperty(PROPERTY_MEDIA_NUM, mediasExtended.size());
                     dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str"));
                     mediaResultMap.put(keyForMap, dl);
                     mediaIndex += 1;
@@ -698,10 +702,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
             logger.info("Found media types: " + foundMediaTypes);
             /* Add results to list to be returned later. */
-            retInternal.addAll(mediaResultMap.values());
+            retMedia.addAll(mediaResultMap.values());
         }
         /* Check for fallback video source if no video item has been found until now. */
-        final boolean foundMedia;
         if (videoIndex == 0 && !StringUtils.isEmpty(vmapURL)) {
             /* Fallback handling for very old (???) content */
             /* Expect such URLs which our host plugin can handle: https://video.twimg.com/amplify_video/vmap/<numbers>.vmap */
@@ -711,34 +714,53 @@ public class TwitterComCrawler extends PluginForDecrypt {
             singleVideo.setFinalFileName(finalFilename);
             singleVideo.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false);
             singleVideo.setProperty(PROPERTY_MEDIA_INDEX, 0);
-            singleVideo.setProperty(PROPERTY_TYPE, "video");
+            singleVideo.setProperty(PROPERTY_TYPE, TYPE_VIDEO);
             singleVideo.setAvailable(true);
-            retInternal.add(singleVideo);
-            foundMedia = true;
-        } else if (retInternal.size() > 0) {
-            foundMedia = true;
-        } else {
-            foundMedia = false;
+            retMedia.add(singleVideo);
         }
         int itemsSkippedDueToPluginSettings = 0;
+        DownloadLink text = null;
+        final ArrayList<DownloadLink> retExternal = new ArrayList<DownloadLink>();
         if (!StringUtils.isEmpty(tweetText)) {
             final String[] urlsInPostText = HTMLParser.getHttpLinks(tweetText, br.getURL());
             if (cfg.isCrawlURLsInsideTweetText() && urlsInPostText.length > 0) {
+                final ArrayList<String> skippedUrls = new ArrayList<String>();
+                final String whitelistRegexStr = cfg.getRegexWhitelistForCrawledUrlsInTweetText();
+                Pattern whitelistPattern = null;
+                if (!StringUtils.isEmpty(whitelistRegexStr)) {
+                    try {
+                        whitelistPattern = Pattern.compile(whitelistRegexStr.trim(), Pattern.CASE_INSENSITIVE);
+                    } catch (final PatternSyntaxException pse) {
+                        logger.info("User entered invalid whitelist regex, ignoring it. Regex: " + whitelistRegexStr);
+                    }
+                }
                 for (final String url : urlsInPostText) {
-                    final DownloadLink dl = this.createDownloadlink(url);
-                    retExternal.add(dl);
+                    if (whitelistPattern == null || new Regex(url, whitelistPattern).matches()) {
+                        retExternal.add(this.createDownloadlink(url));
+                    } else {
+                        skippedUrls.add(url);
+                    }
+                }
+                if (skippedUrls.size() > 0) {
+                    String logtext = "Skipped URLs due du users' whitelist pattern: ";
+                    if (skippedUrls.size() == urlsInPostText.length) {
+                        logtext += "ALL";
+                    } else {
+                        logtext += skippedUrls;
+                    }
+                    logger.info(logtext);
                 }
             } else if (urlsInPostText != null) {
                 itemsSkippedDueToPluginSettings += urlsInPostText.length;
             }
             /* Crawl tweet as text if wanted by user or if tweet contains only text. */
-            if (cfg.isSingleTweetCrawlerAddTweetTextAsTextfile() || !foundMedia) {
+            if (cfg.isSingleTweetCrawlerAddTweetTextAsTextfile() || !retMedia.isEmpty()) {
                 /*
                  * Determine last found original filename now/here because after collecting those items we're removing non-thumbnails if not
                  * wanted by user so this is the only place to determine the last used original filename.
                  */
                 String lastFoundOriginalFilename = null;
-                for (final DownloadLink result : retInternal) {
+                for (final DownloadLink result : retMedia) {
                     final String directurl = result.getStringProperty(TwitterCom.PROPERTY_DIRECTURL);
                     if (directurl != null) {
                         final String originalFilename = Plugin.getFileNameFromURL(new URL(directurl));
@@ -748,7 +770,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         }
                     }
                 }
-                final DownloadLink text = this.createDownloadlink(urlToTweet);
+                text = this.createDownloadlink(urlToTweet);
                 final String filename;
                 if (cfg.isUseOriginalFilenames() && lastFoundOriginalFilename != null) {
                     /*
@@ -766,14 +788,19 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     ignore.printStackTrace();
                 }
                 text.setProperty(PROPERTY_MEDIA_INDEX, 0);
-                text.setProperty(PROPERTY_TYPE, "text");
+                text.setProperty(PROPERTY_TYPE, TYPE_TEXT);
                 text.setAvailable(true);
-                retInternal.add(text);
+                retMedia.add(text);
             } else {
                 itemsSkippedDueToPluginSettings++;
             }
         }
         /* Add remaining plugin properties */
+        final ArrayList<DownloadLink> retInternal = new ArrayList<DownloadLink>();
+        if (text != null) {
+            retInternal.add(text);
+        }
+        retInternal.addAll(retMedia);
         for (final DownloadLink dl : retInternal) {
             dl.setProperty(PROPERTY_USERNAME, username);
             dl.setProperty(PROPERTY_TWEET_ID, tweetID);
@@ -791,25 +818,36 @@ public class TwitterComCrawler extends PluginForDecrypt {
             if (dl.getFinalFileName() != null) {
                 dl.setProperty(PROPERTY_FILENAME_FROM_CRAWLER, dl.getFinalFileName());
             }
-            if (fp != null) {
-                dl._setFilePackage(fp);
-            }
-            distribute(dl);
+            // setFilename(dl);
         }
-        if (fp != null) {
-            fp.addLinks(retExternal);
-        }
-        retInternal.addAll(retExternal);
-        this.distribute(retExternal);
+        final ArrayList<DownloadLink> retAll = new ArrayList<DownloadLink>();
+        retAll.addAll(retInternal);
+        retAll.addAll(retExternal);
+        fp.addLinks(retAll);
+        this.distribute(retAll);
         /* Logger just in case nothing was added. */
-        if (retInternal.isEmpty()) {
+        if (retMedia.isEmpty()) {
             if (itemsSkippedDueToPluginSettings == 0) {
                 logger.info("Failed to find any crawlable content in tweet: " + tweetID);
             } else {
                 logger.info("Failed to find any crawlable content because of user settings. Crawlable but skipped " + itemsSkippedDueToPluginSettings + " item(s) due to users' plugin settings.");
             }
         }
-        return retInternal;
+        return retAll;
+    }
+
+    public static void setFilename(final DownloadLink link) {
+        final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
+        final String tweetID = link.getStringProperty(PROPERTY_TWEET_ID);
+        final String formattedDate = link.getStringProperty(PROPERTY_DATE);
+        final int mediaIndex = link.getIntegerProperty(PROPERTY_MEDIA_INDEX, -1);
+        String replyTextForFilename = "";
+        if (link.getBooleanProperty(PROPERTY_REPLY, false) && cfg.isMarkTweetRepliesViaFilename()) {
+            /* Mark filenames of tweet-replies if wished by user. */
+            replyTextForFilename += "_reply";
+        }
+        final String username = link.getStringProperty(PROPERTY_USERNAME);
+        // TODO: Implement different filename patterns according to user selection
     }
 
     private static long getTimestampTwitterDate(String created_at) {

@@ -22,7 +22,6 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
@@ -34,8 +33,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nifteam.info", "animeforce.org", "sipkur.net", "otrkeyfinder.com", "is.gd", "djurl.com", "q32.ru", "adfoc.us", "lnk.co", "myurl.in", "href.hu", "songspk.info", "nbanews.us", "academicearth.org", "tm-exchange.com", "adiarimore.com", "mafia.to", "warcraft.ingame.de", "mp3.wp.pl", "gantrack.com" }, urls = { "http://nifteam\\.info/link\\.php\\?file=.+", "http://(?:www\\.)?animeforce\\.org/ds(?:\\d+)?\\.php\\?file=.+", "http://sipkur\\.net/[a-z0-9\\-_]+\\.html", "https?://otrkeyfinder\\.com/de/go\\-to\\-mirror\\?otrkey=.+", "https?://(?:www\\.)?is\\.gd/[a-zA-Z0-9]+", "http://djurl\\.com/[A-Za-z0-9]+", "http://q32\\.ru/\\d+/c/[A-Za-z0-9\\-_]+", "http://(www\\.)?adfoc\\.us/(serve/\\?id=[a-z0-9]+|(?!serve|privacy|terms)[a-z0-9]+)", "http://(www\\.)?lnk\\.co/[A-Za-z0-9]+",
-        "http://(www\\.)?protect\\.myurl\\.in/[A-Za-z0-9]+", "http://href\\.hu/x/[a-zA-Z0-9\\.]+", "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=|link\\.songspk\\.help/\\S+/download\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?nbanews\\.us/\\d+", "http://[\\w\\.]*?academicearth\\.org/lectures/.{2,}", "http://[\\w\\.]*?tm-exchange\\.com/(get\\.aspx\\?action=trackgbx|\\?action=trackshow)\\&id=\\d+", "http://[\\w\\.]*?adiarimore\\.com/miralink/[a-z0-9]+", "http://[\\w\\.]*?mafia\\.to/download-[a-z0-9]+\\.cfm", "http://(www\\.)?warcraft\\.ingame\\.de/downloads/\\?file=\\d+", "http://[\\w\\.]*?mp3\\.wp\\.pl/(?!ftp)(p/strefa/artysta/\\d+,utwor,\\d+\\.html|\\?tg=[A-Za-z0-9=]+)", "http://(www\\.)?gantrack\\.com/t/l/\\d+/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nifteam.info", "animeforce.org", "sipkur.net", "otrkeyfinder.com", "is.gd", "djurl.com", "q32.ru", "adfoc.us", "lnk.co", "myurl.in", "href.hu", "songspk.info", "academicearth.org", "tm-exchange.com", "mafia.to", "warcraft.ingame.de", "mp3.wp.pl", "gantrack.com" }, urls = { "http://nifteam\\.info/link\\.php\\?file=.+", "http://(?:www\\.)?animeforce\\.org/ds(?:\\d+)?\\.php\\?file=.+", "http://sipkur\\.net/[a-z0-9\\-_]+\\.html", "https?://otrkeyfinder\\.com/de/go\\-to\\-mirror\\?otrkey=.+", "https?://(?:www\\.)?is\\.gd/[a-zA-Z0-9]+", "http://djurl\\.com/[A-Za-z0-9]+", "http://q32\\.ru/\\d+/c/[A-Za-z0-9\\-_]+", "http://(www\\.)?adfoc\\.us/(serve/\\?id=[a-z0-9]+|(?!serve|privacy|terms)[a-z0-9]+)", "http://(www\\.)?lnk\\.co/[A-Za-z0-9]+", "http://(www\\.)?protect\\.myurl\\.in/[A-Za-z0-9]+",
+        "http://href\\.hu/x/[a-zA-Z0-9\\.]+", "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=|link\\.songspk\\.help/\\S+/download\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?academicearth\\.org/lectures/.{2,}", "http://[\\w\\.]*?tm-exchange\\.com/(get\\.aspx\\?action=trackgbx|\\?action=trackshow)\\&id=\\d+", "http://[\\w\\.]*?mafia\\.to/download-[a-z0-9]+\\.cfm", "http://(www\\.)?warcraft\\.ingame\\.de/downloads/\\?file=\\d+", "http://[\\w\\.]*?mp3\\.wp\\.pl/(?!ftp)(p/strefa/artysta/\\d+,utwor,\\d+\\.html|\\?tg=[A-Za-z0-9=]+)", "http://(www\\.)?gantrack\\.com/t/l/\\d+/[A-Za-z0-9]+" })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
@@ -57,8 +56,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br = new Browser();
+        String parameter = param.getCryptedUrl();
         br.setFollowRedirects(false);
         br.setReadTimeout(60 * 1000);
         boolean dh = false;
@@ -73,11 +71,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
             if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=") || parameter.contains("link.songspk.help/")) {
                 finallink = br.getRedirectLocation();
                 dh = true;
-            } else if (parameter.contains("nbanews.us/")) {
-                br.setFollowRedirects(true);
-                final String id = new Regex(parameter, "nbanews\\.us/(\\d+)").getMatch(0);
-                br.getPage("http://www.nbanews.us/m1.php?id=" + id);
-                finallink = br.getRegex("NewWindow\\('(.*?)'").getMatch(0);
             } else if (parameter.contains("academicearth.org/")) {
                 if (!(br.getRedirectLocation() != null && br.getRedirectLocation().contains("users/login"))) {
                     if (br.containsHTML(">Looks like the Internet may require a little disciplinary action")) {
@@ -102,8 +95,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                 }
             } else if (parameter.contains("tm-exchange.com/")) {
                 finallink = "directhttp://" + parameter.replace("?action=trackshow", "get.aspx?action=trackgbx");
-            } else if (parameter.contains("adiarimore.com/")) {
-                finallink = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
             } else if (parameter.contains("mafia.to/download")) {
                 br.getPage(parameter.replace("download-", "dl-"));
                 finallink = br.getRedirectLocation();

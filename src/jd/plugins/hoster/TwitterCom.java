@@ -178,12 +178,12 @@ public class TwitterCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        final String filenameFromCrawler = link.getStringProperty(TwitterComCrawler.PROPERTY_FILENAME_FROM_CRAWLER);
         if (link.getPluginPatternMatcher().matches(TYPE_TWEET_TEXT)) {
             if (StringUtils.isEmpty(getTweetText(link))) {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String filenameFromCrawler = link.getStringProperty(TwitterComCrawler.PROPERTY_FILENAME_FROM_CRAWLER);
             if (filenameFromCrawler != null) {
                 link.setFinalFileName(filenameFromCrawler);
             }
@@ -191,7 +191,6 @@ public class TwitterCom extends PluginForHost {
             prepBR(this.br);
             /* Most items will come from crawler. */
             String filename = null;
-            final String filenameFromCrawler = link.getStringProperty(TwitterComCrawler.PROPERTY_FILENAME_FROM_CRAWLER);
             if (filenameFromCrawler != null) {
                 link.setFinalFileName(filenameFromCrawler);
                 filename = filenameFromCrawler;

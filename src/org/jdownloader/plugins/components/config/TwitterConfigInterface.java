@@ -4,6 +4,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.SpinnerValidator;
@@ -20,6 +21,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     final String                    text_SingleTweetCrawlerAddTweetTextAsTextfile            = "Single Tweet crawler: Add tweet text as textfile?";
     final String                    text_SingleTweetCrawlerCrawlMode                         = "Single Tweet crawler: Crawl mode";
     final String                    text_CrawlURLsInsideTweetText                            = "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
+    final String                    text_RegexWhitelistForCrawledUrlsInTweetText             = "RegEx whitelist for crawled URLs in tweet text e.g. '(?i).*(site\\.tld|site2\\.tld).*' [Empty = Allow all URLs]";
     final String                    text_CrawlRetweetsV2                                     = "Crawl retweets?";
     final String                    text_CrawlVideoThumbnail                                 = "Crawl video thumbnail?";
     final String                    text_PreferHLSVideoDownload                              = "Videos: Prefer HLS over http download?";
@@ -51,6 +53,10 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
 
         public String getCrawlURLsInsideTweetText_label() {
             return text_CrawlURLsInsideTweetText;
+        }
+
+        public String getRegexWhitelistForCrawledUrlsInTweetText_label() {
+            return text_RegexWhitelistForCrawledUrlsInTweetText;
         }
 
         public String getCrawlRetweetsV2_label() {
@@ -163,6 +169,14 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     boolean isCrawlURLsInsideTweetText();
 
     void setCrawlURLsInsideTweetText(boolean b);
+
+    @AboutConfig
+    @DefaultStringValue("")
+    @DescriptionForConfigEntry(text_RegexWhitelistForCrawledUrlsInTweetText)
+    @Order(45)
+    String getRegexWhitelistForCrawledUrlsInTweetText();
+
+    void setRegexWhitelistForCrawledUrlsInTweetText(String str);
 
     @DefaultBooleanValue(false)
     @AboutConfig

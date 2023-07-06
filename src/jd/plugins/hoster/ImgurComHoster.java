@@ -1383,14 +1383,14 @@ public class ImgurComHoster extends PluginForHost {
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
                                                   {
-                                                      put("SETTING_PREFER_MP4", "Prefer .mp4 files over .gif?");
+                                                      put("SETTING_PREFER_MP4", "Prefer .mp4 files over .gif[v]?");
                                                       put("SETTING_TEXT_API_SETTINGS", "API settings - see imgur.com/account/settings/apps");
                                                       put("SETTING_USE_API", "Use API instead of website?");
                                                       put("SETTING_USE_API_IN_ANONYMOUS_MODE", "Use API in anonymous mode? To be able to use the API you will have to add your own API credentials below otherwise this will render the imgur plugin useless!");
                                                       put("SETTING_API_CREDENTIALS_CLIENTID", "Enter your own imgur Oauth Client-ID\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
                                                       put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Enter your own imgur Oauth Client-Secret\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
                                                       put("SETTING_TEXT_OTHER_SETTINGS", "Other settings:");
-                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
+                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif[v]) urls: Grab source url (e.g. youtube url)?");
                                                       put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*orderid* = Order-ID of the picture e.g. '007'\r\n*ext* = Extension of the file");
                                                       put("LABEL_FILENAME", "Define custom filename:");
                                                       put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
@@ -1403,14 +1403,14 @@ public class ImgurComHoster extends PluginForHost {
                                               };
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
                                                   {
-                                                      put("SETTING_PREFER_MP4", "Bevorzuge .mp4 Dateien anstelle von .gif Dateien?");
+                                                      put("SETTING_PREFER_MP4", "Bevorzuge .mp4 Dateien anstelle von .gif[v] Dateien?");
                                                       put("SETTING_TEXT_API_SETTINGS", "API Einstellungen - siehe imgur.com/account/settings/apps");
                                                       put("SETTING_USE_API", "Verwende API anstatt Webseite?");
                                                       put("SETTING_USE_API_IN_ANONYMOUS_MODE", "API als anonymer User verwenden? Um die API überhaupt verwenden zu können musst du deine eigenen API Zugangsdaten unten eintragen, ansonsten wirst du dieses Plugin nicht mehr verwenden können!");
                                                       put("SETTING_API_CREDENTIALS_CLIENTID", "Gib deine persönliche imgur Oauth Client-ID ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
                                                       put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Gib deinen persönlichen imgur Oauth Client Secret ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
                                                       put("SETTING_TEXT_OTHER_SETTINGS", "Andere Einstellungen:");
-                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
+                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif[v]) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
                                                       put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*orderid* = Platzierungs-ID des Bildes z.B. '007'\r\n*ext* = Dateiendung");
                                                       put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
                                                       put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
