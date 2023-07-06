@@ -115,8 +115,8 @@ public class ImgurComGallery extends PluginForDecrypt {
     private final String            type_album                     = "(?i)https?://[^/]+/a/([A-Za-z0-9]{5,7})";
     private final String            type_tag                       = "(?i)https?://[^/]+/t/[^/]+/([A-Za-z0-9]{5,7})";
     private final String            type_gallery                   = "(?i)https?://[^/]+/gallery/([A-Za-z0-9]{5,7})";
-    public final static String      type_single_direct             = "(?i)https?://i\\.[^/]+/([A-Za-z0-9]{5,7})\\..+";
-    public final static String      type_single_direct_without_ext = "(?i)https?://i\\.[^/]+/([A-Za-z0-9]{5,7})$";
+    public static final String      type_single_direct             = "(?i)https?://i\\.[^/]+/([A-Za-z0-9]{5,7})\\..+";
+    public static final String      type_single_direct_without_ext = "(?i)https?://i\\.[^/]+/([A-Za-z0-9]{5,7})$";
     /* Constants */
     private static Object           CTRLLOCK                       = new Object();
     private ArrayList<DownloadLink> ret                            = new ArrayList<DownloadLink>();

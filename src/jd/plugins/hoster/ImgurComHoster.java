@@ -16,8 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.text.ParseException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -29,6 +31,7 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -95,6 +98,7 @@ public class ImgurComHoster extends PluginForHost {
     private static final String SETTING_CUSTOM_FILENAME                                                      = "SETTING_CUSTOM_FILENAME";
     public static final String  SETTING_CUSTOM_PACKAGENAME                                                   = "SETTING_CUSTOM_PACKAGENAME";
     private final String        SETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT = "SETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_STATUS_TEXT";
+    private final String        SETTING_MISC_ENABLE_DOUBLE_OFFLINE_CHECK_IF_DIRECTURL_IS_GIVEN               = "SETTING_MISC_ENABLE_DOUBLE_OFFLINE_CHECK_IF_DIRECTURL_IS_GIVEN";
     /* DownloadLink properties */
     public static final String  PROPERTY_DOWNLOADLINK_DIRECT_URL                                             = "directlink";
     public static final String  PROPERTY_DOWNLOADLINK_TITLE                                                  = "directtitle";
@@ -147,93 +151,99 @@ public class ImgurComHoster extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         /*
-         * Avoid unneccessary requests --> If we have the directlink, filesize and a "nice" filename, do not access site/API and only check
+         * Avoid unnecessary requests --> If we have the directlink, filesize and a "nice" filename, do not access site/API and only check
          * directurl if needed!
          */
         final boolean isLackingFileInformation = link.getView().getBytesTotal() <= 0 || link.getFinalFileName() == null || getFiletype(link) == null;
-        boolean filesizeHasBeenSetInThisLinkcheck = false;
-        boolean filenameHasBeenSetInThisLinkcheck = false;
         final String fuid = getImgUID(link);
         String dllink = null;
+        boolean enforceCheckDirecturl = false;
         if (isLackingFileInformation || storedDirecturl == null) {
             logger.info("Handling extended linkcheck");
             final boolean apiMode = canUseAPI();
             final boolean useApiInAnonymousMode = this.getPluginConfig().getBooleanProperty(SETTING_USE_API_IN_ANONYMOUS_MODE, defaultSETTING_USE_API);
-            if (apiMode) {
-                prepBRAPI(this.br);
-                if (useApiInAnonymousMode || account == null) {
-                    br.getHeaders().put("Authorization", ImgurComHoster.getAuthorization());
-                } else {
-                    this.loginAPI(br, account, false);
-                }
-                getPage(this.br, getAPIBaseWithVersion() + "/image/" + fuid);
-                if (this.br.getHttpConnection().getResponseCode() == 429) {
-                    if (!useApiInAnonymousMode) {
-                        account.setError(AccountError.TEMP_DISABLED, 30 * 60 * 1000l, "Rate limit reached");
+            try {
+                if (apiMode) {
+                    prepBRAPI(this.br);
+                    if (useApiInAnonymousMode || account == null) {
+                        br.getHeaders().put("Authorization", ImgurComHoster.getAuthorization());
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate limit reached");
+                        this.loginAPI(br, account, false);
                     }
-                } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Unable to find an image with the id")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                final Map<String, Object> entries = this.checkErrorsAPI(br, link, account);
-                final Map<String, Object> data = (Map<String, Object>) entries.get("data");
-                String title = (String) data.get("title");
-                final String description = (String) data.get("description");
-                final long sizeNormal = JavaScriptEngineFactory.toLong(data.get("size"), -1);
-                final Number sizeMP4L = (Number) data.get("mp4_size");
-                long sizeMp4 = 0;
-                if (sizeMP4L != null) {
-                    sizeMp4 = sizeMP4L.longValue();
-                }
-                final long filesize;
-                final String directurlMP4 = (String) data.get("mp4");
-                if (directurlMP4 != null && userPrefersMp4() && sizeMp4 > 0) {
-                    dllink = directurlMP4;
-                    filesize = sizeMp4;
+                    getPage(this.br, getAPIBaseWithVersion() + "/image/" + fuid);
+                    if (this.br.getHttpConnection().getResponseCode() == 429) {
+                        if (!useApiInAnonymousMode) {
+                            account.setError(AccountError.TEMP_DISABLED, 30 * 60 * 1000l, "Rate limit reached");
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate limit reached");
+                        }
+                    } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Unable to find an image with the id")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final Map<String, Object> entries = this.checkErrorsAPI(br, link, account);
+                    final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+                    String title = (String) data.get("title");
+                    final String description = (String) data.get("description");
+                    final long sizeNormal = JavaScriptEngineFactory.toLong(data.get("size"), -1);
+                    final Number sizeMP4L = (Number) data.get("mp4_size");
+                    long sizeMp4 = 0;
+                    if (sizeMP4L != null) {
+                        sizeMp4 = sizeMP4L.longValue();
+                    }
+                    final long filesize;
+                    final String directurlMP4 = (String) data.get("mp4");
+                    if (directurlMP4 != null && userPrefersMp4() && sizeMp4 > 0) {
+                        dllink = directurlMP4;
+                        filesize = sizeMp4;
+                    } else {
+                        dllink = (String) data.get("link");
+                        filesize = sizeNormal;
+                    }
+                    if (!StringUtils.isEmpty(title)) {
+                        title = Encoding.htmlDecode(title);
+                        title = HTMLEntities.unhtmlentities(title);
+                        title = HTMLEntities.unhtmlAmpersand(title);
+                        title = HTMLEntities.unhtmlAngleBrackets(title);
+                        title = HTMLEntities.unhtmlSingleQuotes(title);
+                        title = HTMLEntities.unhtmlDoubleQuotes(title);
+                        title = title.trim();
+                        link.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_TITLE, title);
+                    }
+                    if (!StringUtils.isEmpty(dllink)) {
+                        /* Save new directurl */
+                        link.setProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, dllink);
+                    }
+                    if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+                        link.setComment(description);
+                    }
+                    if (filesize > 0) {
+                        link.setDownloadSize(filesize);
+                    }
                 } else {
-                    dllink = (String) data.get("link");
-                    filesize = sizeNormal;
-                }
-                if (!StringUtils.isEmpty(title)) {
-                    title = Encoding.htmlDecode(title);
-                    title = HTMLEntities.unhtmlentities(title);
-                    title = HTMLEntities.unhtmlAmpersand(title);
-                    title = HTMLEntities.unhtmlAngleBrackets(title);
-                    title = HTMLEntities.unhtmlSingleQuotes(title);
-                    title = HTMLEntities.unhtmlDoubleQuotes(title);
-                    title = title.trim();
-                    link.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_TITLE, title);
-                }
-                if (!StringUtils.isEmpty(dllink)) {
-                    /* Save new directurl */
-                    link.setProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, dllink);
-                }
-                if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
-                    link.setComment(description);
-                }
-                if (filesize > 0) {
-                    link.setDownloadSize(filesize);
-                    filesizeHasBeenSetInThisLinkcheck = true;
-                    /* Filename && filesize given --> We can set a filename here and save one http-request! */
-                    final String filename_formatted = getFormattedFilename(link);
-                    if (filename_formatted != null) {
-                        link.setName(filename_formatted);
-                        filenameHasBeenSetInThisLinkcheck = true;
+                    /* Website mode */
+                    prepBRWebsite(this.br);
+                    getPage(this.br, "https://" + this.getHost() + "/" + fuid);
+                    if (isOfflineWebsite(br)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
+                    websiteParseAndSetData(link);
+                    dllink = getStoredDirecturl(link);
                 }
-            } else {
-                /* Website mode */
-                prepBRWebsite(this.br);
-                getPage(this.br, "https://" + this.getHost() + "/" + fuid);
-                if (isOfflineWebsite(br)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && storedDirecturl != null && SubConfiguration.getConfig(this.getHost()).getBooleanProperty(SETTING_MISC_ENABLE_DOUBLE_OFFLINE_CHECK_IF_DIRECTURL_IS_GIVEN, defaultSETTING_MISC_ENABLE_DOUBLE_OFFLINE_CHECK_IF_DIRECTURL_IS_GIVEN)) {
+                    logger.info("Looks like item is offline -> Performing one last check on directurl");
+                    dllink = storedDirecturl;
+                    enforceCheckDirecturl = true;
+                } else {
+                    throw e;
                 }
-                websiteParseAndSetData(link);
-                dllink = getStoredDirecturl(link);
             }
         } else {
             dllink = storedDirecturl;
+        }
+        final String filename_formatted = getFormattedFilename(link);
+        if (filename_formatted != null) {
+            link.setName(filename_formatted);
         }
         /**
          * 2021-08-11: Don't do this anymore! Not all items are officially downloadable! Most of all times this will result in: </br>
@@ -255,8 +265,7 @@ public class ImgurComHoster extends PluginForHost {
             link.setChunksProgress(null);
             link.setVerifiedFileSize(-1);
         }
-        final boolean allowCheckDirectURLToFindMoreFileInformation = !filesizeHasBeenSetInThisLinkcheck && !filenameHasBeenSetInThisLinkcheck;
-        if (!isDownload && allowCheckDirectURLToFindMoreFileInformation) {
+        if (enforceCheckDirecturl || !link.isSizeSet()) {
             /*
              * Only check available link if user is NOT starting the download --> Avoid to access it twice in a small amount of time -->
              * Keep server-load down.
@@ -306,10 +315,11 @@ public class ImgurComHoster extends PluginForHost {
             dllink = br.getRegex("property=\"og:image\"[^>]*content=\"(https://[^<>\"]+)\"").getMatch(0);
         }
         if (dllink != null) {
-            /* 2020-10-08: Remove all arguments e.g. "?fb" - they would often alter the resolution/quality! */
-            final String removeme = new Regex(dllink, "(\\?.+)").getMatch(0);
-            if (removeme != null) {
-                dllink = dllink.replace(removeme, "");
+            /* 2020-10-08: Remove all arguments e.g. "?fb" - they can alter the resolution/quality! */
+            try {
+                dllink = URLHelper.getUrlWithoutParams(dllink);
+            } catch (final MalformedURLException e) {
+                logger.log(e);
             }
             /* Save new directurl */
             link.setProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, dllink);
@@ -321,6 +331,34 @@ public class ImgurComHoster extends PluginForHost {
                 title = title.replace(removeme, "");
             }
             link.setProperty(PROPERTY_DOWNLOADLINK_TITLE, title);
+        }
+        /* Search for better data-source. Not always given. Example: */
+        final String json = br.getRegex("window\\.postDataJSON=\"([^\"].*?)\"</script>").getMatch(0);
+        if (json != null) {
+            final Map<String, Object> entries = restoreFromString(PluginJSonUtils.unescape(json), TypeRef.MAP);
+            final List<Map<String, Object>> medias = (List<Map<String, Object>>) entries.get("media");
+            if (medias != null && medias.size() == 1) {
+                final Map<String, Object> mediainfo = medias.get(0);
+                final Map<String, Object> metadata = (Map<String, Object>) mediainfo.get("metadata");
+                final String betterDirecturl = (String) mediainfo.get("url");
+                if (!StringUtils.isEmpty(betterDirecturl)) {
+                    link.setProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL, betterDirecturl);
+                }
+                final String betterTitle = (String) metadata.get("title");
+                if (!StringUtils.isEmpty(betterTitle)) {
+                    link.setProperty(PROPERTY_DOWNLOADLINK_TITLE, betterTitle);
+                }
+                final Number filesize = (Number) mediainfo.get("size");
+                if (filesize != null) {
+                    link.setDownloadSize(filesize.longValue());
+                }
+                final String description = (String) metadata.get("description");
+                if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+                    link.setComment(description);
+                }
+            } else {
+                logger.warning("Can't make use of json source");
+            }
         }
     }
 
@@ -1325,6 +1363,7 @@ public class ImgurComHoster extends PluginForHost {
                                                       put("LABEL_FILENAME", "Define custom filename:");
                                                       put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
                                                       put("LABEL_PACKAGENAME", "Define custom packagename for galleries:");
+                                                      put("SETTING_TEXT_MISC_ENABLE_DOUBLE_OFFLINE_CHECK_IF_DIRECTURL_IS_GIVEN", "Enable double-check for offline for items with given directlink?");
                                                       put("SETTING_TEXT_DEBUG_SETTINGS", "Debug settings");
                                                       put("SETTING_TEXT_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT", "Display number of remaining API requests in account traffic left?");
                                                       put("TEXT_ERROR_API_USAGE_DISABLED_DURING_ACCOUNT_LOGIN", "API usage is disabled. Enable API usage in settings to be able to use this account.");
@@ -1344,6 +1383,7 @@ public class ImgurComHoster extends PluginForHost {
                                                       put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
                                                       put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
                                                       put("LABEL_PACKAGENAME", "Gib das Muster des benutzerdefinierten Paketnamens für Gallerien an:");
+                                                      put("SETTING_TEXT_MISC_ENABLE_DOUBLE_OFFLINE_CHECK_IF_DIRECTURL_IS_GIVEN", "Aktiviere doppelte Prüfung auf offline-status, sofern ein Direktlink vorhanden ist?");
                                                       put("SETTING_TEXT_DEBUG_SETTINGS", "Debug Einstellungen");
                                                       put("SETTING_TEXT_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT", "Zeige Anzahl übriger API Anfragen im Account als übriger Traffic an?");
                                                       put("TEXT_ERROR_API_USAGE_DISABLED_DURING_ACCOUNT_LOGIN", "API ist deaktiviert. Aktiviere die API in den Plugineinstellungen, um diesen Account verwenden zu können.");
@@ -1373,6 +1413,7 @@ public class ImgurComHoster extends PluginForHost {
     public static final boolean defaultSOURCEVIDEO                                                                  = false;
     private static final String defaultCustomFilename                                                               = "*username* - *title*_*orderid*_*imgid**ext*";
     public static final String  defaultCustomPackagename                                                            = "*username* - *title* - *galleryid*";
+    public static final boolean defaultSETTING_MISC_ENABLE_DOUBLE_OFFLINE_CHECK_IF_DIRECTURL_IS_GIVEN               = true;
     public static final boolean defaultSETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT = false;
 
     private void setConfigElements() {
@@ -1392,6 +1433,7 @@ public class ImgurComHoster extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_TAGS")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CUSTOM_PACKAGENAME, getPhrase("LABEL_PACKAGENAME")).setDefaultValue(defaultCustomPackagename));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_TAGS_PACKAGENAME")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_MISC_ENABLE_DOUBLE_OFFLINE_CHECK_IF_DIRECTURL_IS_GIVEN, this.getPhrase("SETTING_TEXT_MISC_ENABLE_DOUBLE_OFFLINE_CHECK_IF_DIRECTURL_IS_GIVEN")).setDefaultValue(defaultSETTING_MISC_ENABLE_DOUBLE_OFFLINE_CHECK_IF_DIRECTURL_IS_GIVEN));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, this.getPhrase("SETTING_TEXT_DEBUG_SETTINGS")));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT, this.getPhrase("SETTING_TEXT_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT")).setDefaultValue(defaultSETTING_DEBUG_DISPLAY_NUMBEROF_REMAINING_API_REQUESTS_IN_ACCOUNT_TRAFFICLEFT).setEnabledCondidtion(cfe, true));

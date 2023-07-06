@@ -20,6 +20,18 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.RFC2047;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
@@ -48,18 +60,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.RFC2047;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 /**
  * Abstract class supporting keep2share/fileboom/publish2<br/>
  * <a href="https://github.com/keep2share/api/">Github documentation</a>
@@ -75,6 +75,7 @@ public abstract class K2SApi extends PluginForHost {
     private final String PROPERTY_FILE_ID           = "fileID";
     private final String PROPERTY_LASTDOWNLOAD      = "_lastdownload_timestamp";
     private final String PROPERTY_ACCESS            = "access";
+    /* Hardcoded time to wait between downloads once limit is reached. */
     private final long   FREE_RECONNECTWAIT_MILLIS  = 1 * 60 * 60 * 1000L;
 
     public K2SApi(PluginWrapper wrapper) {
@@ -471,8 +472,8 @@ public abstract class K2SApi extends PluginForHost {
                             if (StringUtils.equals((String) root.get("message"), "Invalid request params")) {
                                 /**
                                  * 2022-02-25: Workaround for when checking only one <b>invalid</b> fileID e.g.
-                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br> This may also happen when there are multiple
-                                 * fileIDs to check and all of them are invalid.
+                                 * "2ahUKEwiUlaOqlZv2AhWLyIUKHXOjAmgQuZ0HegQIARBG". </br>
+                                 * This may also happen when there are multiple fileIDs to check and all of them are invalid.
                                  */
                                 for (final DownloadLink dl : links) {
                                     dl.setAvailable(false);
@@ -700,8 +701,12 @@ public abstract class K2SApi extends PluginForHost {
                     }
                 }
             }
-            final Map<String, Object> getURL = new HashMap<String, Object>();
-            getURL.put("file_id", fuid);
+            final Map<String, Object> postdata = new HashMap<String, Object>();
+            postdata.put("file_id", fuid);
+            if (account != null) {
+                /* Premium + free Account */
+                postdata.put("auth_token", getAuthToken(br, account, link, false));
+            }
             if (isFree) {
                 final Map<String, Object> requestcaptcha = postPageRaw(this.br, "/requestcaptcha", new HashMap<String, Object>(), account, link);
                 final String challenge = (String) requestcaptcha.get("challenge");
@@ -725,21 +730,17 @@ public abstract class K2SApi extends PluginForHost {
                     // captcha can't be blank! Why we don't return null I don't know (raztoki?)!
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
-                getURL.put("captcha_challenge", challenge);
-                getURL.put("captcha_response", code);
                 final String custom_referer = getCustomReferer(link);
                 if (StringUtils.isNotEmpty(custom_referer)) {
                     logger.info("Using Referer value: " + custom_referer);
-                    getURL.put("url_referrer", custom_referer);
+                    postdata.put("url_referrer", custom_referer);
                 } else {
                     logger.info("Using Referer value: NONE given");
                 }
+                postdata.put("captcha_challenge", challenge);
+                postdata.put("captcha_response", code);
             }
-            if (account != null) {
-                /* Premium + free Account */
-                getURL.put("auth_token", getAuthToken(br, account, link, false));
-            }
-            Map<String, Object> geturlResponse = postPageRaw(this.br, "/geturl", getURL, account, link);
+            Map<String, Object> geturlResponse = postPageRaw(this.br, "/geturl", postdata, account, link);
             final String free_download_key = (String) geturlResponse.get("free_download_key");
             boolean resumable = this.isResumeable(link, account);
             int maxChunks = this.getMaxChunks(account);
@@ -748,8 +749,8 @@ public abstract class K2SApi extends PluginForHost {
                 /*
                  * {"status":"success","code":200,"message":"Captcha accepted, please wait","free_download_key":"homeHash","time_wait":30}
                  */
-                final Number time_wait = (Number) geturlResponse.get("time_wait");
-                if (time_wait == null || free_download_key == null) {
+                final Number waitsecondsO = (Number) geturlResponse.get("time_wait");
+                if (waitsecondsO == null || free_download_key == null) {
                     /* This should never happen */
                     this.handleErrorsAPI(account, link, this.br);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -758,9 +759,9 @@ public abstract class K2SApi extends PluginForHost {
                  * 2020-02-18: Add 2 extra seconds else this might happen after sending captcha answer:
                  * {"status":"success","code":200,"message" :"Captcha accepted, please wait","free_download_key":"CENSORED","time_wait":1}
                  */
-                final int wait_seconds = time_wait.intValue();
-                final long waitMillis = (wait_seconds + 2) * 1000l;
-                if (wait_seconds > 180) {
+                final int waitseconds = waitsecondsO.intValue();
+                final long waitMillis = (waitseconds + 2) * 1000l;
+                if (waitseconds > 180) {
                     if (waitMillis <= FREE_RECONNECTWAIT_MILLIS) {
                         final long waittimeStartedBeforeMillis = FREE_RECONNECTWAIT_MILLIS - waitMillis;
                         final long timestampWaittimeStarted = System.currentTimeMillis() - waittimeStartedBeforeMillis;
@@ -777,11 +778,19 @@ public abstract class K2SApi extends PluginForHost {
                     }
                 }
                 sleep(waitMillis, link);
-                getURL.put("free_download_key", free_download_key);
-                getURL.remove("captcha_challenge");
-                getURL.remove("captcha_response");
-                geturlResponse = postPageRaw(this.br, "/geturl", getURL, account, link);
-                /* Captcha required -> Free limits apply! */
+                postdata.put("free_download_key", free_download_key);
+                /* Remove stuff we don't need anymore. */
+                postdata.remove("captcha_challenge");
+                postdata.remove("captcha_response");
+                try {
+                    geturlResponse = postPageRaw(this.br, "/geturl", postdata, account, link);
+                } catch (final PluginException e) {
+                    if (e.getLinkStatus() == LinkStatus.ERROR_CAPTCHA) {
+                        logger.warning("API claims captcha is wrong even though it was solved correctly before -> Users' VPN is blocked or user has changed IP during pre download wait time");
+                    }
+                    throw e;
+                }
+                /* Captcha required -> Free [= download-without-account] limits apply! */
                 resumable = this.isResumeable(link, null);
                 maxChunks = this.getMaxChunks(null);
             }
