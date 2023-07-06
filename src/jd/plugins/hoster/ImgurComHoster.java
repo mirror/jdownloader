@@ -108,6 +108,7 @@ public class ImgurComHoster extends PluginForHost {
     /* Only store file-type from trusted sources as this property will be preferred over every other filetype source!! */
     private static final String PROPERTY_DOWNLOADLINK_FILETYPE                                               = "filetype";
     private static final String PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_FAILED                                   = "timestamp_mp4_failed";
+    private static final String PROPERTY_DOWNLOADLINK_TIMESTAMP_GIFV_FAILED                                  = "timestamp_gifv_failed";
     /* Various constants */
     public static final int     responsecode_website_overloaded                                              = 502;
     private final int           MAX_DOWNLOADS                                                                = -1;
@@ -279,6 +280,10 @@ public class ImgurComHoster extends PluginForHost {
                     logger.info("Looks like broken mp4 -> Try gif");
                     link.setProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_FAILED, System.currentTimeMillis());
                     con = this.br.openHeadConnection(ImgurComGallery.generateURLGifDownload(fuid));
+                } else if (looksLikeBrokenGifv(con)) {
+                    logger.info("Looks like broken gifv -> Try mp4");
+                    link.setProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_GIFV_FAILED, System.currentTimeMillis());
+                    con = this.br.openHeadConnection(ImgurComGallery.generateURLMp4Download(fuid));
                 }
                 checkConnectionAndSetFinalFilename(link, con);
             } finally {
@@ -294,6 +299,15 @@ public class ImgurComHoster extends PluginForHost {
     /** 2023-05-24: Super rare case, see: https://board.jdownloader.org/showthread.php?t=93553 */
     private boolean looksLikeBrokenMp4(final URLConnectionAdapter con) {
         if (con != null && !this.looksLikeDownloadableContent(con) && con.getURL().toString().toLowerCase(Locale.ENGLISH).endsWith(".mp4")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /** For some items, the gifv version can be broken/unavailable and only .mp4 version is available. */
+    private boolean looksLikeBrokenGifv(final URLConnectionAdapter con) {
+        if (con != null && !this.looksLikeDownloadableContent(con) && con.getURL().toString().toLowerCase(Locale.ENGLISH).endsWith(".gifv")) {
             return true;
         } else {
             return false;
@@ -450,9 +464,15 @@ public class ImgurComHoster extends PluginForHost {
 
     public static String getStoredDirecturl(final DownloadLink link) {
         final String storedDirecturl = link.getStringProperty(PROPERTY_DOWNLOADLINK_DIRECT_URL);
-        if (storedDirecturl != null && storedDirecturl.toLowerCase(Locale.ENGLISH).endsWith(".mp4") && looksLikeBrokenMp4(link)) {
+        if (storedDirecturl == null) {
+            return null;
+        }
+        if (storedDirecturl.toLowerCase(Locale.ENGLISH).endsWith(".mp4") && looksLikeBrokenMp4_CACHED(link)) {
             /* Mp4 download is not working ->Return gif URL. */
             return ImgurComGallery.generateURLGifDownload(getImgUID(link));
+        } else if (looksLikeBrokenGifv_CACHED(link)) {
+            /* Gifv download is not working ->Return mp4 URL. */
+            return ImgurComGallery.generateURLMp4Download(getImgUID(link));
         } else {
             return storedDirecturl;
         }
@@ -1115,7 +1135,7 @@ public class ImgurComHoster extends PluginForHost {
         final String storedFiletype = getStoredFiletype(link);
         final String storedDirectURL = getStoredDirecturl(link);
         if (storedFiletype != null) {
-            final String image = new Regex(storedFiletype, "images/(.+)").getMatch(0);
+            final String image = new Regex(storedFiletype, "(?i)images/(.+)").getMatch(0);
             if (image != null) {
                 if (StringUtils.equalsIgnoreCase("jpeg", image)) {
                     return "jpg";
@@ -1123,7 +1143,7 @@ public class ImgurComHoster extends PluginForHost {
                     return image;
                 }
             }
-            final String videoExt = new Regex(storedFiletype, "video/(.+)").getMatch(0);
+            final String videoExt = new Regex(storedFiletype, "(?i)video/(.+)").getMatch(0);
             if (videoExt != null) {
                 return getCorrectedFileExtension(link, videoExt);
             } else if (StringUtils.equalsIgnoreCase("jpeg", storedFiletype)) {
@@ -1142,19 +1162,31 @@ public class ImgurComHoster extends PluginForHost {
     public static String getCorrectedFileExtension(final DownloadLink link, final String suggestedExt) {
         if (suggestedExt == null) {
             return null;
-        } else if (suggestedExt.matches("(?i)(gif|mp4)")) {
-            if (userPrefersMp4() && !looksLikeBrokenMp4(link)) {
+        } else if (suggestedExt.matches("(?i)(gifv?|mp4)")) {
+            if (userPrefersMp4() && !looksLikeBrokenMp4_CACHED(link)) {
+                /* User prefers mp4 */
+                return "mp4";
+            } else if (looksLikeBrokenGifv_CACHED(link)) {
+                /* User might not prefer mp4 but gifv failed -> Use mp4 */
                 return "mp4";
             } else {
-                return "gif";
+                return suggestedExt;
             }
         } else {
             return suggestedExt;
         }
     }
 
-    public static boolean looksLikeBrokenMp4(final DownloadLink link) {
+    public static boolean looksLikeBrokenMp4_CACHED(final DownloadLink link) {
         if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_FAILED, 0) < 5 * 60 * 1000) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean looksLikeBrokenGifv_CACHED(final DownloadLink link) {
+        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_GIFV_FAILED, 0) < 5 * 60 * 1000) {
             return true;
         } else {
             return false;

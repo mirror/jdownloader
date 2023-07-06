@@ -217,20 +217,9 @@ public class ImgurComGallery extends PluginForDecrypt {
     private DownloadLink handleSingleItem(final String url, final String contentID) throws ParseException {
         /* Single images --> Host plugin without requiring any HTTP requests */
         final DownloadLink dl = createDownloadlink(generateUrlDownload(contentID));
-        if (url.matches("(?i)https?://i\\.imgur\\.com/[A-Za-z0-9]+\\.(gif|gifv|mp4)")) {
-            /* Direct-URL video */
-            final String directurl;
-            /* Obey user plugin setting. */
-            if (jd.plugins.hoster.ImgurComHoster.userPrefersMp4()) {
-                directurl = generateURLMp4Download(contentID);
-            } else {
-                /* .gifv --> .gif */
-                directurl = generateURLGifDownload(contentID);
-            }
-            dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DIRECT_URL, directurl);
-        } else if (this.parameter.matches("(?i)https?://i\\.imgur\\.com/[A-Za-z0-9]+\\.[a-z0-9]+")) {
-            /* Direct-URL photo */
-            dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DIRECT_URL, this.parameter);
+        if (url.matches(type_single_direct)) {
+            /* Direct-URL */
+            dl.setProperty(ImgurComHoster.PROPERTY_DOWNLOADLINK_DIRECT_URL, url);
         } else {
             /* URL without known file-extension */
         }
