@@ -7,11 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -24,6 +19,11 @@ import jd.plugins.AccountInvalidException;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freediscussions.com" }, urls = { "" })
 public class FreediscussionsCom extends UseNet {
@@ -46,7 +46,7 @@ public class FreediscussionsCom extends UseNet {
         return "https://www.freediscussions.com/terms";
     }
 
-    public static interface UseNetNLConfigInterface extends UsenetAccountConfigInterface {
+    public static interface FreediscussionsComConfigInterface extends UsenetAccountConfigInterface {
     };
 
     @Override
@@ -137,6 +137,10 @@ public class FreediscussionsCom extends UseNet {
     @Override
     public List<UsenetServer> getAvailableUsenetServer() {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
+        ret.addAll(UsenetServer.createServerList("power.freediscussions.com", false, 119, 443));
+        ret.addAll(UsenetServer.createServerList("power.freediscussions.com", true, 563));
+        ret.addAll(UsenetServer.createServerList("eco.freediscussions.com", false, 119, 443));
+        ret.addAll(UsenetServer.createServerList("eco.freediscussions.com", true, 563));
         ret.addAll(UsenetServer.createServerList("power.usenet.nl", false, 119, 443));
         ret.addAll(UsenetServer.createServerList("power.usenet.nl", true, 563));
         ret.addAll(UsenetServer.createServerList("eco.usenet.nl", false, 119, 443));
