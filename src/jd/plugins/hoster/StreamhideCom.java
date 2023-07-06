@@ -30,6 +30,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -143,6 +144,40 @@ public class StreamhideCom extends XFileSharingProBasic {
     @Override
     protected boolean supports_availablecheck_filename_abuse() {
         return false;
+    }
+
+    private final String PROPERTY_HAS_LOOKED_FOR_ADDITIONAL_FILENAME_SOURCE = "has_looked_for_additional_filename_source";
+    private final String PROPERTY_STREAM_FILENAME                           = "stream_filename";
+
+    @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        final AvailableStatus status = super.requestFileInformationWebsite(link, account, isDownload);
+        final String[] finfo = this.scanInfo(internal_getFileInfoArray());
+        final String storedStreamFilename = link.getStringProperty(PROPERTY_STREAM_FILENAME);
+        if (storedStreamFilename != null) {
+            this.setFilename(storedStreamFilename, link, br);
+        } else {
+            final String filename = finfo[0];
+            if (StringUtils.isEmpty(filename) && br.getURL() != null && !br.getURL().matches("(?i)https?://[^/]+/w/[a-z0-9]{12}") && link.getBooleanProperty(PROPERTY_HAS_LOOKED_FOR_ADDITIONAL_FILENAME_SOURCE) == false) {
+                /*
+                 * 2023-07-06: Workaround for items where uploader has disabled official filenames -> Website does not show any
+                 * title/filename on official download page which we are accessing first.
+                 */
+                logger.info("Looking for filename on streaming page");
+                final Browser brc = br.cloneBrowser();
+                brc.getPage("/w/" + this.getFUIDFromURL(link));
+                final String streamFilename = brc.getRegex("class=\"h4 mb-3 text-white\"[^>]*>([^<]+)</h1>").getMatch(0);
+                if (streamFilename != null) {
+                    logger.info("Successfully found filename on streaming page: " + streamFilename);
+                    link.setProperty(PROPERTY_STREAM_FILENAME, streamFilename);
+                    this.setFilename(streamFilename, link, brc);
+                } else {
+                    logger.warning("Failed to find filename on streaming page");
+                }
+                link.setProperty(PROPERTY_HAS_LOOKED_FOR_ADDITIONAL_FILENAME_SOURCE, true);
+            }
+        }
+        return status;
     }
 
     @Override
