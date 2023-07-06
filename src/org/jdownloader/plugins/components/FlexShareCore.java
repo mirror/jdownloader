@@ -50,11 +50,11 @@ public abstract class FlexShareCore extends antiDDoSForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "/(?:files|get)/([A-Za-z0-9]+)").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     public static final String getDefaultAnnotationPatternPart() {
-        return "/(?:files|get)/[A-Za-z0-9]+";
+        return "/(?:files|get)/([A-Za-z0-9]+)(/([^/]+)\\.html)?";
     }
 
     public static String[] buildAnnotationUrls(List<String[]> pluginDomains) {
@@ -121,6 +121,14 @@ public abstract class FlexShareCore extends antiDDoSForHost {
     // Using FlexShareScript 1.2.1, heavily modified
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (!link.isNameSet()) {
+            final String filenameFromURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+            if (filenameFromURL != null) {
+                link.setName(filenameFromURL);
+            } else {
+                link.setName(this.getFID(link));
+            }
+        }
         this.setBrowserExclusive();
         if (getAPIKey() != null) {
             return requestFileInformationAPI(link);
@@ -150,7 +158,7 @@ public abstract class FlexShareCore extends antiDDoSForHost {
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The file you have requested does not exist")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*The file you have requested does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex fileInfo = br.getRegex("style=\"text-align:(center|left|right);\">(Premium Only\\!)?([^\"<>]+) \\(([0-9\\.]+ [A-Za-z]+)(\\))?(,[^<>\"/]+)?</h1>");

@@ -137,119 +137,124 @@ public class MediafireComFolder extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlFolder(final CryptedLink param) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        this.setBrowserExclusive();
-        final String folderurl = param.getCryptedUrl();
-        final String sharekeyPattern = "[a-z0-9]+";
-        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        final MediafireCom hosterplugin = (MediafireCom) this.getNewPluginForHostInstance(this.getHost());
-        if (account != null) {
-            hosterplugin.login(br, account, false);
-        }
-        String newSharekey = new Regex(folderurl, "(?i)/folder/(" + sharekeyPattern + ")").getMatch(0);
-        if (newSharekey == null) {
-            logger.info("Detected old sharekey --> Trying to get corresponding new sharekey");
-            br.setFollowRedirects(true);
-            br.getPage(folderurl);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        try {
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            this.setBrowserExclusive();
+            final String folderurl = param.getCryptedUrl();
+            final String sharekeyPattern = "[a-z0-9]+";
+            final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+            final MediafireCom hosterplugin = (MediafireCom) this.getNewPluginForHostInstance(this.getHost());
+            if (account != null) {
+                hosterplugin.login(br, account, false);
             }
-            newSharekey = br.getRegex("sharekey=(" + sharekeyPattern + ")").getMatch(0);
+            String newSharekey = new Regex(folderurl, "(?i)/folder/(" + sharekeyPattern + ")").getMatch(0);
             if (newSharekey == null) {
-                newSharekey = br.getRegex("afI\\s*=\\s*\"(" + sharekeyPattern + ")\"").getMatch(0);
+                logger.info("Detected old sharekey --> Trying to get corresponding new sharekey");
+                br.setFollowRedirects(true);
+                br.getPage(folderurl);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                newSharekey = br.getRegex("sharekey=(" + sharekeyPattern + ")").getMatch(0);
+                if (newSharekey == null) {
+                    newSharekey = br.getRegex("afI\\s*=\\s*\"(" + sharekeyPattern + ")\"").getMatch(0);
+                }
+                if (newSharekey == null) {
+                    logger.warning("Unable to find new 'quick_key' --> URL must be offline");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    logger.info("Found new 'sharekey': " + newSharekey);
+                }
             }
-            if (newSharekey == null) {
-                logger.warning("Unable to find new 'quick_key' --> URL must be offline");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final UrlQuery fileFolderQuery = new UrlQuery().add("folder_key", Encoding.urlEncode(newSharekey));
+            // apiRequest(this.br, "https://www.mediafire.com/api/folder/get_info.php", fquery);
+            final Map<String, Object> foldermap = hosterplugin.apiCommand(param.getDownloadLink(), account, "folder/get_info.php", fileFolderQuery);
+            final Map<String, Object> folder_info = (Map<String, Object>) foldermap.get("folder_info");
+            final String folderDescription = (String) folder_info.get("description");
+            final String currentFolderName = folder_info.get("name").toString();
+            final int filesNum = Integer.parseInt(folder_info.get("file_count").toString());
+            final int foldersNum = Integer.parseInt(folder_info.get("folder_count").toString());
+            if (filesNum == 0 && foldersNum == 0) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+            }
+            String subFolderPath = getAdoptedCloudFolderStructure();
+            if (subFolderPath == null) {
+                subFolderPath = currentFolderName;
             } else {
-                logger.info("Found new 'sharekey': " + newSharekey);
+                subFolderPath += "/" + currentFolderName;
             }
-        }
-        final UrlQuery fileFolderQuery = new UrlQuery().add("folder_key", Encoding.urlEncode(newSharekey));
-        // apiRequest(this.br, "https://www.mediafire.com/api/folder/get_info.php", fquery);
-        final Map<String, Object> foldermap = hosterplugin.apiCommand(account, "folder/get_info.php", fileFolderQuery);
-        final Map<String, Object> folder_info = (Map<String, Object>) foldermap.get("folder_info");
-        final String folderDescription = (String) folder_info.get("description");
-        final String currentFolderName = folder_info.get("name").toString();
-        final int filesNum = Integer.parseInt(folder_info.get("file_count").toString());
-        final int foldersNum = Integer.parseInt(folder_info.get("folder_count").toString());
-        if (filesNum == 0 && foldersNum == 0) {
-            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
-        }
-        String subFolderPath = getAdoptedCloudFolderStructure();
-        if (subFolderPath == null) {
-            subFolderPath = currentFolderName;
-        } else {
-            subFolderPath += "/" + currentFolderName;
-        }
-        /* Crawl files */
-        if (filesNum > 0) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(subFolderPath);
-            if (!StringUtils.isEmpty(folderDescription)) {
-                fp.setComment(folderDescription);
+            /* Crawl files */
+            if (filesNum > 0) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(subFolderPath);
+                if (!StringUtils.isEmpty(folderDescription)) {
+                    fp.setComment(folderDescription);
+                }
+                final ArrayList<DownloadLink> filearray = new ArrayList<DownloadLink>();
+                int page = 1;
+                fileFolderQuery.addAndReplace("content_type", "files");
+                do {
+                    fileFolderQuery.addAndReplace("chunk", Integer.toString(page));
+                    final Map<String, Object> resp = hosterplugin.apiCommand(param.getDownloadLink(), account, "folder/get_content.php", fileFolderQuery);
+                    final Map<String, Object> folder_content = (Map<String, Object>) resp.get("folder_content");
+                    final List<Map<String, Object>> files = (List<Map<String, Object>>) folder_content.get("files");
+                    for (final Map<String, Object> file : files) {
+                        final String url = JavaScriptEngineFactory.walkJson(file, "links/normal_download").toString();
+                        final DownloadLink link = createDownloadlink(url);
+                        MediafireCom.parseFileInfo(link, file);
+                        link.setProperty(MediafireCom.PROPERTY_FILE_ID, file.get("quickkey"));
+                        link.setRelativeDownloadFolderPath(subFolderPath);
+                        link._setFilePackage(fp);
+                        filearray.add(link);
+                        distribute(link);
+                    }
+                    logger.info("Crawled files page " + page + " | Found files: " + filearray.size() + "/" + filesNum);
+                    if (this.isAbort()) {
+                        logger.info("Stopping because: Aborted by user");
+                        break;
+                    } else if (!"yes".equalsIgnoreCase(folder_content.get("more_chunks").toString())) {
+                        logger.info("Stopping because: Reached last page");
+                        break;
+                    } else {
+                        page++;
+                    }
+                } while (true);
+                ret.addAll(filearray);
             }
-            final ArrayList<DownloadLink> filearray = new ArrayList<DownloadLink>();
-            int page = 1;
-            fileFolderQuery.addAndReplace("content_type", "files");
-            do {
-                fileFolderQuery.addAndReplace("chunk", Integer.toString(page));
-                final Map<String, Object> resp = hosterplugin.apiCommand(account, "folder/get_content.php", fileFolderQuery);
-                final Map<String, Object> folder_content = (Map<String, Object>) resp.get("folder_content");
-                final List<Map<String, Object>> files = (List<Map<String, Object>>) folder_content.get("files");
-                for (final Map<String, Object> file : files) {
-                    final String url = JavaScriptEngineFactory.walkJson(file, "links/normal_download").toString();
-                    final DownloadLink link = createDownloadlink(url);
-                    MediafireCom.parseFileInfo(link, file);
-                    link.setProperty(MediafireCom.PROPERTY_FILE_ID, file.get("quickkey"));
-                    link.setRelativeDownloadFolderPath(subFolderPath);
-                    link._setFilePackage(fp);
-                    filearray.add(link);
-                    distribute(link);
-                }
-                logger.info("Crawled files page " + page + " | Found files: " + filearray.size() + "/" + filesNum);
-                if (this.isAbort()) {
-                    logger.info("Stopping because: Aborted by user");
-                    break;
-                } else if (!"yes".equalsIgnoreCase(folder_content.get("more_chunks").toString())) {
-                    logger.info("Stopping because: Reached last page");
-                    break;
-                } else {
-                    page++;
-                }
-            } while (true);
-            ret.addAll(filearray);
+            /* Crawl subfolders */
+            if (foldersNum > 0) {
+                final ArrayList<DownloadLink> folderarray = new ArrayList<DownloadLink>();
+                int page = 1;
+                fileFolderQuery.addAndReplace("content_type", "folders");
+                do {
+                    fileFolderQuery.addAndReplace("chunk", Integer.toString(page));
+                    final Map<String, Object> resp = hosterplugin.apiCommand(param.getDownloadLink(), account, "folder/get_content.php", fileFolderQuery);
+                    final Map<String, Object> folder_content = (Map<String, Object>) resp.get("folder_content");
+                    final List<Map<String, Object>> folders = (List<Map<String, Object>>) folder_content.get("folders");
+                    for (final Map<String, Object> folder : folders) {
+                        final DownloadLink link = createDownloadlink("https://www.mediafire.com/folder/" + folder.get("folderkey"));
+                        link.setRelativeDownloadFolderPath(subFolderPath);
+                        folderarray.add(link);
+                        distribute(link);
+                    }
+                    logger.info("Crawled folders page " + page + " | Found subfolders: " + folderarray.size() + "/" + foldersNum);
+                    if (this.isAbort()) {
+                        logger.info("Stopping because: Aborted by user");
+                        break;
+                    } else if (!"yes".equalsIgnoreCase(folder_content.get("more_chunks").toString())) {
+                        logger.info("Stopping because: Reached last page");
+                        break;
+                    } else {
+                        page++;
+                    }
+                } while (true);
+                ret.addAll(folderarray);
+            }
+            return ret;
+        } catch (final PluginException e) {
+            /* Treat any errormessage as "folder offline". */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* Crawl subfolders */
-        if (foldersNum > 0) {
-            final ArrayList<DownloadLink> folderarray = new ArrayList<DownloadLink>();
-            int page = 1;
-            fileFolderQuery.addAndReplace("content_type", "folders");
-            do {
-                fileFolderQuery.addAndReplace("chunk", Integer.toString(page));
-                final Map<String, Object> resp = hosterplugin.apiCommand(account, "folder/get_content.php", fileFolderQuery);
-                final Map<String, Object> folder_content = (Map<String, Object>) resp.get("folder_content");
-                final List<Map<String, Object>> folders = (List<Map<String, Object>>) folder_content.get("folders");
-                for (final Map<String, Object> folder : folders) {
-                    final DownloadLink link = createDownloadlink("https://www.mediafire.com/folder/" + folder.get("folderkey"));
-                    link.setRelativeDownloadFolderPath(subFolderPath);
-                    folderarray.add(link);
-                    distribute(link);
-                }
-                logger.info("Crawled folders page " + page + " | Found subfolders: " + folderarray.size() + "/" + foldersNum);
-                if (this.isAbort()) {
-                    logger.info("Stopping because: Aborted by user");
-                    break;
-                } else if (!"yes".equalsIgnoreCase(folder_content.get("more_chunks").toString())) {
-                    logger.info("Stopping because: Reached last page");
-                    break;
-                } else {
-                    page++;
-                }
-            } while (true);
-            ret.addAll(folderarray);
-        }
-        return ret;
     }
 
     private DownloadLink createSingleFileDownloadlink(final String fileID, final String filename) {

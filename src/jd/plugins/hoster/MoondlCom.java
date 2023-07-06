@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -87,6 +88,16 @@ public class MoondlCom extends XFileSharingProBasic {
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
+        }
+    }
+
+    @Override
+    protected String regExTrafficLeft(final Browser br) {
+        final String ret = br.getRegex("(?i)Traffic available today\\s*<br />\\s*<b [^>]*>([^<]+)").getMatch(0);
+        if (ret != null) {
+            return ret;
+        } else {
+            return super.regExTrafficLeft(br);
         }
     }
 

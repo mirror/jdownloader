@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -247,7 +246,7 @@ public class MediafireCom extends PluginForHost {
                 query.add("link_type", "direct_download");
                 query.add("quick_key", this.getFUID(link));
                 // TODO: Make use of the parsed json (map)
-                final Map<String, Object> resp = apiCommand(account, "file/get_links.php", query);
+                final Map<String, Object> resp = apiCommand(link, account, "file/get_links.php", query);
                 final String url = PluginJSonUtils.getJsonValue(br, "direct_download");
                 if (StringUtils.isEmpty(url)) {
                     // you can error under success.....
@@ -462,7 +461,7 @@ public class MediafireCom extends PluginForHost {
                 }
                 logger.info("Checking cookie validity");
                 try {
-                    final Map<String, Object> resp = apiCommand(account, "user/get_info.php", null);
+                    final Map<String, Object> resp = apiCommand(null, account, "user/get_info.php", null);
                     final String email = (String) JavaScriptEngineFactory.walkJson(resp, "user_info/email");
                     if (StringUtils.equalsIgnoreCase(email, account.getUser())) {
                         logger.info("Cookie login successful");
@@ -526,7 +525,7 @@ public class MediafireCom extends PluginForHost {
             }
             account.setProperty(PROPERTY_ACCOUNT_SESSION_TOKEN, sessionToken);
             // apiCommand(account, "device/get_status.php", null);
-            final Map<String, Object> resp = apiCommand(account, "user/get_info.php", null);
+            final Map<String, Object> resp = apiCommand(null, account, "user/get_info.php", null);
             account.saveCookies(br.getCookies(br.getHost()), "");
             return resp;
         } catch (PluginException e) {
@@ -537,7 +536,7 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    public Map<String, Object> apiCommand(final Account account, final String command, UrlQuery query) throws Exception {
+    public Map<String, Object> apiCommand(final DownloadLink link, final Account account, final String command, UrlQuery query) throws Exception {
         String sessionToken = null;
         if (account != null) {
             sessionToken = this.getSessionToken(account);
@@ -559,26 +558,27 @@ public class MediafireCom extends PluginForHost {
         // website still uses 1.4, api is up to 1.5 at this stage -raztoki20160101
         String a = "https://www.mediafire.com/api/1.5/" + command + "?" + query.toString();
         br.getPage(a);
-        // is success ?
-        return handleApiError(br, account);
+        return handleApiError(br, link, account);
     }
 
     private String getSessionToken(final Account account) {
         return account.getStringProperty(PROPERTY_ACCOUNT_SESSION_TOKEN);
     }
 
-    private Map<String, Object> handleApiError(final Browser br, final Account account) throws PluginException {
+    private Map<String, Object> handleApiError(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         // FYI you can have errors even though it's success
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> resp = (Map<String, Object>) entries.get("response");
         final String result = (String) resp.get("result");
         if (StringUtils.equalsIgnoreCase(result, "Error")) {
             // TODO: Implement more errorcodes: Separate them for the different types of errors, then handle them.
-            final List<Integer> fatal = Arrays.asList(new Integer[] { 100, 101, 102, 103 });
-            final String errormessage = resp.get("message").toString();
+            final String message = resp.get("message").toString();
+            if (link == null) {
+                /* Not in context of download -> Must be account/login error */
+                throw new AccountInvalidException(message);
+            }
             final int errorcode = ((Number) resp.get("error")).intValue();
             /* List of errorcodes: https://www.mediafire.com/developers/core_api/1.5/getting_started/#error_codes */
-            // TODO: Implement some more errorcodes
             switch (errorcode) {
             case 104:
                 /*
@@ -595,14 +595,14 @@ public class MediafireCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Session expired");
             case 110:
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            case 111:
-                return resp;
             case 114:
                 /* E.g. private folder */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 173:
+                throw new AccountRequiredException();
             default:
                 // unknown error!
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_FATAL, message);
             }
         }
         return resp;
@@ -663,7 +663,7 @@ public class MediafireCom extends PluginForHost {
                 }
                 final UrlQuery query = new UrlQuery();
                 query.add("quick_key", sb.toString());
-                apiCommand(account, "file/get_info.php", query);
+                apiCommand(null, account, "file/get_info.php", query);
                 final Map<String, Object> apiResponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 List<Map<String, Object>> file_infos = null;
                 Object infos = JavaScriptEngineFactory.walkJson(apiResponse, "response/file_infos");
