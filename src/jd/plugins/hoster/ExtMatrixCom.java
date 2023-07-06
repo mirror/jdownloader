@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.FlexShareCore;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.jdownloader.plugins.components.FlexShareCore;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ExtMatrixCom extends FlexShareCore {
@@ -38,11 +38,6 @@ public class ExtMatrixCom extends FlexShareCore {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "extmatrix.com" });
         return ret;
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://").replace("/get/", "/files/"));
     }
 
     public static String[] getAnnotationNames() {
@@ -60,7 +55,6 @@ public class ExtMatrixCom extends FlexShareCore {
 
     @Override
     protected String getAPIKey() {
-        // return "4LYl9hFH1Xapzycg4fuFtUSPVvWsr";
         /* 2019-10-02: When logged-in, users will see an apikey but their API does not work! */
         return null;
     }

@@ -33,8 +33,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nifteam.info", "animeforce.org", "sipkur.net", "otrkeyfinder.com", "is.gd", "djurl.com", "q32.ru", "adfoc.us", "lnk.co", "myurl.in", "href.hu", "songspk.info", "academicearth.org", "tm-exchange.com", "mafia.to", "gantrack.com" }, urls = { "http://nifteam\\.info/link\\.php\\?file=.+", "http://(?:www\\.)?animeforce\\.org/ds(?:\\d+)?\\.php\\?file=.+", "http://sipkur\\.net/[a-z0-9\\-_]+\\.html", "https?://otrkeyfinder\\.com/de/go\\-to\\-mirror\\?otrkey=.+", "https?://(?:www\\.)?is\\.gd/[a-zA-Z0-9]+", "http://djurl\\.com/[A-Za-z0-9]+", "http://q32\\.ru/\\d+/c/[A-Za-z0-9\\-_]+", "http://(www\\.)?adfoc\\.us/(serve/\\?id=[a-z0-9]+|(?!serve|privacy|terms)[a-z0-9]+)", "http://(www\\.)?lnk\\.co/[A-Za-z0-9]+", "http://(www\\.)?protect\\.myurl\\.in/[A-Za-z0-9]+", "http://href\\.hu/x/[a-zA-Z0-9\\.]+",
-        "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=|link\\.songspk\\.help/\\S+/download\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?academicearth\\.org/lectures/.{2,}", "http://[\\w\\.]*?tm-exchange\\.com/(get\\.aspx\\?action=trackgbx|\\?action=trackshow)\\&id=\\d+", "http://[\\w\\.]*?mafia\\.to/download-[a-z0-9]+\\.cfm", "http://(www\\.)?gantrack\\.com/t/l/\\d+/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nifteam.info", "animeforce.org", "sipkur.net", "otrkeyfinder.com", "is.gd", "djurl.com", "q32.ru", "adfoc.us", "lnk.co", "myurl.in", "href.hu", "songspk.info", "academicearth.org", "tm-exchange.com", "mafia.to" }, urls = { "http://nifteam\\.info/link\\.php\\?file=.+", "http://(?:www\\.)?animeforce\\.org/ds(?:\\d+)?\\.php\\?file=.+", "http://sipkur\\.net/[a-z0-9\\-_]+\\.html", "https?://otrkeyfinder\\.com/de/go\\-to\\-mirror\\?otrkey=.+", "https?://(?:www\\.)?is\\.gd/[a-zA-Z0-9]+", "http://djurl\\.com/[A-Za-z0-9]+", "http://q32\\.ru/\\d+/c/[A-Za-z0-9\\-_]+", "http://(www\\.)?adfoc\\.us/(serve/\\?id=[a-z0-9]+|(?!serve|privacy|terms)[a-z0-9]+)", "http://(www\\.)?lnk\\.co/[A-Za-z0-9]+", "http://(www\\.)?protect\\.myurl\\.in/[A-Za-z0-9]+", "http://href\\.hu/x/[a-zA-Z0-9\\.]+",
+        "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=|link\\.songspk\\.help/\\S+/download\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?academicearth\\.org/lectures/.{2,}", "http://[\\w\\.]*?tm-exchange\\.com/(get\\.aspx\\?action=trackgbx|\\?action=trackshow)\\&id=\\d+", "http://[\\w\\.]*?mafia\\.to/download-[a-z0-9]+\\.cfm" })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
@@ -123,14 +123,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                 if (finallink == null) {
                     finallink = br.getRegex("linkurl.*?counter.*?linkurl' href=\"(http://[^<>\"]*?)\"").getMatch(0);
                 }
-            } else if (parameter.contains("gantrack.com/")) {
-                if (br.getRedirectLocation() != null) {
-                    br.getPage(br.getRedirectLocation());
-                    if (br.getRedirectLocation() != null) {
-                        br.getPage(br.getRedirectLocation());
-                    }
-                }
-                finallink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(.*?)\">").getMatch(0);
             } else if (parameter.contains("adfoc.us/")) {
                 String id = new Regex(parameter, ".us/(.+)").getMatch(0);
                 if ("forum".equalsIgnoreCase(id) || "support".equalsIgnoreCase(id) || "self".equalsIgnoreCase(id) || "user".equalsIgnoreCase(id) || "payout".equalsIgnoreCase(id) || "api".equalsIgnoreCase(id) || "js".equalsIgnoreCase(id) || "ajax".equalsIgnoreCase(id) || "faq".equalsIgnoreCase(id) || "1How".equalsIgnoreCase(id) || "tickets".equalsIgnoreCase(id) || "advertise".equalsIgnoreCase(id)) {

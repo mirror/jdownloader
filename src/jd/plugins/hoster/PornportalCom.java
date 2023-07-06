@@ -18,10 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -54,6 +52,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.decrypter.PornportalComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class PornportalCom extends PluginForHost {
@@ -309,14 +308,13 @@ public class PornportalCom extends PluginForHost {
                 }
                 /* We should already be loggedIN at this stage! */
                 this.login(this.br, account, link.getHost(), false);
-                final HashMap<String, DownloadLink> qualities = jd.plugins.decrypter.PornportalComCrawler.crawlContentAPI(this, this.br, videoID, account);
-                final Iterator<Entry<String, DownloadLink>> iteratorQualities = qualities.entrySet().iterator();
-                while (iteratorQualities.hasNext()) {
-                    final DownloadLink video = iteratorQualities.next().getValue();
-                    final String videoIDTmp = video.getStringProperty("videoid");
-                    final String qualityTmp = video.getStringProperty("quality");
+                final PornportalComCrawler crawler = (PornportalComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
+                final ArrayList<DownloadLink> results = crawler.crawlContentAPI(this, videoID, account, null);
+                for (final DownloadLink item : results) {
+                    final String videoIDTmp = item.getStringProperty("videoid");
+                    final String qualityTmp = item.getStringProperty("quality");
                     if (videoID.equals(videoIDTmp) && quality.equals(qualityTmp)) {
-                        newDirecturl = video.getStringProperty(PROPERTY_directurl);
+                        newDirecturl = item.getStringProperty(PROPERTY_directurl);
                         break;
                     }
                 }

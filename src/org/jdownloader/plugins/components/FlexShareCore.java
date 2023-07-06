@@ -10,6 +10,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -19,6 +20,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -63,6 +65,10 @@ public abstract class FlexShareCore extends antiDDoSForHost {
             ret.add("https?://(?:[A-Za-z0-9]+\\.)?" + buildHostsPatternPart(domains) + FlexShareCore.getDefaultAnnotationPatternPart());
         }
         return ret.toArray(new String[0]);
+    }
+
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replace("http://", "https://").replaceFirst("/get/", "/files/");
     }
 
     /**
@@ -121,6 +127,15 @@ public abstract class FlexShareCore extends antiDDoSForHost {
     // Using FlexShareScript 1.2.1, heavily modified
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        /*
+         * * 2023-07-06: extmatrix.com: Some files are displayed as offline when accessing them as a free/non-account user thus let's try to
+         * always provide an account.
+         */
+        final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, acc);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         if (!link.isNameSet()) {
             final String filenameFromURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
             if (filenameFromURL != null) {
@@ -133,7 +148,7 @@ public abstract class FlexShareCore extends antiDDoSForHost {
         if (getAPIKey() != null) {
             return requestFileInformationAPI(link);
         } else {
-            return requestFileInformationWebsite(link);
+            return requestFileInformationWebsite(link, account);
         }
     }
 
@@ -149,15 +164,18 @@ public abstract class FlexShareCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Set final filename here because some hosters tag their files */
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     /** 2019-10-02: This will e.g. work for extmatrix.com. Will need to be tested with other filehosts! */
-    public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
-        getPage(link.getPluginPatternMatcher());
+        if (account != null) {
+            this.login(account, null, false);
+        }
+        getPage(getContentURL(link));
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*The file you have requested does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -176,15 +194,12 @@ public abstract class FlexShareCore extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (getAPIKey() != null) {
-            getPage(link.getPluginPatternMatcher());
-        }
-        doFree(link, null);
+        handleFreeDownloads(link, null);
     }
 
-    protected void doFree(final DownloadLink link, Account account) throws Exception, PluginException {
+    protected void handleFreeDownloads(final DownloadLink link, Account account) throws Exception, PluginException {
         /** 2019-10-02: TODO: Add handling to re-use generated directurls */
+        requestFileInformationWebsite(link, null);
         final String getLink = getLink();
         if (getLink == null) {
             handleErrors(link, account);
@@ -278,7 +293,7 @@ public abstract class FlexShareCore extends antiDDoSForHost {
         }
     }
 
-    protected void login(final Account account, final AccountInfo accountInfo, boolean force) throws Exception {
+    protected void login(final Account account, final AccountInfo ai, boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(false);
@@ -287,15 +302,21 @@ public abstract class FlexShareCore extends antiDDoSForHost {
                 boolean loggedIN = false;
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
+                    if (!validateCookies) {
+                        /* Do not validate cookies */
+                        return;
+                    }
                     getPage(getMainPage() + "/members/myfiles.php");
-                    loggedIN = isLoggedIN();
-                    if (loggedIN) {
-                        updateAccountType(br, account, accountInfo);
-                        logger.info("Successfully loggedin via cookies:" + account.getType());
+                    if (isLoggedIN(br)) {
+                        updateAccountType(br, account, ai);
+                        logger.info("Successfully loggedin via cookies");
+                        loggedIN = true;
+                    } else {
+                        logger.info("Cookie login failed");
                     }
                 }
                 if (!loggedIN) {
-                    br.clearCookies(getHost());
+                    br.clearCookies(null);
                     logger.info("Performing full login");
                     getPage(getLoginURL());
                     final Form loginform = getAndFillLoginForm(account);
@@ -326,13 +347,13 @@ public abstract class FlexShareCore extends antiDDoSForHost {
                     if (br.getHttpConnection().getResponseCode() == 404) {
                         getPage("/members/myfiles.php");
                     }
-                    if (!isLoggedIN()) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (!isLoggedIN(br)) {
+                        throw new AccountInvalidException();
                     }
-                    updateAccountType(br, account, accountInfo);
+                    updateAccountType(br, account, ai);
                     logger.info("Successfully loggedin:" + account.getType());
                 }
-                account.saveCookies(br.getCookies(br.getURL()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -364,36 +385,48 @@ public abstract class FlexShareCore extends antiDDoSForHost {
         return loginform;
     }
 
-    protected boolean isLoggedIN() {
-        return br.getCookie(br.getHost(), "auth", Cookies.NOTDELETEDPATTERN) != null;
+    protected boolean isLoggedIN(final Browser br) {
+        if (br.getCookie(br.getHost(), "auth", Cookies.NOTDELETEDPATTERN) != null && br.containsHTML("(?i)/logout\\.php")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    protected void updateAccountType(final Browser br, final Account account, AccountInfo accountInfo) throws Exception {
+    protected void updateAccountType(final Browser br, final Account account, AccountInfo ai) throws Exception {
         if (br.getURL() == null || !br._getURL().getPath().matches("^/?$")) {
             getPage(getMainPage());
         }
         synchronized (account) {
-            if (accountInfo == null) {
-                accountInfo = account.getAccountInfo();
-                if (accountInfo == null) {
-                    accountInfo = new AccountInfo();
+            if (ai == null) {
+                ai = account.getAccountInfo();
+                if (ai == null) {
+                    ai = new AccountInfo();
                 }
             }
-            accountInfo.setUnlimitedTraffic();
-            if (br.containsHTML(">\\s*Premium Member\\s*<")) {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(20);
-                account.setConcurrentUsePossible(true);
-                final String validUntil = br.getRegex("Premium End:</td>\\s+<td>([^<>]*?)</td>").getMatch(0);
-                if (validUntil != null) {
-                    accountInfo.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH));
+            ai.setUnlimitedTraffic();
+            final String registeredDateStr = br.getRegex("(?i)Registered\\s*:\\s*</td>\\s+<td>([^<>]*?)</td>").getMatch(0);
+            if (registeredDateStr != null) {
+                if (registeredDateStr.matches("\\d{2}-\\d{2}-\\d{4}")) {
+                    ai.setCreateTime(TimeFormatter.getMilliSeconds(registeredDateStr, "dd-MM-yyyy", Locale.ENGLISH));
+                } else {
+                    ai.setCreateTime(TimeFormatter.getMilliSeconds(registeredDateStr, "yyyy-MM-dd", Locale.ENGLISH));
                 }
-                accountInfo.setStatus("Premium Account");
+            }
+            final String validUntilDateStr = br.getRegex("(?i)Premium End\\s*:\\s*</td>\\s+<td>([^<>]*?)</td>").getMatch(0);
+            if (br.containsHTML("(?i)>\\s*Premium Member\\s*<")) {
+                account.setType(AccountType.PREMIUM);
+                account.setConcurrentUsePossible(true);
+                if (validUntilDateStr != null) {
+                    if (validUntilDateStr.matches("\\d{2}-\\d{2}-\\d{4}")) {
+                        ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntilDateStr, "dd-MM-yyyy", Locale.ENGLISH));
+                    } else {
+                        ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntilDateStr, "yyyy-MM-dd", Locale.ENGLISH));
+                    }
+                }
             } else {
                 account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
-                accountInfo.setStatus("Free Account");
             }
         }
     }
@@ -407,15 +440,12 @@ public abstract class FlexShareCore extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, null, false);
-        br.setFollowRedirects(false);
-        getPage(link.getPluginPatternMatcher());
+        requestFileInformation(link, account);
         if (AccountType.FREE.equals(account.getType())) {
-            doFree(link, account);
+            handleFreeDownloads(link, account);
         } else {
             String getLink = br.getRedirectLocation();
-            if (getLink != null && getLink.matches("https?://(?:www\\.)?" + Pattern.quote(this.getHost()) + "/get/.*?")) {
+            if (getLink != null && getLink.matches("(?i)https?://(?:www\\.)?" + Pattern.quote(this.getHost()) + "/get/.*?")) {
                 getPage(getLink);
                 getLink = br.getRedirectLocation();
             }

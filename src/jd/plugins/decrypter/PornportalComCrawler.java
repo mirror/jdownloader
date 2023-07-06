@@ -108,69 +108,16 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 br.getPage("https://site-ma." + Browser.getHost(param.getCryptedUrl(), false) + "/login");
                 if (!PornportalCom.prepareBrAPI(this, br, null)) {
                     logger.warning("Failed to set required API headers");
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
-        final String contentID = new Regex(param.getCryptedUrl(), "(?:trailer|scene|series)/(\\d+)").getMatch(0);
+        final String contentID = new Regex(param.getCryptedUrl(), "(?i)(?:trailer|scene|series)/(\\d+)").getMatch(0);
         if (contentID == null) {
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final PluginForHost hostPlugin = getNewPluginForHostInstance(this.getHost());
-        /* Crawll all items */
-        final HashMap<String, DownloadLink> qualities = crawlContentAPI(hostPlugin, this.br, contentID, acc);
-        if (qualities.isEmpty()) {
-            logger.warning("Found nothing");
-            return null;
-        }
-        final PornportalComConfig cfg = PluginJsonConfig.get(PornportalComConfig.class);
-        final List<String> selectedQualities = new ArrayList<String>();
-        if (cfg.isSelectQuality2160()) {
-            selectedQualities.add("2160");
-        }
-        if (cfg.isSelectQuality1080()) {
-            selectedQualities.add("1080");
-        }
-        if (cfg.isSelectQuality720()) {
-            selectedQualities.add("720");
-        }
-        if (cfg.isSelectQuality480()) {
-            selectedQualities.add("480");
-        }
-        if (cfg.isSelectQuality360()) {
-            selectedQualities.add("360");
-        }
-        /* Add user selected quality */
-        final ArrayList<DownloadLink> foundSelection = new ArrayList<DownloadLink>();
-        if (cfg.getQualitySelectionMode() == QualitySelectionMode.ALL_SELECTED) {
-            for (final String selectedQuality : selectedQualities) {
-                if (qualities.containsKey(selectedQuality)) {
-                    foundSelection.add(qualities.get(selectedQuality));
-                }
-            }
-        } else {
-            /* BEST quality only */
-            /* Known qualities sorted best -> Worst */
-            final String[] allKnownQualities = new String[] { "2160", "1080", "720", "480", "360" };
-            for (final String knownQuality : allKnownQualities) {
-                if (qualities.containsKey(knownQuality)) {
-                    /* We found the best quality */
-                    foundSelection.add(qualities.get(knownQuality));
-                    break;
-                }
-            }
-        }
-        if (!foundSelection.isEmpty()) {
-            return foundSelection;
-        } else {
-            /* Fallback: Add all qualities if none were found by selection */
-            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            final Iterator<Entry<String, DownloadLink>> iteratorQualities = qualities.entrySet().iterator();
-            while (iteratorQualities.hasNext()) {
-                ret.add(iteratorQualities.next().getValue());
-            }
-            return ret;
-        }
+        return crawlContentAPI(hostPlugin, contentID, acc, PluginJsonConfig.get(PornportalComConfig.class));
     }
 
     public boolean isProxyRotationEnabledForLinkCrawler() {
@@ -200,22 +147,14 @@ public class PornportalComCrawler extends PluginForDecrypt {
             }
         }
         if (aa != null) {
-            try {
-                ((jd.plugins.hoster.PornportalCom) hostPlugin).login(this.br, aa, this.getHost(), false);
-                return aa;
-            } catch (final PluginException e) {
-                logger.log(e);
-                // handleAccountException(aa, e);
-                logger.info("Login failure --> Continue without account / trailer download");
-            }
+            ((jd.plugins.hoster.PornportalCom) hostPlugin).login(this.br, aa, this.getHost(), false);
+            return aa;
         }
         return null;
     }
 
-    public static HashMap<String, DownloadLink> crawlContentAPI(final PluginForHost plg, final Browser br, final String contentID, final Account account) throws Exception {
-        final PornportalComConfig cfg = PluginJsonConfig.get(PornportalComConfig.class);
-        final FilenameScheme filenameScheme = cfg.getFilenameScheme();
-        final String host = plg.getHost();
+    public ArrayList<DownloadLink> crawlContentAPI(final PluginForHost plg, final String contentID, final Account account, final PornportalComConfig cfg) throws Exception {
+        final FilenameScheme filenameScheme = cfg != null ? cfg.getFilenameScheme() : FilenameScheme.ORIGINAL;
         final HashMap<String, DownloadLink> foundQualities = new HashMap<String, DownloadLink>();
         String api_base = PluginJSonUtils.getJson(br, "dataApiUrl");
         if (StringUtils.isEmpty(api_base)) {
@@ -226,7 +165,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Map<String, Object> result = (Map<String, Object>) root.get("result");
         final ArrayList<Map<String, Object>> videoObjects = new ArrayList<Map<String, Object>>();
         /* Add current object - that itself could be a video object! */
@@ -237,9 +176,9 @@ public class PornportalComCrawler extends PluginForDecrypt {
             final List<Map<String, Object>> children = (List<Map<String, Object>>) videoChildrenO;
             videoObjects.addAll(children);
         }
+        final String host = this.getHost();
         final boolean isPremium = account != null && account.getType() == AccountType.PREMIUM;
-        for (final Object videoO : videoObjects) {
-            final Map<String, Object> clipInfo = (Map<String, Object>) videoO;
+        for (final Map<String, Object> clipInfo : videoObjects) {
             final String type = (String) clipInfo.get("type");
             // final String type = (String) entries.get("type");
             final String videoID = Long.toString(JavaScriptEngineFactory.toLong(clipInfo.get("id"), 0));
@@ -259,7 +198,7 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 title = contentID + "_trailer";
             }
             if (isPremium && type.equals("trailer")) {
-                plg.getLogger().info("Skipping trailer because user owns premium account");
+                logger.info("Skipping trailer because user owns premium account");
                 continue;
             }
             final FilePackage fp = FilePackage.getInstance();
@@ -364,7 +303,60 @@ public class PornportalComCrawler extends PluginForDecrypt {
                 }
             }
         }
-        return foundQualities;
+        final ArrayList<DownloadLink> videos = new ArrayList<DownloadLink>();
+        if (foundQualities.isEmpty()) {
+            logger.warning("Found nothing");
+            return null;
+        }
+        final List<String> selectedQualities = new ArrayList<String>();
+        if (cfg == null || cfg.isSelectQuality2160()) {
+            selectedQualities.add("2160");
+        }
+        if (cfg == null || cfg.isSelectQuality1080()) {
+            selectedQualities.add("1080");
+        }
+        if (cfg == null || cfg.isSelectQuality720()) {
+            selectedQualities.add("720");
+        }
+        if (cfg == null || cfg.isSelectQuality480()) {
+            selectedQualities.add("480");
+        }
+        if (cfg == null || cfg.isSelectQuality360()) {
+            selectedQualities.add("360");
+        }
+        /* Add user selected quality */
+        final ArrayList<DownloadLink> foundSelection = new ArrayList<DownloadLink>();
+        if (cfg == null || cfg.getQualitySelectionMode() == QualitySelectionMode.ALL_SELECTED) {
+            for (final String selectedQuality : selectedQualities) {
+                if (foundQualities.containsKey(selectedQuality)) {
+                    foundSelection.add(foundQualities.get(selectedQuality));
+                }
+            }
+        } else {
+            /* BEST quality only */
+            /* Known qualities sorted best -> Worst */
+            final String[] allKnownQualities = new String[] { "2160", "1080", "720", "480", "360" };
+            for (final String knownQuality : allKnownQualities) {
+                if (foundQualities.containsKey(knownQuality)) {
+                    /* We found the best quality */
+                    foundSelection.add(foundQualities.get(knownQuality));
+                    break;
+                }
+            }
+        }
+        if (!foundSelection.isEmpty()) {
+            return foundSelection;
+        } else {
+            /* Fallback: Add all qualities if none were found by selection */
+            logger.info("Failed to find any results by selection -> Returning all");
+            final Iterator<Entry<String, DownloadLink>> iteratorQualities = foundQualities.entrySet().iterator();
+            while (iteratorQualities.hasNext()) {
+                videos.add(iteratorQualities.next().getValue());
+            }
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        ret.addAll(videos);
+        return ret;
     }
 
     public static String getProtocol() {
