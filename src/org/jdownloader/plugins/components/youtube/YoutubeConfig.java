@@ -18,6 +18,7 @@ import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.RequiresRestart;
+import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.annotations.StorageHandlerFactoryAnnotation;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -126,6 +127,21 @@ public interface YoutubeConfig extends PluginConfigInterface {
             @Override
             public String getLabel() {
                 return _JDT.T.YoutubeDash_IfUrlisAVideoAndPlaylistAction_VIDEO_ONLY();
+            }
+        };
+    }
+
+    public static enum ProfileCrawlMode implements LabelInterface {
+        PLAYLIST {
+            @Override
+            public String getLabel() {
+                return _JDT.T.YoutubeDash_ProfileCrawlModePlaylist();
+            }
+        },
+        USER {
+            @Override
+            public String getLabel() {
+                return _JDT.T.YoutubeDash_ProfileCrawlModeVideosTab();
             }
         };
     }
@@ -290,6 +306,21 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("ASK")
     YoutubeConfig.IfUrlisAVideoAndPlaylistAction getLinkIsVideoAndPlaylistUrlAction();
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Define how channels/profiles should be crawled. Channels can be crawled as their 'Uploaded by' playlist which can be found on the website under '/@channelname/featured' -> 'Play all' or just all videos you can see on the website under '/@channelname/videos' -> Tab called 'Videos'.")
+    @DefaultEnumValue("PLAYLIST")
+    YoutubeConfig.ProfileCrawlMode getProfileCrawlMode();
+
+    void setProfileCrawlMode(YoutubeConfig.ProfileCrawlMode mode);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Define max items to be crawled when channel/playlist/profile is added. -1 = unlimited, 0 = disable channel/playlist/profile crawler")
+    @SpinnerValidator(min = -1, max = 100000, step = 100)
+    @DefaultIntValue(-1)
+    int getPlaylistAndProfileCrawlerMaxItemsLimit();
+
+    void setPlaylistAndProfileCrawlerMaxItemsLimit(int i);
 
     @AboutConfig
     @DefaultFactory(DefaultConvertSubtitleVariantMode.class)

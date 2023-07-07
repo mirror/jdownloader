@@ -582,6 +582,12 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do nothing" })
     String YoutubeDash_IfUrlisAPlaylistAction_NOTHING();
 
+    @Default(lngs = { "en" }, values = { "Playlist 'uploads of user'" })
+    String YoutubeDash_ProfileCrawlModePlaylist();
+
+    @Default(lngs = { "en" }, values = { "Profile ('Videos' tab)" })
+    String YoutubeDash_ProfileCrawlModeVideosTab();
+
     @Default(lngs = { "en" }, values = { "Media Type (Video, Audio, Image, Subtitles, ..." })
     String YoutubeDash_GroupLogic_BY_MEDIA_TYPE();
 
