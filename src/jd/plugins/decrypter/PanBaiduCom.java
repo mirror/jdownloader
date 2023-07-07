@@ -57,12 +57,12 @@ public class PanBaiduCom extends PluginForDecrypt {
         return 1;
     }
 
-    private static final String                TYPE_FOLDER_SUBFOLDER                 = "https?://(?:www\\.)?pan\\.baidu\\.com/(share/.+\\&dir=.+|s/[A-Za-z0-9-_]+#(dir|list)/path=%.+)";
-    private static final String                TYPE_FOLDER_GENERAL                   = "https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+((shareid|uk)=\\d+\\&(shareid|uk)=\\d+(.*?&dir=.+|#(list|dir)/path=%2F.+))";
-    private static final String                TYPE_FOLDER_NORMAL                    = "https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+(%20%E5%AF%86%E7%A0%81:.+)?";
-    private static final String                TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED = "https?://[^/]+/share/init.+";
-    private static final String                TYPE_FOLDER_SHORT                     = "https?://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9-_]+";
-    private static final String                TYPE_FOLDER_USER_HOME                 = ".+/share/home.+";
+    private static final String                TYPE_FOLDER_SUBFOLDER                 = "(?i)https?://(?:www\\.)?pan\\.baidu\\.com/(share/.+\\&dir=.+|s/[A-Za-z0-9-_]+#(dir|list)/path=%.+)";
+    private static final String                TYPE_FOLDER_GENERAL                   = "(?i)https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+((shareid|uk)=\\d+\\&(shareid|uk)=\\d+(.*?&dir=.+|#(list|dir)/path=%2F.+))";
+    private static final String                TYPE_FOLDER_NORMAL                    = "(?i)https?://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+(%20%E5%AF%86%E7%A0%81:.+)?";
+    private static final String                TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED = "(?i)https?://[^/]+/share/init.+";
+    private static final String                TYPE_FOLDER_SHORT                     = "(?i)https?://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9-_]+";
+    private static final String                TYPE_FOLDER_USER_HOME                 = "(?i).+/share/home.+";
     private static final String                APPID                                 = "250528";
     private String                             link_password                         = null;
     private String                             link_password_cookie                  = null;
@@ -107,14 +107,18 @@ public class PanBaiduCom extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("/error") || br.containsHTML("id=\"share_nofound_des\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final boolean looksLikeOffline = br.containsHTML("class=\"error-reason\"");
         if (br.getURL().matches(TYPE_FOLDER_USER_HOME)) {
             crawlHome();
         } else {
             crawlFoldersAndFiles();
         }
         if (decryptedLinks.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            if (looksLikeOffline) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         return decryptedLinks;
     }

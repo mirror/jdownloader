@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.html.Form;
@@ -32,9 +35,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EasyBytezCom extends XFileSharingProBasic {
     public EasyBytezCom(final PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class EasyBytezCom extends XFileSharingProBasic {
         this.enablePremium(super.getPurchasePremiumURL());
     }
 
-    public final static String MAIN_DOMAIN = "easybytez.eu";
+    public final static String MAIN_DOMAIN = "easybytez.me";
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
@@ -54,7 +54,7 @@ public class EasyBytezCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { MAIN_DOMAIN, "easybytez.com", "easybytez.co", "easybytez.to", "zingload.com", "easyload.to", "ezbytez.com", "ebytez.com" });
+        ret.add(new String[] { MAIN_DOMAIN, "easybytez.eu", "easybytez.com", "easybytez.co", "easybytez.to", "zingload.com", "easyload.to", "ezbytez.com", "ebytez.com" });
         return ret;
     }
 
