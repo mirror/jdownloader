@@ -146,7 +146,8 @@ public class PornportalCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https://decrypted" + buildHostsPatternPart(domains) + "/\\d+/\\d+");
+            /* No regex needed - all items are added via crawler plugin. */
+            ret.add("");
         }
         return ret.toArray(new String[0]);
     }
