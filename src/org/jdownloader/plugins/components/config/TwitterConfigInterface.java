@@ -16,7 +16,7 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "twitter.com", type = Type.HOSTER)
 public interface TwitterConfigInterface extends PluginConfigInterface {
     public static final TRANSLATION TRANSLATION                                              = new TRANSLATION();
-    final String                    text_UseOriginalFilenames                                = "Use original filename instead of plugin filenames?";
+    final String                    text_FilenameScheme                                      = "Filename scheme";
     final String                    text_MarkTweetRepliesViaFilename                         = "Append '_reply' to filenames of tweets that are replies to other tweets?";
     final String                    text_SingleTweetCrawlerAddTweetTextAsTextfile            = "Single Tweet crawler: Add tweet text as textfile?";
     final String                    text_SingleTweetCrawlerCrawlMode                         = "Single Tweet crawler: Crawl mode";
@@ -35,8 +35,8 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
         // return "Force grab media? Disable this to also crawl media of retweets and other content from users' timelines (only if you
         // add URLs without '/media'!)";
         // }
-        public String getUseOriginalFilenames_label() {
-            return text_UseOriginalFilenames;
+        public String getFilenameScheme_label() {
+            return text_FilenameScheme;
         }
 
         public String getMarkTweetRepliesViaFilename_label() {
@@ -84,22 +84,46 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
         }
     }
 
-    /* 2022-03-18: Not needed anymore for now. */
-    // @DefaultBooleanValue(true)
-    // @AboutConfig
-    // @DescriptionForConfigEntry("Force grab media? Disable this to also crawl media of retweets and other content from users'
-    // timelines (only if you add URLs without '/media'!)")
-    // @Order(10)
-    // boolean isForceGrabMediaOnlyEnabled();
-    //
-    // void setForceGrabMediaOnlyEnabled(boolean b);
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    @DescriptionForConfigEntry(text_UseOriginalFilenames)
-    @Order(20)
-    boolean isUseOriginalFilenames();
+    public static enum FilenameScheme implements LabelInterface {
+        AUTO {
+            @Override
+            public String getLabel() {
+                return "Auto";
+            }
+        },
+        ORIGINAL {
+            @Override
+            public String getLabel() {
+                return "Original";
+            }
+        },
+        ORIGINAL_PLUS {
+            @Override
+            public String getLabel() {
+                return "Original+: <date>_<tweet_id>_<originalFilenameWithoutExt>.<ext>";
+            }
+        },
+        ORIGINAL_PLUS_2 {
+            @Override
+            public String getLabel() {
+                return "Original+2: <date>_<username>_<tweet_id>_<originalFilenameWithoutExt>.<ext>";
+            }
+        },
+        PLUGIN {
+            @Override
+            public String getLabel() {
+                return "Plugin: <date>_<username>_<tweet_id>_<reply>_<mediaIndex>.<ext>";
+            }
+        };
+    }
 
-    void setUseOriginalFilenames(boolean b);
+    @AboutConfig
+    @DefaultEnumValue("AUTO")
+    @Order(20)
+    @DescriptionForConfigEntry(text_FilenameScheme)
+    FilenameScheme getFilenameScheme();
+
+    void setFilenameScheme(final FilenameScheme scheme);
 
     @DefaultBooleanValue(false)
     @AboutConfig

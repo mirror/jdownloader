@@ -701,8 +701,9 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                     int captchaAttemptCounter = 0;
                     long timeBeforeCaptchaInput;
                     boolean hasRequestedCaptcha = false; // true if user has been asked for captcha at least once
+                    int numberofCaptchasRequested = 0;
                     preDownloadLoop: do {
-                        logger.info("Handling pre-download page " + (preDownloadPageCounter + 1) + " of max " + maxPreDownloadPages + " | Captcha attempts needed: " + captchaAttemptCounter + "/" + maxCaptchaAttempts);
+                        logger.info("Handling pre-download page " + (preDownloadPageCounter + 1) + " of max " + maxPreDownloadPages + " | Captcha attempts needed: " + captchaAttemptCounter + "/" + maxCaptchaAttempts + " | Captchas requested so far: " + numberofCaptchasRequested);
                         timeBeforeCaptchaInput = Time.systemIndependentCurrentJVMTimeMillis();
                         if (hasRequestedCaptcha && this.containsCaptcha(br)) {
                             /* Retry on wrong captcha */
@@ -725,7 +726,8 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
                             final String fileID = this.getStoredInternalFileID(link);
-                            this.postPage("/account/ajax/file_details", "u=" + fileID);
+                            /* 2023-07-06: "p=true" has been added for wrzucaj.pl but that shouldn't affect other websites. */
+                            this.postPage("/account/ajax/file_details", "u=" + fileID + "&p=true");
                             final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                             final String html = (String) root.get("html");
                             /* Small workaround to have this html code available in our current browser instance. */
@@ -802,11 +804,15 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             hasRequestedCaptcha = true;
                             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                             waitTime(this.br, link, timeBeforeCaptchaInput);
-                            continueform.put("capcode", "false");
+                            if (br.containsHTML("capcode")) {
+                                // TODO: Check if this is still needed
+                                continueform.put("capcode", "false");
+                            }
                             continueform.put("g-recaptcha-response", recaptchaV2Response);
                             continueform.setMethod(MethodType.POST);
                             br.setFollowRedirects(true);
                             dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
+                            numberofCaptchasRequested++;
                         } else if (containsSolvemediaCaptcha(continueform) || this.containsSolvemediaCaptcha(br.getRequest().getHtmlCode())) {
                             loopLog += " --> SolvemediaCaptcha";
                             hasRequestedCaptcha = true;
@@ -849,6 +855,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             continueform.setMethod(MethodType.POST);
                             br.setFollowRedirects(true);
                             dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
+                            numberofCaptchasRequested++;
                         } else if (continueform != null && continueform.getMethod() == MethodType.POST) {
                             /* Form + no captcha */
                             loopLog += " --> Form_POST";
@@ -881,20 +888,22 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             logger.info("Failed to find downloadurl in this round");
                             checkErrors(br, link, account);
                             if (preDownloadPageCounter >= maxPreDownloadPages) {
-                                logger.info("Breaking main loop because: Too many pre-download-pages");
+                                logger.info("Ending main loop because: Too many pre-download-pages");
                                 break;
                             } else if (captchaAttemptCounter >= maxCaptchaAttempts) {
                                 logger.info("Ending main loop because: Many wrong captchas");
                                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                            }
-                            /* Captcha logger */
-                            if (hasRequestedCaptcha) {
-                                if (containsCaptcha(br)) {
-                                    this.invalidateLastChallengeResponse();
-                                    logger.info("Wrong captcha");
-                                } else {
-                                    this.validateLastChallengeResponse();
+                            } else {
+                                /* Captcha logger */
+                                if (hasRequestedCaptcha) {
+                                    if (containsCaptcha(br)) {
+                                        this.invalidateLastChallengeResponse();
+                                        logger.info("Wrong captcha");
+                                    } else {
+                                        this.validateLastChallengeResponse();
+                                    }
                                 }
+                                logger.info("Continue to next round");
                             }
                         }
                     } while (true);

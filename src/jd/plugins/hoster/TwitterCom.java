@@ -108,8 +108,8 @@ public class TwitterCom extends PluginForHost {
     }
 
     private final String        TYPE_DIRECT                   = "https?://[a-z0-9]+\\.twimg\\.com/.+";
-    private final String        TYPE_VIDEO_DIRECT             = "https?://amp\\.twimg\\.com/v/.+";
-    private final String        TYPE_VIDEO_VMAP               = "^https?://.*\\.vmap$";
+    public static final String  TYPE_VIDEO_DIRECT             = "https?://amp\\.twimg\\.com/v/.+";
+    public static final String  TYPE_VIDEO_VMAP               = "^https?://.*\\.vmap$";
     public static final String  TYPE_VIDEO_EMBED              = "https?://[^/]+/i/videos/tweet/(\\d+)";
     public static final String  TYPE_VIDEO_SPECIFIC           = "https://[^/]+/([^/]+)/status/(\\d+)/video/(\\d+)";
     private static final String TYPE_TWEET_TEXT               = "https?://[^/]+/([^/]+)/status/(\\d+)";
@@ -147,8 +147,21 @@ public class TwitterCom extends PluginForHost {
         return true;
     }
 
-    private static boolean isVideo(final String url) {
-        if (url.matches(TYPE_VIDEO_EMBED) || url.matches(TYPE_VIDEO_SPECIFIC)) {
+    public static boolean isText(final DownloadLink link) {
+        if (link.getPluginPatternMatcher().matches(TYPE_TWEET_TEXT)) {
+            return true;
+        } else if (StringUtils.equals(link.getStringProperty(TwitterComCrawler.PROPERTY_TYPE), TwitterComCrawler.TYPE_TEXT)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isVideo(final DownloadLink link) {
+        final String url = link.getPluginPatternMatcher();
+        if (url.matches(TYPE_VIDEO_EMBED) || url.matches(TYPE_VIDEO_SPECIFIC) || url.matches(TYPE_VIDEO_VMAP) || url.matches(TYPE_VIDEO_DIRECT)) {
+            return true;
+        } else if (StringUtils.equals(link.getStringProperty(TwitterComCrawler.PROPERTY_TYPE), TwitterComCrawler.TYPE_VIDEO)) {
             return true;
         } else {
             return false;
@@ -178,23 +191,14 @@ public class TwitterCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        final String filenameFromCrawler = link.getStringProperty(TwitterComCrawler.PROPERTY_FILENAME_FROM_CRAWLER);
-        if (link.getPluginPatternMatcher().matches(TYPE_TWEET_TEXT)) {
+        if (isText(link)) {
             if (StringUtils.isEmpty(getTweetText(link))) {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (filenameFromCrawler != null) {
-                link.setFinalFileName(filenameFromCrawler);
-            }
         } else {
             prepBR(this.br);
             /* Most items will come from crawler. */
-            String filename = null;
-            if (filenameFromCrawler != null) {
-                link.setFinalFileName(filenameFromCrawler);
-                filename = filenameFromCrawler;
-            }
             final String tweetID = getTweetID(link);
             String vmap_url = null;
             boolean possibly_geo_blocked = false;
@@ -222,7 +226,7 @@ public class TwitterCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-            } else if (isVideo(link.getPluginPatternMatcher())) {
+            } else if (isVideo(link)) {
                 this.dllink = getStoredVideoDirecturl(link);
                 if (StringUtils.isEmpty(this.dllink)) {
                     logger.info("Trying to obtain fresh video directurl");
@@ -371,11 +375,8 @@ public class TwitterCom extends PluginForHost {
                             this.dllink = regexVideoVmapHighestQualityURL(this.br);
                         }
                     }
-                    if (filename == null) {
-                        /* Fallback */
-                        link.setFinalFileName(tweetID + ".mp4");
-                    }
                 }
+                TwitterComCrawler.setFilename(link);
             } else { // TYPE_DIRECT - jpg/png/mp4
                 if (link.getPluginPatternMatcher().contains("jpg") || link.getPluginPatternMatcher().contains("png")) {
                     if (link.getPluginPatternMatcher().contains(":large")) {
@@ -449,10 +450,8 @@ public class TwitterCom extends PluginForHost {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
                         if (!link.isNameSet()) {
-                            /* Set filename by URL */
-                            if (filename == null) {
-                                filename = Encoding.htmlDecode(getFileNameFromHeader(con)).replace(":orig", "");
-                            }
+                            /* Last chance: Set filename by URL */
+                            String filename = Encoding.htmlDecode(getFileNameFromHeader(con)).replace(":orig", "");
                             if (filename != null) {
                                 if (tweetID != null && !filename.contains(tweetID)) {
                                     filename = tweetID + "_" + filename;

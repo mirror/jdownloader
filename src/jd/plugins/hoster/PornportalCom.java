@@ -935,9 +935,9 @@ public class PornportalCom extends PluginForHost {
                             Account pornhubAccount = findSpecialPornhubAccount(account);
                             if (supportedHostsFinal.contains(domain_pornhub)) {
                                 /* Special pornhub handling --> Add dummy account if external login works */
-                                final Browser br2 = jd.plugins.hoster.PornHubCom.prepBr(new Browser());
+                                final Browser br2 = PornHubCom.prepBr(new Browser());
                                 handleExternalLoginStep(br2, account, domain_pornhub);
-                                final boolean isLoggedIN = jd.plugins.hoster.PornHubCom.isLoggedInHtmlPremium(br2);
+                                final boolean isLoggedIN = PornHubCom.isLoggedInHtmlPremium(br2);
                                 /* Look for special account created by this plugin --> Add account if non existant */
                                 final String targetUsername = this.getHost() + "_" + account.getUser();
                                 if (!isLoggedIN) {
@@ -963,7 +963,7 @@ public class PornportalCom extends PluginForHost {
                                         /* TODO: Why does this not work? */
                                         // AccountController.getInstance().addAccount(pornhubAccount);
                                     }
-                                    pornhubAccount.setProperty(jd.plugins.hoster.PornHubCom.PROPERTY_ACCOUNT_is_cookie_login_only, true);
+                                    pornhubAccount.setProperty(PornHubCom.PROPERTY_ACCOUNT_is_cookie_login_only, true);
                                     pornhubAccount.setEnabled(true);
                                     pornhubAccount.setType(AccountType.PREMIUM);
                                     final AccountInfo pornhubAI = new AccountInfo();
