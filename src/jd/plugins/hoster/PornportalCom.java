@@ -64,7 +64,7 @@ public class PornportalCom extends PluginForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     @Override
@@ -162,19 +162,22 @@ public class PornportalCom extends PluginForHost {
         }
     }
 
-    // @Override
-    // public void correctDownloadLink(final DownloadLink link) {
-    // final String fuid = this.fuid != null ? this.fuid : getFUIDFromURL(link);
-    // if (fuid != null) {
-    // /* link cleanup, prefer https if possible */
-    // if (link.getPluginPatternMatcher() != null &&
-    // link.getPluginPatternMatcher().matches("https?://[A-Za-z0-9\\-\\.:]+/embed-[a-z0-9]{12}")) {
-    // link.setContentUrl(getMainPage() + "/embed-" + fuid + ".html");
-    // }
-    // link.setPluginPatternMatcher(getMainPage() + "/" + fuid);
-    // link.setLinkID(getHost() + "://" + fuid);
-    // }
-    // }
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String videoid = link.getStringProperty(PROPERTY_VIDEO_ID);
+        final String videoquality = link.getStringProperty(PROPERTY_VIDEO_QUALITY);
+        final String galleryid = link.getStringProperty(PROPERTY_GALLERY_ID);
+        final int galleryImagePosition = link.getIntegerProperty(PROPERTY_GALLERY_IMAGE_POSITION, -1);
+        final int galleryPosition = link.getIntegerProperty(PROPERTY_GALLERY_POSITION, -1);
+        if (videoid != null && videoquality != null) {
+            return this.getHost() + "://video" + videoid + "/" + videoquality;
+        } else if (galleryid != null && galleryPosition != -1 && galleryImagePosition != -1) {
+            return this.getHost() + "://photo" + galleryid + "/" + galleryPosition + "/" + galleryImagePosition;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
     /*
      * Debug function: Can be used to quickly find the currently used pornportal version of all supported websites and compare against
      * previously set expected version value.
@@ -257,12 +260,18 @@ public class PornportalCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final int     FREE_MAXDOWNLOADS            = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private String               dllink                       = null;
-    public static final String   PROPERTY_directurl           = "directurl";
+    private static final int     FREE_MAXDOWNLOADS               = 1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME          = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
+    public static final String   PROPERTY_directurl              = "directurl";
+    public static final String   PROPERTY_VIDEO_ID               = "videoid";
+    public static final String   PROPERTY_VIDEO_QUALITY          = "quality";
+    public static final String   PROPERTY_GALLERY_ID             = "galleryid";
+    public static final String   PROPERTY_GALLERY_POSITION       = "gallery_position";
+    public static final String   PROPERTY_GALLERY_IMAGE_POSITION = "gallery_image_position";
+    public static final String   PROPERTY_GALLERY_DIRECTORY      = "gallery_directory";
+    public static final String   PROPERTY_GALLERY_SIZE           = "gallery_size";
 
     public static Browser prepBR(final Browser br) {
         br.setAllowedResponseCodes(new int[] { 400 });
@@ -274,11 +283,22 @@ public class PornportalCom extends PluginForHost {
         return requestFileInformation(link, null, false);
     }
 
+    private String getContentID(final DownloadLink link) {
+        final String videoid = link.getStringProperty(PROPERTY_VIDEO_ID);
+        final String galleryid = link.getStringProperty(PROPERTY_GALLERY_ID);
+        if (videoid != null) {
+            return videoid;
+        } else if (galleryid != null) {
+            return galleryid;
+        } else {
+            return null;
+        }
+    }
+
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        dllink = link.getStringProperty(PROPERTY_directurl);
+        final String dllink = link.getStringProperty(PROPERTY_directurl);
         if (dllink == null) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -299,28 +319,31 @@ public class PornportalCom extends PluginForHost {
                     return AvailableStatus.UNCHECKABLE;
                 }
                 logger.info("Trying to refresh directurl");
-                final String videoID = link.getStringProperty("videoid");
-                final String quality = link.getStringProperty("quality");
-                if (videoID == null || quality == null) {
+                final String contentID = getContentID(link);
+                if (contentID == null) {
                     /* This should never happen */
-                    logger.info("DownloadLink property videoid or quality missing");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 /* We should already be loggedIN at this stage! */
                 this.login(this.br, account, link.getHost(), false);
                 final PornportalComCrawler crawler = (PornportalComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
-                final ArrayList<DownloadLink> results = crawler.crawlContentAPI(this, videoID, account, null);
+                final ArrayList<DownloadLink> results = crawler.crawlContentAPI(this, contentID, account, null);
+                final String targetLinkid = this.getLinkID(link);
+                DownloadLink result = null;
                 for (final DownloadLink item : results) {
-                    final String videoIDTmp = item.getStringProperty("videoid");
-                    final String qualityTmp = item.getStringProperty("quality");
-                    if (videoID.equals(videoIDTmp) && quality.equals(qualityTmp)) {
-                        newDirecturl = item.getStringProperty(PROPERTY_directurl);
+                    if (StringUtils.equals(this.getLinkID(item), targetLinkid)) {
+                        result = item;
                         break;
                     }
                 }
-                if (newDirecturl == null) {
+                if (result == null) {
                     logger.warning("Failed to find fresh directurl --> Content offline?");
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh expired directurl --> Content offline?");
+                }
+                newDirecturl = result.getStringProperty(PROPERTY_directurl);
+                if (newDirecturl == null) {
+                    /* This should never happen */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 logger.info("Successfully found new directurl");
                 con = br.openHeadConnection(newDirecturl);
@@ -328,8 +351,7 @@ public class PornportalCom extends PluginForHost {
             if (con.getResponseCode() == 404) {
                 br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (con.isContentDisposition() || con.getContentType().contains("video")) {
-                br.followConnection(true);
+            } else if (this.looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
                     link.setDownloadSize(con.getCompleteContentLength());
                 }
@@ -342,7 +364,6 @@ public class PornportalCom extends PluginForHost {
                     /* Only set new directurl if it is working. Keep old one until then! */
                     logger.info("Successfully checked new directurl and set property");
                     link.setProperty(PROPERTY_directurl, newDirecturl);
-                    this.dllink = newDirecturl;
                 }
             } else {
                 br.followConnection(true);
@@ -414,7 +435,8 @@ public class PornportalCom extends PluginForHost {
                      * Try to avoid login captcha at all cost!
                      */
                     brlogin.setCookies(target_domain, cookies);
-                    if (!checkCookies && System.currentTimeMillis() - account.getCookiesTimeStamp(target_domain) <= 5 * 60 * 1000) {
+                    if (!checkCookies) {
+                        /* Trust cookies without check */
                         logger.info("Trust cookies without check");
                         return;
                     }
@@ -1058,6 +1080,7 @@ public class PornportalCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
+        final String dllink = link.getStringProperty(PROPERTY_directurl);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
