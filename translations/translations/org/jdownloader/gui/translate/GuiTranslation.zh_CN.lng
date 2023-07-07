@@ -1468,6 +1468,7 @@ YoutubeHelper_getDescription_itag_video_name=视频流名称。如 DASH_WEBM_VID
 YoutubeHelper_getDescription_language=字幕语言。*lng*->EN | *lng[display]* -> Spanish | *lng[full]* -> Spanish (拉丁美洲和加勒比海地区)
 YoutubeHelper_getDescription_playlist_id=播放清单 ID 如 PLD3J3Pup7M00BeAyuplpWoGRFpT3enHPq
 YoutubeHelper_getDescription_playlist_name=播放清单名称。如 Canadian Animals
+YoutubeHelper_getDescription_playlist_size=播放列表大小
 YoutubeHelper_getDescription_quality=变体(清晰度)标签。例如'1080p 30fps'
 YoutubeHelper_getDescription_replacetags=使用下划线替换空白: 附加 [SU]。示例: *videoname[UC][SU]* 或 *channelname[SU]*
 YoutubeHelper_getDescription_resolution=分辨率 (如 1080P，1440x1080，…)
