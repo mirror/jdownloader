@@ -1386,6 +1386,8 @@ YoutubeBasicVariant_getLabel_video360=Vídeo em 360°
 YoutubeBasicVariant_getLabel_video360_3D=Vídeo 3D em 360°
 YoutubeBasicVariant_getLabel_video3d=Vídeo 3D
 YoutubeDashConfigPanel_MultiVariantBox_getLabel_=Qualidade: %s1
+YoutubeDashConfigPanel_YoutubeDashConfigPanel_PlaylistAndProfileCrawlerMaxItemsLimit=Limite máximo de itens da captura de perfil/lista de reprodução [-1 = sem limite, 0 = desabilitar captura]
+YoutubeDashConfigPanel_YoutubeDashConfigPanel_ProfileCrawlMode=Modo de captura do perfil
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_best_explained=O YouTube oferece streams com resolução de até 4320p. Se você deseja baixar estes streams, desmarque a caixa abaixo.
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_extra_desc=<html>Se você deseja que o JDownlolader crie mais links além dos 'Links de melhor qualidade', você pode definir abaixo.</html>
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling=Captura rápida
