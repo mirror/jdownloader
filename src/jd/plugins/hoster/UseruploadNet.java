@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -118,16 +117,20 @@ public class UseruploadNet extends XFileSharingProBasic {
             fileInfo[0] = new Regex(correctedBR, "class=\"name\">\\s*<h4>([^<>\"]+)<").getMatch(0);
         }
         if (StringUtils.isEmpty(fileInfo[1])) {
+            final String fileSize = new Regex(correctedBR, "<span>\\s*Uploaded on.*?</span>\\s*(<span>[^<]+</span>)").getMatch(0);
+            fileInfo[1] = scanGenericFileSize(fileSize);
+        }
+        if (StringUtils.isEmpty(fileInfo[1])) {
             fileInfo[1] = new Regex(correctedBR, "<strong>Size:</strong>([^<>\"]+)</li>").getMatch(0);
         }
-        if (!StringUtils.isEmpty(fileInfo[0])) {
-            /* 2019-07-15: Filehost tags filenames --> Fix that */
-            final String host_tag = new Regex(fileInfo[0], Pattern.compile("(_?userupload\\.net)", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (host_tag != null) {
-                fileInfo[0] = fileInfo[0].replace(host_tag, "");
-            }
-        }
+        fileInfo[0] = removeHostNameFromFilename(fileInfo[0]);
         return fileInfo;
+    }
+
+    @Override
+    protected String getFnameViaAbuseLink(Browser br, DownloadLink link) throws Exception {
+        final String ret = super.getFnameViaAbuseLink(br, link);
+        return removeHostNameFromFilename(ret);
     }
 
     @Override

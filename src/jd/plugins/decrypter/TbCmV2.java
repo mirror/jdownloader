@@ -30,6 +30,31 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNodeVisitor;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
+import jd.plugins.hoster.YoutubeDashV2;
+import jd.utils.locale.JDL;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -76,31 +101,6 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNodeVisitor;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DecrypterRetryException;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
-import jd.plugins.hoster.YoutubeDashV2;
-import jd.utils.locale.JDL;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TbCmV2 extends PluginForDecrypt {
     private static final int DDOS_WAIT_MAX        = Application.isJared(null) ? 1000 : 10;
@@ -137,6 +137,7 @@ public class TbCmV2 extends PluginForDecrypt {
             pattern += "(";
             pattern += "embed\\?v=" + VIDEO_ID_PATTERN + ".*";
             pattern += "|watch\\?v=" + VIDEO_ID_PATTERN + ".*";
+            pattern += "|shorts/" + VIDEO_ID_PATTERN + ".*";
             pattern += "|(?:view_play_list|playlist)\\?(p|list)=.+";
             // TODO: Check if such links still exist
             pattern += "|course\\?list=.+";
