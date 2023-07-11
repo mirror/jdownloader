@@ -695,6 +695,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             singleVideo.setAvailable(true);
             retMedia.add(singleVideo);
         }
+        final ArrayList<DownloadLink> retInternal = new ArrayList<DownloadLink>();
         int itemsSkippedDueToPluginSettings = 0;
         DownloadLink text = null;
         final ArrayList<DownloadLink> retExternal = new ArrayList<DownloadLink>();
@@ -743,7 +744,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         final String originalFilename = getFilenameFromURL(directurl);
                         if (originalFilename != null) {
                             lastFoundOriginalFilename = originalFilename;
-                            break;
                         }
                     }
                 }
@@ -757,17 +757,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 text.setProperty(PROPERTY_MEDIA_INDEX, 0);
                 text.setProperty(PROPERTY_TYPE, TYPE_TEXT);
                 text.setAvailable(true);
-                retMedia.add(text);
+                retInternal.add(text);
             } else {
                 itemsSkippedDueToPluginSettings++;
             }
         }
-        /* Add remaining plugin properties */
-        final ArrayList<DownloadLink> retInternal = new ArrayList<DownloadLink>();
-        if (text != null) {
-            retInternal.add(text);
-        }
         retInternal.addAll(retMedia);
+        /* Add remaining plugin properties */
         for (final DownloadLink dl : retInternal) {
             /* Add additional properties */
             dl.setProperty(PROPERTY_USERNAME, username);
@@ -784,7 +780,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 dl.setProperty(PROPERTY_RETWEET, true);
             }
             /* Set filename which gets created based on user settings and previously set properties. */
-            setFilename(dl);
+            setFormattedFilename(dl);
         }
         final ArrayList<DownloadLink> retAll = new ArrayList<DownloadLink>();
         retAll.addAll(retInternal);
@@ -811,7 +807,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
     }
 
-    public static void setFilename(final DownloadLink link) {
+    public static void setFormattedFilename(final DownloadLink link) {
         final String legacyCrawlerFilename = link.getStringProperty("crawlerfilename");
         if (legacyCrawlerFilename != null) {
             /* Hardcoded filename has been set in crawler revision 47957 or before -> Keep that one. */
@@ -871,7 +867,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             filename = formattedDate + "_" + tweetID + "_" + originalFilenameWithoutExt + ext;
         } else if (scheme == FilenameScheme.ORIGINAL_PLUS_2 && username != null && originalFilenameWithoutExt != null) {
             filename = formattedDate + "_" + username + "_" + tweetID + "_" + originalFilenameWithoutExt + ext;
-        } else if (scheme == FilenameScheme.PLUGIN && username != null && formattedDate != null) {
+        } else if ((scheme == FilenameScheme.PLUGIN || scheme == FilenameScheme.AUTO) && username != null && formattedDate != null) {
             filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename;
             if (mediaCount > 1) {
                 filename += "_" + mediaIndex;

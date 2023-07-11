@@ -196,6 +196,7 @@ public class TwitterCom extends PluginForHost {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            TwitterComCrawler.setFormattedFilename(link);
         } else {
             prepBR(this.br);
             /* Most items will come from crawler. */
@@ -376,7 +377,7 @@ public class TwitterCom extends PluginForHost {
                         }
                     }
                 }
-                TwitterComCrawler.setFilename(link);
+                TwitterComCrawler.setFormattedFilename(link);
             } else { // TYPE_DIRECT - jpg/png/mp4
                 if (link.getPluginPatternMatcher().contains("jpg") || link.getPluginPatternMatcher().contains("png")) {
                     if (link.getPluginPatternMatcher().contains(":large")) {
