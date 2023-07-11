@@ -49,6 +49,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -330,7 +331,9 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 /* 2023-07-06: E.g. bunkr.su/v/fileID */
                 final String directurl = br.getRegex("link\\.href\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
                 final String filesize = br.getRegex("class=\"[^>]*text[^>]*\"[^>]*>\\s*([0-9\\.]+\\s+[MKG]B)").getMatch(0);
-                if (directurl != null && (directurl.matches(TYPE_MEDIA_FILES) || contentURL.matches(TYPE_SINGLE_FILE_WITHOUT_EXT))) {
+                final String fileExtensionFromURL = filesize != null ? Plugin.getFileNameExtensionFromURL(directurl) : null;
+                /* Check if URL we got looks like a direct-URL and only then add it. */
+                if (directurl != null && (directurl.matches(TYPE_MEDIA_FILES) || contentURL.matches(TYPE_SINGLE_FILE_WITHOUT_EXT) || (fileExtensionFromURL != null && fileExtensionFromURL.matches("\\." + EXTENSIONS)))) {
                     add(ret, dups, directurl, null, null, filesize);
                 }
             }
