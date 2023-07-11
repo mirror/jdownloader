@@ -111,7 +111,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "youtube.com", "youtube-nocookie.com", "yt.not.allowed", "youtube.googleapis.com" });
+        ret.add(new String[] { "youtube.com", "music.youtube.com", "youtube-nocookie.com", "yt.not.allowed", "youtube.googleapis.com" });
         return ret;
     }
 
