@@ -16,10 +16,19 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.IntegerInterface;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
 import org.appwork.utils.CounterMap;
@@ -47,13 +56,6 @@ import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
-
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
 
 public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     private AdvancedConfigTableModel model;
@@ -129,6 +131,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     protected void initPluginSettings(Plugin protoType) {
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_contains_video_and_playlist(), null, null, new ComboBox<IfUrlisAVideoAndPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsVideoAndPlaylistUrlAction", KeyHandler.class), IfUrlisAVideoAndPlaylistAction.values(), null));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_equals_playlist(), null, null, new ComboBox<IfUrlisAPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsPlaylistUrlAction", KeyHandler.class), IfUrlisAPlaylistAction.values(), null));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_PlaylistAndProfileCrawlerMaxItemsLimit(), null, null, new Spinner(cf._getStorageHandler().getKeyHandler("PlaylistAndProfileCrawlerMaxItemsLimit", IntegerKeyHandler.class)));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ProfileCrawlMode(), null, null, new ComboBox<ProfileCrawlMode>(cf._getStorageHandler().getKeyHandler("ProfileCrawlMode", KeyHandler.class), ProfileCrawlMode.values(), null));
         // TODO: Add GUI element for setting PlaylistAndProfileCrawlerMaxItemsLimit
         // VariantBase[] variants = VariantBase.values();
