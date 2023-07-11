@@ -23,11 +23,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -45,6 +40,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ImgSrcRuCrawler extends PluginForDecrypt {
@@ -287,9 +287,12 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         // first link = album uid (uaid), these uid's are not transferable to picture ids (upid). But once you are past album page
         // br.getURL() is the correct upid.
         if (br.getURL().contains("/" + id)) {
-            String currentID = br.getRegex("<img [^>]*class=(\"|'|)(?:cur|big)\\1 src=(?:'|\")?https?://[^/]*(?:imgsrc\\.ru|icdn\\.ru)/[a-z]/" + Pattern.quote(username) + "/\\d+/(\\d+)").getMatch(1);
+            String currentID = br.getRegex("<img[^>]*class=(\"|'|)(?:cur|big|prev)\\1[^>]*src=(?:'|\")?(?:https?:)?//[^/]*(?:imgsrc\\.ru|icdn\\.ru)/[a-z]/" + Pattern.quote(username) + "/\\d+/(\\d+)").getMatch(1);
             if (currentID == null) {
-                currentID = br.getRegex("/voter\\.php\\?w=(?:up|down)_(\\d+)").getMatch(0);
+                currentID = br.getRegex("<img[^>]*src=(?:'|\")?(?:https?:)?//[^/]*(?:imgsrc\\.ru|icdn\\.ru)/[a-z]/" + Pattern.quote(username) + "/\\d+/(\\d+)[^>]*class=(\"|'|)(?:cur|big|prev)\\2").getMatch(0);
+                if (currentID == null) {
+                    currentID = br.getRegex("/voter\\.php\\?w=(?:up|down|'\\+way\\+')_(\\d+)").getMatch(0);
+                }
             }
             if (currentID != null) {
                 currentID = "/" + username + "/" + currentID + ".html";
