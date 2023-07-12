@@ -120,10 +120,10 @@ public class ExpfileCom extends PluginForHost {
             /* Invalid link / file has been deleted. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<h2>文件名：([^<]+)</h2>").getMatch(0);
-        String filesize = br.getRegex("文件大小：</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
+        final String filename = br.getRegex("(?i)<h2>\\s*文件名：([^<]+)</h2>").getMatch(0);
+        String filesize = br.getRegex("(?i)文件大小：</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("文件大小：</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
+            filesize = br.getRegex("(?i)文件大小：</span><span class=\"rightnone\">([^<>]+)<").getMatch(0);
         }
         if (filename != null) {
             link.setName(Encoding.htmlDecode(filename).trim());

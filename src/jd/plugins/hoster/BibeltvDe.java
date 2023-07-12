@@ -265,6 +265,7 @@ public class BibeltvDe extends PluginForHost {
             for (final Map<String, Object> entry : ressourcelist) {
                 String type = (String) entry.get("type");
                 if (type == null) {
+                    /* 2023-07-12: They got a newline character in this json key lol */
                     type = (String) entry.get("type\\n");
                 }
                 String url = (String) entry.get("url");

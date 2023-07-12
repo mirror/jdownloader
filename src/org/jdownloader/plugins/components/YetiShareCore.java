@@ -2014,7 +2014,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             if (ai.getStatus() != null) {
                 accStatus = ai.getStatus();
             } else {
-                accStatus = account.getType().toString();
+                accStatus = account.getType().getLabel();
             }
             if (this.isNewYetiShareVersion(account)) {
                 ai.setStatus("[NewYetiShare] " + accStatus);

@@ -30,7 +30,7 @@ import jd.plugins.HostPlugin;
 public class ExtMatrixCom extends FlexShareCore {
     public ExtMatrixCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://" + this.getHost() + "/get-premium.php");
+        this.enablePremium("https://" + this.getHost() + "/premium.php");
     }
 
     public static List<String[]> getPluginDomains() {

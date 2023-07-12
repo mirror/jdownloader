@@ -296,6 +296,24 @@ public class PornportalCom extends PluginForHost {
         }
     }
 
+    private boolean isVideo(final DownloadLink link) {
+        final String videoid = link.getStringProperty(PROPERTY_VIDEO_ID);
+        if (videoid != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean isImage(final DownloadLink link) {
+        final String galleryid = link.getStringProperty(PROPERTY_GALLERY_ID);
+        if (galleryid != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -308,7 +326,12 @@ public class PornportalCom extends PluginForHost {
         String newDirecturl = null;
         try {
             con = br.openHeadConnection(dllink);
-            if (con.getResponseCode() == 403 || con.getResponseCode() == 472) {
+            /**
+             * 403 = Generic expired </br>
+             * 472 = Video-directurl expired 474 = Image directurl expired and/or any directurl is not expired but used with the wrong IP ->
+             * New one needs to be obtained.
+             */
+            if (con.getResponseCode() == 403 || con.getResponseCode() == 472 || con.getResponseCode() == 474) {
                 br.followConnection(true);
                 /* Directurl needs to be refreshed */
                 logger.info("Directurl needs to be refreshed");
@@ -338,7 +361,6 @@ public class PornportalCom extends PluginForHost {
                     }
                 }
                 if (result == null) {
-                    logger.warning("Failed to find fresh directurl --> Content offline?");
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh expired directurl --> Content offline?");
                 }
                 newDirecturl = result.getStringProperty(PROPERTY_directurl);
