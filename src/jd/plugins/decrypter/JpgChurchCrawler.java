@@ -28,6 +28,7 @@ import org.appwork.utils.parser.UrlQuery;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -90,12 +91,13 @@ public class JpgChurchCrawler extends PluginForDecrypt {
         }
         firstQuery.remove("peek");
         firstQuery.remove("seek");
-        final String contentURLCleaned;
+        String contentURLCleaned;
         if (firstQuery.toString().length() > 0) {
             contentURLCleaned = URLHelper.getUrlWithoutParams(param.getCryptedUrl()) + "?" + firstQuery.toString();
         } else {
             contentURLCleaned = URLHelper.getUrlWithoutParams(param.getCryptedUrl());
         }
+        contentURLCleaned = contentURLCleaned.replaceFirst("(?i)/embeds/?$", "");
         br.getPage(contentURLCleaned);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -208,9 +210,8 @@ public class JpgChurchCrawler extends PluginForDecrypt {
                     link._setFilePackage(fp);
                 }
                 if (passCode != null) {
-                    link.setPasswordProtected(true);
-                    link.setDownloadPassword(passCode);
-                    link.setProperty(JpgChurch.PROPERTY_PHPSESSID, br.getCookie(br.getHost(), "PHPSESSID"));
+                    link.setDownloadPassword(passCode, true);
+                    link.setProperty(JpgChurch.PROPERTY_PHPSESSID, br.getCookie(br.getHost(), "PHPSESSID", Cookies.NOTDELETEDPATTERN));
                 }
                 distribute(link);
                 ret.add(link);

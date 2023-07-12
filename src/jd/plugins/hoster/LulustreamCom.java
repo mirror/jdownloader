@@ -15,12 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -40,6 +44,9 @@ public class LulustreamCom extends XFileSharingProBasic {
      * captchatype-info: 2023-06-20: null <br />
      * other:<br />
      */
+    private static final String TYPE_STREAM   = "(?i)https?://[^/]+/e/.+";
+    private static final String TYPE_DOWNLOAD = "(?i)https?://[^/]+/d/.+";
+
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
@@ -58,6 +65,16 @@ public class LulustreamCom extends XFileSharingProBasic {
 
     public static String[] getAnnotationUrls() {
         return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    protected String getContentURL(final DownloadLink link) {
+        final String linkpart = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0);
+        if (linkpart != null) {
+            return getMainPage(link) + "/" + linkpart;
+        } else {
+            return super.getContentURL(link);
+        }
     }
 
     @Override
@@ -103,5 +120,64 @@ public class LulustreamCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected boolean supportsShortURLs() {
+        return false;
+    }
+
+    @Override
+    protected boolean isVideohoster_enforce_video_filename() {
+        /* 2020-08-31: Special */
+        return true;
+    }
+
+    @Override
+    public String getFUIDFromURL(final DownloadLink dl) {
+        try {
+            final String url = dl.getPluginPatternMatcher();
+            if (url != null) {
+                final String result = new Regex(new URL(url).getPath(), "([a-z0-9]+)$").getMatch(0);
+                return result;
+            }
+        } catch (MalformedURLException e) {
+            logger.log(e);
+        }
+        return null;
+    }
+
+    @Override
+    public String getFilenameFromURL(final DownloadLink dl) {
+        return null;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_alt_fast() {
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filename_abuse() {
+        return false;
+    }
+
+    @Override
+    protected boolean isShortURL(DownloadLink link) {
+        return false;
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
+        if (br.containsHTML(">\\s*Oops! Page Not Found|>\\s*Sorry, the page you're looking for doesn't exist")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

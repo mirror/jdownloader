@@ -37,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hostuje.net" }, urls = { "http://[\\w\\.]*?hostuje\\.net/file\\.php\\?id=[a-zA-Z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hostuje.net" }, urls = { "https?://[\\w\\.]*?hostuje\\.net/file\\.php\\?id=([a-zA-Z0-9]+)" })
 public class HostUjeNet extends PluginForHost {
     public HostUjeNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,29 +53,45 @@ public class HostUjeNet extends PluginForHost {
         return -1;
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     private static AtomicReference<String> userAgent = new AtomicReference<String>();
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
-        br = new Browser();
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException, IOException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
         if (userAgent.get() == null) {
             userAgent.set(UserAgents.stringUserAgent());
         }
         br.getHeaders().put("User-Agent", userAgent.get());
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Podany plik nie został odnaleziony|>Podany plik został skasowany z powodu naruszania praw autorskich")) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*Podany plik nie został odnaleziony|>Podany plik został skasowany z powodu naruszania praw autorskich|404 Nie odnaleziono pliku")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("name=\"name\" value=\"([^<>\"]*?)\"").getMatch(0);
         final String filesize = br.getRegex("<b>\\s*Rozmiar\\s*:\\s*</b>\\s*([^<>\"]*?)\\s*<br>").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
-        downloadLink.setName(Encoding.htmlDecode(filename).trim());
         if (filesize != null) {
-            downloadLink.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize)));
+            link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize)));
         }
         return AvailableStatus.TRUE;
     }
@@ -180,6 +196,10 @@ public class HostUjeNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
@@ -213,6 +233,7 @@ public class HostUjeNet extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return true;
     }

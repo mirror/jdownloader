@@ -402,7 +402,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             br.getPage("https://api.twitter.com/1.1/statuses/show/" + tweetID + ".json?cards_platform=Web-12&include_reply_count=1&include_cards=1&include_user_entities=0&tweet_mode=extended");
             try {
                 handleErrorsAPI(this.br);
-                final Map<String, Object> tweet = restoreFromString(br.toString(), TypeRef.MAP);
+                final Map<String, Object> tweet = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 return crawlTweetMap(tweet);
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"code\"\\s*:\\s*34")) {
@@ -417,7 +417,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         br.getPage(API_BASE_v2 + "/timeline/conversation/" + tweetID + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
         handleErrorsAPI(this.br);
-        final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         final Map<String, Object> tweet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "globalObjects/tweets/" + tweetID);
         if (tweet == null) {
             if (looksLikeOfflineError34) {
@@ -934,7 +934,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         this.prepareAPI(br, account);
         final Map<String, Object> user = this.getUserInfo(br, account, username);
-        final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
+        final List<String> pinned_tweet_ids_str = (List<String>) user.get("pinned_tweet_ids_str");
         final String userID = user.get("id_str").toString();
         /* = number of tweets */
         final int tweet_count = ((Number) user.get("statuses_count")).intValue();
@@ -1026,6 +1026,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             totalCrawledTweetsCount = this.preGivenNumberOfTotalWalkedThroughTweetsCount.intValue();
             nextCursor = this.preGivenNextCursor;
         }
+        final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
         final HashSet<String> cursorDupes = new HashSet<String>();
         final String apiURL = API_BASE_v2 + "/timeline/" + content_type + "/" + userID + ".json";
         tweetTimeline: do {
@@ -1035,7 +1036,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
             br.getPage(apiURL + "?" + thisquery.toString());
             handleErrorsAPI(this.br);
-            final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
             final Map<String, Object> globalObjects = (Map<String, Object>) root.get("globalObjects");
             final Map<String, Object> users = (Map<String, Object>) globalObjects.get("users");
             final List<Object> pagination_info = (List<Object>) JavaScriptEngineFactory.walkJson(root, "timeline/instructions/{0}/addEntries/entries");
@@ -1049,11 +1050,17 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 final Map<String, Object> tweet = (Map<String, Object>) iterator.next().getValue();
                 final Map<String, Object> userWhoPostedThisTweet = (Map<String, Object>) users.get(tweet.get("user_id_str").toString());
                 final List<DownloadLink> results = crawlTweetMap(tweet, userWhoPostedThisTweet, fp);
-                /* Count tweet as crawled either way. */
+                /* Count tweet as crawled either way. If our array of results is empty this is due to the users' settings. */
                 totalCrawledTweetsCount++;
                 if (results.size() > 0) {
                     ret.addAll(results);
-                    lastCrawledTweetTimestamp = ret.get(ret.size() - 1).getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+                    for (final DownloadLink thisTweetResult : results) {
+                        /* Find timestamp of last added result. Ignore pinned tweets. */
+                        final String tweetID = thisTweetResult.getStringProperty(PROPERTY_TWEET_ID);
+                        if (pinned_tweet_ids_str == null || (tweetID != null && !pinned_tweet_ids_str.contains(tweetID))) {
+                            lastCrawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+                        }
+                    }
                 } else {
                     /* E.g. tweet only consists of text and used has disabled crawling tweet texts. */
                     logger.info("Found nothing for tweet: " + tweet);
@@ -1153,7 +1160,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
         if (queryID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String userID = this.getUserID(br, account, username);
+        final Map<String, Object> user = getUserInfo(br, account, username);
+        final List<String> pinned_tweet_ids_str = (List<String>) user.get("pinned_tweet_ids_str");
+        final String userID = user.get("id_str").toString();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
         final HashSet<String> cursorDupes = new HashSet<String>();
@@ -1187,7 +1196,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             query.add("variables", Encoding.urlEncode(JSonStorage.serializeToJson(variables)));
             query.add("features", "%7B%22dont_mention_me_view_api_enabled%22%3Atrue%2C%22interactive_text_enabled%22%3Atrue%2C%22responsive_web_uc_gql_enabled%22%3Atrue%2C%22vibe_api_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Afalse%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D");
             br.getPage(API_BASE_GRAPHQL + "/" + queryID + "/UserTweets?" + query.toString());
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/user/result/timeline_v2/timeline/instructions");
             final int totalCrawledTweetsCountOld = totalCrawledTweetsCount;
             boolean reachedUserDefinedMaxItemsLimit = false;
@@ -1200,6 +1209,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 for (final Map<String, Object> timelineEntry : timelineEntries) {
                     final Map<String, Object> content = (Map<String, Object>) timelineEntry.get("content");
                     final String contentType = (String) content.get("entryType");
+                    Long lastCrawledTweetTimestamp = null;
                     if (contentType.equalsIgnoreCase("TimelineTimelineCursor")) {
                         if (content.get("cursorType").toString().equalsIgnoreCase("Bottom")) {
                             nextCursor = content.get("value").toString();
@@ -1218,7 +1228,15 @@ public class TwitterComCrawler extends PluginForDecrypt {
                             if (tweet == null) {
                                 continue;
                             }
-                            ret.addAll(crawlTweetMap(tweet, usr, fp));
+                            final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(tweet, usr, fp);
+                            for (final DownloadLink thisTweetResult : thisTweetResults) {
+                                /* Find timestamp of last added result. Ignore pinned tweets. */
+                                final String tweetID = thisTweetResult.getStringProperty(PROPERTY_TWEET_ID);
+                                if (pinned_tweet_ids_str == null || (tweetID != null && !pinned_tweet_ids_str.contains(tweetID))) {
+                                    lastCrawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+                                }
+                            }
+                            ret.addAll(thisTweetResults);
                             totalCrawledTweetsCount++;
                         } else if (typename.equalsIgnoreCase("TweetTombstone")) {
                             /* TODO: Check if this handling is working */
@@ -1236,10 +1254,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
                             logger.info("Skipping unsupported __typename: " + typename);
                             continue;
                         }
-                    }
-                    Long lastCrawledTweetTimestamp = null;
-                    if (ret.size() > 0) {
-                        lastCrawledTweetTimestamp = ret.get(ret.size() - 1).getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
                     }
                     if (this.maxTweetsToCrawl != null && totalCrawledTweetsCount >= this.maxTweetsToCrawl.intValue()) {
                         reachedUserDefinedMaxItemsLimit = true;
@@ -1300,7 +1314,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 /* {"errors":[{"code":17,"message":"No user matches for specified terms."}]} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Object responseO = restoreFromString(br.toString(), TypeRef.OBJECT);
+            final Object responseO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
             if (!(responseO instanceof List)) {
                 logger.warning("Unknown API error/response");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1309,16 +1323,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
             user = users.get(0);
         } else {
             br.getPage("https://api.twitter.com/graphql/DO_NOT_USE_ATM_2020_02_05/UserByScreenName?variables=%7B%22screen_name%22%3A%22" + username + "%22%2C%22withHighlightedLabel%22%3Afalse%7D");
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
             user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user");
             // userID = (String) user.get("rest_id");
         }
         return user;
-    }
-
-    private String getUserID(final Browser br, final Account account, final String username) throws Exception {
-        final Map<String, Object> user = getUserInfo(br, account, username);
-        return user.get("id_str").toString();
     }
 
     private final String PROPERTY_RESUME_URL = "twitterResumeURL";
@@ -1356,10 +1365,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
      * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br>
      * Scroll down to "Twitter API error codes"
      */
-    private void handleErrorsAPI(final Browser br) throws Exception {
+    private Map<String, Object> handleErrorsAPI(final Browser br) throws Exception {
         Map<String, Object> entries = null;
         try {
-            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         } catch (final Exception e) {
             /* Check for some pure http error-responsecodes. */
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -1403,6 +1412,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 }
             }
         }
+        return entries;
     }
 
     protected void getPage(final Browser br, final String url) throws Exception {

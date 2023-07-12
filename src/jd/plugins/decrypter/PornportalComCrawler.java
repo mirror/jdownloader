@@ -37,7 +37,6 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -176,7 +175,6 @@ public class PornportalComCrawler extends PluginForDecrypt {
             videoObjects.addAll(children);
         }
         final String host = this.getHost();
-        final boolean isPremium = account != null && account.getType() == AccountType.PREMIUM;
         final HashMap<String, DownloadLink> foundTrailers = new HashMap<String, DownloadLink>();
         final HashMap<String, DownloadLink> foundQualities = new HashMap<String, DownloadLink>();
         for (final Map<String, Object> clipInfo : videoObjects) {

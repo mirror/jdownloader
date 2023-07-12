@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
@@ -175,87 +176,82 @@ public abstract class FlexShareCore extends antiDDoSForHost {
         if (account != null) {
             this.login(account, null, false);
         }
-        getPage(getContentURL(link));
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*The file you have requested does not exist")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final URLConnectionAdapter con = br.openGetConnection(this.getContentURL(link));
+        if (this.looksLikeDownloadableContent(con)) {
+            /* Directurl */
+            link.setFinalFileName(Plugin.getFileNameFromHeader(con));
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+            }
+        } else {
+            br.followConnection();
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*The file you have requested does not exist")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Regex fileInfo = br.getRegex("style=\"text-align:(center|left|right);\">(Premium Only\\!)?([^\"<>]+) \\(([0-9\\.]+ [A-Za-z]+)(\\))?(,[^<>\"/]+)?</h1>");
+            String filename = fileInfo.getMatch(2);
+            String filesize = fileInfo.getMatch(3);
+            if (filename == null || filesize == null) {
+                handleErrors(link, null);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // Set final filename here because hoster taggs files
+            link.setFinalFileName(filename.trim());
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        final Regex fileInfo = br.getRegex("style=\"text-align:(center|left|right);\">(Premium Only\\!)?([^\"<>]+) \\(([0-9\\.]+ [A-Za-z]+)(\\))?(,[^<>\"/]+)?</h1>");
-        String filename = fileInfo.getMatch(2);
-        String filesize = fileInfo.getMatch(3);
-        if (filename == null || filesize == null) {
-            handleErrors(link, null);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // Set final filename here because hoster taggs files
-        link.setFinalFileName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        handleFreeDownloads(link, null);
+        handleDownload(link, null);
     }
 
-    protected void handleFreeDownloads(final DownloadLink link, Account account) throws Exception, PluginException {
-        /** 2019-10-02: TODO: Add handling to re-use generated directurls */
-        requestFileInformationWebsite(link, null);
-        final String getLink = getLink();
-        if (getLink == null) {
-            handleErrors(link, account);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // waittime
-        final String waitStr = br.getRegex("var time\\s*=\\s*(\\d+);").getMatch(0);
-        if (waitStr != null) {
-            final int wait = Integer.parseInt(waitStr);
-            if (wait > 240) {
-                // 10 Minutes reconnect-waittime is not enough, let's wait one
-                // hour
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-            }
-            // Short pre-download-waittime can be skipped
-            // sleep(tt * 1001l, downloadLink);
-        }
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(getLink);
-            if (!this.looksLikeDownloadableContent(con)) {
-                br.followConnection();
-                /* 2019-10-02: Tested with filepup.net, they do not have a download captcha! */
-                final String action = getLink();
-                Form dlform = br.getFormbyProperty("name", "pipi");
-                if (dlform == null) {
-                    /* 2020-12-07: extmatrix.com */
-                    dlform = br.getFormByInputFieldKeyValue("task", "download");
-                }
-                if (dlform == null || action == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (dlform.getAction() == null) {
-                    dlform.setAction(action);
-                }
-                if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(dlform)) {
-                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
-                    final String recaptchaV2Response = rc2.getToken();
-                    dlform.put("g-recaptcha-response", recaptchaV2Response);
-                }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, isResumeable(link, account), getMaxChunks(account));
-            } else {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, isResumeable(link, account), getMaxChunks(account));
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+    protected void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        requestFileInformationWebsite(link, account);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.getContentURL(link), isResumeable(link, account), this.getMaxChunks(account));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            logger.warning("The final dllink seems not to be a file!");
             br.followConnection(true);
-            handleGeneralServerErrors(dl.getConnection());
-            handleErrors(link, account);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String getLink = br.getRegex("<a\\s*id\\s*=\\s*'jd_support'\\s*href\\s*=\\s*\"(https?://[^<>\"\\']*?)\"").getMatch(0);
+            if (getLink == null) {
+                getLink = findFreeGetLink(br);
+            }
+            Form dlform = br.getFormbyProperty("name", "pipi");
+            if (dlform == null) {
+                /* 2020-12-07: extmatrix.com */
+                dlform = br.getFormByInputFieldKeyValue("task", "download");
+            }
+            if (dlform == null && getLink == null) {
+                handleErrors(link, account);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* Pre download wait */
+            final String waitStr = br.getRegex("var time\\s*=\\s*(\\d+);").getMatch(0);
+            if (waitStr != null) {
+                final int wait = Integer.parseInt(waitStr);
+                if (wait > 240) {
+                    /* 10 Minutes reconnect-waittime is not enough, let's wait one hour */
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+                }
+                // Short pre-download-waittime can be skipped
+                final boolean skipShortPreDownloadWaittime = true;
+                if (!skipShortPreDownloadWaittime) {
+                    sleep(wait * 1001l, link);
+                }
+            }
+            if (dlform != null) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, isResumeable(link, account), this.getMaxChunks(account));
+            } else {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download", isResumeable(link, account), this.getMaxChunks(account));
+            }
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection(true);
+                handleGeneralServerErrors(dl.getConnection());
+                handleErrors(link, account);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }
@@ -424,6 +420,13 @@ public abstract class FlexShareCore extends antiDDoSForHost {
                         ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntilDateStr, "yyyy-MM-dd", Locale.ENGLISH));
                     }
                 }
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    if (br.containsHTML("(?i)direct=0")) {
+                        ai.setStatus(account.getType().getLabel() + " | Direct Downloads: Enabled");
+                    } else {
+                        ai.setStatus(account.getType().getLabel() + " | Direct Downloads: Disabled");
+                    }
+                }
             } else {
                 account.setType(AccountType.FREE);
                 account.setConcurrentUsePossible(false);
@@ -441,40 +444,13 @@ public abstract class FlexShareCore extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account);
-        if (AccountType.FREE.equals(account.getType())) {
-            handleFreeDownloads(link, account);
-        } else {
-            String getLink = br.getRedirectLocation();
-            if (getLink != null && getLink.matches("(?i)https?://(?:www\\.)?" + Pattern.quote(this.getHost()) + "/get/.*?")) {
-                getPage(getLink);
-                getLink = br.getRedirectLocation();
-            }
-            if (getLink == null) {
-                getLink = br.getRegex("<a\\s*id\\s*=\\s*'jd_support'\\s*href\\s*=\\s*\"(https?://[^<>\"]*?)\"").getMatch(0);
-            }
-            if (getLink == null) {
-                getLink = getLink();
-            }
-            if (getLink == null) {
-                handleErrors(link, account);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download", isResumeable(link, account), this.getMaxChunks(account));
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection(true);
-                handleGeneralServerErrors(dl.getConnection());
-                handleErrors(link, account);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
-        }
+        this.handleDownload(link, account);
     }
 
-    private String getLink() {
+    private String findFreeGetLink(final Browser br) {
         String getLink = br.getRegex("disabled\\s*=\\s*\"disabled\"\\s*onclick\\s*=\\s*\"document\\.location\\s*=\\s*'(https?.*?)';\"").getMatch(0);
         if (getLink == null) {
-            getLink = br.getRegex("('|\")(" + "https?://(www\\.)?([a-z0-9]+\\.)?" + Pattern.quote(this.getHost()) + "/get/[A-Za-z0-9]+/\\d+/[^<>\"/]+)\\1").getMatch(1);
+            getLink = br.getRegex("('|\")(" + "https?://(?:www\\.)?([a-z0-9]+\\.)?" + Pattern.quote(br.getHost()) + "/get/[A-Za-z0-9]+/\\d+/[^<>\"/]+)\\1").getMatch(1);
         }
         return getLink;
     }

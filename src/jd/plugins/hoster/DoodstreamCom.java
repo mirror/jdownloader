@@ -69,8 +69,8 @@ public class DoodstreamCom extends XFileSharingProBasic {
      * captchatype-info: 2020-08-31: null<br />
      * other:<br />
      */
-    private static final String TYPE_STREAM   = "https?://[^/]+/e/.+";
-    private static final String TYPE_DOWNLOAD = "https?://[^/]+/d/.+";
+    private static final String TYPE_STREAM   = "(?i)https?://[^/]+/e/.+";
+    private static final String TYPE_DOWNLOAD = "(?i)https?://[^/]+/d/.+";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -448,7 +448,6 @@ public class DoodstreamCom extends XFileSharingProBasic {
 
     @Override
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean downloadsStarted) throws Exception {
-        correctDownloadLink(link);
         /* First, set fallback-filename */
         if (!link.isNameSet()) {
             setWeakFilename(link, br);

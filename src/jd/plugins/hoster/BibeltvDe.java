@@ -254,7 +254,6 @@ public class BibeltvDe extends PluginForHost {
         br2.getHeaders().put("Authorization", key);
         br2.getPage("/mediathek/api/video/" + internalID);
         entries = JavaScriptEngineFactory.jsonToJavaMap(br2.getRequest().getHtmlCode());
-        int numberOfStreams = 0;
         try {
             /* 2019-12-18: They provide HLS, DASH and http(highest quality only) */
             final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "video/videoUrls");
@@ -262,10 +261,12 @@ public class BibeltvDe extends PluginForHost {
                 /* Most likely video is not available anymore because current date is > date value in field "schedulingEnd". */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            numberOfStreams = ressourcelist.size();
             long max_width = -1;
             for (final Map<String, Object> entry : ressourcelist) {
-                final String type = (String) entry.get("type");
+                String type = (String) entry.get("type");
+                if (type == null) {
+                    type = (String) entry.get("type\\n");
+                }
                 String url = (String) entry.get("url");
                 if (url == null) {
                     url = (String) entry.get("src");

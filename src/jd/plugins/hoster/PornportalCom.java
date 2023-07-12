@@ -352,23 +352,22 @@ public class PornportalCom extends PluginForHost {
             if (con.getResponseCode() == 404) {
                 br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (this.looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setDownloadSize(con.getCompleteContentLength());
-                }
-                /*
-                 * 2020-04-08: Final filename is supposed to be set in crawler. Their internal filenames are always the same e.g.
-                 * "scene_320p.mp4".
-                 */
-                // link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-                if (newDirecturl != null) {
-                    /* Only set new directurl if it is working. Keep old one until then! */
-                    logger.info("Successfully checked new directurl and set property");
-                    link.setProperty(PROPERTY_directurl, newDirecturl);
-                }
-            } else {
+            } else if (!this.looksLikeDownloadableContent(con)) {
                 br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl did not lead to downloadable content");
+            }
+            if (con.getCompleteContentLength() > 0) {
+                link.setDownloadSize(con.getCompleteContentLength());
+            }
+            /*
+             * 2020-04-08: Final filename is supposed to be set in crawler. Their internal filenames are always the same e.g.
+             * "scene_320p.mp4".
+             */
+            // link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+            if (newDirecturl != null) {
+                /* Only set new directurl if it is working. Keep old one until then! */
+                logger.info("Successfully checked new directurl and set property");
+                link.setProperty(PROPERTY_directurl, newDirecturl);
             }
         } finally {
             try {
