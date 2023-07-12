@@ -70,7 +70,7 @@ public class EasyuploadIoFolder extends PluginForDecrypt {
         final String[] fileids = br.getRegex("data-url=\"([a-z0-9]+)\"").getColumn(0);
         final String[] filenames = br.getRegex("class=\"col s5 left-align valign-wrapper\"><p>([^<]+)</p>").getColumn(0);
         final String[] filesizes = br.getRegex("<div class=\"col s3 left-align valign-wrapper\"><p>([^<]+)<").getColumn(0);
-        if (fileids != null && filenames != null && filesizes != null && (fileids.length == filenames.length && fileids.length == filesizes.length)) {
+        if (fileids != null && filenames != null && filesizes != null && fileids.length > 0 && (fileids.length == filenames.length && fileids.length == filesizes.length)) {
             for (int i = 0; i < fileids.length; i++) {
                 final String fileid = fileids[i];
                 final String filename = filenames[i];

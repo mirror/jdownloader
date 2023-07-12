@@ -170,11 +170,11 @@ public class EasyuploadIo extends PluginForHost {
             if (link.isPasswordProtected()) {
                 link.setDownloadPassword(passCode);
             }
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            dllink = entries.get("download_link").toString();
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+            /* 2023-07-12: This can be null. */
+            dllink = (String) entries.get("download_link");
             if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "No downloadlink available -> Broken file?");
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
@@ -191,6 +191,7 @@ public class EasyuploadIo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        dl.setFilenameFix(true);
         link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
