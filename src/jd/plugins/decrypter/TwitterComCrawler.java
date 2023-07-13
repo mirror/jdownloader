@@ -291,7 +291,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
         final SingleTweetCrawlerMode mode = cfg.getSingleTweetCrawlerCrawlMode();
-        if (mode == SingleTweetCrawlerMode.NEW_API) {
+        if (mode == SingleTweetCrawlerMode.NEW_API || mode == SingleTweetCrawlerMode.AUTO) {
             return crawlSingleTweetViaGraphqlAPI(account, tweetID);
         } else {
             /* Old API/Auto mode */
@@ -393,6 +393,12 @@ public class TwitterComCrawler extends PluginForDecrypt {
         return ret;
     }
 
+    @Deprecated
+    /**
+     * 2023-07-13: Looks like twitter has disabled this API(?) </br>
+     * It e.g. returns: {"errors":[{"code":179,"message":"Sorry, you are not authorized to see this status."}]} ...even though user has the
+     * rights to view that tweet.
+     */
     private ArrayList<DownloadLink> crawlSingleTweetViaOldAPI(final Account account, final String tweetID) throws Exception {
         logger.info("Crawling Tweet via old API");
         prepareAPI(this.br, account);

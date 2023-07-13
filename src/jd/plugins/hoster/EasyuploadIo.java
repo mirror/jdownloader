@@ -162,7 +162,7 @@ public class EasyuploadIo extends PluginForHost {
                 query.add("captchatoken", Encoding.urlEncode(recaptchaV2Response));
             }
             br.postPage(action, query);
-            if (br.containsHTML("Invalid file password")) {
+            if (br.containsHTML("(?i)Invalid file password")) {
                 /* {"status":false,"data":"Invalid file password"} */
                 link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
@@ -171,7 +171,7 @@ public class EasyuploadIo extends PluginForHost {
                 link.setDownloadPassword(passCode);
             }
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-            /* 2023-07-12: This can be null. */
+            /* 2023-07-12: This can be null. Should be a super rare case. */
             dllink = (String) entries.get("download_link");
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "No downloadlink available -> Broken file?");
