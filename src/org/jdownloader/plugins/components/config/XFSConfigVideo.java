@@ -8,7 +8,7 @@ import org.jdownloader.plugins.config.Order;
 
 public interface XFSConfigVideo extends XFSConfig {
     final String                    text_PreferredStreamQuality   = "Preferred stream download quality";
-    final String                    text_PreferredDownloadQuality = "Preferred download quality";
+    final String                    text_PreferredDownloadQuality = "Preferred original download quality";
     final String                    text_PreferredDownloadMode    = "Preferred download mode";
     public static final TRANSLATION TRANSLATION                   = new TRANSLATION();
 
@@ -112,13 +112,13 @@ public interface XFSConfigVideo extends XFSConfig {
         ORIGINAL {
             @Override
             public String getLabel() {
-                return "Prefer original";
+                return "Prefer official file download";
             }
         },
         STREAM {
             @Override
             public String getLabel() {
-                return "Prefer stream";
+                return "Prefer stream download";
             }
         };
     }

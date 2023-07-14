@@ -33,7 +33,7 @@ public class GoFileIoCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Browser brc = br.cloneBrowser();
-        final String token = jd.plugins.hoster.GofileIo.getToken(this, brc);
+        final String token = GofileIo.getToken(this, brc);
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final UrlQuery query = new UrlQuery();
         query.add("contentId", folderID);
@@ -83,6 +83,7 @@ public class GoFileIoCrawler extends PluginForDecrypt {
             /* E.g. {"status":"error-notFound","data":{}} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final GofileIo hosterplugin = (GofileIo) this.getNewPluginForHostInstance(this.getHost());
         final Map<String, Object> data = (Map<String, Object>) response.get("data");
         final String currentFolderName = (String) data.get("name");
         String path = this.getAdoptedCloudFolderStructure();
@@ -101,7 +102,8 @@ public class GoFileIoCrawler extends PluginForDecrypt {
             final String type = (String) entry.get("type");
             if (type.equals("file")) {
                 final String fileID = item.getKey();
-                final DownloadLink file = createDownloadlink("https://" + this.getHost() + "/?c=" + folderID + "#file=" + fileID);
+                final String url = "https://" + this.getHost() + "/?c=" + folderID + "#file=" + fileID;
+                final DownloadLink file = new DownloadLink(hosterplugin, null, this.getHost(), url, true);
                 GofileIo.parseFileInfo(file, entry);
                 file.setAvailable(true);
                 if (passCode != null) {

@@ -51,7 +51,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:\\?c=|d/)[A-Za-z0-9]+(?:#file=[a-f0-9]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "" })
 public class GofileIo extends PluginForHost {
     public GofileIo(PluginWrapper wrapper) {
         super(wrapper);
@@ -233,7 +233,7 @@ public class GofileIo extends PluginForHost {
                 if (internalFileID != null && id.toString().equals(internalFileID)) {
                     result = map;
                     break;
-                } else if (id.startsWith(shortFileID)) {
+                } else if (shortFileID != null && id.startsWith(shortFileID)) {
                     resultByShortFileID = map;
                 }
             }

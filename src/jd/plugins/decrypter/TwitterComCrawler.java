@@ -1058,14 +1058,14 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final Map<String, Object> tweetMap = (Map<String, Object>) globalObjects.get("tweets");
             final Iterator<Entry<String, Object>> iterator = tweetMap.entrySet().iterator();
             String lastCreatedAtDateStr = null;
-            boolean reachedUserDefinedMaxItemsLimit = false;
-            boolean reachedUserDefinedMaxDate = false;
+            boolean stopBecauseReachedUserDefinedMaxItemsLimit = false;
+            boolean stopBecauseReachedUserDefinedMaxDate = false;
             Long lastCrawledTweetTimestamp = null;
             tweetItemsLoop: while (iterator.hasNext()) {
                 final Map<String, Object> tweet = (Map<String, Object>) iterator.next().getValue();
                 final Map<String, Object> userWhoPostedThisTweet = (Map<String, Object>) users.get(tweet.get("user_id_str").toString());
                 final List<DownloadLink> results = crawlTweetMap(tweet, userWhoPostedThisTweet, fp);
-                /* Count tweet as crawled either way. If our array of results is empty this is due to the users' settings. */
+                /* Count Tweet as crawled either way. If our array of results is empty this is due to the users' settings. */
                 totalCrawledTweetsCount++;
                 if (results.size() > 0) {
                     ret.addAll(results);
@@ -1086,19 +1086,19 @@ public class TwitterComCrawler extends PluginForDecrypt {
                  * important log statement that comes next to this loop!
                  */
                 if (this.maxTweetsToCrawl != null && totalCrawledTweetsCount >= this.maxTweetsToCrawl.intValue()) {
-                    reachedUserDefinedMaxItemsLimit = true;
+                    stopBecauseReachedUserDefinedMaxItemsLimit = true;
                     break tweetItemsLoop;
                 } else if (this.crawlUntilTimestamp != null && lastCrawledTweetTimestamp != null && lastCrawledTweetTimestamp < crawlUntilTimestamp) {
-                    reachedUserDefinedMaxDate = true;
+                    stopBecauseReachedUserDefinedMaxDate = true;
                     break tweetItemsLoop;
                 }
             }
             logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | lastCreatedAtDateStr = " + lastCreatedAtDateStr + " | last nextCursor = " + nextCursor);
             /* Check abort conditions */
-            if (reachedUserDefinedMaxItemsLimit) {
+            if (stopBecauseReachedUserDefinedMaxItemsLimit) {
                 logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl + " | Actually crawled: " + totalCrawledTweetsCount);
                 break tweetTimeline;
-            } else if (reachedUserDefinedMaxDate) {
+            } else if (stopBecauseReachedUserDefinedMaxDate) {
                 logger.info("Stopping because: Last item age is older than user defined max age " + this.maxTweetDateStr);
                 break tweetTimeline;
             } else if (tweetMap.isEmpty()) {
@@ -1214,8 +1214,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/user/result/timeline_v2/timeline/instructions");
             final int totalCrawledTweetsCountOld = totalCrawledTweetsCount;
-            boolean reachedUserDefinedMaxItemsLimit = false;
-            boolean reachedUserDefinedMaxDate = false;
+            boolean stopBecauseReachedUserDefinedMaxItemsLimit = false;
+            boolean stopBecauseReachedUserDefinedMaxDate = false;
             timelineInstructionsLoop: for (final Map<String, Object> timelineInstruction : timelineInstructions) {
                 if (!timelineInstruction.get("type").toString().equalsIgnoreCase("TimelineAddEntries")) {
                     continue;
@@ -1271,10 +1271,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         }
                     }
                     if (this.maxTweetsToCrawl != null && totalCrawledTweetsCount >= this.maxTweetsToCrawl.intValue()) {
-                        reachedUserDefinedMaxItemsLimit = true;
+                        stopBecauseReachedUserDefinedMaxItemsLimit = true;
                         break timelineInstructionsLoop;
                     } else if (this.crawlUntilTimestamp != null && lastCrawledTweetTimestamp != null && lastCrawledTweetTimestamp < crawlUntilTimestamp) {
-                        reachedUserDefinedMaxDate = true;
+                        stopBecauseReachedUserDefinedMaxDate = true;
                         break timelineInstructionsLoop;
                     }
                 }
@@ -1294,10 +1294,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
             } else if (!cursorDupes.add(nextCursor)) {
                 logger.info("Stopping because: nextCursor value for next page has already been crawled -> Reached end?");
                 break;
-            } else if (reachedUserDefinedMaxItemsLimit) {
+            } else if (stopBecauseReachedUserDefinedMaxItemsLimit) {
                 logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl + " | Actually crawled: " + totalCrawledTweetsCount);
                 break;
-            } else if (reachedUserDefinedMaxDate) {
+            } else if (stopBecauseReachedUserDefinedMaxDate) {
                 logger.info("Stopping because: Last item age is older than user defined max age " + this.maxTweetDateStr);
                 break;
             } else {
