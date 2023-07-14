@@ -18,6 +18,15 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.translate._JDT;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -28,6 +37,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -35,15 +45,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.translate._JDT;
+import jd.plugins.decrypter.JulesjordanComDecrypter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "julesjordan.com" }, urls = { "https?://dl\\d+\\.julesjordan\\.com/dl/.+|https?://(?:www\\.)?julesjordan\\.com/(?:trial|members)/(?:movies|scenes)/[^/]+\\.html" })
 public class JulesjordanCom extends antiDDoSForHost {
@@ -60,11 +62,10 @@ public class JulesjordanCom extends antiDDoSForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = 0;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final int     FREE_MAXDOWNLOADS            = -1;
     private final boolean        ACCOUNT_PREMIUM_RESUME       = true;
     private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    public static final String   html_loggedin                = "members/logout";
+    private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
     private String               dllink                       = null;
     private boolean              server_issues                = false;
 
@@ -73,7 +74,6 @@ public class JulesjordanCom extends antiDDoSForHost {
         return br;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this);
@@ -87,7 +87,7 @@ public class JulesjordanCom extends antiDDoSForHost {
         if (isTrailerURL(link.getPluginPatternMatcher())) {
             /* Trailer download */
             getPage(getURLFree(link.getPluginPatternMatcher()));
-            if (jd.plugins.decrypter.JulesjordanComDecrypter.isOffline(this.br)) {
+            if (JulesjordanComDecrypter.isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             long width_max = 0;
@@ -152,10 +152,10 @@ public class JulesjordanCom extends antiDDoSForHost {
                     }
                     br.getPage(mainlink);
                     /* Check if content has been removed in the meanwhile. */
-                    if (jd.plugins.decrypter.JulesjordanComDecrypter.isOffline(this.br)) {
+                    if (JulesjordanComDecrypter.isOffline(this.br)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    final HashMap<String, String> allQualities = jd.plugins.decrypter.JulesjordanComDecrypter.findAllQualities(this.br);
+                    final HashMap<String, String> allQualities = JulesjordanComDecrypter.findAllQualities(this.br);
                     dllink = allQualities.get(quality);
                     if (StringUtils.isEmpty(dllink)) {
                         logger.warning("Failed to refresh directurl");
@@ -256,9 +256,9 @@ public class JulesjordanCom extends antiDDoSForHost {
                         return;
                     } else {
                         br.getPage("https://www." + account.getHoster() + "/members/index.php");
-                        if (br.containsHTML(html_loggedin)) {
+                        if (isLoggedin(br)) {
                             logger.info("Cookie login successful");
-                            account.saveCookies(br.getCookies(account.getHoster()), "");
+                            account.saveCookies(br.getCookies(br.getHost()), "");
                             return;
                         } else {
                             logger.info("Cookie login failed");
@@ -271,10 +271,6 @@ public class JulesjordanCom extends antiDDoSForHost {
                 br.getPage("https://www." + account.getHoster() + "/members/");
                 br.setCookie(br.getHost(), "CookieScriptConsent", "{\"action\":\"accept\"}");
                 String postdata = "rlm=My+Server&for=https%253a%252f%252fwww%252ejulesjordan%252ecom%252fmembers%252f&uid=" + Encoding.urlEncode(account.getUser()) + "&pwd=" + Encoding.urlEncode(account.getPass()) + "&rmb=y";
-                final DownloadLink dlinkbefore = this.getDownloadLink();
-                if (dlinkbefore == null) {
-                    this.setDownloadLink(new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true));
-                }
                 final String code = this.getCaptchaCode("/img.cptcha", this.getDownloadLink());
                 postdata += "&img=" + Encoding.urlEncode(code);
                 br.getHeaders().put("Origin", "https://www.julesjordan.com");
@@ -295,21 +291,25 @@ public class JulesjordanCom extends antiDDoSForHost {
                 // br.setCookies(newcookies);
                 // }
                 br.postPage("/auth.form", postdata);
-                if (!br.containsHTML(html_loggedin)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                if (br.getURL().matches("(?i).+/expired/?$")) {
+                    /* Login is valid but account is not premium anymore. */
+                    throw new AccountInvalidException("Account is expired");
+                } else if (!isLoggedin(br)) {
+                    throw new AccountInvalidException();
                 }
-                account.saveCookies(br.getCookies(account.getHoster()), "");
-                if (dlinkbefore != null) {
-                    this.setDownloadLink(dlinkbefore);
-                }
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
             }
+        }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        if (br.containsHTML("(?i)members/logout")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
