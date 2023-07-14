@@ -180,4 +180,23 @@ public class LulustreamCom extends XFileSharingProBasic {
             return false;
         }
     }
+
+    @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
+        final String betterFilename = br.getRegex("name=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
+        if (betterFilename != null) {
+            fileInfo[0] = betterFilename;
+        }
+        return fileInfo;
+    }
+
+    @Override
+    protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
+        if (type == URL_TYPE.EMBED) {
+            return "/e/" + fuid;
+        } else {
+            return super.buildURLPath(link, fuid, type);
+        }
+    }
 }

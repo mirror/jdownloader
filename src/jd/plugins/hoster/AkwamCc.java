@@ -48,7 +48,7 @@ public class AkwamCc extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "ak.sv", "akwam.to", "akwam.org", "akwam.cx", "akwam.cc", "akwam.bond" });
+        ret.add(new String[] { "ak.sv", "akwam.to", "akwam.org", "akwam.cx", "akwam.cc", "akwam.bond", "akwam.cz" });
         return ret;
     }
 
@@ -77,7 +77,7 @@ public class AkwamCc extends PluginForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final int     FREE_MAXDOWNLOADS = -1;
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;

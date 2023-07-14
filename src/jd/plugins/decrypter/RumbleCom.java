@@ -16,7 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -134,10 +134,11 @@ public class RumbleCom extends PluginForDecrypt {
         final Iterator<Entry<String, Object>> streamingTypeIterator = videoInfo.entrySet().iterator();
         final QualitySelectionMode mode = cfg.getQualitySelectionMode();
         int bestQualityHeight = 0;
+        long bestQualityFilesize = 0;
         DownloadLink best = null;
         int worstQualityHeight = 10000;
         DownloadLink worst = null;
-        final HashSet<Integer> widthDupes = new HashSet<Integer>();
+        final Map<Integer, DownloadLink> crawledQualities = new HashMap<Integer, DownloadLink>();
         final int preferredHeight = getUserPreferredqualityHeight();
         DownloadLink selectedQuality = null;
         while (streamingTypeIterator.hasNext()) {
@@ -157,11 +158,7 @@ public class RumbleCom extends PluginForDecrypt {
             for (final Map<String, Object> qualityInfo : qualityInfoArray) {
                 final Map<String, Object> qualityInfoMeta = (Map<String, Object>) qualityInfo.get("meta");
                 final String url = qualityInfo.get("url").toString();
-                if (StringUtils.isEmpty(url)) {
-                    /* This should never happen */
-                    continue;
-                }
-                final Number filesize = (Number) qualityInfoMeta.get("size");
+                final Number filesizeN = (Number) qualityInfoMeta.get("size");
                 final int thisQualityWidth = ((Number) qualityInfoMeta.get("w")).intValue();
                 final int thisQualityHeight = ((Number) qualityInfoMeta.get("h")).intValue();
                 final int height;
@@ -178,8 +175,13 @@ public class RumbleCom extends PluginForDecrypt {
                 /* Set this so when user copies URL of any video quality he'll get the URL to the main video. */
                 dl.setContentUrl(param.getCryptedUrl());
                 dl.setForcedFileName(baseTitle + "_" + height + ".mp4");
-                if (filesize != null) {
-                    dl.setDownloadSize(filesize.longValue());
+                if (filesizeN != null) {
+                    final long filesize = filesizeN.longValue();
+                    dl.setDownloadSize(filesize);
+                    if (filesize > bestQualityFilesize) {
+                        bestQualityFilesize = filesize;
+                        best = dl;
+                    }
                 }
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
@@ -190,22 +192,22 @@ public class RumbleCom extends PluginForDecrypt {
                 dl.setProperty(PROPERTY_WIDTH, width);
                 dl.setProperty(PROPERTY_HEIGHT, height);
                 dl.setProperty(PROPERTY_DATE, dateFormatted);
-                if (height > bestQualityHeight) {
+                if (best == null || (filesizeN == null && height > bestQualityHeight)) {
                     bestQualityHeight = height;
                     best = dl;
                 }
-                if (height < worstQualityHeight) {
+                if (worst == null || height < worstQualityHeight) {
                     worstQualityHeight = height;
                     worst = dl;
                 }
+                /* Same resolution can exist multiple times with different bitrates -> Prefer last -> Best */
                 if (height == preferredHeight) {
                     selectedQuality = dl;
                 }
-                if (widthDupes.add(width)) {
-                    ret.add(dl);
-                }
+                crawledQualities.put(height, dl);
             }
         }
+        ret.addAll(crawledQualities.values());
         if (mode == QualitySelectionMode.WORST && worst != null) {
             ret.clear();
             ret.add(worst);
