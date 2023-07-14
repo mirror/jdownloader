@@ -110,7 +110,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
         jd.plugins.hoster.DiskYandexNet.prepBR(this.br);
-        final String parameter = param.toString();
+        final String parameter = param.getCryptedUrl();
         /* Do some URL corrections */
         if (param.getCryptedUrl().matches(type_docviewer)) {
             /* Documents in web view mode --> File-URLs! */
@@ -308,7 +308,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             request.setContentType("text/plain");
             request.setPostDataString("%7B%22hash%22%3A%22" + Encoding.urlEncode(hashMain) + "%3A%22%2C%22offset%22%3A" + offset + "%2C%22withSizes%22%3Atrue%2C%22sk%22%3A%22" + sk + "%22%2C%22options%22%3A%7B%22hasExperimentVideoWithoutPreview%22%3Atrue%7D%7D");
             br.getPage(request);
-            entries = restoreFromString(this.br.toString(), TypeRef.MAP);
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             ressources = (List<Object>) entries.get("resources");
             if (ressources == null) {
                 /* This should never happen */
@@ -372,7 +372,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         do {
             getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(hashWithoutPath) + "&path=" + URLEncode.encodeURIComponent(internalPath));
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
             /*
              * 2021-01-19:
              * {"message":"Не удалось найти запрошенный ресурс.","description":"Resource not found.","error":"DiskNotFoundError"}

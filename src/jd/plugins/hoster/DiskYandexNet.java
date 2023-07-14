@@ -16,7 +16,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -42,14 +51,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.DiskYandexNetFolder;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net" }, urls = { "http://yandexdecrypted\\.net/\\d+" })
 public class DiskYandexNet extends PluginForHost {
@@ -98,7 +99,7 @@ public class DiskYandexNet extends PluginForHost {
 
     /* Make sure we always use our main domain */
     private String getMainLink(final DownloadLink dl) throws Exception {
-        String mainlink = dl.getStringProperty("mainlink", null);
+        String mainlink = dl.getStringProperty("mainlink");
         if (mainlink == null && getRawHash(dl) != null) {
             mainlink = String.format("https://yadi.sk/public/?hash=%s", URLEncode.encodeURIComponent(getRawHash(dl)));
         }
@@ -113,8 +114,9 @@ public class DiskYandexNet extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        if (link.hasProperty(PROPERTY_INTERNAL_FUID)) {
-            return this.getHost() + "://" + link.getStringProperty(PROPERTY_INTERNAL_FUID);
+        final String fuid = link.getStringProperty(PROPERTY_INTERNAL_FUID);
+        if (fuid != null) {
+            return this.getHost() + "://" + fuid;
         } else {
             return super.getLinkID(link);
         }
@@ -152,7 +154,7 @@ public class DiskYandexNet extends PluginForHost {
         this.handleErrorsAPI(link, null);
         /* No error --> No quota reached issue! */
         link.setProperty(PROPERTY_QUOTA_REACHED, false);
-        return parseInformationAPIAvailablecheckFiles(this, link, (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString()));
+        return parseInformationAPIAvailablecheckFiles(this, link, (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode()));
     }
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account) throws Exception {
@@ -163,7 +165,7 @@ public class DiskYandexNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         long filesize_long = -1;
-        String final_filename = link.getStringProperty("plain_filename", null);
+        final String crawledFilename = link.getStringProperty(PROPERTY_CRAWLED_FILENAME);
         String filename = this.br.getRegex("class=\"file-name\" data-reactid=\"[^\"]*?\">([^<>\"]+)<").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             /* Very unsafe method! */
@@ -184,19 +186,16 @@ public class DiskYandexNet extends PluginForHost {
             filesize_str = filesize_str.replace(",", ".");
             filesize_long = SizeFormatter.getSize(filesize_str);
         }
-        if (final_filename == null) {
-            final_filename = filename;
-        }
         /* Important for account download handling */
         if (br.containsHTML("class=\"[^\"]+antifile-sharing\"")) {
             link.setProperty(PROPERTY_QUOTA_REACHED, true);
         } else {
-            link.setProperty(PROPERTY_QUOTA_REACHED, false);
+            link.removeProperty(PROPERTY_QUOTA_REACHED);
         }
-        if (final_filename == null && filename != null) {
+        if (crawledFilename == null && filename != null) {
             link.setFinalFileName(filename);
-        } else if (final_filename != null) {
-            link.setFinalFileName(final_filename);
+        } else if (crawledFilename != null) {
+            link.setFinalFileName(crawledFilename);
         }
         if (filesize_long > -1) {
             link.setDownloadSize(filesize_long);
@@ -205,15 +204,14 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     public static AvailableStatus parseInformationAPIAvailablecheckFiles(final Plugin plugin, final DownloadLink dl, final Map<String, Object> entries) throws Exception {
-        final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), -1);
+        final Number filesize = (Number) entries.get("size");
         final String error = (String) entries.get("error");
         final String hash = (String) entries.get("public_key");
         final String filename = (String) entries.get("name");
         final String path = (String) entries.get("path");
         final String md5 = (String) entries.get("md5");
         final String sha256 = (String) entries.get("sha256");
-        if (error != null || StringUtils.isEmpty(filename) || StringUtils.isEmpty(hash) || StringUtils.isEmpty(path) || filesize == -1) {
-            /* Whatever - our link is probably offline! */
+        if (error != null) {
             return AvailableStatus.FALSE;
         }
         if (sha256 != null) {
@@ -227,10 +225,31 @@ public class DiskYandexNet extends PluginForHost {
         dl.setProperty(PROPERTY_HASH, hash + ":" + path);
         dl.setFinalFileName(filename);
         dl.setProperty(PROPERTY_CRAWLED_FILENAME, filename);
-        if (filesize > 0) {
-            dl.setVerifiedFileSize(filesize);
+        if (filesize != null) {
+            dl.setVerifiedFileSize(filesize.longValue());
         }
-        // dl.setDownloadSize(filesize);
+        /**
+         * Array of direct-URLs -> Find best quality version / original and store that URL. </br>
+         * We expect this array to be sorted from best to worst.
+         */
+        String directurlOriginal = null;
+        String directurlDefault = null;
+        final List<Map<String, Object>> sizes = (List<Map<String, Object>>) entries.get("sizes");
+        for (final Map<String, Object> size : sizes) {
+            final String sizeurl = (String) size.get("url");
+            final String sizename = (String) size.get("name");
+            if (!StringUtils.isEmpty(sizeurl) && StringUtils.equalsIgnoreCase(sizename, "ORIGINAL")) {
+                directurlOriginal = sizeurl;
+            } else if (!StringUtils.isEmpty(sizeurl) && StringUtils.equalsIgnoreCase(sizename, "DEFAULT")) {
+                directurlDefault = sizeurl;
+            }
+        }
+        /* Store for later usage. */
+        if (directurlOriginal != null) {
+            dl.setProperty(getDirecturlProperty(null), directurlOriginal);
+        } else if (directurlDefault != null) {
+            dl.setProperty(getDirecturlProperty(null), directurlDefault);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -248,7 +267,6 @@ public class DiskYandexNet extends PluginForHost {
         if (filesize > 0) {
             dl.setVerifiedFileSize(filesize);
         }
-        // dl.setDownloadSize(filesize);
         return AvailableStatus.TRUE;
     }
 
@@ -286,8 +304,17 @@ public class DiskYandexNet extends PluginForHost {
         doFree(link, null);
     }
 
+    private static String getDirecturlProperty(final Account account) {
+        String str = "directurl";
+        if (account != null) {
+            str += "_" + account.getType();
+        }
+        return str;
+    }
+
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
-        if (!this.attemptStoredDownloadurlDownload(link, "directurl", FREE_RESUME, FREE_MAXCHUNKS)) {
+        final String directurlproperty = getDirecturlProperty(account);
+        if (!this.attemptStoredDownloadurlDownload(link, directurlproperty, FREE_RESUME, FREE_MAXCHUNKS)) {
             String dllink = null;
             if (isFileDownloadQuotaReached(link)) {
                 /*
@@ -331,7 +358,7 @@ public class DiskYandexNet extends PluginForHost {
                         /* Free API download. */
                         getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
                         this.handleErrorsAPI(link, account);
-                        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
+                        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
                         dllink = (String) entries.get("href");
                         if (dllink == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -378,13 +405,13 @@ public class DiskYandexNet extends PluginForHost {
                 /* This will most likely happen for 0 byte filesize files / serverside broken files. */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
             }
-            link.setProperty("directurl", dl.getConnection().getURL().toString());
+            link.setProperty(directurlproperty, dl.getConnection().getURL().toString());
         }
         dl.startDownload();
     }
 
     private void handleErrorsAPI(final DownloadLink link, final Account account) throws PluginException {
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
         if (entries.containsKey("error")) {
             final String error = (String) entries.get("error");
             final String description = (String) entries.get("description");
@@ -621,7 +648,6 @@ public class DiskYandexNet extends PluginForHost {
         account.setProperty("account_userid", userID);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        ai.setStatus("Free Account");
         return ai;
     }
 
@@ -636,7 +662,7 @@ public class DiskYandexNet extends PluginForHost {
         boolean resume = ACCOUNT_FREE_RESUME;
         int maxchunks = ACCOUNT_FREE_MAXCHUNKS;
         if (link.getBooleanProperty(DiskYandexNet.NORESUME, false)) {
-            logger.info("Resume is disabled for this try");
+            logger.info("Resume is disabled for this attempt");
             resume = false;
             /* Allow resume for next try */
             link.setProperty(DiskYandexNet.NORESUME, Boolean.valueOf(false));
@@ -649,7 +675,8 @@ public class DiskYandexNet extends PluginForHost {
         final boolean moveToTrashAfterDownloading = moveIntoAccHandlingActive && getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false);
         final Browser br2;
         final String authSk;
-        if (this.attemptStoredDownloadurlDownload(link, "directlink_account", resume, maxchunks)) {
+        final String directurlproperty = getDirecturlProperty(account);
+        if (this.attemptStoredDownloadurlDownload(link, directurlproperty, resume, maxchunks)) {
             br2 = this.br.cloneBrowser();
             /* Very important! */
             if (link.hasProperty(PROPERTY_LAST_URL)) {
@@ -680,7 +707,7 @@ public class DiskYandexNet extends PluginForHost {
                 br.getHeaders().put("Accept", "*/*");
                 br.getHeaders().put("Content-Type", "text/plain");
                 br.postPageRaw("/public/api/download-url", URLEncode.encodeURIComponent(String.format("{\"hash\":\"%s\",\"sk\":\"%s\",\"uid\":\"%s\",\"options\":{\"hasExperimentVideoWithoutPreview\":true}}", this.getRawHash(link), authSk, userID)));
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                 dllink = (String) JavaScriptEngineFactory.walkJson(entries, "data/url");
                 if (StringUtils.isEmpty(dllink)) {
                     logger.warning("Failed to find final downloadurl");
@@ -698,9 +725,10 @@ public class DiskYandexNet extends PluginForHost {
                 if (internal_file_path == null) {
                     logger.info("MoveFileIntoAccount: No internal filepath available --> Trying to move file into account");
                     /**
-                     * 2021-02-10: Possible values for "source": public_web_copy, public_web_copy_limit </br> public_web_copy_limit is
-                     * usually used if the files is currently quota limited and cannot be downloaded at all at this moment. </br> Both will
-                     * work but we'll try to choose the one which would also be used via browser.
+                     * 2021-02-10: Possible values for "source": public_web_copy, public_web_copy_limit </br>
+                     * public_web_copy_limit is usually used if the files is currently quota limited and cannot be downloaded at all at this
+                     * moment. </br>
+                     * Both will work but we'll try to choose the one which would also be used via browser.
                      */
                     final String copySource;
                     if (this.isFileDownloadQuotaReached(link)) {
@@ -709,7 +737,7 @@ public class DiskYandexNet extends PluginForHost {
                         copySource = "public_web_copy";
                     }
                     br.postPageRaw("/public/api/save", URLEncode.encodeURIComponent(String.format("{\"hash\":\"%s\",\"name\":\"%s\",\"lang\":\"en\",\"source\":\"%s\",\"isAlbum\":false,\"itemId\":null,\"sk\":\"%s\",\"uid\":\"%s\",\"options\":{\"hasExperimentVideoWithoutPreview\":true}}", this.getRawHash(link), link.getName(), copySource, authSk, userID)));
-                    entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                     internal_file_path = (String) JavaScriptEngineFactory.walkJson(entries, "data/path");
                     final String oid = (String) JavaScriptEngineFactory.walkJson(entries, "data/oid");
                     if (br.containsHTML("\"code\":85")) {
@@ -768,7 +796,7 @@ public class DiskYandexNet extends PluginForHost {
             if (link.getFinalFileName() == null) {
                 dl.setFilenameFix(true);
             }
-            link.setProperty("directlink_account", dllink);
+            link.setProperty(directurlproperty, dllink);
         }
         try {
             dl.startDownload();
@@ -850,7 +878,7 @@ public class DiskYandexNet extends PluginForHost {
             logger.info("Trying to move file to trash: " + filepath);
             try {
                 br2.postPage("/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=" + Encoding.urlEncode(filepath) + "&idClient=" + CLIENT_ID + "&sk=" + authSk);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = JSonStorage.restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                 if (entries.containsKey("error")) {
                     logger.info("Possible failure on moving file into trash");
                 } else {
@@ -871,19 +899,7 @@ public class DiskYandexNet extends PluginForHost {
      * account e.g. after importing a public file into an account.
      */
     private String getInternalFilePath(final DownloadLink dl) {
-        String filepath = null;
-        final boolean newWay = true;
-        if (newWay) {
-            /* 2018-04-18: New */
-            filepath = dl.getStringProperty(PROPERTY_PATH_INTERNAL, null);
-        } else {
-            final String plain_filename = dl.getStringProperty(PROPERTY_CRAWLED_FILENAME, null);
-            filepath = Encoding.urlEncode(plain_filename);
-            if (filepath == null) {
-                logger.info("Debug-info: filepath == null, can't throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); here");
-            }
-        }
-        return filepath;
+        return dl.getStringProperty(PROPERTY_PATH_INTERNAL);
     }
 
     /** Deletes all items inside users' Yandex trash folder. */
