@@ -263,6 +263,7 @@ public class MediafireCom extends PluginForHost {
                 if (link.getBooleanProperty("privatefile") && account == null) {
                     throw new AccountRequiredException("Private file: Only downloadable for users with permission and owner");
                 }
+                /* First check if we got a direct-downloadable URL. */
                 URLConnectionAdapter con = null;
                 try {
                     con = br.openGetConnection(link.getPluginPatternMatcher());
@@ -277,61 +278,63 @@ public class MediafireCom extends PluginForHost {
                     } catch (Throwable e) {
                     }
                 }
-                int trycounter = -1;
-                Form captchaForm = getCaptchaForm(br);
-                boolean failableCaptchaRequired = false;
-                if (captchaForm != null) {
-                    do {
-                        trycounter++;
-                        logger.info("CaptchaForm loop number: " + trycounter);
-                        handleNonAPIErrors(link, br);
-                        if (captchaForm.containsHTML("solvemedia.com/papi/")) {
-                            logger.info("Detected captcha method \"solvemedia\" for this host");
-                            handleReconnectBehaviorOnCaptcha(account);
-                            final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                            final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                            final String code = getCaptchaCode(cf, link);
-                            final String chid = sm.getChallenge(code);
-                            captchaForm.put("adcopy_challenge", chid);
-                            captchaForm.put("adcopy_response", code.replace(" ", "+"));
-                            br.submitForm(captchaForm);
-                            failableCaptchaRequired = true;
-                        } else if (captchaForm.containsHTML("g-recaptcha-response")) {
-                            handleReconnectBehaviorOnCaptcha(account);
-                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                            captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                            br.submitForm(captchaForm);
-                        } else if (captchaForm.containsHTML("for=\"customCaptchaCheckbox\"")) {
-                            /* Mediafire custom checkbox "captcha" */
-                            captchaForm.put("mf_captcha_response", "1");
-                            br.submitForm(captchaForm);
-                        } else {
-                            logger.warning("Unknown/Unsupported captcha type required");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (finalDownloadurl == null) {
+                    int trycounter = -1;
+                    Form captchaForm = getCaptchaForm(br);
+                    boolean failableCaptchaRequired = false;
+                    if (captchaForm != null) {
+                        do {
+                            trycounter++;
+                            logger.info("CaptchaForm loop number: " + trycounter);
+                            handleNonAPIErrors(link, br);
+                            if (captchaForm.containsHTML("solvemedia.com/papi/")) {
+                                logger.info("Detected captcha method \"solvemedia\" for this host");
+                                handleReconnectBehaviorOnCaptcha(account);
+                                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                                final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                                final String code = getCaptchaCode(cf, link);
+                                final String chid = sm.getChallenge(code);
+                                captchaForm.put("adcopy_challenge", chid);
+                                captchaForm.put("adcopy_response", code.replace(" ", "+"));
+                                br.submitForm(captchaForm);
+                                failableCaptchaRequired = true;
+                            } else if (captchaForm.containsHTML("g-recaptcha-response")) {
+                                handleReconnectBehaviorOnCaptcha(account);
+                                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                                br.submitForm(captchaForm);
+                            } else if (captchaForm.containsHTML("for=\"customCaptchaCheckbox\"")) {
+                                /* Mediafire custom checkbox "captcha" */
+                                captchaForm.put("mf_captcha_response", "1");
+                                br.submitForm(captchaForm);
+                            } else {
+                                logger.warning("Unknown/Unsupported captcha type required");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            captchaForm = getCaptchaForm(br);
+                            if (getCaptchaForm(br) != null) {
+                                logger.info("Wrong captcha");
+                                continue;
+                            } else {
+                                break;
+                            }
+                        } while (trycounter <= 3 && finalDownloadurl == null);
+                        if (captchaForm != null && failableCaptchaRequired) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
-                        captchaForm = getCaptchaForm(br);
-                        if (getCaptchaForm(br) != null) {
-                            logger.info("Wrong captcha");
-                            continue;
-                        } else {
-                            break;
-                        }
-                    } while (trycounter <= 3 && finalDownloadurl == null);
-                    if (captchaForm != null && failableCaptchaRequired) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                }
-                this.handlePW(link);
-                finalDownloadurl = br.getRegex("kNO\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
-                logger.info("Kno= " + finalDownloadurl);
-                if (finalDownloadurl == null) {
-                    /* pw protected files can directly redirect to download */
-                    finalDownloadurl = br.getRedirectLocation();
-                }
-                if (finalDownloadurl == null) {
-                    finalDownloadurl = br.getRegex("href\\s*=\\s*\"(https?://[^\"]+)\"\\s*id\\s*=\\s*\"downloadButton\"").getMatch(0);
+                    this.handlePW(link);
+                    finalDownloadurl = br.getRegex("kNO\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
+                    logger.info("Kno= " + finalDownloadurl);
                     if (finalDownloadurl == null) {
-                        finalDownloadurl = br.getRegex("(" + MediafireComFolder.TYPE_DIRECT + ")").getMatch(0);
+                        /* pw protected files can directly redirect to download */
+                        finalDownloadurl = br.getRedirectLocation();
+                    }
+                    if (finalDownloadurl == null) {
+                        finalDownloadurl = br.getRegex("href\\s*=\\s*\"(https?://[^\"]+)\"\\s*id\\s*=\\s*\"downloadButton\"").getMatch(0);
+                        if (finalDownloadurl == null) {
+                            finalDownloadurl = br.getRegex("(" + MediafireComFolder.TYPE_DIRECT + ")").getMatch(0);
+                        }
                     }
                 }
             }

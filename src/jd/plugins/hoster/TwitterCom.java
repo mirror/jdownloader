@@ -379,9 +379,9 @@ public class TwitterCom extends PluginForHost {
                 }
                 TwitterComCrawler.setFormattedFilename(link);
             } else { // TYPE_DIRECT - jpg/png/mp4
-                if (link.getPluginPatternMatcher().contains("jpg") || link.getPluginPatternMatcher().contains("png")) {
+                if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "jpg") || StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "png")) {
                     if (link.getPluginPatternMatcher().contains(":large")) {
-                        dllink = link.getPluginPatternMatcher().replaceFirst(":large", "") + ":orig";
+                        dllink = link.getPluginPatternMatcher().replaceFirst(":large", ":orig");
                     } else if (link.getPluginPatternMatcher().matches("(?i).+\\.(jpg|jpeg|png)$")) {
                         /* Append this to get the highest quality possible */
                         dllink = link.getPluginPatternMatcher() + ":orig";
@@ -452,16 +452,17 @@ public class TwitterCom extends PluginForHost {
                         }
                         if (!link.isNameSet()) {
                             /* Last chance: Set filename by URL */
-                            String filename = Encoding.htmlDecode(getFileNameFromHeader(con)).replace(":orig", "");
-                            if (filename != null) {
-                                if (tweetID != null && !filename.contains(tweetID)) {
-                                    filename = tweetID + "_" + filename;
+                            String filenameFromHeader = getFileNameFromHeader(con);
+                            if (filenameFromHeader != null) {
+                                filenameFromHeader = Encoding.htmlDecode(filenameFromHeader).replace(":orig", "").trim();
+                                if (tweetID != null && !filenameFromHeader.contains(tweetID)) {
+                                    filenameFromHeader = tweetID + "_" + filenameFromHeader;
                                 }
                                 final String ext = getExtensionFromMimeType(con.getContentType());
                                 if (ext != null) {
-                                    filename = applyFilenameExtension(filename, "." + ext);
+                                    filenameFromHeader = applyFilenameExtension(filenameFromHeader, "." + ext);
                                 }
-                                link.setFinalFileName(filename);
+                                link.setFinalFileName(filenameFromHeader);
                             }
                         }
                     } finally {

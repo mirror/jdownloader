@@ -178,7 +178,7 @@ public abstract class FlexShareCore extends antiDDoSForHost {
         }
         final URLConnectionAdapter con = br.openGetConnection(this.getContentURL(link));
         if (this.looksLikeDownloadableContent(con)) {
-            /* Directurl */
+            /* Directurl or we're logged in a premium account with direct downloads enabled. */
             link.setFinalFileName(Plugin.getFileNameFromHeader(con));
             if (con.getCompleteContentLength() > 0) {
                 link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -188,15 +188,21 @@ public abstract class FlexShareCore extends antiDDoSForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*The file you have requested does not exist")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            String filename = br.getRegex("(?i)<title>([^<]+) \\| ExtMatrix - The Premium Cloud Storage</title>").getMatch(0);
             final Regex fileInfo = br.getRegex("style=\"text-align:(center|left|right);\">(Premium Only\\!)?([^\"<>]+) \\(([0-9\\.]+ [A-Za-z]+)(\\))?(,[^<>\"/]+)?</h1>");
-            String filename = fileInfo.getMatch(2);
+            if (filename == null) {
+                filename = fileInfo.getMatch(2);
+            }
             String filesize = fileInfo.getMatch(3);
             if (filename == null || filesize == null) {
                 handleErrors(link, null);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // Set final filename here because hoster taggs files
-            link.setFinalFileName(filename.trim());
+            /* Set final filename here because hoster is tagging filenames that are given via Content-Disposition header. */
+            if (filename != null) {
+                filename = Encoding.htmlDecode(filename).trim();
+                link.setFinalFileName(filename);
+            }
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;

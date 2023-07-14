@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -45,6 +46,7 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.TwitterConfigInterface;
 import org.jdownloader.plugins.components.config.TwitterConfigInterface.FilenameScheme;
 import org.jdownloader.plugins.components.config.TwitterConfigInterface.SingleTweetCrawlerMode;
+import org.jdownloader.plugins.components.config.TwitterConfigInterface.SingleTweetCrawlerTextCrawlMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -387,9 +389,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 }
             }
         }
-        if (ret.isEmpty()) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         return ret;
     }
 
@@ -598,7 +597,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final List<String> mediaTypesVideo = Arrays.asList(new String[] { "animated_gif", "video" });
             final String mediaTypePhoto = "photo";
             final Set<String> foundMediaTypes = new HashSet<String>();
-            final Map<String, DownloadLink> mediaResultMap = new HashMap<String, DownloadLink>();
+            final Map<String, DownloadLink> mediaResultMap = new LinkedHashMap<String, DownloadLink>();
             final Set<String> videoIDs = new HashSet<String>();
             for (final List<Map<String, Object>> mediaList : mediaLists) {
                 for (final Map<String, Object> media : mediaList) {
@@ -735,10 +734,12 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     logger.info(logtext);
                 }
             } else if (urlsInPostText != null) {
+                /* All URLs were skipped. */
                 itemsSkippedDueToPluginSettings += urlsInPostText.length;
             }
-            /* Crawl tweet as text if wanted by user or if tweet contains only text. */
-            if (cfg.isSingleTweetCrawlerAddTweetTextAsTextfile() || !retMedia.isEmpty()) {
+            /* Crawl Tweet as text if wanted by user or if tweet contains only text. */
+            final SingleTweetCrawlerTextCrawlMode mode = cfg.getSingleTweetCrawlerTextCrawlMode();
+            if (mode == SingleTweetCrawlerTextCrawlMode.AUTO || mode == SingleTweetCrawlerTextCrawlMode.ALWAYS || (mode == SingleTweetCrawlerTextCrawlMode.ONLY_IF_NO_MEDIA_IS_AVAILABLE && retMedia.isEmpty())) {
                 /*
                  * Determine last found original filename now/here because after collecting those items we're removing non-thumbnails if not
                  * wanted by user so this is the only place to determine the last used original filename.
@@ -869,10 +870,18 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 /* E.g. .txt file filename which is supposed to look like filename of related media file(s). */
                 filename = Plugin.getCorrectOrApplyFileNameExtension(relatedOriginalFilename, ext);
             }
-        } else if ((scheme == FilenameScheme.ORIGINAL_PLUS || scheme == FilenameScheme.AUTO) && originalFilenameWithoutExt != null) {
-            filename = formattedDate + "_" + tweetID + "_" + originalFilenameWithoutExt + ext;
-        } else if (scheme == FilenameScheme.ORIGINAL_PLUS_2 && username != null && originalFilenameWithoutExt != null) {
-            filename = formattedDate + "_" + username + "_" + tweetID + "_" + originalFilenameWithoutExt + ext;
+        } else if (scheme == FilenameScheme.ORIGINAL_PLUS) {
+            filename = formattedDate + "_" + tweetID;
+            if (originalFilenameWithoutExt != null) {
+                filename += "_" + originalFilenameWithoutExt;
+            }
+            filename += ext;
+        } else if ((scheme == FilenameScheme.ORIGINAL_PLUS_2 || scheme == FilenameScheme.AUTO) && username != null) {
+            filename = formattedDate + "_" + username + "_" + tweetID;
+            if (originalFilenameWithoutExt != null) {
+                filename += "_" + originalFilenameWithoutExt;
+            }
+            filename += ext;
         } else if ((scheme == FilenameScheme.PLUGIN || scheme == FilenameScheme.AUTO) && username != null && formattedDate != null) {
             filename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename;
             if (mediaCount > 1) {

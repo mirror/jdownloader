@@ -18,7 +18,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     public static final TRANSLATION TRANSLATION                                              = new TRANSLATION();
     final String                    text_FilenameScheme                                      = "Filename scheme";
     final String                    text_MarkTweetRepliesViaFilename                         = "Append '_reply' to filenames of tweets that are replies to other tweets?";
-    final String                    text_SingleTweetCrawlerAddTweetTextAsTextfile            = "Single Tweet crawler: Add tweet text as textfile?";
+    final String                    text_SingleTweetCrawlerTextCrawlMode                     = "Single Tweet crawler: Text crawl mode";
     final String                    text_SingleTweetCrawlerCrawlMode                         = "Single Tweet crawler: Crawl mode";
     final String                    text_CrawlURLsInsideTweetText                            = "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
     final String                    text_RegexWhitelistForCrawledUrlsInTweetText             = "RegEx whitelist for crawled URLs in tweet text e.g. '(?i).*(site\\.tld|site2\\.tld).*' [Empty = Allow all URLs]";
@@ -43,8 +43,8 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
             return text_MarkTweetRepliesViaFilename;
         }
 
-        public String getSingleTweetCrawlerAddTweetTextAsTextfile_label() {
-            return text_SingleTweetCrawlerAddTweetTextAsTextfile;
+        public String getSingleTweetCrawlerTextCrawlMode_label() {
+            return text_SingleTweetCrawlerTextCrawlMode;
         }
 
         public String getSingleTweetCrawlerCrawlMode_label() {
@@ -133,13 +133,40 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
 
     void setMarkTweetRepliesViaFilename(boolean b);
 
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    @DescriptionForConfigEntry(text_SingleTweetCrawlerAddTweetTextAsTextfile)
-    @Order(30)
-    boolean isSingleTweetCrawlerAddTweetTextAsTextfile();
+    public static enum SingleTweetCrawlerTextCrawlMode implements LabelInterface {
+        AUTO {
+            @Override
+            public String getLabel() {
+                return "Auto";
+            }
+        },
+        ALWAYS {
+            @Override
+            public String getLabel() {
+                return "Always";
+            }
+        },
+        ONLY_IF_NO_MEDIA_IS_AVAILABLE {
+            @Override
+            public String getLabel() {
+                return "Only if no media is available";
+            }
+        },
+        DISABLED {
+            @Override
+            public String getLabel() {
+                return "Never (disabled)";
+            }
+        };
+    }
 
-    void setSingleTweetCrawlerAddTweetTextAsTextfile(boolean b);
+    @AboutConfig
+    @DefaultEnumValue("AUTO")
+    @Order(30)
+    @DescriptionForConfigEntry(text_SingleTweetCrawlerTextCrawlMode)
+    SingleTweetCrawlerTextCrawlMode getSingleTweetCrawlerTextCrawlMode();
+
+    void setSingleTweetCrawlerTextCrawlMode(final SingleTweetCrawlerTextCrawlMode mode);
 
     public static enum SingleTweetCrawlerMode implements LabelInterface {
         AUTO {
