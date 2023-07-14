@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,9 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigapeta.com" }, urls = { "https?://[\\w\\.]*?gigapeta\\.com/dl/(\\w+)" })
 public class GigaPetaCom extends PluginForHost {
@@ -73,7 +73,7 @@ public class GigaPetaCom extends PluginForHost {
         }
         prepBR(br);
         /* 2021-11-22: https unsupported */
-        br.getPage(link.getPluginPatternMatcher().replace("https://", "http://"));
+        br.getPage(link.getPluginPatternMatcher().replaceFirst("(?i)https://", "http://"));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("class=\"big_error\">\\s*404\\s*<")) {

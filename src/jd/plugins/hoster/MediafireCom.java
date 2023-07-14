@@ -598,6 +598,12 @@ public class MediafireCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Session expired");
             case 110:
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 111:
+                /**
+                 * E.g. we tried to link-check a folder-ID as file-ID. {"response":{"action":"file\/get_info","message":"Quick Key is
+                 * missing","error":111,"result":"Error", "current_api_version":"1.5"}}
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 114:
                 /* E.g. private folder */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -666,7 +672,15 @@ public class MediafireCom extends PluginForHost {
                 }
                 final UrlQuery query = new UrlQuery();
                 query.add("quick_key", sb.toString());
-                apiCommand(null, account, "file/get_info.php", query);
+                try {
+                    apiCommand(links.get(0), account, "file/get_info.php", query);
+                } catch (final PluginException ple) {
+                    if (ple.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        /* Ignore exception --> All checked items are offline. */
+                    } else {
+                        throw ple;
+                    }
+                }
                 final Map<String, Object> apiResponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 List<Map<String, Object>> file_infos = null;
                 Object infos = JavaScriptEngineFactory.walkJson(apiResponse, "response/file_infos");

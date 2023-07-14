@@ -325,6 +325,31 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 ret.add(dl);
             }
         }
+        final String json2023_07 = br.getRegex("window\\.SIMORGH_DATA=(\\{.*?\\})</script>").getMatch(0);
+        if (json2023_07 != null) {
+            /* E.g. https://www.bbc.com/tigrinya/news-54078571 */
+            final Map<String, Object> map202307 = restoreFromString(json2023_07, TypeRef.MAP);
+            if (map202307 != null) {
+                final Map<String, Object> media = (Map<String, Object>) findVideoMap202307MediaMap(map202307);
+                final String description = (String) media.get("caption");
+                final String title = media.get("title").toString();
+                final Map<String, Object> videoInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(media, "versions/{0}");
+                final Number availableFrom = (Number) videoInfo.get("availableFrom");
+                final String vpid = videoInfo.get("versionId").toString();
+                final DownloadLink dl = this.generateDownloadlink(vpid);
+                dl.setContentUrl(br.getURL());
+                if (!StringUtils.isEmpty(description)) {
+                    dl.setComment(description);
+                }
+                if (availableFrom != null) {
+                    final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+                    dl.setProperty(BbcCom.PROPERTY_DATE, df.format(new Date(availableFrom.longValue())));
+                }
+                dl.setProperty(BbcCom.PROPERTY_TITLE, title);
+                dl.setName(BbcCom.getFilename(dl));
+                ret.add(dl);
+            }
+        }
         // final String[] newsVpids = br.getRegex("version_offset:(p[a-z0-9]+)").getColumn(0);
         // for (final String newsVpid : newsVpids) {
         // final DownloadLink dl = generateDownloadlink(newsVpid);
@@ -342,7 +367,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 ret.addAll(lookForProgrammesURLs(param));
             }
         }
-        if (ret.size() == 0) {
+        if (ret.isEmpty()) {
             logger.info("Failed to find any playable content --> Probably only irrelevant photo content or no content at all --> Adding offline url");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -378,6 +403,39 @@ public class BbcComDecrypter extends PluginForDecrypt {
                     final Object pico = findVideoMap(arrayo);
                     if (pico != null) {
                         return pico;
+                    }
+                }
+            }
+            return null;
+        } else {
+            return null;
+        }
+    }
+
+    private Object findVideoMap202307MediaMap(final Object o) {
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            if (entrymap.containsKey("imageUrl") && entrymap.containsKey("versions")) {
+                return entrymap;
+            }
+            for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
+                // final String key = entry.getKey();
+                final Object value = entry.getValue();
+                if (value instanceof List || value instanceof Map) {
+                    final Object hit = findVideoMap202307MediaMap(value);
+                    if (hit != null) {
+                        return hit;
+                    }
+                }
+            }
+            return null;
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final Object hit = findVideoMap202307MediaMap(arrayo);
+                    if (hit != null) {
+                        return hit;
                     }
                 }
             }

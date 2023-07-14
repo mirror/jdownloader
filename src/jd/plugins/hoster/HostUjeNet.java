@@ -78,6 +78,7 @@ public class HostUjeNet extends PluginForHost {
         if (userAgent.get() == null) {
             userAgent.set(UserAgents.stringUserAgent());
         }
+        br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", userAgent.get());
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -97,8 +98,8 @@ public class HostUjeNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         br.setFollowRedirects(false);
         final String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
         String decoded = "";
@@ -190,12 +191,11 @@ public class HostUjeNet extends PluginForHost {
             dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         }
         br.submitForm(dlform);
-        String link = null;
-        link = br.getRedirectLocation();
-        if (link == null) {
+        final String directurl = br.getRedirectLocation();
+        if (directurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

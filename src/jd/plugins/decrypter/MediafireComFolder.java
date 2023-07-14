@@ -78,6 +78,14 @@ public class MediafireComFolder extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
+    public static boolean isFolderID(final String contentid) {
+        if (contentid.matches("[A-Za-z0-9]{13}")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     // https://www.mediafire.com/developers/core_api/1.5/getting_started/#error_codes
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -88,14 +96,13 @@ public class MediafireComFolder extends PluginForDecrypt {
         if (direct.matches()) {
             directurl = parameter;
         }
-        final String multipleContentIDsCommaSeparated = new Regex(param.getCryptedUrl(), "mediafire\\.com/(\\?|folder/)([a-z0-9,]+)").getMatch(1);
-        if (multipleContentIDsCommaSeparated != null && multipleContentIDsCommaSeparated.contains(",")) {
-            // TODO: Check if this case still exists
+        final String multipleContentIDsCommaSeparated = new Regex(param.getCryptedUrl(), "https?://[^/]+/\\?([a-z0-9,]+)").getMatch(0);
+        if (multipleContentIDsCommaSeparated != null) {
             /* Multiple files in one link */
             final String[] contentIDs = multipleContentIDsCommaSeparated.split(",");
             for (final String contentID : contentIDs) {
                 final DownloadLink link;
-                if (contentID.matches("[A-Za-z0-9]{13}")) {
+                if (isFolderID(contentID)) {
                     link = this.createDownloadlink("https://www.mediafire.com/folder/" + contentID);
                 } else {
                     link = createSingleFileDownloadlink(contentID, null);
