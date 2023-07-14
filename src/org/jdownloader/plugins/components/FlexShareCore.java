@@ -5,10 +5,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -29,6 +25,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class FlexShareCore extends antiDDoSForHost {
@@ -74,9 +74,8 @@ public abstract class FlexShareCore extends antiDDoSForHost {
 
     /**
      * Can be found in account under: '/members/account.php'. Docs are usually here: '/api/docs.php'. Example website with working API:
-     * filepup.net </br>
-     * The presence of an APIKey does not necessarily mean that the API or that filehost will work! Usually if it does still not work, it
-     * will just return 404. Override this to use API.
+     * filepup.net </br> The presence of an APIKey does not necessarily mean that the API or that filehost will work! Usually if it does
+     * still not work, it will just return 404. Override this to use API.
      */
     protected String getAPIKey() {
         return null;
@@ -188,8 +187,8 @@ public abstract class FlexShareCore extends antiDDoSForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*The file you have requested does not exist")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String filename = br.getRegex("(?i)<title>([^<]+) \\| ExtMatrix - The Premium Cloud Storage</title>").getMatch(0);
-            final Regex fileInfo = br.getRegex("style=\"text-align:(center|left|right);\">(Premium Only\\!)?([^\"<>]+) \\(([0-9\\.]+ [A-Za-z]+)(\\))?(,[^<>\"/]+)?</h1>");
+            String filename = br.getRegex("(?i)<title>\\s*([^<]+)\\s*\\|\\s*ExtMatrix\\s*-\\s*The Premium Cloud Storage\\s*</title>").getMatch(0);
+            final Regex fileInfo = br.getRegex("style=\"text-align:(center|left|right);\">\\s*(Premium Only\\!)?([^\"<>]+) \\(([0-9\\.]+ [A-Za-z]+)(\\))?(,[^<>\"/]+)?</h1>");
             if (filename == null) {
                 filename = fileInfo.getMatch(2);
             }
@@ -488,9 +487,7 @@ public abstract class FlexShareCore extends antiDDoSForHost {
     /**
      * @return true: Website supports https and plugin will prefer https. <br />
      *         false: Website does not support https - plugin will avoid https. <br />
-     *         default: true </br>
-     *         Example which supports https: extmatrix.com </br>
-     *         Example which does NOT support https: filepup.net
+     *         default: true </br> Example which supports https: extmatrix.com </br> Example which does NOT support https: filepup.net
      */
     protected boolean supports_https() {
         return true;

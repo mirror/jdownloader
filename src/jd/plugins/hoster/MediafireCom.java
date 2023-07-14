@@ -24,12 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,6 +49,12 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.MediafireComFolder;
 import jd.plugins.download.HashInfo;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(?:www\\.)?mediafire\\.com/file/([a-z0-9]+)(/([^/]+))?" })
 public class MediafireCom extends PluginForHost {
@@ -677,6 +677,7 @@ public class MediafireCom extends PluginForHost {
                 } catch (final PluginException ple) {
                     if (ple.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                         /* Ignore exception --> All checked items are offline. */
+                        getLogger().log(ple);
                     } else {
                         throw ple;
                     }
@@ -743,9 +744,8 @@ public class MediafireCom extends PluginForHost {
         /* 2020-06-29: Some files will have all information given bur are deleted if delete_date exists! */
         if (delete_date != null && delete_date.matches("\\d{4}-\\d{2}-\\d{2}.*")) {
             /**
-             * For files parsed in context of a folder: </br>
-             * We can't really be sure if the file is online until we actually try to download it but also in browser all files as part of
-             * folders look to be online when viewing folders.
+             * For files parsed in context of a folder: </br> We can't really be sure if the file is online until we actually try to
+             * download it but also in browser all files as part of folders look to be online when viewing folders.
              */
             link.setAvailableStatus(AvailableStatus.FALSE);
         } else {

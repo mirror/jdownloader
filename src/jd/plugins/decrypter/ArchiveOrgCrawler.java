@@ -219,6 +219,14 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     return ret;
                 } else {
                     logger.info("URL is not a directurl");
+                    switch (con.getResponseCode()) {
+                    case 404:
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    case 400:
+                        throw new DecrypterRetryException(RetryReason.HOST);
+                    default:
+                        break;
+                    }
                 }
             } finally {
                 try {
