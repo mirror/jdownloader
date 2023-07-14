@@ -194,16 +194,19 @@ public abstract class FlexShareCore extends antiDDoSForHost {
                 filename = fileInfo.getMatch(2);
             }
             String filesize = fileInfo.getMatch(3);
-            if (filename == null || filesize == null) {
-                handleErrors(link, null);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             /* Set final filename here because hoster is tagging filenames that are given via Content-Disposition header. */
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename).trim();
+                /*
+                 * 2023-07-14: Premium users may get another representation of the file information html website -> Remove stuff we don't
+                 * need.
+                 */
+                filename = filename.replaceFirst("^(?i)Download \\|\\s*", "");
                 link.setFinalFileName(filename);
             }
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
         }
         return AvailableStatus.TRUE;
     }

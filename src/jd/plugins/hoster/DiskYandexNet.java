@@ -817,9 +817,11 @@ public class DiskYandexNet extends PluginForHost {
         if (url == null) {
             return false;
         }
+        boolean valid = false;
         try {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, this.getDownloadLink(), url, resume, maxchunks);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                valid = true;
                 return true;
             } else {
                 throw new IOException();
@@ -831,6 +833,15 @@ public class DiskYandexNet extends PluginForHost {
             } catch (Throwable ignore) {
             }
             return false;
+        } finally {
+            if (!valid) {
+                link.removeProperty(directlinkproperty);
+                try {
+                    dl.getConnection().disconnect();
+                } catch (Throwable ignore) {
+                }
+                this.dl = null;
+            }
         }
     }
 
