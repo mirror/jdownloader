@@ -25,6 +25,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.FacebookConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -47,17 +58,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.FaceBookComGallery;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.FacebookConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FaceBookComVideos extends PluginForHost {
@@ -246,6 +246,15 @@ public class FaceBookComVideos extends PluginForHost {
                     return false;
                 }
             }
+        }
+    }
+
+    public static boolean isPhoto(final DownloadLink link) {
+        final String type = getType(link);
+        if (StringUtils.equals(type, TYPE_PHOTO)) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -514,10 +523,12 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Normal linkcheck via website. </br> Only suited for URLs matching TYPE_VIDEO_WATCH! <br>
+     * Normal linkcheck via website. </br>
+     * Only suited for URLs matching TYPE_VIDEO_WATCH! <br>
      * For other URL-types, website can be quite different depending on the video the user wants to download - it can redirect to random
-     * other URLs! </br> The Facebook website is hard to parse thus our attempt is to find different json sources to obtain video
-     * information from --> Set crawled data on our DownloadLink and use that later to build filenames- and for downloading.
+     * other URLs! </br>
+     * The Facebook website is hard to parse thus our attempt is to find different json sources to obtain video information from --> Set
+     * crawled data on our DownloadLink and use that later to build filenames- and for downloading.
      *
      * @throws PluginException
      */
@@ -566,9 +577,10 @@ public class FaceBookComVideos extends PluginForHost {
             logger.warning("Possible fatal failure: Didn't find any json source");
         }
         /**
-         * Try to find extra data for nicer filenames. </br> Do not trust this source 100% so only set properties which haven't been set
-         * before! </br> This source (video schema object) is not always given!! </br> Example:
-         * https://www.facebook.com/socialchefs/videos/326580738743639
+         * Try to find extra data for nicer filenames. </br>
+         * Do not trust this source 100% so only set properties which haven't been set before! </br>
+         * This source (video schema object) is not always given!! </br>
+         * Example: https://www.facebook.com/socialchefs/videos/326580738743639
          */
         try {
             logger.info("Trying to set filename info via findSchemaJsonVideoObject");
@@ -851,7 +863,8 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     /**
-     * Linkcheck via embed URL. </br> Not all videos are embeddable!
+     * Linkcheck via embed URL. </br>
+     * Not all videos are embeddable!
      */
     @Deprecated
     public AvailableStatus requestFileInformationEmbed(final DownloadLink link, final boolean isDownload) throws Exception {

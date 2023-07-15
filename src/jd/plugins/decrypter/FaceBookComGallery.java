@@ -205,12 +205,22 @@ public class FaceBookComGallery extends PluginForDecrypt {
          * If so, filter out all other stuff we might have picked up.
          */
         String contentIDOfSingleDesiredVideo = null;
+        String contentIDOfSingleDesiredPhoto = null;
+        DownloadLink singleDesiredPhoto = null;
         for (final DownloadLink result : ret) {
             final String contentID = result.getStringProperty(FaceBookComVideos.PROPERTY_CONTENT_ID);
-            if (FaceBookComVideos.isVideo(result) && contentID != null) {
+            if (contentID == null) {
+                continue;
+            }
+            if (FaceBookComVideos.isVideo(result)) {
                 videoPackages.put(contentID, contentIDPackages.get(contentID));
                 if (url.contains(contentID)) {
                     contentIDOfSingleDesiredVideo = contentID;
+                }
+            } else if (FaceBookComVideos.isPhoto(result)) {
+                if (url.contains(contentID)) {
+                    contentIDOfSingleDesiredPhoto = contentID;
+                    singleDesiredPhoto = result;
                 }
             }
         }
@@ -276,7 +286,32 @@ public class FaceBookComGallery extends PluginForDecrypt {
             ret.clear();
             ret.addAll(resultsForOneDesiredVideo);
         }
-        /* Set filenames and package names. */
+        if (singleDesiredPhoto != null) {
+            /* User wants single photo -> Try to find more metadata e.g. name of the uploader */
+            final Map<String, Object> photoExtraInfoMap = this.findPhotoExtraInfoMap(parsedJsons, contentIDOfSingleDesiredPhoto);
+            if (photoExtraInfoMap != null) {
+                final Number created_time = (Number) photoExtraInfoMap.get("created_time");
+                if (created_time != null) {
+                    final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+                    singleDesiredPhoto.setProperty(FaceBookComVideos.PROPERTY_DATE_FORMATTED, df.format(new Date(created_time.longValue() * 1000)));
+                }
+                final Map<String, Object> ownermap = (Map<String, Object>) photoExtraInfoMap.get("owner");
+                String uploaderNameFromMap = (String) ownermap.get("name");
+                if (uploaderNameFromMap != null) {
+                    uploaderNameFromMap = uploaderNameFromMap.trim();
+                    singleDesiredPhoto.setProperty(FaceBookComVideos.PROPERTY_UPLOADER, uploaderNameFromMap);
+                    logger.info("Found extra information for photo: " + contentIDOfSingleDesiredPhoto);
+                } else {
+                    logger.warning("Found wrong ownermap");
+                }
+            } else {
+                logger.info("Failed to find any extra information for photo: " + contentIDOfSingleDesiredPhoto);
+            }
+        }
+        /**
+         * Set filenames and package names. Put each video into a different package to be able to group video + thumbnail or other items
+         * which belong to one video.
+         */
         final Map<String, FilePackage> packages = new HashMap<String, FilePackage>();
         for (final DownloadLink result : ret) {
             FaceBookComVideos.setFilename(result);
@@ -455,9 +490,56 @@ public class FaceBookComGallery extends PluginForDecrypt {
             final List<Object> array = (List) o;
             for (final Object arrayo : array) {
                 if (arrayo instanceof List || arrayo instanceof Map) {
-                    final Object pico = findVideoExtraInfoMapRecursive(arrayo, videoid);
-                    if (pico != null) {
-                        return pico;
+                    final Object res = findVideoExtraInfoMapRecursive(arrayo, videoid);
+                    if (res != null) {
+                        return res;
+                    }
+                }
+            }
+            return null;
+        } else {
+            return null;
+        }
+    }
+
+    private Map<String, Object> findPhotoExtraInfoMap(final List<Object> parsedJsons, final String photoid) {
+        for (final Object parsedJsonO : parsedJsons) {
+            final Object mapO = findPhotoExtraInfoMapRecursive(parsedJsonO, photoid);
+            if (mapO != null) {
+                return (Map<String, Object>) mapO;
+            }
+        }
+        return null;
+    }
+
+    private Object findPhotoExtraInfoMapRecursive(final Object o, final String photoid) {
+        if (photoid == null) {
+            return null;
+        }
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
+                // final String key = entry.getKey();
+                final Object value = entry.getValue();
+                final String __isMedia = (String) entrymap.get("__isMedia");
+                final String id = (String) entrymap.get("id");
+                if (StringUtils.equalsIgnoreCase(__isMedia, "Photo") && StringUtils.equals(id, photoid) && entrymap.containsKey("owner") && entrymap.containsKey("created_time") && entrymap.containsKey("message_preferred_body")) {
+                    return entrymap;
+                } else if (value instanceof List || value instanceof Map) {
+                    final Object ret = findPhotoExtraInfoMapRecursive(value, photoid);
+                    if (ret != null) {
+                        return ret;
+                    }
+                }
+            }
+            return null;
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final Object res = findPhotoExtraInfoMapRecursive(arrayo, photoid);
+                    if (res != null) {
+                        return res;
                     }
                 }
             }
