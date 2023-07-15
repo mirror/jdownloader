@@ -59,19 +59,16 @@ public class JulesjordanCom extends antiDDoSForHost {
         return "https://www.julesjordan.com/terms.html";
     }
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 0;
-    private static final int     FREE_MAXDOWNLOADS            = -1;
-    private final boolean        ACCOUNT_PREMIUM_RESUME       = true;
-    private final int            ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
-    private String               dllink                       = null;
-    private boolean              server_issues                = false;
+    private String  dllink        = null;
+    private boolean server_issues = false;
 
     public static Browser prepBR(final Browser br, final String host) {
         br.setFollowRedirects(true);
         return br;
+    }
+
+    public int getMaxChunks(final Account account) {
+        return 0;
     }
 
     @Override
@@ -81,6 +78,7 @@ public class JulesjordanCom extends antiDDoSForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         // final String decrypter_filename = link.getStringProperty("decrypter_filename", null);
@@ -102,16 +100,15 @@ public class JulesjordanCom extends antiDDoSForHost {
                     dllink = dllink_temp;
                 }
             }
-            final String url_name = getURLName(link.getPluginPatternMatcher());
-            String filename = null;
-            /* Fallback in case we do not get any filename via html code */
-            if (inValidate(filename)) {
-                filename = url_name;
+            if (dllink == null) {
+                /* 2023-07-15 */
+                dllink = br.getRegex("<source data-bitrate=\"trailer\"[^>]*src=\"(http[^\"]+)").getMatch(0);
             }
-            filename = Encoding.htmlDecode(filename).trim();
-            filename = encodeUnicode(filename);
+            String title = getURLName(link.getPluginPatternMatcher()).replace("-", " ");
+            title = Encoding.htmlDecode(title).trim();
+            title = encodeUnicode(title);
             /* Do NOT set final filename yet!! */
-            link.setName(filename + ".mp4");
+            link.setName(title + ".mp4");
             if (!StringUtils.isEmpty(dllink)) {
                 URLConnectionAdapter con = null;
                 try {
@@ -183,11 +180,11 @@ public class JulesjordanCom extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link, null);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, null);
     }
 
-    private void doFree(final DownloadLink link, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        requestFileInformation(link, account);
         handleGeneralErrors();
         if (server_issues) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
@@ -198,7 +195,7 @@ public class JulesjordanCom extends antiDDoSForHost {
              */
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, this.getMaxChunks(account));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
@@ -209,7 +206,6 @@ public class JulesjordanCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty("free_directlink", dllink);
         dl.startDownload();
     }
 
@@ -329,37 +325,12 @@ public class JulesjordanCom extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, account);
-        if (account.getType() == AccountType.FREE) {
-            /* This should never happen! */
-            logger.warning("Entering untested free account code");
-            doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "account_free_directlink");
-        } else {
-            handleGeneralErrors();
-            if (server_issues) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-            } else if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            link.setProperty("premium_directlink", dllink);
-            dl.startDownload();
-        }
+        this.handleDownload(link, account);
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return -1;
     }
 
     @Override
@@ -381,7 +352,7 @@ public class JulesjordanCom extends antiDDoSForHost {
     }
 
     public static boolean isTrailerURL(final String inputurl) {
-        return inputurl != null && (inputurl.matches(".+/(?:trial|members)/.+\\.html$"));
+        return inputurl != null && (inputurl.matches("(?i).+/(?:trial|members)/.+\\.html$"));
     }
 
     public static String getURLName(final String inputurl) {
@@ -420,7 +391,7 @@ public class JulesjordanCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     @Override

@@ -23,6 +23,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -40,11 +44,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.JulesjordanCom;
 import jd.plugins.hoster.JulesjordanCom.JulesjordanComConfigInterface;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "julesjordan.com" }, urls = { "https?://(?:www\\.)?julesjordan\\.com/(?:trial|members)/(?:movies|scenes)/[^/]+\\.html" })
 public class JulesjordanComDecrypter extends PluginForDecrypt {
@@ -55,19 +56,19 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
     /* Important: Keep this updated & keep this in order: Highest --> Lowest */
     private final List<String> all_known_qualities = Arrays.asList("4K", "1080P", "720P", "Mobile");
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         List<String> all_selected_qualities = new ArrayList<String>();
-        final JulesjordanComConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.JulesjordanCom.JulesjordanComConfigInterface.class);
+        final JulesjordanComConfigInterface cfg = PluginJsonConfig.get(JulesjordanCom.JulesjordanComConfigInterface.class);
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account == null) {
             /* Only MOCH download and/or trailer download --> Add link for hostplugin -> User might be able to download trailer */
             final DownloadLink dl = this.createDownloadlink(param.getCryptedUrl());
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            ret.add(dl);
+            return ret;
         }
-        final String url_name = jd.plugins.hoster.JulesjordanCom.getURLName(param.getCryptedUrl());
+        final String url_name = JulesjordanCom.getURLName(param.getCryptedUrl());
         final boolean grabBest = cfg.isGrabBESTEnabled();
         final boolean grabBestWithinUserSelection = cfg.isOnlyBestVideoQualityOfSelectedQualitiesEnabled();
         final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
@@ -93,11 +94,11 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
         }
         synchronized (account) {
             ((jd.plugins.hoster.JulesjordanCom) plg).login(account, false);
-            this.br.getPage(jd.plugins.hoster.JulesjordanCom.getURLPremium(param.getCryptedUrl()));
+            this.br.getPage(JulesjordanCom.getURLPremium(param.getCryptedUrl()));
             /**
-             * 2022-02-21: This may happen randomly- or only for specific links. </br> Once confirmed in JD (or browser!) we should be able
-             * to proceed. The website seems to do this by-IP which is why we do not have to update the account cookies to prevent further
-             * activation-code-prompts.
+             * 2022-02-21: This may happen randomly- or only for specific links. </br>
+             * Once confirmed in JD (or browser!) we should be able to proceed. The website seems to do this by-IP which is why we do not
+             * have to update the account cookies to prevent further activation-code-prompts.
              */
             if (isNewDeviceProtectionActive(this.br)) {
                 String activationCode = null;
@@ -118,17 +119,17 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
                     throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "NEW_DEVICE_OR_LOCATION_DETECTION_NOT_PASSED_" + br._getURL().getPath(), infoText, null);
                 } else {
                     // refresh stored cookies
-                    account.saveCookies(br.getCookies(account.getHoster()), "");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
                 }
             } else {
                 // refresh stored cookies
-                account.saveCookies(br.getCookies(account.getHoster()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             }
         }
         if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = jd.plugins.hoster.JulesjordanCom.getTitle(this.br);
+        String title = JulesjordanCom.getTitle(this.br);
         if (StringUtils.isEmpty(title)) {
             /* Fallback */
             title = url_name;
@@ -161,12 +162,12 @@ public class JulesjordanComDecrypter extends PluginForDecrypt {
         while (it_2.hasNext()) {
             final Entry<String, DownloadLink> entry = it_2.next();
             final DownloadLink keep = entry.getValue();
-            decryptedLinks.add(keep);
+            ret.add(keep);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(title.trim()));
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 
     public static boolean isNewDeviceProtectionActive(final Browser br) {
