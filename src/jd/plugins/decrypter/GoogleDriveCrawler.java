@@ -340,7 +340,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        if (account != null && CAN_HANDLE_PRIVATE_FOLDERS) {
+        if (account != null) {
             if (CAN_HANDLE_PRIVATE_FOLDERS) {
                 logger.info("Account available -> Logging in");
                 loginWebsite(this.br, account);

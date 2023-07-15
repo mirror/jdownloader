@@ -441,6 +441,7 @@ public class DiskYandexNet extends PluginForHost {
                 }
             }
             if (isHLS(dllink)) {
+                checkFFmpeg(link, "Download a HLS Stream");
                 dl = new HLSDownloader(link, br, dllink);
             } else {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
