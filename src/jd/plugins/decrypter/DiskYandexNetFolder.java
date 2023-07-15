@@ -109,7 +109,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        jd.plugins.hoster.DiskYandexNet.prepBR(this.br);
+        /* Load hosterplugin to use same browser headers/settings. */
+        final DiskYandexNet hosterplugin = (DiskYandexNet) this.getNewPluginForHostInstance(this.getHost());
         final String parameter = param.getCryptedUrl();
         /* Do some URL corrections */
         if (param.getCryptedUrl().matches(type_docviewer)) {
@@ -159,7 +160,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         if (isOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String sk = jd.plugins.hoster.DiskYandexNet.getSK(this.br);
+        final String sk = DiskYandexNet.getSK(this.br);
         final String json = br.getRegex("<script type=\"application/json\"[^>]*id=\"store-prefetch\"[^>]*>(.*?)</script>").getMatch(0);
         Map<String, Object> map = restoreFromString(json, TypeRef.MAP);
         // final String rootResourceId = (String) map.get("rootResourceId");
@@ -547,16 +548,16 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     }
 
     private void parseFilePropertiesAPI(final DownloadLink dl, final Map<String, Object> entries) throws Exception {
-        final AvailableStatus status = jd.plugins.hoster.DiskYandexNet.parseInformationAPIAvailablecheckFiles(this, dl, entries);
+        final AvailableStatus status = DiskYandexNet.parseInformationAPIAvailablecheckFiles(this, dl, entries);
         dl.setAvailableStatus(status);
     }
 
     private void parseFilePropertiesWebsite(final DownloadLink dl, final Map<String, Object> entries) throws Exception {
-        final AvailableStatus status = jd.plugins.hoster.DiskYandexNet.parseInformationWebsiteAvailablecheckFiles(this, dl, entries);
+        final AvailableStatus status = DiskYandexNet.parseInformationWebsiteAvailablecheckFiles(this, dl, entries);
         dl.setAvailableStatus(status);
     }
 
     private void getPage(final String url) throws IOException {
-        jd.plugins.hoster.DiskYandexNet.getPage(this.br, url);
+        DiskYandexNet.getPage(this.br, url);
     }
 }

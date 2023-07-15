@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -68,6 +69,17 @@ public class RecurbateCom extends PluginForHost {
     public static final String PROPERTY_DATE_ORIGINAL  = "date_original";
     public static final String PROPERTY_DATE_TIMESTAMP = "date_timestamp";
     public static final String PROPERTY_USER           = "username";
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser brnew = new Browser();
+        brnew.setFollowRedirects(true);
+        final String customUserAgent = PluginJsonConfig.get(RecurbateComConfig.class).getCustomUserAgent();
+        if (!StringUtils.isEmpty(customUserAgent) && !StringUtils.equalsIgnoreCase(customUserAgent, "JDDEFAULT")) {
+            brnew.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, customUserAgent);
+        }
+        return brnew;
+    }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -124,9 +136,8 @@ public class RecurbateCom extends PluginForHost {
             link.setName(fid + ".mp4");
         }
         if (account != null) {
-            this.login(account, link.getPluginPatternMatcher(), true);
+            login(account, link.getPluginPatternMatcher(), true);
         } else {
-            br.setFollowRedirects(true);
             br.getPage(link.getPluginPatternMatcher());
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -198,8 +209,10 @@ public class RecurbateCom extends PluginForHost {
              * Official downloadlinks are only available for "Ultimate" users. Those can download much faster and with an "unlimited"
              * amount.
              */
-            final String officialHighspeedDownloadlink = br.getRegex("recu-link download\"\\s*href=\"(https?://[^\"]+)").getMatch(0);
+            String officialHighspeedDownloadlink = br.getRegex("recu-link download\"\\s*href=\"(https?://[^\"]+)").getMatch(0);
             if (officialHighspeedDownloadlink != null) {
+                /* Fix encoding */
+                officialHighspeedDownloadlink = officialHighspeedDownloadlink.replace("&amp;", "&");
                 logger.info("Found highspeed downloadurl: " + officialHighspeedDownloadlink);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, officialHighspeedDownloadlink, RESUMABLE, MAXCHUNKS);
             } else {
@@ -287,10 +300,9 @@ public class RecurbateCom extends PluginForHost {
         }
     }
 
-    private boolean login(final Account account, final String checkURL, final boolean force) throws Exception {
+    public boolean login(final Account account, final String checkURL, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies userCookies = account.loadUserCookies();
                 if (userCookies == null) {
@@ -305,7 +317,7 @@ public class RecurbateCom extends PluginForHost {
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 logger.info("Attempting user cookie login");
-                this.br.setCookies(this.getHost(), userCookies);
+                br.setCookies(this.getHost(), userCookies);
                 if (!force) {
                     /* Do not validate cookies */
                     return false;

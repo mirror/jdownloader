@@ -341,11 +341,15 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
         }
         Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null && CAN_HANDLE_PRIVATE_FOLDERS) {
-            logger.info("Account available -> Logging in");
-            loginWebsite(this.br, account);
+            if (CAN_HANDLE_PRIVATE_FOLDERS) {
+                logger.info("Account available -> Logging in");
+                loginWebsite(this.br, account);
+            } else {
+                logger.info("Account available -> Can't login (disabled by developer)");
+                account = null;
+            }
         } else {
-            logger.info("Account available -> Can't login (disabled by developer)");
-            account = null;
+            logger.info("No account available");
             GoogleDrive.prepBrowser(this.br);
         }
         br.setFollowRedirects(true);

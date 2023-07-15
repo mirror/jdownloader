@@ -33,8 +33,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "is.gd", "djurl.com", "q32.ru", "adfoc.us", "lnk.co", "myurl.in", "href.hu", "songspk.info", "academicearth.org", "tm-exchange.com", "mafia.to" }, urls = { "https?://(?:www\\.)?is\\.gd/[a-zA-Z0-9]+", "http://djurl\\.com/[A-Za-z0-9]+", "http://q32\\.ru/\\d+/c/[A-Za-z0-9\\-_]+", "http://(www\\.)?adfoc\\.us/(serve/\\?id=[a-z0-9]+|(?!serve|privacy|terms)[a-z0-9]+)", "http://(www\\.)?lnk\\.co/[A-Za-z0-9]+", "http://(www\\.)?protect\\.myurl\\.in/[A-Za-z0-9]+", "http://href\\.hu/x/[a-zA-Z0-9\\.]+", "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=|link\\.songspk\\.help/\\S+/download\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?academicearth\\.org/lectures/.{2,}",
-        "http://[\\w\\.]*?tm-exchange\\.com/(get\\.aspx\\?action=trackgbx|\\?action=trackshow)\\&id=\\d+", "http://[\\w\\.]*?mafia\\.to/download-[a-z0-9]+\\.cfm" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "q32.ru", "adfoc.us", "lnk.co", "myurl.in", "href.hu", "songspk.info", "academicearth.org", "tm-exchange.com", "mafia.to" }, urls = { "http://q32\\.ru/\\d+/c/[A-Za-z0-9\\-_]+", "http://(www\\.)?adfoc\\.us/(serve/\\?id=[a-z0-9]+|(?!serve|privacy|terms)[a-z0-9]+)", "http://(www\\.)?lnk\\.co/[A-Za-z0-9]+", "http://(www\\.)?protect\\.myurl\\.in/[A-Za-z0-9]+", "http://href\\.hu/x/[a-zA-Z0-9\\.]+", "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=|link\\.songspk\\.help/\\S+/download\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?academicearth\\.org/lectures/.{2,}", "http://[\\w\\.]*?tm-exchange\\.com/(get\\.aspx\\?action=trackgbx|\\?action=trackshow)\\&id=\\d+", "http://[\\w\\.]*?mafia\\.to/download-[a-z0-9]+\\.cfm" })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
@@ -177,33 +176,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                 finallink = br.toString();
                 if (finallink == null || finallink.length() > 500 || !finallink.startsWith("http")) {
                     finallink = null;
-                }
-            } else if (parameter.contains("djurl.com/")) {
-                finallink = br.getRedirectLocation();
-                if (finallink == null) {
-                    finallink = br.getRegex("var finalStr = \"(.*?)\";").getMatch(0);
-                }
-                if (finallink != null) {
-                    finallink = Encoding.Base64Decode(finallink);
-                } else {
-                    finallink = br.getRegex("var finalLink = \"(.*?)\";").getMatch(0);
-                    if (finallink == null) {
-                        finallink = br.getRegex("<a href\\s*=\\s*('|\")([^\r\n]*/\\?r=.*?)\\1[^>]*>Close</a>").getMatch(1);
-                    }
-                }
-                if (finallink == null && (br.containsHTML("<title>DJURL\\.COM \\- The DJ Link Shortener</title>") || br.getHttpConnection().getResponseCode() == 404)) {
-                    offline = true;
-                }
-            } else if (parameter.contains("is.gd/")) {
-                final String fid = new Regex(parameter, "[^/]+//[^/]+/(.+)").getMatch(0);
-                parameter = "https://is.gd/" + fid;
-                getPage(parameter);
-                finallink = br.getRedirectLocation();
-                if (finallink == null || finallink.contains("is.gd/")) {
-                    finallink = br.getRegex("the destination shown: \\-<br /><a href=\"(http[^<>\"]*?)\"").getMatch(0);
-                }
-                if (br.containsHTML(">Sorry, we couldn't find the shortened URL you requested") || br.containsHTML(">Link Disabled<") || parameter.equals("http://is.gd") || parameter.equals("http://www.is.gd")) {
-                    offline = true;
                 }
             }
         } catch (final SocketTimeoutException e) {

@@ -23,8 +23,10 @@ import java.util.Set;
 import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -70,8 +72,15 @@ public class RecurbateComProfile extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String username = Encoding.htmlDecode(new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0)).trim();
-        br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        /* Init hosterplugin so we're using the same browser (same headers/settings). */
+        final RecurbateCom hosterplugin = (RecurbateCom) this.getNewPluginForHostInstance(this.getHost());
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            /* Login whenever possible. This is not needed to get the content but can help to get around Cloudflare. */
+            hosterplugin.login(account, param.getCryptedUrl(), true);
+        } else {
+            br.getPage(param.getCryptedUrl());
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
