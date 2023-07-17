@@ -4,6 +4,14 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.requests.GetRequest;
@@ -20,15 +28,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.GofileIo;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:#download#|\\?c=|d/)([A-Za-z0-9\\-]+)$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "https?://(?:www\\.)?gofile\\.io/(?:#download#|\\?c=|d/)([A-Za-z0-9\\-]+)" })
 public class GoFileIoCrawler extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {

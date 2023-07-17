@@ -96,8 +96,14 @@ public class UlozTo extends PluginForHost {
          * * https://uloz.to/soubory/<fid>/<slug> </br>
          */
         ret.add(new String[] { "uloz.to", "ulozto.sk", "ulozto.cz", "ulozto.net", "zachowajto.pl" });
-        ret.add(new String[] { "pornfile.cz", "pornfile.ulozto.net" });
+        ret.add(new String[] { "pinkfile.cz", "pornfile.cz", "pornfile.ulozto.net" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2023-07-17: pornfile.cz main domain has changed to pinkfile.cz */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
