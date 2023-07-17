@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.MagentamusikDeConfig;
@@ -33,9 +32,6 @@ public class MagentamusikDe extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final Regex patternIDInsideURL = new Regex(param.getCryptedUrl(), "https?://[^/]+/(?:[^/]+/)?[a-zA-Z0-9\\-%_]+-(\\d{10,})(?:-\\d+)?$");

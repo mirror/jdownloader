@@ -20,6 +20,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -41,10 +42,34 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "q32.pw" }, urls = { "https?://(?:www\\.)?q32\\.pw/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Q32Pw extends PluginForDecrypt {
     public Q32Pw(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "q32.pw", "q32.link", "q32.ru" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(\\d+/c/[A-Za-z0-9\\-_]+|[A-Za-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -63,7 +88,7 @@ public class Q32Pw extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(directRedirect));
         } else {
             final String domain_key = br.getRegex("domain_key\\s*:\\s*\"([a-f0-9]+)\"").getMatch(0);
-            final String linkid = br.getRegex("linkid\\s*:\\s*\"(\\d+)\"").getMatch(0);
+            final String linkid = br.getRegex("linkid\\s*:\\s*\"([^\"]+)\"").getMatch(0);
             final String lang = br.getRegex("lang\\s*:\\s*\"([a-z]+)\"").getMatch(0);
             final String waitStr = br.getRegex("id=\"countdown\">(\\d+)<").getMatch(0);
             if (domain_key == null || linkid == null || lang == null) {

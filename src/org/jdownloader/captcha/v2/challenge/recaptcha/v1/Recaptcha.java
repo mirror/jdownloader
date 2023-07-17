@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.captcha.utils.RecaptchaTypeTester;
 import jd.captcha.utils.RecaptchaTypeTester.RecaptchaType;
 import jd.http.Browser;
@@ -14,8 +16,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.utils.StringUtils;
 
 public class Recaptcha {
     private static final int MAX_TRIES    = 5;
@@ -31,6 +31,7 @@ public class Recaptcha {
     private String           helperID;
     private final Plugin     plg;
 
+    @Deprecated
     public Recaptcha(final Browser br, Plugin plg) {
         this.br = br;
         this.plg = plg;

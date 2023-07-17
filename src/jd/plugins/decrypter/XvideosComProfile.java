@@ -23,6 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -43,12 +49,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.XvideosCom;
 import jd.plugins.hoster.XvideosCore;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -100,7 +100,7 @@ public class XvideosComProfile extends PluginForDecrypt {
 
     private static final String TYPE_FAVOURITES           = "(?i)https?://[^/]+/favorite/(\\d+)/([a-z0-9\\-_]+).*";
     private static final String TYPE_FAVOURITES_ACCOUNT   = "(?i)https?://[^/]+/account/favorites/(\\d+)";
-    private static final String TYPE_USER                 = "(?i)https?://[^/]+/(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models|pornstars))/[A-Za-z0-9\\-_]+$";
+    private static final String TYPE_USER                 = "(?i)https?://[^/]+/(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models|pornstars))/([A-Za-z0-9\\-_]+).*";
     private static final String TYPE_USER_PREMIUM         = "(?i)https?://[^/]+/pornstar-channels/([A-Za-z0-9\\-_]+)#_tabRed$";
     private static final String TYPE_SINGLE_VIDEO_QUICKIE = "(?i).+#quickies/./(\\d+)";
 
@@ -276,16 +276,17 @@ public class XvideosComProfile extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlChannel(final String url) throws IOException, PluginException {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Set<String> dupeList = new HashSet<String>();
-        final Regex urlinfo = new Regex(url, "https?://[^/]+/([^/]+)/([^/]+)");
-        // final String type = urlinfo.getMatch(0);
-        final String username = urlinfo.getMatch(1);
-        if (!br.getURL().contains(username)) {
+        final String username = new Regex(url, TYPE_USER).getMatch(0);
+        if (username == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (!br.getURL().contains(username)) {
             /* E.g. redirect to mainpage */
             logger.info("Profile does not exist anymore");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final Set<String> dupeList = new HashSet<String>();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
         final String userID = br.getRegex("profile-report-form-(\\d+)_").getMatch(0);

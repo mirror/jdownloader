@@ -27,24 +27,23 @@ import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DepositFiles;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { DepositFiles.class })
 public class DepositfilesComFolder extends PluginForDecrypt {
     private static String MAINPAGE = null;
-    private static String DOMAINS  = null;
 
     public DepositfilesComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "depositfiles.com", "depositfiles.org", "dfiles.eu", "dfiles.ru" });
-        return ret;
+        return DepositFiles.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -71,14 +70,12 @@ public class DepositfilesComFolder extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (MAINPAGE == null || DOMAINS == null) {
+        if (MAINPAGE == null) {
             /* we first have to load the plugin, before we can reference it */
             final PluginForHost depositfilesPlugin = this.getNewPluginForHostInstance(this.getHost());
             ((jd.plugins.hoster.DepositFiles) depositfilesPlugin).setMainpage();
             MAINPAGE = jd.plugins.hoster.DepositFiles.MAINPAGE.get();
-            DOMAINS = jd.plugins.hoster.DepositFiles.DOMAINS;
-            if (MAINPAGE == null || DOMAINS == null) {
-                logger.warning("Contant setters failed.");
+            if (MAINPAGE == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -105,7 +102,7 @@ public class DepositfilesComFolder extends PluginForDecrypt {
         new Regex("", "");
         for (int x = 1; x <= pagecount; x++) {
             br.getPage(url + "?page=" + x + "&format=text");
-            String[] finalLinks = br.getRegex("(https?://" + DOMAINS + "/files/[0-9a-z]+)").getColumn(0);
+            String[] finalLinks = br.getRegex("(https?://[^/]+/files/[0-9a-z]+)").getColumn(0);
             for (String data : finalLinks) {
                 ret.add(createDownloadlink(data));
             }
