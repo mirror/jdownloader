@@ -165,7 +165,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
             query = UrlQuery.parse(param.getCryptedUrl());
         }
         try {
-            maxTweetsToCrawl = Integer.parseInt(query.get("maxitems"));
+            final int maxItemsToCrawlTmp = Integer.parseInt(query.get("maxitems"));
+            if (maxItemsToCrawlTmp > 0) {
+                maxTweetsToCrawl = maxItemsToCrawlTmp;
+            }
         } catch (final Throwable ignore) {
         }
         final String maxTweetDateStrTmp = query.get("max_date");
@@ -179,14 +182,17 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
         }
         try {
-            preGivenPageNumber = Integer.parseInt(query.get("page"));
+            final int preGivenPageNumberTmp = Integer.parseInt(query.get("page"));
+            if (preGivenPageNumberTmp > 0) {
+                preGivenPageNumber = preGivenPageNumberTmp;
+            }
             preGivenNumberOfTotalWalkedThroughTweetsCount = Integer.parseInt(query.get("totalCrawledTweetsCount"));
             preGivenNextCursor = Encoding.htmlDecode(query.get("nextCursor"));
             logger.info("Resuming from last state: page = " + preGivenPageNumber + " | totalCrawledTweetsCount = " + preGivenNumberOfTotalWalkedThroughTweetsCount + " | nextCursor = " + preGivenNextCursor);
         } catch (final Throwable ignore) {
         }
         br.setAllowedResponseCodes(new int[] { 429 });
-        final String newURL = param.getCryptedUrl().replaceFirst("https?://(www\\.|mobile\\.)?twitter\\.com/", "https://" + this.getHost() + "/");
+        final String newURL = param.getCryptedUrl().replaceFirst("(?i)https?://(www\\.|mobile\\.)?twitter\\.com/", "https://" + this.getHost() + "/");
         if (!newURL.equals(param.getCryptedUrl())) {
             logger.info("Currected URL: Old: " + param.getCryptedUrl() + " | New: " + newURL);
             param.setCryptedUrl(newURL);
@@ -364,7 +370,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         if (tweet == null) {
                             continue;
                         }
-                        ret.addAll(crawlTweetMap(tweet, usr, fp));
+                        final ArrayList<DownloadLink> thisResults = crawlTweetMap(tweet, usr, fp);
+                        ret.addAll(thisResults);
+                        distribute(thisResults);
                     } else if (typename.equalsIgnoreCase("TweetTombstone")) {
                         /* TODO: Check if this handling is working */
                         /* 18+ content. We can find the ID of that tweet but we can't know the name of the user who posted it. */
@@ -373,9 +381,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         if (thisTweetID == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         } else if (thisTweetID.equals(tweetID)) {
-                            /*
-                             * The tweet which we are crawling at this moment -> Account required to view that content --> Mostly this
-                             * happens with mature content.
+                            /**
+                             * ID of the Tweet which we are crawling at this moment -> Account required to view that content </br>
+                             * --> Mostly this happens with mature content.
                              */
                             throw new AccountRequiredException();
                         }
@@ -596,7 +604,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
         if (mediaLists.size() > 0) {
             final List<String> mediaTypesVideo = Arrays.asList(new String[] { "animated_gif", "video" });
             final String mediaTypePhoto = "photo";
-            final Set<String> foundMediaTypes = new HashSet<String>();
             final Map<String, DownloadLink> mediaResultMap = new LinkedHashMap<String, DownloadLink>();
             final Set<String> videoIDs = new HashSet<String>();
             for (final List<Map<String, Object>> mediaList : mediaLists) {
@@ -607,7 +614,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     if (mediaResultMap.containsKey(keyForMap)) {
                         continue;
                     }
-                    foundMediaTypes.add(mediaType);
                     final DownloadLink dl;
                     if (mediaTypesVideo.contains(mediaType)) {
                         videoIDs.add(mediaIDStr);
@@ -682,7 +688,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 }
                 logger.info("Skipped thumbnails: " + numberofSkippedVideoThumbnails);
             }
-            logger.info("Found media types: " + foundMediaTypes);
             /* Add results to list to be returned later. */
             retMedia.addAll(mediaResultMap.values());
         }
@@ -764,6 +769,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 text.setProperty(PROPERTY_MEDIA_INDEX, 0);
                 text.setProperty(PROPERTY_TYPE, TYPE_TEXT);
                 text.setAvailable(true);
+                // text.setEnabled(false);
                 retInternal.add(text);
             } else {
                 itemsSkippedDueToPluginSettings++;
@@ -793,7 +799,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
         retAll.addAll(retInternal);
         retAll.addAll(retExternal);
         fp.addLinks(retAll);
-        this.distribute(retAll);
         /* Logger just in case nothing was added. */
         if (retMedia.isEmpty()) {
             if (itemsSkippedDueToPluginSettings == 0) {
@@ -1057,48 +1062,42 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final List<Object> pagination_info = (List<Object>) JavaScriptEngineFactory.walkJson(root, "timeline/instructions/{0}/addEntries/entries");
             final Map<String, Object> tweetMap = (Map<String, Object>) globalObjects.get("tweets");
             final Iterator<Entry<String, Object>> iterator = tweetMap.entrySet().iterator();
-            String lastCreatedAtDateStr = null;
-            boolean stopBecauseReachedUserDefinedMaxItemsLimit = false;
-            boolean stopBecauseReachedUserDefinedMaxDate = false;
             Long lastCrawledTweetTimestamp = null;
-            tweetItemsLoop: while (iterator.hasNext()) {
+            final List<DownloadLink> allowedResults = new ArrayList<DownloadLink>();
+            final HashSet<DownloadLink> skippedResultsByMaxItems = new HashSet<DownloadLink>();
+            final HashSet<DownloadLink> skippedResultsByMaxDate = new HashSet<DownloadLink>();
+            while (iterator.hasNext()) {
                 final Map<String, Object> tweet = (Map<String, Object>) iterator.next().getValue();
                 final Map<String, Object> userWhoPostedThisTweet = (Map<String, Object>) users.get(tweet.get("user_id_str").toString());
-                final List<DownloadLink> results = crawlTweetMap(tweet, userWhoPostedThisTweet, fp);
-                /* Count Tweet as crawled either way. If our array of results is empty this is due to the users' settings. */
-                totalCrawledTweetsCount++;
-                if (results.size() > 0) {
-                    ret.addAll(results);
-                    for (final DownloadLink thisTweetResult : results) {
-                        /* Find timestamp of last added result. Ignore pinned tweets. */
-                        final String tweetID = thisTweetResult.getStringProperty(PROPERTY_TWEET_ID);
-                        if (pinned_tweet_ids_str == null || (tweetID != null && !pinned_tweet_ids_str.contains(tweetID))) {
-                            lastCrawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
-                        }
-                    }
-                } else {
-                    /* E.g. tweet only consists of text and used has disabled crawling tweet texts. */
+                final List<DownloadLink> thisResults = crawlTweetMap(tweet, userWhoPostedThisTweet, fp);
+                if (thisResults.isEmpty()) {
                     logger.info("Found nothing for tweet: " + tweet);
+                    continue;
                 }
-                lastCreatedAtDateStr = (String) tweet.get("created_at");
-                /*
-                 * Set stop conditions here but don't break out of the main loop yet. The reason for this is that we want to have the
-                 * important log statement that comes next to this loop!
-                 */
-                if (this.maxTweetsToCrawl != null && totalCrawledTweetsCount >= this.maxTweetsToCrawl.intValue()) {
-                    stopBecauseReachedUserDefinedMaxItemsLimit = true;
-                    break tweetItemsLoop;
+                for (final DownloadLink thisTweetResult : thisResults) {
+                    /* Find timestamp of last added result. Ignore pinned tweets. */
+                    final String tweetID = thisTweetResult.getStringProperty(PROPERTY_TWEET_ID);
+                    if (pinned_tweet_ids_str == null || (tweetID != null && !pinned_tweet_ids_str.contains(tweetID))) {
+                        lastCrawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+                    }
+                }
+                if (this.maxTweetsToCrawl != null && totalCrawledTweetsCount == this.maxTweetsToCrawl.intValue()) {
+                    skippedResultsByMaxItems.addAll(thisResults);
                 } else if (this.crawlUntilTimestamp != null && lastCrawledTweetTimestamp != null && lastCrawledTweetTimestamp < crawlUntilTimestamp) {
-                    stopBecauseReachedUserDefinedMaxDate = true;
-                    break tweetItemsLoop;
+                    skippedResultsByMaxDate.addAll(thisResults);
+                } else {
+                    totalCrawledTweetsCount++;
+                    allowedResults.addAll(thisResults);
                 }
             }
-            logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | lastCreatedAtDateStr = " + lastCreatedAtDateStr + " | last nextCursor = " + nextCursor);
+            logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | last nextCursor = " + nextCursor);
+            distribute(allowedResults);
+            ret.addAll(allowedResults);
             /* Check abort conditions */
-            if (stopBecauseReachedUserDefinedMaxItemsLimit) {
-                logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl + " | Actually crawled: " + totalCrawledTweetsCount);
+            if (skippedResultsByMaxItems.size() > 0) {
+                logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl);
                 break tweetTimeline;
-            } else if (stopBecauseReachedUserDefinedMaxDate) {
+            } else if (skippedResultsByMaxDate.size() > 0) {
                 logger.info("Stopping because: Last item age is older than user defined max age " + this.maxTweetDateStr);
                 break tweetTimeline;
             } else if (tweetMap.isEmpty()) {
@@ -1215,7 +1214,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/user/result/timeline_v2/timeline/instructions");
             final int totalCrawledTweetsCountOld = totalCrawledTweetsCount;
             boolean stopBecauseReachedUserDefinedMaxItemsLimit = false;
-            boolean stopBecauseReachedUserDefinedMaxDate = false;
+            final List<DownloadLink> allowedResults = new ArrayList<DownloadLink>();
+            final HashSet<DownloadLink> skippedResultsByMaxDate = new HashSet<DownloadLink>();
+            int foundTweetsOnCurrentPage = 0;
             timelineInstructionsLoop: for (final Map<String, Object> timelineInstruction : timelineInstructions) {
                 if (!timelineInstruction.get("type").toString().equalsIgnoreCase("TimelineAddEntries")) {
                     continue;
@@ -1224,7 +1225,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 for (final Map<String, Object> timelineEntry : timelineEntries) {
                     final Map<String, Object> content = (Map<String, Object>) timelineEntry.get("content");
                     final String contentType = (String) content.get("entryType");
-                    Long lastCrawledTweetTimestamp = null;
                     if (contentType.equalsIgnoreCase("TimelineTimelineCursor")) {
                         if (content.get("cursorType").toString().equalsIgnoreCase("Bottom")) {
                             nextCursor = content.get("value").toString();
@@ -1238,22 +1238,33 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         }
                         final String typename = (String) result.get("__typename");
                         if (typename.equalsIgnoreCase("Tweet")) {
+                            foundTweetsOnCurrentPage++;
                             final Map<String, Object> usr = (Map<String, Object>) JavaScriptEngineFactory.walkJson(result, "core/user_results/result/legacy");
                             final Map<String, Object> tweet = (Map<String, Object>) result.get("legacy");
                             if (tweet == null) {
                                 continue;
                             }
                             final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(tweet, usr, fp);
+                            Long crawledTweetTimestamp = null;
                             for (final DownloadLink thisTweetResult : thisTweetResults) {
                                 /* Find timestamp of last added result. Ignore pinned tweets. */
                                 final String tweetID = thisTweetResult.getStringProperty(PROPERTY_TWEET_ID);
                                 if (pinned_tweet_ids_str == null || (tweetID != null && !pinned_tweet_ids_str.contains(tweetID))) {
-                                    lastCrawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+                                    crawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+                                    break;
                                 }
                             }
-                            ret.addAll(thisTweetResults);
-                            totalCrawledTweetsCount++;
+                            if (this.crawlUntilTimestamp != null && crawledTweetTimestamp != null && crawledTweetTimestamp < crawlUntilTimestamp) {
+                                skippedResultsByMaxDate.addAll(thisTweetResults);
+                            } else if (this.maxTweetsToCrawl != null && totalCrawledTweetsCount == this.maxTweetsToCrawl.intValue()) {
+                                stopBecauseReachedUserDefinedMaxItemsLimit = true;
+                                break timelineInstructionsLoop;
+                            } else {
+                                allowedResults.addAll(thisTweetResults);
+                                totalCrawledTweetsCount++;
+                            }
                         } else if (typename.equalsIgnoreCase("TweetTombstone")) {
+                            foundTweetsOnCurrentPage++;
                             /* TODO: Check if this handling is working */
                             /* 18+ content. We can find the ID of that tweet but we can't know the name of the user who posted it. */
                             final String entryId = timelineEntry.get("entryId").toString();
@@ -1263,32 +1274,29 @@ public class TwitterComCrawler extends PluginForDecrypt {
                             }
                             final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/unknowntwitteruser/status/" + thisTweetID);
                             link._setFilePackage(fp);
-                            ret.add(link);
+                            allowedResults.add(link);
                             totalCrawledTweetsCount++;
+                            if (this.maxTweetsToCrawl != null && totalCrawledTweetsCount == this.maxTweetsToCrawl.intValue()) {
+                                stopBecauseReachedUserDefinedMaxItemsLimit = true;
+                                break timelineInstructionsLoop;
+                            }
                         } else {
                             logger.info("Skipping unsupported __typename: " + typename);
                             continue;
                         }
                     }
-                    if (this.maxTweetsToCrawl != null && totalCrawledTweetsCount >= this.maxTweetsToCrawl.intValue()) {
-                        stopBecauseReachedUserDefinedMaxItemsLimit = true;
-                        break timelineInstructionsLoop;
-                    } else if (this.crawlUntilTimestamp != null && lastCrawledTweetTimestamp != null && lastCrawledTweetTimestamp < crawlUntilTimestamp) {
-                        stopBecauseReachedUserDefinedMaxDate = true;
-                        break timelineInstructionsLoop;
-                    }
                 }
             }
-            final int crawledTweetsThisPage = totalCrawledTweetsCount - totalCrawledTweetsCountOld;
-            totalCrawledTweetsCount += crawledTweetsThisPage;
-            logger.info("Crawled page " + page + " | Found tweets on this page: " + crawledTweetsThisPage + " | Total tweets: " + totalCrawledTweetsCount + " | nextCursor = " + nextCursor);
+            ret.addAll(allowedResults);
+            distribute(allowedResults);
+            logger.info("Crawled page " + page + " | Found Tweets on this page: " + foundTweetsOnCurrentPage + " | Tweets crawled so far: " + totalCrawledTweetsCount + " | nextCursor = " + nextCursor);
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
             } else if (StringUtils.isEmpty(nextCursor)) {
                 logger.info("Stopping because: Failed to find nextCursor");
                 break;
-            } else if (crawledTweetsThisPage == 0) {
+            } else if (foundTweetsOnCurrentPage == 0) {
                 logger.info("Stopping because: Failed to find any items on current page " + page);
                 break;
             } else if (!cursorDupes.add(nextCursor)) {
@@ -1297,7 +1305,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             } else if (stopBecauseReachedUserDefinedMaxItemsLimit) {
                 logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl + " | Actually crawled: " + totalCrawledTweetsCount);
                 break;
-            } else if (stopBecauseReachedUserDefinedMaxDate) {
+            } else if (skippedResultsByMaxDate.size() > 0) {
                 logger.info("Stopping because: Last item age is older than user defined max age " + this.maxTweetDateStr);
                 break;
             } else {

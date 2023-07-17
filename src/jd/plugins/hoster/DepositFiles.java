@@ -390,7 +390,7 @@ public class DepositFiles extends antiDDoSForHost {
                     br.followConnection(true);
                     handleDownloadError(br, dl.getConnection(), link);
                 }
-                handleDownload(dl.getConnection(), link, "finallink", downloadURL);
+                handlePreDownloadStuff(dl.getConnection(), link, "finallink", downloadURL);
                 try {
                     /* add a download slot */
                     controlRunningDownloads(account, link, true);
@@ -500,7 +500,7 @@ public class DepositFiles extends antiDDoSForHost {
             br.followConnection(true);
             handleDownloadError(br, dl.getConnection(), link);
         }
-        handleDownload(dl.getConnection(), link, "finallink", finallink);
+        handlePreDownloadStuff(dl.getConnection(), link, "finallink", finallink);
         try {
             /* add a download slot */
             controlRunningDownloads(account, link, true);
@@ -512,7 +512,7 @@ public class DepositFiles extends antiDDoSForHost {
         }
     }
 
-    private void handleDownload(final URLConnectionAdapter connection, final DownloadLink link, String finalLinkProperty, String finalLink) {
+    private void handlePreDownloadStuff(final URLConnectionAdapter connection, final DownloadLink link, String finalLinkProperty, String finalLink) {
         final String name = Plugin.getFileNameFromHeader(connection);
         if (name != null && name.contains("?") && link.getFinalFileName() == null) {
             /* fix invalid filenames */
@@ -809,7 +809,7 @@ public class DepositFiles extends antiDDoSForHost {
                 br.followConnection(true);
                 handleDownloadError(br, dl.getConnection(), link);
             }
-            handleDownload(dl.getConnection(), link, null, url);
+            handlePreDownloadStuff(dl.getConnection(), link, null, url);
             /* add a download slot */
             controlRunningDownloads(account, link, true);
             try {
@@ -1068,10 +1068,10 @@ public class DepositFiles extends antiDDoSForHost {
             br.followConnection(true);
             handleDownloadError(br, dl.getConnection(), link);
         }
-        handleDownload(dl.getConnection(), link, "finallink", directurl);
+        handlePreDownloadStuff(dl.getConnection(), link, "finallink", directurl);
+        /* Add a download slot */
+        controlRunningDownloads(account, link, true);
         try {
-            /* add a download slot */
-            controlRunningDownloads(account, link, true);
             /* start the dl */
             dl.startDownload();
         } finally {

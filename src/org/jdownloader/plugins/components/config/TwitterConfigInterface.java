@@ -100,19 +100,19 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
         ORIGINAL_PLUS {
             @Override
             public String getLabel() {
-                return "Original+: <date>_<tweet_id>_<originalFilenameWithoutExt>.<ext>";
+                return "Original+: <date>_<tweet_id>[opt:_<originalFilenameWithoutExt>].<ext>";
             }
         },
         ORIGINAL_PLUS_2 {
             @Override
             public String getLabel() {
-                return "Original+2: <date>_<username>_<tweet_id>_<originalFilenameWithoutExt>.<ext>";
+                return "Original+2: <date>_<username>_<tweet_id>[opt:_<originalFilenameWithoutExt>].<ext>";
             }
         },
         PLUGIN {
             @Override
             public String getLabel() {
-                return "Plugin: <date>_<username>_<tweet_id>_<reply>_<mediaIndex>.<ext>";
+                return "Plugin: <date>_<username>_<tweet_id>[opt:_<reply>][opt:_<mediaIndex>].<ext>";
             }
         };
     }
