@@ -1,6 +1,5 @@
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 //jDownloader - Downloadmanager
@@ -38,11 +37,9 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -278,8 +275,12 @@ abstract public class ZeveraCore extends UseNet {
             getMultiHosterManagement().runCheck(account, link);
             login(this.br, account, false, getClientID());
             final String directlinkproperty = account.getHoster() + "directlink";
-            String dllink = checkDirectLink(link, directlinkproperty);
-            if (dllink == null) {
+            final String storedDirecturl = link.getStringProperty(directlinkproperty);
+            String dllink = null;
+            if (storedDirecturl != null) {
+                logger.info("Trying to re-use stored directurl: " + storedDirecturl);
+                dllink = storedDirecturl;
+            } else {
                 final String hash_md5 = link.getMD5Hash();
                 final String hash_sha1 = link.getSha1Hash();
                 final String hash_sha256 = link.getSha256Hash();
@@ -354,11 +355,11 @@ abstract public class ZeveraCore extends UseNet {
                         link.setHashInfo(null);
                     }
                 }
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                handleAPIErrors(this, this.br, link, account);
-                /* This should never happen. */
-                getMultiHosterManagement().handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
+                if (StringUtils.isEmpty(dllink)) {
+                    handleAPIErrors(this, this.br, link, account);
+                    /* This should never happen. */
+                    getMultiHosterManagement().handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
+                }
             }
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
@@ -380,8 +381,12 @@ abstract public class ZeveraCore extends UseNet {
                 }
                 this.dl.startDownload();
             } catch (final Exception e) {
-                link.setProperty(directlinkproperty, Property.NULL);
-                throw e;
+                if (storedDirecturl != null) {
+                    link.removeProperty(directlinkproperty);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+                } else {
+                    throw e;
+                }
             }
         }
     }
@@ -398,32 +403,6 @@ abstract public class ZeveraCore extends UseNet {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content", 3 * 60 * 1000l);
         }
         this.dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    return dllink;
-                } else {
-                    throw new IOException();
-                }
-            } catch (final Exception e) {
-                link.removeProperty(property);
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
-        }
-        return null;
     }
 
     @Override
