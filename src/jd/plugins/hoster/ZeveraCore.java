@@ -29,7 +29,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.KeyValueStringEntry;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.os.CrossSystem;
@@ -43,10 +42,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -59,14 +55,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
     /* Connection limits */
-    private static final boolean ACCOUNT_PREMIUM_RESUME    = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    private static final boolean ACCOUNT_PREMIUM_RESUME        = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS     = 0;
+    private final String         API_STATUS_FOR_QUEUE_HANDLING = "deferred";
 
     protected abstract MultiHosterManagement getMultiHosterManagement();
 
@@ -159,7 +155,8 @@ abstract public class ZeveraCore extends UseNet {
         return -1;
     }
 
-    protected Browser prepBR(final Browser br) {
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
         br.setCookiesExclusive(true);
         prepBrowser(br, getHost());
         br.getHeaders().put("User-Agent", "JDownloader");
@@ -209,7 +206,7 @@ abstract public class ZeveraCore extends UseNet {
         } else {
             details = entries;
         }
-        final String filename = details.get("name").toString();
+        final String filename = (String) details.get("name");
         final Number filesize = (Number) details.get("size");
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
@@ -245,7 +242,7 @@ abstract public class ZeveraCore extends UseNet {
     private boolean isSelfhostedContent(final DownloadLink link) {
         if (link == null) {
             return false;
-        } else if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("https?://[^/]+/file\\?id=.+")) {
+        } else if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("(?i)https?://[^/]+/file\\?id=.+")) {
             return true;
         } else {
             return false;
@@ -278,18 +275,93 @@ abstract public class ZeveraCore extends UseNet {
             super.handleMultiHost(link, account);
             return;
         } else {
-            prepBR(this.br);
             getMultiHosterManagement().runCheck(account, link);
             login(this.br, account, false, getClientID());
-            final String dllink = getDllink(this.br, account, link, getClientID(), this);
+            final String directlinkproperty = account.getHoster() + "directlink";
+            String dllink = checkDirectLink(link, directlinkproperty);
+            if (dllink == null) {
+                final String hash_md5 = link.getMD5Hash();
+                final String hash_sha1 = link.getSha1Hash();
+                final String hash_sha256 = link.getSha256Hash();
+                final UrlQuery query = new UrlQuery();
+                query.add("src", URLEncode.encodeURIComponent(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+                if (hash_md5 != null) {
+                    query.add("hash_md5", hash_md5);
+                }
+                if (hash_sha1 != null) {
+                    query.add("hash_sha1", hash_sha1);
+                }
+                if (hash_sha256 != null) {
+                    query.add("hash_sha256", hash_sha256);
+                }
+                /* https://app.swaggerhub.com/apis-docs/premiumize.me/api/1.6.7#/transfer/transferDirectdl */
+                String url = "https://www." + account.getHoster() + "/api/transfer/directdl";
+                final boolean useWorkaround = true;
+                if (!useWorkaround && !usePairingLogin(account)) {
+                    url += "?apikey=" + getAPIKey(account);
+                }
+                br.postPage(url, query);
+                final boolean useSlotBlockingQueueHandling = true;
+                Map<String, Object> entries;
+                if (useSlotBlockingQueueHandling) {
+                    /* 2023-07-17 */
+                    logger.info("Executing slot-blocking queue handling");
+                    entries = this.handleAPIErrors(this, br, link, account, API_STATUS_FOR_QUEUE_HANDLING);
+                    String status = (String) entries.get("status");
+                    if (API_STATUS_FOR_QUEUE_HANDLING.equalsIgnoreCase(status)) {
+                        final Number delay = (Number) entries.get("delay");
+                        final int maxWaitSeconds = delay != null ? Math.min(delay.intValue() * 10, 2400) : 120;
+                        int passedSeconds = 0;
+                        final int waitSecondsPerLoop = 10;
+                        do {
+                            this.sleep(waitSecondsPerLoop * 1000l, link, "deferred queue handling: Waiting sec " + passedSeconds + "/" + maxWaitSeconds);
+                            passedSeconds += waitSecondsPerLoop;
+                            br.postPage(url, query);
+                            entries = this.handleAPIErrors(this, br, link, account, API_STATUS_FOR_QUEUE_HANDLING);
+                            status = (String) entries.get("status");
+                            logger.info("Waited seconds: " + passedSeconds + "/" + maxWaitSeconds);
+                            if (!StringUtils.equals(status, "deferred")) {
+                                logger.info("Stopping because: Status != deferred");
+                                break;
+                            } else if (passedSeconds >= maxWaitSeconds) {
+                                logger.info("Stopping because: Timeout -> Could not find final downloadurl");
+                                break;
+                            }
+                        } while (!this.isAbort());
+                        this.handleAPIErrors(this, entries, br, link, account, null);
+                    }
+                } else {
+                    entries = this.handleAPIErrors(this, br, link, account);
+                }
+                dllink = (String) entries.get("location");
+                final String filename = (String) entries.get("filename");
+                if (!StringUtils.isEmpty(filename) && link.getFinalFileName() == null) {
+                    link.setFinalFileName(filename);
+                }
+                if (!StringUtils.isEmpty(dllink)) {
+                    /*
+                     * 2019-11-29: TODO: This is a workaround! They're caching data. This means that it may also happen that a slightly
+                     * different file will get delivered (= new hash). This is a bad workaround to "disable" the hash check of our original
+                     * file thus prevent JD to display CRC errors when there are none. Premiumize is advised to at least return the correct
+                     * MD5 hash so that we can set it accordingly but for now, we only have this workaround. See also:
+                     * https://svn.jdownloader.org/issues/87604
+                     */
+                    final boolean forceDisableCRCCheck = true;
+                    final long originalSourceFilesize = link.getView().getBytesTotal();
+                    long thisFilesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), -1l);
+                    if (forceDisableCRCCheck || originalSourceFilesize > 0 && thisFilesize > 0 && thisFilesize != originalSourceFilesize) {
+                        logger.info("Dumping existing hashes to prevent errors because of cache download");
+                        link.setHashInfo(null);
+                    }
+                }
+            }
             if (StringUtils.isEmpty(dllink)) {
                 handleAPIErrors(this, this.br, link, account);
+                /* This should never happen. */
                 getMultiHosterManagement().handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
             }
-            link.setProperty(account.getHoster() + "directlink", dllink);
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-                dl.setFilenameFix(true);
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                     br.followConnection(true);
                     /* Only check for API issues if we got a json response. */
@@ -298,6 +370,8 @@ abstract public class ZeveraCore extends UseNet {
                     }
                     getMultiHosterManagement().handleErrorGeneric(account, link, "Unknown download error", 50, 5 * 60 * 1000l);
                 }
+                link.setProperty(directlinkproperty, dllink);
+                dl.setFilenameFix(true);
                 final long verifiedFileSize = link.getVerifiedFileSize();
                 final long completeContentLength = dl.getConnection().getCompleteContentLength();
                 if (completeContentLength != verifiedFileSize) {
@@ -306,7 +380,7 @@ abstract public class ZeveraCore extends UseNet {
                 }
                 this.dl.startDownload();
             } catch (final Exception e) {
-                link.setProperty(account.getHoster() + "directlink", Property.NULL);
+                link.setProperty(directlinkproperty, Property.NULL);
                 throw e;
             }
         }
@@ -324,67 +398,6 @@ abstract public class ZeveraCore extends UseNet {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content", 3 * 60 * 1000l);
         }
         this.dl.startDownload();
-    }
-
-    public String getDllink(final Browser br, final Account account, final DownloadLink link, final String client_id, final PluginForHost hostPlugin) throws Exception {
-        String dllink = checkDirectLink(link, account.getHoster() + "directlink");
-        if (dllink == null) {
-            /* TODO: Check if the cache function is useful for us */
-            // br.getPage("https://www." + account.getHoster() + "/api/cache/check?client_id=" + client_id + "&pin=" +
-            // Encoding.urlEncode(account.getPass()) + "&items%5B%5D=" +
-            // Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
-            final String hash_md5 = link.getMD5Hash();
-            final String hash_sha1 = link.getSha1Hash();
-            final String hash_sha256 = link.getSha256Hash();
-            final UrlQuery query = new UrlQuery();
-            query.add("src", URLEncode.encodeURIComponent(link.getDefaultPlugin().buildExternalDownloadURL(link, hostPlugin)));
-            if (hash_md5 != null) {
-                query.add("hash_md5", hash_md5);
-            }
-            if (hash_sha1 != null) {
-                query.add("hash_sha1", hash_sha1);
-            }
-            if (hash_sha256 != null) {
-                query.add("hash_sha256", hash_sha256);
-            }
-            /* https://app.swaggerhub.com/apis-docs/premiumize.me/api/1.6.7#/transfer/transferDirectdl */
-            String url = "https://www." + account.getHoster() + "/api/transfer/directdl";
-            final boolean useWorkaround = true;
-            if (!useWorkaround && !this.usePairingLogin(account)) {
-                url += "?apikey=" + getAPIKey(account);
-            }
-            final PostFormDataRequest postRequest = br.createPostFormDataRequest(url);
-            if (useWorkaround) {
-                postRequest.getCookies().add(new Cookie(getHost(), "sdk_login", getAPIKey(account)));
-            }
-            for (final KeyValueStringEntry entry : query.list()) {
-                postRequest.addFormData(new FormData(entry.getKey(), URLEncode.decodeURIComponent(entry.getValue())));
-            }
-            sendRequest(br, postRequest);
-            final Map<String, Object> entries = this.handleAPIErrors(this, br, link, account);
-            dllink = (String) entries.get("location");
-            final String filename = (String) entries.get("filename");
-            if (!StringUtils.isEmpty(filename) && link.getFinalFileName() == null) {
-                link.setFinalFileName(filename);
-            }
-            if (!StringUtils.isEmpty(dllink)) {
-                /*
-                 * 2019-11-29: TODO: This is a workaround! They're caching data. This means that it may also happen that a slightly
-                 * different file will get delivered (= new hash). This is a bad workaround to "disable" the hash check of our original file
-                 * thus prevent JD to display CRC errors when there are none. Premiumize is advised to at least return the correct MD5 hash
-                 * so that we can set it accordingly but for now, we only have this workaround. See also:
-                 * https://svn.jdownloader.org/issues/87604
-                 */
-                final boolean forceDisableCRCCheck = true;
-                final long originalSourceFilesize = link.getView().getBytesTotal();
-                long thisFilesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), -1l);
-                if (forceDisableCRCCheck || originalSourceFilesize > 0 && thisFilesize > 0 && thisFilesize != originalSourceFilesize) {
-                    logger.info("Dumping existing hashes to prevent errors because of cache download");
-                    link.setHashInfo(null);
-                }
-            }
-        }
-        return dllink;
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
@@ -426,17 +439,14 @@ abstract public class ZeveraCore extends UseNet {
         if (customerID != null) {
             account.setUser(customerID);
         }
-        final Object fair_use_usedO = userinfo.get("limit_used");
-        final Object space_usedO = userinfo.get("space_used");
-        final Object premium_untilO = userinfo.get("premium_until");
-        if (space_usedO != null && space_usedO instanceof Number) {
-            ai.setUsedSpace(((Number) space_usedO).longValue());
-        } else if (space_usedO != null && space_usedO instanceof Number) {
-            /* 2019-06-26: New */
-            ai.setUsedSpace(((Number) space_usedO).longValue());
+        final Number fair_use_usedO = (Number) userinfo.get("limit_used");
+        final Number space_usedO = (Number) userinfo.get("space_used");
+        final Number premium_untilO = (Number) userinfo.get("premium_until");
+        if (space_usedO != null) {
+            ai.setUsedSpace(space_usedO.longValue());
         }
         /* E.g. free account: "premium_until":false or "premium_until":null */
-        if (premium_untilO != null && premium_untilO instanceof Number) {
+        if (premium_untilO != null) {
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(getMaxSimultanPremiumDownloadNum());
             if (isBoosterPointsUnlimitedTrafficWorkaroundActive(account)) {
@@ -444,7 +454,7 @@ abstract public class ZeveraCore extends UseNet {
                 ai.setUnlimitedTraffic();
             } else {
                 if (fair_use_usedO != null && fair_use_usedO instanceof Number) {
-                    final double d = ((Number) fair_use_usedO).doubleValue();
+                    final double d = fair_use_usedO.doubleValue();
                     final int fairUsagePercentUsed = (int) (d * 100.0);
                     final int fairUsagePercentLeft = 100 - fairUsagePercentUsed;
                     if (fairUsagePercentUsed >= 100) {
@@ -461,7 +471,7 @@ abstract public class ZeveraCore extends UseNet {
                     ai.setUnlimitedTraffic();
                 }
             }
-            ai.setValidUntil(((Number) premium_untilO).longValue() * 1000);
+            ai.setValidUntil(premium_untilO.longValue() * 1000, br);
         } else {
             /* Expired == FREE */
             account.setType(AccountType.FREE);
@@ -661,10 +671,13 @@ abstract public class ZeveraCore extends UseNet {
         return thread;
     }
 
-    public void login(Browser br, final Account account, final boolean force, final String clientID) throws Exception {
+    public void login(final Browser br, final Account account, final boolean force, final String clientID) throws Exception {
         synchronized (account) {
             br.setCookiesExclusive(true);
-            prepBR(br);
+            final boolean useWorkaround = true;
+            if (useWorkaround) {
+                br.setCookie(getHost(), "sdk_login", getAPIKey(account));
+            }
             if (usePairingLogin(account)) {
                 /*
                  * 2019-06-26: New: TODO: We need a way to get the usenet logindata without exposing the original account logindata/apikey!
@@ -686,7 +699,7 @@ abstract public class ZeveraCore extends UseNet {
                         }
                         logger.info("Token expired or user has revoked access --> Full login required");
                     }
-                    this.postPage("https://www." + account.getHoster() + "/token", "response_type=device_code&client_id=" + clientID);
+                    br.postPage("https://www." + account.getHoster() + "/token", "response_type=device_code&client_id=" + clientID);
                     Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                     final long interval_seconds = ((Number) entries.get("interval")).longValue();
                     final long expires_in_seconds = ((Number) entries.get("expires_in")).longValue() - interval_seconds;
@@ -706,7 +719,7 @@ abstract public class ZeveraCore extends UseNet {
                         do {
                             logger.info("Waiting for user to authorize application: " + loop);
                             Thread.sleep(interval_seconds * 1001l);
-                            this.postPage("https://www." + account.getHoster() + "/token", "grant_type=device_code&client_id=" + clientID + "&code=" + device_code);
+                            br.postPage("https://www." + account.getHoster() + "/token", "grant_type=device_code&client_id=" + clientID + "&code=" + device_code);
                             entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                             access_token = (String) entries.get("access_token");
                             if (!StringUtils.isEmpty(access_token)) {
@@ -752,6 +765,10 @@ abstract public class ZeveraCore extends UseNet {
                     account.setPass(null);
                 }
             } else {
+                if (account.hasEverBeenValid() && !force) {
+                    /* Do not validate logins */
+                    return;
+                }
                 callAPI(br, account, "/api/account/info");
                 this.handleAPIErrors(this, br, null, account);
                 /* No Exception = Success */
@@ -779,7 +796,7 @@ abstract public class ZeveraCore extends UseNet {
              */
             url += "&apikey=" + URLEncode.encodeURIComponent(getAPIKey(account));
         }
-        getPage(br, url);
+        br.getPage(url);
     }
 
     @Override
@@ -906,12 +923,11 @@ abstract public class ZeveraCore extends UseNet {
         }
     }
 
-    /**
-     * Keep this for possible future API implementation
-     *
-     * @throws Exception
-     */
     public Map<String, Object> handleAPIErrors(final Plugin plugin, final Browser br, final DownloadLink link, final Account account) throws Exception {
+        return handleAPIErrors(plugin, br, link, account, null);
+    }
+
+    public Map<String, Object> handleAPIErrors(final Plugin plugin, final Browser br, final DownloadLink link, final Account account, final String errorStrIgnore) throws Exception {
         /* E.g. {"status":"error","error":"topup_required","message":"Please purchase premium membership or activate free mode."} */
         Map<String, Object> entries = null;
         try {
@@ -924,12 +940,25 @@ abstract public class ZeveraCore extends UseNet {
                 throw new AccountUnavailableException("Invalid API response", 60 * 1000);
             }
         }
+        handleAPIErrors(plugin, entries, br, link, account, errorStrIgnore);
+        return entries;
+    }
+
+    public void handleAPIErrors(final Plugin plugin, final Map<String, Object> entries, final Browser br, final DownloadLink link, final Account account) throws Exception {
+        handleAPIErrors(plugin, entries, br, link, account, null);
+    }
+
+    public void handleAPIErrors(final Plugin plugin, final Map<String, Object> entries, final Browser br, final DownloadLink link, final Account account, final String errorStrIgnore) throws Exception {
         final Map<String, Object> errormap = (Map<String, Object>) entries.get("error");
         final String status = (String) entries.get("status");
         final String message = (String) entries.get("message");
         /* API can control how long we should wait until next retry. */
         final Number delaySecondsO = (Number) entries.get("delay");
         final long retryInMilliseconds = delaySecondsO != null ? delaySecondsO.longValue() * 1000 : 1 * 60 * 1000;
+        if (errorStrIgnore != null && (StringUtils.equalsIgnoreCase(status, errorStrIgnore) || StringUtils.equalsIgnoreCase(message, errorStrIgnore))) {
+            /* Ignore this particular errormessage for now. */
+            return;
+        }
         if ("error".equalsIgnoreCase(status) && !StringUtils.isEmpty(message)) {
             /* This field is not always given! */
             final String errortype = (String) entries.get("error");
@@ -1026,7 +1055,6 @@ abstract public class ZeveraCore extends UseNet {
                 }
             }
         }
-        return entries;
     }
 
     public static String getCloudID(final String url) throws MalformedURLException {

@@ -88,8 +88,8 @@ public class XHamsterGallery extends PluginForDecrypt {
             sb.append("|users/[^/]+/videos");
             sb.append("|users/[^/]+/photos");
             sb.append("|channels/[^/]+");
-            sb.append("|pornstars/[^/]+");
-            sb.append("|creators/[^/]+");
+            sb.append("|(?:[^/]+/)?pornstars/[^/]+");
+            sb.append("|(?:[^/]+/)?creators/[^/]+");
             sb.append(")");
             ret.add(sb.toString());
         }
@@ -101,8 +101,8 @@ public class XHamsterGallery extends PluginForDecrypt {
     private static final String TYPE_VIDEOS_OF_USER            = "(?i)https?://[^/]+/users/([^/]+)/videos";
     private static final String TYPE_PHOTO_GALLERIES_OF_USER   = "(?i)https?://[^/]+/users/([^/]+)/photos";
     private static final String TYPE_VIDEOS_OF_CHANNEL         = "(?i)https?://[^/]+/channels/([^/]+)";
-    private static final String TYPE_VIDEOS_OF_USER_PORNSTAR   = "(?i)https?://[^/]+/pornstars/([^/]+)";
-    private static final String TYPE_VIDEOS_OF_USER_CREATOR    = "(?i)https?://[^/]+/creators/([^/]+)";
+    private static final String TYPE_VIDEOS_OF_USER_PORNSTAR   = "(?i)https?://[^/]+/(?:[^/]+/)?pornstars/([^/]+)";
+    private static final String TYPE_VIDEOS_OF_USER_CREATOR    = "(?i)https?://[^/]+/(?:[^/]+/)?creators/([^/]+)";
 
     public static String buildHostsPatternPart(String[] domains) {
         final StringBuilder pattern = new StringBuilder();
