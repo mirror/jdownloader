@@ -82,7 +82,7 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
         if (aa != null) {
             /* Login whenever possible - this may unlock some otherwise hidden user content. */
             try {
-                jd.plugins.hoster.ArtstationCom.login(this.br, aa, false);
+                ArtstationCom.login(this.br, aa, false);
             } catch (PluginException e) {
                 handleAccountException(aa, e);
             }
@@ -107,7 +107,7 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
             if (inValidate(project_id)) {
                 return ret;
             }
-            jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
+            ArtstationCom.setHeaders(this.br);
             getPage("https://www.artstation.com/projects/" + project_id + ".json");
             final Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
             final List<Object> resource_data_list = (List<Object>) json.get("assets");
@@ -205,10 +205,10 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                 filename = Encoding.htmlDecode(filename);
                 filename = filename.trim();
                 filename = encodeUnicode(filename);
-                String ext = getFileNameExtensionFromString(url, jd.plugins.hoster.ArtstationCom.default_Extension);
+                String ext = getFileNameExtensionFromString(url, ArtstationCom.default_Extension);
                 /* Make sure that we get a correct extension */
                 if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-                    ext = jd.plugins.hoster.ArtstationCom.default_Extension;
+                    ext = ArtstationCom.default_Extension;
                 }
                 if (!filename.endsWith(ext)) {
                     filename += ext;
@@ -239,7 +239,7 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
             fp.setName(packageName);
         } else if (parameter.matches(TYPE_ARTIST)) {
             final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
-            jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
+            ArtstationCom.setHeaders(this.br);
             getPage("https://www.artstation.com/users/" + username + ".json");
             if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
                 return ret;
@@ -321,7 +321,7 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                 }
             }
             fp.setName(packageName);
-        } else if (parameter.matches(TYPE_MARKETPLACE) || true) {
+        } else if (parameter.matches(TYPE_MARKETPLACE)) {
             String itemname = br.getRegex("<h1[^>]+class\\s*=\\s*\"productPage-title\"[^>]+itemprop\\s*=\\s*\"name\"[^>]*>\\s*([^<]+)\\s*").getMatch(0);
             if (StringUtils.isEmpty(itemname)) {
                 itemname = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
@@ -329,12 +329,8 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
             if (StringUtils.isNotEmpty(itemname)) {
                 fp.setName(itemname);
             }
-            jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
-            getPage(parameter);
-            if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
-                return ret;
-            }
-            ArrayList<String> links = new ArrayList<String>();
+            ArtstationCom.setHeaders(this.br);
+            final ArrayList<String> links = new ArrayList<String>();
             Collections.addAll(links, br.getRegex("<img[^>]+class\\s*=\\s*\"[^\\\"]*img-fluid[^\\\"]*\"[^>]+data-src\\s*=\\s*\"\\s*([^\\\"]+)").getColumn(0));
             for (String link : links) {
                 final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(link));
