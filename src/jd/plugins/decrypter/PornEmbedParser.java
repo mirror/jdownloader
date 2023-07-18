@@ -260,7 +260,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
      *
      */
     public final ArrayList<DownloadLink> findEmbedUrls(final Browser br, final boolean processAll) throws Exception {
-        final DecrypterArrayList<DownloadLink> decryptedLinks = new DecrypterArrayList<DownloadLink>() {
+        final DecrypterArrayList<DownloadLink> ret = new DecrypterArrayList<DownloadLink>() {
             /**
              *
              */
@@ -290,16 +290,16 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
                 if (allowResult(url)) {
                     final List<LazyCrawlerPlugin> nextLazyCrawlerPlugins = findNextLazyCrawlerPlugins(url, LazyPlugin.FEATURE.XXX);
                     if (nextLazyCrawlerPlugins.size() > 0) {
-                        decryptedLinks.addAll(convert(br, url, nextLazyCrawlerPlugins));
+                        ret.addAll(convert(br, url, nextLazyCrawlerPlugins));
                     }
                     final List<LazyHostPlugin> nextLazyHostPlugins = findNextLazyHostPlugins(url, LazyPlugin.FEATURE.XXX);
                     if (nextLazyHostPlugins.size() > 0) {
-                        decryptedLinks.addAll(convert(br, url, nextLazyHostPlugins));
+                        ret.addAll(convert(br, url, nextLazyHostPlugins));
                     }
                 }
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     protected String[] getEmbedURLs(final Browser br) throws Exception {

@@ -32,7 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "adfoc.us", "myurl.in", "href.hu", "songspk.info", "academicearth.org", "tm-exchange.com", "mafia.to" }, urls = { "http://(www\\.)?adfoc\\.us/(serve/\\?id=[a-z0-9]+|(?!serve|privacy|terms)[a-z0-9]+)", "http://(www\\.)?protect\\.myurl\\.in/[A-Za-z0-9]+", "http://href\\.hu/x/[a-zA-Z0-9\\.]+", "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=|link\\.songspk\\.help/\\S+/download\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?academicearth\\.org/lectures/.{2,}", "http://[\\w\\.]*?tm-exchange\\.com/(get\\.aspx\\?action=trackgbx|\\?action=trackshow)\\&id=\\d+", "http://[\\w\\.]*?mafia\\.to/download-[a-z0-9]+\\.cfm" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "adfoc.us", "songspk.info", "academicearth.org", "tm-exchange.com", "mafia.to" }, urls = { "http://(www\\.)?adfoc\\.us/(serve/\\?id=[a-z0-9]+|(?!serve|privacy|terms)[a-z0-9]+)", "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=|link\\.songspk\\.help/\\S+/download\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?academicearth\\.org/lectures/.{2,}", "http://[\\w\\.]*?tm-exchange\\.com/(get\\.aspx\\?action=trackgbx|\\?action=trackshow)\\&id=\\d+", "http://[\\w\\.]*?mafia\\.to/download-[a-z0-9]+\\.cfm" })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
@@ -108,8 +108,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                     finallink = br.getRegex("\"(http://view\\.stern\\.de/de/original/([a-z0-9]+/)?\\d+/.*?\\..{3,4})\"").getMatch(0);
                 }
                 dh = true;
-            } else if (parameter.contains("protect.myurl.in/")) {
-                finallink = br.getRegex("<iframe scrolling=\"(yes|no)\" src=\"(.*?)\"").getMatch(1);
             } else if (parameter.contains("adfoc.us/")) {
                 String id = new Regex(parameter, ".us/(.+)").getMatch(0);
                 if ("forum".equalsIgnoreCase(id) || "support".equalsIgnoreCase(id) || "self".equalsIgnoreCase(id) || "user".equalsIgnoreCase(id) || "payout".equalsIgnoreCase(id) || "api".equalsIgnoreCase(id) || "js".equalsIgnoreCase(id) || "ajax".equalsIgnoreCase(id) || "faq".equalsIgnoreCase(id) || "1How".equalsIgnoreCase(id) || "tickets".equalsIgnoreCase(id) || "advertise".equalsIgnoreCase(id)) {
@@ -150,8 +148,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                 } else {
                     finallink = click;
                 }
-            } else if (parameter.contains("gabber.od.ua/")) {
-                finallink = br.getRegex("Download link:<br><br><br><a href=\\'([^<>\"\\']+)\\'").getMatch(0);
             } else if (parameter.contains("madlink.sk/") || parameter.contains("m-l.sk/")) {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage("http://madlink.sk/ajax/check_redirect.php", "link=" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));

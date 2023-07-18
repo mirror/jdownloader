@@ -21,15 +21,14 @@ import java.util.List;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class SmutrComCrawler extends PornEmbedParser {
-    public SmutrComCrawler(PluginWrapper wrapper) {
+public class FrprnComCrawler extends PornEmbedParser {
+    public FrprnComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -38,10 +37,10 @@ public class SmutrComCrawler extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    public static List<String[]> getPluginDomains() {
+    private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "smutr.com" });
+        ret.add(new String[] { "frprn.com" });
         return ret;
     }
 
@@ -57,50 +56,22 @@ public class SmutrComCrawler extends PornEmbedParser {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/v/(\\d+)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:embed|videos)/(\\d+)/?");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
     protected String getFileTitle(final CryptedLink param, final Browser br) {
-        return getFileTitleStatic(br);
-    }
-
-    public static String getFileTitleStatic(final Browser br) {
-        String title = br.getRegex("<h1 class=\"title\">([^<>\"]+)</h1>").getMatch(0);
-        if (title == null) {
-            title = br.getRegex("(?i)<title>([^<>\"]+) Porn Video</title>").getMatch(0);
-        }
-        return title;
-    }
-
-    @Override
-    protected boolean returnRedirectToUnsupportedLinkAsResult() {
-        return true;
+        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
     protected boolean isOffline(final Browser br) {
-        final String offlineTrait = "/404.php";
         if (br.getHttpConnection().getResponseCode() == 404) {
-            return true;
-        } else if (br.getURL().contains(offlineTrait) || br.getRedirectLocation() != null && br.getRedirectLocation().contains(offlineTrait)) {
             return true;
         } else {
             return false;
         }
-    }
-
-    @Override
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = super.decryptIt(param, progress);
-        final String extraEmbedURL = br.getRegex("(https?://embed\\.clips4sale\\.com/clip/\\d+)").getMatch(0);
-        if (extraEmbedURL != null) {
-            logger.info("Found extra embed URL -> Video is premium-only: " + extraEmbedURL);
-            ret.clear();
-            ret.add(this.createDownloadlink(extraEmbedURL));
-        }
-        return ret;
     }
 }

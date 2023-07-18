@@ -35,6 +35,8 @@ public class KernelVideoSharingComV2HostsDefault3 extends KernelVideoSharingComV
         ret.add(new String[] { "hellporno.com" });
         ret.add(new String[] { "alphaporno.com" });
         ret.add(new String[] { "upskirt.tv" });
+        /* 2023-07-18 */
+        ret.add(new String[] { "freshporno.net" });
         return ret;
     }
 
