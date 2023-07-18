@@ -335,7 +335,8 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
             for (String link : links) {
                 final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(link));
                 String id = new Regex(link, "presentation_assets/([\\d/]+)/").getMatch(0).toString().replaceAll("/", "_");
-                String filename = id + ".jpg";
+                String ext = getFileNameExtensionFromString(link, jd.plugins.hoster.ArtstationCom.default_Extension);
+                String filename = id + ext;
                 if (StringUtils.isNotEmpty(itemname)) {
                     filename = itemname + "_" + filename;
                 }
