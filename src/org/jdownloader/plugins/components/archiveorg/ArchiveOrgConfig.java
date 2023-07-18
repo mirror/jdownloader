@@ -18,8 +18,9 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     final String                    text_FileCrawlerCrawlArchiveView                             = "File crawler: Also crawl archive view?";
     final String                    text_FileCrawlerCrawlMetadataFiles                           = "File crawler: Also crawl metadata files (typically .xml, .sqlite files)?";
     final String                    text_PlaylistFilenameScheme                                  = "Playlist filename scheme";
-    final String                    text_BookImageQuality                                        = "Set book image quality (0 = highest, 10 = lowest)";
-    final String                    text_BookCrawlMode                                           = "Set book crawl mode";
+    final String                    text_BookImageQuality                                        = "Book image quality (0 = highest, 10 = lowest)";
+    final String                    text_BookCrawlMode                                           = "Book crawl mode";
+    final String                    text_PlaylistCrawlMode                                       = "'/details/...' crawler: Audio/video playlist crawl mode";
     final String                    text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable = "Mark non viewable book pages as offline if no account is available?";
     final String                    text_SearchTermCrawlerMaxResultsLimit                        = "Search term crawler: Limit max results [0 = disable this crawler]";
     public static final TRANSLATION TRANSLATION                                                  = new TRANSLATION();
@@ -47,6 +48,10 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
         public String getBookCrawlMode_label() {
             return text_BookCrawlMode;
+        }
+
+        public String getPlaylistCrawlMode_label() {
+            return text_PlaylistCrawlMode;
         }
 
         public String getMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable_label() {
@@ -142,6 +147,35 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     BookCrawlMode getBookCrawlMode();
 
     void setBookCrawlMode(final BookCrawlMode bookCrawlerMode);
+
+    public static enum PlaylistCrawlMode implements LabelInterface {
+        PLAYLIST_ONLY {
+            @Override
+            public String getLabel() {
+                return "Playlist only";
+            }
+        },
+        PLAYLIST_AND_FILES {
+            @Override
+            public String getLabel() {
+                return "Playlist and files";
+            }
+        },
+        FILES_ONLY {
+            @Override
+            public String getLabel() {
+                return "Files only";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("PLAYLIST_ONLY")
+    @Order(41)
+    @DescriptionForConfigEntry(text_PlaylistCrawlMode)
+    PlaylistCrawlMode getPlaylistCrawlMode();
+
+    void setPlaylistCrawlMode(final PlaylistCrawlMode bookCrawlerMode);
 
     @AboutConfig
     @DefaultBooleanValue(true)

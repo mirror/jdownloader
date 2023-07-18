@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -398,58 +397,7 @@ public class DiskYandexNet extends PluginForHost {
                         }
                     }
                     if (StringUtils.isEmpty(dllink) && isVideo(link)) {
-                        /* 2023-07-15: For video files which can officially only be streamed and not downloaded. */
-                        final boolean debugAttemptStreamingDownload = true;
-                        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE || !debugAttemptStreamingDownload) {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Owner has disabled downloads for this file");
-                        }
-                        // TODO see internal ticket: https://svn.jdownloader.org/issues/90385
-                        logger.info("Trying to find stream downloadlink");
-                        final Browser brc = br.cloneBrowser();
-                        brc.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                        brc.getHeaders().put("Content-Type", "text/plain");
-                        brc.getHeaders().put("Origin", "https://" + getCurrentDomain());
-                        brc.getHeaders().put("Referer", this.getMainLink(link));
-                        brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        brc.setAllowedResponseCodes(400);
-                        final Map<String, Object> postdata = new HashMap<String, Object>();
-                        postdata.put("hash", this.getRawHash(link));
-                        brc.getHeaders().put("X-Retpath-Y", this.getMainLink(link));
-                        final String testpost1 = "%7B%22hash%22%3A%22" + URLEncode.encodeURIComponent(this.getRawHash(link)) + "%22%2C%22sk%22%3A%22%22%7D";
-                        brc.postPageRaw("https://" + getCurrentDomain() + "/public/api/get-video-streams", Encoding.urlEncode(JSonStorage.serializeToJson(postdata)));
-                        brc.postPageRaw("https://" + getCurrentDomain() + "/public/api/get-video-streams", testpost1);
-                        Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
-                        final Map<String, Object> captchamap = (Map<String, Object>) entries.get("captcha");
-                        if (captchamap != null) {
-                            /* Yandex SmartCaptcha which we cannot solve. https://cloud.yandex.com/en/services/smartcaptcha */
-                            // final Browser brcaptcha = br.cloneBrowser();
-                            // brcaptcha.getPage(captchamap.get("page").toString());
-                            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                                link.setComment(captchamap.get("page").toString());
-                            }
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type Yandex SmartCaptcha");
-                        }
-                        final String sk = entries.get("newSk").toString();
-                        postdata.put("sk", sk);
-                        /* Same request again, this time with [hopefully] working "sk" value. */
-                        brc.postPageRaw("https://" + getCurrentDomain() + "/public/api/get-video-streams", Encoding.urlEncode(JSonStorage.serializeToJson(postdata)));
-                        /* Find highest video quality */
-                        int bestHeight = -1;
-                        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
-                        final List<Map<String, Object>> videos = (List<Map<String, Object>>) data.get("videos");
-                        for (final Map<String, Object> video : videos) {
-                            final String dimension = video.get("dimension").toString();
-                            if (!dimension.matches("\\d+p")) {
-                                /* Skip unsupported values such as "adaptive". */
-                                continue;
-                            }
-                            final int heightTmp = Integer.parseInt(dimension.replace("p", ""));
-                            if (dllink == null || heightTmp > bestHeight) {
-                                bestHeight = heightTmp;
-                                dllink = entries.get("url").toString();
-                            }
-                        }
-                        logger.info("Picked stream: " + bestHeight + "p | Link: " + dllink);
+                        getStreamDownloadurl(link, account);
                     }
                     if (StringUtils.isEmpty(dllink)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -480,6 +428,92 @@ public class DiskYandexNet extends PluginForHost {
             }
         }
         dl.startDownload();
+    }
+
+    /**
+     * Only call this if you believe that streaming download of this file is possible. </br>
+     * This is pretty much only working when user is logged in. In most of all other cases, their bot protection kicks in and blocks this
+     * handling.
+     */
+    private String getStreamDownloadurl(final DownloadLink link, final Account account) throws Exception {
+        /* 2023-07-15: For video files which can officially only be streamed and not downloaded. */
+        final boolean allowAttemptStreamingDownload = true;
+        if (!allowAttemptStreamingDownload) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Owner has disabled downloads for this file");
+        }
+        logger.info("Trying to find stream downloadlink");
+        final Browser brc = br.cloneBrowser();
+        brc.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        brc.getHeaders().put("Content-Type", "text/plain");
+        brc.getHeaders().put("Origin", "https://" + getCurrentDomain());
+        brc.getHeaders().put("Referer", this.getMainLink(link));
+        brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        brc.getHeaders().put("X-Retpath-Y", this.getMainLink(link));
+        brc.setAllowedResponseCodes(400);
+        String sk = link.getStringProperty(PROPERTY_LAST_AUTH_SK);
+        String errortextStreamingDownloadFailed = "Streaming download failed.";
+        if (account == null) {
+            errortextStreamingDownloadFailed += " Add account and try again.";
+        }
+        if (sk == null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errortextStreamingDownloadFailed);
+        }
+        Map<String, Object> entries = null;
+        String newSK = null;
+        do {
+            final String poststring = "%7B%22hash%22%3A%22" + URLEncode.encodeURIComponent(this.getRawHash(link)) + "%22%2C%22sk%22%3A%22" + sk + "%22%7D";
+            brc.postPageRaw("https://" + getCurrentDomain() + "/public/api/get-video-streams", poststring);
+            entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            if (newSK != null) {
+                logger.info("Breaking loop because: This was the retry");
+                break;
+            }
+            newSK = (String) entries.get("newSk");
+            if (newSK != null) {
+                /* This is sometimes needed. */
+                logger.info("Retrying because: Found newSk value");
+                sk = newSK;
+                continue;
+            } else {
+                logger.info("Breaking loop because: Failed to find newSk");
+                break;
+            }
+        } while (true);
+        if (Boolean.TRUE.equals(entries.get("error"))) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errortextStreamingDownloadFailed);
+        }
+        final Map<String, Object> captchamap = (Map<String, Object>) entries.get("captcha");
+        if (captchamap != null) {
+            /* Dead end: Yandex SmartCaptcha which we cannot solve. https://cloud.yandex.com/en/services/smartcaptcha */
+            // final Browser brcaptcha = br.cloneBrowser();
+            // brcaptcha.getPage(captchamap.get("page").toString());
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                link.setComment(captchamap.get("page").toString());
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Streaming download impossible because of unsupported captcha type Yandex SmartCaptcha");
+        }
+        /* Find highest video quality */
+        int bestHeight = -1;
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        final List<Map<String, Object>> videos = (List<Map<String, Object>>) data.get("videos");
+        String dllink = null;
+        for (final Map<String, Object> video : videos) {
+            final String dimension = video.get("dimension").toString();
+            if (!dimension.matches("\\d+p")) {
+                /* Skip unsupported values such as "adaptive". */
+                continue;
+            }
+            final int heightTmp = Integer.parseInt(dimension.replace("p", ""));
+            if (dllink == null || heightTmp > bestHeight) {
+                bestHeight = heightTmp;
+                dllink = video.get("url").toString();
+            }
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        logger.info("Picked stream: " + bestHeight + "p | Link: " + dllink);
+        return dllink;
     }
 
     private boolean isHLS(final String url) {
@@ -750,16 +784,20 @@ public class DiskYandexNet extends PluginForHost {
          */
         final boolean moveIntoAccHandlingActive = this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, false);
         final boolean moveToTrashAfterDownloading = moveIntoAccHandlingActive && getPluginConfig().getBooleanProperty(DELETE_FROM_ACCOUNT_AFTER_DOWNLOAD, false);
-        final Browser br2;
-        final String authSk;
+        Browser br2 = null;
+        String authSk = link.getStringProperty(PROPERTY_LAST_AUTH_SK);
         final String directurlproperty = getDirecturlProperty(account);
+        final String directurlpropertyWithoutAccount = getDirecturlProperty(null);
         if (this.attemptStoredDownloadurlDownload(link, directurlproperty, resume, maxchunks)) {
+            logger.info("Re-using stored directurl");
             br2 = this.br.cloneBrowser();
             /* Very important! */
             if (link.hasProperty(PROPERTY_LAST_URL)) {
                 br2.setRequest(new GetRequest(link.getStringProperty(PROPERTY_LAST_URL)));
             }
-            authSk = link.getStringProperty(PROPERTY_LAST_AUTH_SK);
+        } else if (this.attemptStoredDownloadurlDownload(link, directurlpropertyWithoutAccount, resume, maxchunks)) {
+            /* Workaround for officially non-downloadable files that got working direct-URLs set during availablecheck. */
+            logger.info("Re-using non-account stored directurl in account mode");
         } else {
             requestFileInformationWebsite(link, account);
             final String userID = getUserID(account);
@@ -779,6 +817,7 @@ public class DiskYandexNet extends PluginForHost {
             final boolean downloadableViaAccountOnly = isFileDownloadQuotaReached(link);
             Map<String, Object> entries = null;
             String dllink = null;
+            boolean isStreamingDownloadActive = false;
             if (!moveIntoAccHandlingActive && !downloadableViaAccountOnly) {
                 logger.info("MoveToAccount handling is inactive -> Starting free account download handling");
                 br.getHeaders().put("Accept", "*/*");
@@ -787,11 +826,17 @@ public class DiskYandexNet extends PluginForHost {
                 entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
                 dllink = (String) JavaScriptEngineFactory.walkJson(entries, "data/url");
                 if (StringUtils.isEmpty(dllink)) {
-                    logger.warning("Failed to find final downloadurl");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    logger.warning("Failed to find official downloadurl");
+                    if (this.isVideo(link)) {
+                        dllink = this.getStreamDownloadurl(link, account);
+                        isStreamingDownloadActive = true;
+                    }
+                    if (StringUtils.isEmpty(dllink)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
-            if (moveIntoAccHandlingActive || downloadableViaAccountOnly || StringUtils.isEmpty(dllink)) {
+            moveFileIntoAccountHandling: if (!isStreamingDownloadActive && (moveIntoAccHandlingActive || downloadableViaAccountOnly || StringUtils.isEmpty(dllink))) {
                 if (downloadableViaAccountOnly) {
                     logger.info("FORCED moveIntoAccHandling active");
                 }
@@ -822,9 +867,18 @@ public class DiskYandexNet extends PluginForHost {
                         // throw new PluginException(LinkStatus.ERROR_FATAL, "No free space available, failed to move file to account");
                         throw new AccountUnavailableException("No free space available, failed to move file to account", 5 * 60 * 1000l);
                     } else if (StringUtils.isEmpty(internal_file_path)) {
-                        /* This should never happen! */
-                        logger.info("MoveFileIntoAccount: Failed to move file into account: WTF");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        /* Rare case. This may happen e.g. for videostreams with disabled download-button. */
+                        if (this.isVideo(link)) {
+                            try {
+                                dllink = this.getStreamDownloadurl(link, account);
+                                isStreamingDownloadActive = true;
+                                break moveFileIntoAccountHandling;
+                            } catch (final Throwable e) {
+                                /* Stream download is impossible */
+                                logger.log(e);
+                            }
+                        }
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can't move file into Yandex account");
                     } else if (StringUtils.isEmpty(oid)) {
                         /* Should never happen */
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error while importing file into account: Failed to find oid");
@@ -856,24 +910,29 @@ public class DiskYandexNet extends PluginForHost {
                     logger.info("given/stored internal filepath: " + internal_file_path);
                 }
                 dllink = getDllinkFromFileInAccount(link, authSk, br);
-                if (dllink == null) {
-                    logger.warning("MoveFileIntoAccount: Fatal failure - failed to generate downloadurl ");
+                if (StringUtils.isEmpty(dllink)) {
+                    /* This should never happen */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             /* Small workaround - use stored browser as it contains our originally used host. */
             br2 = this.br.cloneBrowser();
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection(true);
-                handleServerErrors(link);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (this.isHLS(dllink)) {
+                checkFFmpeg(link, "Download a HLS Stream");
+                dl = new HLSDownloader(link, br, dllink);
+            } else {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection(true);
+                    handleServerErrors(link);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                link.setProperty(directurlproperty, dllink);
             }
             if (link.getFinalFileName() == null) {
                 dl.setFilenameFix(true);
             }
-            link.setProperty(directurlproperty, dllink);
         }
         try {
             dl.startDownload();
@@ -962,7 +1021,7 @@ public class DiskYandexNet extends PluginForHost {
 
     private void moveFileToTrash(final Browser br2, final DownloadLink dl, final String authSk) {
         final String filepath = getInternalFilePath(dl);
-        if (!StringUtils.isEmpty(filepath) && !StringUtils.isEmpty(authSk) && br2.getRequest() != null) {
+        if (!StringUtils.isEmpty(filepath) && !StringUtils.isEmpty(authSk) && br2 != null && br2.getRequest() != null) {
             logger.info("Trying to move file to trash: " + filepath);
             try {
                 br2.postPage("/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=" + Encoding.urlEncode(filepath) + "&idClient=" + CLIENT_ID + "&sk=" + authSk);
@@ -992,7 +1051,7 @@ public class DiskYandexNet extends PluginForHost {
 
     /** Deletes all items inside users' Yandex trash folder. */
     private void emptyTrash(final Browser br2, final String authSk) {
-        if (!StringUtils.isEmpty(authSk) && br2.getRequest() != null) {
+        if (!StringUtils.isEmpty(authSk) && br2 != null && br2.getRequest() != null) {
             try {
                 logger.info("Trying to empty trash");
                 br2.postPage("/models/?_m=do-clean-trash", "_model.0=do-clean-trash&idClient=" + CLIENT_ID + "&sk=" + authSk);
@@ -1018,6 +1077,7 @@ public class DiskYandexNet extends PluginForHost {
      * Gets new 'SK' value via '/auth/status' request. </br>
      * This is sometimes needed as a light king of authorization for some http requests.
      */
+    @Deprecated
     public static String getNewSK(final Browser br, final String domain, final String sourceURL) throws IOException {
         br.getPage("https://" + domain + "/auth/status?urlOrigin=" + Encoding.urlEncode(sourceURL) + "&source=album_web_signin");
         return PluginJSonUtils.getJsonValue(br, "sk");

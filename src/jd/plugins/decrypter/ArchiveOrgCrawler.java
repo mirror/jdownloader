@@ -27,6 +27,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.PlaylistCrawlMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -48,19 +62,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.download.HashInfo;
 import jd.plugins.hoster.ArchiveOrg;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/((?:details|download|stream|embed)/.+|search\\?query=.+)", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
 public class ArchiveOrgCrawler extends PluginForDecrypt {
@@ -196,7 +197,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (path.contains("/") && allowCheckForDirecturl) {
             /**
              * 2023-05-30: Especially important when user adds a like to a file inside a .zip file as that will not be contained in the XML
-             * which we are crawling below. </br> Reference: https://board.jdownloader.org/showthread.php?t=89368
+             * which we are crawling below. </br>
+             * Reference: https://board.jdownloader.org/showthread.php?t=89368
              */
             logger.info("Path contains subpath -> Checking for single directurl");
             URLConnectionAdapter con = null;
@@ -265,9 +267,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* 2020-09-29: Rare case: Download browser emulated games */
             return this.crawlXML(param, br, titleSlug);
         }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> playlistStreams = new ArrayList<DownloadLink>();
         final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
-        final boolean userWantsMoreDataWhichIsOnlyInDownloadXML = cfg.isFileCrawlerCrawlArchiveView() || cfg.isFileCrawlerCrawlMetadataFiles();
         final String videoJson = br.getRegex("class=\"js-tv3-init\"[^>]*value='(\\{.*?\\})").getMatch(0);
         if (videoJson != null) {
             /* 2022-10-31: Example: https://archive.org/details/MSNBCW_20211108_030000_Four_Seasons_Total_Documentary */
@@ -284,7 +285,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 ArchiveOrg.setFinalFilename(video, slug + ".mp4");
                 video.setAvailable(true);
                 video._setFilePackage(fp);
-                ret.add(video);
+                playlistStreams.add(video);
                 position++;
             }
         }
@@ -327,8 +328,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             boolean returnDetailedItems = false;
             if (metadataJson != null) {
                 /**
-                 * Try to find more metadata to the results we already have and combine them with the track-position-data we know. </br> In
-                 * the end we should get the best of both worlds: All tracks with track numbers, metadata and file hashes for CRC checking.
+                 * Try to find more metadata to the results we already have and combine them with the track-position-data we know. </br>
+                 * In the end we should get the best of both worlds: All tracks with track numbers, metadata and file hashes for CRC
+                 * checking.
                  */
                 logger.info("Looking for more detailed audio metadata");
                 audioPlaylistItemsDetailed.addAll(this.crawlMetadataJson(metadataJson, filenameToTrackPositionMapping));
@@ -344,22 +346,24 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
             if (returnDetailedItems) {
                 logger.info("Found valid detailed audio information");
-                ret.addAll(audioPlaylistItemsDetailed);
+                playlistStreams.addAll(audioPlaylistItemsDetailed);
             } else {
                 logger.info("Failed to obtain detailed audio information");
-                ret.addAll(audioPlaylistItemsSimple);
+                playlistStreams.addAll(audioPlaylistItemsSimple);
             }
         }
-        if (ret.size() > 0) {
-            if (!userWantsMoreDataWhichIsOnlyInDownloadXML) {
-                logger.info("Returning streaming items ONLY");
-                return ret;
-            } else {
-                logger.info("Found " + ret.size() + " streaming items but user wants to have stuff which can only be found in XML -> Trying to crawl XML");
-            }
+        final String downloadlinkToAllFilesDownload = br.getRegex("(?i)href=\"(/download/[^\"]*?)\">SHOW ALL").getMatch(0);
+        final PlaylistCrawlMode playlistCrawlMode = cfg.getPlaylistCrawlMode();
+        if (playlistStreams.size() > 0 && playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_ONLY) {
+            /* Check whether user only wants to have playlist items only or more/all. */
+            logger.info("Returning streaming items ONLY");
+            return playlistStreams;
         }
-        final String showAll = br.getRegex("(?i)href=\"(/download/[^\"]*?)\">SHOW ALL").getMatch(0);
-        if (showAll != null) {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        if (downloadlinkToAllFilesDownload == null || playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_AND_FILES) {
+            ret.addAll(playlistStreams);
+        }
+        if (downloadlinkToAllFilesDownload != null) {
             /* This link will go back into this crawler to find all individual downloadlinks. */
             ret.add(createDownloadlink(downloadurl));
             return ret;
@@ -809,8 +813,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     dl.setProperty(ArchiveOrg.PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP, System.currentTimeMillis() + loanedSecondsLeft * 1000);
                 }
                 /**
-                 * Mark pages that are not viewable in browser as offline. </br> If we have borrowed this book, this field will not exist at
-                 * all.
+                 * Mark pages that are not viewable in browser as offline. </br>
+                 * If we have borrowed this book, this field will not exist at all.
                  */
                 final Object viewable = bookpage.get("viewable");
                 if (Boolean.FALSE.equals(viewable)) {

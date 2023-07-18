@@ -110,7 +110,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
         /* Load hosterplugin to use same browser headers/settings. */
-        final DiskYandexNet hosterplugin = (DiskYandexNet) this.getNewPluginForHostInstance(this.getHost());
+        this.getNewPluginForHostInstance(this.getHost());
         final String parameter = param.getCryptedUrl();
         /* Do some URL corrections */
         if (param.getCryptedUrl().matches(type_docviewer)) {
