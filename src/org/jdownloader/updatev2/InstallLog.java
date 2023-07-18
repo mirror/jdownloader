@@ -1,12 +1,11 @@
 package org.jdownloader.updatev2;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
 
 public class InstallLog {
-    private final HashSet<File> sourcePackages;
+    private final HashSet<String> sourcePackages;
 
     public InstallLog() {
         modifiedDirects = new HashSet<String>();
@@ -14,10 +13,10 @@ public class InstallLog {
         modifiedPlugins = new HashSet<String>();
         modifiedExtensionFiles = new HashSet<String>();
         modifiedRestartRequiredFiles = new HashSet<String>();
-        sourcePackages = new HashSet<File>();
+        sourcePackages = new HashSet<String>();
     }
 
-    public HashSet<File> getSourcePackages() {
+    public HashSet<String> getSourcePackages() {
         return sourcePackages;
     }
 
