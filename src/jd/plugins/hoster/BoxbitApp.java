@@ -159,9 +159,9 @@ public class BoxbitApp extends PluginForHost {
             link.setProperty(this.getHost() + PROPERTY_DOWNLOADLINK_directlink, dl.getConnection().getURL().toString());
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
-                /* 2021-09-07: Don't jump into errorhandling here as we typically won't get a json response. */
+                /* 2021-09-07: Don't jump into errorhandling here as we typically won't get a json response here. */
                 // handleErrors(this.br, account, link);
-                mhm.handleErrorGeneric(account, link, "unknown_dl_error", 50, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "Unknown download error", 50, 5 * 60 * 1000l);
             }
         } else {
             logger.info("Re-using stored directurl");

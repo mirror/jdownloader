@@ -119,10 +119,6 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String csrftoken = br.getRegex("window\\.__CSRF_TOKEN__\\s*=\\s*'([^<>\"\\']+)';").getMatch(0);
-        if (csrftoken == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         final FilePackage fp = FilePackage.getInstance();
         if (gallerySlug != null) {
             fp.setName(username + " - " + gallerySlug.replace("-", " ").trim());
@@ -145,7 +141,10 @@ public class DeviantArtComCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlPagination(Account account, final FilePackage fp, final String action, final UrlQuery query) throws IOException, PluginException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String csrftoken = br.getRegex("window\\.__CSRF_TOKEN__\\s*=\\s*'([^<>\"\\']+)';").getMatch(0);
+        String csrftoken = br.getRegex("window\\.__CSRF_TOKEN__\\s*=\\s*'([^<>\"\\']+)';").getMatch(0);
+        if (csrftoken == null) {
+            csrftoken = br.getRegex("csrfToken\\s*:\\s*\"([^\"]+)").getMatch(0);
+        }
         if (csrftoken == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
