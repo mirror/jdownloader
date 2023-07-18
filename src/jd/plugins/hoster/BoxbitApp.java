@@ -23,20 +23,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.MultiHosterManagement;
-
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
@@ -46,15 +34,30 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boxbit.app" }, urls = { "" })
 public class BoxbitApp extends PluginForHost {
     /**
-     * New project of: geragera.com.br </br> API docs: https://boxbit.readme.io/reference/introduction
+     * New project of: geragera.com.br </br>
+     * API docs: https://boxbit.readme.io/reference/introduction
      */
     private static final String          API_BASE                         = "https://api.boxbit.app";
     private static MultiHosterManagement mhm                              = new MultiHosterManagement("boxbit.app");
     private static final int             defaultMAXDOWNLOADS              = -1;
-    private static final int             defaultMAXCHUNKS                 = 0;
+    private static final int             defaultMAXCHUNKS                 = 1;
     private static final boolean         defaultRESUME                    = true;
     private static final String          PROPERTY_userid                  = "userid";
     private static final String          PROPERTY_logintoken              = "token";
@@ -73,7 +76,9 @@ public class BoxbitApp extends PluginForHost {
         return "https://boxbit.app/";
     }
 
-    private Browser prepBR(final Browser br) {
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
         br.setCookiesExclusive(true);
         br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "JDownloader");
         br.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT, "application/json");
@@ -131,7 +136,7 @@ public class BoxbitApp extends PluginForHost {
                 /* Given password is correct --> Save it for later usage */
                 link.setDownloadPassword(passCode);
             }
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
             final String dllink = (String) entries.get("link");
             if (StringUtils.isEmpty(dllink)) {
                 /* This should never happen */
@@ -199,21 +204,18 @@ public class BoxbitApp extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        prepBR(this.br);
         mhm.runCheck(account, link);
         handleDL(account, link);
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
-        loginAPI(account, true);
+        Map<String, Object> user = loginAPI(account, true);
         /* Access userInfo if it hasn't been accessed already. */
         if (br.getURL() == null || !br.getURL().contains("/users/")) {
-            accessUserInfo(this.br, account);
+            user = accessUserInfo(this.br, account);
         }
-        final Map<String, Object> user = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
         final Map<String, Object> subscription = (Map<String, Object>) user.get("subscription");
         List<Map<String, Object>> hosts = null;
         final Object currentSubscriptionO = subscription.get("current");
@@ -233,6 +235,7 @@ public class BoxbitApp extends PluginForHost {
             }
         }
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* For devs: Display token validity in GUI. */
             String status = ai.getStatus();
             if (status == null) {
                 status = "";
@@ -245,7 +248,7 @@ public class BoxbitApp extends PluginForHost {
         if (hosts != null) {
             br.getPage(API_BASE + "/filehosts/domains");
             /* Contains mapping e.g. "uploaded" --> [uploaded.net, uploaded.to, ul.to] */
-            final Map<String, Object> hostMapping = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> hostMapping = this.handleErrors(br, account, null);
             for (final Map<String, Object> hostInfo : hosts) {
                 final Map<String, Object> hostDetails = (Map<String, Object>) hostInfo.get("details");
                 final String hostIdentifier = (String) hostDetails.get("identifier");
@@ -277,14 +280,12 @@ public class BoxbitApp extends PluginForHost {
         }
     }
 
-    private void loginAPI(final Account account, final boolean forceAuthCheck) throws IOException, PluginException, InterruptedException {
+    private Map<String, Object> loginAPI(final Account account, final boolean forceAuthCheck) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
-            this.prepBR(this.br);
             final String token = getLoginToken(account);
             final String userid = getUserID(account);
-            Map<String, Object> entries;
             if (token != null && userid != null) {
-                setLoginHeader(this.br, account);
+                setLoginHeader(br, account);
                 final long tokenRemainingTimeMillis = getLoginTokenRemainingMillis(account);
                 /* Force token refresh if it has expired or is valid for less than <minimumTokenValidity> only. */
                 final long minimumTokenValidity = 60 * 60 * 1000;
@@ -292,17 +293,16 @@ public class BoxbitApp extends PluginForHost {
                 if (!forceAuthCheck && !tokenRefreshRequired) {
                     /* We trust our token --> Do not check them */
                     logger.info("Trust login token without check");
-                    return;
+                    return null;
                 } else {
                     if (tokenRefreshRequired) {
                         logger.info("Token refresh required");
                     } else {
                         logger.info("Attempting token login");
                         try {
-                            accessUserInfo(this.br, account);
-                            this.handleErrors(this.br, account, getDownloadLink());
+                            final Map<String, Object> entries = accessUserInfo(br, account);
                             logger.info("Token login successful");
-                            return;
+                            return entries;
                         } catch (final PluginException ignore) {
                             logger.info("Token login failed --> Trying token refresh");
                         }
@@ -311,14 +311,13 @@ public class BoxbitApp extends PluginForHost {
                     /* Send empty POST request with existing token to get a fresh token */
                     br.postPage(API_BASE + "/auth/refresh", new UrlQuery());
                     try {
-                        this.handleErrors(this.br, account, getDownloadLink());
+                        final Map<String, Object> entries = this.handleErrors(br, account, getDownloadLink());
                         logger.info("Token refresh successful");
-                        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
                         /* Store new token */
                         setAuthTokenData(account, (Map<String, Object>) entries.get("auth"));
                         /* Set new auth header */
-                        setLoginHeader(this.br, account);
-                        return;
+                        setLoginHeader(br, account);
+                        return entries;
                     } catch (final PluginException tokenRefreshFailure) {
                         logger.warning("Token refresh failed");
                         br.getHeaders().remove(HTTPConstants.HEADER_REQUEST_AUTHORIZATION);
@@ -328,11 +327,11 @@ public class BoxbitApp extends PluginForHost {
             }
             logger.info("Performing full login");
             br.postPageRaw(API_BASE + "/auth/login", "{\"email\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"}");
-            this.handleErrors(this.br, account, getDownloadLink());
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = this.handleErrors(this.br, account, getDownloadLink());
             account.setProperty(PROPERTY_userid, JavaScriptEngineFactory.walkJson(entries, "user/uuid").toString());
             setAuthTokenData(account, (Map<String, Object>) entries.get("auth"));
-            setLoginHeader(this.br, account);
+            setLoginHeader(br, account);
+            return entries;
         }
     }
 
@@ -363,20 +362,35 @@ public class BoxbitApp extends PluginForHost {
         return account.getStringProperty(PROPERTY_userid);
     }
 
-    /** https://boxbit.readme.io/reference/user-filehost-list */
-    private void accessUserInfo(final Browser br, final Account account) throws IOException {
+    /**
+     * https://boxbit.readme.io/reference/user-filehost-list
+     *
+     * @throws InterruptedException
+     * @throws PluginException
+     */
+    private Map<String, Object> accessUserInfo(final Browser br, final Account account) throws IOException, PluginException, InterruptedException {
         br.getPage(API_BASE + "/users/" + getUserID(account) + "/?with[]=subscription&with[]=current_subscription_filehosts&with[]=current_subscription_filehost_usages");
+        return this.handleErrors(br, account, null);
     }
 
     /** Handle errors according to: https://boxbit.readme.io/reference/error-codes */
-    private void handleErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
+    private Map<String, Object> handleErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
+        Map<String, Object> entries = null;
+        try {
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        } catch (final JSonMapperException ignore) {
+            /* This should never happen. */
+            if (link != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response", 60 * 1000l);
+            } else {
+                throw new AccountUnavailableException("Invalid API response", 60 * 1000);
+            }
+        }
         if (br.getHttpConnection().getResponseCode() == 401) {
             /* Authentication failure */
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String message = (String) entries.get("message");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, message, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (br.getHttpConnection().getResponseCode() == 422 || br.getHttpConnection().getResponseCode() == 429) {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
             final String message = (String) entries.get("message");
             /* All possible error-keys go along with http response 422 except "busy_worker" --> 429 */
             final List<String> errors = (List<String>) entries.get("errors");
@@ -405,6 +419,7 @@ public class BoxbitApp extends PluginForHost {
         } else {
             /* No error */
         }
+        return entries;
     }
 
     @Override

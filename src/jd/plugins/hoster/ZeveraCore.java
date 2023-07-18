@@ -152,6 +152,7 @@ abstract public class ZeveraCore extends UseNet {
         return -1;
     }
 
+    @Override
     public Browser createNewBrowserInstance() {
         final Browser br = new Browser();
         br.setCookiesExclusive(true);

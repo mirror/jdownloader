@@ -315,6 +315,14 @@ public class DiskYandexNet extends PluginForHost {
         return str;
     }
 
+    private boolean isVideo(final DownloadLink link) {
+        if (StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_MEDIA_TYPE), "VIDEO")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
         final String directurlproperty = getDirecturlProperty(account);
         final String oldDirecturl = link.getStringProperty(directurlproperty);
@@ -389,7 +397,7 @@ public class DiskYandexNet extends PluginForHost {
                             dllink = HTMLEntities.unhtmlentities(dllink);
                         }
                     }
-                    if (StringUtils.isEmpty(dllink) && StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_MEDIA_TYPE), "VIDEO")) {
+                    if (StringUtils.isEmpty(dllink) && isVideo(link)) {
                         /* 2023-07-15: For video files which can officially only be streamed and not downloaded. */
                         final boolean debugAttemptStreamingDownload = true;
                         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE || !debugAttemptStreamingDownload) {

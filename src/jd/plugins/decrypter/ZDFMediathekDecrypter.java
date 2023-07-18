@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +31,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -47,15 +57,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.YoutubeDashV2;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de", "phoenix.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/(?:.+/)?[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?phoenix\\.de/(?:.*?-\\d+\\.html.*|podcast/[A-Za-z0-9]+/video/rss\\.xml)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -118,7 +119,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         QUALITIES_MAP.put("v15", Arrays.asList(new String[][] { new String[] { "1628k_p13", QUALITY.MEDIUM.name() }, new String[] { "2360k_p35", QUALITY.VERYHIGH.name() }, new String[] { "3360k_p36", QUALITY.HD.name() } }));
         /*
          * new String[] { "508k_p9", QUALITY.LOW.name() }
-         * 
+         *
          * new String[] { "808k_p11", QUALITY.HIGH.name() }
          */
         QUALITIES_MAP.put("v17", Arrays.asList(new String[][] { new String[] { "1628k_p13", QUALITY.MEDIUM.name() }, new String[] { "2360k_p35", QUALITY.VERYHIGH.name() }, new String[] { "3360k_p36", QUALITY.HD.name() }, new String[] { "6628k_p61", QUALITY.HD.name() }, new String[] { "6660k_p37", QUALITY.HD.name() } }));
@@ -405,21 +406,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     /** Handles ZDF json present in given browser after API request has been made before. */
     private ArrayList<DownloadLink> handleZdfJson(final CryptedLink param, final Browser br, final String apiToken) throws Exception {
-        final ArrayList<DownloadLink> allDownloadLinks = new ArrayList<DownloadLink>();
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final String contentType = (String) entries.get("contentType");
-        String title = (String) entries.get("title");
-        if (StringUtils.isEmpty(title)) {
-            /* Fallback */
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        }
-        final String editorialDate = (String) entries.get("editorialDate");
-        final Object tvStationo = entries.get("tvService");
-        final String tv_station = tvStationo != null && tvStationo instanceof String ? (String) tvStationo : "ZDF";
-        // final Object hasVideoo = entries.get("hasVideo");
-        // final boolean hasVideo = hasVideoo != null && hasVideoo instanceof Boolean ? ((Boolean) entries.get("hasVideo")).booleanValue() :
-        // false;
-        String tv_show = (String) JavaScriptEngineFactory.walkJson(entries, "http://zdf.de/rels/brand", "title");
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         final Map<String, Object> mainVideoContent = (Map<String, Object>) entries.get("mainVideoContent");
         if (mainVideoContent == null) {
             /* Not a single video? Maybe we have a playlist / embedded video(s)! */
@@ -447,24 +434,29 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             streamsJsonURL = (String) streamInfoMap.get("http://zdf.de/rels/streams/ptmd-template");
             streamsJsonURL = streamsJsonURL.replace("{playerId}", "ngplayer_2_4");
         }
-        /* 2017-02-03: Not required at the moment */
-        // if (!hasVideo) {
-        // logger.info("Content is not a video --> Nothing to download");
-        // return ret;
-        // }
-        if (StringUtils.isEmpty(contentType) || StringUtils.isEmpty(editorialDate) || StringUtils.isEmpty(tv_station)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String title = (String) entries.get("title");
+        final String description = (String) entries.get("leadParagraph");
+        final String editorialDate = (String) entries.get("editorialDate");
+        final Object tvStationo = entries.get("tvService");
+        final String tv_station = tvStationo != null && tvStationo instanceof String ? (String) tvStationo : "ZDF";
+        final Map<String, Object> seriesProgrammeItem0 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "programmeItem/{0}");
+        final Map<String, Object> seriesMetadata = seriesProgrammeItem0 != null ? (Map<String, Object>) seriesProgrammeItem0.get("http://zdf.de/rels/target") : null;
+        final Map<String, Object> seriesSeasonInfo = seriesMetadata != null ? (Map<String, Object>) seriesMetadata.get("http://zdf.de/rels/cmdm/season") : null;
+        final String seriesTitle = seriesMetadata != null ? (String) seriesMetadata.get("title") : null;
+        String tv_show = (String) JavaScriptEngineFactory.walkJson(entries, "http://zdf.de/rels/brand", "title");
+        if (seriesTitle != null) {
+            tv_show = seriesTitle;
         }
-        /* Show is not always available - merge it with the title, if tvShow is available. */
-        if (tv_show != null) {
+        final Number seriesSeasonNumber = seriesSeasonInfo != null ? (Number) seriesSeasonInfo.get("seasonNumber") : null;
+        final Number seriesEpisodeNumber = seriesMetadata != null ? (Number) seriesMetadata.get("episodeNumber") : null;
+        if (tv_show != null && seriesSeasonNumber != null && seriesEpisodeNumber != null) {
+            final DecimalFormat df = new DecimalFormat("00");
+            final String seasonEpisodeString = "S" + df.format(seriesSeasonNumber.intValue()) + "E" + df.format(seriesEpisodeNumber);
+            title = tv_show + " " + seasonEpisodeString + " - " + title;
+        } else if (tv_show != null) {
             title = tv_show + " - " + title;
         }
-        String base_title = title;
         final String date_formatted = new Regex(editorialDate, "(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
-        /* TODO: Remove this */
-        // if (StringUtils.isEmpty(internal_videoid)) {
-        // internal_videoid = new Regex(player_url_template, "/([^/]{2,})$").getMatch(0);
-        // }
         if (date_formatted == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -555,7 +547,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
          */
         final boolean grabHLS = grabHlsAudio || ((grabHls170 || grabHls270 || grabHls360 || grabHls480 || grabHls570 || grabHls720) && !grabBest);
         final Map<String, Object> audioVideoMap = new HashMap<String, Object>();
-        final String filename_packagename_base_title = date_formatted + "_" + tv_station + "_" + base_title;
+        final String filename_packagename_base_title = date_formatted + "_" + tv_station + "_" + title;
         boolean grabDownloadUrlsPossible = false;
         final List<String> hlsDupeArray = new ArrayList<String>();
         boolean atLeastOneSelectedVideoAudioVersionIsAvailable = false;
@@ -649,6 +641,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 }
             }
         } while (!this.isAbort());
+        final ArrayList<DownloadLink> allDownloadLinks = new ArrayList<DownloadLink>();
         final ArrayList<String> directurlDupesList = new ArrayList<String>();
         final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
         final ArrayList<DownloadLink> userSelectedQualities = new ArrayList<DownloadLink>();
@@ -828,8 +821,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         final DownloadLink dl = createDownloadlink(finalDownloadURL);
                         dl.setContentUrl(param.getCryptedUrl());
                         /**
-                         * Usually filesize is only given for the official downloads.</br> Only set it here if we haven't touched the
-                         * original downloadurls!
+                         * Usually filesize is only given for the official downloads.</br>
+                         * Only set it here if we haven't touched the original downloadurls!
                          */
                         if (filesize > 0) {
                             dl.setAvailable(true);
@@ -895,6 +888,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(filename_packagename_base_title);
+        if (description != null) {
+            fp.setComment(description);
+        }
         if (!userSelectedQualities.isEmpty()) {
             logger.info("Using user selected qualities");
             fp.addLinks(userSelectedQualities);
@@ -1163,9 +1159,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Searches for videos in zdfmediathek that match the given search term. </br> This is mostly used as a workaround to find stuff that is
-     * hosted on their other website on zdfmediathek instead as zdfmediathek is providing a fairly stable search function while other
-     * websites hosting the same content such as kika.de can be complicated to parse. </br> This does not (yet) support pagination!
+     * Searches for videos in zdfmediathek that match the given search term. </br>
+     * This is mostly used as a workaround to find stuff that is hosted on their other website on zdfmediathek instead as zdfmediathek is
+     * providing a fairly stable search function while other websites hosting the same content such as kika.de can be complicated to parse.
+     * </br>
+     * This does not (yet) support pagination!
      */
     public ArrayList<DownloadLink> crawlZDFMediathekSearchResultsVOD(final String tvChannel, final String searchTerm, final int maxResults) throws Exception {
         if (StringUtils.isEmpty(tvChannel) || StringUtils.isEmpty(searchTerm)) {
