@@ -372,7 +372,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         int totalNumberofEntries = 0;
         final FilePackage fp = FilePackage.getInstance();
         do {
-            getPage("https://cloud-api.yandex.net/v1/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(hashWithoutPath) + "&path=" + URLEncode.encodeURIComponent(internalPath));
+            getPage(DiskYandexNet.APIV1_BASE + "/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(hashWithoutPath) + "&path=" + URLEncode.encodeURIComponent(internalPath));
             Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
             /*
              * 2021-01-19:

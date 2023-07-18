@@ -104,6 +104,7 @@ public class DiskYandexNet extends PluginForHost {
     public static final String   PROPERTY_LAST_URL                     = "last_url";
     public static final String   PROPERTY_MEDIA_TYPE                   = "media_type";
     public static final String   PROPERTY_ACCOUNT_ENFORCE_COOKIE_LOGIN = "enforce_cookie_login";
+    public static final String   APIV1_BASE                            = "https://cloud-api.yandex.net/v1";
     /*
      * https://tech.yandex.com/disk/api/reference/public-docpage/ 2018-08-09: API(s) seem to work fine again - in case of failure, please
      * disable use_api_file_free_availablecheck ONLY!!
@@ -160,7 +161,7 @@ public class DiskYandexNet extends PluginForHost {
 
     public AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account) throws Exception {
         br.setFollowRedirects(true);
-        getPage("https://cloud-api.yandex.net/v1/disk/public/resources?public_key=" + URLEncode.encodeURIComponent(this.getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
+        getPage(APIV1_BASE + "/disk/public/resources?public_key=" + URLEncode.encodeURIComponent(this.getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
         if (apiAvailablecheckIsOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -359,7 +360,7 @@ public class DiskYandexNet extends PluginForHost {
                          * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
                          */
                         /* Free API download. */
-                        getPage("https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
+                        getPage(APIV1_BASE + "/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
                         this.handleErrorsAPI(link, account);
                         final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
                         dllink = (String) entries.get("href");
@@ -388,23 +389,38 @@ public class DiskYandexNet extends PluginForHost {
                             dllink = HTMLEntities.unhtmlentities(dllink);
                         }
                     }
-                    final boolean debugAttemptStreamingDownload = false;
-                    if (StringUtils.isEmpty(dllink) && StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_MEDIA_TYPE), "VIDEO") && debugAttemptStreamingDownload && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        // TODO see internal ticket: https://svn.jdownloader.org/issues/90385
+                    if (StringUtils.isEmpty(dllink) && StringUtils.equalsIgnoreCase(link.getStringProperty(PROPERTY_MEDIA_TYPE), "VIDEO")) {
                         /* 2023-07-15: For video files which can officially only be streamed and not downloaded. */
+                        final boolean debugAttemptStreamingDownload = true;
+                        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE || !debugAttemptStreamingDownload) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Owner has disabled downloads for this file");
+                        }
+                        // TODO see internal ticket: https://svn.jdownloader.org/issues/90385
                         logger.info("Trying to find stream downloadlink");
                         final Browser brc = br.cloneBrowser();
                         brc.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                         brc.getHeaders().put("Content-Type", "text/plain");
                         brc.getHeaders().put("Origin", "https://" + getCurrentDomain());
-                        // brc.getHeaders().put("Referer", "TODO");
+                        brc.getHeaders().put("Referer", this.getMainLink(link));
                         brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         brc.setAllowedResponseCodes(400);
                         final Map<String, Object> postdata = new HashMap<String, Object>();
                         postdata.put("hash", this.getRawHash(link));
-                        // brc.getHeaders().put("X-Retpath-Y", "TODO same as Referer");
+                        brc.getHeaders().put("X-Retpath-Y", this.getMainLink(link));
+                        final String testpost1 = "%7B%22hash%22%3A%22" + URLEncode.encodeURIComponent(this.getRawHash(link)) + "%22%2C%22sk%22%3A%22%22%7D";
                         brc.postPageRaw("https://" + getCurrentDomain() + "/public/api/get-video-streams", Encoding.urlEncode(JSonStorage.serializeToJson(postdata)));
+                        brc.postPageRaw("https://" + getCurrentDomain() + "/public/api/get-video-streams", testpost1);
                         Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                        final Map<String, Object> captchamap = (Map<String, Object>) entries.get("captcha");
+                        if (captchamap != null) {
+                            /* Yandex SmartCaptcha which we cannot solve. https://cloud.yandex.com/en/services/smartcaptcha */
+                            // final Browser brcaptcha = br.cloneBrowser();
+                            // brcaptcha.getPage(captchamap.get("page").toString());
+                            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                                link.setComment(captchamap.get("page").toString());
+                            }
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type Yandex SmartCaptcha");
+                        }
                         final String sk = entries.get("newSk").toString();
                         postdata.put("sk", sk);
                         /* Same request again, this time with [hopefully] working "sk" value. */
