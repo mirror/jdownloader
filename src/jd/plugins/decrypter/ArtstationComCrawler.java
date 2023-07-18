@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -46,15 +47,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.ArtstationCom;
 import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/((?:artist|artwork)/[^/]+|(?!about|marketplace|jobs|contests|blogs|users)[^/]+(/likes)?)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/((?:artist|artwork|marketplace/p/[^^/\\s]+)/[^/\\s]+|(?!about|jobs|contests|blogs|users)[^/\\s]+(/likes)?)" })
 public class ArtstationComCrawler extends antiDDoSForDecrypt {
     public ArtstationComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_ARTIST = "(?i)https?://(?:www\\.)?artstation\\.com/artist/[^/]+";
-    private static final String TYPE_ALBUM  = "(?i)https?://(?:www\\.)?artstation\\.com/artwork/([a-zA-Z0-9]+)";
-    Object                      modifier    = null;
+    private static final String TYPE_ARTIST      = "(?i)https?://(?:www\\.)?artstation\\.com/artist/[^/]+";
+    private static final String TYPE_ALBUM       = "(?i)https?://(?:www\\.)?artstation\\.com/artwork/([a-zA-Z0-9]+)";
+    private static final String TYPE_MARKETPLACE = "(?i)https?://(?:www\\.)?artstation\\.com/marketplace/p/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-]+)";
+    Object                      modifier         = null;
 
     @Override
     public Browser createNewBrowserInstance() {
@@ -235,7 +237,7 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                 }
             }
             fp.setName(packageName);
-        } else if (parameter.matches(TYPE_ARTIST) || true) {
+        } else if (parameter.matches(TYPE_ARTIST)) {
             final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
             jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
             getPage("https://www.artstation.com/users/" + username + ".json");
@@ -319,6 +321,35 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                 }
             }
             fp.setName(packageName);
+        } else if (parameter.matches(TYPE_MARKETPLACE) || true) {
+            String itemname = br.getRegex("<h1[^>]+class\\s*=\\s*\"productPage-title\"[^>]+itemprop\\s*=\\s*\"name\"[^>]*>\\s*([^<]+)\\s*").getMatch(0);
+            if (StringUtils.isEmpty(itemname)) {
+                itemname = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
+            }
+            if (StringUtils.isNotEmpty(itemname)) {
+                fp.setName(itemname);
+            }
+            jd.plugins.hoster.ArtstationCom.setHeaders(this.br);
+            getPage(parameter);
+            if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+                return ret;
+            }
+            ArrayList<String> links = new ArrayList<String>();
+            Collections.addAll(links, br.getRegex("<img[^>]+class\\s*=\\s*\"[^\\\"]*img-fluid[^\\\"]*\"[^>]+data-src\\s*=\\s*\"\\s*([^\\\"]+)").getColumn(0));
+            for (String link : links) {
+                final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(link));
+                String id = new Regex(link, "presentation_assets/([\\d/]+)/").getMatch(0).toString().replaceAll("/", "_");
+                String filename = id + ".jpg";
+                if (StringUtils.isNotEmpty(itemname)) {
+                    filename = itemname + "_" + filename;
+                }
+                filename = encodeUnicode(filename);
+                dl.setName(filename);
+                dl.setFinalFileName(filename);
+                fp.add(dl);
+                ret.add(dl);
+                distribute(dl);
+            }
         }
         return ret;
     }
