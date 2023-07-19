@@ -32,13 +32,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "adfoc.us", "songspk.info", "academicearth.org", "tm-exchange.com", "mafia.to" }, urls = { "http://(www\\.)?adfoc\\.us/(serve/\\?id=[a-z0-9]+|(?!serve|privacy|terms)[a-z0-9]+)", "http://[\\w\\.]*?(link\\.songs\\.pk/(popsong|song1|bhangra)\\.php\\?songid=|songspk\\.info/ghazals/download/ghazals\\.php\\?id=|link\\.songspk\\.help/\\S+/download\\.php\\?id=)[0-9]+", "http://[\\w\\.]*?academicearth\\.org/lectures/.{2,}", "http://[\\w\\.]*?tm-exchange\\.com/(get\\.aspx\\?action=trackgbx|\\?action=trackshow)\\&id=\\d+", "http://[\\w\\.]*?mafia\\.to/download-[a-z0-9]+\\.cfm" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "adfoc.us", "academicearth.org", "tm-exchange.com", "mafia.to" }, urls = { "http://(www\\.)?adfoc\\.us/(serve/\\?id=[a-z0-9]+|(?!serve|privacy|terms)[a-z0-9]+)", "http://[\\w\\.]*?academicearth\\.org/lectures/.{2,}", "http://[\\w\\.]*?tm-exchange\\.com/(get\\.aspx\\?action=trackgbx|\\?action=trackshow)\\&id=\\d+", "http://[\\w\\.]*?mafia\\.to/download-[a-z0-9]+\\.cfm" })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoSForDecrypt {
     @Override
     public String[] siteSupportedNames() {
-        if ("songspk.info".equals(this.getHost())) {
-            return new String[] { "link.songspk.help", "songspk.info" };
-        }
         return super.siteSupportedNames();
     }
 
@@ -66,10 +63,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
             if (!new Regex(parameter, "tm-exchange\\.com/|is\\.gd/").matches()) {
                 getPage(parameter);
             }
-            if (parameter.contains("link.songs.pk/") || parameter.contains("songspk.info/ghazals/download/ghazals.php?id=") || parameter.contains("link.songspk.help/")) {
-                finallink = br.getRedirectLocation();
-                dh = true;
-            } else if (parameter.contains("academicearth.org/")) {
+            if (parameter.contains("academicearth.org/")) {
                 if (!(br.getRedirectLocation() != null && br.getRedirectLocation().contains("users/login"))) {
                     if (br.containsHTML(">Looks like the Internet may require a little disciplinary action")) {
                         offline = true;

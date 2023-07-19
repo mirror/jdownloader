@@ -287,7 +287,10 @@ public class JulesjordanCom extends antiDDoSForHost {
                 // br.setCookies(newcookies);
                 // }
                 br.postPage("/auth.form", postdata);
-                if (br.getURL().matches("(?i).+/expired/?$")) {
+                if (br.containsHTML("captcha_x=1")) {
+                    /* User entered invalid login-captcha */
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else if (br.getURL().matches("(?i).+/expired/?$")) {
                     /* Login is valid but account is not premium anymore. */
                     throw new AccountInvalidException("Account is expired");
                 } else if (!isLoggedin(br)) {

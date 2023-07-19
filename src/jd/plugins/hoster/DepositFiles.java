@@ -668,7 +668,7 @@ public class DepositFiles extends antiDDoSForHost {
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
             account.setType(AccountType.PREMIUM);
             final Date date = dateFormat.parse(expire);
-            ai.setValidUntil(date.getTime());
+            ai.setValidUntil(date.getTime(), br);
         }
         return ai;
     }
@@ -689,6 +689,7 @@ public class DepositFiles extends antiDDoSForHost {
                         return;
                     }
                     logger.info("Validating login cookies");
+                    br.getPage(MAINPAGE.get());
                     if (this.isLoggedIN(br)) {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(br.getHost()), "");
@@ -698,7 +699,6 @@ public class DepositFiles extends antiDDoSForHost {
                         br.clearCookies(null);
                     }
                 }
-                // web fail over method
                 logger.info("Performing full login");
                 br.getPage(MAINPAGE.get() + "/login.php?return=%2Fde%2F");
                 Thread.sleep(1000);
@@ -739,7 +739,7 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     private boolean isLoggedIN(final Browser br) {
-        if (br.containsHTML("logout\\.php") && br.getCookie(br.getHost(), "autologin", Cookies.NOTDELETEDPATTERN) != null) {
+        if (br.containsHTML("(?i)logout\\.php") && br.getCookie(br.getHost(), "autologin", Cookies.NOTDELETEDPATTERN) != null) {
             return true;
         } else {
             return false;
@@ -768,7 +768,7 @@ public class DepositFiles extends antiDDoSForHost {
 
     private Map<String, Object> getAccountData(Account account) {
         synchronized (account) {
-            final Object ret = account.getProperty("accountData", null);
+            final Object ret = account.getProperty("accountData");
             if (ret instanceof Map) {
                 return (Map<String, Object>) ret;
             } else {
@@ -862,6 +862,10 @@ public class DepositFiles extends antiDDoSForHost {
                 account.setConcurrentUsePossible(false);
             }
             saveAccountData(accountData, account);
+            /**
+             * We can't validate logins so we always need to generate a fresh token. </br>
+             * API will request login captchas if we're doing this too frequently.
+             */
             account.setRefreshTimeout(5 * 60 * 60 * 1000l);
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -869,7 +873,6 @@ public class DepositFiles extends antiDDoSForHost {
             }
             throw e;
         }
-        // }
         return ai;
     }
 
@@ -892,8 +895,9 @@ public class DepositFiles extends antiDDoSForHost {
             query.add("file_password", Encoding.urlEncode(passCode));
         }
         apiGetPage(API_BASE + "/download/file?" + query.toString());
-        Map<String, Object> entries = this.handleErrorsApi(link, account, "FileIsPasswordProtected");
-        if ("FileIsPasswordProtected".equalsIgnoreCase((String) entries.get("error"))) {
+        final String errorPasswordProtected = "FileIsPasswordProtected";
+        Map<String, Object> entries = this.handleErrorsApi(link, account, errorPasswordProtected);
+        if (errorPasswordProtected.equalsIgnoreCase((String) entries.get("error"))) {
             /* File is password protected */
             link.setPasswordProtected(true);
             passCode = getUserInput("Password?", link);
@@ -912,8 +916,10 @@ public class DepositFiles extends antiDDoSForHost {
                 /* This should never happen. */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad API response");
             }
-            // download modes seem to indicate if the user can download as 'gold' or 'free' connection ratios?. User can download there
-            // own uploads under gold even though they don't have gold account status.
+            /*
+             * download modes seem to indicate if the user can download as 'gold' or 'free' connection ratios?. User can download their own
+             * uploads under gold even though they don't have gold account status.
+             */
             if ("gold".equalsIgnoreCase(mode)) {
                 // resume = true;
                 maxchunks = premiumChunklimit;
@@ -935,6 +941,7 @@ public class DepositFiles extends antiDDoSForHost {
         }
         String directurl = (String) data.get("download_url");
         if (StringUtils.isEmpty(directurl)) {
+            /* This should never happen. */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad API response: Failed to find final downloadurl");
         }
         directurl = adjustProtocol(directurl);
@@ -1018,9 +1025,9 @@ public class DepositFiles extends antiDDoSForHost {
 
     private String adjustProtocol(String link) {
         if (preferHTTPS()) {
-            link = link.replace("http://", "https://");
+            link = link.replaceFirst("(?i)http://", "https://");
         } else {
-            link = link.replace("https://", "http://");
+            link = link.replaceFirst("(?i)https://", "http://");
         }
         return link;
     }
