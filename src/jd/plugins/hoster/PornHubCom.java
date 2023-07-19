@@ -919,6 +919,7 @@ public class PornHubCom extends PluginForHost {
                 /* 2017-02-09: For embed player - usually only 480p will be available. */
                 /* Access embed video URL. */
                 /* viewkey should never be null! */
+                plugin.getLogger().warning("Doing embed fallback -> Max quality may be 480p!!");
                 try {
                     final String viewkey = getViewkeyFromURL(br.getURL());
                     if (viewkey != null && !StringUtils.contains(br.getURL(), "embed/" + viewkey)) {
@@ -1548,31 +1549,35 @@ public class PornHubCom extends PluginForHost {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.8,de;q=0.6");
         br.getHeaders().put("Accept-Charset", null);
-        for (String domain : domainsFree) {
-            /* Mandatory since 2023-03-23 */
-            br.setCookie(domain, "cookiesBannerSeen", "1");
-            br.setCookie(domain, "accessAgeDisclaimerPH", "1");
-            /* 2023-04-14: STATE OF UTAH WARNING */
-            br.setCookie(domain, "accessPH", "1");
+        for (final String domain : domainsFree) {
+            setDefaultCookies(br, domain);
         }
-        for (String domain : domainsPremium) {
-            /* Mandatory since 2023-03-23 */
-            br.setCookie(domain, "cookiesBannerSeen", "1");
-            br.setCookie(domain, "accessAgeDisclaimerPH", "1");
-            /* 2023-04-14: STATE OF UTAH WARNING */
-            br.setCookie(domain, "accessPH", "1");
+        for (final String domain : domainsPremium) {
+            setDefaultCookies(br, domain);
         }
         if (getUrlCrawlLanguageHandlingMode() == 0) {
             // make sure that english language will be used in this mode
-            for (String domain : domainsFree) {
-                br.setCookie(domain, "lang", "en");
+            for (final String domain : domainsFree) {
+                setEnglishLangCookie(br, domain);
             }
-            for (String domain : domainsPremium) {
-                br.setCookie(domain, "lang", "en");
+            for (final String domain : domainsPremium) {
+                setEnglishLangCookie(br, domain);
             }
         }
         br.setLoadLimit(br.getDefaultLoadLimit() * 4);
         return br;
+    }
+
+    private static void setDefaultCookies(final Browser br, final String domain) {
+        br.setCookie(domain, "cookiesBannerSeen", "1");
+        br.setCookie(domain, "accessAgeDisclaimerPH", "1");
+        br.setCookie(domain, "accessAgeDisclaimerUK", "1"); // 2023-07-19
+        /* 2023-04-14: STATE OF UTAH WARNING */
+        br.setCookie(domain, "accessPH", "1");
+    }
+
+    private static void setEnglishLangCookie(final Browser br, final String domain) {
+        br.setCookie(domain, "lang", "en");
     }
 
     public static String createPornhubImageLink(final String pluginDomain, final String subdomain, final String urlDomain, final String viewkey, final Account acc) {
