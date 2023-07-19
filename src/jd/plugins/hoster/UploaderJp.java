@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -97,19 +98,24 @@ public class UploaderJp extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        Form form = br.getFormbyProperty("name", "agree");
+        Form form = getContinueForm(br);
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (form.hasInputFieldByName("password")) {
+            link.setPasswordProtected(true);
             String passCode = link.getDownloadPassword();
             if (passCode == null) {
-                passCode = getUserInput(null, link);
+                passCode = getUserInput("Password?", link);
             }
             form.put("password", Encoding.urlEncode(passCode));
+            if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(form)) {
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            }
             submitForm(form);
-            // check to see if its correct password
-            if ((form = br.getFormbyProperty("name", "agree")) != null && form.hasInputFieldByName("password")) {
+            form = getContinueForm(br);
+            if (form != null && form.hasInputFieldByName("password")) {
                 if (link.getDownloadPassword() != null) {
                     link.setDownloadPassword(null);
                 }
@@ -120,6 +126,11 @@ public class UploaderJp extends antiDDoSForHost {
             submitForm(form);
         } else {
             // standard download
+            link.setPasswordProtected(false);
+            if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(form)) {
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            }
             submitForm(form);
         }
         String dllink = br.getRegex("\"(https?://d(?:ownload|l)(x|\\d+)\\.getuploader\\.com/[^<>\"]*?)\"").getMatch(0);
@@ -141,6 +152,18 @@ public class UploaderJp extends antiDDoSForHost {
             }
         }
         dl.startDownload();
+    }
+
+    private Form getContinueForm(final Browser br) {
+        Form form = br.getFormbyProperty("name", "agree");
+        if (form == null) {
+            final Form[] forms = br.getForms();
+            if (forms != null && forms.length == 1) {
+                /* Only one form available -> Select this one */
+                form = forms[0];
+            }
+        }
+        return form;
     }
 
     @Override
