@@ -21,6 +21,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -30,6 +50,8 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -38,49 +60,55 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadLinkDownloadable;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent(?:\\d+)?\\.premium\\.to/(?:t/[a-z0-9]+/\\d+|z/[a-z0-9]+|r/\\d+/[A-F0-9]{32}/[a-z0-9]+/\\d+/[^/]+)|https?://storage\\.premium\\.to/(?:file/[A-Z0-9]+|remote/[A-Z0-9]+/[A-Z0-9]+/[A-Z0-9]+/[^/]+)" })
 public class PremiumTo extends UseNet {
-    private final String             normalTraffic                   = "normalTraffic";
-    private final String             specialTraffic                  = "specialTraffic";
-    private static final String      type_torrent                    = "https?://torrent.*?\\..+";
-    private static final String      type_torrent_file               = "https?://torrent.*?\\.[^/]+/(?:t|z)/(.+)";
-    private static final String      type_torrent_remote             = "https?://torrent.*?\\.[^/]+/r/\\d+/[A-F0-9]{32}/([a-z0-9]+/\\d+)/[^/]+";
-    private static final String      type_storage                    = "https?://storage\\..+";
+    private final String PROPERTY_normalTraffic                                            = "normalTraffic";
+    private final String PROPERTY_specialTraffic                                           = "specialTraffic";
+    private final String type_torrent                                                      = "(?i)https?://torrent.*?\\..+";
+    private final String type_torrent_file                                                 = "(?i)https?://torrent.*?\\.[^/]+/(?:t|z)/(.+)";
+    private final String type_torrent_remote                                               = "(?i)https?://torrent.*?\\.[^/]+/r/\\d+/[A-F0-9]{32}/([a-z0-9]+/\\d+)/[^/]+";
+    private final String type_storage                                                      = "(?i)https?://storage\\..+";
     /* storage.premium.to --> Extract download URLs */
-    private static final String      type_storage_file               = "https?://storage\\.[^/]+/file/(.+)";
+    private final String type_storage_file                                                 = "(?i)https?://storage\\.[^/]+/file/(.+)";
     /* storage.premium.to --> Extract remote URLs */
-    private static final String      type_storage_remote             = "https?://storage\\.[^/]+/(?:remote|r)/[A-Z0-9]+/[A-Z0-9]+/([A-Z0-9]+)/.+";
+    private final String type_storage_remote                                               = "(?i)https?://storage\\.[^/]+/(?:remote|r)/[A-Z0-9]+/[A-Z0-9]+/([A-Z0-9]+)/.+";
     // private static final String type_torrent = "https?://torrent.+";
-    private static final String      API_BASE                        = "https://api.premium.to/api/2";
-    private static final String      API_BASE_STORAGE                = "https://storage.premium.to/api/2";
-    private static final String      API_BASE_TORRENT                = "https://torrent.premium.to/api/2";
+    private final String API_BASE                                                          = "https://api.premium.to/api/2";
+    private final String API_BASE_STORAGE                                                  = "https://storage.premium.to/api/2";
+    private final String API_BASE_TORRENT                                                  = "https://torrent.premium.to/api/2";
+    private final String PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED = "deactivated_filehosts_dialog_shown_and_confirmed";
+
+    private boolean requiresAccount(final DownloadLink link) {
+        if (link != null && link.getPluginPatternMatcher() != null && (link.getPluginPatternMatcher().matches(type_torrent_remote) || link.getPluginPatternMatcher().matches(type_storage_remote))) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     /*
      * 2019-11-10: Internal switch to force disable all Storage hosts - do not touch this unless e.g. admin requests this or API breaks
      * down.
      */
-    private static final boolean     debug_supports_storage_download = true;
-    private static final Set<String> supported_hosts_storage         = new HashSet<String>();
+    private static final boolean     plugin_supports_storage_download = true;
+    private static final Set<String> supported_hosts_storage          = new HashSet<String>();
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://premium.to/");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        br.setFollowRedirects(true);
+        br.setAcceptLanguage("en, en-gb;q=0.8");
+        br.setConnectTimeout(getConnectTimeout());
+        br.setReadTimeout(getReadTimeout());
+        br.getHeaders().put("User-Agent", "JDownloader");
+        return br;
     }
 
     @Override
@@ -93,22 +121,16 @@ public class PremiumTo extends UseNet {
         }
     }
 
-    private boolean requiresAccount(final DownloadLink link) {
-        if (link != null && link.getPluginPatternMatcher() != null && (link.getPluginPatternMatcher().matches(type_torrent_remote) || link.getPluginPatternMatcher().matches(type_storage_remote))) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     private String getFID(final DownloadLink link) {
-        if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(type_storage)) {
+        if (link.getPluginPatternMatcher() == null) {
+            return null;
+        } else if (link.getPluginPatternMatcher().matches(type_storage)) {
             if (link.getPluginPatternMatcher().matches(type_storage_file)) {
                 return new Regex(link.getPluginPatternMatcher(), type_storage_file).getMatch(0);
             } else {
                 return new Regex(link.getPluginPatternMatcher(), type_storage_remote).getMatch(0);
             }
-        } else if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(type_torrent)) {
+        } else if (link.getPluginPatternMatcher().matches(type_torrent)) {
             if (link.getPluginPatternMatcher().matches(type_torrent_file)) {
                 return new Regex(link.getPluginPatternMatcher(), type_torrent_file).getMatch(0);
             } else {
@@ -136,12 +158,14 @@ public class PremiumTo extends UseNet {
 
         public static final PremiumDotToConfigInterface.Translation TRANSLATION = new Translation();
 
+        @AboutConfig
         @DefaultBooleanValue(true)
         @Order(10)
         boolean isClearDownloadHistory();
 
         void setClearDownloadHistory(boolean b);
 
+        @AboutConfig
         @DefaultBooleanValue(false)
         @Order(20)
         boolean isEnableStorageWhiteListing();
@@ -150,6 +174,7 @@ public class PremiumTo extends UseNet {
 
         @AboutConfig
         @DefaultStringValue("examplehost1.com,examplehost2.net")
+        @Order(30)
         String getWhitelistedStorageHosts();
 
         void setWhitelistedStorageHosts(String whitelist);
@@ -183,74 +208,51 @@ public class PremiumTo extends UseNet {
         return (PremiumDotToConfigInterface) super.getAccountJsonConfig(acc);
     }
 
-    private int getReadTimeout() {
+    private static int getReadTimeout() {
         return 300 * 1000;
     }
 
-    private int getConnectTimeout() {
+    private static int getConnectTimeout() {
         return 300 * 1000;
     }
 
-    private Browser prepBrowser(Browser prepBr) {
-        prepBr.setFollowRedirects(true);
-        prepBr.setAcceptLanguage("en, en-gb;q=0.8");
-        prepBr.setConnectTimeout(getConnectTimeout());
-        prepBr.setReadTimeout(getReadTimeout());
-        prepBr.getHeaders().put("User-Agent", "JDownloader");
-        return prepBr;
-    }
-
-    private boolean login(Account account, boolean force) throws Exception {
+    private Map<String, Object> login(Account account, boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                prepBrowser(br);
-                final String userid = this.getUserID(account);
-                final String apikey = this.getAPIKey(account);
-                if (!force) {
-                    /* Trust existing data without check */
-                    return false;
-                }
-                br.getPage(API_BASE + "/traffic.php?userid=" + userid + "&apikey=" + apikey);
-                this.handleErrorsAPI(account, false);
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    /* 2019-10-23: There are no cookies given via API anymore */
-                    // account.clearCookies("");
-                }
-                throw e;
+            br.setCookiesExclusive(true);
+            final String userid = this.getUserID(account);
+            final String apikey = this.getAPIKey(account);
+            if (!force) {
+                /* Trust existing login-data without check */
+                return null;
             }
+            br.getPage(API_BASE + "/traffic.php?userid=" + userid + "&apikey=" + apikey);
+            return this.handleErrorsAPI(null, account, false);
         }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        final AccountInfo ac = new AccountInfo();
-        login(account, true);
-        final String apikey = this.getAPIKey(account);
-        final String userid = this.getUserID(account);
-        if (br.getURL() == null || !br.getURL().contains("traffic.php")) {
-            br.getPage(API_BASE + "/traffic.php?userid=" + userid + "&apikey=" + apikey);
-            this.handleErrorsAPI(account, false);
-        }
-        String additionalAccountStatus = "";
+        final AccountInfo ai = new AccountInfo();
+        final Map<String, Object> userinfo = login(account, true);
         /* Normal traffic */
-        final long nT = Long.parseLong(PluginJSonUtils.getJson(br, "traffic"));
+        final long nT = ((Number) userinfo.get("traffic")).longValue();
         /* Special traffic */
-        final long spT = Long.parseLong(PluginJSonUtils.getJson(br, "specialtraffic"));
-        ac.setTrafficLeft(nT + spT);
+        final long spT = ((Number) userinfo.get("specialtraffic")).longValue();
+        ai.setTrafficLeft(nT + spT);
         // set both so we can check in canHandle.
-        account.setProperty(normalTraffic, nT);
-        account.setProperty(specialTraffic, spT);
+        account.setProperty(PROPERTY_normalTraffic, nT);
+        account.setProperty(PROPERTY_specialTraffic, spT);
+        String additionalAccountStatus = "";
         if (nT > 0 && spT > 0) {
             additionalAccountStatus = String.format(" | Normal Traffic: %d MiB Special Traffic: %d MiB", nT, spT);
         }
+        final String apikey = this.getAPIKey(account);
+        final String userid = this.getUserID(account);
         final ArrayList<String> supported_hosts_regular = new ArrayList<String>();
         ArrayList<String> supported_hosts_storage = new ArrayList<String>();
         try {
             br.getPage(API_BASE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
             final List<Object> ressourcelist = (List<Object>) entries.get("hosts");
             for (final Object hostO : ressourcelist) {
                 if (hostO instanceof String) {
@@ -259,7 +261,6 @@ public class PremiumTo extends UseNet {
             }
         } catch (final Throwable e) {
             logger.info("Failure to find regular supported hosts");
-        } finally {
         }
         supported_hosts_regular.add("usenet");
         supported_hosts_regular.addAll(supported_hosts_regular);
@@ -272,22 +273,23 @@ public class PremiumTo extends UseNet {
              */
             br.getPage(API_BASE_STORAGE + "/hosts.php?userid=" + userid + "&apikey=" + apikey);
             /* We expect a comma separated array */
-            final String tmp_supported_hosts_storage[] = br.toString().toLowerCase().split(";|\\s+");
-            for (final String tmp_supported_host_storage : tmp_supported_hosts_storage) {
+            final String supported_hosts_storage_serverside[] = br.getRequest().getHtmlCode().toLowerCase().split(";|\\s+");
+            for (final String tmp_supported_host_storage : supported_hosts_storage_serverside) {
                 if (!supported_hosts_regular.contains(tmp_supported_host_storage)) {
                     /*
                      * Make sure to add only "storage-only" hosts to storage Array as some hosts can be used via both ways - we prefer
                      * direct downloads!
                      */
-                    if (debug_supports_storage_download) {
-                        logger.info("Found Storage host: " + tmp_supported_host_storage);
+                    if (plugin_supports_storage_download) {
+                        logger.info("Found Storage-only host: " + tmp_supported_host_storage);
                         supported_hosts_storage.add(tmp_supported_host_storage);
                     } else {
-                        logger.info("Storage functionality disabled: Skipping Storage host: " + tmp_supported_host_storage);
+                        logger.info("Storage functionality disabled: Skipping Storage-only host: " + tmp_supported_host_storage);
                     }
                 }
             }
         } catch (final Throwable e) {
+            logger.log(e);
             logger.info("Failed to find Storage hosts");
         }
         /*
@@ -299,12 +301,12 @@ public class PremiumTo extends UseNet {
         List<String> user_whitelisted_hosts_storage = new ArrayList<String>();
         List<String> real_user_whitelisted_hosts_storage = null;
         List<String> final_real_user_whitelisted_hosts_storage = new ArrayList<String>();
-        ac.setMultiHostSupport(this, supported_hosts_regular);
-        real_supported_hosts_regular = ac.getMultiHostSupport();
-        ac.setMultiHostSupport(this, supported_hosts_storage);
-        real_supported_hosts_storage = ac.getMultiHostSupport();
+        ai.setMultiHostSupport(this, supported_hosts_regular);
+        real_supported_hosts_regular = ai.getMultiHostSupport();
+        ai.setMultiHostSupport(this, supported_hosts_storage);
+        real_supported_hosts_storage = ai.getMultiHostSupport();
         {
-            /* Handling for Storage hosts */
+            /* Handling for Storage hosts based on users' plugin settings. */
             boolean onlyAllowWhitelistedStorageHosts = false;
             String whitelistedStorageHostsCommaSeparated = null;
             try {
@@ -322,8 +324,8 @@ public class PremiumTo extends UseNet {
                     for (final String whitelistedHost : whitelistedHosts) {
                         user_whitelisted_hosts_storage.add(whitelistedHost);
                     }
-                    ac.setMultiHostSupport(this, user_whitelisted_hosts_storage);
-                    real_user_whitelisted_hosts_storage = ac.getMultiHostSupport();
+                    ai.setMultiHostSupport(this, user_whitelisted_hosts_storage);
+                    real_user_whitelisted_hosts_storage = ai.getMultiHostSupport();
                 }
                 /*
                  * Only allow verified entries e.g. user enters "examplehost4.com" but real_supported_hosts_storage does not even contain
@@ -364,10 +366,8 @@ public class PremiumTo extends UseNet {
             if (real_supported_hosts_storage == null || real_supported_hosts_storage.isEmpty()) {
                 logger.info("Storage host array is empty");
             } else {
-                for (final String real_supported_host_storage : real_supported_hosts_storage) {
-                    logger.info("Adding final active Storage host: " + real_supported_host_storage);
-                    real_supported_hosts_regular.add(real_supported_host_storage);
-                }
+                logger.info("Adding final active storage hosts to list of supported hosts: " + real_supported_hosts_storage);
+                real_supported_hosts_regular.addAll(real_supported_hosts_storage);
             }
             synchronized (PremiumTo.supported_hosts_storage) {
                 PremiumTo.supported_hosts_storage.clear();
@@ -377,9 +377,95 @@ public class PremiumTo extends UseNet {
                 }
             }
         }
-        ac.setMultiHostSupport(this, real_supported_hosts_regular);
-        ac.setStatus("Premium account" + additionalAccountStatus);
-        return ac;
+        final String[] defaultServersideDeactivatedWebsites = new String[] { "mega.nz", "mega.co.nz" };
+        boolean foundAnyServersideDefaultDeactivatedHost = false;
+        for (final String domain : defaultServersideDeactivatedWebsites) {
+            if (real_supported_hosts_regular.contains(domain)) {
+                foundAnyServersideDefaultDeactivatedHost = true;
+                break;
+            }
+        }
+        if (!foundAnyServersideDefaultDeactivatedHost) {
+            handleServersideDeactivatedHostsInfoDialog(account, defaultServersideDeactivatedWebsites[0]);
+        }
+        ai.setMultiHostSupport(this, real_supported_hosts_regular);
+        ai.setStatus("Premium account" + additionalAccountStatus);
+        return ai;
+    }
+
+    private void handleServersideDeactivatedHostsInfoDialog(final Account account, final String exampleHost) throws InterruptedException {
+        final boolean userConfirmedDialogAlready = account.getBooleanProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, false);
+        final boolean forceDialog = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+        if (userConfirmedDialogAlready && !forceDialog) {
+            return;
+        }
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            // Debug only atm.
+            return;
+        }
+        final Thread dialogThread = showServersideDeactivatedHostInformation(exampleHost);
+        // boolean dialogClosedByUser = false;
+        int passedSeconds = 0;
+        final int waitSecondsPerLoop = 1;
+        final int maxSeconds = 600;
+        try {
+            do {
+                Thread.sleep(waitSecondsPerLoop * 1000);
+                passedSeconds += waitSecondsPerLoop;
+            } while (dialogThread.isAlive());
+        } finally {
+            dialogThread.interrupt();
+        }
+        if (passedSeconds < maxSeconds) {
+            /* Looks like user has reacted to dialog -> Don't show dialog again for this particular account. */
+            logger.info("Dialog closed by user");
+            account.setProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, true);
+        }
+    }
+
+    /**
+     * This dialog is there to make users of this multihoster aware that they can control the list of supported filehosts for this
+     * multihoster serverside in their multihoster account. </br>
+     * Some filehosts are disabled by default which is the core information this dialog is supposed to tell the user.
+     */
+    private Thread showServersideDeactivatedHostInformation(final String exampleHost) {
+        final String host = getHost();
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = host + " - Informationen zu serverseitig standardmäßig für Downloadmanager deaktivierten Hostern";
+                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
+                        message += host + " hat einige Filehoster wie z.B. '" + exampleHost + "' standardmäßig für Downloadmanager deaktiviert, um deinen Traffic nicht zu verschwenden.\r\n";
+                        message += "Falls du " + exampleHost + " oder andere standardmäßig für Downloadmanager deaktivierte Hoster über " + host + " in JD nutzen möchtest, musst du folgendes tun:\t\r\n";
+                        message += "1. Öffne " + host + " im Browser und logge dich ein.\r\n";
+                        message += "2. Klicke auf das tab 'DLM' -> Setze das Häckchen bei allen Hostern, die in der Hosterliste in JD erscheinen sollen und klicke auf den Button 'update'.\r\n";
+                        message += "3. In JD: Rechtsklick auf deinen " + host + " Account in JDownloader -> Aktualisieren\r\n";
+                        message += "Nun sollten Hoster, die vorher ggf. fehlten z.B. '" + exampleHost + "' in der Liste der unterstützten Hoster in JD aufgeführt werden.\r\n";
+                    } else {
+                        title = host + " - Information about filehosters, deactivated for downloadmanagers by default serverside by " + host;
+                        message += "Hello dear " + host + " user\r\n";
+                        message += host + " deactivated some filehosts like '" + exampleHost + "' by default for downloadmanagers in order to not waste any of your traffic.\r\n";
+                        message += "If you want to use " + exampleHost + " or other filehosts in JD which are disabled by " + host + " for downloadmanagers by default, follow these instructions:\r\n";
+                        message += "1. Open " + host + " in your browser and login.\r\n";
+                        message += "2. Click on the tab 'DLM' and enable the checkboxes for all filehosts you wish to use in JDownloader and click on the button 'update'.\r\n";
+                        message += "3. In JDownloader, rightclick on your " + host + " account -> Refresh\r\n";
+                        message += "Now all hosts, which might have been missing before e.g. '" + exampleHost + "' should be visible in the list of supported hosts in JDownloader.\r\n";
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(5 * 60 * 1000);
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
     }
 
     private String getUserID(final Account account) {
@@ -414,35 +500,39 @@ public class PremiumTo extends UseNet {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         if (isUsenetLink(link)) {
             super.handleMultiHost(link, account);
-            return;
         } else {
             handleDirectDownload(link, account);
         }
     }
 
+    /** Handles download of selfhosted files. */
     private void handleDirectDownload(final DownloadLink link, final Account account) throws Exception {
-        this.requestFileInformation(link);
+        if (this.requiresAccount(link) && account == null) {
+            throw new AccountRequiredException();
+        }
+        this.requestFileInformation(link, account);
         final String dllink = getDirectURL(link, account);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, -10);
-        if (dl.getConnection().getResponseCode() == 403) {
-            /*
-             * This e.g. happens if the user deletes a file via the premium.to site and then tries to download the previously added link via
-             * JDownloader.
-             */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (dl.getConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
-        }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
-            this.handleErrorsAPI(account, true);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 403) {
+                /*
+                 * This e.g. happens if the user deletes a file via the premium.to site and then tries to download the previously added link
+                 * via JDownloader.
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
+            } else {
+                this.handleErrorsAPI(link, account, true);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            }
         }
         dl.startDownload();
     }
 
-    /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
+    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         if (isUsenetLink(link)) {
             super.handleMultiHost(link, account);
@@ -459,13 +549,11 @@ public class PremiumTo extends UseNet {
                     }
                 }
             }
-            String serverside_filename = link.getStringProperty("serverside_filename", null);
-            dl = null;
+            String serverside_filename = link.getStringProperty("serverside_filename");
+            this.dl = null;
             final String apikey = this.getAPIKey(account);
             final String userid = this.getUserID(account);
-            final String url = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
-            final int maxConnections = -10;
-            String finalURL = null;
+            final String urlUrlEncoded = Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this));
             /*
              * 2019-04-15: URLs of some hosts can only be downloaded via storage (= have to be fully downloaded top the servers of this
              * Multihost first and can then be downloaded by the user) while others can be used via normal download AND storage (e.g.
@@ -473,66 +561,65 @@ public class PremiumTo extends UseNet {
              */
             final boolean requiresStorageDownload;
             synchronized (supported_hosts_storage) {
-                requiresStorageDownload = supported_hosts_storage != null && supported_hosts_storage.contains(link.getHost());
+                if (supported_hosts_storage != null && supported_hosts_storage.contains(link.getHost())) {
+                    requiresStorageDownload = true;
+                } else {
+                    requiresStorageDownload = false;
+                }
             }
             final UrlQuery query = new UrlQuery();
             query.appendEncoded("userid", userid);
             query.appendEncoded("apikey", apikey);
-            /* TODO: Append these additional parameters */
-            // if (link.getSha1Hash() != null) {
-            // query.appendEncoded("hash_sha1", link.getSha1Hash());
-            // }
-            // if (link.getMD5Hash() != null) {
-            // query.appendEncoded("hash_md5", link.getMD5Hash());
-            // }
-            // if (link.getSha256Hash() != null) {
-            // query.appendEncoded("hash_sha256", link.getSha256Hash());
-            // }
-            // if (link.getFinalFileName() != null) {
-            // query.appendEncoded("final_filename", link.getFinalFileName());
-            // } else if (link.getName() != null) {
-            // query.appendEncoded("filename", link.getName());
-            // }
+            if (link.getSha1Hash() != null) {
+                query.appendEncoded("hash_sha1", link.getSha1Hash());
+            }
+            if (link.getMD5Hash() != null) {
+                query.appendEncoded("hash_md5", link.getMD5Hash());
+            }
+            if (link.getSha256Hash() != null) {
+                query.appendEncoded("hash_sha256", link.getSha256Hash());
+            }
+            String finalURL = null;
             if (requiresStorageDownload) {
                 /* Storage download */
                 logger.info("Attempting STORAGE download: " + link.getHost());
-                if (!debug_supports_storage_download) {
+                if (!plugin_supports_storage_download) {
                     /* This should never happen */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage download is not yet supported via API");
                 }
                 /* Check if that URL has already been downloaded to their cloud. */
-                br.getPage(API_BASE_STORAGE + "/check.php?" + query.toString() + "&url=" + url);
-                handleErrorsAPI(account, false);
-                final String status = getStorageAPIStatus();
+                br.getPage(API_BASE_STORAGE + "/check.php?" + query.toString() + "&url=" + urlUrlEncoded);
+                final Map<String, Object> resp = handleErrorsAPI(link, account, false);
+                final String status = (String) resp.get("Status");
                 /* 2019-11-11: "Canceled" = URL has been added to Storage before but was deleted e.g. by user --> Add it again */
                 if ("Not in queue".equalsIgnoreCase(status) || "Canceled".equalsIgnoreCase(status)) {
                     /* Not on their servers? Add to download-queue! */
-                    br.getPage(API_BASE_STORAGE + "/add.php?" + query.toString() + "&url=" + url);
+                    br.getPage(API_BASE_STORAGE + "/add.php?" + query.toString() + "&url=" + urlUrlEncoded);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Added URL to premium.to Storage: Storage download pending", 1 * 60 * 1000);
                 } else if ("completed".equalsIgnoreCase(status)) {
                     /* File has been downloaded to their servers and download should be possible now. */
-                    finalURL = API_BASE_STORAGE + "/download.php?" + query.toString() + "&url=" + url;
+                    finalURL = API_BASE_STORAGE + "/download.php?" + query.toString() + "&url=" + urlUrlEncoded;
                 } else {
                     /* WTF this should never happen */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown status");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown storage status");
                 }
                 /* We might need this later */
-                serverside_filename = PluginJSonUtils.getJson(br, "Filename");
+                serverside_filename = (String) resp.get("Filename");
             } else {
                 /* Normal (direct) download */
                 logger.info("Attempting DIRECT download: " + link.getHost());
                 login(account, false);
-                finalURL = API_BASE + "/getfile.php?" + query.toString() + "&link=" + url;
+                finalURL = API_BASE + "/getfile.php?" + query.toString() + "&link=" + urlUrlEncoded;
             }
             final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(true);
             final URLConnectionAdapter con = brc.openGetConnection(finalURL);
             try {
-                if (con.isOK() && con.isContentDisposition() && con.getLongContentLength() > 0) {
+                if (con.isOK() && this.looksLikeDownloadableContent(con) && con.getCompleteContentLength() > 0) {
                     finalURL = con.getRequest().getUrl();
-                    if (link.getVerifiedFileSize() != -1 && link.getVerifiedFileSize() != con.getLongContentLength()) {
+                    if (link.getVerifiedFileSize() != -1 && link.getVerifiedFileSize() != con.getCompleteContentLength()) {
                         logger.info("Workaround for size missmatch(rar padding?!)!");
-                        link.setVerifiedFileSize(con.getLongContentLength());
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
             } finally {
@@ -548,26 +635,24 @@ public class PremiumTo extends UseNet {
                 /* We might need this information later */
                 link.setProperty("serverside_filename", serverside_filename);
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadable, br.createGetRequest(finalURL), true, maxConnections);
-            if (dl.getConnection().getResponseCode() == 404) {
-                /* File offline */
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000);
-            }
-            if (!dl.getConnection().isContentDisposition()) {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadable, br.createGetRequest(finalURL), true, -10);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
-                if (dl.getConnection().getResponseCode() == 420) {
+                if (dl.getConnection().getResponseCode() == 404) {
+                    /* File offline */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000);
+                } else if (dl.getConnection().getResponseCode() == 420) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 420", 3 * 60 * 1000);
+                } else {
+                    this.handleErrorsAPI(link, account, false);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error", 3 * 60 * 1000);
                 }
-                this.handleErrorsAPI(account, false);
-                logger.severe("PremiumTo Error");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error", 3 * 60 * 1000);
             }
             /* Check if the download is successful && user wants JD to delete the file in his premium.to account afterwards. */
             final PremiumDotToConfigInterface config = getAccountJsonConfig(account);
             /* 2019-10-24: An API call is missing for that. This feature will have to remain disabled until we get that. */
             final boolean canDeleteStorageFile = false;
-            if (dl.startDownload() && config.isClearDownloadHistory() && canDeleteStorageFile) {
+            if (dl.startDownload() && config.isClearDownloadHistory() && canDeleteStorageFile && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 String storageID = null;
                 if (link.getDownloadURL().matches(type_storage)) {
                     storageID = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
@@ -578,7 +663,7 @@ public class PremiumTo extends UseNet {
                     logger.info("Trying to find storageID");
                     try {
                         br.getPage("https://storage.premium.to/status.php");
-                        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
                         final List<Object> storage_objects = (List<Object>) entries.get("f");
                         for (final Object fileO : storage_objects) {
                             entries = (Map<String, Object>) fileO;
@@ -621,85 +706,91 @@ public class PremiumTo extends UseNet {
         }
     }
 
-    private void handleErrorsAPI(final Account account, final boolean trust_error_404_as_file_not_found) throws Exception {
-        int responsecode = 0;
-        final String responsecodeStr = PluginJSonUtils.getJson(br, "code");
-        if (!StringUtils.isEmpty(responsecodeStr) && responsecodeStr.matches("\\d+")) {
-            responsecode = Integer.parseInt(responsecodeStr);
-        }
-        String errormessage = PluginJSonUtils.getJson(br, "message");
-        if (StringUtils.isEmpty(errormessage)) {
-            errormessage = "Unknown error";
-        }
-        switch (responsecode) {
-        case 0:
-            /* No error */
-            break;
-        case 200:
-            /* Everything ok */
-            break;
-        case 400:
-            /*
-             * Invalid parameter - this should never happen! 2020-06-22: Thiy can happen when the user e.g. uses wrong characters in login
-             * credentials --> Display account invalid message if this didn't happen during download!
-             */
-            if (this.getDownloadLink() == null) {
-                invalidLogin();
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "API response 400: " + errormessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+    private Map<String, Object> handleErrorsAPI(final DownloadLink link, final Account account, final boolean trust_error_404_as_file_not_found) throws Exception {
+        if (StringUtils.containsIgnoreCase(br.getHttpConnection().getContentType(), "json")) {
+            Map<String, Object> entries = null;
+            try {
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            } catch (final JSonMapperException ignore) {
+                /* This should never happen. */
+                if (link != null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response", 60 * 1000l);
+                } else {
+                    throw new AccountUnavailableException("Invalid API response", 60 * 1000);
+                }
             }
-        case 401:
-            /* Invalid apikey --> Invalid logindata */
-            invalidLogin();
-        case 402:
-            /*
-             * Unsupported filehost - rare case but will happen if admin e.g. forgets to remove currently non-working hosts from array of
-             * supported hosts. Do not throw a permanent error here as cached content could always be available!
-             */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 3 * 60 * 1000);
-        case 403:
-            /* Not enough traffic left --> Temp. disable account */
-            throw new AccountUnavailableException("Not enough traffic left", 5 * 60 * 1000l);
-        case 404:
-            if (trust_error_404_as_file_not_found) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                /* 2019-10-30: We cannot trust this API errormessage */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 404 file not found", 3 * 60 * 1000);
+            final Number responsecodeO = (Number) entries.get("code");
+            if (responsecodeO == null) {
+                /* No error e.g. storage download status: {"Status":"Not in queue"} */
+                return entries;
             }
-        default:
-            /* {"code":405,"message":"Too many files"} */
-            /* {"code":500,"message":"Currently no available premium acccount for this filehost"} */
-            errormessage = "Err " + responsecode + ": " + errormessage;
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 3 * 60 * 1000);
-        }
-        /* TODO: Check if these ones still exist */
-        if (br.getURL() != null && br.getURL().contains("storage.premium.to")) {
-            /* Now handle special Storage errors / statuscodes */
-            if ("Invalid API Key".equalsIgnoreCase(br.toString())) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid Storage apikey", 3 * 60 * 1000);
+            final String errormessage = (String) entries.get("message");
+            switch (responsecodeO.intValue()) {
+            case 0:
+                /* No error */
+                break;
+            case 200:
+                /* Everything ok */
+                break;
+            case 400:
+                /*
+                 * Invalid parameter - this should never happen! 2020-06-22: Thiy can happen when the user e.g. uses wrong characters in
+                 * login credentials --> Display account invalid message if this didn't happen during download!
+                 */
+                if (this.getDownloadLink() == null) {
+                    exceptionInvalidLogin();
+                } else {
+                    throw new AccountUnavailableException("API response 400: " + errormessage, 5 * 60 * 1000);
+                }
+            case 401:
+                /* Invalid apikey --> Invalid logindata */
+                exceptionInvalidLogin();
+            case 402:
+                /*
+                 * Unsupported filehost - rare case but will happen if admin e.g. forgets to remove currently non-working hosts from array
+                 * of supported hosts. Do not throw a permanent error here as cached content could always be available!
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 3 * 60 * 1000);
+            case 403:
+                /* Not enough traffic left --> Temp. disable account */
+                throw new AccountUnavailableException("Not enough traffic left", 5 * 60 * 1000l);
+            case 404:
+                if (trust_error_404_as_file_not_found) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    /* 2019-10-30: We cannot trust this API errormessage */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 404 file not found", 3 * 60 * 1000);
+                }
+            default:
+                /* {"code":405,"message":"Too many files"} */
+                /* {"code":500,"message":"Currently no available premium acccount for this filehost"} */
+                if (link == null) {
+                    /* Error must have happened during login */
+                    throw new AccountUnavailableException(errormessage, 5 * 60 * 1000);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, 3 * 60 * 1000);
+                }
             }
-            final String status = getStorageAPIStatus();
-            if (StringUtils.isEmpty(status)) {
-                /* No errors */
-                return;
-            }
-            if (status.equalsIgnoreCase("In queue")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage download pending", 3 * 60 * 1000);
-            }
-        }
-    }
-
-    private void invalidLogin() throws PluginException {
-        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Zugangsdaten ungültig!\r\nDu findest deine Zugangsdaten für JD hier:\r\npremium.to Webseite --> Account --> Siehe API Zugangsdaten", this.getHost()), PluginException.VALUE_ID_PREMIUM_DISABLE);
+            return entries;
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, String.format("Invalid login credentials!\r\nYou can find your special JD login credentials here:\r\npremium.to website --> Account --> See API login credentials", this.getHost()), PluginException.VALUE_ID_PREMIUM_DISABLE);
+            /* TODO: Check if these ones still exist */
+            if (br.getURL() != null && br.getURL().contains("storage.premium.to")) {
+                /* Now handle special Storage errors / statuscodes */
+                if ("Invalid API Key".equalsIgnoreCase(br.getRequest().getHtmlCode())) {
+                    /* This should never happen? */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid Storage apikey", 3 * 60 * 1000);
+                }
+            }
+            return null;
         }
     }
 
-    private String getStorageAPIStatus() {
-        return PluginJSonUtils.getJson(br, "Status");
+    private void exceptionInvalidLogin() throws PluginException {
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            throw new AccountInvalidException("Zugangsdaten ungültig!\r\nDu findest deine Zugangsdaten für JD hier:\r\npremium.to Webseite --> Account --> Siehe API Zugangsdaten");
+        } else {
+            throw new AccountInvalidException("Invalid login credentials!\r\nYou can find your special JD login credentials here:\r\npremium.to website --> Account --> See API login credentials");
+        }
     }
 
     @Override
@@ -713,31 +804,18 @@ public class PremiumTo extends UseNet {
             return super.requestFileInformation(link);
         } else {
             br.setFollowRedirects(true);
-            ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
-            if (accs == null || accs.size() == 0) {
-                /* 2019-10-23: All o those URLs should be downloadable without account/logging in */
-                // if (link.getPluginPatternMatcher().matches(type_storage)) {
-                // /* This linktype can only be downloaded/checked via account */
-                // link.getLinkStatus().setStatusText("Only downlodable via account!");
-                // return AvailableStatus.UNCHECKABLE;
-                // }
-                if (requiresAccount(link)) {
-                    return AvailableStatus.UNCHECKABLE;
-                }
-                return getDirecturlStatus(link, null);
-            } else {
-                for (final Account acc : accs) {
-                    login(acc, false);
-                    /* Pick first account */
-                    return getDirecturlStatus(link, acc);
-                }
-                return AvailableStatus.UNCHECKABLE;
-            }
+            final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+            return requestFileInformation(link, account);
         }
     }
 
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+        return getDirecturlStatus(link, account);
+    }
+
     private AvailableStatus getDirecturlStatus(final DownloadLink link, final Account account) throws Exception {
-        if (link.getPluginPatternMatcher().matches(type_storage_file) && account == null) {
+        if (requiresAccount(link) && account == null) {
+            /* Account required to check given link. */
             return AvailableStatus.UNCHECKABLE;
         }
         final String dllink = getDirectURL(link, account);
@@ -749,11 +827,12 @@ public class PremiumTo extends UseNet {
                 if (con.getResponseCode() == 403) {
                     /* Either invalid URL or user deleted file from Storage/Cloud --> URL is invalid now. */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    br.followConnection(true);
+                    /* We expect an API error */
+                    this.handleErrorsAPI(link, account, true);
+                    return AvailableStatus.UNCHECKABLE;
                 }
-                br.followConnection();
-                /* We expect an API error */
-                this.handleErrorsAPI(account, true);
-                return AvailableStatus.UNCHECKABLE;
             }
             final long fileSize = con.getCompleteContentLength();
             if (fileSize <= 0) {
@@ -809,27 +888,46 @@ public class PremiumTo extends UseNet {
         }
         return dllink;
     }
+    // @Override
+    // public int getMaxSimultanDownload(DownloadLink link, Account account) {
+    // if (isUsenetLink(link)) {
+    // /* 2016-07-29: psp: Lowered this from 10 to 3 RE: admin */
+    // return 3;
+    // } else {
+    // return -1;
+    // }
+    // }
+    //
+    // @Override
+    // public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+    // if (account != null) {
+    // return true;
+    // } else {
+    // return false;
+    // }
+    // }
 
     @Override
-    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         if (isUsenetLink(link)) {
             /* 2016-07-29: psp: Lowered this from 10 to 3 RE: admin */
             return 3;
         } else {
-            /* Not sure about this value. */
             return 20;
         }
     }
+    // @Override
+    // public int getMaxSimultanPremiumDownloadNum() {
+    // return -1;
+    // }
 
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account != null) {
             return true;
-        } else if (!requiresAccount(link)) {
-            /* Some directurls are downloadable without account */
-            return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override
