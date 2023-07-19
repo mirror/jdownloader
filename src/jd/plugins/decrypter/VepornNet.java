@@ -34,6 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.hoster.GenericM3u8;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VepornNet extends antiDDoSForDecrypt {
@@ -109,7 +110,9 @@ public class VepornNet extends antiDDoSForDecrypt {
         }
         final String hlsMaster = br.getRegex("<source type=\"application/x-mpegURL\" src=\"(https?://[^\"]+)").getMatch(0);
         if (hlsMaster != null) {
-            ret.add(this.createDownloadlink(hlsMaster));
+            final DownloadLink hls = this.createDownloadlink(hlsMaster);
+            hls.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, title);
+            ret.add(hls);
         }
         final boolean tryOldHandling = embedURLs == null || embedURLs.length == 0;
         final String[] links = br.getRegex("comment\\((\\d+)\\)").getColumn(0);

@@ -78,20 +78,28 @@ public class RapidGatorNetFolder extends antiDDoSForDecrypt {
         final RapidGatorNet plugin = (RapidGatorNet) this.getNewPluginForHostInstance(this.getHost());
         br.setFollowRedirects(true);
         plugin.getPage(param.getCryptedUrl());
-        br.setFollowRedirects(false);
+        String title = br.getRegex("(?i)Downloading\\s*:\\s*</strong>(.*?)</p>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("(?i)<title>Download file (.*?)</title>").getMatch(0);
+        }
+        final String titleForEmptyOrOfflineFolder;
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            titleForEmptyOrOfflineFolder = folderID + "_" + title;
+        } else {
+            /* Fallback */
+            title = folderID;
+            titleForEmptyOrOfflineFolder = title;
+        }
         if (br.containsHTML("E_FOLDERNOTFOUND") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("class=\"empty\"")) {
-            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderID);
-        }
-        String fpName = br.getRegex("(?i)Downloading\\s*:\\s*</strong>(.*?)</p>").getMatch(0);
-        if (fpName == null) {
-            fpName = br.getRegex("(?i)<title>Download file (.*?)</title>").getMatch(0);
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, titleForEmptyOrOfflineFolder);
         }
         FilePackage fp;
-        if (fpName != null) {
+        if (title != null) {
             fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.setName(Encoding.htmlDecode(title).trim());
             fp.addLinks(ret);
         } else {
             fp = null;

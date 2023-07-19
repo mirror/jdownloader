@@ -97,6 +97,12 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
                 return "Original";
             }
         },
+        ORIGINAL_WITH_TWEET_ID {
+            @Override
+            public String getLabel() {
+                return "Original with tweetID: <tweet_id>[opt:_<originalFilenameWithoutExt>].<ext>";
+            }
+        },
         ORIGINAL_PLUS {
             @Override
             public String getLabel() {

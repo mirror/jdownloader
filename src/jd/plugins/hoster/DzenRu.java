@@ -169,7 +169,10 @@ public class DzenRu extends PluginForHost {
         } else if (!StringUtils.isEmpty(title)) {
             link.setFinalFileName(title + ".mp4");
         }
-        /* Very cheap way of calculating rough filesize using bandwidth of 1080p version and duration of the video. */
+        /**
+         * Very cheap way of calculating rough filesize using bandwidth of 1080p version and duration of the video. </br>
+         * (And yes, not all videos are available in 1080p and real bandwidth may vary.)
+         */
         final Number durationSeconds = (Number) videomap.get("duration");
         if (durationSeconds != null) {
             link.setDownloadSize(durationSeconds.longValue() * 1405854 / 8);
