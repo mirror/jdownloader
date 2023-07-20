@@ -561,15 +561,23 @@ public class XHamsterCom extends PluginForHost {
     }
 
     /**
-     * Designed to find "real" URL inside html of embed video. </br>
-     * Best is to only call this when currently browser is on an embed-URL as this function does not check for that.
+     * Designed to find "real" URL inside html of embed video.
      */
     private String findNonEmbedURL(final Browser br) {
-        String url = br.getRegex("class=\"xh-helper-hidden xplayer-fallback-image\" href=\"(https?://[^/]+/videos/\\w+)").getMatch(0);
-        if (url == null || true) {
+        String url = br.getRegex("class=\"xh-helper-hidden xplayer-fallback-image\" href=\"(https?://[^/]+/videos/[\\w\\-]+)").getMatch(0);
+        if (url == null) {
             url = PluginJSonUtils.getJson(br, "video_url");
         }
-        return url;
+        if (StringUtils.isEmpty(url)) {
+            return null;
+        }
+        final String videoidFromCurrentURL = getFID(br.getURL());
+        /* Check if this is the correct URL. */
+        if (videoidFromCurrentURL == null || url.contains(videoidFromCurrentURL)) {
+            return url;
+        } else {
+            return null;
+        }
     }
 
     /**
