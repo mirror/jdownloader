@@ -154,8 +154,46 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             public String getTooltip() {
                 return "ASSIGN_PLUGIN";
             }
+        },
+        COOKIE_ONLY {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_ONLY();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_ONLY_TOOLTIP();
+            }
+        },
+        COOKIE_OPTIONAL {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_OPTIONAL();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_OPTIONAL_TOOLTIP();
+            }
         };
         public static final long CACHEVERSION = Math.abs(StringUtils.join(values(), "<->").hashCode()) + Math.abs(StringUtils.join(values(), ":").hashCode()) + Math.abs(StringUtils.join(values(), "<=>").hashCode());
+
+        public static boolean isInternalFeature(FEATURE feature) {
+            if (feature != null) {
+                switch (feature) {
+                case FAVICON:
+                case INTERNAL:
+                case ASSIGN_PLUGIN:
+                case GENERIC:
+                    return true;
+                default:
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
 
         public boolean isSet(FEATURE[] features) {
             if (features != null) {

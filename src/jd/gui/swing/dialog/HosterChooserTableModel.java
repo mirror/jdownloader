@@ -27,7 +27,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
@@ -63,7 +62,9 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
                     final LazyPlugin.FEATURE[] features = next.getFeatures();
                     if (features != null) {
                         for (final LazyPlugin.FEATURE f : features) {
-                            if (pattern.matcher(clean(f.getLabel())).find()) {
+                            if (LazyPlugin.FEATURE.isInternalFeature(f)) {
+                                continue;
+                            } else if (pattern.matcher(clean(f.getLabel())).find()) {
                                 continue main;
                             }
                         }
@@ -205,14 +206,18 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
 
             @Override
             protected String getTooltipText(LazyHostPlugin value) {
-                StringBuilder sb = new StringBuilder();
-                LazyPlugin.FEATURE[] features = value.getFeatures();
+                final StringBuilder sb = new StringBuilder();
+                final LazyPlugin.FEATURE[] features = value.getFeatures();
                 if (features != null) {
-                    for (LazyPlugin.FEATURE f : features) {
-                        if (sb.length() > 0) {
-                            sb.append("\r\n");
+                    for (final LazyPlugin.FEATURE f : features) {
+                        if (LazyPlugin.FEATURE.isInternalFeature(f)) {
+                            continue;
+                        } else {
+                            if (sb.length() > 0) {
+                                sb.append("\r\n");
+                            }
+                            sb.append(f.getTooltip());
                         }
-                        sb.append(f.getTooltip());
                     }
                 }
                 return sb.toString();
@@ -220,14 +225,18 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
 
             @Override
             public String getStringValue(LazyHostPlugin value) {
-                StringBuilder sb = new StringBuilder();
-                LazyPlugin.FEATURE[] features = value.getFeatures();
+                final StringBuilder sb = new StringBuilder();
+                final LazyPlugin.FEATURE[] features = value.getFeatures();
                 if (features != null) {
-                    for (LazyPlugin.FEATURE f : features) {
-                        if (sb.length() > 0) {
-                            sb.append("; ");
+                    for (final LazyPlugin.FEATURE f : features) {
+                        if (LazyPlugin.FEATURE.isInternalFeature(f)) {
+                            continue;
+                        } else {
+                            if (sb.length() > 0) {
+                                sb.append("; ");
+                            }
+                            sb.append(f.getLabel());
                         }
-                        sb.append(f.getLabel());
                     }
                 }
                 return sb.toString();
