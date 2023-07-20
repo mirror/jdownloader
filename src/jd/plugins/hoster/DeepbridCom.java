@@ -16,17 +16,26 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -41,29 +50,22 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "https?://(?:www\\.)?deepbrid\\.com/dl\\?f=([a-f0-9]{32})" })
-public class DeepbridCom extends antiDDoSForHost {
+public class DeepbridCom extends PluginForHost {
     private static final String          API_BASE                   = "https://www.deepbrid.com/backend-dl/index.php";
     private static MultiHosterManagement mhm                        = new MultiHosterManagement("deepbrid.com");
     private static final int             defaultMAXDOWNLOADS        = -1;
-    private static final int             defaultMAXCHUNKS           = 0;
+    private static final int             defaultMAXCHUNKS           = 1;
     private static final boolean         defaultRESUME              = true;
     private static final String          PROPERTY_ACCOUNT_maxchunks = "maxchunks";
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
+    }
 
     public DeepbridCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,29 +77,32 @@ public class DeepbridCom extends antiDDoSForHost {
         return "https://www.deepbrid.com/page/terms";
     }
 
-    private Browser newBrowser() {
-        br = new Browser();
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
+        br.setFollowRedirects(true);
         return br;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String filename_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (!link.isNameSet()) {
+            link.setName(filename_url);
+        }
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Wrong request code")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         String filename = br.getRegex("<b>File Name:?\\s*?</b></font><font[^>]+>([^<>\"]+)<").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            filename = filename_url;
+        final String filesize = br.getRegex("<b>File Size:?\\s*?</b></font><font[^>]+>([^<>\"]+)<").getMatch(0);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setName(filename);
         }
-        String filesize = br.getRegex("<b>File Size:?\\s*?</b></font><font[^>]+>([^<>\"]+)<").getMatch(0);
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -122,11 +127,16 @@ public class DeepbridCom extends antiDDoSForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         final String directlinkproperty = "directurl";
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
-            String ticketurl = link.getStringProperty("ticketurl", null);
+        final String storedDirecturl = link.getStringProperty(directlinkproperty);
+        String dllink;
+        if (storedDirecturl != null) {
+            logger.info("Re-using stored directurl: " + storedDirecturl);
+            dllink = storedDirecturl;
+        } else {
+            final String ticketurl = link.getStringProperty("ticketurl");
             if (ticketurl != null) {
-                getPage(ticketurl);
+                logger.info("Re-using stored ticketurl: " + ticketurl);
+                br.getPage(ticketurl);
             } else {
                 final Form dlform = br.getFormbyKey("download");
                 if (dlform == null) {
@@ -138,7 +148,7 @@ public class DeepbridCom extends antiDDoSForHost {
                 if (dlfield != null && dlfield.getValue() == null) {
                     dlform.put("download", "");
                 }
-                submitForm(dlform);
+                br.submitForm(dlform);
                 /* Store that URL as we can use it multiple times to generate new directurls for that particular file! */
                 link.setProperty("ticketurl", br.getURL());
             }
@@ -149,25 +159,34 @@ public class DeepbridCom extends antiDDoSForHost {
             if (StringUtils.isEmpty(dllink)) {
                 if (ticketurl != null) {
                     /* Trash stored ticket-URL and try again! */
-                    link.setProperty("ticketurl", Property.NULL);
+                    link.removeProperty("ticketurl");
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(directlinkproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw e;
             }
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
@@ -178,24 +197,29 @@ public class DeepbridCom extends antiDDoSForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link) throws Exception {
-        String dllink = checkDirectLink(link, this.getHost() + "directlink");
-        br.setFollowRedirects(true);
-        if (dllink == null) {
+        final String directlinkproperty = this.getHost() + "directlink";
+        final String storedDirecturl = link.getStringProperty(directlinkproperty);
+        String dllink;
+        if (storedDirecturl != null) {
+            logger.info("Re-using stored directurl: " + storedDirecturl);
+            dllink = storedDirecturl;
+        } else {
             if (account.getType() == AccountType.PREMIUM) {
                 /* Use API in premium mode */
-                this.postPage(API_BASE + "?page=api&app=jdownloader&action=generateLink", "pass=&link=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
+                br.postPage(API_BASE + "?page=api&app=jdownloader&action=generateLink", "pass=&link=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
             } else {
                 /* Use website for free account downloads */
-                this.postPage(API_BASE + "?page=api&action=generateLink", "pass=&link=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
+                br.postPage(API_BASE + "?page=api&action=generateLink", "pass=&link=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
             }
-            dllink = PluginJSonUtils.getJsonValue(br, "link");
+            final Map<String, Object> resp = this.handleErrorsAPI(br, account, link);
+            dllink = (String) resp.get("link");
             if (StringUtils.isEmpty(dllink)) {
-                this.handleKnownErrors(this.br, account, link);
-                mhm.handleErrorGeneric(account, link, "dllinknull", 10, 5 * 60 * 1000l);
+                /* This should never happen! */
+                mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 10, 20 * 60 * 1000l);
             }
         }
         link.setProperty(this.getHost() + "directlink", dllink);
-        int maxchunks = (int) account.getLongProperty(PROPERTY_ACCOUNT_maxchunks, defaultMAXCHUNKS);
+        int maxchunks = account.getIntegerProperty(PROPERTY_ACCOUNT_maxchunks, defaultMAXCHUNKS);
         if (maxchunks == 1) {
             maxchunks = 1;
         } else if (maxchunks > 0) {
@@ -204,15 +228,25 @@ public class DeepbridCom extends antiDDoSForHost {
             maxchunks = defaultMAXCHUNKS;
         }
         logger.info("Max. allowed chunks: " + maxchunks);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxchunks);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            handleKnownErrors(this.br, account, link);
-            mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxchunks);
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
+                handleErrorsAPI(this.br, account, link);
+                mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
+            }
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(directlinkproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+            } else {
+                throw e;
+            }
         }
         try {
             this.dl.startDownload();
-        } catch (Exception e) {
+        } catch (final Exception e) {
+            /* Special errorhandling */
             final File part = new File(dl.getDownloadable().getFileOutputPart());
             if (part.exists() && part.length() < 5000) {
                 final String content = IO.readFileToString(part);
@@ -229,57 +263,24 @@ public class DeepbridCom extends antiDDoSForHost {
     }
 
     @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
-    }
-
-    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = newBrowser();
         mhm.runCheck(account, link);
         login(account, false);
         handleDL(account, link);
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        final String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                final URLConnectionAdapter con = br2.openHeadConnection(dllink);
-                try {
-                    if (!looksLikeDownloadableContent(con)) {
-                        throw new IOException();
-                    } else {
-                        return dllink;
-                    }
-                } finally {
-                    con.disconnect();
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
-                return null;
-            }
-        } else {
-            return null;
-        }
-    }
-
     @SuppressWarnings({ "unchecked" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
-        br.setFollowRedirects(true);
-        login(account, false);
-        if (br.getURL() == null || !br.getURL().contains("action=accountInfo")) {
-            this.getAPISafe(API_BASE + "?page=api&action=accountInfo", account, null);
+        final Map<String, Object> userinfo = login(account, true);
+        final Number points = (Number) userinfo.get("points");
+        if (points != null) {
+            ai.setPremiumPoints(points.intValue());
         }
-        final String is_premium = PluginJSonUtils.getJson(br, "type");
-        final String maxDownloadsStr = PluginJSonUtils.getJson(br, "maxDownloads");
-        if (!"premium".equalsIgnoreCase(is_premium)) {
+        final String type = userinfo.get("type").toString();
+        final Number maxSimultaneousDownloads = (Number) userinfo.get("maxDownloads");
+        if (!"premium".equalsIgnoreCase(type)) {
             account.setType(AccountType.FREE);
             /*
              * No downloads possible via free account via API. Via website, free downloads are possible but we were too lazy to add extra
@@ -288,34 +289,36 @@ public class DeepbridCom extends antiDDoSForHost {
             ai.setTrafficLeft(0);
             account.setMaxSimultanDownloads(0);
             // ai.setUnlimitedTraffic();
-            /* 2021-01-03: Usually there are 15 Minutes waittime between downloads in free mode -> Do not allow simultaneous downloads */
+            /*
+             * 2021-01-03: Usually there are 15 Minutes waittime between downloads in free mode -> Do not allow simultaneous downloads or no
+             * downloads at all.
+             */
             // account.setMaxSimultanDownloads(1);
         } else {
             account.setType(AccountType.PREMIUM);
-            if (maxDownloadsStr != null && maxDownloadsStr.matches("\\d+")) {
-                logger.info("Using API maxdownloads: " + maxDownloadsStr);
-                account.setMaxSimultanDownloads(Integer.parseInt(maxDownloadsStr));
+            if (maxSimultaneousDownloads != null) {
+                logger.info("Using API maxdownloads: " + maxSimultaneousDownloads);
+                account.setMaxSimultanDownloads(maxSimultaneousDownloads.intValue());
             } else {
                 logger.info("Using DEFAULT maxdownloads: " + defaultMAXDOWNLOADS);
                 account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
             }
-            final String validuntil = PluginJSonUtils.getJsonValue(br, "expiration");
-            ai.setStatus("Premium account");
+            final String validuntil = userinfo.get("expiration").toString();
             /* Correct expire-date - add 24 hours */
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000, br);
             ai.setUnlimitedTraffic();
         }
-        final String maxConnectionsStr = PluginJSonUtils.getJson(br, "maxConnections");
-        if (maxConnectionsStr != null && maxConnectionsStr.matches("\\d+")) {
-            logger.info("Setting maxchunks value: " + maxConnectionsStr);
-            account.setProperty(PROPERTY_ACCOUNT_maxchunks, Long.parseLong(maxConnectionsStr));
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && maxDownloadsStr != null && maxConnectionsStr != null) {
-                ai.setStatus(ai.getStatus() + String.format(" | MaxDls: %s MaxCon: %s", maxDownloadsStr, maxConnectionsStr));
-            }
+        final Number maxConnections = (Number) userinfo.get("maxConnections");
+        if (maxConnections != null) {
+            logger.info("Setting maxchunks value: " + maxConnections);
+            account.setProperty(PROPERTY_ACCOUNT_maxchunks, maxConnections.intValue());
         }
-        this.getAPISafe(API_BASE + "?page=api&action=hosters", account, null);
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            ai.setStatus(account.getType().getLabel() + " | MaxDls: " + maxSimultaneousDownloads + " MaxCon: " + maxConnections + " | Points: " + points);
+        }
+        br.getPage(API_BASE + "?page=api&action=hosters");
         Map<String, Object> entries;
-        final List<Object> supportedhostslistO = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final List<Object> supportedhostslistO = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
         for (final Object hostO : supportedhostslistO) {
             /* List can be given in two different varieties */
@@ -336,7 +339,7 @@ public class DeepbridCom extends antiDDoSForHost {
                     }
                 }
             } else if (hostO instanceof String) {
-                supportedhostslist.add((String) hostO);
+                supportedhostslist.add(hostO.toString());
             }
         }
         try {
@@ -345,7 +348,7 @@ public class DeepbridCom extends antiDDoSForHost {
              * this is another workaround ...
              */
             logger.info("Checking for additional supported hosts on website (API list = unreliable)");
-            getPage("/downloader");
+            br.getPage("/downloader");
             final String[] crippled_hosts = br.getRegex("class=\"hosters_([A-Za-z0-9]+)[^\"]*\"").getColumn(0);
             for (final String crippled_host : crippled_hosts) {
                 if (!supportedhostslist.contains(crippled_host)) {
@@ -355,40 +358,31 @@ public class DeepbridCom extends antiDDoSForHost {
             }
         } catch (final Throwable e) {
             logger.log(e);
-            logger.info("Website-workaround to find additional supported hosts failed");
+            logger.warning("Website-workaround to find additional supported hosts failed");
         }
         account.setConcurrentUsePossible(true);
-        // List<String> assigned = ai.setMultiHostSupport(this, supportedhostslist);
         ai.setMultiHostSupport(this, supportedhostslist);
         return ai;
     }
 
-    private void login(final Account account, final boolean forceFullLogin) throws Exception {
+    private Map<String, Object> login(final Account account, final boolean verifyCookies) throws Exception {
         synchronized (account) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                br.setFollowRedirects(true);
                 final Cookies userCookies = account.loadUserCookies();
                 if (userCookies != null) {
                     br.setCookies(this.getHost(), userCookies);
-                    if (!forceFullLogin) {
+                    if (!verifyCookies) {
                         /* Do not verify cookies */
-                        return;
+                        return null;
                     }
                     logger.info("Trying to login via usercookies");
-                    if (isLoggedinAPI(br)) {
+                    final Map<String, Object> userinfo = checkLoginAPI(br, account, true);
+                    if (userinfo != null) {
                         /* Save new cookie-timestamp */
                         logger.info("UserCookie login successful");
-                        /*
-                         * For cookie login user can enter whatever he wants in "username" field. We want unique usernames so user cannot
-                         * add the same account twice!
-                         */
-                        final String username = PluginJSonUtils.getJson(br, "username");
-                        if (username != null) {
-                            account.setUser(username);
-                        }
-                        return;
+                        return userinfo;
                     } else if (account.hasEverBeenValid()) {
                         throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                     } else {
@@ -398,22 +392,23 @@ public class DeepbridCom extends antiDDoSForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
-                    if (!forceFullLogin) {
+                    if (!verifyCookies) {
                         /* Do not verify cookies */
-                        return;
+                        return null;
                     }
                     logger.info("Trying to login via cookies");
-                    if (isLoggedinAPI(br)) {
-                        /* Save new cookie-timestamp */
+                    try {
+                        final Map<String, Object> userinfo = checkLoginAPI(br, account, false);
                         logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(this.getHost()), "");
-                        return;
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                        return userinfo;
+                    } catch (final PluginException e) {
+                        logger.info("Cookie login failed --> Full login required");
                     }
-                    logger.info("Cookie login failed --> Full login required");
                 }
                 logger.info("Attempting full login");
-                getPage("https://www." + account.getHoster());
-                getPage("https://www." + account.getHoster() + "/login");
+                br.getPage("https://www." + account.getHoster());
+                br.getPage("https://www." + account.getHoster() + "/login");
                 final Form loginform = br.getFormbyProperty("name", "login");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -421,22 +416,17 @@ public class DeepbridCom extends antiDDoSForHost {
                 loginform.put("amember_login", Encoding.urlEncode(account.getUser()));
                 loginform.put("amember_pass", Encoding.urlEncode(account.getPass()));
                 loginform.put("remember_login", "1");
-                if (br.containsHTML("google\\.com/recaptcha/api")) {
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    if (dlinkbefore == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
-                    }
+                if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    if (dlinkbefore != null) {
-                        this.setDownloadLink(dlinkbefore);
-                    }
                     loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
-                submitForm(loginform);
-                if (!isLoggedinAPI(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.submitForm(loginform);
+                final Map<String, Object> userinfo = checkLoginAPI(br, account, false);
+                if (userinfo == null) {
+                    throw new AccountInvalidException();
                 }
-                account.saveCookies(br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
+                return userinfo;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -446,37 +436,52 @@ public class DeepbridCom extends antiDDoSForHost {
         }
     }
 
-    private boolean isLoggedinAPI(final Browser br) throws Exception {
-        getPage(br, API_BASE + "?page=api&action=accountInfo");
-        final String username = PluginJSonUtils.getJson(br, "username");
+    private Map<String, Object> checkLoginAPI(final Browser br, final Account account, final boolean setUsernameOnAccount) throws Exception {
+        final String urlpart = "?page=api&action=accountInfo";
+        br.getPage(API_BASE + urlpart);
+        final Map<String, Object> resp = this.handleErrorsAPI(br, account, null);
+        final String username = (String) resp.get("username");
         final boolean loggedInViaCookies = username != null;
         /* Failure would redirect us to /login */
-        final boolean urlOk = br.getURL().contains("page=api");
+        final boolean urlOk = br.getURL().contains(urlpart);
         if (loggedInViaCookies && urlOk) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private void getAPISafe(final String accesslink, final Account account, final DownloadLink link) throws Exception {
-        getPage(accesslink);
-        handleKnownErrors(this.br, account, link);
-    }
-
-    private void handleKnownErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
-        long errorCode = 0;
-        String errorMsg = null;
-        try {
-            final Object response = restoreFromString(br.toString(), TypeRef.OBJECT);
-            if (response instanceof Map) {
-                final Map<String, Object> entries = (Map<String, Object>) response;
-                errorCode = JavaScriptEngineFactory.toLong(entries.get("error"), 0);
-                errorMsg = (String) entries.get("message");
+            if (setUsernameOnAccount) {
+                /*
+                 * For cookie login user can enter whatever he wants in "username" field. We want unique usernames so user cannot add the
+                 * same account twice!
+                 */
+                account.setUser(username);
             }
-        } catch (final Throwable e) {
-            logger.log(e);
+            return resp;
+        } else {
+            throw new AccountInvalidException();
         }
+    }
+
+    private Map<String, Object> getAPISafe(final String accesslink, final Account account, final DownloadLink link) throws Exception {
+        br.getPage(accesslink);
+        return handleErrorsAPI(this.br, account, link);
+    }
+
+    private Map<String, Object> handleErrorsAPI(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
+        Map<String, Object> entries = null;
+        try {
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        } catch (final JSonMapperException ignore) {
+            /* This should never happen. */
+            if (link != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response", 60 * 1000l);
+            } else {
+                throw new AccountUnavailableException("Invalid API response", 60 * 1000);
+            }
+        }
+        final Number errorCodeO = (Number) entries.get("error");
+        if (errorCodeO == null) {
+            /* No error */
+            return entries;
+        }
+        final int errorCode = errorCodeO.intValue();
+        final String errorMsg = (String) entries.get("message");
         if (errorCode == 0) {
             /* All ok */
         } else if (errorCode == 1) {
@@ -516,11 +521,17 @@ public class DeepbridCom extends antiDDoSForHost {
              * href=\"..\/helpdesk\" target=\"_blank\"\u003Ecreate a support ticket\u003C\/a\u003E requesting to whitelist your account, we
              * will be so happy to assist you!" }
              */
-            throw new AccountUnavailableException("Proxy, VPN or VPS detected. Contact deepbrid.com support!", 15 * 60 * 1000l);
+            throw new AccountUnavailableException("Proxy, VPN or VPS detected. Contact " + getHost() + " support!", 15 * 60 * 1000l);
         } else {
             /* Unknown error */
-            mhm.handleErrorGeneric(account, link, "api_error_unknown", 10, 5 * 60 * 1000l);
+            if (link == null) {
+                /* Error happened during login */
+                throw new AccountUnavailableException(errorMsg, 5 * 60 * 1000l);
+            } else {
+                mhm.handleErrorGeneric(account, link, errorMsg, 10, 5 * 60 * 1000l);
+            }
         }
+        return entries;
     }
 
     @Override
