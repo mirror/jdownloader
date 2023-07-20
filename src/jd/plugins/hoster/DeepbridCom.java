@@ -82,7 +82,8 @@ public class DeepbridCom extends PluginForHost {
         final Browser br = new Browser();
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
-        br.setFollowRedirects(true);
+        /* Important! API may answer with json and a 302 redirect at the same time! */
+        br.setFollowRedirects(false);
         return br;
     }
 
@@ -97,8 +98,8 @@ public class DeepbridCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Wrong request code")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<b>File Name:?\\s*?</b></font><font[^>]+>([^<>\"]+)<").getMatch(0);
-        final String filesize = br.getRegex("<b>File Size:?\\s*?</b></font><font[^>]+>([^<>\"]+)<").getMatch(0);
+        String filename = br.getRegex("(?i)<b>File Name:?\\s*?</b></font><font[^>]+>([^<>\"]+)<").getMatch(0);
+        final String filesize = br.getRegex("(?i)<b>File Size:?\\s*?</b></font><font[^>]+>([^<>\"]+)<").getMatch(0);
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
@@ -167,9 +168,11 @@ public class DeepbridCom extends PluginForHost {
             }
         }
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(brc, link, dllink, false, 1);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
+                brc.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
@@ -229,10 +232,12 @@ public class DeepbridCom extends PluginForHost {
         }
         logger.info("Max. allowed chunks: " + maxchunks);
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxchunks);
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(brc, link, dllink, defaultRESUME, maxchunks);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                handleErrorsAPI(this.br, account, link);
+                brc.followConnection(true);
+                handleErrorsAPI(brc, account, link);
                 mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
             }
         } catch (final Exception e) {
@@ -416,7 +421,7 @@ public class DeepbridCom extends PluginForHost {
                 loginform.put("amember_login", Encoding.urlEncode(account.getUser()));
                 loginform.put("amember_pass", Encoding.urlEncode(account.getPass()));
                 loginform.put("remember_login", "1");
-                if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
+                if (br.containsHTML("(?i)google\\.com/recaptcha/api")) {
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
@@ -441,7 +446,10 @@ public class DeepbridCom extends PluginForHost {
         br.getPage(API_BASE + urlpart);
         final Map<String, Object> resp = this.handleErrorsAPI(br, account, null);
         final String username = (String) resp.get("username");
-        final boolean loggedInViaCookies = username != null;
+        boolean loggedInViaCookies = false;
+        if (!StringUtils.isEmpty(username)) {
+            loggedInViaCookies = true;
+        }
         /* Failure would redirect us to /login */
         final boolean urlOk = br.getURL().contains(urlpart);
         if (loggedInViaCookies && urlOk) {
@@ -456,11 +464,6 @@ public class DeepbridCom extends PluginForHost {
         } else {
             throw new AccountInvalidException();
         }
-    }
-
-    private Map<String, Object> getAPISafe(final String accesslink, final Account account, final DownloadLink link) throws Exception {
-        br.getPage(accesslink);
-        return handleErrorsAPI(this.br, account, link);
     }
 
     private Map<String, Object> handleErrorsAPI(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {

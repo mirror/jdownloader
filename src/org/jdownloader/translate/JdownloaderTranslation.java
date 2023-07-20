@@ -588,6 +588,12 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Channel ('Videos' tab)" })
     String YoutubeDash_ProfileCrawlModeVideosTab();
 
+    @Default(lngs = { "en" }, values = { "Normal (new to old)" })
+    String YoutubeDash_ProfilePlaylistCrawlerAddOrderNormal();
+
+    @Default(lngs = { "en" }, values = { "Inverted (old to new)" })
+    String YoutubeDash_ProfilePlaylistCrawlerAddOrderInverted();
+
     @Default(lngs = { "en" }, values = { "Media Type (Video, Audio, Image, Subtitles, ..." })
     String YoutubeDash_GroupLogic_BY_MEDIA_TYPE();
 

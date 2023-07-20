@@ -138,10 +138,7 @@ public class TbCmV2 extends PluginForDecrypt {
             pattern += "|watch\\?v=" + VIDEO_ID_PATTERN + ".*";
             pattern += "|shorts/" + VIDEO_ID_PATTERN + ".*";
             pattern += "|(?:view_play_list|playlist)\\?(p|list)=.+";
-            // TODO: Check if such links still exist
-            pattern += "|course\\?list=.+";
             pattern += "|watch_videos\\?.+";
-            // TODO: Check if such links still exist
             pattern += "|video_ids=.+";
             pattern += "|channel/.+";
             pattern += "|c/.+";
@@ -255,7 +252,6 @@ public class TbCmV2 extends PluginForDecrypt {
     private YoutubeConfig           cfg;
     private static Object           DIALOGLOCK = new Object();
     private String                  videoID;
-    private String                  watch_videos;
     private String                  playlistID;
     private String                  channelID;
     private String                  userName;
@@ -273,7 +269,6 @@ public class TbCmV2 extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         // nullify, for debugging purposes!
         videoID = null;
-        watch_videos = null;
         playlistID = null;
         channelID = null;
         userName = null;
@@ -322,26 +317,16 @@ public class TbCmV2 extends PluginForDecrypt {
         }
         videoID = getVideoIDFromUrl(cleanedurl);
         // for watch_videos, found within youtube.com music
-        // TODO: Check if links with this parameter still exist / are still valid
-        watch_videos = new Regex(cleanedurl, "video_ids=([a-zA-Z0-9\\-_,]+)").getMatch(0);
-        if (watch_videos != null) {
+        final String video_ids_comma_separated = new Regex(cleanedurl, "video_ids=([a-zA-Z0-9\\-_,]+)").getMatch(0);
+        if (video_ids_comma_separated != null) {
             // first uid in array is the video the user copy url on.
-            videoID = new Regex(watch_videos, "(" + VIDEO_ID_PATTERN + ")").getMatch(0);
+            videoID = new Regex(video_ids_comma_separated, "(" + VIDEO_ID_PATTERN + ")").getMatch(0);
         }
         helper = new YoutubeHelper(br, getLogger());
         if (helper.isConsentCookieRequired()) {
             helper.setConsentCookie(br, null);
         }
         helper.login(getLogger(), false);
-        // TODO: Remove the following commented out lines
-        // /*
-        // * you can not use this with /c or /channel based urls, it will pick up false positives. see
-        // * https://www.youtube.com/channel/UCOSGEokQQcdAVFuL_Aq8dlg, it will find list=PLc-T0ryHZ5U_FtsfHQopuvQugBvRoVR3j which only
-        // * contains 27 videos not the entire channels 112
-        // */
-        // if (!cleanedurl.matches("(?i).+youtube\\.com/(?:channel/|c/).+")) {
-        // playlistID = getListIDByUrls(cleanedurl);
-        // }
         playlistID = getListIDFromUrl(cleanedurl);
         userName = getUsernameFromUrl(cleanedurl);
         channelID = getChannelIDFromUrl(cleanedurl);
@@ -454,7 +439,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 } else {
                     /* Check if link contains a video and a playlist */
                     IfUrlisAVideoAndPlaylistAction PlaylistVideoAction = cfg.getLinkIsVideoAndPlaylistUrlAction();
-                    if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(watch_videos)) && StringUtils.isNotEmpty(videoID)) {
+                    if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(video_ids_comma_separated)) && StringUtils.isNotEmpty(videoID)) {
                         if (PlaylistVideoAction == IfUrlisAVideoAndPlaylistAction.ASK) {
                             /* Ask user */
                             final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, "Crawl video " + this.videoID + " or playlist " + this.playlistID, "This YouTube link contains a video and a playlist. What do you want do download?", null, "Only video", buttonTextCrawlPlaylistOrProfile) {
@@ -501,10 +486,10 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
         }
-        boolean reversePlaylistNumber = false;
         if (videoIdsToAdd.isEmpty()) {
             /* Playlist / Channel */
             if (userDefinedMaxPlaylistOrProfileItemsLimit == 0) {
+                /* This should never happen but it is a double-check left here on purpose. */
                 logger.info(logtextForUserDisabledCrawlerByLimitSetting);
                 return ret;
             }
@@ -543,8 +528,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     helper.getPage(br, getBaseURL() + "/channel/" + channelID);
                     playlistID = br.getRegex("list=([A-Za-z0-9\\-_]+)\"[^<>]+play-all-icon-btn").getMatch(0);
                     if (StringUtils.isEmpty(playlistID) && channelID.startsWith("UC")) {
-                        // channel has no play all button.
-                        // like https://www.youtube.com/channel/UCbmRs17gtQxFXQyvIo5k6Ag/feed
+                        /* channel has no play all button. */
                         playlistID = "UU" + channelID.substring(2);
                     }
                     if (playlistID == null) {
@@ -556,20 +540,17 @@ public class TbCmV2 extends PluginForDecrypt {
                 if (playlist != null) {
                     videoIdsToAdd.addAll(playlist);
                 }
-                // TODO: Check if the URL format related to the next line down below does still exist
-                videoIdsToAdd.addAll(parseVideoIds(watch_videos));
+                videoIdsToAdd.addAll(parseVideoIds(video_ids_comma_separated));
             } catch (InterruptedException e) {
                 logger.log(e);
                 return ret;
             }
         }
+        boolean reversePlaylistNumber = false;
         final boolean isCrawlDupeCheckEnabled = cfg.isCrawlDupeCheckEnabled();
         final Set<String> videoIDsdupeCheck = new HashSet<String>();
         for (YoutubeClipData vid : videoIdsToAdd) {
-            if (this.isAbort()) {
-                logger.info("Aborted!");
-                return ret;
-            } else if (isCrawlDupeCheckEnabled && linkCollectorContainsEntryByID(vid.videoID)) {
+            if (isCrawlDupeCheckEnabled && linkCollectorContainsEntryByID(vid.videoID)) {
                 logger.info("CrawlDupeCheck skip:" + vid.videoID);
                 continue;
             } else if (!videoIDsdupeCheck.add(vid.videoID)) {
@@ -594,7 +575,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 if (vid.playlistEntryNumber == -1 && old.playlistEntryNumber > 0) {
                     vid.playlistEntryNumber = reversePlaylistNumber ? (videoIdsToAdd.size() - old.playlistEntryNumber + 1) : old.playlistEntryNumber;
                 } else if (vid.playlistEntryNumber == -1 && StringUtils.equals(videoID, vid.videoID)) {
-                    final String index = new Regex(cleanedurl, "index=(\\d+)").getMatch(0);
+                    final String index = new Regex(cleanedurl, "(?i)index=(\\d+)").getMatch(0);
                     if (index != null) {
                         vid.playlistEntryNumber = Integer.parseInt(index);
                     }
@@ -887,6 +868,10 @@ public class TbCmV2 extends PluginForDecrypt {
                     ret.add(lnk);
                 }
             }
+            if (this.isAbort()) {
+                logger.info("Aborted!");
+                return ret;
+            }
         }
         return ret;
     }
@@ -1118,43 +1103,48 @@ public class TbCmV2 extends PluginForDecrypt {
             List<Map<String, Object>> varray = null;
             if (round == 0) {
                 rootMap = helper.getYtInitialData();
-                ytConfigData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "responseContext/webResponseContextExtensionData/ytConfigData");
                 Map<String, Object> playlisttab = null;
                 Map<String, Object> shortstab = null;
                 Map<String, Object> videostab = null;
+                ytConfigData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "responseContext/webResponseContextExtensionData/ytConfigData");
                 String videosCountText = null;
                 final List<Map<String, Object>> tabs = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnBrowseResultsRenderer/tabs");
-                for (final Map<String, Object> tab : tabs) {
-                    /* We will get this one if a real playlist is our currently opened tab. */
-                    final Map<String, Object> tabRenderer = (Map<String, Object>) tab.get("tabRenderer");
-                    final Object varrayPlaylistProbe = JavaScriptEngineFactory.walkJson(tabRenderer, "content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
-                    if (varrayPlaylistProbe != null) {
-                        /* Real playlist */
-                        playlisttab = tab;
-                        varray = (List<Map<String, Object>>) varrayPlaylistProbe;
-                        break;
-                    } else if (tabRenderer != null) {
-                        /* Channel/User */
-                        final String title = (String) tabRenderer.get("title");
-                        final Boolean selected = (Boolean) tabRenderer.get("selected");
-                        final List<Map<String, Object>> varrayTmp = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tabRenderer, "content/richGridRenderer/contents");
-                        if ("Shorts".equalsIgnoreCase(title)) {
-                            shortstab = tab;
-                            if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
-                                varray = varrayTmp;
+                if (tabs != null) {
+                    for (final Map<String, Object> tab : tabs) {
+                        /* We will get this one if a real playlist is our currently opened tab. */
+                        final Map<String, Object> tabRenderer = (Map<String, Object>) tab.get("tabRenderer");
+                        final Object varrayPlaylistProbe = JavaScriptEngineFactory.walkJson(tabRenderer, "content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
+                        if (varrayPlaylistProbe != null) {
+                            /* Real playlist */
+                            playlisttab = tab;
+                            varray = (List<Map<String, Object>>) varrayPlaylistProbe;
+                            break;
+                        } else if (tabRenderer != null) {
+                            /* Channel/User */
+                            final String title = (String) tabRenderer.get("title");
+                            final Boolean selected = (Boolean) tabRenderer.get("selected");
+                            final List<Map<String, Object>> varrayTmp = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tabRenderer, "content/richGridRenderer/contents");
+                            if ("Shorts".equalsIgnoreCase(title)) {
+                                shortstab = tab;
+                                if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
+                                    varray = varrayTmp;
+                                }
+                            } else if ("Videos".equalsIgnoreCase(title)) {
+                                videostab = tab;
+                                if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
+                                    varray = varrayTmp;
+                                }
+                            } else {
+                                /* Other/Unsupported tab -> Ignore */
                             }
-                        } else if ("Videos".equalsIgnoreCase(title)) {
-                            videostab = tab;
-                            if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
-                                varray = varrayTmp;
-                            }
-                        } else {
-                            /* Other/Unsupported tab -> Ignore */
                         }
                     }
+                    if (shortstab == null && isChannelOrProfileShorts && videostab != null) {
+                        logger.info("User wanted shorts but channel doesn't contain shorts tab -> Only videos is possible");
+                    } else if (shortstab != null && !isChannelOrProfileShorts) {
+                        logger.info("User wanted videos but channel doesn't contain videos tab -> Only shorts is possible");
+                    }
                 }
-                // varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap,
-                // "contents/twoColumnBrowseResultsRenderer/tabs/{0}/tabRenderer/content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
                 /* This message can also contain information like "2 unavailable videos won't be displayed in this list". */
                 final String errormessage = (String) JavaScriptEngineFactory.walkJson(rootMap, "alerts/{0}/alertRenderer/text/runs/{0}/text");
                 if (varray == null && errormessage != null) {

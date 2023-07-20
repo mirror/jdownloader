@@ -322,6 +322,34 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     void setPlaylistAndProfileCrawlerMaxItemsLimit(int i);
 
+    public static enum PlaylistAndChannelCrawlerAddOrder implements LabelInterface {
+        AUTO {
+            @Override
+            public String getLabel() {
+                return "Auto";
+            }
+        },
+        NORMAL {
+            @Override
+            public String getLabel() {
+                return _JDT.T.YoutubeDash_ProfilePlaylistCrawlerAddOrderNormal();
+            }
+        },
+        INVERTED {
+            @Override
+            public String getLabel() {
+                return _JDT.T.YoutubeDash_ProfilePlaylistCrawlerAddOrderInverted();
+            }
+        };
+    }
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Define in which order items of crawled channels/profiles/playlists should be added. Keep in mind that changing this may affect the stored playlist-position of each item in the end.")
+    @DefaultEnumValue("AUTO")
+    YoutubeConfig.PlaylistAndChannelCrawlerAddOrder getPlaylistAndChannelCrawlerAddOrder();
+
+    void setPlaylistAndChannelCrawlerAddOrder(YoutubeConfig.PlaylistAndChannelCrawlerAddOrder mode);
+
     @AboutConfig
     @DefaultFactory(DefaultConvertSubtitleVariantMode.class)
     YoutubeConfig.SubtitleVariantMode getSubtitleVariantMode();

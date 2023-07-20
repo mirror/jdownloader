@@ -133,6 +133,9 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_equals_playlist(), null, null, new ComboBox<IfUrlisAPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsPlaylistUrlAction", KeyHandler.class), IfUrlisAPlaylistAction.values(), null));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ProfileCrawlMode(), null, null, new ComboBox<ProfileCrawlMode>(cf._getStorageHandler().getKeyHandler("ProfileCrawlMode", KeyHandler.class), ProfileCrawlMode.values(), null));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_PlaylistAndProfileCrawlerMaxItemsLimit(), null, null, new Spinner(cf._getStorageHandler().getKeyHandler("PlaylistAndProfileCrawlerMaxItemsLimit", IntegerKeyHandler.class)));
+        // addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_PlaylistAndChannelCrawlerAddOrder(), null, null, new
+        // ComboBox<PlaylistAndChannelCrawlerAddOrder>(cf._getStorageHandler().getKeyHandler("PlaylistAndChannelCrawlerAddOrder",
+        // KeyHandler.class), PlaylistAndChannelCrawlerAddOrder.values(), null));
         // TODO: Add GUI element for setting PlaylistAndProfileCrawlerMaxItemsLimit
         // VariantBase[] variants = VariantBase.values();
         // Comparator<VariantBase> comp = new Comparator<VariantBase>() {

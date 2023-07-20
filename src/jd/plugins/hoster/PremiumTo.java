@@ -22,27 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jd.PluginWrapper;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadLinkDownloadable;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -63,6 +42,27 @@ import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent(?:\\d+)?\\.premium\\.to/(?:t/[a-z0-9]+/\\d+|z/[a-z0-9]+|r/\\d+/[A-F0-9]{32}/[a-z0-9]+/\\d+/[^/]+)|https?://storage\\.premium\\.to/(?:file/[A-Z0-9]+|remote/[A-Z0-9]+/[A-Z0-9]+/[A-Z0-9]+/[^/]+)" })
 public class PremiumTo extends UseNet {
@@ -401,8 +401,8 @@ public class PremiumTo extends UseNet {
 
     /**
      * This dialog is there to make users of this multihoster aware that they can control the list of supported filehosts for this
-     * multihoster serverside in their multihoster account. </br> Some filehosts are disabled by default which is the core information this
-     * dialog is supposed to tell the user.
+     * multihoster serverside in their multihoster account. </br>
+     * Some filehosts are disabled by default which is the core information this dialog is supposed to tell the user.
      */
     private Thread showServersideDeactivatedHostInformation(final Account account, final String exampleHost) {
         final boolean userConfirmedDialogAlready = account.getBooleanProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, false);
@@ -772,9 +772,9 @@ public class PremiumTo extends UseNet {
 
     private void exceptionInvalidLogin() throws PluginException {
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            throw new AccountInvalidException("Zugangsdaten ungültig!\r\nDu findest deine Zugangsdaten für JD hier:\r\npremium.to Webseite --> Account --> Siehe API Zugangsdaten");
+            throw new AccountInvalidException("Zugangsdaten ungültig!\r\nDu findest deine Zugangsdaten für JD hier:\r\npremium.to Webseite --> Tab 'Account' --> API Zugangsdaten");
         } else {
-            throw new AccountInvalidException("Invalid login credentials!\r\nYou can find your special JD login credentials here:\r\npremium.to website --> Account --> See API login credentials");
+            throw new AccountInvalidException("Invalid login credentials!\r\nYou can find your special JD login credentials here:\r\npremium.to website --> Tab 'Account' --> API login credentials");
         }
     }
 
