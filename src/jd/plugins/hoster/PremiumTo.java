@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -384,9 +383,12 @@ public class PremiumTo extends UseNet {
         defaultServersideDeactivatedWebsites.add(new String[] { "mega.nz", "mega.co.nz" });
         final Iterator<String[]> it = defaultServersideDeactivatedWebsites.iterator();
         while (it.hasNext()) {
-            final String[] next = it.next();
-            if (Arrays.asList(next).contains(real_supported_hosts_regular)) {
-                it.remove();
+            final String[] domains = it.next();
+            for (String domain : domains) {
+                if (real_supported_hosts_regular.contains(domain)) {
+                    it.remove();
+                    break;
+                }
             }
         }
         if (defaultServersideDeactivatedWebsites.size() > 0) {
