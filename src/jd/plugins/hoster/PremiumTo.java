@@ -16,7 +16,9 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -378,12 +380,17 @@ public class PremiumTo extends UseNet {
                 }
             }
         }
-        final String[] defaultServersideDeactivatedWebsites = new String[] { "mega.nz", "mega.co.nz" };
-        for (final String domain : defaultServersideDeactivatedWebsites) {
-            if (real_supported_hosts_regular.contains(domain)) {
-                showServersideDeactivatedHostInformation(account, defaultServersideDeactivatedWebsites[0]);
-                break;
+        final List<String[]> defaultServersideDeactivatedWebsites = new ArrayList<String[]>();
+        defaultServersideDeactivatedWebsites.add(new String[] { "mega.nz", "mega.co.nz" });
+        final Iterator<String[]> it = defaultServersideDeactivatedWebsites.iterator();
+        while (it.hasNext()) {
+            final String[] next = it.next();
+            if (Arrays.asList(next).contains(real_supported_hosts_regular)) {
+                it.remove();
             }
+        }
+        if (defaultServersideDeactivatedWebsites.size() > 0) {
+            showServersideDeactivatedHostInformation(account, defaultServersideDeactivatedWebsites.get(0)[0]);
         }
         ai.setMultiHostSupport(this, real_supported_hosts_regular);
         ai.setStatus("Premium account" + additionalAccountStatus);
