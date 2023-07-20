@@ -21,6 +21,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -40,18 +52,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deepbrid.com" }, urls = { "https?://(?:www\\.)?deepbrid\\.com/dl\\?f=([a-f0-9]{32})" })
 public class DeepbridCom extends PluginForHost {
@@ -84,6 +84,12 @@ public class DeepbridCom extends PluginForHost {
         br.getHeaders().put("User-Agent", "JDownloader");
         /* Important! API may answer with json and a 302 redirect at the same time! */
         br.setFollowRedirects(false);
+        return br;
+    }
+
+    /** Use this for website-requests (non-API requests only!). */
+    public Browser prepBRWebsite(final Browser br) {
+        br.setFollowRedirects(true);
         return br;
     }
 
@@ -168,8 +174,7 @@ public class DeepbridCom extends PluginForHost {
             }
         }
         try {
-            final Browser brc = br.cloneBrowser();
-            brc.setFollowRedirects(true);
+            final Browser brc = prepBRWebsite(br.cloneBrowser());
             dl = jd.plugins.BrowserAdapter.openDownload(brc, link, dllink, false, 1);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 brc.followConnection(true);
@@ -232,8 +237,7 @@ public class DeepbridCom extends PluginForHost {
         }
         logger.info("Max. allowed chunks: " + maxchunks);
         try {
-            final Browser brc = br.cloneBrowser();
-            brc.setFollowRedirects(true);
+            final Browser brc = prepBRWebsite(br.cloneBrowser());
             dl = jd.plugins.BrowserAdapter.openDownload(brc, link, dllink, defaultRESUME, maxchunks);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 brc.followConnection(true);
@@ -353,8 +357,9 @@ public class DeepbridCom extends PluginForHost {
              * this is another workaround ...
              */
             logger.info("Checking for additional supported hosts on website (API list = unreliable)");
-            br.getPage("/downloader");
-            final String[] crippled_hosts = br.getRegex("class=\"hosters_([A-Za-z0-9]+)[^\"]*\"").getColumn(0);
+            final Browser brWebsite = this.prepBRWebsite(br.cloneBrowser());
+            brWebsite.getPage("/service");
+            final String[] crippled_hosts = brWebsite.getRegex("class=\"hosters_([A-Za-z0-9]+)[^\"]*\"").getColumn(0);
             for (final String crippled_host : crippled_hosts) {
                 if (!supportedhostslist.contains(crippled_host)) {
                     logger.info("Adding host from website which has not been given via API: " + crippled_host);
