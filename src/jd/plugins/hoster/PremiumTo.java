@@ -21,26 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -61,6 +41,27 @@ import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadLinkDownloadable;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent(?:\\d+)?\\.premium\\.to/(?:t/[a-z0-9]+/\\d+|z/[a-z0-9]+|r/\\d+/[A-F0-9]{32}/[a-z0-9]+/\\d+/[^/]+)|https?://storage\\.premium\\.to/(?:file/[A-Z0-9]+|remote/[A-Z0-9]+/[A-Z0-9]+/[A-Z0-9]+/[^/]+)" })
 public class PremiumTo extends UseNet {
@@ -378,15 +379,11 @@ public class PremiumTo extends UseNet {
             }
         }
         final String[] defaultServersideDeactivatedWebsites = new String[] { "mega.nz", "mega.co.nz" };
-        boolean foundAnyServersideDefaultDeactivatedHost = false;
         for (final String domain : defaultServersideDeactivatedWebsites) {
             if (real_supported_hosts_regular.contains(domain)) {
-                foundAnyServersideDefaultDeactivatedHost = true;
+                handleServersideDeactivatedHostsInfoDialog(account, defaultServersideDeactivatedWebsites[0]);
                 break;
             }
-        }
-        if (!foundAnyServersideDefaultDeactivatedHost) {
-            handleServersideDeactivatedHostsInfoDialog(account, defaultServersideDeactivatedWebsites[0]);
         }
         ai.setMultiHostSupport(this, real_supported_hosts_regular);
         ai.setStatus("Premium account" + additionalAccountStatus);
@@ -403,7 +400,7 @@ public class PremiumTo extends UseNet {
             // Debug only atm.
             return;
         }
-        final Thread dialogThread = showServersideDeactivatedHostInformation(exampleHost);
+        final Thread dialogThread = showServersideDeactivatedHostInformation(account, exampleHost);
         // boolean dialogClosedByUser = false;
         int passedSeconds = 0;
         final int waitSecondsPerLoop = 1;
@@ -425,41 +422,45 @@ public class PremiumTo extends UseNet {
 
     /**
      * This dialog is there to make users of this multihoster aware that they can control the list of supported filehosts for this
-     * multihoster serverside in their multihoster account. </br>
-     * Some filehosts are disabled by default which is the core information this dialog is supposed to tell the user.
+     * multihoster serverside in their multihoster account. </br> Some filehosts are disabled by default which is the core information this
+     * dialog is supposed to tell the user.
      */
-    private Thread showServersideDeactivatedHostInformation(final String exampleHost) {
+    private Thread showServersideDeactivatedHostInformation(final Account account, final String exampleHost) {
         final String host = getHost();
         final Thread thread = new Thread() {
             public void run() {
+                String message = "";
+                final String title;
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    title = host + " - Informationen zu serverseitig standardmäßig für Downloadmanager deaktivierten Hostern";
+                    message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
+                    message += host + " hat einige Filehoster wie z.B. '" + exampleHost + "' standardmäßig für Downloadmanager deaktiviert, um deinen Traffic nicht zu verschwenden.\r\n";
+                    message += "Falls du " + exampleHost + " oder andere standardmäßig für Downloadmanager deaktivierte Hoster über " + host + " in JD nutzen möchtest, musst du folgendes tun:\t\r\n";
+                    message += "1. Öffne " + host + " im Browser und logge dich ein.\r\n";
+                    message += "2. Klicke auf das tab 'DLM' -> Setze das Häckchen bei allen Hostern, die in der Hosterliste in JD erscheinen sollen und klicke auf den Button 'update'.\r\n";
+                    message += "3. In JD: Rechtsklick auf deinen " + host + " Account in JDownloader -> Aktualisieren\r\n";
+                    message += "Nun sollten Hoster, die vorher ggf. fehlten z.B. '" + exampleHost + "' in der Liste der unterstützten Hoster in JD aufgeführt werden.\r\n";
+                } else {
+                    title = host + " - Information about filehosters, deactivated for downloadmanagers by default serverside by " + host;
+                    message += "Hello dear " + host + " user\r\n";
+                    message += host + " deactivated some filehosts like '" + exampleHost + "' by default for downloadmanagers in order to not waste any of your traffic.\r\n";
+                    message += "If you want to use " + exampleHost + " or other filehosts in JD which are disabled by " + host + " for downloadmanagers by default, follow these instructions:\r\n";
+                    message += "1. Open " + host + " in your browser and login.\r\n";
+                    message += "2. Click on the tab 'DLM' and enable the checkboxes for all filehosts you wish to use in JDownloader and click on the button 'update'.\r\n";
+                    message += "3. In JDownloader, rightclick on your " + host + " account -> Refresh\r\n";
+                    message += "Now all hosts, which might have been missing before e.g. '" + exampleHost + "' should be visible in the list of supported hosts in JDownloader.\r\n";
+                }
+                final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                dialog.setTimeout(5 * 60 * 1000);
+                final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
                 try {
-                    String message = "";
-                    final String title;
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        title = host + " - Informationen zu serverseitig standardmäßig für Downloadmanager deaktivierten Hostern";
-                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
-                        message += host + " hat einige Filehoster wie z.B. '" + exampleHost + "' standardmäßig für Downloadmanager deaktiviert, um deinen Traffic nicht zu verschwenden.\r\n";
-                        message += "Falls du " + exampleHost + " oder andere standardmäßig für Downloadmanager deaktivierte Hoster über " + host + " in JD nutzen möchtest, musst du folgendes tun:\t\r\n";
-                        message += "1. Öffne " + host + " im Browser und logge dich ein.\r\n";
-                        message += "2. Klicke auf das tab 'DLM' -> Setze das Häckchen bei allen Hostern, die in der Hosterliste in JD erscheinen sollen und klicke auf den Button 'update'.\r\n";
-                        message += "3. In JD: Rechtsklick auf deinen " + host + " Account in JDownloader -> Aktualisieren\r\n";
-                        message += "Nun sollten Hoster, die vorher ggf. fehlten z.B. '" + exampleHost + "' in der Liste der unterstützten Hoster in JD aufgeführt werden.\r\n";
-                    } else {
-                        title = host + " - Information about filehosters, deactivated for downloadmanagers by default serverside by " + host;
-                        message += "Hello dear " + host + " user\r\n";
-                        message += host + " deactivated some filehosts like '" + exampleHost + "' by default for downloadmanagers in order to not waste any of your traffic.\r\n";
-                        message += "If you want to use " + exampleHost + " or other filehosts in JD which are disabled by " + host + " for downloadmanagers by default, follow these instructions:\r\n";
-                        message += "1. Open " + host + " in your browser and login.\r\n";
-                        message += "2. Click on the tab 'DLM' and enable the checkboxes for all filehosts you wish to use in JDownloader and click on the button 'update'.\r\n";
-                        message += "3. In JDownloader, rightclick on your " + host + " account -> Refresh\r\n";
-                        message += "Now all hosts, which might have been missing before e.g. '" + exampleHost + "' should be visible in the list of supported hosts in JDownloader.\r\n";
-                    }
-                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                    dialog.setTimeout(5 * 60 * 1000);
-                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
                     ret.throwCloseExceptions();
-                } catch (final Throwable e) {
+                    account.setProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, true);
+                } catch (DialogNoAnswerException e) {
                     getLogger().log(e);
+                    if (!e.isCausedByTimeout()) {
+                        account.setProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, true);
+                    }
                 }
             };
         };
@@ -888,6 +889,7 @@ public class PremiumTo extends UseNet {
         }
         return dllink;
     }
+
     // @Override
     // public int getMaxSimultanDownload(DownloadLink link, Account account) {
     // if (isUsenetLink(link)) {
@@ -906,7 +908,6 @@ public class PremiumTo extends UseNet {
     // return false;
     // }
     // }
-
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         if (isUsenetLink(link)) {
@@ -916,11 +917,11 @@ public class PremiumTo extends UseNet {
             return 20;
         }
     }
+
     // @Override
     // public int getMaxSimultanPremiumDownloadNum() {
     // return -1;
     // }
-
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account != null) {
