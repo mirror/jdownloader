@@ -25,6 +25,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -49,6 +50,11 @@ public class ZbigzCom extends antiDDoSForHost {
     public ZbigzCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://zbigz.com/page-premium-overview");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
 
     @Override
@@ -148,6 +154,7 @@ public class ZbigzCom extends antiDDoSForHost {
                         br.setCookies(cookies);
                         return;
                     } else if (this.checkCookieLogin(account, cookies)) {
+                        /* Success */
                         return;
                     } else {
                         /* Full login required */

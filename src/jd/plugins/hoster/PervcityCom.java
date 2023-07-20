@@ -24,6 +24,7 @@ import org.jdownloader.plugins.components.config.PervcityComConfig;
 import org.jdownloader.plugins.components.config.PervcityComConfig.Quality;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -50,6 +51,11 @@ public class PervcityCom extends PluginForHost {
     public PervcityCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://members.pervcity.com/login.php");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     @Override

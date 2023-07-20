@@ -1071,17 +1071,17 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "FavIcon" })
     String LazyHostPlugin_FEATURE_FAVICON();
 
-    @Default(lngs = { "en" }, values = { "Cookies optional" })
-    String LazyHostPlugin_FEATURE_COOKIE_OPTIONAL();
+    @Default(lngs = { "en" }, values = { "Cookie login optional" })
+    String LazyHostPlugin_FEATURE_COOKIE_LOGIN_OPTIONAL();
 
     @Default(lngs = { "en" }, values = { "This plugin also supports login via cookies" })
     String LazyHostPlugin_FEATURE_COOKIE_OPTIONAL_TOOLTIP();
 
-    @Default(lngs = { "en" }, values = { "Cookies only" })
+    @Default(lngs = { "en" }, values = { "Cookie login only" })
     String LazyHostPlugin_FEATURE_COOKIE_ONLY();
 
     @Default(lngs = { "en" }, values = { "This plugin only supports login via cookies" })
-    String LazyHostPlugin_FEATURE_COOKIE_ONLY_TOOLTIP();
+    String LazyHostPlugin_FEATURE_COOKIE_LOGIN_ONLY_TOOLTIP();
 
     @Default(lngs = { "en" }, values = { "This service supports UseNet downloads (*.nzb files)" })
     String LazyHostPlugin_FEATURE_USENET_TOOLTIP();

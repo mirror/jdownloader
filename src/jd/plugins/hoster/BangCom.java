@@ -26,6 +26,7 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.BangComConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -52,6 +53,18 @@ public class BangCom extends PluginForHost {
     public BangCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.bang.com/joinnow");
+    }
+
+    /* Public/stable release: Allow only cookie login */
+    private static final boolean COOKIE_LOGIN_ONLY = true;
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        if (COOKIE_LOGIN_ONLY) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+        }
     }
 
     @Override
@@ -229,8 +242,7 @@ public class BangCom extends PluginForHost {
                     /* Testing: Allow non-cookie login */
                     cookieLoginOnly = false;
                 } else {
-                    /* Public/stable release: Allow only cookie login */
-                    cookieLoginOnly = true;
+                    cookieLoginOnly = COOKIE_LOGIN_ONLY;
                 }
                 if (userCookies != null || cookies != null) {
                     if (userCookies != null) {

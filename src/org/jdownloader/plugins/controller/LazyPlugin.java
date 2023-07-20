@@ -155,7 +155,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
                 return "ASSIGN_PLUGIN";
             }
         },
-        COOKIE_ONLY {
+        COOKIE_LOGIN_ONLY {
             @Override
             public String getLabel() {
                 return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_ONLY();
@@ -163,13 +163,13 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
 
             @Override
             public String getTooltip() {
-                return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_ONLY_TOOLTIP();
+                return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_LOGIN_ONLY_TOOLTIP();
             }
         },
-        COOKIE_OPTIONAL {
+        COOKIE_LOGIN_OPTIONAL {
             @Override
             public String getLabel() {
-                return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_OPTIONAL();
+                return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_LOGIN_OPTIONAL();
             }
 
             @Override

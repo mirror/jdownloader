@@ -37,6 +37,7 @@ import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.PlaylistFi
 import org.jdownloader.plugins.components.archiveorg.ArchiveOrgLendingInfo;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -64,6 +65,11 @@ public class ArchiveOrg extends PluginForHost {
     public ArchiveOrg(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://archive.org/account/login.createaccount.php");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
 
     @Override

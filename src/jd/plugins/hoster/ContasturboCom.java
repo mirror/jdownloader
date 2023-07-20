@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.util.Arrays;
 
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -34,9 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "contasturbo.com" }, urls = { "" })
 public class ContasturboCom extends PluginForHost {
     private static MultiHosterManagement mhm = new MultiHosterManagement("contasturbo.com");
@@ -45,6 +45,11 @@ public class ContasturboCom extends PluginForHost {
         super(wrapper);
         setStartIntervall(1 * 1000l);
         this.enablePremium("https://www.contasturbo.com/planos/");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
 
     @Override
@@ -162,11 +167,6 @@ public class ContasturboCom extends PluginForHost {
         final String[] hosts = br.getRegex("class=\"logo_servers\">\\s*<div[^>]*?><span>([^<>\"]+)</span>").getColumn(0);
         ai.setMultiHostSupport(this, Arrays.asList(hosts));
         return ai;
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
     @Override
