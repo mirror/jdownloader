@@ -19,6 +19,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.PervcityComConfig;
+import org.jdownloader.plugins.components.config.PervcityComConfig.Quality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -30,6 +36,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -37,12 +44,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.PervcityComConfig;
-import org.jdownloader.plugins.components.config.PervcityComConfig.Quality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PervcityCom extends PluginForHost {
@@ -240,8 +241,6 @@ public class PervcityCom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    public static final long trust_cookie_age = 300000l;
-
     private void login(final Account account, final boolean verifyCookies) throws Exception {
         synchronized (account) {
             try {
@@ -252,44 +251,49 @@ public class PervcityCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !verifyCookies) {
+                    if (!verifyCookies) {
                         /* We trust these cookies --> Do not check them */
-                        logger.info("Trust login cookies as they're not that old");
                         return;
                     }
                     br.getPage("https://members." + this.getHost() + "/");
-                    if (isLoggedIN()) {
+                    if (isLoggedIN(br)) {
                         logger.info("Cookie login successful");
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(this.br.getCookies(br.getHost()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
-                        this.br.clearAll();
+                        this.br.clearCookies(br.getHost());
                     }
                 }
                 logger.info("Performing full login");
                 br.getPage("https://members." + this.getHost() + "/");
-                final Form loginform = br.getFormbyActionRegex(".*auth\\.form");
+                final Form loginform = br.getFormbyActionRegex("(?i).*auth\\.form");
                 if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 loginform.put("uid", Encoding.urlEncode(account.getUser()));
                 loginform.put("pwd", Encoding.urlEncode(account.getPass()));
                 /* 2020-07-01: Login captcha is probably always required */
-                if (br.containsHTML("/img\\.cptcha")) {
+                boolean captchaWasRequired = false;
+                if (containsCaptcha(br)) {
                     logger.info("Login captcha required");
-                    final DownloadLink dummy = new DownloadLink(this, "Account", "members." + this.getHost(), "http://members." + this.getHost(), true);
+                    final DownloadLink dummy = new DownloadLink(this, "Account", "members." + this.getHost(), "https://members." + this.getHost(), true);
                     if (this.getDownloadLink() == null) {
                         this.setDownloadLink(dummy);
                     }
                     final String code = this.getCaptchaCode("/img.cptcha", this.getDownloadLink());
                     loginform.put("img", Encoding.urlEncode(code));
+                    captchaWasRequired = true;
                 }
                 /* Check "Remember Me" checkbox to get long-lasting cookies */
                 loginform.put("rmb", "y");
                 br.submitForm(loginform);
-                if (!isLoggedIN()) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!isLoggedIN(br)) {
+                    if (captchaWasRequired && containsCaptcha(br)) {
+                        throw new AccountInvalidException("Invalid username/password or login-captcha");
+                    } else {
+                        throw new AccountInvalidException();
+                    }
                 }
                 account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
@@ -301,7 +305,11 @@ public class PervcityCom extends PluginForHost {
         }
     }
 
-    private boolean isLoggedIN() {
+    private boolean containsCaptcha(final Browser br) {
+        return br.containsHTML("(?i)/img\\.cptcha");
+    }
+
+    private boolean isLoggedIN(final Browser br) {
         return br.containsHTML("class=\"fa fa-user\"");
     }
 
@@ -313,7 +321,6 @@ public class PervcityCom extends PluginForHost {
         /* 2020-07-01: Assume that all valid accounts of this website are premium accounts ... */
         account.setType(AccountType.PREMIUM);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Premium account");
         return ai;
     }
 

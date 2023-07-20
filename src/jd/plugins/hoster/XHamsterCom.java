@@ -24,6 +24,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -47,19 +60,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XHamsterCom extends PluginForHost {
@@ -150,6 +150,7 @@ public class XHamsterCom extends PluginForHost {
     private final String          PROPERTY_USERNAME                      = "username";
     private final String          PROPERTY_DATE                          = "date";
     private final String          PROPERTY_TAGS                          = "tags";
+    private final static String   PROPERTY_VIDEOID                       = "videoid";
     private final String          PROPERTY_ACCOUNT_LAST_USED_FREE_DOMAIN = "last_used_free_domain";
     private final String          PROPERTY_ACCOUNT_PREMIUM_LOGIN_URL     = "premium_login_url";
 
@@ -208,7 +209,7 @@ public class XHamsterCom extends PluginForHost {
             if (url.matches(TYPE_MOBILE) || url.matches(TYPE_EMBED)) {
                 url = "https://" + newDomain + "/videos/" + new Regex(url, TYPE_EMBED).getMatch(0);
             } else {
-                /* Change domain if needed */
+                /* Change domain in URL */
                 url = url.replaceFirst(Pattern.quote(domainFromURL), newDomain);
             }
         }
@@ -239,7 +240,12 @@ public class XHamsterCom extends PluginForHost {
         if (link.getPluginPatternMatcher() == null) {
             return null;
         } else {
-            return getFID(link.getPluginPatternMatcher());
+            final String videoid = link.getStringProperty(PROPERTY_VIDEOID);
+            if (videoid != null) {
+                return videoid;
+            } else {
+                return getFID(link.getPluginPatternMatcher());
+            }
         }
     }
 
@@ -342,11 +348,9 @@ public class XHamsterCom extends PluginForHost {
             logger.info("Found self-embed: " + selfEmbeddedURL);
             br.getPage(selfEmbeddedURL);
             /* Now this may have sent us to an embed URL --> Fix that */
-            final String urlCorrected = getCorrectedURL(br.getURL());
-            if (!StringUtils.equalsIgnoreCase(br.getURL(), urlCorrected)) {
-                logger.info("Corrected URL: Old: " + br.getURL() + " | New: " + urlCorrected);
-                br.getPage(urlCorrected);
-            }
+            this.embedToNormalHandling(br, link);
+        } else if (br.getURL().matches(TYPE_EMBED)) {
+            this.embedToNormalHandling(br, link);
         }
         /* Set some Packagizer properties */
         String username = br.getRegex("class=\"entity-author-container__name\"[^>]*href=\"https?://[^/]+/users/([^<>\"]+)\"").getMatch(0);
@@ -475,11 +479,14 @@ public class XHamsterCom extends PluginForHost {
             if (title == null) {
                 title = br.getRegex("<h1.*?itemprop=\"name\">(.*?)</h1>").getMatch(0);
                 if (title == null) {
-                    title = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
+                    title = br.getRegex("\"videoTitle\":\"([^<>\"]*?)\"").getMatch(0); // ge.xhamster.com/embed/123456
+                    if (title == null) {
+                        title = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
+                    }
                 }
             }
             if (title == null) {
-                title = br.getRegex("<title.*?>([^<>\"]*?)\\s*\\-\\s*xHamster(" + buildHostsPatternPart(getPluginDomains().get(0)) + ")?</title>").getMatch(0);
+                title = br.getRegex("<title[^>]*>([^<>\"]*?)\\s*\\-\\s*xHamster(" + buildHostsPatternPart(getPluginDomains().get(0)) + ")?</title>").getMatch(0);
             }
             if (title == null) {
                 /* Fallback to URL filename - first try to get nice name from URL. */
@@ -538,6 +545,31 @@ public class XHamsterCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    /** Looks for normal video URL in html code and accesses it if necessary. */
+    private void embedToNormalHandling(final Browser br, final DownloadLink link) throws IOException {
+        final String nonEmbedURL = findNonEmbedURL(br);
+        if (!StringUtils.equalsIgnoreCase(br.getURL(), nonEmbedURL)) {
+            logger.info("Found non-embed URL: Old: " + br.getURL() + " | New: " + nonEmbedURL);
+            br.getPage(nonEmbedURL);
+            final String realVideoID = getFID(nonEmbedURL);
+            if (realVideoID != null) {
+                link.setProperty(PROPERTY_VIDEOID, realVideoID);
+            }
+        }
+    }
+
+    /**
+     * Designed to find "real" URL inside html of embed video. </br>
+     * Best is to only call this when currently browser is on an embed-URL as this function does not check for that.
+     */
+    private String findNonEmbedURL(final Browser br) {
+        String url = br.getRegex("class=\"xh-helper-hidden xplayer-fallback-image\" href=\"(https?://[^/]+/videos/\\w+)").getMatch(0);
+        if (url == null || true) {
+            url = PluginJSonUtils.getJson(br, "video_url");
+        }
+        return url;
     }
 
     /**
@@ -1260,9 +1292,10 @@ public class XHamsterCom extends PluginForHost {
             /* Check vja ajax request -> json */
             br.getPage(api_base_premium + "/subscription/get");
             /**
-             * Returns "null" if cookies are valid but this is not a premium account. </br> Redirects to mainpage if cookies are invalid.
-             * </br> Return json if cookies are valid. </br> Can also return json along with http responsecode 400 for valid cookies but
-             * user is non-premium.
+             * Returns "null" if cookies are valid but this is not a premium account. </br>
+             * Redirects to mainpage if cookies are invalid. </br>
+             * Return json if cookies are valid. </br>
+             * Can also return json along with http responsecode 400 for valid cookies but user is non-premium.
              */
             final boolean looksLikeJsonResponse = br.getRequest().getHtmlCode().startsWith("{");
             if (br.getHttpConnection().getContentType().contains("json") && (looksLikeJsonResponse || br.toString().equals("null"))) {
@@ -1398,9 +1431,11 @@ public class XHamsterCom extends PluginForHost {
             }
         }
         /**
-         * 2022-07-22: Workaround for possible serverside bug: </br> In some countries, xhamster seems to redirect users to xhamster2.com.
-         * </br> If those users send an Accept-Language header of "de,en-gb;q=0.7,en;q=0.3" they can get stuck in a redirect-loop between
-         * deu.xhamster3.com and deu.xhamster3.com. </br> See initial report: https://board.jdownloader.org/showthread.php?t=91170
+         * 2022-07-22: Workaround for possible serverside bug: </br>
+         * In some countries, xhamster seems to redirect users to xhamster2.com. </br>
+         * If those users send an Accept-Language header of "de,en-gb;q=0.7,en;q=0.3" they can get stuck in a redirect-loop between
+         * deu.xhamster3.com and deu.xhamster3.com. </br>
+         * See initial report: https://board.jdownloader.org/showthread.php?t=91170
          */
         final String acceptLanguage = "en-gb;q=0.7,en;q=0.3";
         br.setAcceptLanguage(acceptLanguage);

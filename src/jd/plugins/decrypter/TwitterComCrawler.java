@@ -319,8 +319,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
         if (queryID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(tweetID);
         String nextCursor = null;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Map<String, Object> variables = new HashMap<String, Object>();
@@ -370,7 +368,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         if (tweet == null) {
                             continue;
                         }
-                        final ArrayList<DownloadLink> thisResults = crawlTweetMap(tweet, usr, fp);
+                        final ArrayList<DownloadLink> thisResults = crawlTweetMap(tweet, usr, null);
                         ret.addAll(thisResults);
                         distribute(thisResults);
                     } else if (typename.equalsIgnoreCase("TweetTombstone")) {
@@ -388,7 +386,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
                             throw new AccountRequiredException();
                         }
                         final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/unknowntwitteruser/status/" + thisTweetID);
-                        link._setFilePackage(fp);
                         ret.add(link);
                     } else {
                         logger.info("Skipping unsupported __typename: " + typename);
