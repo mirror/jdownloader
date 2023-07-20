@@ -381,7 +381,7 @@ public class PremiumTo extends UseNet {
         final String[] defaultServersideDeactivatedWebsites = new String[] { "mega.nz", "mega.co.nz" };
         for (final String domain : defaultServersideDeactivatedWebsites) {
             if (real_supported_hosts_regular.contains(domain)) {
-                handleServersideDeactivatedHostsInfoDialog(account, defaultServersideDeactivatedWebsites[0]);
+                showServersideDeactivatedHostInformation(account, defaultServersideDeactivatedWebsites[0]);
                 break;
             }
         }
@@ -390,83 +390,58 @@ public class PremiumTo extends UseNet {
         return ai;
     }
 
-    private void handleServersideDeactivatedHostsInfoDialog(final Account account, final String exampleHost) throws InterruptedException {
-        final boolean userConfirmedDialogAlready = account.getBooleanProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, false);
-        final boolean forceDialog = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
-        if (userConfirmedDialogAlready && !forceDialog) {
-            return;
-        }
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            // Debug only atm.
-            return;
-        }
-        final Thread dialogThread = showServersideDeactivatedHostInformation(account, exampleHost);
-        // boolean dialogClosedByUser = false;
-        int passedSeconds = 0;
-        final int waitSecondsPerLoop = 1;
-        final int maxSeconds = 600;
-        try {
-            do {
-                Thread.sleep(waitSecondsPerLoop * 1000);
-                passedSeconds += waitSecondsPerLoop;
-            } while (dialogThread.isAlive());
-        } finally {
-            dialogThread.interrupt();
-        }
-        if (passedSeconds < maxSeconds) {
-            /* Looks like user has reacted to dialog -> Don't show dialog again for this particular account. */
-            logger.info("Dialog closed by user");
-            account.setProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, true);
-        }
-    }
-
     /**
      * This dialog is there to make users of this multihoster aware that they can control the list of supported filehosts for this
      * multihoster serverside in their multihoster account. </br> Some filehosts are disabled by default which is the core information this
      * dialog is supposed to tell the user.
      */
     private Thread showServersideDeactivatedHostInformation(final Account account, final String exampleHost) {
-        final String host = getHost();
-        final Thread thread = new Thread() {
-            public void run() {
-                String message = "";
-                final String title;
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    title = host + " - Informationen zu serverseitig standardmäßig für Downloadmanager deaktivierten Hostern";
-                    message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
-                    message += host + " hat einige Filehoster wie z.B. '" + exampleHost + "' standardmäßig für Downloadmanager deaktiviert, um deinen Traffic nicht zu verschwenden.\r\n";
-                    message += "Falls du " + exampleHost + " oder andere standardmäßig für Downloadmanager deaktivierte Hoster über " + host + " in JD nutzen möchtest, musst du folgendes tun:\t\r\n";
-                    message += "1. Öffne " + host + " im Browser und logge dich ein.\r\n";
-                    message += "2. Klicke auf das tab 'DLM' -> Setze das Häckchen bei allen Hostern, die in der Hosterliste in JD erscheinen sollen und klicke auf den Button 'update'.\r\n";
-                    message += "3. In JD: Rechtsklick auf deinen " + host + " Account in JDownloader -> Aktualisieren\r\n";
-                    message += "Nun sollten Hoster, die vorher ggf. fehlten z.B. '" + exampleHost + "' in der Liste der unterstützten Hoster in JD aufgeführt werden.\r\n";
-                } else {
-                    title = host + " - Information about filehosters, deactivated for downloadmanagers by default serverside by " + host;
-                    message += "Hello dear " + host + " user\r\n";
-                    message += host + " deactivated some filehosts like '" + exampleHost + "' by default for downloadmanagers in order to not waste any of your traffic.\r\n";
-                    message += "If you want to use " + exampleHost + " or other filehosts in JD which are disabled by " + host + " for downloadmanagers by default, follow these instructions:\r\n";
-                    message += "1. Open " + host + " in your browser and login.\r\n";
-                    message += "2. Click on the tab 'DLM' and enable the checkboxes for all filehosts you wish to use in JDownloader and click on the button 'update'.\r\n";
-                    message += "3. In JDownloader, rightclick on your " + host + " account -> Refresh\r\n";
-                    message += "Now all hosts, which might have been missing before e.g. '" + exampleHost + "' should be visible in the list of supported hosts in JDownloader.\r\n";
-                }
-                final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                dialog.setTimeout(5 * 60 * 1000);
-                final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                try {
-                    ret.throwCloseExceptions();
-                    account.setProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, true);
-                } catch (DialogNoAnswerException e) {
-                    getLogger().log(e);
-                    if (!e.isCausedByTimeout()) {
-                        account.setProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, true);
+        final boolean userConfirmedDialogAlready = account.getBooleanProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, false);
+        if (!userConfirmedDialogAlready) {
+            final String host = getHost();
+            final Thread thread = new Thread() {
+                public void run() {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = host + " - Informationen zu serverseitig standardmäßig für Downloadmanager deaktivierten Hostern";
+                        message += "Hallo liebe(r) " + host + " NutzerIn\r\n";
+                        message += host + " hat einige Filehoster wie z.B. '" + exampleHost + "' standardmäßig für Downloadmanager deaktiviert, um deinen Traffic nicht zu verschwenden.\r\n";
+                        message += "Falls du " + exampleHost + " oder andere standardmäßig für Downloadmanager deaktivierte Hoster über " + host + " in JD nutzen möchtest, musst du folgendes tun:\t\r\n";
+                        message += "1. Öffne " + host + " im Browser und logge dich ein.\r\n";
+                        message += "2. Klicke auf das tab 'DLM' -> Setze das Häckchen bei allen Hostern, die in der Hosterliste in JD erscheinen sollen und klicke auf den Button 'update'.\r\n";
+                        message += "3. In JD: Rechtsklick auf deinen " + host + " Account in JDownloader -> Aktualisieren\r\n";
+                        message += "Nun sollten Hoster, die vorher ggf. fehlten z.B. '" + exampleHost + "' in der Liste der unterstützten Hoster in JD aufgeführt werden.\r\n";
+                    } else {
+                        title = host + " - Information about filehosters, deactivated for downloadmanagers by default serverside by " + host;
+                        message += "Hello dear " + host + " user\r\n";
+                        message += host + " deactivated some filehosts like '" + exampleHost + "' by default for downloadmanagers in order to not waste any of your traffic.\r\n";
+                        message += "If you want to use " + exampleHost + " or other filehosts in JD which are disabled by " + host + " for downloadmanagers by default, follow these instructions:\r\n";
+                        message += "1. Open " + host + " in your browser and login.\r\n";
+                        message += "2. Click on the tab 'DLM' and enable the checkboxes for all filehosts you wish to use in JDownloader and click on the button 'update'.\r\n";
+                        message += "3. In JDownloader, rightclick on your " + host + " account -> Refresh\r\n";
+                        message += "Now all hosts, which might have been missing before e.g. '" + exampleHost + "' should be visible in the list of supported hosts in JDownloader.\r\n";
                     }
-                }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(5 * 60 * 1000);
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    try {
+                        ret.throwCloseExceptions();
+                        account.setProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, true);
+                    } catch (DialogNoAnswerException e) {
+                        getLogger().log(e);
+                        if (!e.isCausedByTimeout()) {
+                            account.setProperty(PROPERTY_ACCOUNT_DEACTIVATED_FILEHOSTS_DIALOG_SHOWN_AND_CONFIRMED, true);
+                        }
+                    }
+                };
             };
-        };
-        thread.setDaemon(true);
-        thread.start();
-        return thread;
+            thread.setDaemon(true);
+            thread.start();
+            return thread;
+        } else {
+            return null;
+        }
     }
 
     private String getUserID(final Account account) {
