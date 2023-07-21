@@ -733,9 +733,9 @@ public class FaceBookComVideos extends PluginForHost {
             final List<Object> array = (List) o;
             for (final Object arrayo : array) {
                 if (arrayo instanceof List || arrayo instanceof Map) {
-                    final Object pico = websiteFindErrorMap(arrayo, videoid);
-                    if (pico != null) {
-                        return pico;
+                    final Object ret = websiteFindErrorMap(arrayo, videoid);
+                    if (ret != null) {
+                        return ret;
                     }
                 }
             }

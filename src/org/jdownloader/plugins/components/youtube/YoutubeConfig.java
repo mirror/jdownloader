@@ -329,16 +329,22 @@ public interface YoutubeConfig extends PluginConfigInterface {
                 return "Auto";
             }
         },
-        NORMAL {
+        LATEST {
             @Override
             public String getLabel() {
-                return _JDT.T.YoutubeDash_ProfilePlaylistCrawlerAddOrderNormal();
+                return _JDT.T.YoutubeDash_ProfilePlaylistCrawlerAddOrderLatest();
             }
         },
-        INVERTED {
+        POPULAR {
             @Override
             public String getLabel() {
-                return _JDT.T.YoutubeDash_ProfilePlaylistCrawlerAddOrderInverted();
+                return _JDT.T.YoutubeDash_ProfilePlaylistCrawlerAddOrderPopular();
+            }
+        },
+        OLDEST {
+            @Override
+            public String getLabel() {
+                return _JDT.T.YoutubeDash_ProfilePlaylistCrawlerAddOrderOldest();
             }
         };
     }

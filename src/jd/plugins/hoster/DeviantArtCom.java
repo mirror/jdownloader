@@ -40,6 +40,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.DeviantArtComConfig;
 import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -82,6 +83,17 @@ public class DeviantArtCom extends PluginForHost {
     /* Don't touch the following! */
     private static final AtomicInteger freeDownloadsRunning                  = new AtomicInteger(0);
     private static final AtomicInteger accountDownloadsRunning               = new AtomicInteger(0);
+    /* 2022-10-31: Normal login process won't work due to their anti DDoS protection -> Only cookie login is possible */
+    private final boolean              allowCookieLoginOnly                  = true;
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        if (allowCookieLoginOnly) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        }
+    }
 
     /**
      * @author raztoki, pspzockerscene, Jiaz
@@ -761,8 +773,6 @@ public class DeviantArtCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
-                /* 2022-10-31: Normal login process won't work due to their anti DDoS protection -> Only cookie login is possible */
-                final boolean allowCookieLoginOnly = true;
                 if (userCookies == null && allowCookieLoginOnly) {
                     showCookieLoginInfo();
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());

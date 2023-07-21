@@ -35,6 +35,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -52,6 +53,7 @@ import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAPlaylistAction;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
+import org.jdownloader.plugins.components.youtube.YoutubeConfig.PlaylistAndChannelCrawlerAddOrder;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.ProfileCrawlMode;
 import org.jdownloader.plugins.components.youtube.YoutubeHelper;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
@@ -1089,6 +1091,16 @@ public class TbCmV2 extends PluginForDecrypt {
         final String DELEGATED_SESSION_ID = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("DELEGATED_SESSION_ID")) : null;
         final Set<String> playListDupes = new HashSet<String>();
         Integer totalNumberofItems = null;
+        String userWishedSort = null;
+        /* Check if user wishes different sort than default */
+        final PlaylistAndChannelCrawlerAddOrder addOrder = cfg.getPlaylistAndChannelCrawlerAddOrder();
+        if (addOrder == PlaylistAndChannelCrawlerAddOrder.LATEST) {
+            userWishedSort = "Latest";
+        } else if (addOrder == PlaylistAndChannelCrawlerAddOrder.POPULAR) {
+            userWishedSort = "Popular";
+        } else if (addOrder == PlaylistAndChannelCrawlerAddOrder.OLDEST) {
+            userWishedSort = "Oldest";
+        }
         do {
             /* First try old HTML handling though by now [June 2023] all data is provided via json. */
             String nextPageToken = null;
@@ -1103,6 +1115,15 @@ public class TbCmV2 extends PluginForDecrypt {
             List<Map<String, Object>> varray = null;
             if (round == 0) {
                 rootMap = helper.getYtInitialData();
+                if (userWishedSort != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    // Latest, Popular, Oldest
+                    final String sortToken = (String) this.findSortToken(rootMap, userWishedSort);
+                    if (sortToken == null) {
+                        logger.info("Unable to sort by " + userWishedSort + ": Either this item is not sortable or it is already sorted in the wished order");
+                    } else {
+                        logger.info("Token for sort is: " + sortToken);
+                    }
+                }
                 Map<String, Object> playlisttab = null;
                 Map<String, Object> shortstab = null;
                 Map<String, Object> videostab = null;
@@ -1176,7 +1197,13 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             } else {
                 rootMap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "onResponseReceivedActions/{0}/appendContinuationItemsAction/continuationItems");
+                final List<Map<String, Object>> onResponseReceivedActions = (List<Map<String, Object>>) rootMap.get("onResponseReceivedActions");
+                final Map<String, Object> lastReceivedAction = onResponseReceivedActions.get(onResponseReceivedActions.size() - 1);
+                varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(lastReceivedAction, "appendContinuationItemsAction/continuationItems");
+                if (varray == null) {
+                    /* E.g. at the beginning after sorting */
+                    varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(lastReceivedAction, "reloadContinuationItemsCommand/continuationItems");
+                }
             }
             if (varray == null) {
                 /* This should never happen. */
@@ -1259,6 +1286,41 @@ public class TbCmV2 extends PluginForDecrypt {
         }
         logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs | Number of possibly missing videos [due to private/offrline/GEO-block]: " + missingVideos);
         return ret;
+    }
+
+    private Object findSortToken(final Object o, final String sortText) {
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            final String thisSortText = (String) JavaScriptEngineFactory.walkJson(entrymap, "chipCloudChipRenderer/text/simpleText");
+            final String thisContinuationCommand = (String) JavaScriptEngineFactory.walkJson(entrymap, "chipCloudChipRenderer/navigationEndpoint/continuationCommand/token");
+            if (sortText.equalsIgnoreCase(thisSortText) && thisContinuationCommand != null) {
+                return thisContinuationCommand;
+            }
+            for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
+                // final String key = entry.getKey();
+                final Object value = entry.getValue();
+                if (value instanceof List || value instanceof Map) {
+                    final Object pico = findSortToken(value, sortText);
+                    if (pico != null) {
+                        return pico;
+                    }
+                }
+            }
+            return null;
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final Object ret = findSortToken(arrayo, sortText);
+                    if (ret != null) {
+                        return ret;
+                    }
+                }
+            }
+            return null;
+        } else {
+            return o;
+        }
     }
 
     public static Browser prepBrowserWebAPI(final Browser br, final Account account) throws PluginException {

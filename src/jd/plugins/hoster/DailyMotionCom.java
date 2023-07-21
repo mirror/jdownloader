@@ -57,7 +57,7 @@ import jd.utils.locale.JDL;
 public class DailyMotionCom extends PluginForHost {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
     }
 
     public String getVideosource(final Browser br, final String videoID) throws Exception {
