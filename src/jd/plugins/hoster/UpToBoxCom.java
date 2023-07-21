@@ -465,65 +465,57 @@ public class UpToBoxCom extends PluginForHost {
             if (dllink == null) {
                 String passCode = null;
                 Form dlform = getWaitingTokenForm(br);
-                if (dlform != null) {
-                    if (dlform.hasInputFieldByName("file-password")) {
-                        link.setPasswordProtected(true);
-                        passCode = link.getDownloadPassword();
-                        if (passCode == null) {
-                            passCode = getUserInput("Password?", link);
-                        }
-                        dlform.put("file-password", Encoding.urlEncode(passCode));
-                    } else {
-                        link.setPasswordProtected(false);
+                if (dlform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (dlform.hasInputFieldByName("file-password")) {
+                    link.setPasswordProtected(true);
+                    passCode = link.getDownloadPassword();
+                    if (passCode == null) {
+                        passCode = getUserInput("Password?", link);
                     }
-                    int waittime = regexPreDownloadWaittimeWebsite(br);
-                    if (waittime > 0) {
-                        logger.info("Found pre-download-waittime(1): " + waittime);
-                        this.sleep((waittime + 5) * 1001l, link);
+                    dlform.put("file-password", Encoding.urlEncode(passCode));
+                } else {
+                    link.setPasswordProtected(false);
+                }
+                int waittimeSecondsStr = regexPreDownloadWaittimeSecondsWebsite(br);
+                if (waittimeSecondsStr > 0) {
+                    logger.info("Found pre-download-waittime(1): " + waittimeSecondsStr);
+                    this.sleep((waittimeSecondsStr + 5) * 1001l, link);
+                } else {
+                    logger.info("ZERO pre-download waittime(1)");
+                }
+                br.submitForm(dlform);
+                checkErrorsWebsite(br, link, null);
+                dllink = getDllinkWebsite(br);
+                dlform = getWaitingTokenForm(br);
+                if (dllink == null && dlform != null) {
+                    waittimeSecondsStr = regexPreDownloadWaittimeSecondsWebsite(br);
+                    if (waittimeSecondsStr > 0) {
+                        logger.info("Found pre-download-waittime(2): " + waittimeSecondsStr);
+                        this.sleep((waittimeSecondsStr + 5) * 1001l, link);
                     } else {
-                        logger.info("ZERO pre-download waittime(1)");
+                        logger.info("ZERO pre-download waittime(2)");
                     }
                     br.submitForm(dlform);
                     checkErrorsWebsite(br, link, null);
                     dllink = getDllinkWebsite(br);
                     dlform = getWaitingTokenForm(br);
                     if (dllink == null && dlform != null) {
-                        waittime = regexPreDownloadWaittimeWebsite(br);
-                        if (waittime > 0) {
-                            logger.info("Found pre-download-waittime(2): " + waittime);
-                            this.sleep((waittime + 5) * 1001l, link);
-                        } else {
-                            logger.info("ZERO pre-download waittime(2)");
-                        }
-                        br.submitForm(dlform);
-                        checkErrorsWebsite(br, link, null);
-                        dllink = getDllinkWebsite(br);
-                        dlform = getWaitingTokenForm(br);
-                        if (dllink == null && dlform != null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                    }
-                    /* Save correctly entered password. */
-                    if (passCode != null) {
-                        link.setDownloadPassword(passCode);
-                    }
-                }
-                if (StringUtils.isEmpty(dllink)) {
-                    logger.warning("Failed to find final downloadurl");
-                    if (br.containsHTML("id='ban'")) {
-                        /*
-                         * 2020-06-12: E.g. "<h1>This page is not allowed in the US</h1>",
-                         * "We're sorry but it appears your IP comes from the US so you're not allowed to download or stream.",
-                         * "If you have a premium account, please login to remove the limitation."
-                         */
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "GEO-blocked");
-                    } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
+                /* Save correctly entered password. */
+                if (passCode != null) {
+                    link.setDownloadPassword(passCode);
+                }
+                if (StringUtils.isEmpty(dllink)) {
+                    logger.warning("Failed to find final downloadurl");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
-        dllink = correctProtocolOfFinalDownloadURL(dllink);
+        dllink = correctProtocolInFinalDownloadURL(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(null));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
@@ -551,9 +543,14 @@ public class UpToBoxCom extends PluginForHost {
             link.setDownloadPassword(null);
             throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
         }
-        final int waittimeSeconds = regexPreDownloadWaittimeWebsite(br);
+        final int waittimeSeconds = regexPreDownloadWaittimeSecondsWebsite(br);
         if (waittimeSeconds > WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittimeSeconds * 1001l);
+        }
+        final String waittimeMinutesStr = br.getRegex("(?i)class=\"red text\"[^>]*><strong>\\s*Free members only wait (\\d+) minutes before").getMatch(0);
+        if (waittimeMinutesStr != null) {
+            /* 2023-07-21 */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waittimeMinutesStr) * 60 * 1001l);
         }
         /* Basically the same what waittimeSecondsStr does --> More complicated fallback */
         final String preciseWaittime = br.getRegex("(?i)or you can wait ([^<>\"]+)<").getMatch(0);
@@ -605,6 +602,13 @@ public class UpToBoxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hot linking is not allowed on Uptobox", 3 * 60 * 1000l);
         } else if (br.containsHTML("(?i)>\\s*This file is temporarily unavailable, please retry")) {
             errorFileTemporarilyUnavailable();
+        } else if (br.containsHTML("id='ban'")) {
+            /*
+             * 2020-06-12: E.g. "<h1>This page is not allowed in the US</h1>",
+             * "We're sorry but it appears your IP comes from the US so you're not allowed to download or stream.",
+             * "If you have a premium account, please login to remove the limitation."
+             */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "GEO-blocked");
         }
     }
 
@@ -619,7 +623,7 @@ public class UpToBoxCom extends PluginForHost {
         }
     }
 
-    private int regexPreDownloadWaittimeWebsite(final Browser br) {
+    private int regexPreDownloadWaittimeSecondsWebsite(final Browser br) {
         final String waittimeSecondsStr = br.getRegex("data-remaining-time='(\\d+)'").getMatch(0);
         if (waittimeSecondsStr != null) {
             return Integer.parseInt(waittimeSecondsStr);
@@ -780,7 +784,7 @@ public class UpToBoxCom extends PluginForHost {
         } else {
             link.removeProperty(PROPERTY_last_downloaded_quality);
         }
-        dllink = correctProtocolOfFinalDownloadURL(dllink);
+        dllink = correctProtocolInFinalDownloadURL(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, getMaxChunks(account));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
@@ -796,13 +800,13 @@ public class UpToBoxCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String correctProtocolOfFinalDownloadURL(final String finalDownloadurl) {
+    private String correctProtocolInFinalDownloadURL(final String finalDownloadurl) {
         if (PluginJsonConfig.get(UpToBoxComConfig.class).isUseHTTPSForDownloads()) {
             logger.info("User prefers https");
-            return finalDownloadurl.replaceFirst("http://", "https://");
+            return finalDownloadurl.replaceFirst("(?i)http://", "https://");
         } else {
             logger.info("User prefers http");
-            return finalDownloadurl.replaceFirst("https?://", "http://");
+            return finalDownloadurl.replaceFirst("(?i)https?://", "http://");
         }
     }
 

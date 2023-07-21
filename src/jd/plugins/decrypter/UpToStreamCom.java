@@ -131,6 +131,7 @@ public class UpToStreamCom extends PluginForDecrypt {
                 for (final Map<String, Object> file : ressourcelist) {
                     final String linkid = file.get("file_code").toString();
                     final String filename = file.get("file_name").toString();
+                    final Number file_size = (Number) file.get("file_size_user");
                     /* Extra failsafe - avoid infinite loop! */
                     if (dupecheck.contains(linkid)) {
                         /* This should never happen. */
@@ -139,6 +140,7 @@ public class UpToStreamCom extends PluginForDecrypt {
                     }
                     final DownloadLink dl = this.createDownloadlink("https://" + br.getHost() + "/" + linkid);
                     dl.setName(filename);
+                    dl.setDownloadSize(file_size.longValue());
                     dl.setAvailable(true);
                     if (foldersCanHaveSubfolders) {
                         dl.setRelativeDownloadFolderPath(filePath);

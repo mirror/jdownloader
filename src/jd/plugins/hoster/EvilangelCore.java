@@ -36,6 +36,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
 import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -64,6 +65,18 @@ import jd.plugins.PluginForHost;
 public abstract class EvilangelCore extends PluginForHost {
     public EvilangelCore(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        final List<LazyPlugin.FEATURE> ret = new ArrayList<LazyPlugin.FEATURE>();
+        ret.add(LazyPlugin.FEATURE.XXX);
+        if (allowCookieLoginOnly()) {
+            ret.add(LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY);
+        } else {
+            ret.add(LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL);
+        }
+        return ret.toArray(new LazyPlugin.FEATURE[0]);
     }
 
     protected Browser prepBrowser(final Browser br) {
@@ -115,6 +128,10 @@ public abstract class EvilangelCore extends PluginForHost {
     }
 
     public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
+    protected boolean allowCookieLoginOnly() {
         return false;
     }
 
@@ -833,10 +850,6 @@ public abstract class EvilangelCore extends PluginForHost {
 
     /** TODO: Add functionality. */
     protected boolean accountAllowsOfficialDownloads(final Account account) {
-        return false;
-    }
-
-    protected boolean allowCookieLoginOnly() {
         return false;
     }
 

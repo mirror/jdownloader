@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -82,14 +83,8 @@ public class DeepbridCom extends PluginForHost {
         final Browser br = new Browser();
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
-        /* Important! API may answer with json and a 302 redirect at the same time! */
+        /* See handleRedirects */
         br.setFollowRedirects(false);
-        return br;
-    }
-
-    /** Use this for website-requests (non-API requests only!). */
-    public Browser prepBRWebsite(final Browser br) {
-        br.setFollowRedirects(true);
         return br;
     }
 
@@ -97,11 +92,14 @@ public class DeepbridCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String filename_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         if (!link.isNameSet()) {
+            /* Fallback-filename */
             link.setName(filename_url);
         }
         this.setBrowserExclusive();
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Wrong request code")) {
+        getPage(br, link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*Wrong request code")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("(?i)<b>File Name:?\\s*?</b></font><font[^>]+>([^<>\"]+)<").getMatch(0);
@@ -143,7 +141,7 @@ public class DeepbridCom extends PluginForHost {
             final String ticketurl = link.getStringProperty("ticketurl");
             if (ticketurl != null) {
                 logger.info("Re-using stored ticketurl: " + ticketurl);
-                br.getPage(ticketurl);
+                getPage(br, ticketurl);
             } else {
                 final Form dlform = br.getFormbyKey("download");
                 if (dlform == null) {
@@ -155,7 +153,7 @@ public class DeepbridCom extends PluginForHost {
                 if (dlfield != null && dlfield.getValue() == null) {
                     dlform.put("download", "");
                 }
-                br.submitForm(dlform);
+                submitForm(br, dlform);
                 /* Store that URL as we can use it multiple times to generate new directurls for that particular file! */
                 link.setProperty("ticketurl", br.getURL());
             }
@@ -174,7 +172,8 @@ public class DeepbridCom extends PluginForHost {
             }
         }
         try {
-            final Browser brc = prepBRWebsite(br.cloneBrowser());
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(brc, link, dllink, false, 1);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 brc.followConnection(true);
@@ -214,10 +213,10 @@ public class DeepbridCom extends PluginForHost {
         } else {
             if (account.getType() == AccountType.PREMIUM) {
                 /* Use API in premium mode */
-                br.postPage(API_BASE + "?page=api&app=jdownloader&action=generateLink", "pass=&link=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
+                postPage(br, API_BASE + "?page=api&app=jdownloader&action=generateLink", "pass=&link=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
             } else {
                 /* Use website for free account downloads */
-                br.postPage(API_BASE + "?page=api&action=generateLink", "pass=&link=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
+                postPage(br, API_BASE + "?page=api&action=generateLink", "pass=&link=" + Encoding.urlEncode(link.getPluginPatternMatcher()));
             }
             final Map<String, Object> resp = this.handleErrorsAPI(br, account, link);
             dllink = (String) resp.get("link");
@@ -237,12 +236,13 @@ public class DeepbridCom extends PluginForHost {
         }
         logger.info("Max. allowed chunks: " + maxchunks);
         try {
-            final Browser brc = prepBRWebsite(br.cloneBrowser());
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(brc, link, dllink, defaultRESUME, maxchunks);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 brc.followConnection(true);
                 handleErrorsAPI(brc, account, link);
-                mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "Unknown download error", 10, 5 * 60 * 1000l);
             }
         } catch (final Exception e) {
             if (storedDirecturl != null) {
@@ -268,6 +268,36 @@ public class DeepbridCom extends PluginForHost {
                 }
             }
             throw e;
+        }
+    }
+
+    private void getPage(final Browser br, final String url) throws IOException {
+        br.getPage(url);
+        handleRedirects(br);
+    }
+
+    private void postPage(final Browser br, final String url, final String postData) throws IOException {
+        br.postPage(url, postData);
+        handleRedirects(br);
+    }
+
+    private void submitForm(final Browser br, final Form form) throws IOException {
+        br.submitForm(form);
+        handleRedirects(br);
+    }
+
+    /**
+     * Special handling as API requests [when user is not logged in] may resul in json response but at the same time return a 302 redirect
+     * to a html page which we do not want.
+     */
+    private void handleRedirects(final Browser br) throws IOException {
+        final String redirect = br.getRedirectLocation();
+        if (redirect != null) {
+            if (br.getURL().contains(API_BASE) || br.getURL().contains(API_BASE.replaceFirst("www\\.", ""))) {
+                logger.info("Ignoring redirect to keep json in browser | Redirect: " + redirect);
+            } else {
+                br.followRedirect(true);
+            }
         }
     }
 
@@ -303,6 +333,7 @@ public class DeepbridCom extends PluginForHost {
              * downloads at all.
              */
             // account.setMaxSimultanDownloads(1);
+            ai.setExpired(true); // 2023-07-21
         } else {
             account.setType(AccountType.PREMIUM);
             if (maxSimultaneousDownloads != null) {
@@ -325,7 +356,7 @@ public class DeepbridCom extends PluginForHost {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             ai.setStatus(account.getType().getLabel() + " | MaxDls: " + maxSimultaneousDownloads + " MaxCon: " + maxConnections + " | Points: " + points);
         }
-        br.getPage(API_BASE + "?page=api&action=hosters");
+        getPage(br, API_BASE + "?page=api&action=hosters");
         Map<String, Object> entries;
         final List<Object> supportedhostslistO = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
@@ -357,9 +388,8 @@ public class DeepbridCom extends PluginForHost {
              * this is another workaround ...
              */
             logger.info("Checking for additional supported hosts on website (API list = unreliable)");
-            final Browser brWebsite = this.prepBRWebsite(br.cloneBrowser());
-            brWebsite.getPage("/service");
-            final String[] crippled_hosts = brWebsite.getRegex("class=\"hosters_([A-Za-z0-9]+)[^\"]*\"").getColumn(0);
+            getPage(br, "/service");
+            final String[] crippled_hosts = br.getRegex("class=\"hosters_([A-Za-z0-9]+)[^\"]*\"").getColumn(0);
             for (final String crippled_host : crippled_hosts) {
                 if (!supportedhostslist.contains(crippled_host)) {
                     logger.info("Adding host from website which has not been given via API: " + crippled_host);
@@ -377,78 +407,69 @@ public class DeepbridCom extends PluginForHost {
 
     private Map<String, Object> login(final Account account, final boolean verifyCookies) throws Exception {
         synchronized (account) {
-            try {
-                /* Load cookies */
-                br.setCookiesExclusive(true);
-                final Cookies userCookies = account.loadUserCookies();
-                if (userCookies != null) {
-                    br.setCookies(this.getHost(), userCookies);
-                    if (!verifyCookies) {
-                        /* Do not verify cookies */
-                        return null;
-                    }
-                    logger.info("Trying to login via usercookies");
-                    final Map<String, Object> userinfo = checkLoginAPI(br, account, true);
-                    if (userinfo != null) {
-                        /* Save new cookie-timestamp */
-                        logger.info("UserCookie login successful");
-                        return userinfo;
-                    } else if (account.hasEverBeenValid()) {
-                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                    } else {
-                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                    }
-                }
-                final Cookies cookies = account.loadCookies("");
+            /* Load cookies */
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
+            if (cookies != null || userCookies != null) {
                 if (cookies != null) {
                     br.setCookies(this.getHost(), cookies);
-                    if (!verifyCookies) {
-                        /* Do not verify cookies */
-                        return null;
-                    }
-                    logger.info("Trying to login via cookies");
-                    try {
-                        final Map<String, Object> userinfo = checkLoginAPI(br, account, false);
-                        logger.info("Cookie login successful");
+                } else {
+                    br.setCookies(this.getHost(), userCookies);
+                }
+                if (!verifyCookies) {
+                    /* Do not verify cookies */
+                    return null;
+                }
+                logger.info("Trying to login via usercookies");
+                try {
+                    final Map<String, Object> userinfo = checkLoginAPI(br, account, true);
+                    logger.info("UserCookie login successful");
+                    if (userCookies == null) {
+                        /* Only save cookies when needed. */
                         account.saveCookies(br.getCookies(br.getHost()), "");
-                        return userinfo;
-                    } catch (final PluginException e) {
+                    }
+                    return userinfo;
+                } catch (final PluginException e) {
+                    if (userCookies != null) {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    } else {
                         logger.info("Cookie login failed --> Full login required");
+                        account.clearCookies("");
                     }
                 }
-                logger.info("Attempting full login");
-                br.getPage("https://www." + account.getHoster());
-                br.getPage("https://www." + account.getHoster() + "/login");
-                final Form loginform = br.getFormbyProperty("name", "login");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("amember_login", Encoding.urlEncode(account.getUser()));
-                loginform.put("amember_pass", Encoding.urlEncode(account.getPass()));
-                loginform.put("remember_login", "1");
-                if (br.containsHTML("(?i)google\\.com/recaptcha/api")) {
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                }
-                br.submitForm(loginform);
-                final Map<String, Object> userinfo = checkLoginAPI(br, account, false);
-                if (userinfo == null) {
-                    throw new AccountInvalidException();
-                }
-                account.saveCookies(br.getCookies(br.getHost()), "");
-                return userinfo;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
             }
+            logger.info("Attempting full login");
+            getPage(br, "https://www." + account.getHoster());
+            getPage(br, "https://www." + account.getHoster() + "/login");
+            final Form loginform = br.getFormbyProperty("name", "login");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("amember_login", Encoding.urlEncode(account.getUser()));
+            loginform.put("amember_pass", Encoding.urlEncode(account.getPass()));
+            loginform.put("remember_login", "1");
+            if (br.containsHTML("(?i)google\\.com/recaptcha/api")) {
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            }
+            submitForm(br, loginform);
+            final Map<String, Object> userinfo = checkLoginAPI(br, account, false);
+            if (userinfo == null) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return userinfo;
         }
     }
 
     private Map<String, Object> checkLoginAPI(final Browser br, final Account account, final boolean setUsernameOnAccount) throws Exception {
         final String urlpart = "?page=api&action=accountInfo";
-        br.getPage(API_BASE + urlpart);
+        getPage(br, API_BASE + urlpart);
         final Map<String, Object> resp = this.handleErrorsAPI(br, account, null);
         final String username = (String) resp.get("username");
         boolean loggedInViaCookies = false;

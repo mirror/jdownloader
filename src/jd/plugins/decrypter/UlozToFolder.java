@@ -99,7 +99,6 @@ public class UlozToFolder extends PluginForDecrypt {
         br.setFollowRedirects(false);
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         /* Important! Sets e.g. age-restricted removal headers! */
-        ((jd.plugins.hoster.UlozTo) plg).prepBR(this.br);
         br.getPage(param.getCryptedUrl());
         ((jd.plugins.hoster.UlozTo) plg).handleAgeRestrictedRedirects();
         final String finallink = br.getRedirectLocation();

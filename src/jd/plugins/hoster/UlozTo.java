@@ -55,7 +55,7 @@ import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UlozTo extends PluginForHost {
-    private static final String  QUICKDOWNLOAD                = "https?://[^/]+/quickDownload/\\d+";
+    private static final String  QUICKDOWNLOAD                = "(?i)https?://[^/]+/quickDownload/\\d+";
     /* 2017-01-02: login API seems to be broken --> Use website as workaround */
     private static final boolean use_login_api                = false;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
@@ -66,6 +66,16 @@ public class UlozTo extends PluginForHost {
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://uloz.to/kredit");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        br.setCustomCharset("utf-8");
+        br.setAllowedResponseCodes(new int[] { 400, 401, 410, 451 });
+        br.setCookie(this.getHost(), "adblock_detected", "false");
+        br.setCookie(this.getHost(), "maturity", "adult");
+        return br;
     }
 
     @Override
@@ -83,7 +93,7 @@ public class UlozTo extends PluginForHost {
     }
 
     private String getContentURL(final DownloadLink link) {
-        return link.getPluginPatternMatcher().replaceAll("https?://[^/]+/", "https://" + this.getHost() + "/");
+        return link.getPluginPatternMatcher().replaceAll("(?i)https?://[^/]+/", "https://" + this.getHost() + "/");
     }
 
     public static List<String[]> getPluginDomains() {
@@ -137,14 +147,6 @@ public class UlozTo extends PluginForHost {
         return -1;
     }
 
-    public Browser prepBR(final Browser br) {
-        br.setCustomCharset("utf-8");
-        br.setAllowedResponseCodes(new int[] { 400, 401, 410, 451 });
-        br.setCookie(this.getHost(), "adblock_detected", "false");
-        br.setCookie(this.getHost(), "maturity", "adult");
-        return br;
-    }
-
     protected static String getDownloadModeDirectlinkProperty(final Account account) {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
@@ -191,7 +193,6 @@ public class UlozTo extends PluginForHost {
                 link.setName(fid);
             }
         }
-        prepBR(this.br);
         if (account != null) {
             login(account, false);
         }
@@ -733,7 +734,8 @@ public class UlozTo extends PluginForHost {
                     }
                 }
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
+            /* 2023-07-21: Max chunks tested = 9 */
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, -9);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection();
                 this.checkErrors(br, link, account);
@@ -766,7 +768,6 @@ public class UlozTo extends PluginForHost {
                 final AccountInfo ai = aa != null ? aa : account.getAccountInfo();
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
-                prepBR(this.br);
                 br.getHeaders().put("Accept", "text/html, */*");
                 br.getHeaders().put("Accept-Encoding", "identity");
                 br.getHeaders().put("User-Agent", "UFM 1.5");
@@ -825,7 +826,6 @@ public class UlozTo extends PluginForHost {
             try {
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
-                prepBR(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
