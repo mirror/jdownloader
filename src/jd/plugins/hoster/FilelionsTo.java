@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class FilelionsCom extends XFileSharingProBasic {
-    public FilelionsCom(final PluginWrapper wrapper) {
+public class FilelionsTo extends XFileSharingProBasic {
+    public FilelionsTo(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -43,7 +43,7 @@ public class FilelionsCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "filelions.com" });
+        ret.add(new String[] { "filelions.to" });
         return ret;
     }
 
