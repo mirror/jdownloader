@@ -21,8 +21,12 @@ import java.util.List;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -31,9 +35,6 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SwzzXyz extends MightyScriptAdLinkFly {
@@ -74,10 +75,15 @@ public class SwzzXyz extends MightyScriptAdLinkFly {
         if (url.matches("https?://[^/]+/[A-Za-z0-9]+/?$")) {
             final ArrayList<DownloadLink> ret = super.decryptIt(param, progress);
             if (ret.size() == 1) {
-                // debug to see what response looks like
-                final String debugURL = ret.get(0).getPluginPatternMatcher();
-                if (canHandle(debugURL)) {
-                    getPage(debugURL);
+                /* Check for invalid links */
+                final String hostFromOriginalURL = Browser.getHost(url);
+                final String resultURL = ret.get(0).getPluginPatternMatcher();
+                if (resultURL.matches("(?i)^https?://[^/]+/t/[A-Za-z0-9]+$") && resultURL.contains(hostFromOriginalURL)) {
+                    /* Broken website/link -> It would lead to page with error 403 */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (canHandle(resultURL)) {
+                    /* Link that can be handled by this plugin -> Something must be wrong */
+                    // getPage(debugURL);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }

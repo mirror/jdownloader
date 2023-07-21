@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.awt.Dialog.ModalityType;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1050,6 +1051,10 @@ public class TbCmV2 extends PluginForDecrypt {
         br.getHeaders().put("Accept-Charset", null);
         final boolean isChannelOrProfileShorts = isChannelOrProfileShorts(referenceUrl);
         String userOrPlaylistURL;
+        String desiredChannelTab = null;
+        // final Map<String, String> tabFallbackMapping = new HashMap<String, String>();
+        // tabFallbackMapping.put("Shorts", "Videos");
+        // tabFallbackMapping.put("Videos", "Shorts");
         if (playlistID != null) {
             userOrPlaylistURL = getBaseURL() + "/playlist?list=" + playlistID;
         } else if (channelID != null) {
@@ -1057,21 +1062,25 @@ public class TbCmV2 extends PluginForDecrypt {
             userOrPlaylistURL = getBaseURL() + "/channel/" + channelID;
             if (isChannelOrProfileShorts) {
                 userOrPlaylistURL += "/shorts";
+                desiredChannelTab = "Shorts";
             } else {
                 userOrPlaylistURL += "/videos";
+                desiredChannelTab = "Videos";
             }
         } else {
             /* Channel/User */
             userOrPlaylistURL = getBaseURL() + "/@" + userName;
             if (isChannelOrProfileShorts) {
                 userOrPlaylistURL += "/shorts";
+                desiredChannelTab = "Shorts";
             } else {
                 userOrPlaylistURL += "/videos";
+                desiredChannelTab = "Videos";
             }
         }
         // TODO: Add better/proper check for offline/invalid channel/playlist/user.
         helper.getPage(br, userOrPlaylistURL);
-        final String originalURL = br.getURL();
+        final URL originalURL = br._getURL();
         final ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         // user list it's not a playlist.... just a channel decryption. this can return incorrect information.
         final String playListTitleHTML = extractWebsiteTitle(br);
@@ -1118,6 +1127,7 @@ public class TbCmV2 extends PluginForDecrypt {
             List<Map<String, Object>> varray = null;
             if (round == 0) {
                 rootMap = helper.getYtInitialData();
+                final List<String> availableChannelTabs = new ArrayList<String>();
                 Map<String, Object> playlisttab = null;
                 Map<String, Object> shortstab = null;
                 Map<String, Object> videostab = null;
@@ -1136,15 +1146,18 @@ public class TbCmV2 extends PluginForDecrypt {
                             break;
                         } else if (tabRenderer != null) {
                             /* Channel/User */
-                            final String title = (String) tabRenderer.get("title");
+                            final String tabTitle = (String) tabRenderer.get("title");
                             final Boolean selected = (Boolean) tabRenderer.get("selected");
                             final List<Map<String, Object>> varrayTmp = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tabRenderer, "content/richGridRenderer/contents");
-                            if ("Shorts".equalsIgnoreCase(title)) {
+                            if (tabTitle != null) {
+                                availableChannelTabs.add(tabTitle);
+                            }
+                            if ("Shorts".equalsIgnoreCase(tabTitle)) {
                                 shortstab = tab;
                                 if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
                                     varray = varrayTmp;
                                 }
-                            } else if ("Videos".equalsIgnoreCase(title)) {
+                            } else if ("Videos".equalsIgnoreCase(tabTitle)) {
                                 videostab = tab;
                                 if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
                                     varray = varrayTmp;
@@ -1154,16 +1167,31 @@ public class TbCmV2 extends PluginForDecrypt {
                             }
                         }
                     }
+                    logger.info("Available channel tabs: " + availableChannelTabs);
                     if (shortstab == null && isChannelOrProfileShorts && videostab != null) {
                         logger.info("User wanted shorts but channel doesn't contain shorts tab -> Only videos is possible");
                     } else if (shortstab != null && !isChannelOrProfileShorts) {
                         logger.info("User wanted videos but channel doesn't contain videos tab -> Only shorts is possible");
                     }
                 }
-                /* This message can also contain information like "2 unavailable videos won't be displayed in this list". */
-                final String errormessage = (String) JavaScriptEngineFactory.walkJson(rootMap, "alerts/{0}/alertRenderer/text/runs/{0}/text");
+                /**
+                 * This message can also contain information like "2 unavailable videos won't be displayed in this list". </br>
+                 * Only mind this errormessage if we can't find any content.
+                 */
+                final List<Map<String, Object>> alerts = (List<Map<String, Object>>) rootMap.get("alerts");
+                String errormessage = null;
+                /* Find last errormessage. Mostly there is one one available anyways. */
+                if (alerts != null && alerts.size() > 0) {
+                    for (final Map<String, Object> alert : alerts) {
+                        final Map<String, Object> alertRenderer = (Map<String, Object>) alert.get("alertRenderer");
+                        errormessage = (String) JavaScriptEngineFactory.walkJson(alertRenderer, "text/runs/{0}/text"); // Playlist(?)
+                        if (errormessage == null) {
+                            errormessage = (String) JavaScriptEngineFactory.walkJson(alertRenderer, "text/simpleText"); // Channel
+                        }
+                    }
+                }
                 if (varray == null && errormessage != null) {
-                    throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "CHANNEL_OR_PLAYLIST_OFFLINE_" + this.playlistID, errormessage);
+                    throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "CHANNEL_OR_PLAYLIST_OFFLINE_" + originalURL.getPath(), errormessage);
                 }
                 /* Find extra information about playlist */
                 final Map<String, Object> playlistHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/playlistHeaderRenderer");
@@ -1184,6 +1212,10 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 if (videosCountText != null) {
                     videosCountText = videosCountText.replaceAll("(\\.|,)", "");
+                    if (videosCountText.equalsIgnoreCase("No videos") || videosCountText.equals("0")) {
+                        /* Profile with no videos at all (or empty playlist but not sure if that can even exist) */
+                        throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
+                    }
                     if (videosCountText.matches("\\d+")) {
                         totalNumberofItems = Integer.valueOf(videosCountText);
                         globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_SIZE, totalNumberofItems);
@@ -1193,9 +1225,9 @@ public class TbCmV2 extends PluginForDecrypt {
                     /* User wishes custom sort which needs to be done serverside. */
                     sortToken = (String) this.findSortToken(rootMap, userWishedSortTitle);
                     if (sortToken == null) {
-                        logger.info("Unable to sort by " + userWishedSortTitle + ": Either this item is not sortable or it is already sorted in the wished order");
+                        logger.info("Unable to sort by '" + userWishedSortTitle + "': Either this item is not sortable or it is already sorted in the wished order");
                     } else {
-                        logger.info("Token for sort by " + userWishedSortTitle + " is: " + sortToken);
+                        logger.info("Token for sort by '" + userWishedSortTitle + "' is: " + sortToken);
                         activeSort = userWishedSortTitle;
                     }
                 }
@@ -1280,7 +1312,7 @@ public class TbCmV2 extends PluginForDecrypt {
             }
             client.put("clientName", INNERTUBE_CLIENT_NAME);
             client.put("clientVersion", INNERTUBE_CLIENT_VERSION);
-            client.put("originalUrl", originalURL);
+            client.put("originalUrl", originalURL.toString());
             context.put("client", client);
             final Map<String, Object> paginationPostData = new HashMap<String, Object>();
             paginationPostData.put("context", context);
@@ -1297,16 +1329,25 @@ public class TbCmV2 extends PluginForDecrypt {
         if (totalNumberofItems != null) {
             missingVideos = totalNumberofItems.intValue() - ret.size();
         }
-        logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs | Number of possibly missing videos [due to private/offline/GEO-block]: " + missingVideos);
+        logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs | Number of possibly missing videos [due to private/offline/GEO-block or bug in plugin]: " + missingVideos);
         return ret;
     }
 
+    /**
+     * Recursive function designed to find token which is needed to alter the serverside order of any items inside channel overview tabs (of
+     * "/@username/overview").
+     */
     private Object findSortToken(final Object o, final String sortText) {
         if (o instanceof Map) {
             final Map<String, Object> entrymap = (Map<String, Object>) o;
             final String thisSortText = (String) JavaScriptEngineFactory.walkJson(entrymap, "chipCloudChipRenderer/text/simpleText");
             final String thisContinuationCommand = (String) JavaScriptEngineFactory.walkJson(entrymap, "chipCloudChipRenderer/navigationEndpoint/continuationCommand/token");
-            if (sortText.equalsIgnoreCase(thisSortText) && thisContinuationCommand != null) {
+            /*
+             * If isSelected is true, that is our current sort -> In that case we do not want to return anything if that is the sort we want
+             * as we already have it and we do not want the upper handling to just reload the list in the order we already have.
+             */
+            final Boolean isSelected = (Boolean) JavaScriptEngineFactory.walkJson(entrymap, "chipCloudChipRenderer/isSelected");
+            if (sortText.equalsIgnoreCase(thisSortText) && thisContinuationCommand != null && !Boolean.TRUE.equals(isSelected)) {
                 return thisContinuationCommand;
             }
             for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
