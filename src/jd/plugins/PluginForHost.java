@@ -1048,7 +1048,7 @@ public abstract class PluginForHost extends Plugin {
      * @param account
      * @return
      */
-    protected int getMaxSimultanDownload(DownloadLink link, final Account account) {
+    protected int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         int max;
         if (account == null) {
             max = getMaxSimultanFreeDownloadNum();

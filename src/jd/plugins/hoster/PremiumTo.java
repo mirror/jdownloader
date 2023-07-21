@@ -874,38 +874,16 @@ public class PremiumTo extends UseNet {
         return dllink;
     }
 
-    // @Override
-    // public int getMaxSimultanDownload(DownloadLink link, Account account) {
-    // if (isUsenetLink(link)) {
-    // /* 2016-07-29: psp: Lowered this from 10 to 3 RE: admin */
-    // return 3;
-    // } else {
-    // return -1;
-    // }
-    // }
-    //
-    // @Override
-    // public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
-    // if (account != null) {
-    // return true;
-    // } else {
-    // return false;
-    // }
-    // }
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         if (isUsenetLink(link)) {
             /* 2016-07-29: psp: Lowered this from 10 to 3 RE: admin */
             return 3;
         } else {
-            return 20;
+            return Integer.MAX_VALUE;
         }
     }
 
-    // @Override
-    // public int getMaxSimultanPremiumDownloadNum() {
-    // return -1;
-    // }
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account != null) {

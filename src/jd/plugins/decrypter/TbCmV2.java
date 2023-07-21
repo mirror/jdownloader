@@ -1095,6 +1095,7 @@ public class TbCmV2 extends PluginForDecrypt {
         /* Check if user wishes different sort than default */
         final PlaylistAndChannelCrawlerAddOrder addOrder = cfg.getPlaylistAndChannelCrawlerAddOrder();
         if (addOrder == PlaylistAndChannelCrawlerAddOrder.LATEST) {
+            /* 2023-07-21: Serverside default */
             userWishedSortTitle = "Latest";
         } else if (addOrder == PlaylistAndChannelCrawlerAddOrder.POPULAR) {
             userWishedSortTitle = "Popular";
