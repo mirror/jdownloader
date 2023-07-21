@@ -158,7 +158,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         COOKIE_LOGIN_ONLY {
             @Override
             public String getLabel() {
-                return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_ONLY();
+                return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_LOGIN_ONLY();
             }
 
             @Override
@@ -174,7 +174,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
 
             @Override
             public String getTooltip() {
-                return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_OPTIONAL_TOOLTIP();
+                return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_LOGIN_OPTIONAL_TOOLTIP();
             }
         };
         public static final long CACHEVERSION = Math.abs(StringUtils.join(values(), "<->").hashCode()) + Math.abs(StringUtils.join(values(), ":").hashCode()) + Math.abs(StringUtils.join(values(), "<=>").hashCode());

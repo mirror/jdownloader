@@ -38,23 +38,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.net.BCSSLSocketStreamFactory;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -85,6 +68,23 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PornHubComVideoCrawler;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.net.BCSSLSocketStreamFactory;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PornHubComVideoCrawler.class })
@@ -360,18 +360,42 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static Request getFirstPageWithAccount(final PornHubCom plg, final Account account, final String url) throws Exception {
-        if (account == null) {
-            return getPage(plg.getBrowser(), url);
-        } else {
-            synchronized (account) {
-                final boolean verifiedLogin = plg.login(account, false);
-                final Request request = getPage(plg.getBrowser(), url);
-                if (!isLoggedInHtml(plg.getBrowser())) {
-                    plg.getLogger().info("Not logged in?|VerifiedLogin:" + verifiedLogin);
-                    plg.login(account, true);
-                    return getPage(plg.getBrowser(), url);
-                } else {
+        synchronized (DEFAULT_COOKIES) {
+            final Browser br = plg.getBrowser();
+            if (account == null) {
+                while (true) {
+                    final Request request = getPage(br, url);
+                    final String accessAgeCookie[] = new Regex(request.getHtmlCode(), "setCookieAdvanced\\s*\\(\\s*'(accessAge[^']+)'\\s*,\\s*([^,]+),").getRow(0);
+                    if (accessAgeCookie != null) {
+                        if (!DEFAULT_COOKIES.containsKey(accessAgeCookie[0])) {
+                            plg.getLogger().info("Auto-Learn new accessAge cookie:" + Arrays.toString(accessAgeCookie));
+                            DEFAULT_COOKIES.put(accessAgeCookie[0], accessAgeCookie[1].trim());
+                            setDefaultCookies(br, br.getBaseURL());
+                            continue;
+                        }
+                    }
                     return request;
+                }
+            } else {
+                while (true) {
+                    final boolean verifiedLogin = plg.login(account, false);
+                    final Request request = getPage(br, url);
+                    final String accessAgeCookie[] = new Regex(request.getHtmlCode(), "setCookieAdvanced\\s*\\(\\s*'(accessAge[^']+)'\\s*,\\s*([^,]+),").getRow(0);
+                    if (accessAgeCookie != null) {
+                        if (!DEFAULT_COOKIES.containsKey(accessAgeCookie[0])) {
+                            plg.getLogger().info("Auto-Learn new accessAge cookie:" + Arrays.toString(accessAgeCookie));
+                            DEFAULT_COOKIES.put(accessAgeCookie[0], accessAgeCookie[1].trim());
+                            setDefaultCookies(br, br.getBaseURL());
+                            continue;
+                        }
+                    }
+                    if (!isLoggedInHtml(br)) {
+                        plg.getLogger().info("Not logged in?|VerifiedLogin:" + verifiedLogin);
+                        plg.login(account, true);
+                        continue;
+                    } else {
+                        return request;
+                    }
                 }
             }
         }
@@ -1217,8 +1241,8 @@ public class PornHubCom extends PluginForHost {
                     if (premiumExpired && !isPremiumDomain(br.getHost())) {
                         /**
                          * Expired pornhub premium --> It should still be a valid free account --> We might need to access a special url
-                         * which redirects us to the pornhub free mainpage and sets the cookies. </br>
-                         * 2022-06-27: Old code but let's leave it in for now as we can't know if it is still needed.
+                         * which redirects us to the pornhub free mainpage and sets the cookies. </br> 2022-06-27: Old code but let's leave
+                         * it in for now as we can't know if it is still needed.
                          */
                         logger.info("Expired premium --> Free account (?)");
                         final String pornhubMainpageCookieRedirectUrl = br.getRegex("\\'pornhubLink\\'\\s*?:\\s*?(?:\"|\\')(https?://(?:www\\.)?pornhub\\.(?:com|org)/[^<>\"\\']+)(?:\"|\\')").getMatch(0);
@@ -1271,8 +1295,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     /**
-     * Checks login and sets account-type. </br>
-     * Expects browser instance to be logged in already (cookies need to be there).
+     * Checks login and sets account-type. </br> Expects browser instance to be logged in already (cookies need to be there).
      *
      * @throws Exception
      */
@@ -1568,12 +1591,23 @@ public class PornHubCom extends PluginForHost {
         return br;
     }
 
+    private static Map<String, String> DEFAULT_COOKIES = new HashMap<String, String>();
+    static {
+        synchronized (DEFAULT_COOKIES) {
+            DEFAULT_COOKIES.put("accessAgeDisclaimerPH", "1");
+            DEFAULT_COOKIES.put("accessAgeDisclaimerUK", "1");// 2023-07-19
+            /* 2023-04-14: STATE OF UTAH WARNING */
+            DEFAULT_COOKIES.put("accessPH", "1");
+        }
+    }
+
     private static void setDefaultCookies(final Browser br, final String domain) {
         br.setCookie(domain, "cookiesBannerSeen", "1");
-        br.setCookie(domain, "accessAgeDisclaimerPH", "1");
-        br.setCookie(domain, "accessAgeDisclaimerUK", "1"); // 2023-07-19
-        /* 2023-04-14: STATE OF UTAH WARNING */
-        br.setCookie(domain, "accessPH", "1");
+        synchronized (DEFAULT_COOKIES) {
+            for (Map.Entry<String, String> defaultCookie : DEFAULT_COOKIES.entrySet()) {
+                br.setCookie(domain, defaultCookie.getKey(), defaultCookie.getValue());
+            }
+        }
     }
 
     private static void setEnglishLangCookie(final Browser br, final String domain) {
