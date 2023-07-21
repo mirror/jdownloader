@@ -1091,21 +1091,23 @@ public class TbCmV2 extends PluginForDecrypt {
         final String DELEGATED_SESSION_ID = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("DELEGATED_SESSION_ID")) : null;
         final Set<String> playListDupes = new HashSet<String>();
         Integer totalNumberofItems = null;
-        String userWishedSort = null;
+        String userWishedSortTitle = null;
         /* Check if user wishes different sort than default */
         final PlaylistAndChannelCrawlerAddOrder addOrder = cfg.getPlaylistAndChannelCrawlerAddOrder();
         if (addOrder == PlaylistAndChannelCrawlerAddOrder.LATEST) {
-            userWishedSort = "Latest";
+            userWishedSortTitle = "Latest";
         } else if (addOrder == PlaylistAndChannelCrawlerAddOrder.POPULAR) {
-            userWishedSort = "Popular";
+            userWishedSortTitle = "Popular";
         } else if (addOrder == PlaylistAndChannelCrawlerAddOrder.OLDEST) {
-            userWishedSort = "Oldest";
+            userWishedSortTitle = "Oldest";
         }
-        do {
+        String activeSort = "Untouched/Default";
+        String sortToken = null;
+        pagination: do {
             /* First try old HTML handling though by now [June 2023] all data is provided via json. */
             String nextPageToken = null;
             checkErrors(pbr);
-            final int playListDupesSizeOld = playListDupes.size();
+            final int crawledItemsSizeOld = playListDupes.size();
             boolean reachedUserDefinedMaxItemsLimit = false;
             if (!isJson) {
                 logger.info("Jumping into json handling");
@@ -1115,15 +1117,6 @@ public class TbCmV2 extends PluginForDecrypt {
             List<Map<String, Object>> varray = null;
             if (round == 0) {
                 rootMap = helper.getYtInitialData();
-                if (userWishedSort != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    // Latest, Popular, Oldest
-                    final String sortToken = (String) this.findSortToken(rootMap, userWishedSort);
-                    if (sortToken == null) {
-                        logger.info("Unable to sort by " + userWishedSort + ": Either this item is not sortable or it is already sorted in the wished order");
-                    } else {
-                        logger.info("Token for sort is: " + sortToken);
-                    }
-                }
                 Map<String, Object> playlisttab = null;
                 Map<String, Object> shortstab = null;
                 Map<String, Object> videostab = null;
@@ -1195,6 +1188,16 @@ public class TbCmV2 extends PluginForDecrypt {
                         globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_SIZE, totalNumberofItems);
                     }
                 }
+                if (userWishedSortTitle != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    /* User wishes custom sort which needs to be done serverside. */
+                    sortToken = (String) this.findSortToken(rootMap, userWishedSortTitle);
+                    if (sortToken == null) {
+                        logger.info("Unable to sort by " + userWishedSortTitle + ": Either this item is not sortable or it is already sorted in the wished order");
+                    } else {
+                        logger.info("Token for sort by " + userWishedSortTitle + " is: " + sortToken);
+                        activeSort = userWishedSortTitle;
+                    }
+                }
             } else {
                 rootMap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Map<String, Object>> onResponseReceivedActions = (List<Map<String, Object>>) rootMap.get("onResponseReceivedActions");
@@ -1205,86 +1208,95 @@ public class TbCmV2 extends PluginForDecrypt {
                     varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(lastReceivedAction, "reloadContinuationItemsCommand/continuationItems");
                 }
             }
-            if (varray == null) {
-                /* This should never happen. */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            for (final Map<String, Object> vid : varray) {
-                /* Playlist */
-                String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
-                if (id == null) {
-                    /* /@profile/videos */
-                    id = (String) JavaScriptEngineFactory.walkJson(vid, "richItemRenderer/content/videoRenderer/videoId");
-                    if (id == null) {
-                        /* Reel/Short */
-                        id = (String) JavaScriptEngineFactory.walkJson(vid, "richItemRenderer/content/reelItemRenderer/videoId");
-                    }
-                }
-                /* Typically last item (item 101) will contain the continuationToken. */
-                final String continuationToken = (String) JavaScriptEngineFactory.walkJson(vid, "continuationItemRenderer/continuationEndpoint/continuationCommand/token");
-                if (id != null) {
-                    playListDupes.add(id);
-                    ret.add(new YoutubeClipData(id, videoPositionCounter++));
-                    if (playListDupes.size() == maxItemsLimit) {
-                        reachedUserDefinedMaxItemsLimit = true;
-                        break;
-                    }
-                } else if (continuationToken != null) {
-                    /* Typically last item contains token for next page */
-                    nextPageToken = continuationToken;
-                } else {
-                    logger.info("Found unknown playlist item: " + vid);
-                }
-            }
-            /* Check for some abort conditions */
-            final int numberofNewItemsThisRun = playListDupes.size() - playListDupesSizeOld;
-            logger.info("Crawled page " + round + " | Found items on this page [== pagination_size]: " + numberofNewItemsThisRun + " | Found items so far: " + playListDupes.size() + "/" + totalNumberofItems + " | nextPageToken = " + nextPageToken + " | Max items limit: " + maxItemsLimit);
-            if (this.isAbort()) {
-                throw new InterruptedException();
-            } else if (reachedUserDefinedMaxItemsLimit) {
-                logger.info("Stopping because: Reached max items limit of " + maxItemsLimit);
-                break;
-            } else if (numberofNewItemsThisRun == 0) {
-                logger.info("Stopping because: No new videoIDs found on current page");
-                break;
-            } else if (nextPageToken == null) {
-                logger.info("Stopping because: No next page found");
-                break;
+            if (sortToken != null && round == 0) {
+                logger.info("Round 0 goes into sorting list via sort token: " + sortToken);
+                nextPageToken = sortToken;
             } else {
-                /* Try to continue to next page */
-                if (StringUtils.isEmpty(INNERTUBE_CLIENT_NAME) || StringUtils.isEmpty(INNERTUBE_API_KEY) || StringUtils.isEmpty(INNERTUBE_CLIENT_VERSION)) {
+                if (varray == null) {
                     /* This should never happen. */
-                    logger.info("Stopping because: Pagination is broken due to missing 'INNERTUBE' variable");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                for (final Map<String, Object> vid : varray) {
+                    /* Playlist */
+                    String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
+                    if (id == null) {
+                        /* /@profile/videos */
+                        id = (String) JavaScriptEngineFactory.walkJson(vid, "richItemRenderer/content/videoRenderer/videoId");
+                        if (id == null) {
+                            /* Reel/Short */
+                            id = (String) JavaScriptEngineFactory.walkJson(vid, "richItemRenderer/content/reelItemRenderer/videoId");
+                        }
+                    }
+                    /* Typically last item (item 101) will contain the continuationToken. */
+                    final String continuationToken = (String) JavaScriptEngineFactory.walkJson(vid, "continuationItemRenderer/continuationEndpoint/continuationCommand/token");
+                    if (id != null) {
+                        if (!playListDupes.add(id)) {
+                            /* Additional fail-safe: This should never happen / not be needed. */
+                            logger.info("Stopping because: Found dupe");
+                            break pagination;
+                        }
+                        ret.add(new YoutubeClipData(id, videoPositionCounter++));
+                        if (playListDupes.size() == maxItemsLimit) {
+                            reachedUserDefinedMaxItemsLimit = true;
+                            break;
+                        }
+                    } else if (continuationToken != null) {
+                        /* Typically last item contains token for next page */
+                        nextPageToken = continuationToken;
+                    } else {
+                        logger.info("Found unknown playlist item: " + vid);
+                    }
+                }
+                /* Check for some abort conditions */
+                final int numberofNewItemsThisRun = playListDupes.size() - crawledItemsSizeOld;
+                logger.info("Crawled page " + round + " | Found items on this page [== pagination_size]: " + numberofNewItemsThisRun + " | Found items so far: " + playListDupes.size() + "/" + totalNumberofItems + " | nextPageToken = " + nextPageToken + " | Max items limit: " + maxItemsLimit + " | activeSort: " + activeSort);
+                if (this.isAbort()) {
+                    logger.info("Stopping because: Aborted by user");
+                    throw new InterruptedException();
+                } else if (reachedUserDefinedMaxItemsLimit) {
+                    logger.info("Stopping because: Reached max items limit of " + maxItemsLimit);
+                    break;
+                } else if (numberofNewItemsThisRun == 0) {
+                    logger.info("Stopping because: No new videoIDs found on current page");
+                    break;
+                } else if (nextPageToken == null) {
+                    logger.info("Stopping because: No next page found");
                     break;
                 }
-                final Map<String, Object> context = new HashMap<String, Object>();
-                final Map<String, Object> client = new HashMap<String, Object>();
-                /* Field "visitorData" is required for e.g. /@profile/shorts" but not for "real" playlists.yin */
-                String visitorData = ytConfigData != null ? (String) ytConfigData.get("visitorData") : null;
-                if (visitorData != null) {
-                    client.put("visitorData", visitorData);
-                }
-                client.put("clientName", INNERTUBE_CLIENT_NAME);
-                client.put("clientVersion", INNERTUBE_CLIENT_VERSION);
-                client.put("originalUrl", originalURL);
-                context.put("client", client);
-                final Map<String, Object> paginationPostData = new HashMap<String, Object>();
-                paginationPostData.put("context", context);
-                paginationPostData.put("continuation", nextPageToken);
-                round = antiDdosSleep(round);
-                /* Set headers on every run as some tokens (Authorization header!) contain timestamps so they can expire. */
-                prepBrowserWebAPI(br, helper.getAccountLoggedIn());
-                if (DELEGATED_SESSION_ID != null) {
-                    br.getHeaders().put("X-Goog-Pageid", DELEGATED_SESSION_ID);
-                }
-                br.postPageRaw("/youtubei/v1/browse?key=" + INNERTUBE_API_KEY + "&prettyPrint=false", JSonStorage.serializeToJson(paginationPostData));
             }
+            /* Try to continue to next page */
+            if (StringUtils.isEmpty(INNERTUBE_CLIENT_NAME) || StringUtils.isEmpty(INNERTUBE_API_KEY) || StringUtils.isEmpty(INNERTUBE_CLIENT_VERSION)) {
+                /* This should never happen. */
+                logger.info("Stopping because: Pagination is broken due to missing 'INNERTUBE' variable");
+                break;
+            }
+            final Map<String, Object> context = new HashMap<String, Object>();
+            final Map<String, Object> client = new HashMap<String, Object>();
+            /* Field "visitorData" is required for e.g. /@profile/shorts" but not for "real" playlists.yin */
+            String visitorData = ytConfigData != null ? (String) ytConfigData.get("visitorData") : null;
+            if (visitorData != null) {
+                client.put("visitorData", visitorData);
+            }
+            client.put("clientName", INNERTUBE_CLIENT_NAME);
+            client.put("clientVersion", INNERTUBE_CLIENT_VERSION);
+            client.put("originalUrl", originalURL);
+            context.put("client", client);
+            final Map<String, Object> paginationPostData = new HashMap<String, Object>();
+            paginationPostData.put("context", context);
+            paginationPostData.put("continuation", nextPageToken);
+            round = antiDdosSleep(round);
+            /* Set headers on every run as some tokens (Authorization header!) contain timestamps so they can expire. */
+            prepBrowserWebAPI(br, helper.getAccountLoggedIn());
+            if (DELEGATED_SESSION_ID != null) {
+                br.getHeaders().put("X-Goog-Pageid", DELEGATED_SESSION_ID);
+            }
+            br.postPageRaw("/youtubei/v1/browse?key=" + INNERTUBE_API_KEY + "&prettyPrint=false", JSonStorage.serializeToJson(paginationPostData));
         } while (true);
         int missingVideos = 0;
         if (totalNumberofItems != null) {
             missingVideos = totalNumberofItems.intValue() - ret.size();
         }
-        logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs | Number of possibly missing videos [due to private/offrline/GEO-block]: " + missingVideos);
+        logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs | Number of possibly missing videos [due to private/offline/GEO-block]: " + missingVideos);
         return ret;
     }
 

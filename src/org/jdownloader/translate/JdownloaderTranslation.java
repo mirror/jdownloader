@@ -594,7 +594,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Popular" })
     String YoutubeDash_ProfilePlaylistCrawlerAddOrderPopular();
 
-    @Default(lngs = { "en" }, values = { "Inverted (old to new)" })
+    @Default(lngs = { "en" }, values = { "Oldest (old to new)" })
     String YoutubeDash_ProfilePlaylistCrawlerAddOrderOldest();
 
     @Default(lngs = { "en" }, values = { "Media Type (Video, Audio, Image, Subtitles, ..." })
