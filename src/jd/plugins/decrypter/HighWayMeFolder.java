@@ -38,7 +38,7 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> crawledItems = super.decryptIt(param, progress);
-        if (param.getCryptedUrl().matches("^https?://(?:torrentarchiv|torrent)\\.high-way\\.me/dlt/[a-z0-9]+/$")) {
+        if (param.getCryptedUrl().matches("(?i)^https?://(?:torrentarchiv|torrent)\\.high-way\\.me/dlt/[a-z0-9]+/$")) {
             /*
              * Root of the torrent -> Can sometimes contain one single .zip file which contains all items again -> Filter that to avoid
              * downloading everything twice!
@@ -71,7 +71,7 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
 
     @Override
     protected String getCurrentDirectoryPath(final Browser br) {
-        String path = br.getRegex("<(?:title|h1)>Index of (/[^<]+)</(?:title|h1)>").getMatch(0);
+        String path = br.getRegex("(?i)<(?:title|h1)>Index of (/[^<]+)</(?:title|h1)>").getMatch(0);
         if (path == null) {
             return null;
         } else {
@@ -79,7 +79,7 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
                 path = Encoding.htmlDecode(path);
             }
             /* Remove internal base path as it's not required for the user. */
-            final String removeThis = new Regex(path, "^(/torrent/([a-f0-9]{40}|[a-f0-9]{64}))/").getMatch(0);
+            final String removeThis = new Regex(path, "(?i)^(/torrent/([a-f0-9]{40}|[a-f0-9]{64}))/").getMatch(0);
             if (removeThis != null) {
                 path = path.replaceFirst(removeThis, "");
             }

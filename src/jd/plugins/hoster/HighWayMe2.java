@@ -62,7 +62,7 @@ public class HighWayMe2 extends HighWayCore {
     }
 
     @Override
-    protected String getWebsiteBase() {
+    public String getWebsiteBase() {
         return "https://" + this.getHost() + "/";
     }
 
