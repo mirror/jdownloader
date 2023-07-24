@@ -20,6 +20,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -43,13 +50,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kink.com" }, urls = { "https?://(?:www\\.)?kink.com/shoot/(\\d+)" })
 public class KinkCom extends PluginForHost {
@@ -297,6 +297,7 @@ public class KinkCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (userCookies != null) {
                     if (checkAndSaveCookies(br, userCookies, account)) {
+                        /* Cookies are valid. */
                         return;
                     } else {
                         if (account.hasEverBeenValid()) {
@@ -308,6 +309,7 @@ public class KinkCom extends PluginForHost {
                 }
                 if (cookies != null) {
                     if (checkAndSaveCookies(br, cookies, account)) {
+                        /* Cookies are valid. */
                         return;
                     }
                 }
@@ -352,12 +354,12 @@ public class KinkCom extends PluginForHost {
 
     private boolean checkAndSaveCookies(final Browser br, final Cookies cookies, final Account account) throws IOException {
         logger.info("Attempting cookie login");
-        this.br.setCookies(this.getHost(), cookies);
+        br.setCookies(this.getHost(), cookies);
         br.getPage("https://www." + this.getHost() + "/my/billing");
         if (this.isLoggedin(br)) {
             logger.info("Cookie login successful");
             /* Refresh cookie timestamp */
-            account.saveCookies(br.getCookies(this.getHost()), "");
+            account.saveCookies(br.getCookies(br.getHost()), "");
             return true;
         } else {
             logger.info("Cookie login failed");

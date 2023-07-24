@@ -80,7 +80,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z]{2}/videos/\\d+-\\d+-[ADFK]+(/([a-z0-9\\-]+)/?)?|embeds/[a-z]{2}/\\d+-\\d+-[ADFK]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z]{2}/videos/\\d+-\\d+-[A-Z]+(/([a-z0-9\\-]+)/?)?|embeds/[a-z]{2}/\\d+-\\d+-[A-Z]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -92,25 +92,25 @@ public class ArteMediathekV3 extends PluginForDecrypt {
     private final String        PROPERTY_TITLE_AND_SUBTITLE = "title_and_subtitle";
     private final String        PROPERTY_DATE               = "date";
     private final String        PROPERTY_ORIGINAL_FILENAME  = "original_filename";
-    private final String        PROPERTY_AUDIO_CODE         = "audio_code";                                                              // ex
-                                                                                                                                         // versionCode
-                                                                                                                                         // e.g.
-                                                                                                                                         // VF,
-                                                                                                                                         // VF-STA,
-                                                                                                                                         // VA
-    private final String        PROPERTY_AUDIO_SHORT_LABEL  = "audioShortLabel";                                                         // e.g.
-                                                                                                                                         // DE,
-                                                                                                                                         // FR
-    private final String        PROPERTY_AUDIO_LABEL        = "audioLabel";                                                              // e.g.
-                                                                                                                                         // Deutsch,
-                                                                                                                                         // Französisch
+    private final String        PROPERTY_AUDIO_CODE         = "audio_code";                                                             // ex
+                                                                                                                                        // versionCode
+                                                                                                                                        // e.g.
+                                                                                                                                        // VF,
+                                                                                                                                        // VF-STA,
+                                                                                                                                        // VA
+    private final String        PROPERTY_AUDIO_SHORT_LABEL  = "audioShortLabel";                                                        // e.g.
+                                                                                                                                        // DE,
+                                                                                                                                        // FR
+    private final String        PROPERTY_AUDIO_LABEL        = "audioLabel";                                                             // e.g.
+                                                                                                                                        // Deutsch,
+                                                                                                                                        // Französisch
     private final String        PROPERTY_WIDTH              = "width";
     private final String        PROPERTY_HEIGHT             = "height";
     private final String        PROPERTY_BITRATE            = "bitrate";
     private final String        PROPERTY_PLATFORM           = "platform";
     private final String        PROPERTY_TYPE               = "type";
-    private final String        TYPE_NORMAL                 = "https?://[^/]+/([a-z]{2})/videos/(\\d+-\\d+-[ADFK]+)(/([a-z0-9\\-]+)/?)?";
-    private final String        TYPE_EMBED                  = "https?://[^/]+/embeds/([a-z]{2})/(\\d+-\\d+-[ADFK]+)";
+    private final String        TYPE_NORMAL                 = "https?://[^/]+/([a-z]{2})/videos/(\\d+-\\d+-[A-Z]+)(/([a-z0-9\\-]+)/?)?";
+    private final String        TYPE_EMBED                  = "https?://[^/]+/embeds/([a-z]{2})/(\\d+-\\d+-[A-Z]+)";
 
     private static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("Authorization", "Bearer Nzc1Yjc1ZjJkYjk1NWFhN2I2MWEwMmRlMzAzNjI5NmU3NWU3ODg4ODJjOWMxNTMxYzEzZGRjYjg2ZGE4MmIwOA");
@@ -354,7 +354,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
                 link.setProperty(PROPERTY_PLATFORM, platform);
                 link.setProperty(PROPERTY_ORIGINAL_FILENAME, videoStream.get("filename"));
                 final VersionInfo versionInfo = parseVersionInfo(audioCode);
-                /* Do not modify those linkIDs to try to keep backward compatibility! remove the -[ADFK] to be same as old vpi */
+                /* Do not modify those linkIDs to try to keep backward compatibility! remove the -[A-Z] to be same as old vpi */
                 link.setContentUrl(param.getCryptedUrl());
                 link.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, getHost());
                 link.setLinkID(getHost() + "://" + new Regex(videoID, "(\\d+-\\d+)").getMatch(0) + "/" + versionInfo.toString() + "/" + "http_" + bitrate);
@@ -482,13 +482,13 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             if (ret.size() == 1 && thumbnailFilenameMode == ThumbnailFilenameMode.AUTO) {
                 /* Only one video result --> Use same filename as that result for thumbnail. */
                 final String filenameOfTheOnlyAddedVideo = ret.get(0).getFinalFileName();
-                thumbnail.setFinalFileName(filenameOfTheOnlyAddedVideo.substring(0, filenameOfTheOnlyAddedVideo.lastIndexOf(".")) + "." + extension);
+                thumbnail.setFinalFileName(encodeUnicode(filenameOfTheOnlyAddedVideo.substring(0, filenameOfTheOnlyAddedVideo.lastIndexOf(".")) + "." + extension));
             } else {
                 final FilenameSchemeType filenameSchemeType = cfg.getFilenameSchemeTypeV2();
                 if (filenameSchemeType == FilenameSchemeType.ORIGINAL) {
-                    thumbnail.setFinalFileName(mainImage.get("name").toString());
+                    thumbnail.setFinalFileName(encodeUnicode(mainImage.get("name").toString()));
                 } else {
-                    thumbnail.setFinalFileName(packageName + "." + extension);
+                    thumbnail.setFinalFileName(encodeUnicode(packageName + "." + extension));
                 }
                 if (!StringUtils.isEmpty(imageCaption)) {
                     thumbnail.setComment(imageCaption);
@@ -547,7 +547,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         filename = filename.replace("*title*", link.getStringProperty(PROPERTY_TITLE));
         filename = filename.replace("*subtitle*", link.getStringProperty(PROPERTY_SUBTITLE, ""));
         filename = filename.replace("*title_and_subtitle*", link.getStringProperty(PROPERTY_TITLE_AND_SUBTITLE));
-        link.setFinalFileName(filename);
+        link.setFinalFileName(encodeUnicode(filename));
         return filename;
     }
 

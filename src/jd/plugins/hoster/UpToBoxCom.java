@@ -445,14 +445,13 @@ public class UpToBoxCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         final String directlinkproperty = this.getDirectlinkProperty(null);
-        String dllink = link.getStringProperty(directlinkproperty);
-        final boolean isFreshDirecturl;
+        final String storedDirecturl = link.getStringProperty(directlinkproperty);
+        String dllink = null;
         if (dllink != null) {
-            isFreshDirecturl = false;
             logger.info("Re-using previously generated directurl");
+            dllink = storedDirecturl;
         } else {
             /* Always check for errors here as download1 Form can be present e.g. along with a (reconnect-waittime) error. */
-            isFreshDirecturl = true;
             this.requestFileInformationAPI(link);
             handlePropertyBasedErrors(link, null);
             if (link.getBooleanProperty(PROPERTY_needs_premium, false)) {
@@ -501,9 +500,6 @@ public class UpToBoxCom extends PluginForHost {
                     checkErrorsWebsite(br, link, null);
                     dllink = getDllinkWebsite(br);
                     dlform = getWaitingTokenForm(br);
-                    if (dllink == null && dlform != null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
                 }
                 /* Save correctly entered password. */
                 if (passCode != null) {
@@ -511,7 +507,11 @@ public class UpToBoxCom extends PluginForHost {
                 }
                 if (StringUtils.isEmpty(dllink)) {
                     logger.warning("Failed to find final downloadurl");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (getWaitingTokenForm(br) != null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Free download not possible at this moment");
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
         }
@@ -519,7 +519,7 @@ public class UpToBoxCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(null));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
-            if (!isFreshDirecturl) {
+            if (storedDirecturl != null) {
                 link.removeProperty(directlinkproperty);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Old directurl expired");
             } else {
@@ -533,7 +533,7 @@ public class UpToBoxCom extends PluginForHost {
     }
 
     private String getDllinkWebsite(final Browser br) {
-        return br.getRegex("\"(https?://[^\"]+/dl/[^\"]+)\"").getMatch(0);
+        return br.getRegex("(?i)\"(https?://[^\"]+/dl/[^\"]+)\"").getMatch(0);
     }
 
     protected void checkErrorsWebsite(final Browser br, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
@@ -546,11 +546,6 @@ public class UpToBoxCom extends PluginForHost {
         final int waittimeSeconds = regexPreDownloadWaittimeSecondsWebsite(br);
         if (waittimeSeconds > WAITTIME_UPPER_LIMIT_UNTIL_RECONNECT) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittimeSeconds * 1001l);
-        }
-        final String waittimeMinutesStr = br.getRegex("(?i)class=\"red text\"[^>]*><strong>\\s*Free members only wait (\\d+) minutes before").getMatch(0);
-        if (waittimeMinutesStr != null) {
-            /* 2023-07-21 */
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waittimeMinutesStr) * 60 * 1001l);
         }
         /* Basically the same what waittimeSecondsStr does --> More complicated fallback */
         final String preciseWaittime = br.getRegex("(?i)or you can wait ([^<>\"]+)<").getMatch(0);
@@ -624,7 +619,7 @@ public class UpToBoxCom extends PluginForHost {
     }
 
     private int regexPreDownloadWaittimeSecondsWebsite(final Browser br) {
-        final String waittimeSecondsStr = br.getRegex("data-remaining-time='(\\d+)'").getMatch(0);
+        final String waittimeSecondsStr = br.getRegex("data-remaining-time=(?:'|\")(\\d+)").getMatch(0);
         if (waittimeSecondsStr != null) {
             return Integer.parseInt(waittimeSecondsStr);
         } else {

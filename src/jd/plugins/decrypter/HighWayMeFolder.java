@@ -97,4 +97,9 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
             return "/";
         }
     }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
 }

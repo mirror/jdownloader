@@ -137,4 +137,9 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
         }
         return ret;
     }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
 }
