@@ -21,6 +21,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,9 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImageVenueCom extends PluginForHost {
@@ -154,11 +154,14 @@ public class ImageVenueCom extends PluginForHost {
         }
         dllink = br.getRegex("data-toggle=\"full\">\\s*<img src=\"(https?://[^<>\"]+)\"").getMatch(0);
         if (dllink == null) {
+            /* 2023-07-24 */
+            dllink = br.getRegex("<img src=\"(https?://[^\"]+)\"[^>]*id=\"main-image\"").getMatch(0);
+        }
+        if (dllink == null) {
             if (br.containsHTML("tempval\\.focus\\(\\)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 logger.warning("Could not find finallink reference");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         String filename = br.getRegex("<title>\\s*(?:ImageVenue.com\\s*-)?\\s*(.*?)\\s*</title>").getMatch(0);
