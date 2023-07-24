@@ -766,6 +766,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         String embeddedVideoURL = new Regex(PluginJSonUtils.unescape(br.toString()), "<iframe [^>]*src=('|\")(.*?)\\1").getMatch(1);
         if (embeddedVideoURL != null) {
+            logger.info("Found embedded video: " + embeddedVideoURL);
             if (embeddedVideoURL.startsWith("//")) {
                 embeddedVideoURL = "https:" + embeddedVideoURL;
             }

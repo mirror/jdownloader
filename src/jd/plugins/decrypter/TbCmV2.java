@@ -137,7 +137,7 @@ public class TbCmV2 extends PluginForDecrypt {
         for (final String[] domains : getPluginDomains()) {
             String pattern = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/";
             pattern += "(";
-            pattern += "embed\\?v=" + VIDEO_ID_PATTERN + ".*";
+            pattern += "embed(\\?v=|/)" + VIDEO_ID_PATTERN + ".*";
             pattern += "|watch\\?v=" + VIDEO_ID_PATTERN + ".*";
             pattern += "|shorts/" + VIDEO_ID_PATTERN + ".*";
             pattern += "|(?:view_play_list|playlist)\\?(p|list)=.+";
@@ -219,6 +219,11 @@ public class TbCmV2 extends PluginForDecrypt {
      */
     private static boolean isChannelOrProfileShorts(final String url) {
         return StringUtils.endsWithCaseInsensitive(url, "/shorts");
+    }
+
+    /** Returns supported tab names from URLs e.g. "shorts" or "videos". */
+    private static String getChannelUrlTabName(final String url) {
+        return new Regex(url, "/(shorts|videos)$").getMatch(0);
     }
 
     private boolean linkCollectorContainsEntryByID(final String videoID) {
@@ -490,7 +495,7 @@ public class TbCmV2 extends PluginForDecrypt {
             }
         }
         if (videoIdsToAdd.isEmpty()) {
-            /* Playlist / Channel */
+            /* Channel/Playlist */
             if (userDefinedMaxPlaylistOrProfileItemsLimit == 0) {
                 /* This should never happen but it is a double-check left here on purpose. */
                 logger.info(logtextForUserDisabledCrawlerByLimitSetting);
@@ -552,7 +557,10 @@ public class TbCmV2 extends PluginForDecrypt {
         boolean reversePlaylistNumber = false;
         final boolean isCrawlDupeCheckEnabled = cfg.isCrawlDupeCheckEnabled();
         final Set<String> videoIDsdupeCheck = new HashSet<String>();
+        int videoidindex = -1;
         for (YoutubeClipData vid : videoIdsToAdd) {
+            videoidindex++;
+            logger.info("Processing item " + videoidindex + "/" + videoIdsToAdd.size() + " | " + vid);
             if (isCrawlDupeCheckEnabled && linkCollectorContainsEntryByID(vid.videoID)) {
                 logger.info("CrawlDupeCheck skip:" + vid.videoID);
                 continue;
@@ -1078,7 +1086,6 @@ public class TbCmV2 extends PluginForDecrypt {
                 desiredChannelTab = "Videos";
             }
         }
-        // TODO: Add better/proper check for offline/invalid channel/playlist/user.
         helper.getPage(br, userOrPlaylistURL);
         final URL originalURL = br._getURL();
         final ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
@@ -1243,8 +1250,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(lastReceivedAction, "reloadContinuationItemsCommand/continuationItems");
                 }
             }
-            final boolean canPerformPagination = !StringUtils.isEmpty(INNERTUBE_CLIENT_NAME) && !StringUtils.isEmpty(INNERTUBE_API_KEY) && !StringUtils.isEmpty(INNERTUBE_CLIENT_VERSION);
-            if (sortToken != null && round == 0 && canPerformPagination) {
+            if (sortToken != null && round == 0) {
                 logger.info("Round 0 goes into sorting list via sort token: " + sortToken);
                 nextPageToken = sortToken;
             } else {
