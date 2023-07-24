@@ -79,7 +79,7 @@ public class XHamsterCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xhamster.com", "xhamster.xxx", "xhamster.desi", "xhamster.one", "xhamster1.desi", "xhamster2.desi", "xhamster3.desi", "openxh.com", "openxh1.com", "openxh2.com", "megaxh.com", "xhvid.com", "xhbranch5.com" });
+        ret.add(new String[] { "xhamster.com", "xhamster.xxx", "xhamster.desi", "xhamster.one", "xhamster1.desi", "xhamster2.desi", "xhamster3.desi", "openxh.com", "openxh1.com", "openxh2.com", "megaxh.com", "xhvid.com", "xhbranch5.com", "xhamster.tv" });
         return ret;
     }
 
@@ -106,6 +106,8 @@ public class XHamsterCom extends PluginForHost {
         for (final String[] domains : pluginDomains) {
             /* Videos current pattern */
             String pattern = "https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/videos/[a-z0-9\\-_]+-[A-Za-z0-9]+";
+            /* E.g. xhamster.tv */
+            pattern += "|https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/video/[a-z0-9\\-]+";
             /* Embed pattern: 2020-05-08: /embed/123 = current pattern, x?embed.php = old one */
             pattern += "|https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/(embed/[A-Za-z0-9]+|x?embed\\.php\\?video=[A-Za-z0-9]+)";
             /* Movies old pattern --> Redirects to TYPE_VIDEOS_2 (or TYPE_VIDEOS_3) */
@@ -144,7 +146,7 @@ public class XHamsterCom extends PluginForHost {
     public static final String    domain_premium                         = "faphouse.com";
     public static final String    api_base_premium                       = "https://faphouse.com/api";
     private static final String   TYPE_MOVIES                            = "(?i)^https?://[^/]+/movies/(\\d+)/([^/]+)\\.html$";
-    private static final String   TYPE_VIDEOS                            = "(?i)^https?://[^/]+/videos/([A-Za-z0-9]+)$";
+    private static final String   TYPE_VIDEOS                            = "(?i)^https?://[^/]+/videos?/([A-Za-z0-9\\-]+)$";
     private static final String   TYPE_VIDEOS_2                          = "(?i)^https?://[^/]+/videos/([a-z0-9\\-_]+)-(\\d+)$";
     private static final String   TYPE_VIDEOS_3                          = "(?i)^https?://[^/]+/videos/([a-z0-9\\-_]+)-([A-Za-z0-9]+)$";
     private final String          PROPERTY_USERNAME                      = "username";
@@ -339,12 +341,12 @@ public class XHamsterCom extends PluginForHost {
             br.getPage(contentURL);
         }
         /* Check for self-embed */
-        String selfEmbeddedURL = br.getRegex("<iframe[^>]*src\\s*=\\s*\"(https?://xh\\.video/(?:[A-Za-z])/" + getFID(link) + ")\"[^>]*></iframe>").getMatch(0);
+        String selfEmbeddedURL = br.getRegex("(?i)<iframe[^>]*src\\s*=\\s*\"(https?://xh\\.video/(?:[A-Za-z])/" + getFID(link) + ")\"[^>]*></iframe>").getMatch(0);
         if (selfEmbeddedURL == null) {
-            selfEmbeddedURL = br.getRegex("<iframe[^>]*src\\s*=\\s*\"(https?://xh\\.video/(?:[A-Za-z])/[^\"]+)\"[^>]*></iframe>").getMatch(0);
+            selfEmbeddedURL = br.getRegex("(?i)<iframe[^>]*src\\s*=\\s*\"(https?://xh\\.video/(?:[A-Za-z])/[^\"]+)\"[^>]*></iframe>").getMatch(0);
         }
         if (selfEmbeddedURL != null) {
-            /* 2022-09-12: xhamster.one sometimes shows a different page and self-embeds */
+            /* 2022-09-12: Some special domains like xhamster.one / xhamster.tv show a different page and self-embeds */
             logger.info("Found self-embed: " + selfEmbeddedURL);
             br.getPage(selfEmbeddedURL);
             /* Now this may have sent us to an embed URL --> Fix that */
@@ -550,7 +552,10 @@ public class XHamsterCom extends PluginForHost {
     /** Looks for normal video URL in html code and accesses it if necessary. */
     private void embedToNormalHandling(final Browser br, final DownloadLink link) throws IOException {
         final String nonEmbedURL = findNonEmbedURL(br);
-        if (!StringUtils.equalsIgnoreCase(br.getURL(), nonEmbedURL)) {
+        if (nonEmbedURL == null) {
+            logger.warning("Failed to find nonEmbedURL -> Content offline?");
+            return;
+        } else if (!StringUtils.equalsIgnoreCase(br.getURL(), nonEmbedURL)) {
             logger.info("Found non-embed URL: Old: " + br.getURL() + " | New: " + nonEmbedURL);
             br.getPage(nonEmbedURL);
             final String realVideoID = getFID(nonEmbedURL);

@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -73,6 +74,9 @@ public class SoundclickComCrawler extends PluginForDecrypt {
         }
         final String bandID = new Regex(param.getCryptedUrl(), "(?:&|\\?)bandID=(\\d+)").getMatch(0);
         String title = br.getRegex("id=\"sclkArtist_pageHead_name\"[^>]*>([^<]+)</div>").getMatch(0);
+        if (title == null) {
+            title = HTMLSearch.searchMetaTag(br, "og:title");
+        }
         final String[] songIDs = br.getRegex("data-songid=\"(\\d+)").getColumn(0);
         if (songIDs == null || songIDs.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
