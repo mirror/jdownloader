@@ -19,12 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,6 +35,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stahomat.cz", "superload.cz" }, urls = { "https?://(?:www\\.)?stahomat\\.(?:cz|sk)/(stahnout|download)/[a-zA-Z0-9%-]+", "https?://(?:www\\.)?(superload\\.cz|superload\\.eu|superload\\.sk|superloading\\.com|stahovatelka\\.cz)/(stahnout|download)/[a-zA-Z0-9%-]+" })
 public class StahomatCzSuperloadCz extends antiDDoSForHost {
@@ -349,7 +348,8 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         postPage(br, get_api_base() + "/get-status-bar", "token=" + loginToken);
-        final Integer credits = Integer.parseInt(PluginJSonUtils.getJson(br, "credits"));
+        final String creditsString = PluginJSonUtils.getJson(br, "credits");
+        final Integer credits = (creditsString != null && creditsString.matches("\\d+")) ? Integer.parseInt(creditsString) : null;
         if (credits != null) {
             // 1000 credits = 1 GB, convert back into 1024 (Bytes)
             // String expression = "(" + credits + " / 1000) * 1073741824";
@@ -377,7 +377,7 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
             try {
                 postPage(br, page, postData + getLoginToken(account));
             } catch (final BrowserException e) {
-                if (br.getRequest().getHttpConnection().getResponseCode() == 401) {
+                if (br.getRequest() != null && br.getRequest().getHttpConnection().getResponseCode() == 401) {
                     logger.info("Request failed (401) -> Re-newing token and trying again");
                     try {
                         this.login(account);
