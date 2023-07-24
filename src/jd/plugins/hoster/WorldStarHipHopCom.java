@@ -128,7 +128,6 @@ public class WorldStarHipHopCom extends PluginForHost {
         }
         if (!StringUtils.isEmpty(filename)) {
             filename = Encoding.htmlDecode(filename).trim();
-            filename = encodeUnicode(filename);
             link.setFinalFileName(filename + ".mp4");
         }
         if (!StringUtils.isEmpty(dllink)) {

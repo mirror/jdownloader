@@ -128,7 +128,6 @@ public class WistiaCom extends PluginForHost {
         dllink = "https://embedwistia-a.akamaihd.net/deliveries/" + dllink_id + "/file.mp4";
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         if (ext != null && ext.equalsIgnoreCase("m3u8")) {
             ext = "mp4";
         }

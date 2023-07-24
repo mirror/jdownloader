@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -26,8 +28,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vine.co" }, urls = { "https?://(?:www\\.)?vine\\.co/(?!v/)[^\\s]+" })
 public class VineCoDecrypter extends PluginForDecrypt {
@@ -104,7 +104,7 @@ public class VineCoDecrypter extends PluginForDecrypt {
                 }
                 String fname;
                 if (description != null && !"".equals(description)) {
-                    fname = encodeUnicode(description);
+                    fname = description;
                 } else {
                     fname = fid;
                 }

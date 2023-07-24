@@ -66,7 +66,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/pages/(?:torrent|usenet)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/pages/(?:center|torrent|usenet)/?");
         }
         return ret.toArray(new String[0]);
     }
@@ -79,10 +79,18 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
         }
         final HighWayMe2 hosterplugin = (HighWayMe2) this.getNewPluginForHostInstance(this.getHost());
         hosterplugin.login(account, false);
+        final String categoryTorrent = "torrent";
+        final String categoryUsenet = "usenet";
         final HashSet<String> categoriesToCrawl = new HashSet<String>();
-        /* TODO: Crawl only the category selected by user / the one which is in the added URL. */
-        categoriesToCrawl.add("torrent");
-        categoriesToCrawl.add("usenet");
+        if (param.getCryptedUrl().contains(categoryTorrent)) {
+            categoriesToCrawl.add(categoryTorrent);
+        } else if (param.getCryptedUrl().contains(categoryUsenet)) {
+            categoriesToCrawl.add(categoryUsenet);
+        } else {
+            /* No specific category given in URL -> Crawl both */
+            categoriesToCrawl.add(categoryTorrent);
+            categoriesToCrawl.add(categoryUsenet);
+        }
         int numberofSkippedItems = 0;
         for (final String category : categoriesToCrawl) {
             br.getPage(hosterplugin.getWebsiteBase() + category + ".php?action=list&json&order=1&suche=");
@@ -127,6 +135,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                 ret.add(link);
                 distribute(link);
             }
+            logger.info("Crawled category " + category + " | Number of items crawled so far: " + ret.size());
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 return ret;

@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,9 +36,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yadi.sk" }, urls = { "https://yadi\\.sk/a/[A-Za-z0-9\\-_]+/([a-f0-9]{24})" })
 public class YandexAlbum extends PluginForHost {
@@ -119,7 +119,6 @@ public class YandexAlbum extends PluginForHost {
             /* Whatever - our link is probably offline! */
             return AvailableStatus.FALSE;
         }
-        filename = plugin.encodeUnicode(filename);
         dl.setFinalFileName(filename);
         dl.setDownloadSize(filesize);
         String dllink = null, dllinkAlt = null;

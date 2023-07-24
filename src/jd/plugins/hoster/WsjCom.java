@@ -22,6 +22,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -35,9 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wsj.com" }, urls = { "https?://(?:www\\.)?((?:wsj|barrons)\\.com/video/[^/]+/[A-F0-9]{8}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{12}\\.html|allthingsd\\.com/video/\\?video_id=[A-F0-9]{8}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{4}\\-[A-F0-9]{12})" })
 public class WsjCom extends PluginForHost {
     public WsjCom(PluginWrapper wrapper) {
@@ -50,13 +50,13 @@ public class WsjCom extends PluginForHost {
     // other:
     /*
      * E.g. HTTP- and HLS URL comparison:
-     * 
-     * 
+     *
+     *
      * http://www.wsj.com/video/mossberg-reviews-the-roku-3/3B86D721-7315-494C-BB6A-44A0B13DDAEE.html
-     * 
+     *
      * http://m.wsj.net/video/20130305/030513ptechroku/030513ptechroku_v2_ec2564k.mp4
-     * 
-     * 
+     *
+     *
      * http://wsjvod-i.akamaihd.net/i/video/20130305/030513ptechroku/030513ptechroku_v2_ec,464,174,264,664,1264,1864,2564,k.mp4.csmil/
      * master. m3u8
      */
@@ -115,7 +115,7 @@ public class WsjCom extends PluginForHost {
         dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = date_formatted + "_" + domain + "_" + encodeUnicode(filename);
+        filename = date_formatted + "_" + domain + "_" + filename;
         String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;

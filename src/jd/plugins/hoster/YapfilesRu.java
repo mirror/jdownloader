@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yapfiles.ru" }, urls = { "http://(?:www\\.)?yapfiles\\.ru/(?:show|files)/\\d+/[a-f0-9]{32}\\.(?:mp4|flv)" })
 public class YapfilesRu extends PluginForHost {
-
     public YapfilesRu(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -43,7 +41,6 @@ public class YapfilesRu extends PluginForHost {
         link.setUrlDownload(url_corrected);
         link.setContentUrl(url_corrected);
     }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -53,7 +50,6 @@ public class YapfilesRu extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
-
     private String               dllink            = null;
     private boolean              server_issues     = false;
 
@@ -95,7 +91,6 @@ public class YapfilesRu extends PluginForHost {
         dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
@@ -134,18 +129,15 @@ public class YapfilesRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

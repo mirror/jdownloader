@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -112,7 +111,6 @@ public class XyouCom extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;

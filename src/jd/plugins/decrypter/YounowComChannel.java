@@ -128,7 +128,7 @@ public class YounowComChannel extends PluginForDecrypt {
                     } else {
                         temp_filename = username + "_" + broadcastID;
                     }
-                    temp_filename = encodeUnicode(temp_filename) + ".mp4";
+                    temp_filename = temp_filename + ".mp4";
                     dl.setName(temp_filename);
                     dl.setAvailable(true);
                     dl._setFilePackage(fp);

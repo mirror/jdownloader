@@ -89,7 +89,6 @@ public class WickedsickTv extends antiDDoSForHost {
         if (filename != null) {
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
-            filename = encodeUnicode(filename);
             if (!filename.endsWith(ext)) {
                 filename += ext;
             }

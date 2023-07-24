@@ -79,7 +79,6 @@ public class XbooruCom extends PluginForHost {
         dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         String ext = getFileNameExtensionFromString(dllink, ".jpg");
         if (!filename.endsWith(ext)) {
             filename += ext;

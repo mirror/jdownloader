@@ -96,7 +96,6 @@ public class WeltDeMediathek extends PluginForHost {
         filename += organization + "_" + title;
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         /* Find downloadlink */
         try {
             final String mp4[] = br.getRegex("(https?://[^\"]*?[A-Za-z0-9_]+_(\\d{3,4})\\.mp4)").getColumn(0);

@@ -17,6 +17,12 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -25,12 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "younow.com" }, urls = { "https?://(?:www\\.)?younowdecrypted\\.com/[^/]+/\\d+" })
 public class YounowCom extends PluginForHost {
@@ -92,7 +92,7 @@ public class YounowCom extends PluginForHost {
             filename = profileUrlString + "_" + fid + " - " + broadcastTitle;
         }
         hls_master = (String) entries.get("hls");
-        filename = encodeUnicode(filename) + ".mp4";
+        filename += ".mp4";
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }

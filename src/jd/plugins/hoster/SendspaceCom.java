@@ -159,10 +159,15 @@ public class SendspaceCom extends PluginForHost {
                             logger.info("Cannot check URL because of anti-DDoS captcha");
                             return AvailableStatus.UNCHECKABLE;
                         } else {
+                            /* Handle anti bot captcha */
                             logger.info("Handling security Form");
                             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                             securityform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                             br.submitForm(securityform);
+                            if (getSecurityForm() != null) {
+                                /* This should never happen. */
+                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to pass anti bot captcha");
+                            }
                         }
                     }
                     String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);/* old */
@@ -213,7 +218,9 @@ public class SendspaceCom extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                         link.setName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-                        link.setDownloadSize(con.getLongContentLength());
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                         return AvailableStatus.TRUE;
                     } finally {
                         try {

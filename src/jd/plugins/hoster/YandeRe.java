@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -29,8 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yande.re" }, urls = { "https?://yande\\.re/post/show/(\\d+)" })
 public class YandeRe extends PluginForHost {
@@ -98,7 +98,6 @@ public class YandeRe extends PluginForHost {
         ext = getFileNameExtensionFromString(DLLINK, ".png");
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         if (!filename.endsWith(ext)) {
             filename += ext;
         }

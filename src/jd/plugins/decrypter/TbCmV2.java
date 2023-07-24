@@ -1219,6 +1219,8 @@ public class TbCmV2 extends PluginForDecrypt {
                     if (videosCountText.matches("\\d+")) {
                         totalNumberofItems = Integer.valueOf(videosCountText);
                         globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_SIZE, totalNumberofItems);
+                    } else {
+                        logger.warning("Found non-number videosCountText: " + videosCountText);
                     }
                 }
                 if (userWishedSortTitle != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
@@ -1241,7 +1243,8 @@ public class TbCmV2 extends PluginForDecrypt {
                     varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(lastReceivedAction, "reloadContinuationItemsCommand/continuationItems");
                 }
             }
-            if (sortToken != null && round == 0) {
+            final boolean canPerformPagination = !StringUtils.isEmpty(INNERTUBE_CLIENT_NAME) && !StringUtils.isEmpty(INNERTUBE_API_KEY) && !StringUtils.isEmpty(INNERTUBE_CLIENT_VERSION);
+            if (sortToken != null && round == 0 && canPerformPagination) {
                 logger.info("Round 0 goes into sorting list via sort token: " + sortToken);
                 nextPageToken = sortToken;
             } else {

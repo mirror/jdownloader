@@ -64,12 +64,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = {}, urls = {})
 public abstract class HighWayCore extends UseNet {
-    private static final String                            PATTERN_TV                             = "https?://[^/]+/onlinetv\\.php\\?id=.+";
-    private static final String                            PATTERN_DIRECT                         = "https?://[^/]+/dl(?:u|t)/(([a-z0-9]+)(?:/$|/.+))";
+    private static final String                            PATTERN_TV                             = "(?i)https?://[^/]+/onlinetv\\.php\\?id=.+";
+    private static final String                            PATTERN_DIRECT                         = "(?i)https?://[^/]+/dl(?:u|t)/(([a-z0-9]+)(?:/$|/.+))";
     private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG    = 13;
     /* Contains <host><Boolean resume possible|impossible> */
     private static Map<String, Map<String, Boolean>>       hostResumeMap                          = new HashMap<String, Map<String, Boolean>>();
@@ -204,25 +203,21 @@ public abstract class HighWayCore extends UseNet {
             br.setFollowRedirects(true);
             this.login(account, false);
             final boolean check_via_json = true;
-            String filename;
-            String filesize_str;
             if (check_via_json) {
-                final String json_url = link.getPluginPatternMatcher().replaceAll("stream=(?:0|1)", "") + "&json=1";
-                this.br.getPage(json_url);
-                final String code = PluginJSonUtils.getJsonValue(this.br, "code");
-                filename = PluginJSonUtils.getJsonValue(this.br, "name");
-                filesize_str = PluginJSonUtils.getJsonValue(this.br, "size");
-                if ("5".equals(code)) {
-                    /* Login issue */
-                    return AvailableStatus.UNCHECKABLE;
-                } else if (!"0".equals(code)) {
+                final String json_url = link.getPluginPatternMatcher().replaceAll("(?i)stream=(?:0|1)", "") + "&json=1";
+                br.getPage(json_url);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Number code = (Number) entries.get("code");
+                if (code != null && code.intValue() != 0) {
+                    /* E.g. {"code":"8","error":"ID nicht bekannt"} */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (StringUtils.isEmpty(filesize_str) || !filesize_str.matches("\\d+")) {
-                    /* This should never happen at this stage! */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                this.checkErrors(br, link, account);
+                link.setFinalFileName(entries.get("name").toString());
+                final String filesizeBytesStr = entries.get("size").toString();
+                if (filesizeBytesStr != null && filesizeBytesStr.matches("\\d+")) {
+                    link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
                 }
-                link.setDownloadSize(Long.parseLong(filesize_str));
             } else {
                 URLConnectionAdapter con = null;
                 try {
@@ -230,7 +225,11 @@ public abstract class HighWayCore extends UseNet {
                     if (!this.looksLikeDownloadableContent(con) || con.getCompleteContentLength() <= 0) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
-                        filename = getFileNameFromHeader(con);
+                        final String filename = getFileNameFromHeader(con);
+                        if (filename != null) {
+                            link.setFinalFileName(filename);
+                        }
+                        ;
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } finally {
@@ -239,9 +238,6 @@ public abstract class HighWayCore extends UseNet {
                     } catch (Throwable e) {
                     }
                 }
-            }
-            if (!StringUtils.isEmpty(filename)) {
-                link.setFinalFileName(filename);
             }
         } else {
             /* Direct-URL download. */
@@ -775,18 +771,15 @@ public abstract class HighWayCore extends UseNet {
             } else {
                 logger.info("Checking cookies");
                 this.br.getPage(this.getAPIBase() + "?logincheck");
+                /* Don't check for errors here as a failed login can trigger error dialogs which we don't want here! */
+                // this.checkErrors(this.br, account);
                 try {
-                    /* Don't check for errors here as a failed login can trigger error dialogs which we don't want here! */
-                    // this.checkErrors(this.br, account);
-                    final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                    if (getAPIErrorcode(entries) == -1) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(this.br.getCookies(this.br.getHost()), "");
-                        return;
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Cookie login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                } catch (final Exception ignore) {
+                    this.checkErrors(br, null, account);
+                    /* No exception --> Success */
+                    logger.info("Cookie login successful");
+                    account.saveCookies(this.br.getCookies(this.br.getHost()), "");
+                    return;
+                } catch (final PluginException ignore) {
                     logger.log(ignore);
                     logger.info("Cookie login failed");
                 }
@@ -859,15 +852,6 @@ public abstract class HighWayCore extends UseNet {
         }
     }
 
-    private int getAPIErrorcode(final Map<String, Object> entries) {
-        if (!entries.containsKey("error")) {
-            /* No error */
-            return -1;
-        } else {
-            return ((Number) entries.get("code")).intValue();
-        }
-    }
-
     private Map<String, Object> checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
         try {
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
@@ -884,83 +868,92 @@ public abstract class HighWayCore extends UseNet {
     }
 
     private void checkErrors(final Map<String, Object> entries, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
-        final int code = getAPIErrorcode(entries);
-        if (code == -1) {
+        final Number code = (Number) entries.get("code");
+        String msg = (String) entries.get("error");
+        if (code == null && msg == null) {
             /* No error -> We're good :) */
             return;
-        }
-        String msg = (String) entries.get("error");
-        if (StringUtils.isEmpty(msg)) {
-            /* This should never happen */
-            msg = "Unknown error";
         }
         int retrySeconds = 180;
         final Object retryInSecondsO = entries.get("retry_in_seconds");
         if (retryInSecondsO != null && (retryInSecondsO instanceof Number || retryInSecondsO.toString().matches("\\d+"))) {
             retrySeconds = Integer.parseInt(retryInSecondsO.toString());
         }
-        switch (code) {
-        case 1:
-            /* Invalid logindata */
-            this.exceptionAccountInvalid(account);
-        case 2:
-            /* Session expired (this should never happen) */
-            throw new AccountUnavailableException(msg, retrySeconds * 1000l);
-        case 3:
-            /* Not enough premium traffic available */
-            throw new AccountUnavailableException(msg, retrySeconds * 1000l);
-        case 4:
-            /* User requested too many simultaneous downloads */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
-        case 5:
-            /* Premium package expired --> Temp. deactivate account so next account-check will set correct new account status */
-            throw new AccountUnavailableException(msg, retrySeconds * 1000l);
-        case 6:
-            /* No- or no valid URL was provided (this should never happen) */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
-        case 7:
-            /* There is no case 7 (lol) */
-        case 8:
-            /* Temp. error try again later */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
-        case 9:
-            /* File not found --> Do not trust this error whenever a multihoster is answering with it */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
-        case 10:
-            /* Host is not supported or not supported for free account users */
-            getMultiHosterManagement().putError(account, this.getDownloadLink(), retrySeconds * 1000l, msg);
-        case 11:
-            /**
-             * Host (not multihost) is currently under maintenance or offline --> Disable it for some time </br>
-             * 2021-11-08: Admin asked us not to disable host right away when this error happens as it seems like this error is more rleated
-             * to single files/fileservers -> Done accordingly.
-             */
-            // mhm.putError(account, this.getDownloadLink(), retrySeconds * 1000l, msg);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
-        case 12:
-            /* Multihost itself is currently under maintenance --> Temp. disable account for some minutes */
-            throw new AccountUnavailableException(msg, retrySeconds * 1000l);
-        case 13:
-            /* Password required or sent password was wrong --> This should never happen here as upper handling should handle this! */
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-        case 14:
-            /* Host specific (= account specific) download limit has been reached --> Try file later */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
-        case 15:
-            /*
-             * Host specific download request limit has been reahed. This is basically the protection of this multihost against users trying
-             * to start a lot of downloads of limited hosts at the same time, trying to exceed the multihosts daily host specific limits.
-             */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
-        case 16:
-            /* Error, user is supposed to contact support of this multihost. */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
-        default:
-            /* Unknown/other errorcodes */
-            if (link != null) {
+        if (code != null) {
+            switch (code.intValue()) {
+            case 0:
+                /* No error */
+                return;
+            case 1:
+                /* Invalid logindata */
+                this.exceptionAccountInvalid(account);
+            case 2:
+                /* Session expired (this should never happen) */
+                throw new AccountUnavailableException(msg, retrySeconds * 1000l);
+            case 3:
+                /* Not enough premium traffic available */
+                throw new AccountUnavailableException(msg, retrySeconds * 1000l);
+            case 4:
+                /* User requested too many simultaneous downloads */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
+            case 5:
+                /* Premium package expired --> Temp. deactivate account so next account-check will set correct new account status */
+                throw new AccountUnavailableException(msg, retrySeconds * 1000l);
+            case 6:
+                /* No- or no valid URL was provided (this should never happen) */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
+            case 7:
+                /* There is no case 7 (lol) */
+            case 8:
+                /* Temp. error try again later */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
+            case 9:
+                /* File not found --> Do not trust this error whenever a multihoster is answering with it */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
+            case 10:
+                /* Host is not supported or not supported for free account users */
+                getMultiHosterManagement().putError(account, this.getDownloadLink(), retrySeconds * 1000l, msg);
+            case 11:
+                /**
+                 * Host (not multihost) is currently under maintenance or offline --> Disable it for some time </br>
+                 * 2021-11-08: Admin asked us not to disable host right away when this error happens as it seems like this error is more
+                 * rleated to single files/fileservers -> Done accordingly.
+                 */
+                // mhm.putError(account, this.getDownloadLink(), retrySeconds * 1000l, msg);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
+            case 12:
+                /* Multihost itself is currently under maintenance --> Temp. disable account for some minutes */
+                throw new AccountUnavailableException(msg, retrySeconds * 1000l);
+            case 13:
+                /* Password required or sent password was wrong --> This should never happen here as upper handling should handle this! */
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            case 14:
+                /* Host specific (= account specific) download limit has been reached --> Try file later */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
+            case 15:
+                /*
+                 * Host specific download request limit has been reahed. This is basically the protection of this multihost against users
+                 * trying to start a lot of downloads of limited hosts at the same time, trying to exceed the multihosts daily host specific
+                 * limits.
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
+            case 16:
+                /* Error, user is supposed to contact support of this multihost. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
+            default:
+                /* Unknown/other errorcodes */
+                if (link != null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
+                } else {
+                    throw new AccountUnavailableException("Unexpected error: " + msg, retrySeconds * 1000l);
+                }
+            }
+        } else {
+            /* Handle old style/old API errormessages */
+            if (msg.equalsIgnoreCase("UserOrPassInvalid")) {
+                throw new AccountInvalidException();
             } else {
-                throw new AccountUnavailableException("Unexpected error: " + msg, retrySeconds * 1000l);
+                logger.warning("Unknown/Unhandled errormessage: " + msg);
             }
         }
     }
