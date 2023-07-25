@@ -419,7 +419,6 @@ public class UdemyCom extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         if (ext == null && dllink != null && dllink.contains(".m3u8")) {
             ext = default_Extension;
         }

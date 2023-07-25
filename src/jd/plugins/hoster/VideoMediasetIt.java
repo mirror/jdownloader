@@ -128,7 +128,6 @@ public class VideoMediasetIt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename.trim());
-        filename = encodeUnicode(filename);
         date_formatted = formatDate(date);
         if (date_formatted != null) {
             filename = date_formatted + "_video_mediaset_it_" + filename;

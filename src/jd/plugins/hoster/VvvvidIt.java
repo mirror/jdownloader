@@ -62,11 +62,10 @@ public class VvvvidIt extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String filename = link.getStringProperty("filename", null);
+        String filename = link.getStringProperty("filename");
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = encodeUnicode(filename);
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }

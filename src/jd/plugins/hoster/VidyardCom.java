@@ -162,7 +162,6 @@ public class VidyardCom extends PluginForHost {
         if (!StringUtils.isEmpty(title)) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            title = encodeUnicode(title);
             link.setFinalFileName(title + ext);
         }
         if (!StringUtils.isEmpty(dllink)) {

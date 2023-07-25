@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -27,8 +29,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vine.co" }, urls = { "https?://(www\\.)?vine\\.co/v/[A-Za-z0-9]+" })
 public class VineCo extends PluginForHost {
@@ -86,7 +86,6 @@ public class VineCo extends PluginForHost {
         dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         /* Include linkid in filename to avoid false positive duplicate! */
         filename = filename + ".mp4";
         downloadLink.setFinalFileName(filename);

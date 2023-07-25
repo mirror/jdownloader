@@ -103,7 +103,6 @@ public class VideopressCom extends PluginForHost {
         dllink = (String) entries.get("original");
         title = Encoding.htmlDecode(title);
         title = title.trim();
-        title = encodeUnicode(title);
         String ext;
         if (!StringUtils.isEmpty(dllink)) {
             ext = getFileNameExtensionFromString(dllink, default_extension);
