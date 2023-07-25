@@ -18,9 +18,11 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -83,7 +85,7 @@ public class FilestoreMe extends XFileSharingProBasic {
             return 1;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return 0;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
@@ -103,5 +105,20 @@ public class FilestoreMe extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        String dllink = super.getDllink(link, account, br, src);
+        /**
+         * 2023-07-25: Small workaround: They can sometimes provide embedded PDF URLs. Those are direct-URLs and work just fine but using
+         * them will result in corrupt filenames. </br>
+         * Doing what we do here results in the upper handling using the "official download button" instead.
+         */
+        if (dllink != null && !StringUtils.containsIgnoreCase(dllink, "embedded=true")) {
+            return dllink;
+        } else {
+            return null;
+        }
     }
 }
