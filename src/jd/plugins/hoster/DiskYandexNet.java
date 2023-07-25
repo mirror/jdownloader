@@ -109,6 +109,7 @@ public class DiskYandexNet extends PluginForHost {
     public static final String   PROPERTY_LAST_URL                     = "last_url";
     public static final String   PROPERTY_MEDIA_TYPE                   = "media_type";
     public static final String   PROPERTY_ACCOUNT_ENFORCE_COOKIE_LOGIN = "enforce_cookie_login";
+    private final String         PROPERTY_ACCOUNT_USERID               = "account_userid";
     public static final String   APIV1_BASE                            = "https://cloud-api.yandex.net/v1";
     /*
      * https://tech.yandex.com/disk/api/reference/public-docpage/ 2018-08-09: API(s) seem to work fine again - in case of failure, please
@@ -166,7 +167,7 @@ public class DiskYandexNet extends PluginForHost {
 
     public AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account) throws Exception {
         br.setFollowRedirects(true);
-        getPage(APIV1_BASE + "/disk/public/resources?public_key=" + URLEncode.encodeURIComponent(this.getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
+        br.getPage(APIV1_BASE + "/disk/public/resources?public_key=" + URLEncode.encodeURIComponent(this.getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
         if (apiAvailablecheckIsOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -178,7 +179,7 @@ public class DiskYandexNet extends PluginForHost {
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account) throws Exception {
         br.setFollowRedirects(true);
-        getPage(getMainLink(link));
+        br.getPage(getMainLink(link));
         if (DiskYandexNetFolder.isOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -298,19 +299,6 @@ public class DiskYandexNet extends PluginForHost {
         }
     }
 
-    private void getPage(final String url) throws IOException {
-        getPage(this.br, url);
-    }
-
-    public static void getPage(final Browser br, final String url) throws IOException {
-        br.getPage(url);
-        /* 2017-03-30: New */
-        final String jsRedirect = br.getRegex("(https?://[^<>\"]+force_show=1[^<>\"]*?)").getMatch(0);
-        if (jsRedirect != null) {
-            br.getPage(jsRedirect);
-        }
-    }
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         handleFreeDownload(link, null);
@@ -378,7 +366,7 @@ public class DiskYandexNet extends PluginForHost {
                      * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
                      */
                     /* Free API download. */
-                    getPage(APIV1_BASE + "/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
+                    br.getPage(APIV1_BASE + "/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
                     this.handleErrorsAPI(link, account);
                     final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
                     dllink = (String) entries.get("href");
@@ -598,7 +586,7 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private String getUserID(final Account acc) {
-        return acc.getStringProperty("account_userid");
+        return acc.getStringProperty(PROPERTY_ACCOUNT_USERID);
     }
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -617,17 +605,23 @@ public class DiskYandexNet extends PluginForHost {
                 if (userCookies != null) {
                     logger.info("Attempting cookie login...");
                     this.setCookies(userCookies);
-                    if (this.checkCookies(account)) {
+                    if (!force) {
+                        /* Do not check cookies */
+                        return;
+                    }
+                    if (this.checkCookies(br, account)) {
+                        logger.info("Cookie login successful");
                         /*
                          * Set username by cookie in an attempt to get a unique username because in theory user can enter whatever he wants
                          * when doing cookie-login!
                          */
-                        final String usernameByCookie = br.getCookie(br.getURL(), "yandex_login");
+                        final String usernameByCookie = br.getCookie(br.getURL(), "yandex_login", Cookies.NOTDELETEDPATTERN);
                         if (!StringUtils.isEmpty(usernameByCookie)) {
                             account.setUser(usernameByCookie);
                         }
                         return;
                     } else {
+                        logger.info("Cookie login failed");
                         if (account.hasEverBeenValid()) {
                             throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                         } else {
@@ -638,13 +632,16 @@ public class DiskYandexNet extends PluginForHost {
                 if (cookies != null) {
                     this.setCookies(cookies);
                     if (!force) {
-                        /* Trust cookies */
-                        logger.info("Trust cookies without check");
+                        /* Do not check cookies */
                         return;
                     }
-                    if (this.checkCookies(account)) {
-                        account.saveCookies(br.getCookies(this.getHost()), "");
+                    if (this.checkCookies(br, account)) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return;
+                    } else {
+                        logger.info("Cookie login failed");
+                        br.clearCookies(null);
                     }
                 }
                 /* Check if previous login attempt failed and cookie login is enforced. */
@@ -738,16 +735,21 @@ public class DiskYandexNet extends PluginForHost {
         br.setCookies("passport.yandex.com", cookies);
     }
 
-    private boolean checkCookies(final Account account) throws IOException {
-        br.getPage("https://passport.yandex.com/profile");
-        if (br.containsHTML("mode=logout")) {
-            /* Set new cookie timestamp */
-            logger.info("Cookie login successful");
-            return true;
-        } else {
-            /* Failed - we have to perform a full login! */
-            logger.info("Cookie login failed");
-            br.clearCookies(br.getHost());
+    private boolean checkCookies(final Browser br, final Account account) throws IOException {
+        br.getPage("https://id.yandex.com/");
+        if (br.getURL().contains("passport.yandex.com") || br.getURL().contains("/auth")) {
+            return false;
+        }
+        logger.info("First check looks good, performing 2nd login check");
+        try {
+            br.getPage("https://mail.yandex.com/api/v2/serp/counters?silent");
+            if (br.getRequest().getHtmlCode().startsWith("{")) {
+                /* json response -> Looks like we're logged in */
+                return true;
+            } else {
+                return false;
+            }
+        } catch (final Exception e) {
             return false;
         }
     }
@@ -756,15 +758,17 @@ public class DiskYandexNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        if (br.getRequest() == null || !br.getURL().contains("client/disk")) {
-            getPage("/client/disk/");
-        }
+        br.getPage("https://" + getCurrentDomain() + "/client/disk/");
         /* userid is needed for some account related http requests later on. */
-        final String userID = PluginJSonUtils.getJson(br, "uid");
+        String userID = PluginJSonUtils.getJson(br, "uid");
+        if (StringUtils.isEmpty(userID)) {
+            /* 2023-07-25 */
+            userID = PluginJSonUtils.getJson(br, "_uid");
+        }
         if (StringUtils.isEmpty(userID)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        account.setProperty("account_userid", userID);
+        account.setProperty(PROPERTY_ACCOUNT_USERID, userID);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         return ai;

@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URLDecoder;
@@ -331,7 +330,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         if (param.getCryptedUrl().matches(type_yadi_sk_mail)) {
             hashWithPath = getHashFromURL(param.getCryptedUrl());
         } else if (param.getCryptedUrl().matches(type_shortURLs_d) || param.getCryptedUrl().matches(type_shortURLs_i)) {
-            getPage(param.getCryptedUrl());
+            br.getPage(param.getCryptedUrl());
             if (isOfflineWebsite(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -372,7 +371,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         int totalNumberofEntries = 0;
         final FilePackage fp = FilePackage.getInstance();
         do {
-            getPage(DiskYandexNet.APIV1_BASE + "/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(hashWithoutPath) + "&path=" + URLEncode.encodeURIComponent(internalPath));
+            br.getPage(DiskYandexNet.APIV1_BASE + "/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(hashWithoutPath) + "&path=" + URLEncode.encodeURIComponent(internalPath));
             Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
             /*
              * 2021-01-19:
@@ -555,9 +554,5 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     private void parseFilePropertiesWebsite(final DownloadLink dl, final Map<String, Object> entries) throws Exception {
         final AvailableStatus status = DiskYandexNet.parseInformationWebsiteAvailablecheckFiles(this, dl, entries);
         dl.setAvailableStatus(status);
-    }
-
-    private void getPage(final String url) throws IOException {
-        DiskYandexNet.getPage(this.br, url);
     }
 }
