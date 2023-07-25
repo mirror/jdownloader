@@ -109,6 +109,12 @@ public interface XFSConfigVideo extends XFSConfig {
     void setPreferredDownloadQuality(PreferredDownloadQuality quality);
 
     public static enum DownloadMode implements LabelInterface {
+        AUTO {
+            @Override
+            public String getLabel() {
+                return "Auto";
+            }
+        },
         ORIGINAL {
             @Override
             public String getLabel() {
@@ -124,7 +130,7 @@ public interface XFSConfigVideo extends XFSConfig {
     }
 
     @AboutConfig
-    @DefaultEnumValue("ORIGINAL")
+    @DefaultEnumValue("AUTO")
     @DescriptionForConfigEntry(text_PreferredDownloadMode)
     @Order(130)
     DownloadMode getPreferredDownloadMode();

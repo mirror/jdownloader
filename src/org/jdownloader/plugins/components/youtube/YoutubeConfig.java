@@ -322,7 +322,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     void setPlaylistAndProfileCrawlerMaxItemsLimit(int i);
 
-    public static enum PlaylistAndChannelCrawlerAddOrder implements LabelInterface {
+    public static enum ChannelCrawlerSortMode implements LabelInterface {
         AUTO {
             @Override
             public String getLabel() {
@@ -332,29 +332,29 @@ public interface YoutubeConfig extends PluginConfigInterface {
         LATEST {
             @Override
             public String getLabel() {
-                return _JDT.T.YoutubeDash_ProfilePlaylistCrawlerAddOrderLatest();
+                return _JDT.T.YoutubeDash_ChannelCrawlerSortModeLatest();
             }
         },
         POPULAR {
             @Override
             public String getLabel() {
-                return _JDT.T.YoutubeDash_ProfilePlaylistCrawlerAddOrderPopular();
+                return _JDT.T.YoutubeDash_ChannelCrawlerSortModePopular();
             }
         },
         OLDEST {
             @Override
             public String getLabel() {
-                return _JDT.T.YoutubeDash_ProfilePlaylistCrawlerAddOrderOldest();
+                return _JDT.T.YoutubeDash_ChannelCrawlerSortModeOldest();
             }
         };
     }
 
     @AboutConfig
-    @DescriptionForConfigEntry("Define in which order items of crawled channels/profiles/playlists should be added. Keep in mind that changing this may affect the stored playlist-position of each item in the end.")
+    @DescriptionForConfigEntry("Define in which order items of crawled channels should be added.")
     @DefaultEnumValue("AUTO")
-    YoutubeConfig.PlaylistAndChannelCrawlerAddOrder getPlaylistAndChannelCrawlerAddOrder();
+    YoutubeConfig.ChannelCrawlerSortMode getChannelCrawlerPreferredSortMode();
 
-    void setPlaylistAndChannelCrawlerAddOrder(YoutubeConfig.PlaylistAndChannelCrawlerAddOrder mode);
+    void setChannelCrawlerPreferredSortMode(YoutubeConfig.ChannelCrawlerSortMode sort);
 
     @AboutConfig
     @DefaultFactory(DefaultConvertSubtitleVariantMode.class)

@@ -52,9 +52,9 @@ import org.jdownloader.plugins.components.youtube.StreamCollection;
 import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
+import org.jdownloader.plugins.components.youtube.YoutubeConfig.ChannelCrawlerSortMode;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAPlaylistAction;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
-import org.jdownloader.plugins.components.youtube.YoutubeConfig.PlaylistAndChannelCrawlerAddOrder;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.ProfileCrawlMode;
 import org.jdownloader.plugins.components.youtube.YoutubeHelper;
 import org.jdownloader.plugins.components.youtube.YoutubeStreamData;
@@ -127,11 +127,6 @@ public class TbCmV2 extends PluginForDecrypt {
         return buildSupportedNames(getPluginDomains());
     }
 
-    // TODO: Remove the following commented out lines
-    // old patterns: "https?://(?:www\\.)?youtube-nocookie\\.com/embed/.+", "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+",
-    // "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|shorts/|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|c/|course\\?list=)[%A-Za-z0-9\\-_]+(.*?index=\\d+)?(.*?page=\\d+)?(.*?list=[%A-Za-z0-9\\-_]+)?(\\#variant=\\S++)?|watch_videos\\?.*?video_ids=.+",
-    // "https?://youtube\\.googleapis\\.com/(v/|user/|channel/|c/)[%A-Za-z0-9\\-_]+(\\#variant=\\S+)?",
-    // "https?://([a-z]+\\.)?youtube\\.com/@[^/]+"
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
@@ -222,7 +217,7 @@ public class TbCmV2 extends PluginForDecrypt {
     }
 
     /** Returns supported tab names from URLs e.g. "shorts" or "videos". */
-    private static String getChannelUrlTabName(final String url) {
+    private static String getChannelTabNameFromURL(final String url) {
         return new Regex(url, "/(shorts|videos)$").getMatch(0);
     }
 
@@ -494,6 +489,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
         }
+        FilePackage channelOrPlaylistPackage = null;
         if (videoIdsToAdd.isEmpty()) {
             /* Channel/Playlist */
             if (userDefinedMaxPlaylistOrProfileItemsLimit == 0) {
@@ -552,6 +548,11 @@ public class TbCmV2 extends PluginForDecrypt {
             } catch (InterruptedException e) {
                 logger.log(e);
                 return ret;
+            }
+            final boolean channelAndPlaylistCrawlerGroupingTest = true;
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && channelAndPlaylistCrawlerGroupingTest) {
+                channelOrPlaylistPackage = FilePackage.getInstance();
+                channelOrPlaylistPackage.setName("TestDevTestTest");
             }
         }
         boolean reversePlaylistNumber = false;
@@ -1057,47 +1058,194 @@ public class TbCmV2 extends PluginForDecrypt {
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
         }
         br.getHeaders().put("Accept-Charset", null);
-        final boolean isChannelOrProfileShorts = isChannelOrProfileShorts(referenceUrl);
+        boolean isChannelOrProfileShorts = isChannelOrProfileShorts(referenceUrl);
         String userOrPlaylistURL;
         String desiredChannelTab = null;
+        final String channelTabFromURL = getChannelTabNameFromURL(referenceUrl);
         // final Map<String, String> tabFallbackMapping = new HashMap<String, String>();
         // tabFallbackMapping.put("Shorts", "Videos");
         // tabFallbackMapping.put("Videos", "Shorts");
         if (playlistID != null) {
-            userOrPlaylistURL = getBaseURL() + "/playlist?list=" + playlistID;
+            userOrPlaylistURL = getPlaylistURL(playlistID);
         } else if (channelID != null) {
             /* Channel via channelID (legacy - urls containing only channelID are not common anymore) */
-            userOrPlaylistURL = getBaseURL() + "/channel/" + channelID;
-            if (isChannelOrProfileShorts) {
-                userOrPlaylistURL += "/shorts";
-                desiredChannelTab = "Shorts";
-            } else {
-                userOrPlaylistURL += "/videos";
+            if (channelTabFromURL == null) {
+                userOrPlaylistURL = getChannelURLOLD(channelID, "videos");
                 desiredChannelTab = "Videos";
+            } else {
+                userOrPlaylistURL = getChannelURLOLD(channelID, channelTabFromURL);
+                desiredChannelTab = channelTabFromURL;
             }
         } else {
             /* Channel/User */
-            userOrPlaylistURL = getBaseURL() + "/@" + userName;
-            if (isChannelOrProfileShorts) {
-                userOrPlaylistURL += "/shorts";
-                desiredChannelTab = "Shorts";
-            } else {
-                userOrPlaylistURL += "/videos";
+            if (channelTabFromURL == null) {
+                userOrPlaylistURL = getChannelURL(userName, "videos");
                 desiredChannelTab = "Videos";
+            } else {
+                userOrPlaylistURL = getChannelURL(userName, channelTabFromURL);
+                desiredChannelTab = channelTabFromURL;
             }
         }
-        helper.getPage(br, userOrPlaylistURL);
-        final URL originalURL = br._getURL();
+        URL originalURL = null;
         final ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
-        // user list it's not a playlist.... just a channel decryption. this can return incorrect information.
-        final String playListTitleHTML = extractWebsiteTitle(br);
-        if (playListTitleHTML != null) {
-            globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, Encoding.htmlDecode(playListTitleHTML).trim());
-        }
-        helper.parse();
         Map<String, Object> ytConfigData = null;
-        boolean isJson = false;
         Browser pbr = br.cloneBrowser();
+        final Set<String> playListDupes = new HashSet<String>();
+        Integer totalNumberofItems = null;
+        String userWishedSortTitle = null;
+        /* Check if user wishes different sort than default */
+        final ChannelCrawlerSortMode sortMode = cfg.getChannelCrawlerPreferredSortMode();
+        if (sortMode == ChannelCrawlerSortMode.LATEST) {
+            /* 2023-07-21: Serverside default */
+            userWishedSortTitle = "Latest";
+        } else if (sortMode == ChannelCrawlerSortMode.POPULAR) {
+            userWishedSortTitle = "Popular";
+        } else if (sortMode == ChannelCrawlerSortMode.OLDEST) {
+            userWishedSortTitle = "Oldest";
+        }
+        String activeSort = "Untouched/Default";
+        String sortToken = null;
+        short run = -1;
+        Map<String, Object> rootMap;
+        List<Map<String, Object>> varray = null;
+        do {
+            run++;
+            helper.getPage(br, userOrPlaylistURL);
+            if (originalURL == null) {
+                originalURL = br._getURL();
+            }
+            final String playListTitleHTML = extractWebsiteTitle(br);
+            if (playListTitleHTML != null) {
+                globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, Encoding.htmlDecode(playListTitleHTML).trim());
+            }
+            helper.parse();
+            rootMap = helper.getYtInitialData();
+            final List<String> availableChannelTabs = new ArrayList<String>();
+            Map<String, Object> playlisttab = null;
+            Map<String, Object> shortstab = null;
+            Map<String, Object> videostab = null;
+            ytConfigData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "responseContext/webResponseContextExtensionData/ytConfigData");
+            String videosCountText = null;
+            final List<Map<String, Object>> tabs = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnBrowseResultsRenderer/tabs");
+            if (tabs != null) {
+                for (final Map<String, Object> tab : tabs) {
+                    /* We will get this one if a real playlist is our currently opened tab. */
+                    final Map<String, Object> tabRenderer = (Map<String, Object>) tab.get("tabRenderer");
+                    final Object varrayPlaylistProbe = JavaScriptEngineFactory.walkJson(tabRenderer, "content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
+                    if (varrayPlaylistProbe != null) {
+                        /* Real playlist */
+                        playlisttab = tab;
+                        varray = (List<Map<String, Object>>) varrayPlaylistProbe;
+                        break;
+                    } else if (tabRenderer != null) {
+                        /* Channel/User */
+                        final String tabTitle = (String) tabRenderer.get("title");
+                        final Boolean selected = (Boolean) tabRenderer.get("selected");
+                        final List<Map<String, Object>> varrayTmp = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tabRenderer, "content/richGridRenderer/contents");
+                        if (tabTitle != null) {
+                            availableChannelTabs.add(tabTitle);
+                        }
+                        if ("Shorts".equalsIgnoreCase(tabTitle)) {
+                            shortstab = tab;
+                            if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
+                                varray = varrayTmp;
+                            }
+                        } else if ("Videos".equalsIgnoreCase(tabTitle)) {
+                            videostab = tab;
+                            if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
+                                varray = varrayTmp;
+                            }
+                        } else {
+                            /* Other/Unsupported tab -> Ignore */
+                        }
+                    }
+                }
+                logger.info("Available channel tabs: " + availableChannelTabs);
+                if (shortstab == null && isChannelOrProfileShorts && videostab != null && run == 0) {
+                    logger.info("User wanted shorts but channel doesn't contain shorts tab -> Fallback to Videos tab");
+                    if (channelID != null) {
+                        userOrPlaylistURL = getChannelURLOLD(userName, "videos");
+                        desiredChannelTab = "Videos";
+                    } else {
+                        /* Channel/User */
+                        userOrPlaylistURL = getChannelURL(userName, "videos");
+                        desiredChannelTab = "Videos";
+                    }
+                    continue;
+                } else if (shortstab != null && !isChannelOrProfileShorts && run == 0) {
+                    logger.info("User wanted videos but channel doesn't contain videos tab -> Fallback to shorts tab");
+                    if (channelID != null) {
+                        userOrPlaylistURL = getChannelURLOLD(userName, "shorts");
+                        desiredChannelTab = "Shorts";
+                    } else {
+                        /* Channel/User */
+                        userOrPlaylistURL = getChannelURL(userName, "shorts");
+                        desiredChannelTab = "Shorts";
+                    }
+                    continue;
+                }
+            }
+            /**
+             * This message can also contain information like "2 unavailable videos won't be displayed in this list". </br>
+             * Only mind this errormessage if we can't find any content.
+             */
+            final List<Map<String, Object>> alerts = (List<Map<String, Object>>) rootMap.get("alerts");
+            String errormessage = null;
+            /* Find last errormessage. Mostly there is one one available anyways. */
+            if (alerts != null && alerts.size() > 0) {
+                for (final Map<String, Object> alert : alerts) {
+                    final Map<String, Object> alertRenderer = (Map<String, Object>) alert.get("alertRenderer");
+                    errormessage = (String) JavaScriptEngineFactory.walkJson(alertRenderer, "text/runs/{0}/text"); // Playlist(?)
+                    if (errormessage == null) {
+                        errormessage = (String) JavaScriptEngineFactory.walkJson(alertRenderer, "text/simpleText"); // Channel
+                    }
+                }
+            }
+            if (varray == null && errormessage != null) {
+                throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "CHANNEL_OR_PLAYLIST_OFFLINE_" + originalURL.getPath(), errormessage);
+            }
+            /* Find extra information about playlist */
+            final Map<String, Object> playlistHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/playlistHeaderRenderer");
+            if (playlistHeaderRenderer != null) {
+                /* This is the better source for playlist title than html. */
+                final String playlistTitle = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "title/simpleText");
+                if (playlistTitle != null) {
+                    globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, playlistTitle);
+                }
+                videosCountText = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "numVideosText/runs/{0}/text");
+            }
+            /* Find extra information about channel */
+            if (!isChannelOrProfileShorts) {
+                final Map<String, Object> channelHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/c4TabbedHeaderRenderer");
+                if (channelHeaderRenderer != null) {
+                    videosCountText = (String) JavaScriptEngineFactory.walkJson(channelHeaderRenderer, "videosCountText/runs/{0}/text");
+                }
+            }
+            if (videosCountText != null) {
+                videosCountText = videosCountText.replaceAll("(\\.|,)", "");
+                if (videosCountText.equalsIgnoreCase("No videos") || videosCountText.equals("0")) {
+                    /* Profile with no videos at all (or empty playlist but not sure if that can even exist) */
+                    throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
+                }
+                if (videosCountText.matches("\\d+")) {
+                    totalNumberofItems = Integer.valueOf(videosCountText);
+                    globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_SIZE, totalNumberofItems);
+                } else {
+                    logger.warning("Found non-number videosCountText: " + videosCountText);
+                }
+            }
+            if (userWishedSortTitle != null) {
+                /* User wishes custom sort which needs to be done serverside. */
+                sortToken = (String) this.findSortToken(rootMap, userWishedSortTitle);
+                if (sortToken == null) {
+                    logger.info("Unable to sort by '" + userWishedSortTitle + "': Either this item is not sortable or it is already sorted in the wished order");
+                } else {
+                    logger.info("Token for sort by '" + userWishedSortTitle + "' is: " + sortToken);
+                    activeSort = userWishedSortTitle;
+                }
+            }
+            break;
+        } while (run < 1);
         int videoPositionCounter = 1;
         int round = 0;
         final String INNERTUBE_CLIENT_NAME = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_NAME")) : null;
@@ -1105,141 +1253,14 @@ public class TbCmV2 extends PluginForDecrypt {
         final String INNERTUBE_CLIENT_VERSION = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CLIENT_VERSION")) : null;
         /* Now stuff that is required when user is logged in. */
         final String DELEGATED_SESSION_ID = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("DELEGATED_SESSION_ID")) : null;
-        final Set<String> playListDupes = new HashSet<String>();
-        Integer totalNumberofItems = null;
-        String userWishedSortTitle = null;
-        /* Check if user wishes different sort than default */
-        final PlaylistAndChannelCrawlerAddOrder addOrder = cfg.getPlaylistAndChannelCrawlerAddOrder();
-        if (addOrder == PlaylistAndChannelCrawlerAddOrder.LATEST) {
-            /* 2023-07-21: Serverside default */
-            userWishedSortTitle = "Latest";
-        } else if (addOrder == PlaylistAndChannelCrawlerAddOrder.POPULAR) {
-            userWishedSortTitle = "Popular";
-        } else if (addOrder == PlaylistAndChannelCrawlerAddOrder.OLDEST) {
-            userWishedSortTitle = "Oldest";
-        }
-        String activeSort = "Untouched/Default";
-        String sortToken = null;
         pagination: do {
             /* First try old HTML handling though by now [June 2023] all data is provided via json. */
             String nextPageToken = null;
             checkErrors(pbr);
             final int crawledItemsSizeOld = playListDupes.size();
             boolean reachedUserDefinedMaxItemsLimit = false;
-            if (!isJson) {
-                logger.info("Jumping into json handling");
-                isJson = true;
-            }
-            final Map<String, Object> rootMap;
-            List<Map<String, Object>> varray = null;
             if (round == 0) {
-                rootMap = helper.getYtInitialData();
-                final List<String> availableChannelTabs = new ArrayList<String>();
-                Map<String, Object> playlisttab = null;
-                Map<String, Object> shortstab = null;
-                Map<String, Object> videostab = null;
-                ytConfigData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "responseContext/webResponseContextExtensionData/ytConfigData");
-                String videosCountText = null;
-                final List<Map<String, Object>> tabs = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnBrowseResultsRenderer/tabs");
-                if (tabs != null) {
-                    for (final Map<String, Object> tab : tabs) {
-                        /* We will get this one if a real playlist is our currently opened tab. */
-                        final Map<String, Object> tabRenderer = (Map<String, Object>) tab.get("tabRenderer");
-                        final Object varrayPlaylistProbe = JavaScriptEngineFactory.walkJson(tabRenderer, "content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
-                        if (varrayPlaylistProbe != null) {
-                            /* Real playlist */
-                            playlisttab = tab;
-                            varray = (List<Map<String, Object>>) varrayPlaylistProbe;
-                            break;
-                        } else if (tabRenderer != null) {
-                            /* Channel/User */
-                            final String tabTitle = (String) tabRenderer.get("title");
-                            final Boolean selected = (Boolean) tabRenderer.get("selected");
-                            final List<Map<String, Object>> varrayTmp = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tabRenderer, "content/richGridRenderer/contents");
-                            if (tabTitle != null) {
-                                availableChannelTabs.add(tabTitle);
-                            }
-                            if ("Shorts".equalsIgnoreCase(tabTitle)) {
-                                shortstab = tab;
-                                if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
-                                    varray = varrayTmp;
-                                }
-                            } else if ("Videos".equalsIgnoreCase(tabTitle)) {
-                                videostab = tab;
-                                if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
-                                    varray = varrayTmp;
-                                }
-                            } else {
-                                /* Other/Unsupported tab -> Ignore */
-                            }
-                        }
-                    }
-                    logger.info("Available channel tabs: " + availableChannelTabs);
-                    if (shortstab == null && isChannelOrProfileShorts && videostab != null) {
-                        logger.info("User wanted shorts but channel doesn't contain shorts tab -> Only videos is possible");
-                    } else if (shortstab != null && !isChannelOrProfileShorts) {
-                        logger.info("User wanted videos but channel doesn't contain videos tab -> Only shorts is possible");
-                    }
-                }
-                /**
-                 * This message can also contain information like "2 unavailable videos won't be displayed in this list". </br>
-                 * Only mind this errormessage if we can't find any content.
-                 */
-                final List<Map<String, Object>> alerts = (List<Map<String, Object>>) rootMap.get("alerts");
-                String errormessage = null;
-                /* Find last errormessage. Mostly there is one one available anyways. */
-                if (alerts != null && alerts.size() > 0) {
-                    for (final Map<String, Object> alert : alerts) {
-                        final Map<String, Object> alertRenderer = (Map<String, Object>) alert.get("alertRenderer");
-                        errormessage = (String) JavaScriptEngineFactory.walkJson(alertRenderer, "text/runs/{0}/text"); // Playlist(?)
-                        if (errormessage == null) {
-                            errormessage = (String) JavaScriptEngineFactory.walkJson(alertRenderer, "text/simpleText"); // Channel
-                        }
-                    }
-                }
-                if (varray == null && errormessage != null) {
-                    throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "CHANNEL_OR_PLAYLIST_OFFLINE_" + originalURL.getPath(), errormessage);
-                }
-                /* Find extra information about playlist */
-                final Map<String, Object> playlistHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/playlistHeaderRenderer");
-                if (playlistHeaderRenderer != null) {
-                    /* This is the better source for playlist title than html. */
-                    final String playlistTitle = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "title/simpleText");
-                    if (playlistTitle != null) {
-                        globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, playlistTitle);
-                    }
-                    videosCountText = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "numVideosText/runs/{0}/text");
-                }
-                /* Find extra information about channel */
-                if (!isChannelOrProfileShorts) {
-                    final Map<String, Object> channelHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/c4TabbedHeaderRenderer");
-                    if (channelHeaderRenderer != null) {
-                        videosCountText = (String) JavaScriptEngineFactory.walkJson(channelHeaderRenderer, "videosCountText/runs/{0}/text");
-                    }
-                }
-                if (videosCountText != null) {
-                    videosCountText = videosCountText.replaceAll("(\\.|,)", "");
-                    if (videosCountText.equalsIgnoreCase("No videos") || videosCountText.equals("0")) {
-                        /* Profile with no videos at all (or empty playlist but not sure if that can even exist) */
-                        throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
-                    }
-                    if (videosCountText.matches("\\d+")) {
-                        totalNumberofItems = Integer.valueOf(videosCountText);
-                        globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_SIZE, totalNumberofItems);
-                    } else {
-                        logger.warning("Found non-number videosCountText: " + videosCountText);
-                    }
-                }
-                if (userWishedSortTitle != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    /* User wishes custom sort which needs to be done serverside. */
-                    sortToken = (String) this.findSortToken(rootMap, userWishedSortTitle);
-                    if (sortToken == null) {
-                        logger.info("Unable to sort by '" + userWishedSortTitle + "': Either this item is not sortable or it is already sorted in the wished order");
-                    } else {
-                        logger.info("Token for sort by '" + userWishedSortTitle + "' is: " + sortToken);
-                        activeSort = userWishedSortTitle;
-                    }
-                }
+                /* Do nothing */
             } else {
                 rootMap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Map<String, Object>> onResponseReceivedActions = (List<Map<String, Object>>) rootMap.get("onResponseReceivedActions");
@@ -1340,6 +1361,26 @@ public class TbCmV2 extends PluginForDecrypt {
         }
         logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs | Number of possibly missing videos [due to private/offline/GEO-block or bug in plugin]: " + missingVideos);
         return ret;
+    }
+
+    private static String getPlaylistURL(final String playlistID) {
+        return getBaseURL() + "/playlist?list=" + playlistID;
+    }
+
+    private static String getChannelURLOLD(final String channelID, final String tabName) {
+        String channelURL = getBaseURL() + "/channel/" + channelID;
+        if (tabName != null) {
+            channelURL += "/" + tabName;
+        }
+        return channelURL;
+    }
+
+    private static String getChannelURL(final String userName, final String tabName) {
+        String channelURL = getBaseURL() + "/@" + userName;
+        if (tabName != null) {
+            channelURL += "/" + tabName;
+        }
+        return channelURL;
     }
 
     /**

@@ -38,7 +38,7 @@ public class FilelionsTo extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2023-07-25: null <br />
+     * captchatype-info: 2023-07-25: reCaptchaV2 (via official video download) <br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {

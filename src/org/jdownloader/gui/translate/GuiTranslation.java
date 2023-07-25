@@ -4361,8 +4361,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Profile crawl mode" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_ProfileCrawlMode();
 
-    @Default(lngs = { "en" }, values = { "Channel/Playlist crawler add-order" })
-    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_PlaylistAndChannelCrawlerAddOrder();
+    @Default(lngs = { "en" }, values = { "Channel crawler preferred sort mode" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_ChannelCrawlerPreferredSortMode();
 
     @Default(lngs = { "en" }, values = { "Profile/Playlist crawler max items limit [-1 = no limit, 0 = disable crawler]" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_PlaylistAndProfileCrawlerMaxItemsLimit();

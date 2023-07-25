@@ -589,13 +589,13 @@ public interface JdownloaderTranslation extends TranslateInterface {
     String YoutubeDash_ProfileCrawlModeVideosTab();
 
     @Default(lngs = { "en" }, values = { "Latest (new to old)" })
-    String YoutubeDash_ProfilePlaylistCrawlerAddOrderLatest();
+    String YoutubeDash_ChannelCrawlerSortModeLatest();
 
     @Default(lngs = { "en" }, values = { "Popular" })
-    String YoutubeDash_ProfilePlaylistCrawlerAddOrderPopular();
+    String YoutubeDash_ChannelCrawlerSortModePopular();
 
     @Default(lngs = { "en" }, values = { "Oldest (old to new)" })
-    String YoutubeDash_ProfilePlaylistCrawlerAddOrderOldest();
+    String YoutubeDash_ChannelCrawlerSortModeOldest();
 
     @Default(lngs = { "en" }, values = { "Media Type (Video, Audio, Image, Subtitles, ..." })
     String YoutubeDash_GroupLogic_BY_MEDIA_TYPE();
