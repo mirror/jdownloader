@@ -691,7 +691,7 @@ public abstract class HighWayCore extends UseNet {
                 final List<String> realDomainList = ai.getMultiHostSupport();
                 if (realDomainList == null || realDomainList.isEmpty()) {
                     /* Skip unsupported hosts or host plugins which don't allow multihost usage. */
-                    logger.info("Skipping host not supported by JD: " + domain);
+                    logger.info("Skipping host not supported by JD or not multihoster-supported by JD: " + domain);
                     continue;
                 }
                 final String realDomain = realDomainList.get(0);

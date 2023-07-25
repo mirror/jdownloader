@@ -16,12 +16,12 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -79,32 +79,67 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
         }
         final HighWayMe2 hosterplugin = (HighWayMe2) this.getNewPluginForHostInstance(this.getHost());
         hosterplugin.login(account, false);
-        final String categoryTorrent = "torrent";
-        final String categoryUsenet = "usenet";
-        final HashSet<String> categoriesToCrawl = new HashSet<String>();
-        if (param.getCryptedUrl().contains(categoryTorrent)) {
-            categoriesToCrawl.add(categoryTorrent);
-        } else if (param.getCryptedUrl().contains(categoryUsenet)) {
-            categoriesToCrawl.add(categoryUsenet);
+        boolean crawlTorrent = false;
+        boolean crawlUsenet = false;
+        if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "torrent")) {
+            crawlTorrent = true;
+        } else if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "usenet")) {
+            crawlUsenet = true;
         } else {
             /* No specific category given in URL -> Crawl both */
-            categoriesToCrawl.add(categoryTorrent);
-            categoriesToCrawl.add(categoryUsenet);
+            crawlTorrent = true;
+            crawlUsenet = true;
         }
         int numberofSkippedItems = 0;
-        for (final String category : categoriesToCrawl) {
-            br.getPage(hosterplugin.getWebsiteBase() + category + ".php?action=list&json&order=1&suche=");
+        torrentCrawler: if (crawlTorrent) {
+            br.getPage(hosterplugin.getWebsiteBase() + "torrent.php?action=list&json&order=1&suche=");
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            List<Map<String, Object>> items = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "arguments/usenet");
-            if (items == null) {
-                items = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "arguments/torrents");
-            }
+            final List<Map<String, Object>> items = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "arguments/torrents");
             if (items == null || items.isEmpty()) {
-                logger.info("Failed to find any items for category: " + category);
-                continue;
+                logger.info("Failed to find any items for category: torrent");
+                break torrentCrawler;
             }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(category);
+            fp.setName("Torrent");
+            for (final Map<String, Object> item : items) {
+                final String percentDownloaded = item.get("percentDone").toString();
+                final String name = item.get("name").toString();
+                // final String status = item.get("Status").toString();
+                if (!percentDownloaded.equals("100")) {
+                    logger.info("Skipping unfinished item: " + name + " | Percent: " + percentDownloaded);
+                    numberofSkippedItems++;
+                    continue;
+                }
+                final DownloadLink link = this.createDownloadlink(item.get("link").toString());
+                // final String filesizeBytesStr = (String) item.get("Size");
+                // if (filesizeBytesStr != null) {
+                // link.setDownloadSize(Long.parseLong(filesizeBytesStr));
+                // }
+                link.setName(name);
+                /*
+                 * Do not set availablestatus as we most likely got a folder containing multiple items -> Needs to be crawled via
+                 * HighWayMeFolder
+                 */
+                // link.setAvailable(true);
+                link._setFilePackage(fp);
+                ret.add(link);
+                distribute(link);
+            }
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                return ret;
+            }
+        }
+        usenetCrawler: if (crawlUsenet) {
+            br.getPage(hosterplugin.getWebsiteBase() + "usenet.php?action=list&json&order=1&suche=");
+            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final List<Map<String, Object>> items = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "arguments/usenet");
+            if (items == null || items.isEmpty()) {
+                logger.info("Failed to find any items for category: usenet");
+                break usenetCrawler;
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName("Usenet");
             for (final Map<String, Object> item : items) {
                 final String percentDownloaded = item.get("Prozent").toString();
                 final String name = item.get("Name").toString();
@@ -116,11 +151,11 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                     continue;
                 }
                 final DownloadLink link = this.createDownloadlink(item.get("link").toString());
-                if (zip.equals("1")) {
+                if (StringUtils.equals(zip, "1")) {
                     link.setName(Plugin.getCorrectOrApplyFileNameExtension(name, ".zip"));
-                    final long filesizeBytes = Long.parseLong(item.get("Size").toString());
-                    if (filesizeBytes > 0) {
-                        link.setDownloadSize(filesizeBytes);
+                    final String filesizeBytesStr = (String) item.get("Size");
+                    if (filesizeBytesStr != null) {
+                        link.setDownloadSize(Long.parseLong(filesizeBytesStr));
                     }
                     link.setAvailable(true);
                 } else {
@@ -134,11 +169,6 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                 link._setFilePackage(fp);
                 ret.add(link);
                 distribute(link);
-            }
-            logger.info("Crawled category " + category + " | Number of items crawled so far: " + ret.size());
-            if (this.isAbort()) {
-                logger.info("Stopping because: Aborted by user");
-                return ret;
             }
         }
         if (ret.isEmpty()) {

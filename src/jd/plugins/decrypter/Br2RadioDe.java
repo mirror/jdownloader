@@ -44,7 +44,7 @@ public class Br2RadioDe extends PluginForDecrypt {
                 link.setAvailable(true);
                 link.setVerifiedFileSize(Long.parseLong(asset[2]));
                 if (title != null) {
-                    link.setFinalFileName(encodeUnicode(title) + "_" + asset[0] + Plugin.getFileNameExtensionFromURL(asset[1]));
+                    link.setFinalFileName(title + "_" + asset[0] + Plugin.getFileNameExtensionFromURL(asset[1]));
                 }
                 audio.add(link);
             }
@@ -60,7 +60,7 @@ public class Br2RadioDe extends PluginForDecrypt {
             }
             if (title != null) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(encodeUnicode(title));
+                fp.setName(title);
                 fp.addLinks(audio);
             }
             return audio;

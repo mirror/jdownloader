@@ -78,8 +78,8 @@ public class BaseShareComCrawler extends PluginForDecrypt {
         String title = br.getRegex("<h2>([^<>]*?)</h2>").getMatch(0);
         String fpName = null;
         if (artist != null && title != null) {
-            artist = encodeUnicode(Encoding.htmlDecode(artist).trim());
-            title = encodeUnicode(Encoding.htmlDecode(title).trim());
+            artist = Encoding.htmlDecode(artist).trim();
+            title = Encoding.htmlDecode(title).trim();
             fpName = artist + " - " + title;
         }
         final String jstext = br.getRegex("<div id=\"content\">.*?<script>(.*?)</script>").getMatch(0);

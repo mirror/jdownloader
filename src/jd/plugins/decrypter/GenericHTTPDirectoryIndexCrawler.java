@@ -97,9 +97,12 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
             /* Either offline or not a http index */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final FilePackage fp = FilePackage.getInstance();
+        FilePackage fp = null;
         /* Set full path as packagename so users can easily see that for every package. */
-        fp.setName(path);
+        if (!path.equals("/")) {
+            fp = FilePackage.getInstance();
+            fp.setName(path);
+        }
         /* nginx (default?): Entries sometimes contain the create-date, sometimes only the filesize (for folders, only "-"). */
         String[][] filesAndFolders = br.getRegex("<a href=\"([^\"]+)\">([^>]+)</a>(?: *\\d{1,2}-[A-Za-z]{3}-\\d{4} \\d{1,2}:\\d{1,2})?[ ]+(\\d+|-)").getMatches();
         if (filesAndFolders.length > 0) {
@@ -107,20 +110,24 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
             for (final String[] finfo : filesAndFolders) {
                 final DownloadLink downloadLink = parseEntry(DirectoryListingMode.NGINX, br, finfo);
                 downloadLink.setRelativeDownloadFolderPath(path);
-                downloadLink._setFilePackage(fp);
+                if (fp != null) {
+                    downloadLink._setFilePackage(fp);
+                }
                 ret.add(downloadLink);
             }
         } else {
             /* Apache default http dir index */
             filesAndFolders = br.getRegex("<a href=\"([^\"]+)\">[^<]*</a>\\s*</td><td align=\"right\">\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}\\s*</td><td align=\"right\">[ ]*(\\d+(\\.\\d)?[A-Z]?|-)[ ]*</td>").getMatches();
-            if (filesAndFolders.length == 0) {
+            if (filesAndFolders == null || filesAndFolders.length == 0) {
                 ret.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + path, "EMPTY_FOLDER " + path));
                 return ret;
             }
             for (final String[] finfo : filesAndFolders) {
                 final DownloadLink downloadLink = parseEntry(DirectoryListingMode.APACHE, br, finfo);
                 downloadLink.setRelativeDownloadFolderPath(path);
-                downloadLink._setFilePackage(fp);
+                if (fp != null) {
+                    downloadLink._setFilePackage(fp);
+                }
                 ret.add(downloadLink);
             }
         }
