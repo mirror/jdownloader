@@ -106,8 +106,8 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static ArrayList<BrightcoveClipData> findAllQualities(final Plugin plugin, final Map<String, Object> map) {
         final ArrayList<BrightcoveClipData> media = new ArrayList<BrightcoveClipData>();
-        final String publisherName = plugin.encodeUnicode(getPublisherName(map));
-        final String title = plugin.encodeUnicode(getTitle(map));
+        final String publisherName = getPublisherName(map);
+        final String title = getTitle(map);
         final long creationDate = getCreationDate(map);
         Map<String, Object> entries = null;
         final List<Object> resource_data_list = (List) JavaScriptEngineFactory.walkJson(map, "data/programmedContent/videoPlayer/mediaDTO/renditions");

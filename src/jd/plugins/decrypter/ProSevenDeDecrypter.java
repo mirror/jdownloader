@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,9 +35,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de", "kabeleinsdoku.de" }, urls = { "https?://(?:www\\.)?prosieben\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?prosiebenmaxx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?the\\-voice\\-of\\-germany\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?kabeleins\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sat1gold\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?sixx\\.(?:de|at|ch)/.+", "https?://(?:www\\.)?kabeleinsdoku\\.(?:de|at|ch)/.+" })
 public class ProSevenDeDecrypter extends PluginForDecrypt {
@@ -123,7 +123,7 @@ public class ProSevenDeDecrypter extends PluginForDecrypt {
             }
             /* Even though the data comes from json it might be htmlencoded sometimes - let's fix that! */
             filename = Encoding.htmlDecode(filename);
-            filename = encodeUnicode(filename) + ".mp4";
+            filename = filename + ".mp4";
             final DownloadLink dl = this.createDownloadlink("http://7tvdecrypted.de/" + videoid);
             dl.setProperty("decrypter_filename", filename);
             dl.setProperty("mainlink", parameter);
