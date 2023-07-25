@@ -549,7 +549,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 logger.log(e);
                 return ret;
             }
-            final boolean channelAndPlaylistCrawlerGroupingTest = true;
+            final boolean channelAndPlaylistCrawlerGroupingTest = false;
             if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && channelAndPlaylistCrawlerGroupingTest) {
                 channelOrPlaylistPackage = FilePackage.getInstance();
                 channelOrPlaylistPackage.setName("TestDevTestTest");
