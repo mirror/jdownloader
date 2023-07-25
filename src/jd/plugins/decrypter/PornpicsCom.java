@@ -23,6 +23,7 @@ import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -66,22 +67,23 @@ public class PornpicsCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String galleryTitle = br.getRegex("<h1>([^<]+)</h1>").getMatch(0);
-        if (galleryTitle == null) {
-            /* Fallback */
+        if (galleryTitle != null) {
+            galleryTitle = Encoding.htmlDecode(galleryTitle).trim();
+        } else {
+            /* Fallback: Obtain title from added URL. */
             final String urlSlug = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
             galleryTitle = urlSlug.replace("-", " ").trim();
         }
-        String modelNamesCommaSeparated = null;
-        final String[] modelNamesList = br.getRegex("href='/\\?q=[^\"\\']+'\\s*title=\"[^\"]+\"><span>([^<]+)</span>").getColumn(0);
-        if (modelNamesList != null && modelNamesList.length > 0) {
-            modelNamesCommaSeparated = StringUtils.join(modelNamesList, ",");
+        String modelNamesCommaSeparated = br.getRegex("<div class=\"hidden suggest-2_source-list__model\"[^>]*>([^<]+)</div>").getMatch(0);
+        if (modelNamesCommaSeparated != null) {
+            modelNamesCommaSeparated = Encoding.htmlDecode(modelNamesCommaSeparated).trim();
         }
         final String[] links = br.getRegex("class='thumbwook'><a class='rel-link' href='(https?://[^<>\"\\']+)").getColumn(0);
         if (links == null || links.length == 0) {
@@ -90,14 +92,15 @@ public class PornpicsCom extends PluginForDecrypt {
         for (final String singleLink : links) {
             final DownloadLink link = createDownloadlink(singleLink);
             link.setProperty("gallerytitle", galleryTitle);
-            if (modelNamesCommaSeparated != null) {
+            if (!StringUtils.isEmpty(modelNamesCommaSeparated)) {
                 link.setProperty("models", modelNamesCommaSeparated);
             }
-            decryptedLinks.add(link);
+            link.setAvailable(true);
+            ret.add(link);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(galleryTitle);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 }

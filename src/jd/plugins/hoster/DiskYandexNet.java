@@ -247,16 +247,20 @@ public class DiskYandexNet extends PluginForHost {
          * Array of direct-URLs -> Find best quality version / original and store that URL. </br>
          * We expect this array to be sorted from best to worst.
          */
-        String directurlOriginal = null;
+        String directurlOriginal = (String) entries.get("file");
         String directurlDefault = null;
-        final List<Map<String, Object>> sizes = (List<Map<String, Object>>) entries.get("sizes");
-        for (final Map<String, Object> size : sizes) {
-            final String sizeurl = (String) size.get("url");
-            final String sizename = (String) size.get("name");
-            if (!StringUtils.isEmpty(sizeurl) && StringUtils.equalsIgnoreCase(sizename, "ORIGINAL")) {
-                directurlOriginal = sizeurl;
-            } else if (!StringUtils.isEmpty(sizeurl) && StringUtils.equalsIgnoreCase(sizename, "DEFAULT")) {
-                directurlDefault = sizeurl;
+        if (StringUtils.isEmpty(directurlOriginal)) {
+            final List<Map<String, Object>> sizes = (List<Map<String, Object>>) entries.get("sizes");
+            if (sizes != null && sizes.size() > 0) {
+                for (final Map<String, Object> size : sizes) {
+                    final String sizeurl = (String) size.get("url");
+                    final String sizename = (String) size.get("name");
+                    if (!StringUtils.isEmpty(sizeurl) && StringUtils.equalsIgnoreCase(sizename, "ORIGINAL")) {
+                        directurlOriginal = sizeurl;
+                    } else if (!StringUtils.isEmpty(sizeurl) && StringUtils.equalsIgnoreCase(sizename, "DEFAULT")) {
+                        directurlDefault = sizeurl;
+                    }
+                }
             }
         }
         /* Store for later usage. */
@@ -309,7 +313,7 @@ public class DiskYandexNet extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        doFree(link, null);
+        handleFreeDownload(link, null);
     }
 
     private static String getDirecturlProperty(final Account account) {
@@ -328,9 +332,19 @@ public class DiskYandexNet extends PluginForHost {
         }
     }
 
-    public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
+    public void handleFreeDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         final String directurlproperty = getDirecturlProperty(account);
-        final String oldDirecturl = link.getStringProperty(directurlproperty);
+        String storedDirecturl = link.getStringProperty(directurlproperty);
+        if (storedDirecturl == null) {
+            logger.info("Checking availablestatus in hope to find directurl");
+            this.requestFileInformation(link, account);
+            storedDirecturl = link.getStringProperty(directurlproperty);
+            if (storedDirecturl != null) {
+                logger.info("Found directurl via availablecheck");
+            } else {
+                logger.info("Failed to find directurl via availablecheck");
+            }
+        }
         if (!this.attemptStoredDownloadurlDownload(link, directurlproperty, FREE_RESUME, FREE_MAXCHUNKS)) {
             String dllink = null;
             if (isFileDownloadQuotaReached(link)) {
@@ -348,74 +362,62 @@ public class DiskYandexNet extends PluginForHost {
             PluginException exceptionDuringLinkcheck = null;
             try {
                 requestFileInformation(link, account);
-                if (use_api_file_free_availablecheck) {
-                    /*
-                     * 2018-08-09: Randomly found this during testing - this seems to be a good way to easily get downloadlinks PLUS via
-                     * this way, it is possible to download files which otherwise require the usage of an account e.g. errormessage
-                     * "Download limit reached. You can still save this file to your Yandex.Disk" [And then download it via own account]
-                     */
-                    dllink = PluginJSonUtils.getJson(br, "file");
-                }
             } catch (final PluginException exc) {
                 logger.info("Exception happened during availablecheck!");
                 exceptionDuringLinkcheck = exc;
             }
-            if (StringUtils.isEmpty(dllink)) {
-                /**
-                 * 2021-02-08: Workaround for error "DiskResourceDownloadLimitExceededError": API request for availablecheck will fail while
-                 * download is usually possible!
-                 */
-                try {
-                    if (use_api_file_free_download) {
-                        /**
-                         * Download API:
-                         *
-                         * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
-                         */
-                        /* Free API download. */
-                        getPage(APIV1_BASE + "/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
-                        this.handleErrorsAPI(link, account);
-                        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
-                        dllink = (String) entries.get("href");
-                    } else {
-                        if (StringUtils.isEmpty(dllink)) {
-                            /* Free website download */
-                            if (use_api_file_free_availablecheck) {
-                                this.requestFileInformationWebsite(link, account);
-                            }
-                            final String sk = getSK(this.br);
-                            if (sk == null) {
-                                logger.warning("sk in website download handling is null");
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            br.getHeaders().put("Accept", "*/*");
-                            br.getHeaders().put("Content-Type", "text/plain");
-                            br.postPageRaw("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", getRawHash(link), sk));
-                            handleErrorsFree(br);
-                            dllink = PluginJSonUtils.getJsonValue(br, "url");
-                            if (StringUtils.isEmpty(dllink)) {
-                                logger.warning("Failed to find final downloadurl");
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            /* Don't do htmldecode because the link will become invalid then */
-                            /* sure json will return url with htmlentities? */
-                            dllink = HTMLEntities.unhtmlentities(dllink);
-                        }
+            /**
+             * 2021-02-08: Workaround for error "DiskResourceDownloadLimitExceededError": API request for availablecheck will fail while
+             * download is usually possible!
+             */
+            try {
+                if (use_api_file_free_download) {
+                    /**
+                     * Download API:
+                     *
+                     * https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=public_key&path=/
+                     */
+                    /* Free API download. */
+                    getPage(APIV1_BASE + "/disk/public/resources/download?public_key=" + URLEncode.encodeURIComponent(getHashWithoutPath(link)) + "&path=" + URLEncode.encodeURIComponent(this.getPath(link)));
+                    this.handleErrorsAPI(link, account);
+                    final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
+                    dllink = (String) entries.get("href");
+                } else {
+                    /* Free website download */
+                    if (use_api_file_free_availablecheck) {
+                        this.requestFileInformationWebsite(link, account);
                     }
-                    if (StringUtils.isEmpty(dllink) && isVideo(link)) {
-                        getStreamDownloadurl(link, account);
-                    }
-                    if (StringUtils.isEmpty(dllink)) {
+                    final String sk = getSK(this.br);
+                    if (sk == null) {
+                        logger.warning("sk in website download handling is null");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                } catch (final Exception exc) {
-                    if (exceptionDuringLinkcheck != null) {
-                        logger.info("Throwing Exception that happened during linkcheck");
-                        throw exceptionDuringLinkcheck;
-                    } else {
-                        logger.info("Throwing exception that happened while trying to find final downloadurl");
-                        throw exc;
+                    br.getHeaders().put("Accept", "*/*");
+                    br.getHeaders().put("Content-Type", "text/plain");
+                    br.postPageRaw("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", getRawHash(link), sk));
+                    handleErrorsFree(br);
+                    dllink = PluginJSonUtils.getJsonValue(br, "url");
+                    if (StringUtils.isEmpty(dllink)) {
+                        logger.warning("Failed to find final downloadurl");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                    /* Don't do htmldecode because the link will become invalid then */
+                    /* sure json will return url with htmlentities? */
+                    dllink = HTMLEntities.unhtmlentities(dllink);
+                }
+                if (StringUtils.isEmpty(dllink) && isVideo(link)) {
+                    getStreamDownloadurl(link, account);
+                }
+                if (StringUtils.isEmpty(dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } catch (final Exception exc) {
+                if (exceptionDuringLinkcheck != null) {
+                    logger.info("Throwing Exception that happened during linkcheck");
+                    throw exceptionDuringLinkcheck;
+                } else {
+                    logger.info("Throwing exception that happened while trying to find final downloadurl");
+                    throw exc;
                 }
             }
             if (isHLS(dllink)) {
