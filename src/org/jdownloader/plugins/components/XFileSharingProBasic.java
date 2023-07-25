@@ -172,11 +172,12 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     protected static final String             PROPERTY_ACCOUNT_INFO_TRUST_UNLIMITED_TRAFFIC                     = "trust_unlimited_traffic";
 
     public static enum URL_TYPE {
-        SHORT,
-        NORMAL,
+        EMBED_VIDEO,
         FILE,
-        EMBED,
-        IMAGE
+        IMAGE,
+        NORMAL,
+        SHORT,
+        OFFICIAL_VIDEO_DOWNLOAD
     }
 
     @Override
@@ -592,6 +593,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      * Example: streamhide.com
      */
     protected boolean supportsShortURLs() {
+        // TODO: 2023-07-25: Change this to false by default
         return true;
     }
 
@@ -606,15 +608,15 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected boolean isEmbedURL(final DownloadLink link) {
-        return URL_TYPE.EMBED.equals(getURLType(link));
+        return URL_TYPE.EMBED_VIDEO.equals(getURLType(link));
     }
 
     protected boolean isEmbedURL(final String url) {
-        return URL_TYPE.EMBED.equals(getURLType(url));
+        return URL_TYPE.EMBED_VIDEO.equals(getURLType(url));
     }
 
     protected String buildEmbedURLPath(DownloadLink link, final String fuid) {
-        return buildURLPath(link, fuid, URL_TYPE.EMBED);
+        return buildURLPath(link, fuid, URL_TYPE.EMBED_VIDEO);
     }
 
     protected String buildNormalURLPath(DownloadLink link, final String fuid) {
@@ -635,16 +637,18 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
 
     protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
         switch (type) {
-        case EMBED:
+        case EMBED_VIDEO:
             return "/embed-" + fuid + ".html";
-        case NORMAL:
-            return "/" + fuid;
         case FILE:
             return "/file/" + fuid;
-        case SHORT:
-            return "/d/" + fuid;
         case IMAGE:
             return "/" + fuid;
+        case NORMAL:
+            return "/" + fuid;
+        case SHORT:
+            return "/d/" + fuid;
+        case OFFICIAL_VIDEO_DOWNLOAD:
+            return "/d/" + fuid;
         default:
             throw new IllegalArgumentException("Unsupported type:" + type + "|" + fuid);
         }
@@ -716,7 +720,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                      * work with the current main domain of the filehost!!
                      */
                     return URLHelper.parseLocation(new URL(protocol + urlHost), buildShortURLPath(link, fuid));
-                case EMBED:
+                case EMBED_VIDEO:
                     /*
                      * URL displayed to the user. We correct this as we do not catch the ".html" part but we don't care about the host
                      * inside this URL!
@@ -1099,7 +1103,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         }
         /* Remove some html tags - in most cases not necessary! */
         name = name.replaceAll("(</b>|<b>|\\.html)", "").trim();
-        if (this.internal_isVideohoster_enforce_video_filename(link) || this.isVideohosterEmbedHTML(br)) {
+        final URL_TYPE urltype = this.getURLType(br.getURL());
+        if (this.internal_isVideohoster_enforce_video_filename(link) || this.isVideohosterEmbedHTML(br) || URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD.equals(urltype) || URL_TYPE.EMBED_VIDEO.equals(urltype)) {
             /* For videohosts we often get ugly filenames such as 'some_videotitle.avi.mkv.mp4' --> Correct that! */
             name = this.correctOrApplyFileNameExtension(name, ".mp4");
         }
@@ -1123,12 +1128,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 return URL_TYPE.IMAGE;
             } else if (this.supportsShortURLs() && url.matches("(?i)^https?://[^/]+/d/([a-z0-9]+).*")) {
                 return URL_TYPE.SHORT;
+            } else if (url.matches("(?i)^https?://[^/]+/d/([a-z0-9]{12}).*")) {
+                return URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD;
             } else if (url.matches("(?i)^https?://[^/]+/([a-z0-9]{12}).*")) {
                 return URL_TYPE.NORMAL;
             } else if (url.matches("(?i)^https?://[^/]+/file/([a-z0-9]{12}).*")) {
                 return URL_TYPE.FILE;
             } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/embed-([a-z0-9]{12}).*") || url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/e/([a-z0-9]{12}).*")) {
-                return URL_TYPE.EMBED;
+                return URL_TYPE.EMBED_VIDEO;
             } else {
                 logger.info("Unknown URL_TYPE:" + url);
             }
@@ -1146,7 +1153,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     } else {
                         throw new IllegalArgumentException("Unsupported type:" + type + "|" + url);
                     }
-                case EMBED:
+                case EMBED_VIDEO:
                     return new Regex(new URL(url).getPath(), "/(?:embed-|e/)?([a-z0-9]{12})").getMatch(0);
                 case FILE:
                     return new Regex(new URL(url).getPath(), "/file/([a-z0-9]{12})").getMatch(0);
@@ -1232,7 +1239,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         String dllink = getDllink(link, account, br, getCorrectBR(br));
         if (StringUtils.isEmpty(dllink)) {
             final URL_TYPE type = this.getURLType(br.getURL());
-            if (type != URL_TYPE.EMBED) {
+            if (type != URL_TYPE.EMBED_VIDEO) {
                 final String embed_access = this.getMainPage(br) + this.buildEmbedURLPath(link, this.getFUIDFromURL(link));
                 getPage(br, embed_access);
                 /**
@@ -1303,6 +1310,12 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                         fileInfo[0] = new Regex(html, "Filename:?\\s*(<[^>]+>\\s*)+?([^<>\"]+)").getMatch(1);
                     }
                 }
+            }
+        }
+        if (StringUtils.isEmpty(fileInfo[0])) {
+            final String officialVideoDownloadFilename = new Regex(html, "(?i)>\\s*Download\\s*([^<]*?)\\s*</h\\d+>").getMatch(0);
+            if (officialVideoDownloadFilename != null) {
+                fileInfo[0] = officialVideoDownloadFilename;
             }
         }
         final String downloadFileTable = new Regex(html, "<h\\d+>\\s*Download\\s*File\\s*</h\\d+>\\s*<table[^>]*>(.*?)</table>").getMatch(0);
@@ -1985,8 +1998,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             videoQualityHTMLs = br.getRegex("download_video\\([^\r\t\n]+").getColumn(-1);
         }
         if (videoQualityHTMLs == null || videoQualityHTMLs.length == 0) {
-            logger.info("Failed to find any official video downloads");
-            return null;
+            /* Try new handling */
+            return getDllinkViaOfficialVideoDownloadNew(br, link, account, returnFilesize);
         }
         /*
          * Internal quality identifiers highest to lowest (inside 'download_video' String): o = original, h = high, n = normal, l=low
@@ -2130,6 +2143,122 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             logger.info("Successfully found dllink via official video download:" + dllink);
             return dllink;
         }
+    }
+
+    /** 2023-07-25:For new style XFS websites with links like /d/[a-z0-9]{12} e.g. filelions.to, streamhide.com */
+    protected String getDllinkViaOfficialVideoDownloadNew(final Browser br, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
+        if (returnFilesize) {
+            logger.info("[FilesizeMode] Trying to find official video downloads");
+        } else {
+            logger.info("[DownloadMode] Trying to find official video downloads");
+        }
+        final String[][] videoInfo = br.getRegex("href=\"(/d/[a-z0-9]{12}_[a-z]{1})\".*?<small class=\"text-muted\">\\d+x\\d+ ([^<]+)</small>").getMatches();
+        if (videoInfo == null || videoInfo.length == 0) {
+            logger.info("Failed to find any official video downloads");
+            return null;
+        }
+        /*
+         * Internal quality identifiers highest to lowest (inside 'download_video' String): o = original, h = high, n = normal, l=low
+         */
+        final HashMap<String, Integer> qualityMap = new HashMap<String, Integer>();
+        qualityMap.put("l", 20); // low
+        qualityMap.put("n", 40); // normal
+        qualityMap.put("h", 60); // high
+        qualityMap.put("o", 80); // original
+        qualityMap.put("x", 100); // download
+        long maxInternalQualityValue = 0;
+        String filesizeStrBest = null;
+        String filesizeStrSelected = null;
+        String videoURLBest = null;
+        String videoURLSelected = null;
+        final String userSelectedQualityValue = getPreferredDownloadQualityStr();
+        if (userSelectedQualityValue == null) {
+            logger.info("Trying to find highest quality for official video download");
+        } else {
+            logger.info(String.format("Trying to find user selected quality %s for official video download", userSelectedQualityValue));
+        }
+        for (final String videoInfos[] : videoInfo) {
+            final String videoURL = videoInfos[0];
+            final String filesizeStr = videoInfos[1];
+            final String videoQualityStrTmp = new Regex(videoURL, "_([a-z]{1})$").getMatch(0);
+            if (StringUtils.isEmpty(videoQualityStrTmp)) {
+                /*
+                 * Possible plugin failure but let's skip bad items. Upper handling will fallback to stream download if everything fails!
+                 */
+                logger.warning("Found unidentifyable video quality");
+                continue;
+            } else if (!qualityMap.containsKey(videoQualityStrTmp)) {
+                /*
+                 * 2020-01-18: There shouldn't be any unknown values but we should consider allowing such in the future maybe as final
+                 * fallback.
+                 */
+                logger.info("Skipping unknown quality: " + videoQualityStrTmp);
+                continue;
+            }
+            /* Look for best quality */
+            final int internalQualityValueTmp = qualityMap.get(videoQualityStrTmp);
+            if (internalQualityValueTmp > maxInternalQualityValue || videoURLBest == null) {
+                maxInternalQualityValue = internalQualityValueTmp;
+                videoURLBest = videoURL;
+                filesizeStrBest = filesizeStr;
+            }
+            if (userSelectedQualityValue != null && videoQualityStrTmp.equalsIgnoreCase(userSelectedQualityValue)) {
+                logger.info("Found user selected quality: " + userSelectedQualityValue);
+                videoURLSelected = videoURL;
+                if (filesizeStr != null) {
+                    /*
+                     * Usually, filesize for official video downloads will be given but not in all cases. It may also happen that our upper
+                     * RegEx fails e.g. for supervideo.tv.
+                     */
+                    filesizeStrSelected = filesizeStr;
+                }
+                break;
+            }
+        }
+        if (videoURLBest == null && videoURLSelected == null) {
+            logger.warning("Video selection handling failed");
+            return null;
+        }
+        final String filesizeStrChosen;
+        final String continueURL;
+        if (filesizeStrSelected == null) {
+            if (userSelectedQualityValue == null) {
+                logger.info("Returning BEST quality according to user preference");
+            } else {
+                logger.info("Returning BEST quality as fallback");
+            }
+            filesizeStrChosen = filesizeStrBest;
+            continueURL = videoURLBest;
+        } else {
+            logger.info("Returning user selected quality: " + userSelectedQualityValue);
+            filesizeStrChosen = filesizeStrSelected;
+            continueURL = videoURLSelected;
+        }
+        if (returnFilesize) {
+            /* E.g. in availablecheck */
+            return filesizeStrChosen;
+        }
+        this.getPage(br, continueURL);
+        String dllink = null;
+        final Form download1 = br.getFormByInputFieldKeyValue("op", "download_orig");
+        if (download1 != null) {
+            this.handleCaptcha(link, br, download1);
+            this.submitForm(br, download1);
+            this.checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
+        }
+        dllink = this.getDllink(link, account, br, br.toString());
+        if (StringUtils.isEmpty(dllink)) {
+            /*
+             * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
+             */
+            dllink = br.getRegex("<a href\\s*=\\s*\"(https?[^\"]+)\"[^>]*>\\s*Direct Download Link\\s*</a>").getMatch(0);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            logger.warning("Failed to find dllink via official video download");
+        } else {
+            logger.info("Successfully found dllink via official video download");
+        }
+        return dllink;
     }
 
     /**
@@ -3470,6 +3599,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         if (new Regex(html, "(?i)>\\s*Video is processing now").matches()) {
             /* E.g. '<div id="over_player_msg">Video is processing now. <br>Conversion stage: <span id='enc_pp'>...</span></div>' */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable: Video is still being encoded or broken", 10 * 60 * 1000l);
+        }
+        if (br.containsHTML("(?i)>\\s*Downloads disabled for this file")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Uploader has disabled downloads for this file");
         }
         /*
          * Errorhandling for accounts that are valid but cannot be used yet because the user has to add his mail to the account via website.

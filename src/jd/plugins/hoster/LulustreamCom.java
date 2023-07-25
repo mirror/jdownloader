@@ -193,7 +193,7 @@ public class LulustreamCom extends XFileSharingProBasic {
 
     @Override
     protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
-        if (type == URL_TYPE.EMBED) {
+        if (type == URL_TYPE.EMBED_VIDEO) {
             return "/e/" + fuid;
         } else {
             return super.buildURLPath(link, fuid, type);

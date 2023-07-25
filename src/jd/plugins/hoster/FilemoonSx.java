@@ -142,7 +142,7 @@ public class FilemoonSx extends XFileSharingProBasic {
     @Override
     protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
         switch (type) {
-        case EMBED:
+        case EMBED_VIDEO:
             return "/e/" + fuid;
         case NORMAL:
             return "/d/" + fuid;
@@ -157,7 +157,7 @@ public class FilemoonSx extends XFileSharingProBasic {
             if (url.matches("(?i)^https?://[^/]+/d/([a-z0-9]+).*")) {
                 return URL_TYPE.NORMAL;
             } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/e/([a-z0-9]{12}).*")) {
-                return URL_TYPE.EMBED;
+                return URL_TYPE.EMBED_VIDEO;
             } else {
                 logger.info("Unknown URL_TYPE:" + url);
             }

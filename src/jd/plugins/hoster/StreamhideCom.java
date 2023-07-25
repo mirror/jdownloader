@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
@@ -26,14 +25,11 @@ import org.jdownloader.plugins.components.config.XFSConfigVideoStreamhideCom;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamhideCom extends XFileSharingProBasic {
@@ -178,143 +174,6 @@ public class StreamhideCom extends XFileSharingProBasic {
             }
         }
         return status;
-    }
-
-    @Override
-    public String[] scanInfo(final String html, final String[] fileInfo) {
-        super.scanInfo(html, fileInfo);
-        final String betterFilename = new Regex(html, "(?i)>\\s*Download\\s*([^<]*?)\\s*</h\\d+>").getMatch(0);
-        if (betterFilename != null) {
-            fileInfo[0] = betterFilename;
-        }
-        return fileInfo;
-    }
-
-    @Override
-    protected String getDllinkViaOfficialVideoDownload(final Browser br, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
-        if (returnFilesize) {
-            logger.info("[FilesizeMode] Trying to find official video downloads");
-        } else {
-            logger.info("[DownloadMode] Trying to find official video downloads");
-        }
-        final String[][] videoInfo = br.getRegex("href=\"(/d/[a-z0-9]{12}_[a-z]{1})\".*?<small class=\"text-muted\">\\d+x\\d+ ([^<]+)</small>").getMatches();
-        if (videoInfo == null || videoInfo.length == 0) {
-            logger.info("Failed to find any official video downloads");
-            return null;
-        }
-        /*
-         * Internal quality identifiers highest to lowest (inside 'download_video' String): o = original, h = high, n = normal, l=low
-         */
-        final HashMap<String, Integer> qualityMap = new HashMap<String, Integer>();
-        qualityMap.put("l", 20); // low
-        qualityMap.put("n", 40); // normal
-        qualityMap.put("h", 60); // high
-        qualityMap.put("o", 80); // original
-        qualityMap.put("x", 100); // download
-        long maxInternalQualityValue = 0;
-        String filesizeStrBest = null;
-        String filesizeStrSelected = null;
-        String videoURLBest = null;
-        String videoURLSelected = null;
-        final String userSelectedQualityValue = getPreferredDownloadQualityStr();
-        if (userSelectedQualityValue == null) {
-            logger.info("Trying to find highest quality for official video download");
-        } else {
-            logger.info(String.format("Trying to find user selected quality %s for official video download", userSelectedQualityValue));
-        }
-        for (final String videoInfos[] : videoInfo) {
-            final String videoURL = videoInfos[0];
-            final String filesizeStr = videoInfos[1];
-            final String videoQualityStrTmp = new Regex(videoURL, "_([a-z]{1})$").getMatch(0);
-            if (StringUtils.isEmpty(videoQualityStrTmp)) {
-                /*
-                 * Possible plugin failure but let's skip bad items. Upper handling will fallback to stream download if everything fails!
-                 */
-                logger.warning("Found unidentifyable video quality");
-                continue;
-            } else if (!qualityMap.containsKey(videoQualityStrTmp)) {
-                /*
-                 * 2020-01-18: There shouldn't be any unknown values but we should consider allowing such in the future maybe as final
-                 * fallback.
-                 */
-                logger.info("Skipping unknown quality: " + videoQualityStrTmp);
-                continue;
-            }
-            /* Look for best quality */
-            final int internalQualityValueTmp = qualityMap.get(videoQualityStrTmp);
-            if (internalQualityValueTmp > maxInternalQualityValue || videoURLBest == null) {
-                maxInternalQualityValue = internalQualityValueTmp;
-                videoURLBest = videoURL;
-                filesizeStrBest = filesizeStr;
-            }
-            if (userSelectedQualityValue != null && videoQualityStrTmp.equalsIgnoreCase(userSelectedQualityValue)) {
-                logger.info("Found user selected quality: " + userSelectedQualityValue);
-                videoURLSelected = videoURL;
-                if (filesizeStr != null) {
-                    /*
-                     * Usually, filesize for official video downloads will be given but not in all cases. It may also happen that our upper
-                     * RegEx fails e.g. for supervideo.tv.
-                     */
-                    filesizeStrSelected = filesizeStr;
-                }
-                break;
-            }
-        }
-        if (videoURLBest == null && videoURLSelected == null) {
-            logger.warning("Video selection handling failed");
-            return null;
-        }
-        final String filesizeStrChosen;
-        final String continueURL;
-        if (filesizeStrSelected == null) {
-            if (userSelectedQualityValue == null) {
-                logger.info("Returning BEST quality according to user preference");
-            } else {
-                logger.info("Returning BEST quality as fallback");
-            }
-            filesizeStrChosen = filesizeStrBest;
-            continueURL = videoURLBest;
-        } else {
-            logger.info("Returning user selected quality: " + userSelectedQualityValue);
-            filesizeStrChosen = filesizeStrSelected;
-            continueURL = videoURLSelected;
-        }
-        if (returnFilesize) {
-            /* E.g. in availablecheck */
-            return filesizeStrChosen;
-        }
-        this.getPage(br, continueURL);
-        String dllink = null;
-        final Form download1 = br.getFormByInputFieldKeyValue("op", "download_orig");
-        if (download1 != null) {
-            this.handleCaptcha(link, br, download1);
-            this.submitForm(br, download1);
-            this.checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
-        }
-        dllink = this.getDllink(link, account, br, br.toString());
-        if (StringUtils.isEmpty(dllink)) {
-            /*
-             * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
-             */
-            dllink = br.getRegex("<a href\\s*=\\s*\"(https?[^\"]+)\"[^>]*>\\s*Direct Download Link\\s*</a>").getMatch(0);
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            logger.warning("Failed to find dllink via official video download");
-        } else {
-            logger.info("Successfully found dllink via official video download");
-        }
-        return dllink;
-    }
-    // @Override
-    // protected URL_TYPE getURLType(final String url) {
-    // return null;
-    // }
-
-    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
-        if (br.containsHTML("(?i)>\\s*Downloads disabled for this file")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Uploader has disabled downloads for this file");
-        }
-        super.checkErrors(br, html, link, account, checkAll);
     }
 
     @Override
