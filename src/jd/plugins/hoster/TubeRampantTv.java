@@ -17,9 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -29,8 +30,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube.rampant.tv" }, urls = { "https?://(?:tube|videos)\\.rampant\\.tv/videos/[A-Za-z0-9\\-_\\(\\)%,]+\\.html" })
 public class TubeRampantTv extends PluginForHost {
@@ -80,7 +79,6 @@ public class TubeRampantTv extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
             if (br.containsHTML("/premium/unleashed\\.php|\\&type=trial\\'")) {
@@ -117,11 +115,7 @@ public class TubeRampantTv extends PluginForHost {
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                try {
-                    con = br2.openHeadConnection(dllink);
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
+                con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 } else {

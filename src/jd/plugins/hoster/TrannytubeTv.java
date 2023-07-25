@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -92,7 +91,6 @@ public class TrannytubeTv extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         final String ext;
         if (dllink != null) {
             ext = getFileNameExtensionFromString(dllink, default_extension);

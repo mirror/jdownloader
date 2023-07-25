@@ -1058,7 +1058,6 @@ public class TbCmV2 extends PluginForDecrypt {
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
         }
         br.getHeaders().put("Accept-Charset", null);
-        boolean isChannelOrProfileShorts = isChannelOrProfileShorts(referenceUrl);
         String userOrPlaylistURL;
         String desiredChannelTab = null;
         final String channelTabFromURL = getChannelTabNameFromURL(referenceUrl);
@@ -1108,6 +1107,7 @@ public class TbCmV2 extends PluginForDecrypt {
         short run = -1;
         Map<String, Object> rootMap;
         List<Map<String, Object>> varray = null;
+        boolean abortPaginationAfterFirstPage = false;
         do {
             run++;
             helper.getPage(br, userOrPlaylistURL);
@@ -1126,63 +1126,72 @@ public class TbCmV2 extends PluginForDecrypt {
             Map<String, Object> videostab = null;
             ytConfigData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "responseContext/webResponseContextExtensionData/ytConfigData");
             String videosCountText = null;
-            final List<Map<String, Object>> tabs = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnBrowseResultsRenderer/tabs");
-            if (tabs != null) {
-                for (final Map<String, Object> tab : tabs) {
-                    /* We will get this one if a real playlist is our currently opened tab. */
-                    final Map<String, Object> tabRenderer = (Map<String, Object>) tab.get("tabRenderer");
-                    final Object varrayPlaylistProbe = JavaScriptEngineFactory.walkJson(tabRenderer, "content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
-                    if (varrayPlaylistProbe != null) {
-                        /* Real playlist */
-                        playlisttab = tab;
-                        varray = (List<Map<String, Object>>) varrayPlaylistProbe;
-                        break;
-                    } else if (tabRenderer != null) {
-                        /* Channel/User */
-                        final String tabTitle = (String) tabRenderer.get("title");
-                        final Boolean selected = (Boolean) tabRenderer.get("selected");
-                        final List<Map<String, Object>> varrayTmp = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tabRenderer, "content/richGridRenderer/contents");
-                        if (tabTitle != null) {
-                            availableChannelTabs.add(tabTitle);
+            final Map<String, Object> autoGeneratexYoutubeMixPlaylistProbe = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnWatchNextResults/playlist/playlist");
+            if (autoGeneratexYoutubeMixPlaylistProbe != null && Boolean.TRUE.equals(autoGeneratexYoutubeMixPlaylistProbe.get("isInfinite"))) {
+                globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, autoGeneratexYoutubeMixPlaylistProbe.get("title").toString());
+                varray = (List<Map<String, Object>>) autoGeneratexYoutubeMixPlaylistProbe.get("contents");
+                /* Such playlists can contain an infinite amount of items -> Stop after first page */
+                abortPaginationAfterFirstPage = true;
+            } else {
+                final List<Map<String, Object>> tabs = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnBrowseResultsRenderer/tabs");
+                if (tabs != null) {
+                    for (final Map<String, Object> tab : tabs) {
+                        /* We will get this one if a real playlist is our currently opened tab. */
+                        final Map<String, Object> tabRenderer = (Map<String, Object>) tab.get("tabRenderer");
+                        final Object varrayPlaylistProbe = JavaScriptEngineFactory.walkJson(tabRenderer, "content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
+                        if (varrayPlaylistProbe != null) {
+                            /* Real playlist */
+                            playlisttab = tab;
+                            varray = (List<Map<String, Object>>) varrayPlaylistProbe;
+                            break;
+                        } else if (tabRenderer != null) {
+                            /* Channel/User */
+                            final String tabTitle = (String) tabRenderer.get("title");
+                            final Boolean selected = (Boolean) tabRenderer.get("selected");
+                            final List<Map<String, Object>> varrayTmp = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tabRenderer, "content/richGridRenderer/contents");
+                            if (tabTitle != null) {
+                                availableChannelTabs.add(tabTitle);
+                            }
+                            if ("Shorts".equalsIgnoreCase(tabTitle)) {
+                                shortstab = tab;
+                                if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
+                                    varray = varrayTmp;
+                                }
+                            } else if ("Videos".equalsIgnoreCase(tabTitle)) {
+                                videostab = tab;
+                                if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
+                                    varray = varrayTmp;
+                                }
+                            } else {
+                                /* Other/Unsupported tab -> Ignore */
+                            }
                         }
-                        if ("Shorts".equalsIgnoreCase(tabTitle)) {
-                            shortstab = tab;
-                            if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
-                                varray = varrayTmp;
-                            }
-                        } else if ("Videos".equalsIgnoreCase(tabTitle)) {
-                            videostab = tab;
-                            if (Boolean.TRUE.equals(selected) && varrayTmp != null) {
-                                varray = varrayTmp;
-                            }
+                    }
+                    logger.info("Available channel tabs: " + availableChannelTabs);
+                    final boolean isChannelOrProfileShorts = isChannelOrProfileShorts(referenceUrl);
+                    if (shortstab == null && isChannelOrProfileShorts && videostab != null && run == 0) {
+                        logger.info("User wanted shorts but channel doesn't contain shorts tab -> Fallback to Videos tab");
+                        if (channelID != null) {
+                            userOrPlaylistURL = getChannelURLOLD(userName, "videos");
+                            desiredChannelTab = "Videos";
                         } else {
-                            /* Other/Unsupported tab -> Ignore */
+                            /* Channel/User */
+                            userOrPlaylistURL = getChannelURL(userName, "videos");
+                            desiredChannelTab = "Videos";
                         }
+                        continue;
+                    } else if (videostab == null && shortstab != null && !isChannelOrProfileShorts && run == 0) {
+                        logger.info("User wanted videos but channel doesn't contain videos tab -> Fallback to shorts tab");
+                        if (channelID != null) {
+                            userOrPlaylistURL = getChannelURLOLD(userName, "shorts");
+                            desiredChannelTab = "Shorts";
+                        } else {
+                            /* Channel/User */
+                            userOrPlaylistURL = getChannelURL(userName, "shorts");
+                            desiredChannelTab = "Shorts";
+                        }
+                        continue;
                     }
-                }
-                logger.info("Available channel tabs: " + availableChannelTabs);
-                if (shortstab == null && isChannelOrProfileShorts && videostab != null && run == 0) {
-                    logger.info("User wanted shorts but channel doesn't contain shorts tab -> Fallback to Videos tab");
-                    if (channelID != null) {
-                        userOrPlaylistURL = getChannelURLOLD(userName, "videos");
-                        desiredChannelTab = "Videos";
-                    } else {
-                        /* Channel/User */
-                        userOrPlaylistURL = getChannelURL(userName, "videos");
-                        desiredChannelTab = "Videos";
-                    }
-                    continue;
-                } else if (shortstab != null && !isChannelOrProfileShorts && run == 0) {
-                    logger.info("User wanted videos but channel doesn't contain videos tab -> Fallback to shorts tab");
-                    if (channelID != null) {
-                        userOrPlaylistURL = getChannelURLOLD(userName, "shorts");
-                        desiredChannelTab = "Shorts";
-                    } else {
-                        /* Channel/User */
-                        userOrPlaylistURL = getChannelURL(userName, "shorts");
-                        desiredChannelTab = "Shorts";
-                    }
-                    continue;
                 }
             }
             /**
@@ -1215,7 +1224,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 videosCountText = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "numVideosText/runs/{0}/text");
             }
             /* Find extra information about channel */
-            if (!isChannelOrProfileShorts) {
+            if (!isChannelOrProfileShorts(br.getURL())) {
                 final Map<String, Object> channelHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/c4TabbedHeaderRenderer");
                 if (channelHeaderRenderer != null) {
                     videosCountText = (String) JavaScriptEngineFactory.walkJson(channelHeaderRenderer, "videosCountText/runs/{0}/text");
@@ -1258,19 +1267,6 @@ public class TbCmV2 extends PluginForDecrypt {
             String nextPageToken = null;
             checkErrors(pbr);
             final int crawledItemsSizeOld = playListDupes.size();
-            boolean reachedUserDefinedMaxItemsLimit = false;
-            if (round == 0) {
-                /* Do nothing */
-            } else {
-                rootMap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                final List<Map<String, Object>> onResponseReceivedActions = (List<Map<String, Object>>) rootMap.get("onResponseReceivedActions");
-                final Map<String, Object> lastReceivedAction = onResponseReceivedActions.get(onResponseReceivedActions.size() - 1);
-                varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(lastReceivedAction, "appendContinuationItemsAction/continuationItems");
-                if (varray == null) {
-                    /* E.g. at the beginning after sorting */
-                    varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(lastReceivedAction, "reloadContinuationItemsCommand/continuationItems");
-                }
-            }
             if (sortToken != null && round == 0) {
                 logger.info("Round 0 goes into sorting list via sort token: " + sortToken);
                 nextPageToken = sortToken;
@@ -1279,6 +1275,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     /* This should never happen. */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                boolean reachedUserDefinedMaxItemsLimit = false;
                 for (final Map<String, Object> vid : varray) {
                     /* Playlist */
                     String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
@@ -1288,6 +1285,10 @@ public class TbCmV2 extends PluginForDecrypt {
                         if (id == null) {
                             /* Reel/Short */
                             id = (String) JavaScriptEngineFactory.walkJson(vid, "richItemRenderer/content/reelItemRenderer/videoId");
+                            if (id == null) {
+                                /* Video of radio/mix auto generated playlist */
+                                id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistPanelVideoRenderer/videoId");
+                            }
                         }
                     }
                     /* Typically last item (item 101) will contain the continuationToken. */
@@ -1318,20 +1319,23 @@ public class TbCmV2 extends PluginForDecrypt {
                     throw new InterruptedException();
                 } else if (reachedUserDefinedMaxItemsLimit) {
                     logger.info("Stopping because: Reached max items limit of " + maxItemsLimit);
-                    break;
+                    break pagination;
                 } else if (numberofNewItemsThisRun == 0) {
                     logger.info("Stopping because: No new videoIDs found on current page");
-                    break;
+                    break pagination;
                 } else if (nextPageToken == null) {
                     logger.info("Stopping because: No next page found");
-                    break;
+                    break pagination;
+                } else if (abortPaginationAfterFirstPage) {
+                    logger.info("Stopping because: abortPaginationAfterFirstPage == true");
+                    break pagination;
                 }
             }
             /* Try to continue to next page */
             if (StringUtils.isEmpty(INNERTUBE_CLIENT_NAME) || StringUtils.isEmpty(INNERTUBE_API_KEY) || StringUtils.isEmpty(INNERTUBE_CLIENT_VERSION)) {
                 /* This should never happen. */
                 logger.info("Stopping because: Pagination is broken due to missing 'INNERTUBE' variable");
-                break;
+                break pagination;
             }
             final Map<String, Object> context = new HashMap<String, Object>();
             final Map<String, Object> client = new HashMap<String, Object>();
@@ -1354,6 +1358,14 @@ public class TbCmV2 extends PluginForDecrypt {
                 br.getHeaders().put("X-Goog-Pageid", DELEGATED_SESSION_ID);
             }
             br.postPageRaw("/youtubei/v1/browse?key=" + INNERTUBE_API_KEY + "&prettyPrint=false", JSonStorage.serializeToJson(paginationPostData));
+            rootMap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final List<Map<String, Object>> onResponseReceivedActions = (List<Map<String, Object>>) rootMap.get("onResponseReceivedActions");
+            final Map<String, Object> lastReceivedAction = onResponseReceivedActions.get(onResponseReceivedActions.size() - 1);
+            varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(lastReceivedAction, "appendContinuationItemsAction/continuationItems");
+            if (varray == null) {
+                /* E.g. at the beginning after sorting */
+                varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(lastReceivedAction, "reloadContinuationItemsCommand/continuationItems");
+            }
         } while (true);
         int missingVideos = 0;
         if (totalNumberofItems != null) {
@@ -1364,7 +1376,12 @@ public class TbCmV2 extends PluginForDecrypt {
     }
 
     private static String getPlaylistURL(final String playlistID) {
-        return getBaseURL() + "/playlist?list=" + playlistID;
+        if (playlistID.startsWith("RD")) {
+            /* Youtube auto generated playlist / "Mix" */
+            return getBaseURL() + "/watch?list=" + playlistID;
+        } else {
+            return getBaseURL() + "/playlist?list=" + playlistID;
+        }
     }
 
     private static String getChannelURLOLD(final String channelID, final String tabName) {

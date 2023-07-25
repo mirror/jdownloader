@@ -86,7 +86,6 @@ public class Tf1Fr extends PluginForHost {
         if (filename == null || filename.equals("")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        filename = encodeUnicode(filename);
         if (filename.endsWith(" - ")) {
             filename = filename.replaceFirst(" \\- $", "");
         }
@@ -175,8 +174,8 @@ public class Tf1Fr extends PluginForHost {
             dl.startDownload();
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();

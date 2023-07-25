@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -34,10 +38,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TnaFlixCom extends PluginForHost {
@@ -200,7 +200,6 @@ public class TnaFlixCom extends PluginForHost {
             link.setName(filename);
         } else {
             filename = Encoding.htmlDecode(filename).trim();
-            filename = encodeUnicode(filename);
             link.setFinalFileName(filename + ".mp4");
         }
         return AvailableStatus.TRUE;
@@ -329,7 +328,9 @@ public class TnaFlixCom extends PluginForHost {
             if (dl.getConnection().getResponseCode() == 416) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 30 * 60 * 1000l);
             } else {
-                /* 403 error usually means we've tried to download an official downloadurl which may only be available for loggedin users! */
+                /*
+                 * 403 error usually means we've tried to download an official downloadurl which may only be available for loggedin users!
+                 */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
         }

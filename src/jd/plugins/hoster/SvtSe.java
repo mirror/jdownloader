@@ -21,14 +21,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import jd.PluginWrapper;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
@@ -38,6 +30,14 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "svt.se" }, urls = { "https?://(?:www\\.)?(?:svt|svtplay)\\.se/.+" })
 public class SvtSe extends PluginForHost {
@@ -119,7 +119,6 @@ public class SvtSe extends PluginForHost {
             filename += title;
         }
         filename += subtitle + ".mp4";
-        filename = encodeUnicode(filename);
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }

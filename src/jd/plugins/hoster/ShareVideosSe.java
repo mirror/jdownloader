@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,9 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "share-videos.se" }, urls = { "https?://(?:(?:www\\.)?share\\-videos\\.se/auto/video/\\d+\\?uid=\\d+|embed\\.share\\-videos\\.se/auto/embed/\\d+\\?uid=\\d+)" })
 public class ShareVideosSe extends PluginForHost {
@@ -115,7 +115,6 @@ public class ShareVideosSe extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         final String ext;
         if (dllink != null) {
             ext = getFileNameExtensionFromString(dllink, default_extension);

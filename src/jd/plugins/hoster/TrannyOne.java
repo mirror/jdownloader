@@ -15,6 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -24,11 +29,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tranny.one" }, urls = { "https?://(?:www\\.)?tranny\\.one/view/(\\d+)" })
 public class TrannyOne extends antiDDoSForHost {
@@ -87,7 +87,6 @@ public class TrannyOne extends antiDDoSForHost {
         if (filename != null) {
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
-            filename = encodeUnicode(filename);
             if (!filename.endsWith(ext)) {
                 filename += ext;
             }
@@ -100,10 +99,10 @@ public class TrannyOne extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    server_issues = true;
-                } else {
+                if (this.looksLikeDownloadableContent(con)) {
                     link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    server_issues = true;
                 }
             } finally {
                 try {
