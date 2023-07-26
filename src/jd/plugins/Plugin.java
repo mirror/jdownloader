@@ -801,8 +801,6 @@ public abstract class Plugin implements ActionListener {
             output = output.replace("\\", "∖");
             output = output.replace("*", "#");
             output = output.replace("?", "¿");
-            // not illegal
-            // output = output.replace("!", "¡");
             output = output.replace("!", "¡");
             output = output.replace("\"", "'");
             return output;

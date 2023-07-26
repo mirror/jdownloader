@@ -1180,7 +1180,6 @@ public class VKontakteRuHoster extends PluginForHost {
                         /* Do not validate login cookies */
                         return;
                     } else {
-                        logger.info("Attempting cookie login");
                         if (checkCookieLogin(br, account)) {
                             return;
                         }

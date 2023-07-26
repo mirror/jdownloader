@@ -253,6 +253,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         packageName = packageName.replace("*title*", title);
         packageName = packageName.replace("*subtitle*", subtitle != null ? subtitle : "");
         packageName = packageName.replace("*title_and_subtitle*", titleAndSubtitle);
+        packageName = this.encodeUnicode(packageName);
         final FilePackage fp = FilePackage.getInstance();
         fp.setCleanupPackageName(false);
         fp.setName(packageName);

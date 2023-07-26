@@ -17,6 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -36,15 +41,16 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixabay.com" }, urls = { "https?://(?:www\\.)?pixabay\\.com/(?:en/)?(?:(?:photos|gifs|illustrations|vectors|images/download)/)?([a-z0-9\\-]+)-(\\d+)/?" })
 public class PixaBayCom extends PluginForHost {
     public PixaBayCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://pixabay.com/en/accounts/register/");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     @Override
@@ -189,7 +195,7 @@ public class PixaBayCom extends PluginForHost {
                 final String ext = Plugin.getFileNameExtensionFromURL(dllink);
                 link.setProperty("free_directlink", dllink);
                 fileTitle = Encoding.htmlDecode(fileTitle.trim());
-                fileTitle = encodeUnicode(fileTitle) + ext;
+                fileTitle += ext;
                 link.setFinalFileName(fileTitle);
                 return AvailableStatus.TRUE; // <=== No account
             }
