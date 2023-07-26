@@ -208,7 +208,7 @@ public class PixaBayCom extends PluginForHost {
             quality_max = "10000";
         }
         fileTitle = Encoding.htmlDecode(fileTitle).trim();
-        fileTitle = encodeUnicode(fileTitle) + assumedFileExtension;
+        fileTitle += assumedFileExtension;
         link.setFinalFileName(fileTitle);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));

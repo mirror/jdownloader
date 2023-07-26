@@ -101,10 +101,6 @@ public class PixeldrainCom extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    /* Connection stuff */
-    private static final int      FREE_MAXDOWNLOADS                             = -1;
-    private static final int      ACCOUNT_FREE_MAXDOWNLOADS                     = 1;
-    private static final int      ACCOUNT_PREMIUM_MAXDOWNLOADS                  = -1;
     /* Docs: https://pixeldrain.com/api */
     public static final String    API_BASE                                      = "https://pixeldrain.com/api";
     protected static final String PIXELDRAIN_JD_API_HELP_PAGE                   = "https://pixeldrain.com/user/connect_app?app=jdownloader";
@@ -226,7 +222,7 @@ public class PixeldrainCom extends PluginForHost {
                 br.getPage(API_BASE + "/file/" + sb.toString() + "/info");
                 try {
                     final List<Map<String, Object>> items;
-                    final Object response = restoreFromString(br.toString(), TypeRef.OBJECT);
+                    final Object response = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
                     if (response instanceof List) {
                         items = (List<Map<String, Object>>) response;
                     } else {
@@ -374,7 +370,7 @@ public class PixeldrainCom extends PluginForHost {
     private static boolean isCaptchaRequiredStatus(final String str) {
         if (str == null) {
             return false;
-        } else if (str.matches(".*_captcha_required$")) {
+        } else if (str.matches("(?i).*_captcha_required$")) {
             /*
              * 2022-02-23: Either "file_rate_limited_captcha_required" or "virus_detected_captcha_required". This can also happen for other
              * reasons such as reached rate-limits.
@@ -411,7 +407,7 @@ public class PixeldrainCom extends PluginForHost {
                     if (this.isLoggedinWebsite(this.br)) {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(this.br.getCookies(br.getHost()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
@@ -436,7 +432,7 @@ public class PixeldrainCom extends PluginForHost {
                 if (!isLoggedinWebsite(this.br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(this.br.getCookies(br.getHost()), "");
                 return;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -492,12 +488,12 @@ public class PixeldrainCom extends PluginForHost {
             /* Set login auth header */
             br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Basic " + Encoding.Base64Encode(":" + apikey));
             if (!force) {
-                logger.info("Trust apikey without check");
+                /* Do not check apikey */
                 return;
             }
             logger.info("Validating apikey");
             br.getPage(getAPIURLUser());
-            final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> response = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             if (br.getHttpConnection().getResponseCode() == 401 || (Boolean) response.get("success") == Boolean.FALSE) {
                 if (!account.hasEverBeenValid()) {
                     showApiLoginInformation(account);
@@ -508,8 +504,8 @@ public class PixeldrainCom extends PluginForHost {
         }
     }
 
-    private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+    private Map<String, Object> checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Boolean status = (Boolean) entries.get("success");
         if (status == Boolean.FALSE) {
             final String value = (String) entries.get("value");
@@ -524,6 +520,7 @@ public class PixeldrainCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, 3 * 60 * 1000l);
             }
         }
+        return entries;
     }
 
     /** Shows special login information once per account. */
@@ -599,7 +596,7 @@ public class PixeldrainCom extends PluginForHost {
         if (!StringUtils.equalsIgnoreCase(br.getURL(), getAPIURLUser())) {
             br.getPage(getAPIURLUser());
         }
-        final Map<String, Object> user = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> user = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         /* User will always only have one running subscription. */
         final Map<String, Object> subscription = (Map<String, Object>) user.get("subscription");
         ai.setUsedSpace(((Number) user.get("storage_space_used")).longValue());
@@ -612,10 +609,10 @@ public class PixeldrainCom extends PluginForHost {
             /* Assume it's a free account */
             account.setType(AccountType.FREE);
             ai.setUnlimitedTraffic();
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(5);
         } else {
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(-1);
         }
         account.setConcurrentUsePossible(true);
         final long monthlyTrafficMax = ((Number) subscription.get("monthly_transfer_cap")).longValue();
@@ -630,9 +627,9 @@ public class PixeldrainCom extends PluginForHost {
         accountStatusText += String.format(" | Balance: %2.2f€", euroBalance / 1000000);
         ai.setStatus(accountStatusText);
         /**
-         * Limits for anonymous users can be checked here: https://pixeldrain.com/api/misc/rate_limits </br>
-         * Once one of these limits is hit, a captcha will be required for downloading. These captchas can be avoided by using free/paid
-         * accounts.
+         * Global limits and limits for (anonymous) users can be checked here: https://pixeldrain.com/api/misc/rate_limits </br>
+         * Once one of these limits is hit, a captcha will be required for downloading.</br>
+         * These captchas can be avoided by using free/paid accounts.
          */
         account.setAllowReconnectToResetLimits(true);
         return ai;
@@ -645,7 +642,7 @@ public class PixeldrainCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return -1;
     }
 
     @Override

@@ -19,6 +19,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -38,17 +45,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "peekvids.com" }, urls = { "https?://(?:www\\.)?peekvids\\.com/(?:watch\\?v=|v/)([A-Za-z0-9\\-_]+)(?:/\\w+)?" })
 public class PeekVidsCom extends PluginForHost {
     public PeekVidsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://accounts.playvid.com/peekvids/join");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     @Override
@@ -99,7 +105,6 @@ public class PeekVidsCom extends PluginForHost {
      *
      * @throws Exception
      */
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this);
@@ -107,6 +112,7 @@ public class PeekVidsCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        dllink = null;
         if (!link.isNameSet()) {
             link.setName(this.getFID(link) + ".mp4");
         }
@@ -171,7 +177,7 @@ public class PeekVidsCom extends PluginForHost {
                 /* These cookies are not necessarily required */
                 br.setCookie(this.getHost(), "mediaPlayerMute", "0");
                 br.setCookie(this.getHost(), "mediaPlayerVolume", "1");
-                cookies.put(this.getHost(), this.br.getCookies(this.getHost()));
+                cookies.put(this.getHost(), this.br.getCookies(br.getHost()));
             }
         }
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Video not found<|class=\"play\\-error\"|This video was (deleted|removed)")) {
@@ -180,12 +186,11 @@ public class PeekVidsCom extends PluginForHost {
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename);
                 filename = filename.trim();
-                filename = encodeUnicode(filename);
                 link.setFinalFileName(filename + ".mp4");
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>\\s*([^<>]+?)( - PeekVids)?\\s*</title>").getMatch(0);
+        String title = br.getRegex("<title>\\s*([^<>]+?)( - PeekVids)?\\s*</title>").getMatch(0);
         // String flashvars = br.getRegex("flashvars=\"(.*?)\"").getMatch(0);
         String flashvars = br.getRegex("(<video.*?</video>)").getMatch(0);
         if (flashvars == null) {
@@ -204,7 +209,7 @@ public class PeekVidsCom extends PluginForHost {
                 } else {
                     if (checkDirectLink()) {
                         if (filesize > 0) {
-                            link.setDownloadSize(filesize);
+                            link.setVerifiedFileSize(filesize);
                         }
                         break;
                     }
@@ -214,13 +219,11 @@ public class PeekVidsCom extends PluginForHost {
         if (dllink == null && counter == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (filename == null) {
-            filename = this.getFID(link);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            title += ".mp4";
+            link.setFinalFileName(title);
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        filename = encodeUnicode(filename);
-        filename += ".mp4";
-        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
@@ -276,9 +279,9 @@ public class PeekVidsCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        /* Add a download slot */
+        controlMaxFreeDownloads(account, link, +1);
         try {
-            /* Add a download slot */
-            controlMaxFreeDownloads(account, link, +1);
             /* start the dl */
             dl.startDownload();
         } finally {
