@@ -134,7 +134,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
     }
 
     public static void main(String[] args) throws Exception {
-        if (false) {
+        if (true) {
             Application.setApplication(".jd_home");
             showNonBlocking().join();
         }
