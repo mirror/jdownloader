@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -33,11 +32,9 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rtl.de", "vox.de", "frauenzimmer.de", "vip.de", "wetter.de", "sport.de", "kochbar.de" }, urls = { "https?://(?:[a-z0-9]+\\.)?rtl\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?vox\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?frauenzimmer\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?vip\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?wetter\\.de/[a-z0-9\\-/]+\\.html", "https?://(?:www\\.)?sport\\.de/.+", "https?://(?:www\\.)?kochbar\\.de/[a-z0-9\\-/]+\\.html" })
 public class RTLCms extends PluginForHost {
-
     public RTLCms(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     /* Extension which will be used if no correct extension is found */
     /* 2016-05-13, psp: #varoufake #verafake */
     /*
@@ -49,7 +46,6 @@ public class RTLCms extends PluginForHost {
     private static final boolean free_http_resume    = true;
     private static final int     free_http_maxchunks = 1;
     private static final int     free_maxdownloads   = 1;
-
     private String               DLLINK              = null;
 
     @Override
@@ -123,7 +119,6 @@ public class RTLCms extends PluginForHost {
         if (headline2 != null && (headline2.equals("null") || headline2.equals(""))) {
             headline2 = null;
         }
-
         DLLINK = Encoding.htmlDecode(DLLINK);
         String filename;
         /* Verify our json data ... */
@@ -140,7 +135,6 @@ public class RTLCms extends PluginForHost {
             filename = filename.replace("cms/", "");
             filename = filename.replace(".html", "");
         }
-        filename = encodeUnicode(filename);
         final String ext = getFileNameExtensionFromString(DLLINK, ".mp4");
         if (!filename.endsWith(ext)) {
             filename += ext;
@@ -150,8 +144,8 @@ public class RTLCms extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (this.looksLikeDownloadableContent(con)) {
+                downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -168,14 +162,15 @@ public class RTLCms extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_http_resume, free_http_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

@@ -1223,12 +1223,14 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 videosCountText = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "numVideosText/runs/{0}/text");
             }
-            /* Find extra information about channel */
-            if (!isChannelOrProfileShorts(br.getURL())) {
-                final Map<String, Object> channelHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/c4TabbedHeaderRenderer");
-                if (channelHeaderRenderer != null) {
-                    videosCountText = (String) JavaScriptEngineFactory.walkJson(channelHeaderRenderer, "videosCountText/runs/{0}/text");
-                }
+            /**
+             * Find extra information about channel </br>
+             * Do not do this if tab is e.g. "shorts" as we'd then pickup an incorrect number. YT ui does not display the total number of
+             * shorts of a user.
+             */
+            final Map<String, Object> channelHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/c4TabbedHeaderRenderer");
+            if (channelHeaderRenderer != null && StringUtils.equalsIgnoreCase(desiredChannelTab, "Videos")) {
+                videosCountText = (String) JavaScriptEngineFactory.walkJson(channelHeaderRenderer, "videosCountText/runs/{0}/text");
             }
             if (videosCountText != null) {
                 videosCountText = videosCountText.replaceAll("(\\.|,)", "");
@@ -1238,7 +1240,6 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 if (videosCountText.matches("\\d+")) {
                     totalNumberofItems = Integer.valueOf(videosCountText);
-                    globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_SIZE, totalNumberofItems);
                 } else {
                     logger.warning("Found non-number videosCountText: " + videosCountText);
                 }
@@ -1370,6 +1371,11 @@ public class TbCmV2 extends PluginForDecrypt {
         int missingVideos = 0;
         if (totalNumberofItems != null) {
             missingVideos = totalNumberofItems.intValue() - ret.size();
+            globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_SIZE, totalNumberofItems);
+        } else if (maxItemsLimit == -1 || ret.size() < maxItemsLimit) {
+            /* We could not determine the number of items in this channel/playlist -> Use total number of found items as this number. */
+            logger.info("Unable to determine PLAYLIST_SIZE -> Using number of found items as replacement");
+            globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_SIZE, ret.size());
         }
         logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs | Number of possibly missing videos [due to private/offline/GEO-block or bug in plugin]: " + missingVideos);
         return ret;

@@ -131,7 +131,6 @@ public class SextvxCom extends PluginForHost {
         if (filename != null) {
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
-            filename = encodeUnicode(filename);
             final String ext = ".mp4";
             if (!filename.endsWith(ext)) {
                 filename += ext;

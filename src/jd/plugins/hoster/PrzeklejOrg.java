@@ -15,19 +15,15 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easypaste.org" }, urls = { "https?" + "://(www\\.)?(?:przeklej\\.org|easypaste\\.org)/file/[A-Za-z0-9]+" })
 public class PrzeklejOrg extends PluginForHost {
@@ -74,7 +70,6 @@ public class PrzeklejOrg extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -82,41 +77,19 @@ public class PrzeklejOrg extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dllink = checkDirectLink(downloadLink, "directlink");
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        String dllink = br.getRegex("(?i)<a href=\"(/file/download/\\w+.*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("<a href=\"(/file/download/\\w+.*?)\"").getMatch(0);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, false, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink", dllink);
+        link.setProperty("directlink", dllink);
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            }
-        }
-        return dllink;
     }
 
     @Override
