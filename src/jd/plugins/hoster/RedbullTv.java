@@ -22,7 +22,6 @@ import java.util.Map.Entry;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -38,17 +37,17 @@ public class RedbullTv extends PluginForHost {
     private static final String                   FAST_LINKCHECK = "FAST_LINKCHECK";
     public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
                                                                      {
-                                                                                                                                                       /*
-                                                                                                                                                        * Format
-                                                                                                                                                        * -
-                                                                                                                                                        * name
-                                                                                                                                                        * :
-                                                                                                                                                        * videoCodec,
-                                                                                                                                                        * videoBitrate,
-                                                                                                                                                        * videoResolution,
-                                                                                                                                                        * audioCodec,
-                                                                                                                                                        * audioBitrate
-                                                                                                                                                        */
+                                                                                                                                                                      /*
+                                                                                                                                                                       * Format
+                                                                                                                                                                       * -
+                                                                                                                                                                       * name
+                                                                                                                                                                       * :
+                                                                                                                                                                       * videoCodec,
+                                                                                                                                                                       * videoBitrate,
+                                                                                                                                                                       * videoResolution,
+                                                                                                                                                                       * audioCodec,
+                                                                                                                                                                       * audioBitrate
+                                                                                                                                                                       */
                                                                          put("64", new String[] { "AVC", "64", "0x0", "AAC LC", "64" });
                                                                          put("296", new String[] { "AVC", "296", "384x216", "AAC LC", "75,3" });
                                                                          put("496", new String[] { "AVC", "496", "384x216", "AAC LC", "75,3" });
@@ -91,19 +90,9 @@ public class RedbullTv extends PluginForHost {
         DLLINK = link.getStringProperty("directlink", null);
         URLConnectionAdapter con = null;
         try {
-            try {
-                if (isJDStable()) {
-                    /* @since JD2 */
-                    con = br.openHeadConnection(DLLINK);
-                } else {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(DLLINK);
-                }
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                link.setDownloadSize(con.getLongContentLength());
+            con = br.openHeadConnection(DLLINK);
+            if (this.looksLikeDownloadableContent(con)) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -116,27 +105,20 @@ public class RedbullTv extends PluginForHost {
         }
     }
 
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }

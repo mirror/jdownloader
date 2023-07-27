@@ -21,7 +21,6 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
@@ -33,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nonktube.com" }, urls = { "https?://(www\\.)?nonktube\\.com/(?:porn/)?video/\\d+/[a-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nonktube.com" }, urls = { "https?://(?:www\\.)?nonktube\\.com/(?:porn/)?video/(\\d+)/([a-z0-9\\-]+)" })
 public class NonktubeCom extends PluginForHost {
     public NonktubeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,20 +60,30 @@ public class NonktubeCom extends PluginForHost {
         return "http://www.nonktube.com/static/terms";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        // 20170228 Referrer should be https
-        link.setUrlDownload(link.getDownloadURL().replace("http:", "https:"));
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        final String fid = new Regex(downloadLink.getDownloadURL(), "/video/(\\d+)/").getMatch(0);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String urlSlug = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        link.setFinalFileName(urlSlug.replace("-", " ").trim() + ".mp4");
+        final String fid = getFID(link);
         dllink = null;
         this.setBrowserExclusive();
-        downloadLink.setLinkID(fid);
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL().replaceFirst("(?i)http://", "https://"));
         String redirect = this.br.getRedirectLocation();
         if (redirect != null && ((!redirect.contains("nonktube.com/") || !redirect.contains("/video/")) && redirect.contains("out.php"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -87,52 +96,26 @@ public class NonktubeCom extends PluginForHost {
                 this.br.getPage(redirect);
             }
         }
-        String filename;
-        if (true) {
-            /* Faster way */
-            br.getPage("https://www.nonktube.com/media/nuevo/config.php?key=" + fid + "--");
-            if (br.containsHTML("Invalid video|<title>NONK Tube<") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = br.getRegex("<title><\\!\\[CDATA\\[([^<>\"]*?)\\]\\]></title>").getMatch(0);
-        } else {
-            if (br.containsHTML("data-dismiss=\"alert\"") || br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            filename = br.getRegex("<title>([^<>\"]*?) \\- NonkTube\\.com</title>").getMatch(0);
-            br.getPage("http://www.nonktube.com/media/nuevo/config.php?key=" + fid + "--");
-        }
-        if (filename == null) {
-            /* Final fallback */
-            filename = new Regex(downloadLink.getDownloadURL(), "nonktube\\.com/video/\\d+/([a-z0-9\\-]+)").getMatch(0);
+        /* Faster way */
+        br.getPage("https://www.nonktube.com/media/nuevo/config.php?key=" + fid + "--");
+        if (br.containsHTML("(?i)Invalid video|<title>NONK Tube<") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = br.getRegex("<file>(https?://[^<>\"]*?)</file>").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename) + ".mp4";
-        downloadLink.setFinalFileName(filename);
         if (dllink != null) {
             dllink = Encoding.htmlDecode(dllink);
             /** 2019-01-29: Works only with .mp4 ending! */
             dllink = dllink.replace(".flv", ".mp4");
             URLConnectionAdapter con = null;
             try {
-                try {
-                    HeadRequest headRequest = new HeadRequest(dllink);
-                    headRequest.getHeaders().put(OPEN_RANGE_REQUEST);
-                    con = br.openRequestConnection(headRequest);
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (!con.getContentType().contains("html") && con.isOK()) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                HeadRequest headRequest = new HeadRequest(dllink);
+                headRequest.getHeaders().put(OPEN_RANGE_REQUEST);
+                con = br.openRequestConnection(headRequest);
+                if (this.looksLikeDownloadableContent(con)) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 } else {
                     server_issues = true;
                 }
-                downloadLink.setProperty("directlink", dllink);
             } finally {
                 try {
                     if (con != null) {
@@ -171,10 +154,6 @@ public class NonktubeCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

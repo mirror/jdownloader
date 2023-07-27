@@ -15,10 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
@@ -80,14 +77,12 @@ public class MyzcloudMe extends antiDDoSForHost {
     /** 2020-02-27: This service is blocking all but turkish IPs! Turkish Proxy/VPN required or every request will return 404! */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        /* 2020-08-10: This service is only hosting audio content. */
-        link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp3");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 500 });
-        if (!link.isNameSet()) {
-            link.setName(this.getFID(link));
-        }
         getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 500 || br.getHttpConnection().getResponseCode() == 400) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -151,11 +146,7 @@ public class MyzcloudMe extends antiDDoSForHost {
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection();
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (dl.getConnection().getContentType().contains("gif")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 15 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 403) {
@@ -169,7 +160,6 @@ public class MyzcloudMe extends antiDDoSForHost {
         } else if (dl.getConnection().getContentType().contains("gif")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 15 * 60 * 1000l);
         }
-        link.setProperty("directlink", dllink);
         dl.startDownload();
     }
 

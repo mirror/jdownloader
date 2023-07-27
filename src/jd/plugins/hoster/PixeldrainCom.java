@@ -24,6 +24,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
@@ -46,7 +47,6 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -56,6 +56,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DefaultEditAccountPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -70,6 +71,14 @@ public class PixeldrainCom extends PluginForHost {
     public PixeldrainCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://pixeldrain.com/#pro");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        br.getHeaders().put("User-Agent", "JDownloader");
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -139,8 +148,10 @@ public class PixeldrainCom extends PluginForHost {
         final String speedLimitPropertyKey = getSpeedLimitProperty(account);
         if (account != null && AccountType.PREMIUM.equals(account.getType())) {
             return false;
+        } else if (link.getIntegerProperty(speedLimitPropertyKey, 0) > 0) {
+            return true;
         } else {
-            return link.getIntegerProperty(speedLimitPropertyKey, 0) > 0;
+            return false;
         }
     }
 
@@ -171,12 +182,6 @@ public class PixeldrainCom extends PluginForHost {
 
     private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-    }
-
-    public static Browser prepBR(final Browser br) {
-        br.getHeaders().put("User-Agent", "JDownloader");
-        br.setFollowRedirects(true);
-        return br;
     }
 
     private String getAPIURLUser() {
@@ -312,6 +317,7 @@ public class PixeldrainCom extends PluginForHost {
         } else {
             link.removeProperty(PROPERTY_CAPTCHA_REQUIRED);
         }
+        /* Determine if there is a speed-limit in place. */
         final Object speedLimit = data.get("download_speed_limit");
         final String speedLimitPropertyKey = getSpeedLimitProperty(account);
         if (speedLimit == null || ((speedLimit instanceof Number) && ((Number) speedLimit).intValue() == 0)) {
@@ -393,7 +399,6 @@ public class PixeldrainCom extends PluginForHost {
     private void loginWebsite(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                prepBR(this.br);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
@@ -450,34 +455,6 @@ public class PixeldrainCom extends PluginForHost {
 
     private void loginAPI(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            prepBR(this.br);
-            final Cookies cookies = account.loadCookies("");
-            if (cookies != null) {
-                /**
-                 * First try to migrate old accounts which still used website login. </br>
-                 * Website cookies contain the API key too -> Extract and set this. Then delete cookies as we don't need them anymore.
-                 */
-                /* TODO: Remove this legacy handling after 2023-05 */
-                logger.info("Trying to convert old website cookies to first time API key login");
-                final List<Cookie> allCookies = cookies.getCookies();
-                Cookie apikeyCookie = null;
-                for (final Cookie cookie : allCookies) {
-                    if (StringUtils.equals(cookie.getKey(), "pd_auth_key")) {
-                        apikeyCookie = cookie;
-                        break;
-                    }
-                }
-                if (apikeyCookie != null) {
-                    final String apikey = apikeyCookie.getValue();
-                    logger.info("Successfully found apikey in website cookies: " + apikey);
-                    account.setPass(apikey);
-                } else {
-                    /* This should never happen. In this case user will have to manually re-add account via apikey. */
-                    logger.warning("Failed to find apikey in website cookies --> This user will most likely have to re-login");
-                }
-                /* Remove cookies as this is a one-try event. */
-                account.clearCookies("");
-            }
             /* Correct user input */
             account.setPass(correctPassword(account.getPass()));
             final String apikey = account.getPass();
@@ -505,7 +482,17 @@ public class PixeldrainCom extends PluginForHost {
     }
 
     private Map<String, Object> checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        Map<String, Object> entries = null;
+        try {
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        } catch (final JSonMapperException ignore) {
+            /* This should never happen. */
+            if (link != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response", 60 * 1000l);
+            } else {
+                throw new AccountUnavailableException("Invalid API response", 60 * 1000);
+            }
+        }
         final Boolean status = (Boolean) entries.get("success");
         if (status == Boolean.FALSE) {
             final String value = (String) entries.get("value");
@@ -529,39 +516,40 @@ public class PixeldrainCom extends PluginForHost {
             /* Do not display this dialog if it has been displayed before for this account. */
             if (account.hasProperty(PROPERTY_ACCOUNT_HAS_SHOWN_APIKEY_HELP_DIALOG)) {
                 return;
-            }
-            /* Only display this dialog once per account! */
-            account.setProperty(PROPERTY_ACCOUNT_HAS_SHOWN_APIKEY_HELP_DIALOG, true);
-            final Thread thread = new Thread() {
-                public void run() {
-                    try {
-                        String message = "";
-                        final String title;
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            title = "Pixeldrain - Login";
-                            message += "Hallo liebe(r) Pixeldrain NutzerIn\r\n";
-                            message += "Um deinen Pixeldrain Account in JDownloader verwenden zu können, musst du auf folgender Pixeldrain Seite einen API Key erstellen und ihn in JDownloader ins 'Passwort' bzw. 'API Key' Feld eingeben:\r\n";
-                            message += PIXELDRAIN_JD_API_HELP_PAGE;
-                        } else {
-                            title = "Pixeldrain - Login";
-                            message += "Hello dear Pixeldrain user\r\n";
-                            message += "In order to use an account of this service in JDownloader, you need to generate an API key on the following page and put it into the 'Password' or 'API Key' field in JDownloader:\r\n";
-                            message += PIXELDRAIN_JD_API_HELP_PAGE;
+            } else {
+                /* Only display this dialog once per account! */
+                account.setProperty(PROPERTY_ACCOUNT_HAS_SHOWN_APIKEY_HELP_DIALOG, true);
+                final Thread thread = new Thread() {
+                    public void run() {
+                        try {
+                            String message = "";
+                            final String title;
+                            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                                title = "Pixeldrain - Login";
+                                message += "Hallo liebe(r) Pixeldrain NutzerIn\r\n";
+                                message += "Um deinen Pixeldrain Account in JDownloader verwenden zu können, musst du auf folgender Pixeldrain Seite einen API Key erstellen und ihn in JDownloader in das 'Passwort' bzw. 'API Key' Feld eingeben:\r\n";
+                                message += PIXELDRAIN_JD_API_HELP_PAGE;
+                            } else {
+                                title = "Pixeldrain - Login";
+                                message += "Hello dear Pixeldrain user\r\n";
+                                message += "In order to use an account of this service in JDownloader, you need to generate an API key on the following page and put it into the 'Password' or 'API Key' field in JDownloader:\r\n";
+                                message += PIXELDRAIN_JD_API_HELP_PAGE;
+                            }
+                            final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                            dialog.setTimeout(3 * 60 * 1000);
+                            if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                                CrossSystem.openURL(PIXELDRAIN_JD_API_HELP_PAGE);
+                            }
+                            final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                            ret.throwCloseExceptions();
+                        } catch (final Throwable e) {
+                            getLogger().log(e);
                         }
-                        final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                        dialog.setTimeout(3 * 60 * 1000);
-                        if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                            CrossSystem.openURL(PIXELDRAIN_JD_API_HELP_PAGE);
-                        }
-                        final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                        ret.throwCloseExceptions();
-                    } catch (final Throwable e) {
-                        getLogger().log(e);
-                    }
+                    };
                 };
-            };
-            thread.setDaemon(true);
-            thread.start();
+                thread.setDaemon(true);
+                thread.start();
+            }
         }
     }
 
@@ -591,7 +579,6 @@ public class PixeldrainCom extends PluginForHost {
          * There are also "Donator" Accounts (at this moment we don't try to differ between them) but the download process is no different
          * when using those!
          */
-        final AccountInfo ai = new AccountInfo();
         login(account, true);
         if (!StringUtils.equalsIgnoreCase(br.getURL(), getAPIURLUser())) {
             br.getPage(getAPIURLUser());
@@ -599,6 +586,7 @@ public class PixeldrainCom extends PluginForHost {
         final Map<String, Object> user = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         /* User will always only have one running subscription. */
         final Map<String, Object> subscription = (Map<String, Object>) user.get("subscription");
+        final AccountInfo ai = new AccountInfo();
         ai.setUsedSpace(((Number) user.get("storage_space_used")).longValue());
         if (useAPIForLogin()) {
             /* Not necessarily a username/mail given but we need one as our "primary key". */

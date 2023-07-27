@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,10 +32,15 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lololyrics.com" }, urls = { "https?://(www\\.)?lololyrics\\.com/(ftdownload\\.php\\?download\\&id=\\d+|free\\-\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lololyrics.com" }, urls = { "https?://(?:www\\.)?lololyrics\\.com/(?:ftdownload\\.php\\?download\\&id=|free\\-)\\d+" })
 public class LololyricsCom extends PluginForHost {
     public LololyricsCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
     /* DEV NOTES */
@@ -46,16 +53,23 @@ public class LololyricsCom extends PluginForHost {
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        link.setUrlDownload("http://www.lololyrics.com/free-" + fid);
-        link.setLinkID(fid);
-    }
-
     @Override
     public String getAGBLink() {
         return "http://www.lololyrics.com/faq#privacy";
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -63,7 +77,7 @@ public class LololyricsCom extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage("https://www.lololyrics.com/free-" + this.getFID(link));
         if (br.containsHTML("class=\"head_error\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -78,7 +92,6 @@ public class LololyricsCom extends PluginForHost {
         dllink = Encoding.htmlDecode(dllink);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         filename += ".mp3";
         link.setName(filename);
         final Browser br2 = br.cloneBrowser();
@@ -95,13 +108,13 @@ public class LololyricsCom extends PluginForHost {
                 /* Probably limit reached */
                 dllink = null;
             }
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override

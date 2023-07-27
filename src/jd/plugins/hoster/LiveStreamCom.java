@@ -18,9 +18,15 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,17 +37,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livestream.com" }, urls = { "https?://(www\\.)?livestream\\.com/[^<>\"]+/videos/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livestream.com" }, urls = { "https?://(?:www\\.)?livestream\\.com/[^<>\"]+/videos/(\\d+)" })
 public class LiveStreamCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public LiveStreamCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     /* DEV NOTES */
@@ -91,14 +96,32 @@ public class LiveStreamCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String fid = this.getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(fid + ".mp4");
+        }
         String filename = null;
         progressive_url = null;
         m3u8_url = null;
-        final long entryId = Long.parseLong(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        final long entryId = Long.parseLong(fid);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -111,7 +134,7 @@ public class LiveStreamCom extends PluginForHost {
         entries = (Map<String, Object>) entries.get("feed");
         Map<String, Object> entry = getEntry(entryId, (List<Map<String, Object>>) entries.get("data"));
         if (entry == null) {
-            final String eventsID = new Regex(downloadLink.getPluginPatternMatcher(), "/events/(\\d+)/").getMatch(0);
+            final String eventsID = new Regex(link.getPluginPatternMatcher(), "/events/(\\d+)/").getMatch(0);
             final String accountID = br.getRegex("/accounts/(\\d+)/events/" + eventsID).getMatch(0);
             if (eventsID != null) {
                 final Browser brc = br.cloneBrowser();
@@ -122,8 +145,8 @@ public class LiveStreamCom extends PluginForHost {
         }
         if (entry == null) {
             final String title = br.getRegex("og:title\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
-            if (title != null && !downloadLink.isNameSet()) {
-                downloadLink.setName(title);
+            if (title != null && !link.isNameSet()) {
+                link.setName(title + ".mp4");
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
@@ -148,7 +171,7 @@ public class LiveStreamCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        downloadLink.setFinalFileName(filename);
+        link.setFinalFileName(filename);
         if (progressive_url != null) {
             progressive_url = Encoding.htmlDecode(progressive_url);
             final Browser br2 = br.cloneBrowser();
@@ -156,19 +179,14 @@ public class LiveStreamCom extends PluginForHost {
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                try {
-                    con = br2.openHeadConnection(progressive_url);
-                } catch (final BrowserException e) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, -1, e);
-                }
-                if (!con.getContentType().contains("text") && con.isOK()) {
+                con = br2.openHeadConnection(progressive_url);
+                if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        downloadLink.setDownloadSize(con.getCompleteContentLength());
+                        link.setDownloadSize(con.getCompleteContentLength());
                     }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                downloadLink.setProperty("directlink", progressive_url);
             } finally {
                 try {
                     con.disconnect();
@@ -189,7 +207,7 @@ public class LiveStreamCom extends PluginForHost {
                     }
                 }
                 if (estimatedSize > 0) {
-                    downloadLink.setDownloadSize(estimatedSize);
+                    link.setDownloadSize(estimatedSize);
                 }
                 return AvailableStatus.TRUE;
             } else {

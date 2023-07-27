@@ -36,6 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.PixeldrainCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -74,17 +75,23 @@ public class PixeldrainComFolder extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
         final String folderID = urlinfo.getMatch(0);
-        PixeldrainCom.prepBR(this.br);
+        if (folderID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final PluginForHost hosterplugin = this.getNewPluginForHostInstance(this.getHost());
+        /* Use same browser settings/headers as hosterplugin. */
+        this.br = hosterplugin.createNewBrowserInstance();
         br.getPage(PixeldrainCom.API_BASE + "/list/" + folderID);
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* 2020-10-01: E.g. {"success":false,"value":"not_found","message":"The entity you requested could not be found"} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> folder = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> folder = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
         final String folderName = (String) folder.get("title");
         final List<Map<String, Object>> files = (List<Map<String, Object>>) folder.get("files");
         if (files.isEmpty()) {
-            throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "EMPTY_FOLDER_l_" + folderID, "This folder exists but is empty.", null);
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_FOLDER_l_" + folderID, "This folder exists but is empty.", null);
         }
         final Number targetIndex;
         final String targetIndexStr = urlinfo.getMatch(2);
@@ -101,7 +108,7 @@ public class PixeldrainComFolder extends PluginForDecrypt {
             PixeldrainCom.setDownloadLinkInfo(this, dl, null, file);
             if (targetIndex != null && index == targetIndex.intValue()) {
                 /* User wants only one item within that folder */
-                logger.info("Found target-file at index: " + index + " | " + dl.getFinalFileName());
+                logger.info("Found target-file at index: " + index + " | " + dl.getFinalFileName() + " | Returning only this file!");
                 ret.clear();
                 ret.add(dl);
                 break;
