@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -38,6 +39,11 @@ import jd.plugins.PluginForDecrypt;
 public class ImagesHackComCrawler extends PluginForDecrypt {
     public ImagesHackComCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     private static final String TYPE_USER                  = "https?://(?:www\\.)?imageshack\\.(?:com|us)/user/[A-Za-z0-9\\-_]+";

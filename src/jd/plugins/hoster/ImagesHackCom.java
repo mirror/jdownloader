@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -49,6 +51,11 @@ public class ImagesHackCom extends PluginForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST };
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://imageshack.com/terms";
     }
@@ -67,9 +74,10 @@ public class ImagesHackCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        DLLINK = null;
         this.setBrowserExclusive();
         /* Set password-cookies if needed */
-        passCode = link.getStringProperty("pass", null);
+        passCode = link.getDownloadPassword();
         final String pwcookie = link.getStringProperty("pwcookie", null);
         if (pwcookie != null) {
             final String[] cookieinfo = pwcookie.split(":");
@@ -134,7 +142,7 @@ public class ImagesHackCom extends PluginForHost {
             } else {
                 link.setName(getFileNameFromHeader(con));
                 if (con.getCompleteContentLength() > 0) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             }
         } catch (final Throwable e) {
@@ -173,18 +181,17 @@ public class ImagesHackCom extends PluginForHost {
             dl.setAvailable(false);
             return AvailableStatus.FALSE;
         }
-        if (!inValidate(album) && !inValidate(username)) {
+        if (!StringUtils.isEmpty(album) && !StringUtils.isEmpty(username)) {
             filename = username + " - " + album + "_" + filename;
         } else {
-            if (!inValidate(username)) {
+            if (!StringUtils.isEmpty(username)) {
                 /* E.g. username is hidden for private images but images are downloadable/viewable. */
                 filename = username + "_" + filename;
-            } else if (!inValidate(album)) {
+            } else if (!StringUtils.isEmpty(album)) {
                 /* An image does not necessarily have to be part of an album. */
                 filename = album + "_" + filename;
             }
         }
-        filename = plugin.encodeUnicode(filename);
         dl.setFinalFileName(filename);
         if (filesize > 0) {
             /* Happens e.g. when crawling all images of a user - API sometimes randomly returns 0 for filesize. */
@@ -204,22 +211,6 @@ public class ImagesHackCom extends PluginForHost {
 
     public static String api_json_get_username(final Map<String, Object> json) {
         return (String) JavaScriptEngineFactory.walkJson(json, "owner/username");
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    public static boolean inValidate(final String s) {
-        if (s == null || s.matches("\\s+") || s.equals("")) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override
@@ -254,7 +245,7 @@ public class ImagesHackCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty("pass", this.passCode);
+        link.setDownloadPassword(this.passCode);
         dl.startDownload();
     }
 

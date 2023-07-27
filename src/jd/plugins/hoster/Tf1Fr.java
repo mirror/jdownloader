@@ -118,7 +118,7 @@ public class Tf1Fr extends PluginForHost {
         br2.getPage("http://www.wat.tv/get/webhtml/" + video_id);
         String finallink = null;
         try {
-            final Map<String, Object> response = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> response = JSonStorage.restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.HASHMAP);
             finallink = response != null ? (String) response.get("hls") : null;
         } catch (final Throwable ignore) {
         }

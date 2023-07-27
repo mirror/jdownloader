@@ -165,7 +165,6 @@ public class KinkCom extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         if (!filename.endsWith(".mp4")) {
             filename += ".mp4";
         }

@@ -112,7 +112,6 @@ public class HqcollectNet extends PluginForHost {
             filename = this.getFID(link) + "_" + filename;
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
-            filename = encodeUnicode(filename);
             link.setFinalFileName(filename + ".mp4");
         }
         dllink = br.getRegex("<source src=\"(https?://[^<>\"]+)\" type=\"video/mp4\">").getMatch(0);
@@ -131,7 +130,6 @@ public class HqcollectNet extends PluginForHost {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    link.setDownloadSize(con.getLongContentLength());
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?", 60 * 60 * 1000l);
                 }

@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,12 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javhd.com" }, urls = { "https?://(?:www\\.)?javhd\\.com/[a-z]{2}/id/(\\d+)/([a-z0-9\\-]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javhd.com" }, urls = { "https?://(?:www\\.)?javhd\\.com/[a-z]{2}/(?:id/\\d+/[a-z0-9\\-]+|tourjoin\\?id=\\d+)" })
 public class JavhdCom extends PluginForHost {
     public JavhdCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,10 +52,11 @@ public class JavhdCom extends PluginForHost {
     private static final String  default_extension = ".mp4";
     /* Connection stuff */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
+    private final String         TYPE_OLD          = "https?://(?:www\\.)?javhd\\.com/[a-z]{2}/id/(\\d+)/([a-z0-9\\-]+)";
+    private final String         TYPE_NEW          = "https?://(?:www\\.)?javhd\\.com/[a-z]{2}/tourjoin\\?id=(\\d+)";
 
     @Override
     public String getAGBLink() {
@@ -74,31 +74,45 @@ public class JavhdCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        String fid = new Regex(link.getPluginPatternMatcher(), TYPE_OLD).getMatch(0);
+        if (fid == null) {
+            fid = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        }
+        return fid;
+    }
+
+    private String getTitleFromURL(final DownloadLink link) {
+        String title = new Regex(link.getPluginPatternMatcher(), TYPE_OLD).getMatch(1);
+        if (title != null) {
+            return title.replace("-", " ").trim();
+        } else {
+            return null;
+        }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        final String videoid = this.getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(videoid + ".mp4");
+        }
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String linkid = this.getFID(link);
-        br.getPage("https://" + this.getHost() + "/en/player/" + linkid + "?is_trailer=1");
+        br.getPage("https://" + this.getHost() + "/en/player/" + videoid + "?is_trailer=1");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final String id = Long.toString(JavaScriptEngineFactory.toLong(entries.get("id"), 0));
-        if (!id.equals(linkid)) {
+        final String id = entries.get("id").toString();
+        if (!id.equals(videoid)) {
             /* Offline = all values will be null */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        String filename = (String) entries.get("title");
-        if (StringUtils.isEmpty(filename)) {
-            filename = url_filename;
+        final String titleFromURL = this.getTitleFromURL(link);
+        String title = (String) entries.get("title");
+        if (StringUtils.isEmpty(title)) {
+            title = titleFromURL;
         }
         /* RegExes sometimes used for streaming */
         final String jssource = br.getRegex("sources(?:\")?\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
@@ -144,9 +158,8 @@ public class JavhdCom extends PluginForHost {
                 logger.info("BEST handling for multiple video source failed");
             }
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
+        title = Encoding.htmlDecode(title);
+        title = title.trim();
         String ext;
         if (!StringUtils.isEmpty(dllink)) {
             ext = getFileNameExtensionFromString(dllink, default_extension);
@@ -156,20 +169,17 @@ public class JavhdCom extends PluginForHost {
         } else {
             ext = default_extension;
         }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
         if (!StringUtils.isEmpty(dllink)) {
-            dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
+            if (StringUtils.endsWithCaseInsensitive(dllink, "black_cap.mp4")) {
+                /* Example: https://javhd.com/en/tourjoin?id=30453 */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video or no trailer available");
+            }
+            link.setFinalFileName(title + ext);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (con.isOK() && !con.getContentType().contains("text")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                } else {
-                    server_issues = true;
-                }
+                connectionErrorhandling(con);
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             } finally {
                 try {
                     con.disconnect();
@@ -178,33 +188,32 @@ public class JavhdCom extends PluginForHost {
             }
         } else {
             /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
+            link.setName(title + ext);
         }
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
+    private void connectionErrorhandling(final URLConnectionAdapter con) throws Exception {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
+        }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        this.connectionErrorhandling(dl.getConnection());
         dl.startDownload();
     }
 
