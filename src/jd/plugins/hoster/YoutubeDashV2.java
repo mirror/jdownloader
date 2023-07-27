@@ -146,6 +146,7 @@ import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
+import jd.plugins.decrypter.TbCmV2;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
@@ -193,11 +194,28 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     public String getPluginContentURL(final DownloadLink link) {
         final String videoID = link.getStringProperty(YoutubeHelper.YT_ID);
         final String playlistID = link.getStringProperty(YoutubeHelper.YT_PLAYLIST_ID);
-        final boolean tryToReturnUrlInPlaylistContext = true;
-        if (tryToReturnUrlInPlaylistContext && DebugMode.TRUE_IN_IDE_ELSE_FALSE && playlistID != null) {
-            /* 2023-06-28: Debug-test */
-            return "https://www.youtube.com/watch?v=" + videoID + "&list=" + playlistID;
+        final boolean newHandling = true;
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && newHandling) {
+            AbstractVariant variant = null;
+            try {
+                variant = getVariant(link);
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
+            String url = generateVideoContentURL(videoID, playlistID, link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_INT, -1));
+            if (variant != null) {
+                /* Add this to URL so if user adds this again, crawler knows which variant to crawl. */
+                url += "#variant=" + Encoding.urlEncode(Base64.encode(variant.getStorableString()));
+            }
+            return url;
         }
+        // final String videoID = link.getStringProperty(YoutubeHelper.YT_ID);
+        // final String playlistID = link.getStringProperty(YoutubeHelper.YT_PLAYLIST_ID);
+        // final boolean tryToReturnUrlInPlaylistContext = true;
+        // if (tryToReturnUrlInPlaylistContext && DebugMode.TRUE_IN_IDE_ELSE_FALSE && playlistID != null) {
+        // /* 2023-06-28: Debug-test */
+        // return "https://www.youtube.com/watch?v=" + videoID + "&list=" + playlistID;
+        // }
         if (PluginJsonConfig.get(YoutubeConfig.class).isSetCustomUrlEnabled()) {
             return generateContentURL(videoID);
         } else {
@@ -2963,6 +2981,17 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     }
 
     public static String generateContentURL(final String videoID) {
-        return "https://www.youtube.com/watch?v=" + videoID;
+        return generateVideoContentURL(videoID, null, -1);
+    }
+
+    public static String generateVideoContentURL(final String videoID, final String playlistID, final int playlistPosition) {
+        String url = TbCmV2.getBaseURL() + "/watch?v=" + videoID;
+        if (playlistID != null) {
+            url += "&list=" + playlistID;
+            if (playlistPosition > 0) {
+                url += "&index=" + playlistPosition;
+            }
+        }
+        return url;
     }
 }

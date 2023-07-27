@@ -45,6 +45,12 @@ import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.plugins.components.youtube.ClipDataCache;
 import org.jdownloader.plugins.components.youtube.Projection;
@@ -110,7 +116,12 @@ public class TbCmV2 extends PluginForDecrypt {
 
     public TbCmV2(PluginWrapper wrapper) {
         super(wrapper);
-    };
+    }
+
+    @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 100);
+    }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -213,12 +224,17 @@ public class TbCmV2 extends PluginForDecrypt {
      * in browser.
      */
     private static boolean isChannelOrProfileShorts(final String url) {
-        return StringUtils.endsWithCaseInsensitive(url, "/shorts");
+        final String channelTabName = getChannelTabNameFromURL(url);
+        if (StringUtils.equalsIgnoreCase(channelTabName, "shorts")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /** Returns supported tab names from URLs e.g. "shorts" or "videos". */
     private static String getChannelTabNameFromURL(final String url) {
-        return new Regex(url, "/(shorts|videos)$").getMatch(0);
+        return new Regex(url, "(?i)/(shorts|videos).*$").getMatch(0);
     }
 
     private boolean linkCollectorContainsEntryByID(final String videoID) {
@@ -278,15 +294,7 @@ public class TbCmV2 extends PluginForDecrypt {
         globalPropertiesForDownloadLink = new HashMap<String, Object>();
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
         String addedLink = param.getCryptedUrl();
-        if (StringUtils.containsIgnoreCase(addedLink, "youtube-nocookie.com")) {
-            // TODO: Solve this in a more elegant way
-            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            addedLink = addedLink.replaceFirst("https?://(?:www\\.)?youtube-nocookie\\.com/embed/", "https://youtube.com/watch?v=");
-            final DownloadLink link = createDownloadlink(addedLink);
-            link.setContainerUrl(addedLink);
-            ret.add(link);
-            return ret;
-        } else if (StringUtils.containsIgnoreCase(addedLink, "yt.not.allowed")) {
+        if (StringUtils.containsIgnoreCase(addedLink, "yt.not.allowed")) {
             // TODO: Check what this is/was there for
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             if (cfg.isAndroidSupportEnabled()) {
@@ -316,7 +324,7 @@ public class TbCmV2 extends PluginForDecrypt {
         final String requestedVariantString = new Regex(cleanedurl, "(?i)\\#variant=(\\S*)").getMatch(0);
         if (StringUtils.isNotEmpty(requestedVariantString)) {
             requestedVariant = AbstractVariant.get(Base64.decodeToString(requestedVariantString));
-            cleanedurl = cleanedurl.replaceAll("\\#variant=\\S+", "");
+            cleanedurl = cleanedurl.replaceAll("(?i)\\#variant=\\S+", "");
         }
         videoID = getVideoIDFromUrl(cleanedurl);
         // for watch_videos, found within youtube.com music
@@ -555,6 +563,11 @@ public class TbCmV2 extends PluginForDecrypt {
                 channelOrPlaylistPackage.setName("TestDevTestTest");
             }
         }
+        Integer indexFromAddedURL = null;
+        final String indexFromAddedURLStr = new Regex(cleanedurl, "(?i)index=(\\d+)").getMatch(0);
+        if (indexFromAddedURLStr != null) {
+            indexFromAddedURL = Integer.parseInt(indexFromAddedURLStr);
+        }
         boolean reversePlaylistNumber = false;
         final boolean isCrawlDupeCheckEnabled = cfg.isCrawlDupeCheckEnabled();
         final Set<String> videoIDsdupeCheck = new HashSet<String>();
@@ -586,11 +599,9 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 if (vid.playlistEntryNumber == -1 && old.playlistEntryNumber > 0) {
                     vid.playlistEntryNumber = reversePlaylistNumber ? (videoIdsToAdd.size() - old.playlistEntryNumber + 1) : old.playlistEntryNumber;
-                } else if (vid.playlistEntryNumber == -1 && StringUtils.equals(videoID, vid.videoID)) {
-                    final String index = new Regex(cleanedurl, "(?i)index=(\\d+)").getMatch(0);
-                    if (index != null) {
-                        vid.playlistEntryNumber = Integer.parseInt(index);
-                    }
+                } else if (vid.playlistEntryNumber == -1 && StringUtils.equals(videoID, vid.videoID) && indexFromAddedURL != null) {
+                    /* Use index inside added URL. */
+                    vid.playlistEntryNumber = indexFromAddedURL;
                 }
             } catch (Exception e) {
                 logger.log(e);
@@ -1064,8 +1075,10 @@ public class TbCmV2 extends PluginForDecrypt {
         // final Map<String, String> tabFallbackMapping = new HashMap<String, String>();
         // tabFallbackMapping.put("Shorts", "Videos");
         // tabFallbackMapping.put("Videos", "Shorts");
+        String humanReadableTitle;
         if (playlistID != null) {
-            userOrPlaylistURL = getPlaylistURL(playlistID);
+            userOrPlaylistURL = generatePlaylistURL(playlistID);
+            humanReadableTitle = "Playlist " + playlistID;
         } else if (channelID != null) {
             /* Channel via channelID (legacy - urls containing only channelID are not common anymore) */
             if (channelTabFromURL == null) {
@@ -1075,6 +1088,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 userOrPlaylistURL = getChannelURLOLD(channelID, channelTabFromURL);
                 desiredChannelTab = channelTabFromURL;
             }
+            humanReadableTitle = "ChannelID " + channelID;
         } else {
             /* Channel/User */
             if (channelTabFromURL == null) {
@@ -1084,6 +1098,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 userOrPlaylistURL = getChannelURL(userName, channelTabFromURL);
                 desiredChannelTab = channelTabFromURL;
             }
+            humanReadableTitle = "Channel " + userName;
         }
         URL originalURL = null;
         final ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
@@ -1199,19 +1214,30 @@ public class TbCmV2 extends PluginForDecrypt {
              * Only mind this errormessage if we can't find any content.
              */
             final List<Map<String, Object>> alerts = (List<Map<String, Object>>) rootMap.get("alerts");
-            String errormessage = null;
+            String errorOrWarningMessage = null;
             /* Find last errormessage. Mostly there is one one available anyways. */
             if (alerts != null && alerts.size() > 0) {
                 for (final Map<String, Object> alert : alerts) {
-                    final Map<String, Object> alertRenderer = (Map<String, Object>) alert.get("alertRenderer");
-                    errormessage = (String) JavaScriptEngineFactory.walkJson(alertRenderer, "text/runs/{0}/text"); // Playlist(?)
-                    if (errormessage == null) {
-                        errormessage = (String) JavaScriptEngineFactory.walkJson(alertRenderer, "text/simpleText"); // Channel
+                    Map<String, Object> alertRenderer = (Map<String, Object>) alert.get("alertRenderer");
+                    if (alertRenderer == null) {
+                        alertRenderer = (Map<String, Object>) alert.get("alertWithButtonRenderer");
+                    }
+                    if (alertRenderer == null) {
+                        logger.warning("Failed to find alertRenderer in alert: " + alert);
+                        continue;
+                    }
+                    errorOrWarningMessage = (String) JavaScriptEngineFactory.walkJson(alertRenderer, "text/runs/{0}/text"); // Playlist(?)
+                    if (errorOrWarningMessage == null) {
+                        errorOrWarningMessage = (String) JavaScriptEngineFactory.walkJson(alertRenderer, "text/simpleText"); // Channel
                     }
                 }
             }
-            if (varray == null && errormessage != null) {
-                throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "CHANNEL_OR_PLAYLIST_OFFLINE_" + originalURL.getPath(), errormessage);
+            if (varray == null && errorOrWarningMessage != null) {
+                throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "CHANNEL_OR_PLAYLIST_OFFLINE_" + humanReadableTitle, errorOrWarningMessage);
+            } else if (errorOrWarningMessage != null) {
+                /* For example "Unavailable videos are hidden" */
+                logger.info("Found warning message for playlist/channel: " + errorOrWarningMessage);
+                this.displayBubblenotifyMessage(humanReadableTitle, errorOrWarningMessage);
             }
             /* Find extra information about playlist */
             final Map<String, Object> playlistHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/playlistHeaderRenderer");
@@ -1256,13 +1282,15 @@ public class TbCmV2 extends PluginForDecrypt {
             }
             break;
         } while (run < 1);
-        int videoPositionCounter = 1;
+        int videoPositionCounter = 0;
         int round = 0;
         final String INNERTUBE_CLIENT_NAME = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_NAME")) : null;
         final String INNERTUBE_API_KEY = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_API_KEY")) : null;
         final String INNERTUBE_CLIENT_VERSION = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CLIENT_VERSION")) : null;
         /* Now stuff that is required when user is logged in. */
         final String DELEGATED_SESSION_ID = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("DELEGATED_SESSION_ID")) : null;
+        boolean reachedUserDefinedMaxItemsLimit = false;
+        int numberofSkippedDuplicates = 0;
         pagination: do {
             /* First try old HTML handling though by now [June 2023] all data is provided via json. */
             String nextPageToken = null;
@@ -1276,7 +1304,6 @@ public class TbCmV2 extends PluginForDecrypt {
                     /* This should never happen. */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                boolean reachedUserDefinedMaxItemsLimit = false;
                 for (final Map<String, Object> vid : varray) {
                     /* Playlist */
                     String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
@@ -1295,12 +1322,14 @@ public class TbCmV2 extends PluginForDecrypt {
                     /* Typically last item (item 101) will contain the continuationToken. */
                     final String continuationToken = (String) JavaScriptEngineFactory.walkJson(vid, "continuationItemRenderer/continuationEndpoint/continuationCommand/token");
                     if (id != null) {
+                        videoPositionCounter++;
                         if (!playListDupes.add(id)) {
-                            /* Additional fail-safe: This should never happen / not be needed. */
-                            logger.info("Stopping because: Found dupe");
-                            break pagination;
+                            /* Playlists can contain the same video multiple times */
+                            logger.info("Skipping dupe: " + id + " | Position: " + videoPositionCounter);
+                            numberofSkippedDuplicates++;
+                            continue;
                         }
-                        ret.add(new YoutubeClipData(id, videoPositionCounter++));
+                        ret.add(new YoutubeClipData(id, videoPositionCounter));
                         if (playListDupes.size() == maxItemsLimit) {
                             reachedUserDefinedMaxItemsLimit = true;
                             break;
@@ -1370,40 +1399,37 @@ public class TbCmV2 extends PluginForDecrypt {
         } while (true);
         int missingVideos = 0;
         if (totalNumberofItems != null) {
-            missingVideos = totalNumberofItems.intValue() - ret.size();
             globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_SIZE, totalNumberofItems);
-        } else if (maxItemsLimit == -1 || ret.size() < maxItemsLimit) {
+            /*
+             * If user set limit we maybe didn't crawl all items but then that was on purpose -> Do not calculate number of "missing" items
+             * as they are not missing but they got skipped.
+             */
+            if (!reachedUserDefinedMaxItemsLimit) {
+                missingVideos = totalNumberofItems.intValue() - ret.size();
+                if (missingVideos > 0) {
+                    String missingItemsText = missingVideos + " of " + totalNumberofItems + " items are missing in this playlist (duplicates, offline or hidden by YouTube).";
+                    missingItemsText += "\r\nSkipped duplicates: " + numberofSkippedDuplicates;
+                    this.displayBubblenotifyMessage(humanReadableTitle, missingItemsText);
+                }
+            }
+        } else if (!reachedUserDefinedMaxItemsLimit) {
             /* We could not determine the number of items in this channel/playlist -> Use total number of found items as this number. */
             logger.info("Unable to determine PLAYLIST_SIZE -> Using number of found items as replacement");
             globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_SIZE, ret.size());
         }
-        logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs | Number of possibly missing videos [due to private/offline/GEO-block or bug in plugin]: " + missingVideos);
+        logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs | Number of possibly missing videos [due to duplicate/private/offline/GEO-block or bug in plugin]: " + missingVideos + " | Skipped duplicates: " + numberofSkippedDuplicates);
         return ret;
     }
 
-    private static String getPlaylistURL(final String playlistID) {
-        if (playlistID.startsWith("RD")) {
-            /* Youtube auto generated playlist / "Mix" */
-            return getBaseURL() + "/watch?list=" + playlistID;
-        } else {
-            return getBaseURL() + "/playlist?list=" + playlistID;
+    private void displayBubblenotifyMessage(final String title, final String msg) {
+        if (!org.appwork.utils.Application.isHeadless()) {
+            BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
+                @Override
+                public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
+                    return new BasicNotify("Youtube: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
+                }
+            });
         }
-    }
-
-    private static String getChannelURLOLD(final String channelID, final String tabName) {
-        String channelURL = getBaseURL() + "/channel/" + channelID;
-        if (tabName != null) {
-            channelURL += "/" + tabName;
-        }
-        return channelURL;
-    }
-
-    private static String getChannelURL(final String userName, final String tabName) {
-        String channelURL = getBaseURL() + "/@" + userName;
-        if (tabName != null) {
-            channelURL += "/" + tabName;
-        }
-        return channelURL;
     }
 
     /**
@@ -1513,12 +1539,32 @@ public class TbCmV2 extends PluginForDecrypt {
     }
 
     @Override
-    public void init() {
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), 100);
-    }
-
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    public static String generatePlaylistURL(final String playlistID) {
+        if (playlistID.startsWith("RD")) {
+            /* Youtube auto generated playlist / "Mix" */
+            return getBaseURL() + "/watch?list=" + playlistID;
+        } else {
+            return getBaseURL() + "/playlist?list=" + playlistID;
+        }
+    }
+
+    private static String getChannelURLOLD(final String channelID, final String tabName) {
+        String channelURL = getBaseURL() + "/channel/" + channelID;
+        if (tabName != null) {
+            channelURL += "/" + tabName;
+        }
+        return channelURL;
+    }
+
+    private static String getChannelURL(final String userName, final String tabName) {
+        String channelURL = getBaseURL() + "/@" + userName;
+        if (tabName != null) {
+            channelURL += "/" + tabName;
+        }
+        return channelURL;
     }
 }
