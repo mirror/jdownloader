@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.awt.Color;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -330,13 +331,36 @@ public class FikperCom extends PluginForHost {
                 final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
                 final int waitBeforeDownloadMillis = ((Number) entries.get("delayTime")).intValue();
                 final boolean skipPreDownloadWaittime = true; // 2022-11-14: Wait time is skippable
-                final boolean useHcaptcha = true;
+                final boolean useHcaptcha = false;
+                final boolean useSolvemediaCaptcha = true;
+                boolean usedCaptchaTypeCanFail = false;
                 final Map<String, Object> postdata = new HashMap<String, Object>();
                 if (useHcaptcha) {
                     /* 2023-01-16 */
                     final CaptchaHelperHostPluginHCaptcha hCaptcha = getHcaptchaHelper(br);
                     final String hCaptchaResponse = hCaptcha.getToken();
                     postdata.put("recaptcha", hCaptchaResponse);
+                } else if (useSolvemediaCaptcha) {
+                    /* 2023-07-27 */
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                    sm.setChallengeKey("U0PGYjYQo61wWfWxQ43vpsJrUQSpCiuY");
+                    File cf = null;
+                    try {
+                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    } catch (final InterruptedException e) {
+                        throw e;
+                    } catch (final Exception e) {
+                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support", -1, e);
+                        } else {
+                            throw e;
+                        }
+                    }
+                    final String code = getCaptchaCode("solvemedia", cf, link);
+                    final String chid = sm.getChallenge(code);
+                    postdata.put("captchaValue", code);
+                    postdata.put("challenge", chid);
+                    usedCaptchaTypeCanFail = true;
                 } else {
                     /* Old handling */
                     final String recaptchaV2Response = getRecaptchaHelper(br).getToken();
@@ -358,8 +382,11 @@ public class FikperCom extends PluginForHost {
                         // You can download files up to 2GB in free mode.
                         // {"code":403,"message":"File size limit"}
                         throw new AccountRequiredException("You can download files up to 2GB in free mode");
+                    } else if ("Invalid captcha.".equals("message") && usedCaptchaTypeCanFail) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Code:" + code + "|Message:" + message);
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Code:" + code + "|Message:" + message);
                 }
                 final String filesize = StringUtils.valueOfOrNull(dlresponse.get("size"));
                 if (filesize != null && filesize.matches("\\d+")) {
