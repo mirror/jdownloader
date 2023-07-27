@@ -1543,7 +1543,7 @@ public class TbCmV2 extends PluginForDecrypt {
         return false;
     }
 
-    public static String generatePlaylistURL(final String playlistID) {
+    private static String generatePlaylistURL(final String playlistID) {
         if (playlistID.startsWith("RD")) {
             /* Youtube auto generated playlist / "Mix" */
             return getBaseURL() + "/watch?list=" + playlistID;

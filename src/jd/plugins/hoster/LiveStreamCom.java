@@ -166,7 +166,6 @@ public class LiveStreamCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = entryId + "_" + filename;
-        filename = encodeUnicode(filename);
         final String ext = ".mp4";
         if (!filename.endsWith(ext)) {
             filename += ext;

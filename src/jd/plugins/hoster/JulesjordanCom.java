@@ -106,7 +106,6 @@ public class JulesjordanCom extends antiDDoSForHost {
             }
             String title = getURLName(link.getPluginPatternMatcher()).replace("-", " ");
             title = Encoding.htmlDecode(title).trim();
-            title = encodeUnicode(title);
             /* Do NOT set final filename yet!! */
             link.setName(title + ".mp4");
             if (!StringUtils.isEmpty(dllink)) {
@@ -258,7 +257,7 @@ public class JulesjordanCom extends antiDDoSForHost {
                             return;
                         } else {
                             logger.info("Cookie login failed");
-                            br.clearAll();
+                            br.clearCookies(null);
                         }
                     }
                 }
