@@ -29,6 +29,24 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -55,24 +73,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OneFichierCom extends PluginForHost {
@@ -218,8 +218,9 @@ public class OneFichierCom extends PluginForHost {
                 // remove last &
                 sb.deleteCharAt(sb.length() - 1);
                 /**
-                 * This method is serverside deprecated but we're still using it because: </br> 1. It is still working. </br> 2. It is the
-                 * only method that can be used to check multiple items with one request.
+                 * This method is serverside deprecated but we're still using it because: </br>
+                 * 1. It is still working. </br>
+                 * 2. It is the only method that can be used to check multiple items with one request.
                  */
                 br.postPageRaw(correctProtocol("http://" + this.getHost() + "/check_links.pl"), sb.toString());
                 for (final DownloadLink dllink : links) {
@@ -235,8 +236,8 @@ public class OneFichierCom extends PluginForHost {
                         }
                     } else if (br.containsHTML(addedlink_id + "[^;]*;;;PRIVATE")) {
                         /**
-                         * Private or password protected file. </br> Admin was asked to change this to return a more precise status instead
-                         * but declined that suggestion.
+                         * Private or password protected file. </br>
+                         * Admin was asked to change this to return a more precise status instead but declined that suggestion.
                          */
                         dllink.setProperty(PROPERTY_ACL_ACCESS_CONTROL_LIMIT, true);
                         dllink.setAvailable(true);
@@ -548,8 +549,8 @@ public class OneFichierCom extends PluginForHost {
     }
 
     /**
-     * Access restricted by IP / only registered users / only premium users / only owner. </br> See here for all possible reasons (login
-     * required): https://1fichier.com/console/acl.pl
+     * Access restricted by IP / only registered users / only premium users / only owner. </br>
+     * See here for all possible reasons (login required): https://1fichier.com/console/acl.pl
      *
      * @throws PluginException
      */
@@ -883,10 +884,15 @@ public class OneFichierCom extends PluginForHost {
 
     private static void errorInvalidAPIKey(final Account account) throws PluginException {
         if (account != null) {
-            // clear invalid apiKey
-            account.setPass(null);
             /* Assume APIKey is invalid or simply not valid anymore (e.g. user disabled or changed APIKey) */
-            throw new AccountInvalidException("Invalid API Key - you can find your API Key here: 1fichier.com/console/params.pl\r\nPlease keep in mind that API Keys are only available for premium customers.\r\nIf you do not own a premium account, disable the API Key setting in JD plugin settings so that you can login via username & password!\r\nKeep in mind that 2-factor-authentification login via JD and username/password is not supported!\r\nIf you want to login into your FREE 1fichier account in JD via username & password you will first have to disable 2-factor-authentication in your 1fichier account!");
+            final StringBuilder sb = new StringBuilder();
+            sb.append("Invalid API Key!");
+            sb.append("\r\nYou can find your API Key here: 1fichier.com/console/params.pl");
+            sb.append("\r\nIf you bought a 'premium key'/'Voucher'/'Activation key' from a reseller, you first need to create a 1fichier account and redeem that code here: 1fichier.com/console/vu.pl");
+            sb.append("\r\nPlease keep in mind that API Keys are only available for premium customers.");
+            sb.append("\r\nInformation for 1fichier.com FREE-account users:");
+            sb.append("\r\nIf you do not own a premium- but only a free account, Go to Settings -> Plugins -> 1fichier.com -> 'Use premium API' -> Disable this -> Now try to login again, this time with username & password.");
+            throw new AccountInvalidException(sb.toString());
         } else {
             throw new AccountRequiredException();
         }
@@ -1124,8 +1130,8 @@ public class OneFichierCom extends PluginForHost {
             logger.info("Max Chunks:" + maxChunks);
             if (!this.attemptStoredDownloadurlDownload(link, PROPERTY_PREMLINK, resume_account_premium, maxChunks)) {
                 /**
-                 * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br> According to their admin, using the public
-                 * availablecheck call just before downloading via API can be troublesome
+                 * 2021-02-11: Don't do availablecheck in premium mode to reduce requests. </br>
+                 * According to their admin, using the public availablecheck call just before downloading via API can be troublesome
                  */
                 String dllink;
                 if (canUseAPI(account)) {
@@ -1157,8 +1163,8 @@ public class OneFichierCom extends PluginForHost {
 
     private String getDllinkPremiumAPI(final DownloadLink link, final Account account) throws Exception {
         /**
-         * 2019-04-05: At the moment there are no benefits for us when using this. </br> 2021-01-29: Removed this because if login is
-         * blocked because of "flood control" this won't work either!
+         * 2019-04-05: At the moment there are no benefits for us when using this. </br>
+         * 2021-01-29: Removed this because if login is blocked because of "flood control" this won't work either!
          */
         final boolean checkFileInfoBeforeDownloadAttempt = false;
         if (checkFileInfoBeforeDownloadAttempt) {

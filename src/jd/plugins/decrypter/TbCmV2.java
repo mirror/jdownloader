@@ -301,6 +301,7 @@ public class TbCmV2 extends PluginForDecrypt {
              */
             logger.info("Returning nothing because: Android support is disabled");
             // TODO: Maybe add BubbleNotification for this?
+            // this.displayBubblenotifyMessage("YouTube - disabled crawler", "Crawled is disabled due to... [TODO]");
             return new ArrayList<DownloadLink>();
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>() {
@@ -312,10 +313,12 @@ public class TbCmV2 extends PluginForDecrypt {
         };
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "PREF", "hl=en-GB");
-        String cleanedurl = Encoding.urlDecode(addedLink, true);
+        // TODO: Maybe remove this as we're not modifying this URL anymore and also all methods to extract information out of YT URLs work
+        // domain-indepoendent.
+        String cleanedurl = addedLink;
         final String requestedVariantString = new Regex(cleanedurl, "(?i)\\#variant=(\\S*)").getMatch(0);
         if (StringUtils.isNotEmpty(requestedVariantString)) {
-            requestedVariant = AbstractVariant.get(Base64.decodeToString(requestedVariantString));
+            requestedVariant = AbstractVariant.get(Base64.decodeToString(Encoding.htmlDecode(requestedVariantString)));
             cleanedurl = cleanedurl.replaceAll("(?i)\\#variant=\\S+", "");
         }
         videoID = getVideoIDFromUrl(cleanedurl);
@@ -966,7 +969,6 @@ public class TbCmV2 extends PluginForDecrypt {
             final YoutubeHelper helper = new YoutubeHelper(br, getLogger());
             ClipDataCache.referenceLink(helper, ret, clip);
             // thislink.setAvailable(true);
-            ret.setContentUrl(getBaseURL() + "/watch?v=" + clip.videoID + "#variant=" + Encoding.urlEncode(Base64.encode(variantInfo.getVariant().getStorableString())));
             // thislink.setProperty(key, value)
             ret.setProperty(YoutubeHelper.YT_ID, clip.videoID);
             ret.setProperty(YoutubeHelper.YT_COLLECTION, l.getName());

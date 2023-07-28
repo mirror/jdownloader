@@ -194,33 +194,18 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
     public String getPluginContentURL(final DownloadLink link) {
         final String videoID = link.getStringProperty(YoutubeHelper.YT_ID);
         final String playlistID = link.getStringProperty(YoutubeHelper.YT_PLAYLIST_ID);
-        final boolean newHandling = true;
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && newHandling) {
-            AbstractVariant variant = null;
-            try {
-                variant = getVariant(link);
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
-            String url = generateVideoContentURL(videoID, playlistID, link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_INT, -1));
-            if (variant != null) {
-                /* Add this to URL so if user adds this again, crawler knows which variant to crawl. */
-                url += "#variant=" + Encoding.urlEncode(Base64.encode(variant.getStorableString()));
-            }
-            return url;
+        AbstractVariant variant = null;
+        try {
+            variant = getVariant(link);
+        } catch (final Throwable e) {
+            logger.log(e);
         }
-        // final String videoID = link.getStringProperty(YoutubeHelper.YT_ID);
-        // final String playlistID = link.getStringProperty(YoutubeHelper.YT_PLAYLIST_ID);
-        // final boolean tryToReturnUrlInPlaylistContext = true;
-        // if (tryToReturnUrlInPlaylistContext && DebugMode.TRUE_IN_IDE_ELSE_FALSE && playlistID != null) {
-        // /* 2023-06-28: Debug-test */
-        // return "https://www.youtube.com/watch?v=" + videoID + "&list=" + playlistID;
-        // }
-        if (PluginJsonConfig.get(YoutubeConfig.class).isSetCustomUrlEnabled()) {
-            return generateContentURL(videoID);
-        } else {
-            return super.getPluginContentURL(link);
+        String url = generateVideoContentURL(videoID, playlistID, link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_INT, -1));
+        if (PluginJsonConfig.get(YoutubeConfig.class).isEnableIncludeVariantStringInContentURLs() && variant != null) {
+            /* Add this to URL so if user adds this again, crawler knows which variant to crawl. */
+            url += "#variant=" + Encoding.urlEncode(Base64.encode(variant.getStorableString()));
         }
+        return url;
     }
 
     @Override
@@ -340,10 +325,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         return "Youtube:" + link.getStringProperty(YoutubeHelper.YT_VARIANT) + link.getName() + "_" + link.getView().getBytesTotal();
     }
 
-    private boolean isDownloading = false;
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        return requestFileInformation(downloadLink, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink downloadLink, final boolean isDownload) throws Exception {
         final String id = downloadLink.getStringProperty(YoutubeHelper.YT_ID);
         // final YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
         final YoutubeHelper helper = new YoutubeHelper(br, getLogger());
@@ -352,7 +339,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         logger.info("requestFileInformation:" + id + "|" + variant.getVariantDetails());
         // update linkid
         final String linkid = downloadLink.getLinkID();
-        if (linkid != null && !isDownloading) {
+        if (linkid != null && !isDownload) {
             switch (variant.getType()) {
             case SUBTITLES: {
                 final String subtitleID = YoutubeHelper.createLinkID(downloadLink.getStringProperty(YoutubeHelper.YT_ID), variant);
@@ -1914,7 +1901,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             };
             oldView = downloadLink.setView(newView);
             // debug
-            requestFileInformation(downloadLink);
+            requestFileInformation(downloadLink, true);
             final SingleDownloadController dlc = downloadLink.getDownloadLinkController();
             final List<File> locks = new ArrayList<File>();
             HttpServer httpServer = null;
@@ -2244,8 +2231,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, Account account) throws Exception {
-        isDownloading = true;
-        YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
+        final YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
         final YoutubeHelper helper = new YoutubeHelper(br, getLogger());
         AbstractVariant variant = getVariant(downloadLink);
         if (account != null) {
@@ -2259,7 +2245,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             return;
         case IMAGE:
             this.setBrowserExclusive();
-            this.requestFileInformation(downloadLink);
+            this.requestFileInformation(downloadLink, true);
             this.br.setDebug(true);
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getAndUpdateVariantInfo(downloadLink, true).getDataStreams().get(0).getUrl(), resume, 1);
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("image/")) {
@@ -2286,7 +2272,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             break;
         case SUBTITLES:
             this.setBrowserExclusive();
-            this.requestFileInformation(downloadLink);
+            this.requestFileInformation(downloadLink, true);
             this.br.setDebug(true);
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getAndUpdateVariantInfo(downloadLink, true).getDataStreams().get(0).getUrl(), resume, 1);
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("text/xml")) {
@@ -2317,7 +2303,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
             }
             this.setBrowserExclusive();
             //
-            this.requestFileInformation(downloadLink);
+            this.requestFileInformation(downloadLink, true);
             this.br.setDebug(true);
             // downloadLink.setInternalTmpFilenameAppend(fileName);
             final YoutubeFinalLinkResource sd = getYoutubeFinalLinkResource(downloadLink, YoutubeHelper.YT_STREAM_DATA_VIDEO);

@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -28,10 +30,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ivoox.com" }, urls = { "https?://(?:[a-z]+\\.)?ivoox\\.com/(?:[a-z]{2}/)?[a-z0-9\\-]+audios\\-mp3_rf_\\d+_\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ivoox.com" }, urls = { "https?://(?:[a-z]+\\.)?ivoox\\.com/(?:[a-z]{2}/)?[a-z0-9\\-]+audios\\-mp3_rf_(\\d+)_\\d+\\.html" })
 public class IvooxCom extends PluginForHost {
     public IvooxCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
     /* DEV NOTES */
     // Tags:
@@ -52,12 +59,29 @@ public class IvooxCom extends PluginForHost {
         return "http://de.ivoox.com/en/informacion-legal_il.html";
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         server_issues = false;
-        final String fid = new Regex(link.getDownloadURL(), "(\\d+)_\\d+\\.html$").getMatch(0);
+        final String fid = this.getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(fid + ".mp3");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
@@ -68,9 +92,6 @@ public class IvooxCom extends PluginForHost {
         if (filename == null) {
             /* 2016-10-14: They messed up escaping in this html. */
             filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"\\s*/\\s*>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = fid;
         }
         String official_download = br.getRegex("downloadlink\\'\\)\\.load\\(\\'([^<>\"\\']+)\\'\\)").getMatch(0);
         if (official_download != null) {
@@ -87,24 +108,21 @@ public class IvooxCom extends PluginForHost {
             /* 2019-02-05: Old way! */
             dllink = "http://files.ivoox.com/listen/" + fid;
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext = default_extension;
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
         if (dllink != null) {
-            dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
+            if (filename != null) {
+                filename = Encoding.htmlDecode(filename);
+                filename = filename.trim();
+                final String ext = default_extension;
+                if (!filename.endsWith(ext)) {
+                    filename += ext;
+                }
+                link.setFinalFileName(filename);
+            }
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getLongContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                     /*
                      * 2020-01-22: Final downloadurl contains temp. token and is only valid once but redirects to static final downloadurl
                      * --> Use that as final downloadurl later
@@ -119,9 +137,6 @@ public class IvooxCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }

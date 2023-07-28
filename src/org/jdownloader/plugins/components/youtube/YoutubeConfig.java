@@ -473,10 +473,10 @@ public interface YoutubeConfig extends PluginConfigInterface {
      */
     boolean isProxyEnabled();
 
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Sets 'download from' field to: http://www.youtube.com/watch?v=\" + videoID. Useful for when you don't want variant information polluting URL.")
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Appends String representing internal variant information ('#variant=...') to URL the user gets when copying URL of added item.")
     @AboutConfig
-    boolean isSetCustomUrlEnabled();
+    boolean isEnableIncludeVariantStringInContentURLs();
 
     void setAdvancedVariantNamesEnabled(boolean b);
 
@@ -572,7 +572,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     void setQualitySortIdentifierOrderVideoFramerate(String[] s);
 
-    void setSetCustomUrlEnabled(boolean b);
+    void setEnableIncludeVariantStringInContentURLs(boolean b);
 
     void setSubtitleFilenamePattern(String name);
 
