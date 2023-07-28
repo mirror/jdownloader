@@ -22,7 +22,6 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -36,9 +35,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class HogTv extends antiDDoSForHost {
+public class HogTv extends PluginForHost {
     public HogTv(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -84,7 +84,6 @@ public class HogTv extends antiDDoSForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -111,10 +110,9 @@ public class HogTv extends antiDDoSForHost {
             link.setName(this.getFID(link) + ".mp4");
         }
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -195,7 +193,6 @@ public class HogTv extends antiDDoSForHost {
         if (filename != null) {
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
-            filename = encodeUnicode(filename);
             if (!filename.endsWith(ext)) {
                 filename += ext;
             }
@@ -204,13 +201,10 @@ public class HogTv extends antiDDoSForHost {
         if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;
             try {
-                con = openAntiDDoSRequestConnection(br, br.createGetRequest(this.dllink));
-                if (!this.looksLikeDownloadableContent(con)) {
-                    server_issues = true;
-                } else {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
+                con = br.openHeadConnection(dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -222,12 +216,23 @@ public class HogTv extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws Exception {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);

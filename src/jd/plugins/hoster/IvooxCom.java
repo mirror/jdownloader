@@ -15,11 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -27,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -52,7 +52,6 @@ public class IvooxCom extends PluginForHost {
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -73,14 +72,16 @@ public class IvooxCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
-        server_issues = false;
         final String fid = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(fid + ".mp3");
+            link.setName(fid + default_extension);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -88,10 +89,10 @@ public class IvooxCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2>Descripción de ([^<>]+)</h2>").getMatch(0);
-        if (filename == null) {
+        String title = br.getRegex("<h2>Descripción de ([^<>]+)</h2>").getMatch(0);
+        if (title == null) {
             /* 2016-10-14: They messed up escaping in this html. */
-            filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"\\s*/\\s*>").getMatch(0);
+            title = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"\\s*/\\s*>").getMatch(0);
         }
         String official_download = br.getRegex("downloadlink\\'\\)\\.load\\(\\'([^<>\"\\']+)\\'\\)").getMatch(0);
         if (official_download != null) {
@@ -108,28 +109,20 @@ public class IvooxCom extends PluginForHost {
             /* 2019-02-05: Old way! */
             dllink = "http://files.ivoox.com/listen/" + fid;
         }
-        if (dllink != null) {
-            if (filename != null) {
-                filename = Encoding.htmlDecode(filename);
-                filename = filename.trim();
-                final String ext = default_extension;
-                if (!filename.endsWith(ext)) {
-                    filename += ext;
-                }
-                link.setFinalFileName(filename);
+        if (dllink != null && !isDownload) {
+            if (title != null) {
+                title = Encoding.htmlDecode(title);
+                title = title.trim();
+                link.setName(title + default_extension);
             }
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                    /*
-                     * 2020-01-22: Final downloadurl contains temp. token and is only valid once but redirects to static final downloadurl
-                     * --> Use that as final downloadurl later
-                     */
-                    dllink = con.getURL().toString();
-                } else {
-                    server_issues = true;
+                handleConnectionErrors(br, con);
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+                final String extByMimeType = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (extByMimeType != null) {
+                    link.setFinalFileName(title + "." + extByMimeType);
                 }
             } finally {
                 try {
@@ -141,25 +134,27 @@ public class IvooxCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection();
-            if (dl.getConnection().getResponseCode() == 403) {
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws Exception {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        this.handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 

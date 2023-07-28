@@ -15,11 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -51,7 +52,6 @@ public class IcerboxBiz extends antiDDoSForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private String               fuid                         = null;
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
@@ -84,12 +84,16 @@ public class IcerboxBiz extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception, PluginException {
-        fuid = getFID(link);
-        link.setLinkID(fuid);
+        final String fuid = getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(fuid);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(br, link.getDownloadURL());
-        if (br.containsHTML(">רוב הסיכויים שנמחק. אתה מועבר לדף הראשי<") || this.br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fuid)) {
+        if (br.containsHTML(">רוב הסיכויים שנמחק. אתה מועבר לדף הראשי<") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getURL().contains(fuid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("הורדת קובץ\\s*\\[(.*?)\\]\\s+<").getMatch(0);
@@ -98,9 +102,7 @@ public class IcerboxBiz extends antiDDoSForHost {
         }
         final String filesize = br.getRegex("<b>גודל הקובץ: </b>\\s*<span[^>]+>([^<>\"]*?)</span>").getMatch(0);
         if (filename != null) {
-            link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())));
-        } else {
-            link.setName(this.fuid);
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -113,40 +115,46 @@ public class IcerboxBiz extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
         throw new AccountRequiredException();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+                link.removeProperty(property);
+                logger.log(e);
+                return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account acc) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dllink = checkDirectLink(downloadLink, "directlink_account_premium");
+    public void handlePremium(final DownloadLink link, final Account acc) throws Exception, PluginException {
+        requestFileInformation(link);
+        String dllink = checkDirectLink(link, "directlink_account_premium");
         if (dllink == null) {
+            final String fuid = this.getFID(link);
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             getPage(br, "https://www." + this.getHost() + "/ajax/unlock.php?password=" + Encoding.urlEncode(acc.getPass()) + "&file=" + fuid + "&keep=false&_=" + System.currentTimeMillis());
             /**
@@ -173,13 +181,13 @@ public class IcerboxBiz extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty("directlink_account_premium", dllink);
+        link.setProperty("directlink_account_premium", dllink);
         /* start the dl */
         dl.startDownload();
     }
