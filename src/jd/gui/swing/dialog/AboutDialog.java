@@ -413,7 +413,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
                     BC_VERSION = new BouncyCastleProvider().getVersion();
                 }
                 stats.add(new JLabel("TLS:"), "");
-                stats.add(createLink("BouncyCastle " + BC_VERSION, "https://www.bouncycastle.org/latest_releases.html"));
+                stats.add(createLink("BouncyCastle " + BC_VERSION, "https://www.bouncycastle.org/releasenotes.html#r" + String.valueOf(BC_VERSION).replace(".", "rv")));
             }
         } catch (Throwable e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
