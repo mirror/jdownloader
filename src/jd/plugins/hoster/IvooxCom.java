@@ -109,6 +109,7 @@ public class IvooxCom extends PluginForHost {
             /* 2019-02-05: Old way! */
             dllink = "http://files.ivoox.com/listen/" + fid;
         }
+        /* Important: Direct-URL can only be used one time!! */
         if (dllink != null && !isDownload) {
             if (title != null) {
                 title = Encoding.htmlDecode(title);
@@ -155,6 +156,11 @@ public class IvooxCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
         this.handleConnectionErrors(br, dl.getConnection());
+        final String filename = link.getName();
+        final String extByMimeType = Plugin.getExtensionFromMimeTypeStatic(dl.getConnection().getContentType());
+        if (extByMimeType != null && filename != null) {
+            link.setFinalFileName(this.correctOrApplyFileNameExtension(filename, "." + extByMimeType));
+        }
         dl.startDownload();
     }
 
