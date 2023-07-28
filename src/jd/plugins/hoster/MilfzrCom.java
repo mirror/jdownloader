@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -24,17 +23,20 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "milfzr.com" }, urls = { "https?://(?:www\\.)?milfzr\\.com/[A-Za-z0-9\\-%]+/?$" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "milfzr.com" }, urls = { "https?://(?:www\\.)?milfzr\\.com/(?:[A-Za-z0-9\\-%]+/?|\\?p=\\d+)" })
 public class MilfzrCom extends PluginForHost {
     public MilfzrCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,30 +52,55 @@ public class MilfzrCom extends PluginForHost {
     // protocol: no https
     // other:
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".mp4";
+    private static final String default_extension  = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
+    private static final int    free_maxdownloads  = -1;
+    private String              dllink             = null;
+    private final String        PROPERTY_CONTENTID = "contentid";
+    private final String        PATTERN_NORMAL     = "(?i)https?://(?:www\\.)?milfzr\\.com/([A-Za-z0-9\\-%]+)/?";
+    private final String        PATTERN_SHORT      = "(?i)https?://(?:www\\.)?milfzr\\.com/\\?p=(\\d+)";
 
     @Override
     public String getAGBLink() {
-        return "http://milfzr.com/";
+        return "https://milfzr.com/";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        final String urlTitle = Encoding.htmlDecode(new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/([^/]+)").getMatch(0).replace("-", " "));
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        final String storedContentid = link.getStringProperty(PROPERTY_CONTENTID);
+        if (storedContentid != null) {
+            return storedContentid;
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), PATTERN_SHORT).getMatch(0);
+        }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String fid = this.getFID(link);
+        final String urlSlug = new Regex(link.getPluginPatternMatcher(), PATTERN_NORMAL).getMatch(0);
         if (!link.isNameSet()) {
-            link.setName(urlTitle + ".mp4");
+            if (urlSlug != null) {
+                link.setName(Encoding.htmlDecode(urlSlug).trim() + ".mp4");
+            } else {
+                link.setName(fid + ".mp4");
+            }
         }
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
+        final String videoThumbnail = PluginJSonUtils.getJson(br, "posterImage");
+        final String fidFromHTML = br.getRegex("rel='shortlink'[^>]*href='https?://[^/]+/\\?p=(\\d+)").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 403) {
             /* Bad responsecode */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -89,13 +116,18 @@ public class MilfzrCom extends PluginForHost {
              * https://milfzr.com/wp-login.php?redirect_to=https%3A%2F%2Fmilfzr.com%2Fwp-admin%2F&reauth=1
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.toString().length() <= 100) {
+        } else if (br.getRequest().getHtmlCode().length() < 100) {
             /* Invalid response */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h1 id=\"title\">([^<>\"]+)</h1>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            filename = urlTitle;
+        if (fidFromHTML == null) {
+            logger.warning("Failed to find internal ID for this item");
+        } else if (fid == null) {
+            link.setProperty(PROPERTY_CONTENTID, fidFromHTML);
+        }
+        String title = br.getRegex("<h1 class=\"entry-title\"[^>]*>([^<>\"]+)</h1>").getMatch(0);
+        if (title == null) {
+            title = HTMLSearch.searchMetaTag(br, "og:title");
         }
         /* RegExes sometimes used for streaming */
         final String jssource = br.getRegex("sources(?:\")?\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
@@ -154,39 +186,38 @@ public class MilfzrCom extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        String ext;
-        if (!StringUtils.isEmpty(dllink)) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-            if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
+            String ext;
+            if (!StringUtils.isEmpty(dllink)) {
+                ext = getFileNameExtensionFromString(dllink, default_extension);
+                if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
+                    ext = default_extension;
+                }
+            } else {
                 ext = default_extension;
             }
-        } else {
-            ext = default_extension;
+            if (!title.endsWith(ext)) {
+                title += ext;
+            }
+            link.setFinalFileName(title);
         }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (StringUtils.isEmpty(dllink) && videoThumbnail == null) {
+            /* No video content e.g. https://milfzr.com/tags/ or https://milfzr.com/news/ */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (!StringUtils.isEmpty(dllink)) {
-            dllink = Encoding.htmlDecode(dllink);
+            // dllink = Encoding.htmlDecode(dllink);
             if (dllink.contains("//videos-up")) {
                 dllink = dllink.replace("//videos-up", "//milfzr.com/videos-up");
             }
-            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    link.setProperty("directlink", dllink);
-                } else {
-                    server_issues = true;
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -196,30 +227,32 @@ public class MilfzrCom extends PluginForHost {
             }
         } else {
             /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
+            link.setName(title);
         }
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws Exception {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 

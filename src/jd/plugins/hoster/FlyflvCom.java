@@ -15,9 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,12 +30,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyflv.com" }, urls = { "https?://(?:www\\.)?flyflv\\.com/movies/(\\d+(?:/[A-Za-z0-9\\-_]+)?|player/\\d+)" })
 public class FlyflvCom extends PluginForHost {
     public FlyflvCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     /* DEV NOTES */
@@ -45,17 +50,10 @@ public class FlyflvCom extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
         return "http://www.flyflv.com/site/page/terms";
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        final String linkpart = new Regex(link.getPluginPatternMatcher(), "/(\\d+(/.+)?)$").getMatch(0);
-        link.setPluginPatternMatcher("https://www.flyflv.com/movies/" + linkpart);
     }
 
     @Override
@@ -69,28 +67,29 @@ public class FlyflvCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "/movies/(?:player/)?(\\d+)").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "(?i)/movies/(?:player/)?(\\d+)").getMatch(0);
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         final String fid = getFID(link);
-        String fallbackTitle = new Regex(link.getPluginPatternMatcher(), "movies/\\d+/(.+)").getMatch(0);
-        if (fallbackTitle == null) {
+        String fallbackTitle = new Regex(link.getPluginPatternMatcher(), "(?i)movies/\\d+/(.+)").getMatch(0);
+        if (fallbackTitle != null) {
+            fallbackTitle = fallbackTitle.replace("-", " ").trim();
+        } else {
             fallbackTitle = fid;
         }
         if (!link.isNameSet()) {
             link.setName(fallbackTitle + ".mp4");
         }
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage("https://www." + this.getHost() + "/movies/" + fid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -116,24 +115,15 @@ public class FlyflvCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename).trim();
-        filename = encodeUnicode(filename);
         final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
+        filename = this.correctOrApplyFileNameExtension(filename, ext);
         link.setFinalFileName(filename);
         if (!StringUtils.isEmpty(this.dllink) && !isDownload) {
             URLConnectionAdapter con = null;
             try {
-                /* Do NOT use Head-Request for this website!! */
-                con = br.openGetConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 1000) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    server_issues = true;
-                }
+                con = br.openHeadConnection(dllink);
+                handleConnectionErrors(br, con);
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             } finally {
                 try {
                     con.disconnect();
@@ -144,27 +134,27 @@ public class FlyflvCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(this.dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Important else we might run into error 403. */
-        this.sleep(1000, link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws Exception {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (StringUtils.isEmpty(this.dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
