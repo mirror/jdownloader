@@ -144,7 +144,7 @@ public class TbCmV2 extends PluginForDecrypt {
             String pattern = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/";
             pattern += "(";
             pattern += "embed(\\?v=|/)" + VIDEO_ID_PATTERN + ".*";
-            pattern += "|watch\\?v=" + VIDEO_ID_PATTERN + ".*";
+            pattern += "|watch.*";
             pattern += "|shorts/" + VIDEO_ID_PATTERN + ".*";
             pattern += "|(?:view_play_list|playlist)\\?(p|list)=.+";
             pattern += "|watch_videos\\?.+";
@@ -294,26 +294,18 @@ public class TbCmV2 extends PluginForDecrypt {
         globalPropertiesForDownloadLink = new HashMap<String, Object>();
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
         String addedLink = param.getCryptedUrl();
-        if (StringUtils.containsIgnoreCase(addedLink, "yt.not.allowed")) {
-            // TODO: Check what this is/was there for
-            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            if (cfg.isAndroidSupportEnabled()) {
-                if (addedLink.matches("https?://[\\w\\.]*yt\\.not\\.allowed/[%a-z_A-Z0-9\\-]+")) {
-                    addedLink = addedLink.replaceFirst("yt\\.not\\.allowed", "youtu.be");
-                } else {
-                    addedLink = addedLink.replaceFirst("yt\\.not\\.allowed", "youtube.com");
-                }
-                final DownloadLink link = createDownloadlink(addedLink);
-                link.setContainerUrl(addedLink);
-                ret.add(link);
-            }
-            return ret;
+        if (StringUtils.containsIgnoreCase(addedLink, "yt.not.allowed") && !cfg.isAndroidSupportEnabled()) {
+            /*
+             * Important! Neither touch nor question this as long as there are references to "yt.not.allowed" in
+             * jd.controlling.linkcrawler.LinkCrawler.java.
+             */
+            logger.info("Returning nothing because: Android support is disabled");
+            // TODO: Maybe add BubbleNotification for this?
+            return new ArrayList<DownloadLink>();
         }
-        final String finalContainerURL = addedLink;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>() {
             @Override
             public boolean add(DownloadLink e) {
-                e.setContainerUrl(finalContainerURL);
                 distribute(e);
                 return super.add(e);
             }
@@ -333,15 +325,15 @@ public class TbCmV2 extends PluginForDecrypt {
             // first uid in array is the video the user copy url on.
             videoID = new Regex(video_ids_comma_separated, "(" + VIDEO_ID_PATTERN + ")").getMatch(0);
         }
+        playlistID = getListIDFromUrl(cleanedurl);
+        userName = getUsernameFromUrl(cleanedurl);
+        channelID = getChannelIDFromUrl(cleanedurl);
+        final String userChannel = new Regex(cleanedurl, "/c/([^/\\?]+)").getMatch(0);
         helper = new YoutubeHelper(br, getLogger());
         if (helper.isConsentCookieRequired()) {
             helper.setConsentCookie(br, null);
         }
         helper.login(getLogger(), false);
-        playlistID = getListIDFromUrl(cleanedurl);
-        userName = getUsernameFromUrl(cleanedurl);
-        channelID = getChannelIDFromUrl(cleanedurl);
-        final String userChannel = new Regex(cleanedurl, "/c/([^/\\?]+)").getMatch(0);
         if (StringUtils.isEmpty(channelID) && StringUtils.isNotEmpty(userChannel)) {
             // TODO: Check if this is still needed
             logger.info("Trying to find channelID");
@@ -366,11 +358,12 @@ public class TbCmV2 extends PluginForDecrypt {
         globalPropertiesForDownloadLink.put(YoutubeHelper.YT_USER_ID, userName);
         /* @Developer: Enable this boolean if pagination is broken and you are unable to quickly fix it. */
         final boolean paginationIsBroken = false;
-        final boolean isChannelOrProfileShorts = isChannelOrProfileShorts(cleanedurl);
         final short maxItemsPerPage = 100;
         final ArrayList<YoutubeClipData> videoIdsToAdd = new ArrayList<YoutubeClipData>();
         int userDefinedMaxPlaylistOrProfileItemsLimit = cfg.getPlaylistAndProfileCrawlerMaxItemsLimit();
-        final String logtextForUserDisabledCrawlerByLimitSetting = "Doing nothing because user has disabled channel/profile/playlist crawler by setting limit to 0";
+        final String playlistHandlingLogtextForUserDisabledCrawlerByLimitSetting = "Doing nothing because user has disabled channel/profile/playlist crawler by setting limit to 0";
+        String playlistHandlingHumanReadableTypeOfUrlToCrawl = null;
+        String playlistHandlingHumanReadableTitle = null;
         if (StringUtils.isEmpty(playlistID) && StringUtils.isEmpty(userName) && StringUtils.isEmpty(userChannel) && !StringUtils.isEmpty(videoID)) {
             /* Single video */
             videoIdsToAdd.add(new org.jdownloader.plugins.components.youtube.YoutubeClipData(videoID));
@@ -383,41 +376,39 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 /* Ask user: Prevents accidental crawling of entire Play-List or Channel-List or User-List. */
                 IfUrlisAPlaylistAction playListAction = cfg.getLinkIsPlaylistUrlAction();
-                final String humanReadableTypeOfUrlToCrawl;
-                final String dialogTitle;
                 if (playlistID != null) {
-                    humanReadableTypeOfUrlToCrawl = "Playlist";
-                    dialogTitle = "Playlist | " + playlistID;
-                } else if (userName != null && isChannelOrProfileShorts) {
-                    humanReadableTypeOfUrlToCrawl = "Channel Shorts";
-                    dialogTitle = "Channel | " + userName + " | Shorts";
+                    playlistHandlingHumanReadableTypeOfUrlToCrawl = "Playlist";
+                    playlistHandlingHumanReadableTitle = "Playlist | " + playlistID;
+                } else if (userName != null && isChannelOrProfileShorts(cleanedurl)) {
+                    playlistHandlingHumanReadableTypeOfUrlToCrawl = "Channel Shorts";
+                    playlistHandlingHumanReadableTitle = "Channel | " + userName + " | Shorts";
                 } else if (userName != null) {
-                    humanReadableTypeOfUrlToCrawl = "Channel";
-                    dialogTitle = "Channel via username | " + userName;
+                    playlistHandlingHumanReadableTypeOfUrlToCrawl = "Channel";
+                    playlistHandlingHumanReadableTitle = "Channel | " + userName;
                 } else {
-                    humanReadableTypeOfUrlToCrawl = "Channel";
-                    dialogTitle = "Channel via channelID | " + channelID;
+                    playlistHandlingHumanReadableTypeOfUrlToCrawl = "Channel";
+                    playlistHandlingHumanReadableTitle = "ChannelID | " + channelID;
                 }
                 final String buttonTextCrawlPlaylistOrProfile;
                 if (paginationIsBroken) {
-                    buttonTextCrawlPlaylistOrProfile = humanReadableTypeOfUrlToCrawl + " [max first " + maxItemsPerPage + " items]";
+                    buttonTextCrawlPlaylistOrProfile = playlistHandlingHumanReadableTypeOfUrlToCrawl + " [max first " + maxItemsPerPage + " items]";
                 } else if (userDefinedMaxPlaylistOrProfileItemsLimit > 0) {
-                    buttonTextCrawlPlaylistOrProfile = humanReadableTypeOfUrlToCrawl + " [max first " + userDefinedMaxPlaylistOrProfileItemsLimit + " item(s)]";
+                    buttonTextCrawlPlaylistOrProfile = playlistHandlingHumanReadableTypeOfUrlToCrawl + " [max first " + userDefinedMaxPlaylistOrProfileItemsLimit + " item(s)]";
                 } else {
-                    buttonTextCrawlPlaylistOrProfile = humanReadableTypeOfUrlToCrawl;
+                    buttonTextCrawlPlaylistOrProfile = playlistHandlingHumanReadableTypeOfUrlToCrawl;
                 }
                 if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(channelID) || StringUtils.isNotEmpty(userName)) && StringUtils.isEmpty(videoID)) {
                     if (userDefinedMaxPlaylistOrProfileItemsLimit == 0) {
-                        logger.info(logtextForUserDisabledCrawlerByLimitSetting);
+                        logger.info(playlistHandlingLogtextForUserDisabledCrawlerByLimitSetting);
                         return ret;
                     }
                     if (playListAction == IfUrlisAPlaylistAction.ASK) {
-                        String messageDialogText = "This URL is a " + humanReadableTypeOfUrlToCrawl + " link. What would you like to do?";
+                        String messageDialogText = "This URL is a " + playlistHandlingHumanReadableTypeOfUrlToCrawl + " link. What would you like to do?";
                         if (paginationIsBroken) {
                             messageDialogText += "\r\nJDownloader can only crawl the first " + maxItemsPerPage + " items automatically.\r\nIf there are more than " + maxItemsPerPage + " items, you need to use external tools to grab the single URLs to all videos and add those to JD manually.";
                         }
                         messageDialogText += "\r\nIf you wish to hide this dialog, you can pre-select your preferred option under Settings -> Plugins -> youtube.com.";
-                        final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, dialogTitle, JDL.L("plugins.host.youtube.isplaylist.question.message", messageDialogText), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", buttonTextCrawlPlaylistOrProfile), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do nothing?")) {
+                        final ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, playlistHandlingHumanReadableTitle, JDL.L("plugins.host.youtube.isplaylist.question.message", messageDialogText), null, JDL.L("plugins.host.youtube.isplaylist.question.onlyplaylist", buttonTextCrawlPlaylistOrProfile), JDL.L("plugins.host.youtube.isvideoandplaylist.question.nothing", "Do nothing?")) {
                             @Override
                             public ModalityType getModalityType() {
                                 return ModalityType.MODELESS;
@@ -502,11 +493,12 @@ public class TbCmV2 extends PluginForDecrypt {
             /* Channel/Playlist */
             if (userDefinedMaxPlaylistOrProfileItemsLimit == 0) {
                 /* This should never happen but it is a double-check left here on purpose. */
-                logger.info(logtextForUserDisabledCrawlerByLimitSetting);
+                logger.info(playlistHandlingLogtextForUserDisabledCrawlerByLimitSetting);
                 return ret;
             }
             try {
-                if (!isChannelOrProfileShorts && !StringUtils.isEmpty(userName) && StringUtils.isEmpty(playlistID) && cfg.getProfileCrawlMode() == ProfileCrawlMode.PLAYLIST) {
+                // TODO: Clean this code mess
+                if (!isChannelOrProfileShorts(cleanedurl) && !StringUtils.isEmpty(userName) && StringUtils.isEmpty(playlistID) && cfg.getProfileCrawlMode() == ProfileCrawlMode.PLAYLIST) {
                     /*
                      * the user channel parser only parses 1050 videos. this workaround finds the user channel playlist and parses this
                      * playlist instead
@@ -530,7 +522,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     /* channelID starts with "UC" */
                     playlistID = "UU" + channelID.substring(2);
                 }
-                if (!isChannelOrProfileShorts && StringUtils.isEmpty(playlistID) && !StringUtils.isEmpty(channelID) && cfg.getProfileCrawlMode() == ProfileCrawlMode.PLAYLIST) {
+                if (!isChannelOrProfileShorts(cleanedurl) && StringUtils.isEmpty(playlistID) && !StringUtils.isEmpty(channelID) && cfg.getProfileCrawlMode() == ProfileCrawlMode.PLAYLIST) {
                     /*
                      * you can not use this with /c or /channel based urls, it will pick up false positives. see
                      * https://www.youtube.com/channel/UCOSGEokQQcdAVFuL_Aq8dlg, it will find list=PLc-T0ryHZ5U_FtsfHQopuvQugBvRoVR3j which
@@ -553,14 +545,40 @@ public class TbCmV2 extends PluginForDecrypt {
                     videoIdsToAdd.addAll(playlist);
                 }
                 videoIdsToAdd.addAll(parseVideoIds(video_ids_comma_separated));
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 logger.log(e);
+                logger.warning("Playlist crawler failed due to exception");
                 return ret;
             }
-            final boolean channelAndPlaylistCrawlerGroupingTest = false;
+            final boolean channelAndPlaylistCrawlerGroupingTest = true;
             if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && channelAndPlaylistCrawlerGroupingTest) {
                 channelOrPlaylistPackage = FilePackage.getInstance();
-                channelOrPlaylistPackage.setName("TestDevTestTest");
+                channelOrPlaylistPackage.setAllowMerge(true);
+                // channelOrPlaylistPackage.setCleanupPackageName(false);
+                final String playlistTitle = (String) globalPropertiesForDownloadLink.get(YoutubeHelper.YT_PLAYLIST_TITLE);
+                final String channelName = (String) globalPropertiesForDownloadLink.get(YoutubeHelper.YT_CHANNEL_TITLE);
+                if (playlistTitle != null) {
+                    channelOrPlaylistPackage.setName(playlistTitle);
+                } else {
+                    // TODO: Maybe obtain this information from helper or somewhere else as added URL and URL used later can change!
+                    final boolean isShorts = isChannelOrProfileShorts(cleanedurl);
+                    String packagename;
+                    if (channelName != null) {
+                        packagename = channelName;
+                    } else if (this.userName != null) {
+                        packagename = this.userName;
+                    } else {
+                        packagename = playlistHandlingHumanReadableTitle;
+                    }
+                    if (isShorts) {
+                        packagename += " | Shorts";
+                    }
+                    channelOrPlaylistPackage.setName(packagename);
+                }
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    /* Dev only: Include number of expected items in packagename for better overview/debugging. */
+                    channelOrPlaylistPackage.setName("[" + videoIdsToAdd.size() + " items] " + channelOrPlaylistPackage.getName());
+                }
             }
         }
         Integer indexFromAddedURL = null;
@@ -830,7 +848,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     // System.out.println(cur.getVariant().getBaseVariant() + "\t" + cur.getVariant().getQualityRating());
                     // }
                     if (linkVariants.size() > 0) {
-                        DownloadLink lnk = createLink(l, linkVariants.get(0), cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants);
+                        DownloadLink lnk = createLink(l, linkVariants.get(0), cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants, channelOrPlaylistPackage);
                         ret.add(lnk);
                         if (linkVariants.get(0).getVariant().getGroup() == VariantGroup.SUBTITLES) {
                             List<String> extras = CFG_YOUTUBE.CFG.getExtraSubtitles();
@@ -840,10 +858,10 @@ public class TbCmV2 extends PluginForDecrypt {
                                         for (VariantInfo vi : linkVariants) {
                                             if (vi.getVariant() instanceof SubtitleVariant) {
                                                 if ("*".equals(s)) {
-                                                    lnk = createLink(l, vi, cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants);
+                                                    lnk = createLink(l, vi, cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants, channelOrPlaylistPackage);
                                                     ret.add(lnk);
                                                 } else if (StringUtils.equalsIgnoreCase(((SubtitleVariant) vi.getVariant()).getGenericInfo().getLanguage(), s)) {
-                                                    lnk = createLink(l, vi, cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants);
+                                                    lnk = createLink(l, vi, cutLinkVariantsDropdown.size() > 0 ? cutLinkVariantsDropdown : linkVariants, channelOrPlaylistPackage);
                                                     ret.add(lnk);
                                                     break;
                                                 }
@@ -887,7 +905,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 for (VariantInfo vi : linkVariants) {
                     ArrayList<VariantInfo> lst = new ArrayList<VariantInfo>();
                     lst.add(vi);
-                    DownloadLink lnk = createLink(new YoutubeVariantCollection(), vi, lst);
+                    final DownloadLink lnk = createLink(new YoutubeVariantCollection(), vi, lst, channelOrPlaylistPackage);
                     ret.add(lnk);
                 }
             }
@@ -921,7 +939,7 @@ public class TbCmV2 extends PluginForDecrypt {
         return ret;
     }
 
-    private DownloadLink createLink(YoutubeVariantCollection l, VariantInfo variantInfo, List<VariantInfo> alternatives) {
+    private DownloadLink createLink(YoutubeVariantCollection l, VariantInfo variantInfo, List<VariantInfo> alternatives, final FilePackage groupPackage) {
         try {
             YoutubeClipData clip = null;
             if (clip == null && variantInfo.getVideoStreams() != null) {
@@ -968,14 +986,18 @@ public class TbCmV2 extends PluginForDecrypt {
             String filename = helper.createFilename(ret);
             ret.setFinalFileName(filename);
             ret.setLinkID(linkID);
-            FilePackage fp = FilePackage.getInstance();
-            final String fpName = helper.replaceVariables(ret, helper.getConfig().getPackagePattern());
-            // req otherwise returned "" value = 'various', regardless of user settings for various!
-            if (StringUtils.isNotEmpty(fpName)) {
-                fp.setName(fpName);
-                // let the packagizer merge several packages that have the same name
-                fp.setAllowMerge(true);
-                fp.add(ret);
+            if (groupPackage != null) {
+                groupPackage.add(ret);
+            } else {
+                final String fpName = helper.replaceVariables(ret, helper.getConfig().getPackagePattern());
+                // req otherwise returned "" value = 'various', regardless of user settings for various!
+                if (StringUtils.isNotEmpty(fpName)) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(fpName);
+                    // let the packagizer merge several packages that have the same name
+                    fp.setAllowMerge(true);
+                    fp.add(ret);
+                }
             }
             long estimatedFileSize = 0;
             final AbstractVariant variant = variantInfo.getVariant();
@@ -1237,7 +1259,7 @@ public class TbCmV2 extends PluginForDecrypt {
             } else if (errorOrWarningMessage != null) {
                 /* For example "Unavailable videos are hidden" */
                 logger.info("Found warning message for playlist/channel: " + errorOrWarningMessage);
-                this.displayBubblenotifyMessage(humanReadableTitle, errorOrWarningMessage);
+                this.displayBubblenotifyMessage(humanReadableTitle + " | Warning", errorOrWarningMessage);
             }
             /* Find extra information about playlist */
             final Map<String, Object> playlistHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/playlistHeaderRenderer");
@@ -1282,6 +1304,7 @@ public class TbCmV2 extends PluginForDecrypt {
             }
             break;
         } while (run < 1);
+        humanReadableTitle += " sorted by " + activeSort;
         int videoPositionCounter = 0;
         int round = 0;
         final String INNERTUBE_CLIENT_NAME = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("INNERTUBE_CONTEXT_CLIENT_NAME")) : null;
@@ -1406,17 +1429,26 @@ public class TbCmV2 extends PluginForDecrypt {
              */
             if (!reachedUserDefinedMaxItemsLimit) {
                 missingVideos = totalNumberofItems.intValue() - ret.size();
-                if (missingVideos > 0) {
-                    String missingItemsText = missingVideos + " of " + totalNumberofItems + " items are missing in this playlist (duplicates, offline or hidden by YouTube).";
-                    missingItemsText += "\r\nSkipped duplicates: " + numberofSkippedDuplicates;
-                    this.displayBubblenotifyMessage(humanReadableTitle, missingItemsText);
-                }
             }
         } else if (!reachedUserDefinedMaxItemsLimit) {
             /* We could not determine the number of items in this channel/playlist -> Use total number of found items as this number. */
             logger.info("Unable to determine PLAYLIST_SIZE -> Using number of found items as replacement");
             globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_SIZE, ret.size());
         }
+        /* Number of skipped and missing items are two different numbers! */
+        missingVideos -= numberofSkippedDuplicates;
+        String bubblenotificationText = "Finished finding all items of " + humanReadableTitle;
+        bubblenotificationText += "\r\nFound " + ret.size() + " of " + (totalNumberofItems != null ? totalNumberofItems : "??") + " videos in " + humanReadableTitle;
+        if (missingVideos > 0) {
+            bubblenotificationText += "\r\nMissing videos: " + missingVideos + " due to  skipped duplicates, offline or hidden videos by YouTube";
+            bubblenotificationText += "\r\nReasons for missing videos: Videos that are hidden/offline/private/GEO-blocked";
+        }
+        if (numberofSkippedDuplicates > 0) {
+            bubblenotificationText += "\r\nSkipped duplicates: " + numberofSkippedDuplicates;
+            bubblenotificationText += "\r\nPlaylists can contain the same item multiple times but JD can only add it once to linkgrabber.";
+        }
+        bubblenotificationText += "\r\nProcessing results. This will take a while.";
+        this.displayBubblenotifyMessage(humanReadableTitle + " items", bubblenotificationText);
         logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs | Number of possibly missing videos [due to duplicate/private/offline/GEO-block or bug in plugin]: " + missingVideos + " | Skipped duplicates: " + numberofSkippedDuplicates);
         return ret;
     }

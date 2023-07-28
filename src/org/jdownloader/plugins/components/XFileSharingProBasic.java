@@ -1313,10 +1313,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             }
         }
         if (StringUtils.isEmpty(fileInfo[0])) {
-            final String officialVideoDownloadFilename = new Regex(html, "(?i)>\\s*Download\\s*([^<]*?)\\s*</h\\d+>").getMatch(0);
-            if (officialVideoDownloadFilename != null) {
-                fileInfo[0] = officialVideoDownloadFilename;
-            }
+            /* 2023-07-28: For new style XFS videohosts when on official video download page "/d/<fuid>" */
+            fileInfo[0] = new Regex(html, "(?i)<h4 [^>]*>\\s*Download\\s*([^<]*?)\\s*</h\\d+>").getMatch(0);
         }
         final String downloadFileTable = new Regex(html, "<h\\d+>\\s*Download\\s*File\\s*</h\\d+>\\s*<table[^>]*>(.*?)</table>").getMatch(0);
         if (downloadFileTable != null) {

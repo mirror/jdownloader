@@ -77,7 +77,7 @@ public class FileHorstDe extends PluginForHost {
         final String md5 = br.getRegex("<td>\\s*MD5:\\s*</td><td>([^<]*?)<").getMatch(0);
         /* Server sometimes sends crippled/encoded filenames */
         if (filename != null) {
-            link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename).trim()));
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
