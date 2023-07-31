@@ -24,6 +24,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,14 +51,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtTextField;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emuparadise.me" }, urls = { "https?://(?:www\\.)?emuparadise\\.me/(roms/roms\\.php\\?gid=\\d+|roms/get-download\\.php\\?gid=\\d+|[^<>/]+/[^<>/]+/\\d+)" })
 public class EmuParadiseMe extends PluginForHost {
@@ -75,7 +75,6 @@ public class EmuParadiseMe extends PluginForHost {
     }
 
     private static Object        LOCK                         = new Object();
-    private static final String  COOKIE_HOST                  = "http://emuparadise.me/";
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     /* Connection stuff */
     private final boolean        FREE_RESUME                  = true;
@@ -175,7 +174,7 @@ public class EmuParadiseMe extends PluginForHost {
             }
         }
         if (filename != null) {
-            link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim())) + ".zip");
+            link.setName(Encoding.htmlDecode(filename).trim() + ".zip");
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(correctFilesize(filesize)));
@@ -220,11 +219,11 @@ public class EmuParadiseMe extends PluginForHost {
                 for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                     final String key = cookieEntry.getKey();
                     final String value = cookieEntry.getValue();
-                    br.setCookie(COOKIE_HOST, key, value);
+                    br.setCookie(getHost(), key, value);
                 }
             } else {
                 /* Skips the captcha (tries to). */
-                br.setCookie(COOKIE_HOST, "downloadcaptcha", "1");
+                br.setCookie(getHost(), "downloadcaptcha", "1");
             }
         }
     }
@@ -275,7 +274,7 @@ public class EmuParadiseMe extends PluginForHost {
                             }
                             /* Save cookies to avoid captchas in the future */
                             final HashMap<String, String> cookies = new HashMap<String, String>();
-                            final Cookies add = br.getCookies(COOKIE_HOST);
+                            final Cookies add = br.getCookies(getHost());
                             for (final Cookie c : add.getCookies()) {
                                 cookies.put(c.getKey(), c.getValue());
                             }

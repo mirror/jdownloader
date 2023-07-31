@@ -48,7 +48,6 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
-import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -57,7 +56,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.decrypter.FaceBookComGallery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FaceBookComVideos extends PluginForHost {
@@ -191,9 +189,20 @@ public class FaceBookComVideos extends PluginForHost {
         return br;
     }
 
-    private String getAndCheckDownloadURL(final DownloadLink link) throws Exception {
+    private String getAndCheckDownloadURL(final DownloadLink link, final boolean throwExceptionIfNoDirecturlIsAvailable) throws Exception {
+        final String urlLast = link.getStringProperty(PROPERTY_DIRECTURL_LAST);
+        final String urlVideoLow = link.getStringProperty(PROPERTY_DIRECTURL_LOW);
+        final String urlVideoHD = link.getStringProperty(PROPERTY_DIRECTURL_HD);
+        final String urlOld = link.getStringProperty(PROPERTY_DIRECTURL_OLD);
+        if (urlLast == null && urlVideoLow == null && urlVideoHD == null && urlOld == null) {
+            if (throwExceptionIfNoDirecturlIsAvailable) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                return null;
+            }
+        }
         String ret = checkDirecturlFromPropertyAndSetFilesize(link, PROPERTY_DIRECTURL_LAST);
-        if (ret == null && PluginJsonConfig.get(this.getConfigInterface()).isPreferHD()) {
+        if (ret == null && (PluginJsonConfig.get(this.getConfigInterface()).isPreferHD() || urlVideoLow == null)) {
             ret = checkDirecturlFromPropertyAndSetFilesize(link, PROPERTY_DIRECTURL_HD);
         }
         if (ret == null) {
@@ -208,11 +217,12 @@ public class FaceBookComVideos extends PluginForHost {
     /** Returns directurl without checking it. */
     private static String getDirecturl(final DownloadLink link) {
         String ret = link.getStringProperty(PROPERTY_DIRECTURL_LAST);
-        if (ret == null && PluginJsonConfig.get(FacebookConfig.class).isPreferHD()) {
+        final String urlVideoLow = link.getStringProperty(PROPERTY_DIRECTURL_LOW);
+        if (ret == null && (PluginJsonConfig.get(FacebookConfig.class).isPreferHD() || urlVideoLow == null)) {
             ret = link.getStringProperty(PROPERTY_DIRECTURL_HD);
         }
         if (ret == null) {
-            ret = link.getStringProperty(PROPERTY_DIRECTURL_LOW);
+            ret = urlVideoLow;
             if (ret == null) {
                 ret = link.getStringProperty(PROPERTY_DIRECTURL_OLD);
             }
@@ -272,36 +282,16 @@ public class FaceBookComVideos extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         prepBR(this.br);
-        if (!link.hasProperty(PROPERTY_TYPE) && FaceBookComGallery.USE_NEW_HANDLING_DEC_2022) {
-            /* Legacy handling: Convert old items to new ones */
-            // TODO: Remove after 05/2023
-            final FaceBookComGallery crawler = (FaceBookComGallery) this.getNewPluginForDecryptInstance(this.getHost());
-            final ArrayList<DownloadLink> results = crawler.decryptIt(new CryptedLink(link.getPluginPatternMatcher()), null);
-            DownloadLink newLink = null;
-            for (final DownloadLink result : results) {
-                if (getType(result).equals(getType(link))) {
-                    newLink = result;
-                    break;
-                }
-            }
-            if (newLink == null) {
-                /* This should never happen. */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            link.setProperties(newLink.getProperties());
-            link.setPluginPatternMatcher(newLink.getPluginPatternMatcher());
-        }
-        downloadURL = getAndCheckDownloadURL(link);
+        downloadURL = getAndCheckDownloadURL(link, false);
         if (downloadURL != null) {
             // New handling dec 2022
             logger.info("Availablecheck only via directurl done:" + downloadURL);
             return AvailableStatus.TRUE;
         }
-        /* Old handling before dec 2022 TODO: Remove this */
         boolean loggedIn = false;
         final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
-        final boolean findAndCheckDownloadurl = isDownload || fastLinkcheck == false;
         if (link.getPluginPatternMatcher().matches(PATTERN_GROUP_PERMALINK) || link.getPluginPatternMatcher().matches(PATTERN_POSTS)) {
+            /* Hm old code */
             br.getPage(link.getPluginPatternMatcher());
             String video = null;
             boolean search = true;
@@ -354,38 +344,33 @@ public class FaceBookComVideos extends PluginForHost {
             if (account != null && !loggedIn) {
                 login(account, false);
             }
-            /* Embed only = no nice filenames given */
-            final boolean useEmbedOnly = false;
-            if (useEmbedOnly) {
-                this.requestFileInformationEmbed(link, isDownload);
-            } else {
-                /*
-                 * First round = do this as this is the best way to find all required filename information especially the upload-date!
-                 */
-                AvailableStatus websiteCheckResult = AvailableStatus.UNCHECKABLE;
-                try {
-                    websiteCheckResult = requestFileInformationVideoWebsite(link, isDownload);
-                    if (websiteCheckResult == AvailableStatus.FALSE) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    if (account == null) {
-                        link.removeProperty(PROPERTY_ACCOUNT_REQUIRED);
-                    }
-                } catch (final AccountRequiredException aq) {
-                    if (account != null) {
-                        /*
-                         * We're already logged in -> Item must be offline (or can only be accessed via another account with has the
-                         * required permissions which we can't know as Facebook gives little information in their errormessages).
-                         */
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else {
-                        throw aq;
-                    }
+            /*
+             * First round = do this as this is the best way to find all required filename information especially the upload-date!
+             */
+            AvailableStatus websiteCheckResult = AvailableStatus.UNCHECKABLE;
+            try {
+                websiteCheckResult = requestFileInformationVideoWebsite(link, isDownload);
+                if (websiteCheckResult == AvailableStatus.FALSE) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (account == null) {
+                    link.removeProperty(PROPERTY_ACCOUNT_REQUIRED);
+                }
+            } catch (final AccountRequiredException aq) {
+                if (account != null) {
+                    /*
+                     * We're already logged in -> Item must be offline (or can only be accessed via another account with has the required
+                     * permissions which we can't know as Facebook gives little information in their errormessages).
+                     */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw aq;
                 }
             }
             setFilename(link);
+            final boolean findAndCheckDownloadurl = isDownload || fastLinkcheck == false;
             if (findAndCheckDownloadurl) {
-                downloadURL = getAndCheckDownloadURL(link);
+                downloadURL = getAndCheckDownloadURL(link, true);
                 if (downloadURL == null) {
                     /* E.g. final downloadurl doesn't lead to video-file. */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
@@ -860,25 +845,6 @@ public class FaceBookComVideos extends PluginForHost {
         } else {
             return null;
         }
-    }
-
-    /**
-     * Linkcheck via embed URL. </br>
-     * Not all videos are embeddable!
-     */
-    @Deprecated
-    public AvailableStatus requestFileInformationEmbed(final DownloadLink link, final boolean isDownload) throws Exception {
-        br.getPage("https://www." + this.getHost() + "/video/embed?video_id=" + this.getFID(link));
-        /*
-         * 2020-06-05: <div class="pam uiBoxRed"><div class="fsl fwb fcb">Video nicht verfügbar</div>Dieses Video wurde entweder entfernt
-         * oder ist aufgrund der ‎Privatsphäre-Einstellungen nicht sichtbar.</div>
-         */
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"pam uiBoxRed\"")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Object jsonO = websiteFindAndParseJson();
-        websitehandleVideoJson(link, jsonO);
-        return AvailableStatus.TRUE;
     }
 
     private String checkDirecturlFromPropertyAndSetFilesize(final DownloadLink link, final String propertyName) throws IOException, PluginException {

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -70,14 +71,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
         return new String[] { "facebook.com" };
     }
 
-    public static final boolean USE_NEW_HANDLING_DEC_2022 = true;
-
     public static String[] getAnnotationUrls() {
-        if (USE_NEW_HANDLING_DEC_2022) {
-            return new String[] { "https?://(?:www\\.)?facebook\\.com/.+" };
-        } else {
-            return new String[] { "https?://(?:www\\.)?facebook_plugin_unfinished\\.com/.+" };
-        }
+        return new String[] { "https?://(?:www\\.)?facebook\\.com/.+" };
     }
 
     private final String COMPONENT_USERNAME              = "(?:[\\%a-zA-Z0-9\\-]+)";
@@ -103,8 +98,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     @Deprecated
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        // for debugging
-        if (debug) {
+        skippedLivestreams = 0;
+        if (debug && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* For debugging as facebook websites and resulting log outputs are huge */
             disableLogger();
         }
         if (param.getCryptedUrl().matches(TYPE_FBSHORTLINK)) {
@@ -398,8 +394,16 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     }
                     final String description = (String) JavaScriptEngineFactory.walkJson(map, "savable_description/text");
                     final String uploaderURL = FaceBookComVideos.getUploaderNameFromVideoURL(videoContentURL);
-                    final String urlLow = (String) map.get("playable_url");
-                    final String urlHigh = (String) map.get("playable_url_quality_hd");
+                    String urlLow = (String) map.get("playable_url");
+                    if (StringUtils.isEmpty(urlLow)) {
+                        /* 2023-07-13 */
+                        urlLow = (String) map.get("browser_native_sd_url");
+                    }
+                    String urlHigh = (String) map.get("playable_url_quality_hd");
+                    if (StringUtils.isEmpty(urlHigh)) {
+                        /* 2023-07-13 */
+                        urlHigh = (String) map.get("browser_native_hd_url");
+                    }
                     if (!StringUtils.isEmpty(urlHigh)) {
                         video.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_HD, urlHigh);
                     }
