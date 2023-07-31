@@ -733,7 +733,7 @@ public class XHamsterCom extends PluginForHost {
         }
         Map<String, Object> hlsMaster = null;
         try {
-            final Map<String, Object> json = restoreFromString(br.getRegex(">\\s*window\\.initials\\s*=\\s*(\\{.*?\\})\\s*;\\s*<").getMatch(0), TypeRef.MAP);
+            final Map<String, Object> json = restoreFromString(br.getRegex(">\\s*window\\.initials\\s*=\\s*(\\{.*?\\});\\s*</").getMatch(0), TypeRef.MAP);
             final List<Map<String, Object>> sources = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(json, "xplayerSettings/sources/standard/mp4");
             if (sources != null) {
                 for (final String quality : qualities) {

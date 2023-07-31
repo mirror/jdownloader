@@ -73,8 +73,8 @@ public class PorndoeCom extends PluginForHost {
         return "https://porndoe.com/terms-and-conditions";
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("/embed/", "/"));
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replace("/embed/", "/");
     }
 
     @Override
@@ -84,11 +84,18 @@ public class PorndoeCom extends PluginForHost {
         server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || (!br.getURL().contains("/video/") && !br.getURL().contains("/watch/")) || br.containsHTML("/deleted-scenes/")) {
+        br.setAllowedResponseCodes(410);
+        br.getPage(getContentURL(link));
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getURL().contains("/video/") && !br.getURL().contains("/watch/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("/deleted-scenes/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(this.br.getURL(), "/(?:watch|video)/(.+)").getMatch(0);
+        final String url_filename = new Regex(this.br.getURL(), "(?i)/(?:watch|video)/(.+)").getMatch(0);
         String filename = br.getRegex("<h1.*?>\\s*([^<>]+)\\s*</h1>").getMatch(0);
         if (filename == null) {
             /* Fallback */

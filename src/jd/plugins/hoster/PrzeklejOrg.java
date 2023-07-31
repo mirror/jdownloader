@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -67,8 +69,8 @@ public class PrzeklejOrg extends PluginForHost {
             filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*-\\s*(?:file on\\s*)" + domains + "\\s*</title>").getMatch(0);
         }
         final String filesize = br.getRegex("\"contentSize\":\\s*\"(\\d+)\",").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -79,14 +81,24 @@ public class PrzeklejOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        String dllink = br.getRegex("(?i)<a href=\"(/file/download/\\w+.*?)\"").getMatch(0);
+        final boolean looksLikePremiumAccountRequired = br.containsHTML("If you want to download this file on high speed, please send SMS on number");
+        String dllink = br.getRegex("(?i)\"(/file/download/\\w+.*?)\"").getMatch(0);
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (looksLikePremiumAccountRequired) {
+                throw new AccountRequiredException();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
+        dllink += "&code=free";
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (looksLikePremiumAccountRequired) {
+                throw new AccountRequiredException();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         link.setProperty("directlink", dllink);
         dl.startDownload();

@@ -42,7 +42,7 @@ public class ShrtflyVip extends MightyScriptAdLinkFly {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "shrtfly.com", "shrtfly.vip", "shrtvip.com", "stfly.me", "smwebs.xyz" });
+        ret.add(new String[] { "shrtfly.com", "shrtfly.vip", "shrtvip.com", "stfly.me", "stfly.xyz", "smwebs.xyz" });
         return ret;
     }
 
@@ -91,15 +91,12 @@ public class ShrtflyVip extends MightyScriptAdLinkFly {
         do {
             logger.info("Working on page: " + page + " | Total waited seconds so far: " + totalWaitedSeconds);
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
             final String error = (String) entries.get("error");
             if (error != null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (page >= 8) {
-                logger.warning("Preventing endless loop");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (data == null) {
+            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            if (data == null) {
                 logger.warning("Field 'data' is missing");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -118,7 +115,11 @@ public class ShrtflyVip extends MightyScriptAdLinkFly {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
                 return ret;
+            } else if (page >= 8) {
+                logger.warning("Preventing endless loop");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.postPage(next_page, "speed_token=" + Encoding.urlEncode(speed_token));
             nextForm = br.getFormbyProperty("id", "form");
