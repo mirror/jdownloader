@@ -18,6 +18,12 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -29,13 +35,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.AllDebridCom;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AlldebridComFolder extends PluginForDecrypt {
@@ -72,16 +75,16 @@ public class AlldebridComFolder extends PluginForDecrypt {
     }
 
     /** API docs: https://docs.alldebrid.com/#status */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String addedURL = param.getCryptedUrl();
         /*
          * Important: Every account has its own files. A magnetID generated inside account A will not work in account B! Alldebrid support
          * knows about this issue and is thinking about adding a modifier into their magnetURL so that we know which account to use in case
          * the user owns multiple alldebrid.com accounts.
          */
-        final String magnetID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final Account account = AccountController.getInstance().getValidAccount("alldebrid.com");
+        final String magnetID = new Regex(addedURL, this.getSupportedLinks()).getMatch(0);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account == null) {
             throw new AccountRequiredException();
         }
@@ -92,17 +95,15 @@ public class AlldebridComFolder extends PluginForDecrypt {
         br.getPage(AllDebridCom.api_base + "/magnet/status?" + query.toString());
         final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
         if (entries.containsKey("error")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> magnet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/magnets");
         final String torrentName = (String) magnet.get("filename");
-        final String torrentNameEscaped = Regex.escape(torrentName);
+        final String torrentNameEscaped = Pattern.quote(torrentName);
         final List<Map<String, Object>> linksO = (List<Map<String, Object>>) magnet.get("links");
-        if (linksO.isEmpty()) {
+        if (linksO == null || linksO.isEmpty()) {
             /* Probably unfinished torrent download */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String folderRoot = torrentName;
         final FilePackage fpRoot = FilePackage.getInstance();
@@ -136,9 +137,9 @@ public class AlldebridComFolder extends PluginForDecrypt {
                 }
             }
             dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /** Recursive function which returns the complete path to a file inside nested json arrays. */

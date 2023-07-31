@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Date;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -34,10 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net" }, urls = { "highporndecrypted://(.+)" })
 public class HighpornNet extends antiDDoSForHost {
@@ -110,7 +110,6 @@ public class HighpornNet extends antiDDoSForHost {
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         final String ext;
         if (dllink != null) {
             ext = getFileNameExtensionFromString(dllink, default_extension);

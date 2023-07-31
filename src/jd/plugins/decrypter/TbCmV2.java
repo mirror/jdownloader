@@ -31,31 +31,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.PluginWrapper;
-import jd.controlling.ProgressController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNodeVisitor;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterPlugin;
-import jd.plugins.DecrypterRetryException;
-import jd.plugins.DecrypterRetryException.RetryReason;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.UserAgents;
-import jd.plugins.components.UserAgents.BrowserName;
-import jd.plugins.hoster.YoutubeDashV2;
-import jd.utils.locale.JDL;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -108,6 +83,31 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNodeVisitor;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.UserAgents;
+import jd.plugins.components.UserAgents.BrowserName;
+import jd.plugins.hoster.YoutubeDashV2;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TbCmV2 extends PluginForDecrypt {
@@ -166,9 +166,6 @@ public class TbCmV2 extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
-    /**
-     * Returns host from provided String.
-     */
     public static String getBaseURL() {
         return "https://www.youtube.com";
     }
@@ -196,11 +193,11 @@ public class TbCmV2 extends PluginForDecrypt {
     private String getVideoIDFromUrl(final String url) {
         String vuid = new Regex(url, "(?i)v=" + VIDEO_ID_PATTERN).getMatch(0);
         if (vuid == null) {
-            vuid = new Regex(url, "(?i)v/" + VIDEO_ID_PATTERN).getMatch(0);
+            vuid = new Regex(url, "(?i)/v/" + VIDEO_ID_PATTERN).getMatch(0);
             if (vuid == null) {
-                vuid = new Regex(url, "(?i)shorts/" + VIDEO_ID_PATTERN).getMatch(0);
+                vuid = new Regex(url, "(?i)/shorts/" + VIDEO_ID_PATTERN).getMatch(0);
                 if (vuid == null) {
-                    vuid = new Regex(url, "(?i)embed/(?!videoseries\\?)" + VIDEO_ID_PATTERN).getMatch(0);
+                    vuid = new Regex(url, "(?i)/embed/(?!videoseries\\?)" + VIDEO_ID_PATTERN).getMatch(0);
                 }
             }
         }
@@ -212,9 +209,12 @@ public class TbCmV2 extends PluginForDecrypt {
     }
 
     private String getUsernameFromUrl(final String url) {
-        String userName = new Regex(url, "(?i)/user/([^/\\?]+)").getMatch(0);
+        String userName = new Regex(url, "(?i)/user/([^/\\?#]+)").getMatch(0);
         if (userName == null) {
-            userName = new Regex(url, "(?i)https?://[^/]+/@([^/\\?]+)").getMatch(0);
+            userName = new Regex(url, "(?i)https?://[^/]+/@([^/\\?#]+)").getMatch(0);
+            if (userName == null) {
+                userName = new Regex(url, "(?i)https?://[^/]+/c/([^/\\?#]+)").getMatch(0);
+            }
         }
         return userName;
     }
@@ -274,7 +274,6 @@ public class TbCmV2 extends PluginForDecrypt {
     private String                  playlistID;
     private String                  channelID;
     private String                  userName;
-    private AbstractVariant         requestedVariant;
     private HashMap<String, Object> globalPropertiesForDownloadLink;
     private YoutubeHelper           helper;
 
@@ -312,9 +311,10 @@ public class TbCmV2 extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "PREF", "hl=en-GB");
         // TODO: Maybe remove this as we're not modifying this URL anymore and also all methods to extract information out of YT URLs work
-        // domain-indepoendent.
+        // domain-independent.
         String cleanedurl = addedLink;
         final String requestedVariantString = new Regex(cleanedurl, "(?i)\\#variant=(\\S*)").getMatch(0);
+        AbstractVariant requestedVariant = null;
         if (StringUtils.isNotEmpty(requestedVariantString)) {
             requestedVariant = AbstractVariant.get(Base64.decodeToString(Encoding.htmlDecode(requestedVariantString)));
             cleanedurl = cleanedurl.replaceAll("(?i)\\#variant=\\S+", "");
@@ -329,26 +329,11 @@ public class TbCmV2 extends PluginForDecrypt {
         playlistID = getListIDFromUrl(cleanedurl);
         userName = getUsernameFromUrl(cleanedurl);
         channelID = getChannelIDFromUrl(cleanedurl);
-        final String userChannel = new Regex(cleanedurl, "/c/([^/\\?]+)").getMatch(0);
         helper = new YoutubeHelper(br, getLogger());
         if (helper.isConsentCookieRequired()) {
             helper.setConsentCookie(br, null);
         }
         helper.login(getLogger(), false);
-        if (StringUtils.isEmpty(channelID) && StringUtils.isNotEmpty(userChannel)) {
-            // TODO: Check if this is still needed
-            logger.info("Trying to find channelID");
-            helper.getPage(br, getBaseURL() + "/c/" + userChannel);
-            channelID = br.getRegex("(?i)/channel/(UC[A-Za-z0-9\\-_]+)/videos").getMatch(0);
-            if (StringUtils.isEmpty(channelID)) {
-                // its within meta tags multiple times (ios/ipad/iphone) also
-                helper.parse();
-                channelID = getChannelID(helper, br);
-            }
-            if (StringUtils.isEmpty(channelID)) {
-                logger.warning("Failed to find channelID");
-            }
-        }
         if (StringUtils.isEmpty(channelID) && StringUtils.isEmpty(userName) && StringUtils.isEmpty(playlistID) && StringUtils.isEmpty(videoID)) {
             /* This should be a rare case but it can happen since we are supporting a lot of different URL formats. */
             logger.info("Unsupported URL");
@@ -365,7 +350,7 @@ public class TbCmV2 extends PluginForDecrypt {
         final String playlistHandlingLogtextForUserDisabledCrawlerByLimitSetting = "Doing nothing because user has disabled channel/profile/playlist crawler by setting limit to 0";
         String playlistHandlingHumanReadableTypeOfUrlToCrawl = null;
         String playlistHandlingHumanReadableTitle = null;
-        if (StringUtils.isEmpty(playlistID) && StringUtils.isEmpty(userName) && StringUtils.isEmpty(userChannel) && !StringUtils.isEmpty(videoID)) {
+        if (StringUtils.isEmpty(playlistID) && StringUtils.isEmpty(userName) && !StringUtils.isEmpty(videoID)) {
             /* Single video */
             videoIdsToAdd.add(new org.jdownloader.plugins.components.youtube.YoutubeClipData(videoID));
         } else {
@@ -520,7 +505,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     globalPropertiesForDownloadLink.put(YoutubeHelper.YT_CHANNEL_ID, channelID);
-                    /* channelID starts with "UC" */
+                    /* channelID starts with "UC". We can build channel-playlist out of channel-ID. */
                     playlistID = "UU" + channelID.substring(2);
                 }
                 if (!isChannelOrProfileShorts(cleanedurl) && StringUtils.isEmpty(playlistID) && !StringUtils.isEmpty(channelID) && cfg.getProfileCrawlMode() == ProfileCrawlMode.PLAYLIST) {
@@ -578,7 +563,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                     /* Dev only: Include number of expected items in packagename for better overview/debugging. */
-                    channelOrPlaylistPackage.setName("[" + videoIdsToAdd.size() + " items] " + channelOrPlaylistPackage.getName());
+                    channelOrPlaylistPackage.setName("[" + videoIdsToAdd.size() + " videos] " + channelOrPlaylistPackage.getName());
                 }
             }
         }
@@ -1087,7 +1072,6 @@ public class TbCmV2 extends PluginForDecrypt {
              * Only set User-Agent if we're not logged in because login session can be bound to User-Agent and tinkering around with
              * different User-Agents and the same cookies is just a bad idea!
              */
-            // firefox gets different result than chrome! lets hope switching wont cause issue.
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
         }
         br.getHeaders().put("Accept-Charset", null);
@@ -1125,7 +1109,6 @@ public class TbCmV2 extends PluginForDecrypt {
         URL originalURL = null;
         final ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         Map<String, Object> ytConfigData = null;
-        Browser pbr = br.cloneBrowser();
         final Set<String> playListDupes = new HashSet<String>();
         Integer totalNumberofItems = null;
         String userWishedSortTitle = null;
@@ -1232,8 +1215,8 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
             /**
-             * This message can also contain information like "2 unavailable videos won't be displayed in this list". </br> Only mind this
-             * errormessage if we can't find any content.
+             * This message can also contain information like "2 unavailable videos won't be displayed in this list". </br>
+             * Only mind this errormessage if we can't find any content.
              */
             final List<Map<String, Object>> alerts = (List<Map<String, Object>>) rootMap.get("alerts");
             String errorOrWarningMessage = null;
@@ -1272,8 +1255,9 @@ public class TbCmV2 extends PluginForDecrypt {
                 videosCountText = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "numVideosText/runs/{0}/text");
             }
             /**
-             * Find extra information about channel </br> Do not do this if tab is e.g. "shorts" as we'd then pickup an incorrect number. YT
-             * ui does not display the total number of shorts of a user.
+             * Find extra information about channel </br>
+             * Do not do this if tab is e.g. "shorts" as we'd then pickup an incorrect number. YT ui does not display the total number of
+             * shorts of a user.
              */
             final Map<String, Object> channelHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/c4TabbedHeaderRenderer");
             if (channelHeaderRenderer != null && StringUtils.equalsIgnoreCase(desiredChannelTab, "Videos")) {
@@ -1316,7 +1300,6 @@ public class TbCmV2 extends PluginForDecrypt {
         pagination: do {
             /* First try old HTML handling though by now [June 2023] all data is provided via json. */
             String nextPageToken = null;
-            checkErrors(pbr);
             final int crawledItemsSizeOld = playListDupes.size();
             if (sortToken != null && round == 0) {
                 logger.info("Round 0 goes into sorting list via sort token: " + sortToken);
@@ -1557,6 +1540,7 @@ public class TbCmV2 extends PluginForDecrypt {
         return ret;
     }
 
+    /* TODO: Check if this is still needed */
     private void checkErrors(Browser br) throws InterruptedException {
         if (br.containsHTML(">404 Not Found<")) {
             throw new InterruptedException("404 Not Found");
