@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,8 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "icloud.com" }, urls = { "http://iclouddecrypted\\.com/[A-Z0-9\\-]+_[a-f0-9]{42}" })
 public class IcloudCom extends PluginForHost {
@@ -67,8 +67,8 @@ public class IcloudCom extends PluginForHost {
         /* First check if the directlink has already been set via decrypter! */
         dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
-            final String type = link.getStringProperty("type", null);
-            final String folderid = link.getStringProperty("folderid", null);
+            final String type = link.getStringProperty("type");
+            final String folderid = link.getStringProperty("folderid");
             if (folderid == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -80,7 +80,7 @@ public class IcloudCom extends PluginForHost {
             boolean triedSecondHost = false;
             do {
                 this.br.postPageRaw("https://" + host + "/" + folderid + "/sharedstreams/webasseturls", postData);
-                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
                 if (entries.containsKey("X-Apple-MMe-Host")) {
                     if (triedSecondHost) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -105,7 +105,6 @@ public class IcloudCom extends PluginForHost {
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename);
                 filename = filename.trim();
-                filename = encodeUnicode(filename);
                 String ext = getFileNameExtensionFromString(dllink, "video".equalsIgnoreCase(type) ? default_ExtensionVideo : default_ExtensionImage);
                 if (!filename.endsWith(ext)) {
                     filename += ext;

@@ -22,6 +22,12 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -75,6 +81,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account == null) {
+            displayBubblenotifyMessage("Account benötigt", "Account benötigt, um torrent und usenet Dateien aus dem eigenen High-Way Account einfügen zu können.");
             throw new AccountRequiredException();
         }
         final HighWayMe2 hosterplugin = (HighWayMe2) this.getNewPluginForHostInstance(this.getHost());
@@ -173,8 +180,18 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
         }
         if (ret.isEmpty()) {
             logger.info("Failed to find any results | Number of skipped items: " + numberofSkippedItems);
+            displayBubblenotifyMessage("Nichts gefunden", "Es konnten keine eigenen torrents/usenet Downloads gefunden werden.\r\nAnzahl übersprungener/unfertiger Elemente: " + numberofSkippedItems);
         }
         return ret;
+    }
+
+    private void displayBubblenotifyMessage(final String title, final String msg) {
+        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
+            @Override
+            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
+                return new BasicNotify("High-Way: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
+            }
+        });
     }
 
     @Override

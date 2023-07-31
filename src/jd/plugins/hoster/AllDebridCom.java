@@ -912,6 +912,9 @@ public class AllDebridCom extends PluginForHost {
             /* Account needed to check such links. */
             return AvailableStatus.UNCHECKABLE;
         } else {
+            if (!link.isNameSet()) {
+                link.setName(this.getFID(link));
+            }
             generteFreshDirecturl(link, account);
             /* No exception = File is online */
             return AvailableStatus.TRUE;
