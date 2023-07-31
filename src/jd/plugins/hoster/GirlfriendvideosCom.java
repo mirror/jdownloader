@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,8 +30,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlfriendvideos.com" }, urls = { "https?://(?:www\\.)?girlfriendvideos\\.com/members/[a-z]/[a-z0-9\\-_]+/(\\d+)\\.php" })
 public class GirlfriendvideosCom extends PluginForHost {
@@ -77,7 +77,9 @@ public class GirlfriendvideosCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (!br.getURL().contains("/members/") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("This video has been removed")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("This video has been removed")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getURL().contains("/members/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // String filename = br.getRegex("<title>Girlfriend Videos \\- ([^<>\"]*?)</title>").getMatch(0); -> Free User-Submitted ...
@@ -95,7 +97,6 @@ public class GirlfriendvideosCom extends PluginForHost {
         if (filename != null) {
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
-            filename = encodeUnicode(filename);
             final String ext = getFileNameExtensionFromString(dllink, ".mp4");
             if (!filename.endsWith(ext)) {
                 filename += ext;

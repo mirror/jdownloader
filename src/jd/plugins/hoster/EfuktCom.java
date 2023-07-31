@@ -15,23 +15,31 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "efukt.com" }, urls = { "https?://(?:www\\.)?efukt\\.com/(\\d+[A-Za-z0-9_\\-]+\\.html|out\\.php\\?id=\\d+|view\\.gif\\.php\\?id=\\d+)" })
-public class EfuktCom extends antiDDoSForHost {
+public class EfuktCom extends PluginForHost {
     public EfuktCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     /* Connection stuff */
@@ -45,12 +53,47 @@ public class EfuktCom extends antiDDoSForHost {
         return "http://efukt.com/tos/";
     }
 
+    private final String PATTERN_1 = "https?://(?:www\\.)?efukt\\.com/(\\d+)([A-Za-z0-9_\\-]+)\\.html";
+    private final String PATTERN_2 = "https?://(?:www\\.)?efukt\\.com/view\\.gif\\.php\\?id=(\\d+)";
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        String fid = new Regex(link.getPluginPatternMatcher(), PATTERN_1).getMatch(0);
+        if (fid == null) {
+            fid = new Regex(link.getPluginPatternMatcher(), PATTERN_2).getMatch(0);
+        }
+        return fid;
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String expectedExt;
+        if (link.getPluginPatternMatcher().contains("gif.php")) {
+            expectedExt = ".gif";
+        } else {
+            expectedExt = ".mp4";
+        }
+        if (!link.isNameSet()) {
+            final String fid = this.getFID(link);
+            if (link.getPluginPatternMatcher().contains("gif.php")) {
+                link.setName(fid + expectedExt);
+            } else {
+                link.setName(fid + expectedExt);
+            }
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.canHandle(br.getURL())) {
@@ -74,8 +117,7 @@ public class EfuktCom extends antiDDoSForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            title = encodeUnicode(title);
-            link.setFinalFileName(title + ".mp4");
+            link.setName(title + expectedExt);
         }
         if (dllink != null) {
             URLConnectionAdapter con = null;
@@ -84,6 +126,12 @@ public class EfuktCom extends antiDDoSForHost {
                 handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                if (title != null) {
+                    final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                    if (ext != null) {
+                        link.setFinalFileName(title + "." + ext);
+                    }
                 }
             } finally {
                 try {

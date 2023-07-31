@@ -17,8 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -26,28 +29,44 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "directupload.net" }, urls = { "http://(www\\.)?directupload\\.net/file/d/\\d+/[A-Za-z0-9\\-_]+\\.htm" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "directupload.net" }, urls = { "https?://(?:www\\.)?directupload\\.net/file/d/(\\d+)/([A-Za-z0-9\\-_]+)\\.htm" })
 public class DirectUploadNet extends PluginForHost {
-    // other: sites having the same admin: cloud.directupload.net, directupload.net
     public DirectUploadNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.directupload.net/index.php?mode=agb";
+        return "https://www.directupload.net/index.php?mode=agb";
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            String weakFilename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+            weakFilename = weakFilename.replace("_", ".");
+            link.setName(weakFilename);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("hochgeladen am  \\|")) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getHttpConnection().getResponseCode() == 404) {
+        } else if (br.containsHTML("(?i)hochgeladen am  \\|")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<img  id=\"ImgFrame\" src=\"\" alt=\"([^<>\"]*?)\"").getMatch(0);
@@ -56,7 +75,7 @@ public class DirectUploadNet extends PluginForHost {
         }
         final String filesize = br.getRegex("Dateigröße: ([^<>\"]*?) \\|").getMatch(0);
         if (filename != null) {
-            link.setName(encodeUnicode(Encoding.htmlDecode(filename).trim()));
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -67,7 +86,7 @@ public class DirectUploadNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        final String dllink = link.getDownloadURL().replace("/file/", "/down/");
+        final String dllink = link.getDownloadURL().replaceFirst("(?i)/file/", "/down/");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
