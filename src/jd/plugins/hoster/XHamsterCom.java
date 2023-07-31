@@ -731,47 +731,62 @@ public class XHamsterCom extends PluginForHost {
         case 1:
             qualities.add("240p");
         }
-        Map<String, Object> hlsMaster = null;
+        Map<String, Object> hlsMap = null;
         try {
             final Map<String, Object> json = restoreFromString(br.getRegex(">\\s*window\\.initials\\s*=\\s*(\\{.*?\\});\\s*</").getMatch(0), TypeRef.MAP);
-            final List<Map<String, Object>> sources = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(json, "xplayerSettings/sources/standard/mp4");
+            List<Map<String, Object>> sources = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(json, "xplayerSettings/sources/standard/mp4");
+            if (sources == null) {
+                /* 2023-07-31: VR */
+                sources = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(json, "xplayerSettings/sources/standard/h264");
+            }
             if (sources != null) {
+                String firstUnknownHTTPQualityDownloadurl = null;
                 for (final String quality : qualities) {
-                    for (Map<String, Object> source : sources) {
+                    for (final Map<String, Object> source : sources) {
                         final String qualityTmp = (String) source.get("quality");
                         String url = (String) source.get("url");
-                        if (hlsMaster == null && StringUtils.containsIgnoreCase(url, ".m3u8")) {
-                            hlsMaster = source;
-                            continue;
-                        }
-                        if (!StringUtils.equalsIgnoreCase(quality, qualityTmp) || StringUtils.isEmpty(url)) {
-                            continue;
-                        }
-                        String fallback = (String) source.get("fallback");
-                        /* We found the quality we were looking for. */
-                        url = br.getURL(url).toString();
-                        fallback = fallback != null ? br.getURL(fallback).toString() : null;
-                        if (verifyURL(url)) {
-                            logger.info("Sources(url):" + quality + "->" + url);
-                            return url;
-                        } else if (fallback != null && verifyURL(fallback)) {
-                            logger.info("Sources(fallback):" + quality + "->" + fallback);
-                            return fallback;
+                        if (hlsMap == null && StringUtils.containsIgnoreCase(url, ".m3u8")) {
+                            hlsMap = source;
                         } else {
-                            logger.info("Sources(failed):" + quality);
-                            break;
+                            String fallback = (String) source.get("fallback");
+                            /* We found the quality we were looking for. */
+                            url = br.getURL(url).toString();
+                            fallback = fallback != null ? br.getURL(fallback).toString() : null;
+                            if (!StringUtils.equalsIgnoreCase(quality, qualityTmp) || StringUtils.isEmpty(url)) {
+                                logger.info("Ignoring unknown quality: " + qualityTmp);
+                                if (firstUnknownHTTPQualityDownloadurl == null) {
+                                    firstUnknownHTTPQualityDownloadurl = url;
+                                }
+                                continue;
+                            }
+                            if (verifyURL(url)) {
+                                logger.info("Sources(url):" + quality + "->" + url);
+                                return url;
+                            } else if (fallback != null && verifyURL(fallback)) {
+                                logger.info("Sources(fallback):" + quality + "->" + fallback);
+                                return fallback;
+                            } else {
+                                logger.info("Sources(failed):" + quality);
+                                break;
+                            }
                         }
                     }
                 }
+                logger.info("Did not find any matching quality:" + qualities);
+                if (firstUnknownHTTPQualityDownloadurl != null && hlsMap == null) {
+                    logger.info("Returning first unknown http quality as fallback: " + firstUnknownHTTPQualityDownloadurl);
+                    return firstUnknownHTTPQualityDownloadurl;
+                }
+            } else {
+                logger.warning("Could not find any video sources in json");
             }
         } catch (final JSonMapperException e) {
             logger.log(e);
         }
-        logger.info("Did not find any matching quality:" + qualities);
-        if (hlsMaster != null) {
+        if (hlsMap != null) {
             /* 2021-02-01 */
-            logger.info("Try fallback to HLS download -> " + hlsMaster);
-            return (String) hlsMaster.get("url");
+            logger.info("Try fallback to HLS download -> " + hlsMap);
+            return (String) hlsMap.get("url");
         }
         final String newPlayer = Encoding.htmlDecode(br.getRegex("videoUrls\":\"(\\{.*?\\]\\})").getMatch(0));
         if (newPlayer != null) {
