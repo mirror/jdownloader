@@ -1386,6 +1386,9 @@ YoutubeBasicVariant_getLabel_video360=360° VR Video
 YoutubeBasicVariant_getLabel_video360_3D=360° 3D VR Video
 YoutubeBasicVariant_getLabel_video3d=3D-Video
 YoutubeDashConfigPanel_MultiVariantBox_getLabel_=Kvalitet: %s1
+YoutubeDashConfigPanel_YoutubeDashConfigPanel_ChannelCrawlerPreferredSortMode=Preferirani način sortiranja pretraživanja kanala
+YoutubeDashConfigPanel_YoutubeDashConfigPanel_PlaylistAndProfileCrawlerMaxItemsLimit=Maksimalan broj stavki Profila/Playliste [-1 = nema limita, 0 = onemogući pretraživač]
+YoutubeDashConfigPanel_YoutubeDashConfigPanel_ProfileCrawlMode=Način pretraživanja kanala
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_best_explained=Youtube nudi video tokove do rezolucije 4320p. Ako želite download-ovati ove tokove, molimo isključite opciju ispod.
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_extra_desc=Ako želizte da JDownloader kreira više linkova pored linka 'Linkovi Najboljeg Kvaliteta', to možete podesiti ispod.
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling=Prezo pretraživanje
