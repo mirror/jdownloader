@@ -740,7 +740,7 @@ public class XHamsterCom extends PluginForHost {
                 sources = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(json, "xplayerSettings/sources/standard/h264");
             }
             if (sources != null) {
-                String firstUnknownHTTPQualityDownloadurl = null;
+                String firstHTTPQualityDownloadurl = null;
                 for (final String quality : qualities) {
                     for (final Map<String, Object> source : sources) {
                         final String qualityTmp = (String) source.get("quality");
@@ -752,10 +752,9 @@ public class XHamsterCom extends PluginForHost {
                             /* We found the quality we were looking for. */
                             url = br.getURL(url).toString();
                             fallback = fallback != null ? br.getURL(fallback).toString() : null;
-                            if (!StringUtils.equalsIgnoreCase(quality, qualityTmp) || StringUtils.isEmpty(url)) {
-                                logger.info("Ignoring unknown quality: " + qualityTmp);
-                                if (firstUnknownHTTPQualityDownloadurl == null) {
-                                    firstUnknownHTTPQualityDownloadurl = url;
+                            if (!StringUtils.equalsIgnoreCase(quality, qualityTmp)) {
+                                if (firstHTTPQualityDownloadurl == null) {
+                                    firstHTTPQualityDownloadurl = url;
                                 }
                                 continue;
                             }
@@ -773,9 +772,9 @@ public class XHamsterCom extends PluginForHost {
                     }
                 }
                 logger.info("Did not find any matching quality:" + qualities);
-                if (firstUnknownHTTPQualityDownloadurl != null && hlsMap == null) {
-                    logger.info("Returning first unknown http quality as fallback: " + firstUnknownHTTPQualityDownloadurl);
-                    return firstUnknownHTTPQualityDownloadurl;
+                if (firstHTTPQualityDownloadurl != null && hlsMap == null) {
+                    logger.info("Returning first unknown http quality as fallback: " + firstHTTPQualityDownloadurl);
+                    return firstHTTPQualityDownloadurl;
                 }
             } else {
                 logger.warning("Could not find any video sources in json");
