@@ -53,20 +53,21 @@ import jd.plugins.decrypter.FaceBookComGallery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FaceBookComVideos extends PluginForHost {
+    private final boolean enforceCookieLogin = true;
+
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING, LazyPlugin.FEATURE.IMAGE_HOST };
+        if (enforceCookieLogin) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING, LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING, LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        }
     }
 
     @Override
     public Browser createNewBrowserInstance() {
         final Browser br = new Browser();
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.getHeaders().put("Accept-Encoding", "gzip, deflate");
-        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        br.setCookie(this.getHost(), "locale", "en_GB");
-        br.setFollowRedirects(true);
+        FaceBookComGallery.prepBR(br);
         return br;
     }
 
@@ -496,7 +497,6 @@ public class FaceBookComVideos extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 /* 2020-10-9: Experimental login/test */
                 final Cookies userCookies = account.loadUserCookies();
-                final boolean enforceCookieLogin = true;
                 if (enforceCookieLogin && userCookies == null) {
                     showCookieLoginInfo();
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());

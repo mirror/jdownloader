@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,8 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigholestube.com" }, urls = { "https?://(?:www\\.)?bigholestube\\.com/([a-z0-9\\-_]+)/" })
 public class BigholestubeCom extends PluginForHost {
@@ -64,7 +65,7 @@ public class BigholestubeCom extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("http://bigholestube.com/", "ageCookieRemember", "1");
+        br.setCookie(getHost(), "ageCookieRemember", "1");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"(playerbox|Video_Player)\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -98,31 +99,40 @@ public class BigholestubeCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", dllink);
-            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+        }
     }
 
     @Override

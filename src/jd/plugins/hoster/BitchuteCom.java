@@ -15,6 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -25,14 +30,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bitchute.com" }, urls = { "https?://(?:www\\.)?bitchute\\.com/video/([A-Za-z0-9\\-_]+)" })
-public class BitchuteCom extends antiDDoSForHost {
+public class BitchuteCom extends PluginForHost {
     public BitchuteCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,7 +53,6 @@ public class BitchuteCom extends antiDDoSForHost {
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -75,12 +75,13 @@ public class BitchuteCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + ".mp4");
+        }
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*Channel Blocked\\s*<")) {
@@ -89,45 +90,34 @@ public class BitchuteCom extends antiDDoSForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\"page-title\">([^<>\"]+)<").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            filename = this.getFID(link);
-        }
+        String title = br.getRegex("class=\"page-title\">([^<>\"]+)<").getMatch(0);
         if (StringUtils.isEmpty(dllink)) {
             dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        String ext;
-        if (!StringUtils.isEmpty(dllink)) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-            if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
+        if (title != null) {
+            String filename = Encoding.htmlDecode(title);
+            filename = filename.trim();
+            String ext;
+            if (!StringUtils.isEmpty(dllink)) {
+                ext = getFileNameExtensionFromString(dllink, default_extension);
+                if (ext != null && !ext.matches("\\.(?:flv|mp4)")) {
+                    ext = default_extension;
+                }
+            } else {
                 ext = default_extension;
             }
-        } else {
-            ext = default_extension;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
+            link.setFinalFileName(filename);
         }
         if (!StringUtils.isEmpty(dllink)) {
-            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
-                if (!this.looksLikeDownloadableContent(con)) {
-                    server_issues = true;
-                    brc.followConnection(true);
-                } else {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -135,32 +125,34 @@ public class BitchuteCom extends antiDDoSForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+        }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 

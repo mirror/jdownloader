@@ -57,6 +57,22 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        prepBR(br);
+        return br;
+    }
+
+    public static void prepBR(final Browser br) {
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        br.getHeaders().put("Accept-Encoding", "gzip, deflate");
+        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        br.setCookie(getAnnotationNames()[0], "locale", "en_GB");
+        br.setFollowRedirects(true);
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
@@ -71,7 +87,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     public static String[] getAnnotationUrls() {
-        return new String[] { "https?://(?:www\\.)?facebook\\.com/.+" };
+        return new String[] { "https?://(?:(m|www)\\.)?facebook\\.com/.+" };
     }
 
     private final String COMPONENT_USERNAME              = "(?:[\\%a-zA-Z0-9\\-]+)";
@@ -113,17 +129,18 @@ public class FaceBookComGallery extends PluginForDecrypt {
     FaceBookComVideos hosterplugin = null;
 
     public ArrayList<DownloadLink> crawl(final CryptedLink param, final Account account) throws Exception {
-        br.setFollowRedirects(true);
         hosterplugin = (FaceBookComVideos) this.getNewPluginForHostInstance(this.getHost());
         if (account != null) {
             hosterplugin.login(account, false);
         }
-        String url = param.getCryptedUrl();
-        final Regex embeddedVideoRegex = new Regex(url, "(?i)https?://[^/]+/video/embed\\?video_id=(\\d+)");
+        /* Do some minor corrections of added link. */
+        /* Remove m.facebook.com as our crawler can't cope with those (old?) facebook website versions for mobile devices. */
+        String url = param.getCryptedUrl().replaceFirst("(?i)http://", "https://").replace("https://m.", "https://www.");
+        final String videoIDFRomEmbedURL = new Regex(url, "(?i)https?://[^/]+/video/embed\\?video_id=(\\d+)").getMatch(0);
         // final String mobileSubdomain = new Regex(url, "(?i)https?:/(m\\.[^/]+)/.+").getMatch(0);
-        if (embeddedVideoRegex.matches()) {
+        if (videoIDFRomEmbedURL != null) {
             /* Small workaround for embedded videourls */
-            url = "https://www." + this.getHost() + "/watch/?v=" + embeddedVideoRegex.getMatch(0);
+            url = "https://www." + this.getHost() + "/watch/?v=" + videoIDFRomEmbedURL;
         }
         // if (mobileSubdomain != null) {
         // /* Remove mobile sobdomain */
@@ -172,6 +189,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     // logger.log(ignore);
                 }
             }
+        }
+        if (processedJsonStrings.isEmpty()) {
+            logger.warning("Failed to find any jsons to process");
         }
         if (ret.isEmpty() && this.skippedLivestreams > 0) {
             logger.info("Livestreams are not supported");
@@ -418,19 +438,16 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final String key = entry.getKey();
                 final Object value = entry.getValue();
                 final String ifThisisAVideoThisIsTheVideoID = value instanceof String ? value.toString() : null;
-                if (key.equals("id") && map.containsKey("is_live_streaming") && map.containsKey("dash_manifest")) {
-                    final boolean isLivestream = ((Boolean) map.get("is_live_streaming")).booleanValue();
-                    if (isLivestream) {
+                final Boolean is_live_streaming = (Boolean) map.get("is_live_streaming");
+                if (key.equals("id") && is_live_streaming != null && map.containsKey("dash_manifest")) {
+                    if (Boolean.TRUE.equals(is_live_streaming)) {
                         /* Livestreams are not supported */
                         logger.info("Skipping livestream: " + ifThisisAVideoThisIsTheVideoID);
                         skippedLivestreams++;
                         continue;
                     }
                     final String videoContentURL = (String) map.get("permalink_url");
-                    final String thumbnailDirectURL = JavaScriptEngineFactory.walkJson(map, "preferred_thumbnail/image/uri").toString();
-                    final DownloadLink thumbnail = new DownloadLink(this.hosterplugin, this.getHost(), thumbnailDirectURL, true);
-                    thumbnail.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_THUMBNAIL);
-                    thumbnail.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LAST, thumbnailDirectURL);
+                    final String thumbnailDirectURL = (String) JavaScriptEngineFactory.walkJson(map, "preferred_thumbnail/image/uri");
                     final DownloadLink video = new DownloadLink(this.hosterplugin, this.getHost(), videoContentURL, true);
                     final Object playable_duration_in_ms = map.get("playable_duration_in_ms");
                     if (playable_duration_in_ms instanceof Number) {
@@ -467,7 +484,13 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     video.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_VIDEO);
                     final ArrayList<DownloadLink> thisResults = new ArrayList<DownloadLink>();
                     thisResults.add(video);
-                    thisResults.add(thumbnail);
+                    if (!StringUtils.isEmpty(thumbnailDirectURL)) {
+                        /* Not all videos have thumbnails! Alternatively we could check for field "has_preview_thumbnails". */
+                        final DownloadLink thumbnail = new DownloadLink(this.hosterplugin, this.getHost(), thumbnailDirectURL, true);
+                        thumbnail.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_THUMBNAIL);
+                        thumbnail.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LAST, thumbnailDirectURL);
+                        thisResults.add(thumbnail);
+                    }
                     /* Add properties to result */
                     for (final DownloadLink thisResult : thisResults) {
                         thisResult.setProperty(FaceBookComVideos.PROPERTY_CONTENT_ID, ifThisisAVideoThisIsTheVideoID);

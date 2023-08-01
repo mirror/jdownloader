@@ -110,7 +110,7 @@ public class GoogleDrive extends PluginForHost {
 
     @Override
     public FEATURE[] getFeatures() {
-        return new FEATURE[] { FEATURE.FAVICON };
+        return new FEATURE[] { FEATURE.FAVICON, FEATURE.COOKIE_LOGIN_ONLY };
     }
 
     @Override

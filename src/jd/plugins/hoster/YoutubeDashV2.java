@@ -168,7 +168,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
     }
 
     /**
