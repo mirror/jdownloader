@@ -512,10 +512,10 @@ public class EightTracksCom extends antiDDoSForHost {
         if (album != null && (album.equals(title) || StringUtils.isEmpty(album))) {
             album = null;
         }
-        title = encodeUnicode(Encoding.htmlDecode(title.trim()));
-        artist = encodeUnicode(Encoding.htmlDecode(artist.trim()));
+        title = Encoding.htmlDecode(title).trim();
+        artist = Encoding.htmlDecode(artist).trim();
         if (album != null) {
-            album = encodeUnicode(Encoding.htmlDecode(album.trim()));
+            album = Encoding.htmlDecode(album).trim();
             filename = artist + " - " + album + " - " + title;
         } else {
             filename = artist + " - " + title;

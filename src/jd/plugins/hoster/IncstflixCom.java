@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2017  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -16,11 +16,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,37 +34,57 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "clyp.it" }, urls = { "https?://(?:www\\.)?clyp\\.it/([A-Za-z0-9]+)" })
-public class ClypIt extends PluginForHost {
-    public ClypIt(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class IncstflixCom extends PluginForHost {
+    public IncstflixCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /* DEV NOTES */
-    // Tags:
-    // protocol: no https
-    // other:
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "incestflix.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/watch/([\\w\\-]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     @Override
     public String getAGBLink() {
-        return "https://clyp.it/terms";
+        return "http://www.incestflix.com/dmca";
     }
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String fid = getFID(link);
-        if (fid != null) {
-            return "clyp.it://" + fid;
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
         } else {
             return super.getLinkID(link);
         }
@@ -74,67 +94,33 @@ public class ClypIt extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    /** Using website-API "api.clyp.it" */
-    @SuppressWarnings({ "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
-        final String extDefault = ".mp3";
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + extDefault);
+            final String urlSlug = this.getFID(link);
+            link.setName(urlSlug.replace("-", " ").trim() + ".mp4");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String fid = new Regex(link.getPluginPatternMatcher(), "([^/]+)$").getMatch(0);
-        this.br.getPage("https://api.clyp.it/" + fid + "/playlist");
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().endsWith("/404")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
-        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "AudioFiles/{0}");
-        final String description = (String) entries.get("Description");
-        String title = (String) entries.get("Title");
-        if (title == null) {
-            title = br.getRegex("class=\"block\\-title\">[\t\n\r ]+<h\\d+>([^<>]*?)<").getMatch(0);
-        }
-        if (title == null) {
-            title = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
-        }
-        if (title == null) {
-            title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        }
-        if (title == null) {
-            title = fid;
-        }
-        dllink = (String) entries.get("SecureMp3Url");
-        if (dllink == null) {
-            dllink = (String) entries.get("Mp3Url");
-        }
-        if (dllink == null) {
-            dllink = "https://a.clyp.it/" + fid + ".mp3";
-        }
-        dllink = Encoding.htmlDecode(dllink);
+        String title = br.getRegex("(?i)<title>([^<]+) - INCESTFLIX\\.COM</title>").getMatch(0);
+        dllink = br.getRegex("<source src='([^<>\"\\']+)'[^>]*type=.video/mp4.").getMatch(0);
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            title = encodeUnicode(title);
-            final String ext = getFileNameExtensionFromString(dllink, extDefault);
-            if (!title.endsWith(ext)) {
-                title += ext;
-            }
-            link.setFinalFileName(title);
+            link.setFinalFileName(title + ".mp4");
         }
-        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
-            link.setComment(description);
-        }
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(this.dllink);
-                handleConnectionErrors(br2, con);
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
@@ -146,6 +132,17 @@ public class ClypIt extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
     }
 
     private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException {
@@ -162,17 +159,6 @@ public class ClypIt extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
         }
-    }
-
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        handleConnectionErrors(br, dl.getConnection());
-        dl.startDownload();
     }
 
     @Override
