@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -31,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "trannytube.tv" }, urls = { "https?://(?:www\\.)?trannytube\\.tv/(?:[a-z]{2}/)?movies/\\d+/[a-z0-9\\-]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "trannytube.tv" }, urls = { "https?://(?:www\\.)?trannytube\\.tv/(?:[a-z]{2}/)?(movies/\\d+/[a-z0-9\\-]+|embed/\\d+)" })
 public class TrannytubeTv extends PluginForHost {
     public TrannytubeTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,68 +53,96 @@ public class TrannytubeTv extends PluginForHost {
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
+    private final String         PATTERN_NORMAL    = "(?i)https?://[^/]+/(?:[a-z]{2}/)?movies/(\\d+)/([a-z0-9\\-]+)";
+    private final String         PATTERN_EMBED     = "(?i)https?://[^/]+/(?:[a-z]{2}/)?embed/(\\d+)";
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
-        return "http://www.trannytube.tv/";
+        return "https://www.trannytube.tv/";
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return "trannytube.tv://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        String fid = new Regex(link.getPluginPatternMatcher(), PATTERN_NORMAL).getMatch(0);
+        if (fid == null) {
+            fid = new Regex(link.getPluginPatternMatcher(), PATTERN_EMBED).getMatch(0);
+        }
+        return fid;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
-        server_issues = false;
+        final String fid = this.getFID(link);
+        String urlSlug = new Regex(link.getPluginPatternMatcher(), PATTERN_NORMAL).getMatch(1);
+        boolean setFallbackName = false;
+        if (!link.isNameSet()) {
+            if (urlSlug != null) {
+                link.setName(urlSlug.replace("-", " ").trim() + default_extension);
+            } else {
+                link.setName(fid + default_extension);
+            }
+            setFallbackName = true;
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        if (link.getPluginPatternMatcher().matches(PATTERN_EMBED)) {
+            /* This will redirect to PATTERN_NORMAL. */
+            br.getPage("https://www." + this.getHost() + "/movies/" + fid + "/dummy-slug");
+        } else {
+            br.getPage(link.getPluginPatternMatcher().replaceFirst("(?i)http://", "https://"));
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
-        String filename = br.getRegex("<title>([^<>\"]+) at Tranny Tube TV</title>").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
+        if (setFallbackName) {
+            urlSlug = new Regex(br.getURL(), PATTERN_NORMAL).getMatch(0);
+            if (urlSlug != null) {
+                link.setName(urlSlug.replace("-", " ").trim() + default_extension);
+            }
         }
+        String title = br.getRegex("<title>([^<>\"]+) at Tranny Tube TV</title>").getMatch(0);
         dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
         if (dllink == null) {
-            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+            dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\"[^<]*type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
         }
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://[a-z0-9]+\\.trannytube\\.tv/video\\d+/f/[^<>\"]+)").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        final String ext;
-        if (dllink != null) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-        } else {
-            ext = default_extension;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        if (dllink != null) {
-            dllink = Encoding.htmlDecode(dllink);
+        if (title != null) {
+            String filename = Encoding.htmlDecode(title);
+            filename = filename.trim();
+            final String ext;
+            if (dllink != null) {
+                ext = getFileNameExtensionFromString(dllink, default_extension);
+            } else {
+                ext = default_extension;
+            }
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
             link.setFinalFileName(filename);
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
+        }
+        if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                    link.setProperty("directlink", dllink);
-                } else {
-                    server_issues = true;
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -121,36 +150,35 @@ public class TrannytubeTv extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
-            br.followConnection();
             try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
         }
-        dl.startDownload();
     }
 
     @Override

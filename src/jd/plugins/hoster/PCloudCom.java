@@ -21,10 +21,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -40,10 +42,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.PCloudComFolder;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "https?://pclouddecrypted\\.com/\\d+" })
 public class PCloudCom extends PluginForHost {
@@ -55,14 +55,18 @@ public class PCloudCom extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        PCloudComFolder.prepBR(br);
+        return br;
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://my.pcloud.com/#page=policies&tab=terms-of-service";
     }
 
-    private static final String  MAINPAGE                                        = "https://www.pcloud.com";
     private static final String  NICE_HOST                                       = "pcloud.com";
-    private static final String  NICE_HOSTproperty                               = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String  NOCHUNKS                                        = NICE_HOSTproperty + "NOCHUNKS";
     /* Plugin Settings */
     private static final String  DOWNLOAD_ZIP                                    = "DOWNLOAD_ZIP_2";
     private static final String  MOVE_FILES_TO_ACCOUNT                           = "MOVE_FILES_TO_ACCOUNT";
@@ -78,7 +82,7 @@ public class PCloudCom extends PluginForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME                                     = true;
     private static final int     FREE_MAXCHUNKS                                  = 0;
-    private static final int     FREE_MAXDOWNLOADS                               = 20;
+    private static final int     FREE_MAXDOWNLOADS                               = -1;
     private int                  statusCode                                      = 0;
     private String               downloadURL                                     = null;
 
@@ -103,11 +107,7 @@ public class PCloudCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, Exception {
-        if (link.getBooleanProperty("offline", false)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         this.setBrowserExclusive();
-        prepBR();
         final String filename = link.getStringProperty("plain_name", null);
         final String filesize = link.getStringProperty("plain_size", null);
         if (filename == null || filesize == null) {
@@ -142,8 +142,6 @@ public class PCloudCom extends PluginForHost {
         if (isCompleteFolder(link)) {
             resume = false;
             maxchunks = 1;
-        } else if (link.getBooleanProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, false)) {
-            maxchunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, resume, maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
@@ -151,30 +149,7 @@ public class PCloudCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directLinkID, downloadURL);
-        try {
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                    logger.log(e);
-                }
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, false) == false) {
-                    link.setProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } catch (final PluginException e) {
-            // New V2 chunk errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (link.getBooleanProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, false) == false) {
-                link.setProperty(NICE_HOSTproperty + PCloudCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY, null, e);
-            }
-            throw e;
-        }
+        dl.startDownload();
     }
 
     private String getDownloadURL(final DownloadLink link, final Account account, final String account_auth, final boolean publicDownload) throws Exception {
@@ -248,15 +223,6 @@ public class PCloudCom extends PluginForHost {
         return dl.getBooleanProperty("complete_folder", false);
     }
 
-    private void prepBR() {
-        br.setFollowRedirects(true);
-        br.getHeaders().put("Accept-Encoding", "gzip");
-        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
-        br.getHeaders().put("Accept-Charset", null);
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
@@ -289,7 +255,6 @@ public class PCloudCom extends PluginForHost {
                         br.clearAll();
                     }
                 }
-                prepBR();
                 logger.info("Performing full login");
                 /* Depending on which selection the user met when he registered his account, a different endpoint is required for login. */
                 try {
@@ -369,7 +334,7 @@ public class PCloudCom extends PluginForHost {
         PluginException cause = null;
         try {
             requestFileInformation(link);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             switch (statusCode) {
             case STATUS_CODE_PREMIUMONLY:
             case STATUS_CODE_MAYBE_OWNER_ONLY:
@@ -451,32 +416,33 @@ public class PCloudCom extends PluginForHost {
         doDownloadURL(link, account, account_auth, publicDownload);
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        final String dllink = downloadLink.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String property) {
+        String dllink = link.getStringProperty(property);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (!looksLikeDownloadableContent(con)) {
-                    throw new IOException();
-                } else {
+                if (this.looksLikeDownloadableContent(con)) {
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     return dllink;
+                } else {
+                    throw new IOException();
                 }
             } catch (final Exception e) {
+                link.removeProperty(property);
                 logger.log(e);
-                downloadLink.setProperty(property, Property.NULL);
                 return null;
             } finally {
-                try {
+                if (con != null) {
                     con.disconnect();
-                } catch (final Throwable e) {
                 }
             }
-        } else {
-            return null;
         }
+        return null;
     }
 
     private String getCODE(final DownloadLink dl) throws PluginException {
