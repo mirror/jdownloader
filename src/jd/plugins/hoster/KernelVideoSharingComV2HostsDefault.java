@@ -160,7 +160,7 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         /* 2023-07-13 */
         ret.add(new String[] { "urgayporn.com" });
         /* 2023-07-31 */
-        ret.add(new String[] { "gotgayporn.com" });
+        ret.add(new String[] { "gotgayporn.com", "bonertube.com" });
         return ret;
     }
 

@@ -361,7 +361,7 @@ public class DropboxCom extends PluginForHost {
         account.setUser(null);
         account.setPass(null);
         try {
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
             final String given_name = (String) JavaScriptEngineFactory.walkJson(entries, "name/given_name");
             final String surname = (String) JavaScriptEngineFactory.walkJson(entries, "name/surname");
             if (!StringUtils.isEmpty(given_name)) {
@@ -546,6 +546,7 @@ public class DropboxCom extends PluginForHost {
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("Final downloadlink lead to HTML code");
                 br.followConnection(true);
+                checkErrorsHTML(br);
                 final URLConnectionAdapter con = dl.getConnection();
                 if (con.getResponseCode() == 401) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -560,6 +561,12 @@ public class DropboxCom extends PluginForHost {
                 link.setFinalFileName(this.correctOrApplyFileNameExtension(filename, ext));
             }
             dl.startDownload();
+        }
+    }
+
+    private void checkErrorsHTML(final Browser br) throws PluginException {
+        if (br.containsHTML("(?i)Link Temporarily Disabled")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download is temporary disabled because it has been downloaded too frequently", 10 * 60 * 1000l);
         }
     }
 

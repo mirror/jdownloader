@@ -59,7 +59,7 @@ public class AvxHmeWCrawler extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         /* Always add current domain to first position! */
-        ret.add(new String[] { "avh.world", "avaxhome.ws", "avaxhome.bz", "avaxhome.cc", "avaxhome.in", "avaxhome.pro", "avaxho.me", "avaxhm.com", "avxhm.is", "avxhm.se", "avxhome.se", "avxhome.in", "avxde.org", "xsava.xyz", "zavat.pw", "avxlive.icu" });
+        ret.add(new String[] { "avh.world", "avaxhome.ws", "avaxhome.bz", "avaxhome.cc", "avaxhome.in", "avaxhome.pro", "avaxho.me", "avaxhm.com", "avxhm.is", "avxhm.se", "avxhome.se", "avxhome.in", "avxde.org", "xsava.xyz", "zavat.pw", "avxlive.icu", "avxhm.in" });
         return ret;
     }
 
@@ -79,12 +79,12 @@ public class AvxHmeWCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go)/.+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go|audiobooks| girls|tvseries|anime|sheet_music|musik|fernsehserie|zeitschriften|zeitungen|grafik|madchen|horbucher)/.+");
         }
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_REDIRECT = "https?://[^/]+/go/([a-f0-9]{32}/\\d+/?|[A-Za-z0-9\\-_:%]+/?|\\d+/[^\"]+)";
+    private static final String TYPE_REDIRECT = "(?i)https?://[^/]+/go/([a-f0-9]{32}/\\d+/?|[A-Za-z0-9\\-_:%]+/?|\\d+/[^\"]+)";
     private static AtomicLong   LAST_DIRECT   = new AtomicLong(-1);
 
     @Override
