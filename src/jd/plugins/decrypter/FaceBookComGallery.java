@@ -47,7 +47,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.FaceBookComVideos;
 
 @SuppressWarnings("deprecation")
@@ -106,18 +105,18 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (param.getCryptedUrl().matches(TYPE_FBSHORTLINK)) {
             return handleRedirectToExternalSite(param.getCryptedUrl());
         } else {
-            return crawl(param);
+            final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+            return crawl(param, account);
         }
     }
 
-    PluginForHost hosterplugin = null;
+    FaceBookComVideos hosterplugin = null;
 
-    private ArrayList<DownloadLink> crawl(final CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> crawl(final CryptedLink param, final Account account) throws Exception {
         br.setFollowRedirects(true);
-        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        hosterplugin = this.getNewPluginForHostInstance(this.getHost());
+        hosterplugin = (FaceBookComVideos) this.getNewPluginForHostInstance(this.getHost());
         if (account != null) {
-            ((FaceBookComVideos) hosterplugin).login(account, false);
+            hosterplugin.login(account, false);
         }
         String url = param.getCryptedUrl();
         final Regex embeddedVideoRegex = new Regex(url, "(?i)https?://[^/]+/video/embed\\?video_id=(\\d+)");
@@ -336,7 +335,62 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 result._setFilePackage(fp);
             }
         }
+        if (ret.isEmpty()) {
+            /*
+             * IUt is really hard to find out why specific Facebook content is offline (permission issue or offline content) so this is a
+             * last ditch effort.
+             */
+            Map<String, Object> videoErrormap = null;
+            for (final Object parsedJson : parsedJsons) {
+                videoErrormap = (Map<String, Object>) websiteFindVideoErrorMap(parsedJson, null);
+                if (videoErrormap != null) {
+                    break;
+                }
+            }
+            if (videoErrormap != null) {
+                logger.info("Offline reason: " + videoErrormap.get("title") + " | Offline Map: " + videoErrormap);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                logger.warning("Returning empty array");
+            }
+        }
         return ret;
+    }
+
+    private Object websiteFindVideoErrorMap(final Object o, final String videoid) {
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
+                final String key = entry.getKey();
+                final Object value = entry.getValue();
+                if (key.equals("rootView") && value instanceof Map && entrymap.containsKey("tracePolicy")) {
+                    final String tracePolicy = (String) entrymap.get("tracePolicy");
+                    final String videoidTmp = (String) JavaScriptEngineFactory.walkJson(entrymap, "params/video_id");
+                    if ((StringUtils.equalsIgnoreCase(tracePolicy, "comet.error") || StringUtils.equalsIgnoreCase(tracePolicy, "comet.watch.video.not.found")) && (videoid == null || StringUtils.equals(videoidTmp, videoid))) {
+                        return o;
+                    }
+                } else if (value instanceof List || value instanceof Map) {
+                    final Object pico = websiteFindVideoErrorMap(value, videoid);
+                    if (pico != null) {
+                        return pico;
+                    }
+                }
+            }
+            return null;
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final Object ret = websiteFindVideoErrorMap(arrayo, videoid);
+                    if (ret != null) {
+                        return ret;
+                    }
+                }
+            }
+            return null;
+        } else {
+            return null;
+        }
     }
 
     private ArrayList<DownloadLink> handleRedirectToExternalSite(final String url) throws DecrypterException, PluginException {
@@ -552,34 +606,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
             return null;
         }
     }
-    // private void crawlVideoPermalinks(final Object o, final List<DownloadLink> results) {
-    // if (o instanceof Map) {
-    // final Map<String, Object> map = (Map<String, Object>) o;
-    // final String __typename = (String) map.get("__typename");
-    // final String url = (String) map.get("wwwUrl");
-    // if (StringUtils.equals(__typename, "Video") && !StringUtils.isEmpty(url)) {
-    // results.add(this.createDownloadlink(url));
-    // } else {
-    // for (final Map.Entry<String, Object> entry : map.entrySet()) {
-    // final Object value = entry.getValue();
-    // if (value instanceof List || value instanceof Map) {
-    // crawlVideoPermalinks(value, results);
-    // }
-    // }
-    // }
-    // return;
-    // } else if (o instanceof List) {
-    // final List<Object> array = (List) o;
-    // for (final Object arrayo : array) {
-    // if (arrayo instanceof List || arrayo instanceof Map) {
-    // crawlVideoPermalinks(arrayo, results);
-    // }
-    // }
-    // return;
-    // } else {
-    // return;
-    // }
-    // }
 
     private void crawlPhotos(final Object o, final ArrayList<DownloadLink> results) {
         if (o instanceof Map) {

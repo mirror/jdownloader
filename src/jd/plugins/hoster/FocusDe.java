@@ -168,7 +168,6 @@ public class FocusDe extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            title = encodeUnicode(title);
             link.setFinalFileName(title + ".mp4");
         }
         if (filesize <= 0 && !isDownload) {
