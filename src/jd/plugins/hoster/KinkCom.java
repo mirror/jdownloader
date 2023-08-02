@@ -22,7 +22,6 @@ import java.util.Locale;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -68,11 +67,10 @@ public class KinkCom extends PluginForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private static final boolean resume        = true;
-    private static final int     maxchunks     = 0;
-    private static final int     maxdownloads  = -1;
-    private String               dllink        = null;
-    private boolean              server_issues = false;
+    private static final boolean resume       = true;
+    private static final int     maxchunks    = 0;
+    private static final int     maxdownloads = -1;
+    private String               dllink       = null;
 
     @Override
     public String getAGBLink() {
@@ -94,7 +92,7 @@ public class KinkCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
         return requestFileInformation(link, acc);
     }
@@ -107,41 +105,37 @@ public class KinkCom extends PluginForHost {
         }
     }
 
-    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException {
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException, InterruptedException {
+        final String extDefault = ".mp4";
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(this.getFID(link) + extDefault);
         }
         if (checkDirectLink(link, account) != null) {
             logger.info("Availablecheck via directurl complete");
             return AvailableStatus.TRUE;
         }
         if (account != null) {
-            try {
-                this.login(account, false);
-            } catch (final Throwable ignore) {
-                /* This should never happen */
-                logger.log(ignore);
-                /* Check impossible when not logged in */
-                return AvailableStatus.UNCHECKABLE;
-            }
+            this.login(account, false);
         }
         dllink = null;
-        server_issues = false;
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>\\s*([^<>\"]+)\\s*</title>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            filename = this.getFID(link);
+        String title = br.getRegex("<title>\\s*([^<>\"]+)\\s*</title>").getMatch(0);
+        if (StringUtils.isEmpty(title)) {
+            title = this.getFID(link);
         } else {
-            filename = this.getFID(link) + "_" + filename;
+            title = this.getFID(link) + "_" + title;
         }
         if (account != null) {
             /* Look for "official" downloadlinks --> Find highest quality */
             int qualityMax = -1;
             final String[][] dlinfos = br.getRegex("download\\s*=\\s*\"(https?://[^\"]+)\"[^/]*>\\s*(\\d+)\\s*<span").getMatches();
+            if (dlinfos == null || dlinfos.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             for (final String[] dlinfo : dlinfos) {
                 final int qualityTmp = Integer.parseInt(dlinfo[1]);
                 if (qualityTmp > qualityMax) {
@@ -163,12 +157,9 @@ public class KinkCom extends PluginForHost {
             dllink = url;
             logger.info("Chosen trailer: " + dllink);
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        if (!filename.endsWith(".mp4")) {
-            filename += ".mp4";
-        }
-        link.setName(filename);
+        title = Encoding.htmlDecode(title);
+        title = title.trim();
+        link.setName(this.applyFilenameExtension(title, extDefault));
         if (!StringUtils.isEmpty(dllink) && !(Thread.currentThread() instanceof SingleDownloadController)) {
             link.setProperty(this.getDirectlinkProperty(link, account), this.dllink);
             URLConnectionAdapter con = null;
@@ -176,13 +167,9 @@ public class KinkCom extends PluginForHost {
                 final Browser brc = br.cloneBrowser();
                 br.setFollowRedirects(true);
                 con = brc.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    return AvailableStatus.TRUE;
-                } else {
-                    server_issues = true;
+                handleConnectionErrors(brc, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -228,9 +215,7 @@ public class KinkCom extends PluginForHost {
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         if (!this.attemptStoredDownloadurlDownload(link, account)) {
             requestFileInformation(link, account);
-            if (server_issues) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-            } else if (StringUtils.isEmpty(dllink)) {
+            if (StringUtils.isEmpty(dllink)) {
                 /* Display premiumonly message in this case */
                 if (account == null || Account.AccountType.FREE.equals(account.getType())) {
                     logger.info("Failed to download trailer");
@@ -238,22 +223,22 @@ public class KinkCom extends PluginForHost {
                 throw new AccountRequiredException();
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                try {
-                    br.followConnection();
-                } catch (final IOException e) {
-                    logger.log(e);
-                }
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
-                }
-            }
+            handleConnectionErrors(br, dl.getConnection());
         }
         dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
+            }
+        }
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
@@ -305,22 +290,23 @@ public class KinkCom extends PluginForHost {
                             throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                         }
                     }
-                }
-                if (cookies != null) {
+                } else if (cookies != null) {
                     if (checkAndSaveCookies(br, cookies, account)) {
                         /* Cookies are valid. */
                         return;
                     }
                 }
                 logger.info("Performing full login");
-                br.setCookie(this.getHost(), "ktvc", "0");
-                br.setCookie(this.getHost(), "privyOptIn", "false");
-                br.getPage("https://www." + this.getHost() + "/login");
+                br.setCookie(getHost(), "ktvc", "0");
+                br.setCookie(getHost(), "privyOptIn", "false");
+                br.getPage("https://www." + getHost() + "/login");
                 final Form loginform = br.getFormbyProperty("name", "login");
                 if (loginform == null) {
                     logger.warning("Failed to find loginform");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                /* Small workaround for form parser bug found 2023-08-02 */
+                loginform.setAction("/login");
                 /* Add some browser fingerprinting magic */
                 loginform.put("pf", Encoding.urlEncode(getPFValue(this.br, loginform)));
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
@@ -330,18 +316,31 @@ public class KinkCom extends PluginForHost {
                 }
                 /* Makes the cookies last for 30 days */
                 loginform.put("remember", "on");
-                if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                final boolean captchaRequired = br.containsHTML("window\\.grecaptchaRequired\\s*=\\s*true");
+                if (captchaRequired) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage("/javascripts/kink.min.1293.js");
+                    final String reCaptchaKey = brc.getRegex("recaptchaPublicKey\\s*:\\s*\"([^\"]+)").getMatch(0);
+                    if (reCaptchaKey == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey) {
+                        @Override
+                        public TYPE getType() {
+                            return TYPE.INVISIBLE;
+                        }
+                    }.getToken();
                     loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
                 final Request post = br.createFormRequest(loginform);
                 post.getHeaders().put("Origin", "https://www." + this.getHost());
                 br.getPage(post);
                 if (!isLoggedin(br)) {
+                    /* Recommend cookie login to user */
                     showCookieLoginInfo();
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -389,10 +388,24 @@ public class KinkCom extends PluginForHost {
             /* E.g. first full website login */
             br.getPage("/my/billing");
         }
-        long highestExpireTimestamp = 0;
+        final Cookies userCooies = account.loadUserCookies();
+        if (userCooies != null) {
+            /*
+             * When using cookie login users can enter whatever they want into username field --> We're trying to get unique values for that
+             * field too!
+             */
+            final String username = br.getRegex("account-name\"[^>]*>([^<]+)<").getMatch(0);
+            if (username != null) {
+                account.setUser(Encoding.htmlDecode(username).trim());
+            } else {
+                logger.warning("Failed to find username");
+            }
+        }
+        boolean isAutoRebillIfAccountIsValid = false;
+        long highestExpireTimestamp = -1;
         /* User can own multiple premium packages --> Use the expire date that is farthest away to set in JD! */
         final String[] possibleExpireDates = br.getRegex("([A-Z][a-z]{2} \\d{2}, \\d{4} \\d{2}:\\d{2} [A-Z]{3})").getColumn(0);
-        if (possibleExpireDates.length > 0) {
+        if (possibleExpireDates != null && possibleExpireDates.length > 0) {
             for (final String possibleExpireDate : possibleExpireDates) {
                 final long expireTimestampTmp = TimeFormatter.getMilliSeconds(possibleExpireDate, "MMM dd, yyyy HH:mm ZZ", Locale.ENGLISH);
                 if (expireTimestampTmp > highestExpireTimestamp) {
@@ -401,30 +414,45 @@ public class KinkCom extends PluginForHost {
             }
         } else {
             /* Maybe user only has permanent subscriptions "without" expire-date --> Use highest "rebill-date" as expire-date instead. */
-            final String[] possibleRebillDates = br.getRegex("([A-Z][a-z]{2} \\d{2}, \\d{4})").getColumn(0);
-            for (final String possibleExpireDate : possibleRebillDates) {
-                final long expireTimestampTmp = TimeFormatter.getMilliSeconds(possibleExpireDate, "MMM dd, yyyy", Locale.ENGLISH);
-                if (expireTimestampTmp > highestExpireTimestamp) {
-                    highestExpireTimestamp = expireTimestampTmp;
+            final String[] possibleRebillDates = br.getRegex("([A-Z][a-z]{2} \\d{1,2}, \\d{4})").getColumn(0);
+            if (possibleRebillDates != null && possibleRebillDates.length > 0) {
+                for (final String possibleExpireDate : possibleRebillDates) {
+                    final long expireTimestampTmp = TimeFormatter.getMilliSeconds(possibleExpireDate, "MMM dd, yyyy", Locale.ENGLISH);
+                    if (expireTimestampTmp > highestExpireTimestamp) {
+                        highestExpireTimestamp = expireTimestampTmp;
+                    }
                 }
+                isAutoRebillIfAccountIsValid = true;
             }
+        }
+        if (highestExpireTimestamp == -1) {
+            ai.setExpired(true);
+            logger.info("Failed to find any expiredate -> Account is expired or plugin is broken");
+            return ai;
         }
         /*
          * Always set expire-date. Free/expired premium accounts are unsupported and will get displayed as expired automatically --> Do NOT
          * accept those!
          */
-        ai.setValidUntil(highestExpireTimestamp);
+        ai.setValidUntil(highestExpireTimestamp, br);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
         account.setConcurrentUsePossible(true);
+        String statusText = account.getType().getLabel();
+        if (isAutoRebillIfAccountIsValid) {
+            statusText += " | Auto rebill: Yes";
+        } else {
+            statusText += " | Auto rebill: No";
+        }
         /* Try to let user know when login session will expire */
         final Cookies allCookies = br.getCookies(br.getHost());
         final Cookie cookie = allCookies.get("kinky.sess");
-        if (cookie != null && account.loadUserCookies() != null) {
+        if (cookie != null && userCooies != null) {
             final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");
             final String sessionExpireDateFormatted = formatter.format(new Date(cookie.getExpireDate()));
-            ai.setStatus("Sess valid until: " + sessionExpireDateFormatted);
+            statusText += " | Cookies valid until: " + sessionExpireDateFormatted;
         }
+        ai.setStatus(statusText);
         return ai;
     }
 
