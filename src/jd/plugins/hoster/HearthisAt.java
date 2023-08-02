@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -26,13 +29,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hearthis.at" }, urls = { "https?://(?:www\\.)?hearthis\\.at/([^/]+)/([A-Za-z0-9-]+)/?" })
 public class HearthisAt extends PluginForHost {
@@ -62,25 +62,48 @@ public class HearthisAt extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
+        return urlinfo.getMatch(0) + " - " + urlinfo.getMatch(1);
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         return requestFileInformation(link, false);
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
-        link.setMimeHint(CompiledFiletypeFilter.AudioExtensions.MP3);
+        final String extDefault = ".mp3";
         dllink = null;
+        if (!link.isNameSet()) {
+            link.setName(getFID(link) + extDefault);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String url_title = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
+        final String url_title = urlinfo.getMatch(1);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("track\\-detail track_") || this.br.getURL().contains("/search/")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.br.containsHTML("track\\-detail track_")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (StringUtils.containsIgnoreCase(br.getURL(), "/search/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // String filename = br.getRegex("data-playlist-title=\"([^<>\"]*?)\"").getMatch(0); // Always get "pause" (1st match)
-        String filename = br.getRegex("<title>([^<>]*?) \\|[^<>]+</title>").getMatch(0);
-        if (filename == null) {
+        String title = br.getRegex("<title>([^<>]*?) \\|[^<>]+</title>").getMatch(0);
+        if (title == null) {
             /* Fallback */
-            filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0) + " - " + url_title;
+            title = urlinfo.getMatch(0) + " - " + url_title;
         }
         // final String downloadlink_stream = br.getRegex("data-mp3=\"(http[^<>\"]*?)\"").getMatch(0); // Always get dummy link (1st)
         String downloadlink_stream = null;
@@ -92,7 +115,7 @@ public class HearthisAt extends PluginForHost {
             }
         }
         br.setFollowRedirects(true);
-        if (dllink != null && (!dllink.contains(".mp3") && !dllink.contains("index.php"))) {
+        if (dllink != null && (!dllink.contains(extDefault) && !dllink.contains("index.php"))) {
             dllink = null;
         }
         if (isDownload) {
@@ -138,11 +161,10 @@ public class HearthisAt extends PluginForHost {
             dllink = downloadlink_stream;
             logger.info("\n\n-> Failed to get download link -> Checking stream link: " + dllink + "\n");
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
+        title = Encoding.htmlDecode(title);
+        title = title.trim();
         if (!link.isNameSet()) {
-            link.setFinalFileName(filename + ".mp3");
+            link.setFinalFileName(title + extDefault);
         }
         if (!StringUtils.isEmpty(this.dllink) && !isDownload) {
             final Browser br2 = br.cloneBrowser();
@@ -155,21 +177,17 @@ public class HearthisAt extends PluginForHost {
                 br2.getHeaders().put(OPEN_RANGE_REQUEST);
                 /* Do NOT use HEAD request here! */
                 con = br2.openGetConnection(dllink);
-                if (looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        if (DownloadInterface.isNewHTTPCore()) {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        } else {
-                            link.setDownloadSize(con.getCompleteContentLength());
-                        }
+                handleConnectionErrors(br2, con);
+                if (con.getCompleteContentLength() > 0) {
+                    if (DownloadInterface.isNewHTTPCore()) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    } else {
+                        link.setDownloadSize(con.getCompleteContentLength());
                     }
-                    final String ext = getFileNameExtensionFromString(getFileNameFromHeader(con), ".mp3");
-                    link.setFinalFileName(filename + ext);
-                    link.setProperty("directlink", dllink);
-                } else if (con.getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (!con.isOK()) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                }
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(title + "." + ext);
                 }
             } finally {
                 try {
@@ -191,19 +209,23 @@ public class HearthisAt extends PluginForHost {
         }
         // required to enforce use of range requests
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume && DownloadInterface.isNewHTTPCore(), free_maxchunks);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else if (isOfficialDownload) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download broken serverside");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download broken serverside?");
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Audio file broken?");
             }
         }
-        dl.startDownload();
     }
 
     @Override

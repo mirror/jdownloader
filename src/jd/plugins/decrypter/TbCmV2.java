@@ -59,6 +59,7 @@ import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.plugins.components.youtube.YoutubeClipData;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.ChannelCrawlerSortMode;
+import org.jdownloader.plugins.components.youtube.YoutubeConfig.ChannelPlaylistCrawlerPackagingMode;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAPlaylistAction;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.ProfileCrawlMode;
@@ -292,8 +293,7 @@ public class TbCmV2 extends PluginForDecrypt {
         userName = null;
         globalPropertiesForDownloadLink = new HashMap<String, Object>();
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
-        String addedLink = param.getCryptedUrl();
-        if (StringUtils.containsIgnoreCase(addedLink, "yt.not.allowed") && !cfg.isAndroidSupportEnabled()) {
+        if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "yt.not.allowed") && !cfg.isAndroidSupportEnabled()) {
             /*
              * Important! Neither touch nor question this as long as there are references to "yt.not.allowed" in
              * jd.controlling.linkcrawler.LinkCrawler.java.
@@ -312,7 +312,7 @@ public class TbCmV2 extends PluginForDecrypt {
         br.setCookie(this.getHost(), "PREF", "hl=en-GB");
         // TODO: Maybe remove this as we're not modifying this URL anymore and also all methods to extract information out of YT URLs work
         // domain-independent.
-        String cleanedurl = addedLink;
+        String cleanedurl = param.getCryptedUrl();
         final String requestedVariantString = new Regex(cleanedurl, "(?i)\\#variant=(\\S*)").getMatch(0);
         AbstractVariant requestedVariant = null;
         if (StringUtils.isNotEmpty(requestedVariantString)) {
@@ -347,7 +347,7 @@ public class TbCmV2 extends PluginForDecrypt {
         final short maxItemsPerPage = 100;
         final ArrayList<YoutubeClipData> videoIdsToAdd = new ArrayList<YoutubeClipData>();
         int userDefinedMaxPlaylistOrProfileItemsLimit = cfg.getPlaylistAndProfileCrawlerMaxItemsLimit();
-        final String playlistHandlingLogtextForUserDisabledCrawlerByLimitSetting = "Doing nothing because user has disabled channel/profile/playlist crawler by setting limit to 0";
+        final String playlistHandlingLogtextForUserDisabledCrawlerByLimitSetting = "Doing nothing because user has disabled channel/playlist crawler by setting limit to 0";
         String playlistHandlingHumanReadableTypeOfUrlToCrawl = null;
         String playlistHandlingHumanReadableTitle = null;
         if (StringUtils.isEmpty(playlistID) && StringUtils.isEmpty(userName) && !StringUtils.isEmpty(videoID)) {
@@ -516,7 +516,7 @@ public class TbCmV2 extends PluginForDecrypt {
                      */
                     logger.info("Trying to find playlistID for channel-playlist 'Uploads by " + channelID + "'");
                     helper.getPage(br, getBaseURL() + "/channel/" + channelID);
-                    playlistID = br.getRegex("list=([A-Za-z0-9\\-_]+)\"[^<>]+play-all-icon-btn").getMatch(0);
+                    playlistID = br.getRegex("(?i)list=([A-Za-z0-9\\-_]+)\"[^<>]+play-all-icon-btn").getMatch(0);
                     if (StringUtils.isEmpty(playlistID) && channelID.startsWith("UC")) {
                         /* channel has no play all button. */
                         playlistID = "UU" + channelID.substring(2);
@@ -527,44 +527,46 @@ public class TbCmV2 extends PluginForDecrypt {
                     }
                 }
                 final ArrayList<YoutubeClipData> playlist = crawlPlaylistOrChannel(helper, br, playlistID, userName, channelID, cleanedurl, userDefinedMaxPlaylistOrProfileItemsLimit);
-                if (playlist != null) {
+                if (playlist != null && playlist.size() > 0) {
+                    final String internalContainerURL = helper.getChannelPlaylistCrawlerContainerUrlOverride(param.getCryptedUrl());
                     videoIdsToAdd.addAll(playlist);
+                    final ChannelPlaylistCrawlerPackagingMode mode = cfg.getChannelPlaylistCrawlerPackagingMode();
+                    if (mode == ChannelPlaylistCrawlerPackagingMode.AUTO || mode == ChannelPlaylistCrawlerPackagingMode.GROUP_ALL_VIDEOS_AS_SINGLE_PACKAGE) {
+                        channelOrPlaylistPackage = FilePackage.getInstance();
+                        channelOrPlaylistPackage.setAllowMerge(true);
+                        // channelOrPlaylistPackage.setCleanupPackageName(false);
+                        final String playlistTitle = (String) globalPropertiesForDownloadLink.get(YoutubeHelper.YT_PLAYLIST_TITLE);
+                        final String channelName = (String) globalPropertiesForDownloadLink.get(YoutubeHelper.YT_CHANNEL_TITLE);
+                        if (playlistTitle != null) {
+                            channelOrPlaylistPackage.setName(playlistTitle);
+                        } else {
+                            final boolean isShorts = isChannelOrProfileShorts(internalContainerURL);
+                            String packagename;
+                            if (channelName != null) {
+                                packagename = channelName;
+                            } else if (this.userName != null) {
+                                packagename = this.userName;
+                            } else {
+                                packagename = playlistHandlingHumanReadableTitle;
+                            }
+                            if (isShorts) {
+                                packagename += " | Shorts";
+                            }
+                            channelOrPlaylistPackage.setName(packagename);
+                        }
+                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            /* Dev only: Include number of expected items in packagename for better overview/debugging. */
+                            channelOrPlaylistPackage.setName("[" + videoIdsToAdd.size() + " videos] " + channelOrPlaylistPackage.getName());
+                        }
+                    }
+                } else {
+                    // TODO: Check if this is still needed
+                    videoIdsToAdd.addAll(parseVideoIds(video_ids_comma_separated));
                 }
-                videoIdsToAdd.addAll(parseVideoIds(video_ids_comma_separated));
             } catch (final InterruptedException e) {
                 logger.log(e);
                 logger.warning("Playlist crawler failed due to exception");
                 return ret;
-            }
-            final boolean channelAndPlaylistCrawlerGroupingTest = true;
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && channelAndPlaylistCrawlerGroupingTest) {
-                channelOrPlaylistPackage = FilePackage.getInstance();
-                channelOrPlaylistPackage.setAllowMerge(true);
-                // channelOrPlaylistPackage.setCleanupPackageName(false);
-                final String playlistTitle = (String) globalPropertiesForDownloadLink.get(YoutubeHelper.YT_PLAYLIST_TITLE);
-                final String channelName = (String) globalPropertiesForDownloadLink.get(YoutubeHelper.YT_CHANNEL_TITLE);
-                if (playlistTitle != null) {
-                    channelOrPlaylistPackage.setName(playlistTitle);
-                } else {
-                    // TODO: Maybe obtain this information from helper or somewhere else as added URL and URL used later can change!
-                    final boolean isShorts = isChannelOrProfileShorts(cleanedurl);
-                    String packagename;
-                    if (channelName != null) {
-                        packagename = channelName;
-                    } else if (this.userName != null) {
-                        packagename = this.userName;
-                    } else {
-                        packagename = playlistHandlingHumanReadableTitle;
-                    }
-                    if (isShorts) {
-                        packagename += " | Shorts";
-                    }
-                    channelOrPlaylistPackage.setName(packagename);
-                }
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    /* Dev only: Include number of expected items in packagename for better overview/debugging. */
-                    channelOrPlaylistPackage.setName("[" + videoIdsToAdd.size() + " videos] " + channelOrPlaylistPackage.getName());
-                }
             }
         }
         Integer indexFromAddedURL = null;
@@ -573,12 +575,17 @@ public class TbCmV2 extends PluginForDecrypt {
             indexFromAddedURL = Integer.parseInt(indexFromAddedURLStr);
         }
         boolean reversePlaylistNumber = false;
+        if (this.playlistID != null && cfg.isProcessPlaylistItemsInReverseOrder() && (userDefinedMaxPlaylistOrProfileItemsLimit == -1 || videoIdsToAdd.size() < userDefinedMaxPlaylistOrProfileItemsLimit)) {
+            logger.info("Processing crawled playlist in reverse order");
+            reversePlaylistNumber = true;
+            Collections.reverse(videoIdsToAdd);
+        }
         final boolean isCrawlDupeCheckEnabled = cfg.isCrawlDupeCheckEnabled();
         final Set<String> videoIDsdupeCheck = new HashSet<String>();
         int videoidindex = -1;
         for (YoutubeClipData vid : videoIdsToAdd) {
             videoidindex++;
-            logger.info("Processing item " + videoidindex + "/" + videoIdsToAdd.size() + " | " + vid);
+            logger.info("Processing item " + videoidindex + "/" + videoIdsToAdd.size() + " | VideoID: " + vid);
             if (isCrawlDupeCheckEnabled && linkCollectorContainsEntryByID(vid.videoID)) {
                 logger.info("CrawlDupeCheck skip:" + vid.videoID);
                 continue;
@@ -1287,6 +1294,10 @@ public class TbCmV2 extends PluginForDecrypt {
             }
             break;
         } while (run < 1);
+        if (!StringUtils.equals(originalURL.toString(), br.getURL())) {
+            logger.info("Channel/playlist URL used differs from URL that was initially added: Original: " + originalURL.toString() + " | Actually used: " + br.getURL());
+            helper.setChannelPlaylistCrawlerContainerUrlOverride(br.getURL());
+        }
         humanReadableTitle += " sorted by " + activeSort;
         int videoPositionCounter = 0;
         int round = 0;
@@ -1538,17 +1549,6 @@ public class TbCmV2 extends PluginForDecrypt {
             }
         }
         return ret;
-    }
-
-    /* TODO: Check if this is still needed */
-    private void checkErrors(Browser br) throws InterruptedException {
-        if (br.containsHTML(">404 Not Found<")) {
-            throw new InterruptedException("404 Not Found");
-        } else if (br.containsHTML("iframe style=\"display:block;border:0;\" src=\"/error")) {
-            throw new InterruptedException("Unknown Error");
-        } else if (br.containsHTML("<h2>\\s*This channel does not exist\\.\\s*</h2>")) {
-            throw new InterruptedException("Channel does not exist.");
-        }
     }
 
     @Override

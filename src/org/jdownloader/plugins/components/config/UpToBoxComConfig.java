@@ -162,6 +162,17 @@ public interface UpToBoxComConfig extends PluginConfigInterface {
                 return "uptobox.fr";
             }
         },
+        UPTOBOXLINK {
+            @Override
+            public String getLabel() {
+                return getDomain();
+            }
+
+            @Override
+            public String getDomain() {
+                return "uptobox.link";
+            }
+        },
         UPTOSTREAMCOM {
             @Override
             public String getLabel() {
@@ -195,6 +206,7 @@ public interface UpToBoxComConfig extends PluginConfigInterface {
                 return "uptostream.eu";
             }
         };
+
         public abstract String getDomain();
     }
 

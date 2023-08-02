@@ -597,6 +597,12 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Oldest (old to new)" })
     String YoutubeDash_ChannelCrawlerSortModeOldest();
 
+    @Default(lngs = { "en" }, values = { "Put all videos into one package" })
+    String YoutubeDash_ChannelPlaylistCrawlerPackagingModeSingle();
+
+    @Default(lngs = { "en" }, values = { "Put each video into a separate package" })
+    String YoutubeDash_ChannelPlaylistCrawlerPackagingModePerVideo();
+
     @Default(lngs = { "en" }, values = { "Media Type (Video, Audio, Image, Subtitles, ..." })
     String YoutubeDash_GroupLogic_BY_MEDIA_TYPE();
 

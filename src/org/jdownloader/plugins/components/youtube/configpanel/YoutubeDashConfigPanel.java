@@ -35,6 +35,7 @@ import org.jdownloader.plugins.components.youtube.Projection;
 import org.jdownloader.plugins.components.youtube.VariantIDStorable;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.ChannelCrawlerSortMode;
+import org.jdownloader.plugins.components.youtube.YoutubeConfig.ChannelPlaylistCrawlerPackagingMode;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAPlaylistAction;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
 import org.jdownloader.plugins.components.youtube.YoutubeConfig.ProfileCrawlMode;
@@ -50,6 +51,7 @@ import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
 
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
@@ -135,6 +137,9 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ProfileCrawlMode(), null, null, new ComboBox<ProfileCrawlMode>(cf._getStorageHandler().getKeyHandler("ProfileCrawlMode", KeyHandler.class), ProfileCrawlMode.values(), null));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_PlaylistAndProfileCrawlerMaxItemsLimit(), null, null, new Spinner(cf._getStorageHandler().getKeyHandler("PlaylistAndProfileCrawlerMaxItemsLimit", IntegerKeyHandler.class)));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ChannelCrawlerPreferredSortMode(), null, null, new ComboBox<ChannelCrawlerSortMode>(cf._getStorageHandler().getKeyHandler("ChannelCrawlerPreferredSortMode", KeyHandler.class), ChannelCrawlerSortMode.values(), null));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ChannelPlaylistCrawlerPackagingMode(), null, null, new ComboBox<ChannelPlaylistCrawlerPackagingMode>(cf._getStorageHandler().getKeyHandler("ChannelPlaylistCrawlerPackagingMode", KeyHandler.class), ChannelPlaylistCrawlerPackagingMode.values(), null));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ChannelPlaylistCrawlerPackagingMode(), null, null, new ComboBox<ChannelPlaylistCrawlerPackagingMode>(cf._getStorageHandler().getKeyHandler("ChannelPlaylistCrawlerPackagingMode", KeyHandler.class), ChannelPlaylistCrawlerPackagingMode.values(), null));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ProcessPlaylistItemsInReverseOrder(), null, new Checkbox(cf._getStorageHandler().getKeyHandler("ProcessPlaylistItemsInReverseOrder", null)));
         // VariantBase[] variants = VariantBase.values();
         // Comparator<VariantBase> comp = new Comparator<VariantBase>() {
         //

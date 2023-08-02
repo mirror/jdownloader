@@ -4361,11 +4361,17 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Profile crawl mode" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_ProfileCrawlMode();
 
+    @Default(lngs = { "en" }, values = { "Channel/Playlist crawler max items limit [-1 = no limit, 0 = disable crawler]" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_PlaylistAndProfileCrawlerMaxItemsLimit();
+
     @Default(lngs = { "en" }, values = { "Channel crawler preferred sort mode" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_ChannelCrawlerPreferredSortMode();
 
-    @Default(lngs = { "en" }, values = { "Profile/Playlist crawler max items limit [-1 = no limit, 0 = disable crawler]" })
-    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_PlaylistAndProfileCrawlerMaxItemsLimit();
+    @Default(lngs = { "en" }, values = { "Channel/Playlist crawler group mode" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_ChannelPlaylistCrawlerPackagingMode();
+
+    @Default(lngs = { "en" }, values = { "Process crawled playlist items in reverse order (only applies if no crawl limit is set or playlist contains less items than set crawl limit!)?" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_ProcessPlaylistItemsInReverseOrder();
 
     @Default(lngs = { "en" }, values = { "Explanation of the available tags:" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_tags();

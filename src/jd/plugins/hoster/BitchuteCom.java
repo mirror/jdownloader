@@ -75,8 +75,12 @@ public class BitchuteCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(this.getFID(link) + default_extension);
         }
         dllink = null;
         this.setBrowserExclusive();
@@ -89,6 +93,13 @@ public class BitchuteCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*This video is unavailable at your location due to the following restrictions")) {
+            if (isDownload) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
+            } else {
+                /* Video is online but cannot be downloaded. */
+                return AvailableStatus.TRUE;
+            }
         }
         String title = br.getRegex("class=\"page-title\">([^<>\"]+)<").getMatch(0);
         if (StringUtils.isEmpty(dllink)) {
@@ -147,7 +158,7 @@ public class BitchuteCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

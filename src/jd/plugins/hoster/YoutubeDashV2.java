@@ -2536,7 +2536,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
 
     @Override
     public String getDescription() {
-        return "JDownloader's YouTube Plugin helps downloading videoclips from youtube.com. YouTube provides different video formats and qualities. JDownloader is able to extract audio after download, and save it as mp3 file. \r\n - Hear your favourite YouTube Clips on your MP3 Player.";
+        return "JDownloader's YouTube Plugin helps downloading videos from youtube.com. YouTube provides different audio/video formats and qualities. JDownloader is also able to extract the audio track after download, and save it as a separate file.";
     }
 
     protected FilePair[] listFilePairsToMove(DownloadLink link, String currentDirectory, String currentName, String newDirectory, String newName) {

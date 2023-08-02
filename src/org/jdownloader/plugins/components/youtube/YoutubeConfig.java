@@ -356,6 +356,41 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     void setChannelCrawlerPreferredSortMode(YoutubeConfig.ChannelCrawlerSortMode sort);
 
+    public static enum ChannelPlaylistCrawlerPackagingMode implements LabelInterface {
+        AUTO {
+            @Override
+            public String getLabel() {
+                return "Auto";
+            }
+        },
+        GROUP_ALL_VIDEOS_AS_SINGLE_PACKAGE {
+            @Override
+            public String getLabel() {
+                return _JDT.T.YoutubeDash_ChannelPlaylistCrawlerPackagingModeSingle();
+            }
+        },
+        GROUP_EACH_VIDEO_INDIVIDUALLY {
+            @Override
+            public String getLabel() {
+                return _JDT.T.YoutubeDash_ChannelPlaylistCrawlerPackagingModePerVideo();
+            }
+        };
+    }
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Channels/playlist crawler: Grouping mode")
+    @DefaultEnumValue("AUTO")
+    YoutubeConfig.ChannelPlaylistCrawlerPackagingMode getChannelPlaylistCrawlerPackagingMode();
+
+    void setChannelPlaylistCrawlerPackagingMode(YoutubeConfig.ChannelPlaylistCrawlerPackagingMode mode);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("If enabled, list of crawled videoIDs will be reversed before processing. Important: This will also change the index numbers inside the YouTube URLs you get in JD later on! This setting is only applied if no crawl limit is set or if the playlist contains less items than the crawl limit.")
+    @DefaultBooleanValue(false)
+    boolean isProcessPlaylistItemsInReverseOrder();
+
+    void setProcessPlaylistItemsInReverseOrder(boolean b);
+
     @AboutConfig
     @DefaultFactory(DefaultConvertSubtitleVariantMode.class)
     YoutubeConfig.SubtitleVariantMode getSubtitleVariantMode();

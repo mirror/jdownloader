@@ -15,7 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -28,11 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bundestag.de" }, urls = { "https?://(?:www\\.)?bundestag\\.de/mediathek.+" })
 public class BundestagDe extends PluginForHost {
@@ -63,9 +64,9 @@ public class BundestagDe extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllinkHTTP = null;
-        String contentID = new Regex(link.getPluginPatternMatcher(), "ids=(\\d+)").getMatch(0);
+        String contentID = new Regex(link.getPluginPatternMatcher(), "(?i)ids=(\\d+)").getMatch(0);
         if (contentID == null) {
-            contentID = new Regex(link.getPluginPatternMatcher(), "id=(\\d+)").getMatch(0);
+            contentID = new Regex(link.getPluginPatternMatcher(), "(?i)id=(\\d+)").getMatch(0);
         }
         if (contentID == null) {
             /* Seems like user added an invalid url. */
@@ -78,7 +79,11 @@ public class BundestagDe extends PluginForHost {
         br.setFollowRedirects(true);
         this.br.setAllowedResponseCodes(400);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"error\"")) {
+        if (br.getHttpConnection().getResponseCode() == 400) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("class=\"error\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         link.setLinkID(this.getHost() + "://" + contentID);
@@ -108,7 +113,7 @@ public class BundestagDe extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
             final Map<String, Object> videoInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "pl/entries/{0}");
             titleJson = (String) videoInfo.get("title");
             final Map<String, Object> video = (Map<String, Object>) videoInfo.get("video");
@@ -128,7 +133,6 @@ public class BundestagDe extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        filename = encodeUnicode(filename);
         filename = Encoding.htmlDecode(filename).trim();
         link.setFinalFileName(filename + ".mp4");
         if (dllinkHTTP != null) {
@@ -138,12 +142,9 @@ public class BundestagDe extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllinkHTTP);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                handleConnectionErrors(br2, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -169,16 +170,7 @@ public class BundestagDe extends PluginForHost {
         if (!StringUtils.isEmpty(this.dllinkHTTP)) {
             /* HTTP download */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllinkHTTP, free_resume, free_maxchunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            handleConnectionErrors(br, dl.getConnection());
             dl.startDownload();
         } else {
             /* HLS download */
@@ -186,6 +178,19 @@ public class BundestagDe extends PluginForHost {
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br)).getDownloadurl());
             dl.startDownload();
+        }
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
         }
     }
 
