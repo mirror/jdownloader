@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2017  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -20,12 +20,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -34,32 +36,30 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class FastPicRu extends PluginForHost {
-    public FastPicRu(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class YoupicCom extends PluginForHost {
+    public YoupicCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* DEV NOTES */
-    // Tags:
-    // protocol: no https
-    // other:
-    /* Connection stuff */
-    private static final boolean free_resume       = true;
-    /* We're only downloading small files so 1 chunk is enough. */
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-
     @Override
-    public String getAGBLink() {
-        return "https://fastpic.ru/";
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST };
     }
+
+    /* Connection stuff */
+    private static final boolean free_resume        = true;
+    private static final int     free_maxchunks     = 1;
+    private static final int     free_maxdownloads  = -1;
+    private String               dllink             = null;
+    private final String         PROPERTY_TITLE     = "title";
+    private final String         PROPERTY_FULL_NAME = "full_name";
+    private final String         PROPERTY_USERNAME  = "user";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "fastpic.org", "fastpic.ru" });
+        ret.add(new String[] { "youpic.com" });
         return ret;
     }
 
@@ -75,9 +75,14 @@ public class FastPicRu extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/view/([^<>\"]+)\\.html");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/image/(\\d+)(/([\\w\\-]+))?");
         }
         return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "https://youpic.com/termconditions";
     }
 
     @Override
@@ -95,29 +100,51 @@ public class FastPicRu extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        String title = getFID(link);
-        title = Encoding.htmlDecode(title);
-        title = title.trim();
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        dllink = null;
         final String extDefault = ".jpg";
         if (!link.isNameSet()) {
-            link.setName(this.correctOrApplyFileNameExtension(title, extDefault));
+            final String urlSlug = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+            if (urlSlug != null) {
+                link.setName(urlSlug.replace("-", " ").trim() + extDefault);
+            } else {
+                link.setName(this.getFID(link) + extDefault);
+            }
         }
-        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dllink = br.getRegex("<span class=\"text-muted d-lg-none\">нажмите для увеличения</span>\\s*<img src=\"(https://[^\"]+)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(https?://[a-z0-9]+\\.[^/]+/big/[^/]+/[^/]+/[^/]+/_?[a-f0-9]{32}\\.[A-Za-z]+[^\"]*)\"").getMatch(0);
+        String title = HTMLSearch.searchMetaTag(br, "og:title");
+        dllink = br.getRegex("\"(https?://cdn\\.[^/]+/large/[^\"]+)\"").getMatch(0);
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            title = title.replaceFirst("(?i)\\s*on YouPic", "");
+            final Regex moreinfo = new Regex(title, " by (.+)");
+            final String fullName = moreinfo.getMatch(0);
+            if (fullName != null) {
+                link.setProperty(PROPERTY_FULL_NAME, fullName);
+                title = title.replace(moreinfo.getMatch(-1), "");
+            } else {
+                logger.warning("Failed to find fullName");
+            }
+            title = title.trim();
+            link.setProperty(PROPERTY_TITLE, title);
+            link.setFinalFileName(title + extDefault);
+        }
+        final String username = br.getRegex("/photographer/([\\w\\-]+)").getMatch(0);
+        if (username != null) {
+            link.setProperty(PROPERTY_USERNAME, username);
+        } else {
+            logger.warning("Failed to find username");
         }
         if (!StringUtils.isEmpty(dllink)) {
+            dllink = dllink.replaceFirst("(?i)/large/", "/huge/"); // Higher image quality
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(this.dllink);
+                con = br.openGetConnection(this.dllink);
                 handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -148,10 +175,6 @@ public class FastPicRu extends PluginForHost {
     }
 
     private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (con.getURL().toString().contains("/not_found.gif")) {
-            /* https://static.fastpic.org/not_found.gif */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
             if (con.getResponseCode() == 403) {
@@ -161,6 +184,17 @@ public class FastPicRu extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
             }
+        }
+    }
+
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con) {
+        /* Special: For working image direct-URLs they return nearly no headers at all. Also no content-type header. */
+        final String contentType = con.getContentType();
+        if (con.isOK() && !StringUtils.containsIgnoreCase(contentType, "html") && con.getCompleteContentLength() > 0) {
+            return true;
+        } else {
+            return false;
         }
     }
 

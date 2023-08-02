@@ -15,8 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,12 +34,15 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BaseShareCom extends antiDDoSForHost {
     public BaseShareCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
     private final String PATTERN_EMBED  = "https?://[^/]+/songs/embed/id/(\\d+)";
@@ -98,13 +106,14 @@ public class BaseShareCom extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Regex urlinfoEmbed = new Regex(link.getPluginPatternMatcher(), PATTERN_EMBED);
+        final String extDefault = ".mp3";
         if (!link.isNameSet()) {
             /* Set fallback-filename */
             final Regex urlinfoNormal = new Regex(link.getPluginPatternMatcher(), PATTERN_NORMAL);
             if (urlinfoEmbed.matches()) {
-                link.setName(urlinfoEmbed.getMatch(0) + ".mp3");
+                link.setName(urlinfoEmbed.getMatch(0) + extDefault);
             } else {
-                link.setName(urlinfoNormal.getMatch(0) + " - " + urlinfoNormal.getMatch(1) + ".mp3");
+                link.setName(urlinfoNormal.getMatch(0) + " - " + urlinfoNormal.getMatch(1) + extDefault);
             }
         }
         this.setBrowserExclusive();
@@ -133,11 +142,10 @@ public class BaseShareCom extends antiDDoSForHost {
         if (artist == null || title == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        artist = encodeUnicode(Encoding.htmlDecode(artist)).trim();
-        title = encodeUnicode(Encoding.htmlDecode(title)).trim();
+        artist = Encoding.htmlDecode(artist).trim();
+        title = Encoding.htmlDecode(title).trim();
         filename = artist + " - " + title;
-        filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".mp3");
+        final String ext = getFileNameExtensionFromString(dllink, extDefault);
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
@@ -150,9 +158,7 @@ public class BaseShareCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
-                if (!this.looksLikeDownloadableContent(con)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
+                handleConnectionErrors(br2, con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
@@ -169,12 +175,25 @@ public class BaseShareCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
+            }
+        }
     }
 
     /* for the crawler, so we have only one session of antiddos */

@@ -16,7 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -24,6 +25,7 @@ import javax.script.ScriptEngineManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -35,13 +37,43 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fanfox.net", "mangahome.com" }, urls = { "https?://(?:www\\.)?fanfox\\.net/manga/[^/]+/(?:v[A-Za-z0-9]+/)?c[\\d\\.]+/\\d+\\.html", "https?://(?:www\\.)?mangahome\\.com/manga/[^/]+/(?:v[A-Za-z0-9]+/)?c[\\d\\.]+/\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Mangafox extends PluginForHost {
     public Mangafox(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.IMAGE_HOST };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "fanfox.net", "mangahome.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/manga/[^/]+/(?:v[A-Za-z0-9]+/)?c[\\d\\.]+/\\d+\\.html");
+        }
+        return ret.toArray(new String[0]);
     }
 
     /* DEV NOTES */
@@ -54,7 +86,6 @@ public class Mangafox extends PluginForHost {
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -70,10 +101,9 @@ public class Mangafox extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         link.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie(new URL(link.getPluginPatternMatcher()).getHost(), "isAdult", "1");
+        br.setCookie(link.getPluginPatternMatcher(), "isAdult", "1");
         br.getPage(link.getPluginPatternMatcher());
         /* Check if main URL is still online */
         if (isOffline(br)) {
@@ -104,31 +134,29 @@ public class Mangafox extends PluginForHost {
         if (StringUtils.isEmpty(filename)) {
             filename = url_filename;
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        String ext;
-        if (!StringUtils.isEmpty(dllink)) {
-            ext = getFileNameExtensionFromString(dllink, default_extension);
-        } else {
-            ext = default_extension;
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            String ext;
+            if (!StringUtils.isEmpty(dllink)) {
+                ext = getFileNameExtensionFromString(dllink, default_extension);
+            } else {
+                ext = default_extension;
+            }
+            filename = this.correctOrApplyFileNameExtension(filename, ext);
+            link.setName(filename);
         }
         if (!StringUtils.isEmpty(dllink)) {
-            dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                } else {
-                    server_issues = true;
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(filename, "." + ext));
                 }
             } finally {
                 try {
@@ -136,9 +164,6 @@ public class Mangafox extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
@@ -198,28 +223,27 @@ public class Mangafox extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
+            }
+        }
     }
 
     @Override
