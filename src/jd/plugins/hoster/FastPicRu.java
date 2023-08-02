@@ -16,6 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -26,10 +30,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fastpic.org" }, urls = { "https?://(?:www\\.)?fastpic\\.(?:ru|org)/view/([^<>\"]+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FastPicRu extends PluginForHost {
     public FastPicRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,68 +53,84 @@ public class FastPicRu extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://fastpic.ru/";
+        return "https://fastpic.ru/";
     }
 
-    /** 2021-08-02: Main domain has changed from fastpic.ru to fastpic.org. */
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "fastpic.org", "fastpic.ru" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
     @Override
-    public String rewriteHost(String host) {
-        if (host == null || host.equalsIgnoreCase("fastpic.ru")) {
-            return this.getHost();
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/view/([^<>\"]+)\\.html");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
         } else {
-            return super.rewriteHost(host);
+            return super.getLinkID(link);
         }
     }
 
-    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        String title = getFID(link);
+        title = Encoding.htmlDecode(title);
+        title = title.trim();
+        final String extDefault = ".jpg";
+        if (!link.isNameSet()) {
+            link.setName(this.correctOrApplyFileNameExtension(title, extDefault));
+        }
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         dllink = br.getRegex("<span class=\"text-muted d-lg-none\">нажмите для увеличения</span>\\s*<img src=\"(https://[^\"]+)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://[a-z0-9]+\\.[^/]+/big/[^/]+/[^/]+/[^/]+/_?[a-f0-9]{32}\\.[A-Za-z]+[^\"]*)\"").getMatch(0);
         }
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".jpg");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        link.setFinalFileName(filename);
-        URLConnectionAdapter con = null;
-        try {
-            final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
-            con = br2.openHeadConnection(dllink);
-            if (con.getURL().toString().contains("/not_found.gif")) {
-                /* https://static.fastpic.org/not_found.gif */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (this.looksLikeDownloadableContent(con)) {
+        if (!StringUtils.isEmpty(dllink)) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            link.setProperty("directlink", dllink);
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -118,18 +139,32 @@ public class FastPicRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException {
+        if (con.getURL().toString().contains("/not_found.gif")) {
+            /* https://static.fastpic.org/not_found.gif */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (!this.looksLikeDownloadableContent(con)) {
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            try {
+                br.followConnection(true);
+            } catch (final IOException e) {
+                logger.log(e);
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+        }
     }
 
     @Override

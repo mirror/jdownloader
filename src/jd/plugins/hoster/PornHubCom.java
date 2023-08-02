@@ -38,6 +38,23 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.net.BCSSLSocketStreamFactory;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -69,23 +86,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PornHubComVideoCrawler;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.net.BCSSLSocketStreamFactory;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PornHubComVideoCrawler.class })
 public class PornHubCom extends PluginForHost {
@@ -108,15 +108,15 @@ public class PornHubCom extends PluginForHost {
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
     public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-        {
-            put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-            put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-            put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-            put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-            put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-            put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-        }
-    });
+                                                                                            {
+                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+                                                                                            }
+                                                                                        });
     public static final String                    BEST_ONLY                             = "BEST_ONLY";
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    CRAWL_VIDEO_HLS                       = "CRAWL_VIDEO_HLS";
@@ -144,7 +144,7 @@ public class PornHubCom extends PluginForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
 
     @Override
@@ -1123,172 +1123,169 @@ public class PornHubCom extends PluginForHost {
 
     public boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                final String preferredLoginFreeDomain = getConfiguredDomainLoginFree(this.getHost());
-                final String preferredLoginPremiumDomain = getConfiguredDomainLoginPremium(this.getHost());
-                // Load cookies
-                br.setCookiesExclusive(true);
-                /* 2017-01-25: Important - we often have redirects! */
-                br.setFollowRedirects(true);
-                prepBr(br);
-                final String freeCookieDomain = getPreferredFreeCookieDomain(account);
-                final Cookies freeCookies = account.loadCookies(COOKIE_ID_FREE);
-                final Cookies premiumCookies = account.loadCookies(COOKIE_ID_PREMIUM);
-                final boolean is_cookie_only_login = account.getBooleanProperty(PROPERTY_ACCOUNT_is_cookie_login_only, false);
-                if (!force) {
+            final String preferredLoginFreeDomain = getConfiguredDomainLoginFree(this.getHost());
+            final String preferredLoginPremiumDomain = getConfiguredDomainLoginPremium(this.getHost());
+            // Load cookies
+            br.setCookiesExclusive(true);
+            /* 2017-01-25: Important - we often have redirects! */
+            br.setFollowRedirects(true);
+            prepBr(br);
+            final String freeCookieDomain = getPreferredFreeCookieDomain(account);
+            final Cookies freeCookies = account.loadCookies(COOKIE_ID_FREE);
+            final Cookies premiumCookies = account.loadCookies(COOKIE_ID_PREMIUM);
+            final Cookies userCookies = account.loadUserCookies();
+            final boolean is_cookie_only_login = account.getBooleanProperty(PROPERTY_ACCOUNT_is_cookie_login_only, false);
+            if (!force) {
+                br.setCookies(freeCookieDomain, freeCookies);
+                br.setCookies(preferredLoginPremiumDomain, premiumCookies);
+                logger.info("Trust login cookies without check:" + account.getType());
+                /* We trust these cookies --> Do not check them */
+                return false;
+            }
+            if ((freeCookies != null && premiumCookies != null) || userCookies != null) {
+                /* Check cookies - only perform a full login if they're not valid anymore. */
+                if (userCookies != null) {
+                    br.setCookies(userCookies);
+                } else {
                     br.setCookies(freeCookieDomain, freeCookies);
                     br.setCookies(preferredLoginPremiumDomain, premiumCookies);
-                    logger.info("Trust login cookies without check:" + account.getType());
-                    /* We trust these cookies --> Do not check them */
-                    return false;
                 }
-                if (freeCookies != null && premiumCookies != null) {
-                    /* Check cookies - only perform a full login if they're not valid anymore. */
-                    br.setCookies(freeCookieDomain, freeCookies);
-                    br.setCookies(preferredLoginPremiumDomain, premiumCookies);
-                    if (checkLoginSetAccountTypeAndSaveCookies(br, account, true)) {
-                        logger.info("Cookie login successful");
-                        return true;
-                    } else {
-                        br.clearCookies(null);
-                        logger.info("Cached login cookies failed");
-                    }
+                if (checkLoginSetAccountTypeAndSaveCookies(br, account, true)) {
+                    logger.info("Cookie login successful");
+                    return true;
+                } else {
+                    br.clearCookies(null);
+                    logger.info("Cached login cookies failed");
                 }
-                if (is_cookie_only_login) {
-                    if (account.hasEverBeenValid()) {
-                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                    } else {
-                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                    }
+            }
+            if (is_cookie_only_login || userCookies != null) {
+                if (account.hasEverBeenValid()) {
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                } else {
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                 }
-                logger.info("Performing full login");
-                prepBr(br);
-                // getPage(br, "https://www." + preferredLoginFreeDomain);
+            }
+            logger.info("Performing full login");
+            prepBr(br);
+            // getPage(br, "https://www." + preferredLoginFreeDomain);
+            getPage(br, getProtocolFree() + "www." + preferredLoginFreeDomain + "/login");
+            if (br.containsHTML("(?i)Sorry we couldn't find what you were looking for")) {
+                /* Try again */
                 getPage(br, getProtocolFree() + "www." + preferredLoginFreeDomain + "/login");
-                if (br.containsHTML("(?i)Sorry we couldn't find what you were looking for")) {
-                    /* Try again */
-                    getPage(br, getProtocolFree() + "www." + preferredLoginFreeDomain + "/login");
-                }
-                final Form loginform = br.getFormbyKey("username");
-                // final String login_key = br.getRegex("id=\"login_key\" value=\"([^<>\"]*?)\"").getMatch(0);
-                // final String login_hash = br.getRegex("id=\"login_hash\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (loginform == null) {
+            }
+            final Form loginform = br.getFormbyKey("username");
+            // final String login_key = br.getRegex("id=\"login_key\" value=\"([^<>\"]*?)\"").getMatch(0);
+            // final String login_hash = br.getRegex("id=\"login_hash\" value=\"([^<>\"]*?)\"").getMatch(0);
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String token1 = null;
+            if (loginform.hasInputFieldByName("token")) {
+                token1 = loginform.getInputField("token").getValue();
+            }
+            loginform.put("username", account.getUser());
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            loginform.put("remember_me", "on");
+            loginform.setMethod(MethodType.POST);
+            loginform.setAction("/front/authenticate");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.submitForm(loginform);
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            // final String success = PluginJSonUtils.getJsonValue(br, "success");
+            final Number twoStepVerification = ((Number) entries.get("twoStepVerification"));
+            if (twoStepVerification != null && twoStepVerification.intValue() == 1) {
+                /* At this point we know that username and password are correct! */
+                final String authyId = (String) entries.get("authyId");
+                final String authyIdHashed = (String) entries.get("authyIdHashed");
+                final String token2 = (String) entries.get("autoLoginParameter");
+                final String phoneNumber = (String) entries.get("phoneNumber");
+                if (StringUtils.isEmpty(authyId) || StringUtils.isEmpty(token2) || StringUtils.isEmpty(phoneNumber)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                String token1 = null;
-                if (loginform.hasInputFieldByName("token")) {
-                    token1 = loginform.getInputField("token").getValue();
+                logger.info("2FA code required");
+                String twoFACode = this.getUserInput("Enter 2-Factor SMS Authentication code for number " + phoneNumber, null);
+                if (twoFACode != null) {
+                    twoFACode = twoFACode.trim();
                 }
-                loginform.put("username", account.getUser());
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("remember_me", "on");
-                loginform.setMethod(MethodType.POST);
-                loginform.setAction("/front/authenticate");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.submitForm(loginform);
-                Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
-                // final String success = PluginJSonUtils.getJsonValue(br, "success");
-                final Number twoStepVerification = ((Number) entries.get("twoStepVerification"));
+                /* 2021-03-08: I also got 7-digit codes... */
+                if (twoFACode == null || !twoFACode.matches("^\\d{4,}$")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Format der 2-faktor-Authentifizierung!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code format!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                final Form loginform2 = new Form();
+                loginform2.setAction(br.getURL());
+                loginform2.setMethod(MethodType.POST);
+                loginform2.put("username", Encoding.urlEncode(account.getUser()));
+                loginform2.put("token2", Encoding.urlEncode(token2));
+                loginform2.put("verification_modal", "1");
+                loginform2.put("authyId", authyId);
+                loginform2.put("authyIdHashed", StringUtils.valueOrEmpty(authyIdHashed));
+                if (token1 != null) {
+                    loginform2.put("token", Encoding.urlEncode(token1));
+                }
+                loginform2.put("verification_code", twoFACode);
+                br.submitForm(loginform2);
+                entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            }
+            final String redirect = (String) entries.get("redirect");
+            final Boolean expiredPremiumUser = (Boolean) entries.get("expiredPremiumUser");
+            /*
+             * 2022-06-27: remember_me is always "false" even though we check the "remember_me" checkbox/field. It's the same in browser
+             * though!
+             */
+            // final Boolean rememberMe = (Boolean) entries.get("remember_me");
+            // final String username = (String) entries.get("username");
+            if ((Integer) ReflectionUtils.cast(entries.get("success"), Integer.class) != 1) {
+                throw new AccountInvalidException();
+            }
+            if (redirect != null && (redirect.startsWith("http") || redirect.startsWith("/"))) {
+                /* Required to get the (premium) cookies (multiple redirects). */
+                final boolean premiumExpired;
+                if (expiredPremiumUser != null && expiredPremiumUser == Boolean.TRUE) {
+                    premiumExpired = true;
+                } else {
+                    premiumExpired = isPremiumFromURL(redirect) && redirect.contains("expired");
+                }
+                getPage(br, redirect);
+                if (premiumExpired && !isPremiumDomain(br.getHost())) {
+                    /**
+                     * Expired pornhub premium --> It should still be a valid free account --> We might need to access a special url which
+                     * redirects us to the pornhub free mainpage and sets the cookies. </br>
+                     * 2022-06-27: Old code but let's leave it in for now as we can't know if it is still needed.
+                     */
+                    logger.info("Expired premium --> Free account (?)");
+                    final String pornhubMainpageCookieRedirectUrl = br.getRegex("\\'pornhubLink\\'\\s*?:\\s*?(?:\"|\\')(https?://(?:www\\.)?pornhub\\.(?:com|org)/[^<>\"\\']+)(?:\"|\\')").getMatch(0);
+                    if (pornhubMainpageCookieRedirectUrl != null) {
+                        getPage(br, pornhubMainpageCookieRedirectUrl);
+                    } else {
+                        logger.info("Failed to find pornhubMainpageCookieRedirectUrl");
+                    }
+                }
+            } else {
+                /* Fallback */
+                getPage(br, getProtocolFree() + "www." + preferredLoginFreeDomain);
+            }
+            if (!isLoggedInHtml(br)) {
                 if (twoStepVerification != null && twoStepVerification.intValue() == 1) {
-                    /* At this point we know that username and password are correct! */
-                    final String authyId = (String) entries.get("authyId");
-                    final String authyIdHashed = (String) entries.get("authyIdHashed");
-                    final String token2 = (String) entries.get("autoLoginParameter");
-                    final String phoneNumber = (String) entries.get("phoneNumber");
-                    if (StringUtils.isEmpty(authyId) || StringUtils.isEmpty(token2) || StringUtils.isEmpty(phoneNumber)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    logger.info("2FA code required");
-                    String twoFACode = this.getUserInput("Enter 2-Factor SMS Authentication code for number " + phoneNumber, null);
-                    if (twoFACode != null) {
-                        twoFACode = twoFACode.trim();
-                    }
-                    /* 2021-03-08: I also got 7-digit codes... */
-                    if (twoFACode == null || !twoFACode.matches("^\\d{4,}$")) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Format der 2-faktor-Authentifizierung!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code format!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
-                    final Form loginform2 = new Form();
-                    loginform2.setAction(br.getURL());
-                    loginform2.setMethod(MethodType.POST);
-                    loginform2.put("username", Encoding.urlEncode(account.getUser()));
-                    loginform2.put("token2", Encoding.urlEncode(token2));
-                    loginform2.put("verification_modal", "1");
-                    loginform2.put("authyId", authyId);
-                    loginform2.put("authyIdHashed", StringUtils.valueOrEmpty(authyIdHashed));
-                    if (token1 != null) {
-                        loginform2.put("token", Encoding.urlEncode(token1));
-                    }
-                    loginform2.put("verification_code", twoFACode);
-                    br.submitForm(loginform2);
-                    entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid 2-factor-authentication code", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                final String redirect = (String) entries.get("redirect");
-                final Boolean expiredPremiumUser = (Boolean) entries.get("expiredPremiumUser");
-                /*
-                 * 2022-06-27: remember_me is always "false" even though we check the "remember_me" checkbox/field. It's the same in browser
-                 * though!
-                 */
-                // final Boolean rememberMe = (Boolean) entries.get("remember_me");
-                // final String username = (String) entries.get("username");
-                if ((Integer) ReflectionUtils.cast(entries.get("success"), Integer.class) != 1) {
+            }
+            /* Check if we're really logged in and set account type. */
+            if (!checkLoginSetAccountTypeAndSaveCookies(br, account, false)) {
+                if (isAccountAgeVerificationRequired(br, account)) {
+                    throw new AccountInvalidException("Please verify your age to access Pornhub Premium");
+                } else {
+                    /* This should never happen */
+                    logger.warning("Invalid logins although full login seemed to be successful");
                     throw new AccountInvalidException();
                 }
-                if (redirect != null && (redirect.startsWith("http") || redirect.startsWith("/"))) {
-                    /* Required to get the (premium) cookies (multiple redirects). */
-                    final boolean premiumExpired;
-                    if (expiredPremiumUser != null && expiredPremiumUser == Boolean.TRUE) {
-                        premiumExpired = true;
-                    } else {
-                        premiumExpired = isPremiumFromURL(redirect) && redirect.contains("expired");
-                    }
-                    getPage(br, redirect);
-                    if (premiumExpired && !isPremiumDomain(br.getHost())) {
-                        /**
-                         * Expired pornhub premium --> It should still be a valid free account --> We might need to access a special url
-                         * which redirects us to the pornhub free mainpage and sets the cookies. </br> 2022-06-27: Old code but let's leave
-                         * it in for now as we can't know if it is still needed.
-                         */
-                        logger.info("Expired premium --> Free account (?)");
-                        final String pornhubMainpageCookieRedirectUrl = br.getRegex("\\'pornhubLink\\'\\s*?:\\s*?(?:\"|\\')(https?://(?:www\\.)?pornhub\\.(?:com|org)/[^<>\"\\']+)(?:\"|\\')").getMatch(0);
-                        if (pornhubMainpageCookieRedirectUrl != null) {
-                            getPage(br, pornhubMainpageCookieRedirectUrl);
-                        } else {
-                            logger.info("Failed to find pornhubMainpageCookieRedirectUrl");
-                        }
-                    }
-                } else {
-                    /* Fallback */
-                    getPage(br, getProtocolFree() + "www." + preferredLoginFreeDomain);
-                }
-                if (!isLoggedInHtml(br)) {
-                    if (twoStepVerification != null && twoStepVerification.intValue() == 1) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid 2-factor-authentication code", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                /* Check if we're really logged in and set account type. */
-                if (!checkLoginSetAccountTypeAndSaveCookies(br, account, false)) {
-                    if (isAccountAgeVerificationRequired(br, account)) {
-                        throw new AccountInvalidException("Please verify your age to access Pornhub Premium");
-                    } else {
-                        /* This should never happen */
-                        logger.warning("Invalid logins although full login seemed to be successful");
-                        throw new AccountInvalidException();
-                    }
-                }
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies(COOKIE_ID_FREE);
-                    account.clearCookies(COOKIE_ID_PREMIUM);
-                }
-                throw e;
             }
+            return true;
         }
     }
 
@@ -1303,7 +1300,8 @@ public class PornHubCom extends PluginForHost {
     }
 
     /**
-     * Checks login and sets account-type. </br> Expects browser instance to be logged in already (cookies need to be there).
+     * Checks login and sets account-type. </br>
+     * Expects browser instance to be logged in already (cookies need to be there).
      *
      * @throws Exception
      */

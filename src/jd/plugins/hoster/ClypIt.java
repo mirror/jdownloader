@@ -117,7 +117,6 @@ public class ClypIt extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            title = encodeUnicode(title);
             final String ext = getFileNameExtensionFromString(dllink, extDefault);
             if (!title.endsWith(ext)) {
                 title += ext;

@@ -114,12 +114,18 @@ public class PCloudComFolder extends PluginForDecrypt {
         if (!passwordSuccess) {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
-        // final String errormsg = (String) entries.get("error");
-        /* 7002 = deleted by the owner, 7003 = abused */
-        if (result == 7002 || result == 7003) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         final Map<String, Object> metadata = (Map<String, Object>) entries.get("metadata");
+        if (metadata == null) {
+            /* Looks like item is offline */
+            final String errormsg = (String) entries.get("error");
+            /* 7002 = deleted by the owner, 7003 = abused */
+            if (result == 7002 || result == 7003) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                logger.info("Item is offline because: " + errormsg);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
         final String folderNameMain = (String) metadata.get("name");
         addFolder(metadata, null, parameter);
         if (ret.size() > 1 && SubConfiguration.getConfig(this.getHost()).getBooleanProperty(DOWNLOAD_ZIP, false)) {

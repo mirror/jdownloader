@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.EightMusesComConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Cookies;
@@ -36,10 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.EightMusesComConfig;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "https?://(?:www\\.|comics\\.)?8muses\\.com/(?:(comics/)?picture/([^/]+/){1,}\\d+|forum/(?:data/)?attachments/.+)" })
 public class EightMusesCom extends antiDDoSForHost {
     public EightMusesCom(PluginWrapper wrapper) {
@@ -47,18 +48,23 @@ public class EightMusesCom extends antiDDoSForHost {
         this.enablePremium("https://comics.8muses.com/forum/register/");
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other: Helper plugin which most likely downloads directurls and also has additional account support
-    private String              dllink       = null;
-    private static final String TYPE_DIRECT  = ".+8muses\\.com/forum/.+";
-    private static final String TYPE_PICTURE = "https?://[^/]+/(?:comics/)?picture/(.+)";
-    public static final String  TYPE_FORUM   = "https?://[^/]+/forum/(?:data/)?attachments/(.+)";
+    private String              dllink          = null;
+    private static final String PATTERN_DIRECT  = "(?i).+8muses\\.com/forum/.+";
+    private static final String PATTERN_PICTURE = "(?i)https?://[^/]+/(?:comics/)?picture/(.+)";
+    public static final String  PATTERN_FORUM   = "(?i)https?://[^/]+/forum/(?:data/)?attachments/(.+)";
 
     @Override
     public String getAGBLink() {
-        return "http://www.8muses.com/";
+        return "https://www.8muses.com/";
     }
 
     @Override
@@ -68,17 +74,17 @@ public class EightMusesCom extends antiDDoSForHost {
     }
 
     private String getFilenameURL(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(TYPE_FORUM)) {
+        if (link.getPluginPatternMatcher().matches(PATTERN_FORUM)) {
             /* TYPE_FORUM */
             return getURLNameForum(link.getPluginPatternMatcher());
         } else {
             /* TYPE_PICTURE */
-            return new Regex(link.getPluginPatternMatcher(), TYPE_PICTURE).getMatch(0);
+            return new Regex(link.getPluginPatternMatcher(), PATTERN_PICTURE).getMatch(0);
         }
     }
 
     public static String getURLNameForum(final String url) {
-        String urlname = new Regex(url, TYPE_FORUM).getMatch(0);
+        String urlname = new Regex(url, PATTERN_FORUM).getMatch(0);
         /*
          * Try to remove fileID from string and change last "-" to "." to have a file-extension for e.g. if linkcheck fails/file
          * offline/premiumonly so that we still got a nice filename.
@@ -111,7 +117,7 @@ public class EightMusesCom extends antiDDoSForHost {
             this.login(account, false);
         }
         String filename = null;
-        if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
+        if (link.getPluginPatternMatcher().matches(PATTERN_DIRECT)) {
             dllink = link.getPluginPatternMatcher();
         } else {
             getPage(link.getPluginPatternMatcher());
@@ -145,7 +151,6 @@ public class EightMusesCom extends antiDDoSForHost {
             }
             filename = Encoding.htmlDecode(filename);
             filename = filename.trim();
-            filename = encodeUnicode(filename);
             String ext = getFileNameExtensionFromString(dllink);
             /* Make sure that we get a correct extension */
             if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
@@ -180,7 +185,6 @@ public class EightMusesCom extends antiDDoSForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
                 }
-                link.setProperty("directlink", dllink);
             } finally {
                 try {
                     con.disconnect();
