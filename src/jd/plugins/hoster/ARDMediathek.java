@@ -63,8 +63,13 @@ public class ARDMediathek extends PluginForHost {
     }
 
     @Override
+    public String getPluginContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher();
+    }
+
+    @Override
     public String getAGBLink() {
-        return "http://www.ardmediathek.de/ard/servlet/content/3606532";
+        return "https://www.ardmediathek.de/ard/servlet/content/3606532";
     }
 
     @Override
