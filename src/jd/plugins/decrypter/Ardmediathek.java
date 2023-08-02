@@ -364,6 +364,7 @@ public class Ardmediathek extends PluginForDecrypt {
             final String title = (String) video.get("title");
             final String showname = (String) JavaScriptEngineFactory.walkJson(video, "show/title");
             final String type = (String) video.get("type");
+            final String description = (String) video.get("synopsis");
             if ("player_live".equalsIgnoreCase(type)) {
                 logger.info("Cannot download livestreams");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -387,6 +388,9 @@ public class Ardmediathek extends PluginForDecrypt {
             metadata.setSubtitle(showname);
             if (oldArdDocumentID != null) {
                 metadata.setContentID(oldArdDocumentID);
+            }
+            if (!StringUtils.isEmpty(description)) {
+                metadata.setDescription(description);
             }
             streamMap = root;
         }

@@ -534,7 +534,6 @@ public class TbCmV2 extends PluginForDecrypt {
                     if (mode == ChannelPlaylistCrawlerPackagingMode.AUTO || mode == ChannelPlaylistCrawlerPackagingMode.GROUP_ALL_VIDEOS_AS_SINGLE_PACKAGE) {
                         channelOrPlaylistPackage = FilePackage.getInstance();
                         channelOrPlaylistPackage.setAllowMerge(true);
-                        // channelOrPlaylistPackage.setCleanupPackageName(false);
                         final String playlistTitle = (String) globalPropertiesForDownloadLink.get(YoutubeHelper.YT_PLAYLIST_TITLE);
                         final String channelName = (String) globalPropertiesForDownloadLink.get(YoutubeHelper.YT_CHANNEL_TITLE);
                         if (playlistTitle != null) {
