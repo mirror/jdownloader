@@ -15,8 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -47,6 +51,11 @@ public class HentaiFoundryCom extends PluginForHost {
         this.enablePremium("https://www.hentai-foundry.com/users/create");
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.IMAGE_GALLERY };
+    }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -54,7 +63,6 @@ public class HentaiFoundryCom extends PluginForHost {
     private static final String type_direct_pdf = "https?://www\\.hentai\\-foundry\\.com/stories/user/[A-Za-z0-9\\-_]+/\\d+/[A-Za-z0-9\\-_]+\\.pdf";
     private static final String type_picture    = "https?://www\\.hentai\\-foundry\\.com/pictures/user/[A-Za-z0-9\\-_]+/\\d+";
     private String              dllink          = null;
-    private boolean             server_issues   = false;
 
     @Override
     public String getAGBLink() {
@@ -69,21 +77,27 @@ public class HentaiFoundryCom extends PluginForHost {
         return new Regex(url, "/user/[A-Za-z0-9\\-_]+/(\\d+)").getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    @SuppressWarnings("deprecation")
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         dllink = null;
-        server_issues = false;
         String filename = null;
         String ext = null;
-        final String fid = getFID(downloadLink.getDownloadURL());
+        final String fid = getFID(link.getDownloadURL());
         br.setFollowRedirects(true);
-        if (downloadLink.getDownloadURL().matches(type_direct_pdf)) {
-            dllink = downloadLink.getDownloadURL() + "?enterAgree=1&size=0";
+        if (account != null) {
+            login(br, account, false);
+        }
+        if (link.getDownloadURL().matches(type_direct_pdf)) {
+            dllink = link.getDownloadURL() + "?enterAgree=1&size=0";
             ext = ".pdf";
-            filename = fid + "_" + new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+\\.pdf)$").getMatch(0);
+            filename = fid + "_" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+\\.pdf)$").getMatch(0);
         } else {
-            br.getPage(downloadLink.getDownloadURL() + "?enterAgree=1&size=0");
+            br.getPage(link.getDownloadURL() + "?enterAgree=1&size=0");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -101,7 +115,6 @@ public class HentaiFoundryCom extends PluginForHost {
                 filename = fid + "_" + Encoding.htmlDecode(filename);
             }
             filename = filename.trim();
-            filename = encodeUnicode(filename);
         }
         if (ext == null && dllink != null) {
             ext = getFileNameExtensionFromString(dllink, ".png");
@@ -115,54 +128,54 @@ public class HentaiFoundryCom extends PluginForHost {
         } else if (ext == null) {
             ext = ".jpg";
         }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        filename = this.correctOrApplyFileNameExtension(filename, ext);
+        if (link.getFinalFileName() == null) {
+            link.setFinalFileName(filename);
         }
-        if (downloadLink.getFinalFileName() == null) {
-            downloadLink.setFinalFileName(filename);
-        }
-        if (dllink != null) {
+        if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } finally {
                 try {
                     con.disconnect();
                 } catch (final Throwable e) {
                 }
             }
-            if (con.isOK() && !con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                server_issues = true;
-            }
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, "free_directlink");
+    public void handleFree(final DownloadLink link) throws Exception {
+        handleDownload(link, null);
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 5 * 60 * 1000l);
-        } else if (dllink == null) {
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link, account);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken?");
+            }
+        }
     }
 
     @Override
@@ -170,12 +183,9 @@ public class HentaiFoundryCom extends PluginForHost {
         return 5;
     }
 
-    private static final String MAINPAGE = "http://hentai-foundry.com";
-    private static Object       LOCK     = new Object();
-
     @SuppressWarnings("unchecked")
     public static void login(final Browser br, final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
+        synchronized (account) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -190,7 +200,7 @@ public class HentaiFoundryCom extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
+                            br.setCookie(account.getHoster(), key, value);
                         }
                         return;
                     }
@@ -217,7 +227,7 @@ public class HentaiFoundryCom extends PluginForHost {
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
+                final Cookies add = br.getCookies(br.getHost());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
@@ -231,31 +241,21 @@ public class HentaiFoundryCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(br, account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(br, account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         /* free accounts can still have captcha */
         account.setMaxSimultanDownloads(5);
         account.setConcurrentUsePossible(false);
-        ai.setStatus("Free Account");
-        account.setValid(true);
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(br, account, false);
-        requestFileInformation(link);
-        doFree(link, false, 1, "account_free_directlink");
+        this.handleDownload(link, account);
     }
 
     @Override

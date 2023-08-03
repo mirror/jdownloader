@@ -134,6 +134,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download from this host is currently not possible" })
     String downloadlink_status_error_hoster_temp_unavailable();
 
+    @Default(lngs = { "en" }, values = { "Serverside queue download of this item is pending" })
+    String downloadlink_status_error_multihost_queue_download_pending();
+
     @Default(lngs = { "en" }, values = { "Disconnect?" })
     String plugins_errors_disconnect();
 

@@ -346,7 +346,7 @@ public class PixeldrainCom extends PluginForHost {
              * User prefers to perform reconnect to be able to download without speedlimit again. </br>
              * 2022-07-19: Speedlimit sits only on IP, not on account but our upper system will of not do reconnects for accounts atm.
              */
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, String.format("You are speed limited. Change your IP, try again later or allow speed limited downloads in %s plugin settings.", this.getHost()), 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, String.format("You are speed limited. Change your IP, try again later or allow speed limited downloads in %s plugin settings.", this.getHost()), 15 * 60 * 1000l);
         }
         String dllink = API_BASE + "/file/" + this.getFID(link);
         final UrlQuery query = new UrlQuery();

@@ -252,7 +252,7 @@ public class ARDMediathek extends PluginForHost {
     }
 
     private void postprocess(final DownloadLink link) {
-        if (isSubtitle(link)) {
+        if (isSubtitle(link) && StringUtils.endsWithCaseInsensitive(link.getName(), ".xml")) {
             if (!convertSubtitle(link)) {
                 logger.severe("Subtitle conversion failed!");
             } else {

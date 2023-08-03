@@ -74,7 +74,9 @@ public class MediathekHelper {
                 ext = "mp4";
             }
         }
-        ext = "." + ext;
+        if (!ext.startsWith(".")) {
+            ext = "." + ext;
+        }
         filename += ext;
         return filename;
     }

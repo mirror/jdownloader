@@ -2,6 +2,9 @@ package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
@@ -10,6 +13,8 @@ import org.jdownloader.translate._JDT;
 
 @PluginHost(host = "ardmediathek.de", type = Type.CRAWLER)
 public interface ArdConfigInterface extends PluginConfigInterface {
+    final String text_PreferredSubtitleType = "Preferred subtitle type";
+
     public static class TRANSLATION {
         public String getFastLinkcheckEnabled_label() {
             return _JDT.T.lit_enable_fast_linkcheck();
@@ -17,6 +22,10 @@ public interface ArdConfigInterface extends PluginConfigInterface {
 
         public String getGrabSubtitleEnabled_label() {
             return _JDT.T.lit_add_subtitles();
+        }
+
+        public String getPreferredSubtitleType_label() {
+            return text_PreferredSubtitleType;
         }
 
         public String getPreferAudioDescription_label() {
@@ -48,6 +57,29 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     boolean isGrabSubtitleEnabled();
 
     void setGrabSubtitleEnabled(boolean b);
+
+    public static enum SubtitleType implements LabelInterface {
+        WEBVTT {
+            @Override
+            public String getLabel() {
+                return "WEBVTT (.vtt)";
+            }
+        },
+        XML {
+            @Override
+            public String getLabel() {
+                return "SRT [XML -> srt (.srt)]";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("WEBVTT")
+    @Order(11)
+    @DescriptionForConfigEntry(text_PreferredSubtitleType)
+    SubtitleType getPreferredSubtitleType();
+
+    void setPreferredSubtitleType(final SubtitleType type);
 
     @DefaultBooleanValue(false)
     @Order(12)

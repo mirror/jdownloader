@@ -35,6 +35,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.ArdConfigInterface;
+import org.jdownloader.plugins.components.config.ArdConfigInterface.SubtitleType;
 import org.jdownloader.plugins.components.config.DasersteConfig;
 import org.jdownloader.plugins.components.config.EurovisionConfig;
 import org.jdownloader.plugins.components.config.MdrDeConfig;
@@ -395,9 +396,13 @@ public class Ardmediathek extends PluginForDecrypt {
             streamMap = root;
         }
         metadata.setChannel("ardmediathek");
-        final String captionURL = (String) JavaScriptEngineFactory.walkJson(streamMap, "widgets/{0}/mediaCollection/embedded/_subtitleUrl");
-        if (captionURL != null) {
-            metadata.setCaptionsURL(captionURL);
+        final String captionURL_XML = (String) JavaScriptEngineFactory.walkJson(streamMap, "widgets/{0}/mediaCollection/embedded/_subtitleUrl");
+        if (!StringUtils.isEmpty(captionURL_XML)) {
+            metadata.setCaptionsURL_XML(captionURL_XML);
+        }
+        final String captionURL_WEBVTT = (String) JavaScriptEngineFactory.walkJson(streamMap, "widgets/{0}/mediaCollection/embedded/_subtitleWebVTTUrl");
+        if (!StringUtils.isEmpty(captionURL_WEBVTT)) {
+            metadata.setCaptionsURL_WEBVTT(captionURL_WEBVTT);
         }
         final HashMap<String, DownloadLink> foundQualities = crawlARDJson(param, metadata, streamMap);
         return this.handleUserQualitySelection(metadata, foundQualities);
@@ -1004,7 +1009,7 @@ public class Ardmediathek extends PluginForDecrypt {
             metadata.setChannel(tvStation);
         }
         if (captionsLink != null) {
-            metadata.setCaptionsURL(captionsLink);
+            metadata.setCaptionsURL_XML(captionsLink);
         }
         final ArrayList<String> hls_master_dupelist = new ArrayList<String>();
         final String assetsAudiodescription = br.getRegex("<assets type=\"audiodesc\">(.*?)</assets>").getMatch(0);
@@ -1505,12 +1510,21 @@ public class Ardmediathek extends PluginForDecrypt {
             finalSelectedQualityMap = foundQualitiesMap;
         }
         /* Finally add selected URLs - add subtitles if available and wished by user */
+        final String captionsURL;
+        final String captionsExt;
+        if (cfg.getPreferredSubtitleType() == SubtitleType.WEBVTT && metadata.getCaptionsURL_WEBVTT() != null) {
+            captionsURL = metadata.getCaptionsURL_WEBVTT();
+            captionsExt = ".vtt";
+        } else {
+            captionsURL = metadata.getCaptionsURL_XML();
+            captionsExt = ".xml";
+        }
         final Iterator<Entry<String, DownloadLink>> it = finalSelectedQualityMap.entrySet().iterator();
         while (it.hasNext()) {
             final Entry<String, DownloadLink> entry = it.next();
             final DownloadLink dl = entry.getValue();
-            if (cfg.isGrabSubtitleEnabled() && !StringUtils.isEmpty(metadata.getCaptionsLink())) {
-                final DownloadLink subtitle = createDownloadlink(metadata.getCaptionsLink().replaceAll("https?://", getHost() + "decrypted://"));
+            if (cfg.isGrabSubtitleEnabled() && !StringUtils.isEmpty(captionsURL)) {
+                final DownloadLink subtitle = createDownloadlink(captionsURL.replaceAll("https?://", getHost() + "decrypted://"));
                 final MediathekProperties data_src = dl.bindData(MediathekProperties.class);
                 final MediathekProperties data_subtitle = subtitle.bindData(MediathekProperties.class);
                 data_subtitle.setStreamingType("subtitle");
@@ -1520,7 +1534,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 data_subtitle.setResolution(data_src.getResolution());
                 data_subtitle.setBitrateTotal(data_src.getBitrateTotal());
                 data_subtitle.setTitle(data_src.getTitle());
-                data_subtitle.setFileExtension("xml");
+                data_subtitle.setFileExtension(captionsExt);
                 if (data_src.getShow() != null) {
                     data_subtitle.setShow(data_src.getShow());
                 }
@@ -1587,7 +1601,8 @@ public class Ardmediathek extends PluginForDecrypt {
         private String  channel                  = null;
         private String  description              = null;
         private String  contentID                = null;
-        private String  captionsURL              = null;
+        private String  captionsURL_XML          = null;
+        private String  captionsURL_WEBVTT       = null;
         private long    dateTimestamp            = -1;
         private boolean requiresContentIDToBeSet = true;
 
@@ -1656,8 +1671,8 @@ public class Ardmediathek extends PluginForDecrypt {
             }
         }
 
-        public String getCaptionsLink() {
-            return this.captionsURL;
+        public String getCaptionsURL_XML() {
+            return this.captionsURL_XML;
         }
 
         public String getDescription() {
@@ -1668,8 +1683,8 @@ public class Ardmediathek extends PluginForDecrypt {
             this.description = description;
         }
 
-        public void setCaptionsURL(final String captionsURL) {
-            this.captionsURL = captionsURL;
+        public void setCaptionsURL_XML(final String captionsURL) {
+            this.captionsURL_XML = captionsURL;
         }
 
         public boolean isRequiresContentIDToBeSet() {
@@ -1678,6 +1693,14 @@ public class Ardmediathek extends PluginForDecrypt {
 
         public void setRequiresContentIDToBeSet(boolean requiresContentIDToBeSet) {
             this.requiresContentIDToBeSet = requiresContentIDToBeSet;
+        }
+
+        public String getCaptionsURL_WEBVTT() {
+            return captionsURL_WEBVTT;
+        }
+
+        public void setCaptionsURL_WEBVTT(final String captionsURL_WEBVTT) {
+            this.captionsURL_WEBVTT = captionsURL_WEBVTT;
         }
     }
 

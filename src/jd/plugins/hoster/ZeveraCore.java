@@ -18,9 +18,11 @@ import java.net.URL;
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
@@ -33,6 +35,9 @@ import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -57,9 +62,12 @@ import jd.plugins.components.MultiHosterManagement;
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
     /* Connection limits */
-    private static final boolean ACCOUNT_PREMIUM_RESUME        = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS     = 0;
-    private final String         API_STATUS_FOR_QUEUE_HANDLING = "deferred";
+    private static final boolean                           ACCOUNT_PREMIUM_RESUME                 = true;
+    private static final int                               ACCOUNT_PREMIUM_MAXCHUNKS              = 0;
+    private final String                                   API_STATUS_FOR_QUEUE_DEFERRED_HANDLING = "deferred";
+    private static Map<String, ArrayList<String>>          hostQueueHandlingMapOfLists            = new HashMap<String, ArrayList<String>>();
+    private static Map<String, Map<String, AtomicInteger>> hostRunningDownloadsNumMap             = new HashMap<String, Map<String, AtomicInteger>>();
+    private static Map<String, Map<String, AtomicInteger>> hostActiveQueueHandlingNumMap          = new HashMap<String, Map<String, AtomicInteger>>();
 
     protected abstract MultiHosterManagement getMultiHosterManagement();
 
@@ -153,6 +161,21 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     @Override
+    protected int getMaxSimultanDownload(final DownloadLink link, final Account account) {
+        if (account != null && link != null) {
+            /* Look for host specific limit */
+            synchronized (getMapLock()) {
+                final ArrayList<String> queueHostsList = getList(ZeveraCore.hostQueueHandlingMapOfLists);
+                if (queueHostsList.contains(link.getHost())) {
+                    return 2;
+                }
+            }
+            return account.getMaxSimultanDownloads();
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
     public Browser createNewBrowserInstance() {
         final Browser br = new Browser();
         br.setCookiesExclusive(true);
@@ -224,9 +247,11 @@ abstract public class ZeveraCore extends UseNet {
              */
             if (account.getType() == AccountType.PREMIUM) {
                 getMultiHosterManagement().runCheck(account, link);
+                checkForConditinalSkipException(link);
                 return true;
             } else if (this.supportsFreeAccountDownloadMode(account)) {
                 getMultiHosterManagement().runCheck(account, link);
+                checkForConditinalSkipException(link);
                 return true;
             } else {
                 return false;
@@ -234,6 +259,24 @@ abstract public class ZeveraCore extends UseNet {
         } else {
             /* Download without account is not possible */
             return false;
+        }
+    }
+
+    private void checkForConditinalSkipException(final DownloadLink link) throws ConditionalSkipReasonException {
+        synchronized (getMapLock()) {
+            final Map<String, AtomicInteger> hostRunningDlsNumMap = getMap(ZeveraCore.hostRunningDownloadsNumMap);
+            final ArrayList<String> queueHostsList = getList(ZeveraCore.hostQueueHandlingMapOfLists);
+            if (hostRunningDlsNumMap.containsKey(link.getHost()) && queueHostsList.contains(link.getHost())) {
+                final int maxDlsForCurrentHost = 2;
+                final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(link.getHost());
+                if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
+                    /*
+                     * Max downloads for specific host for this MOCH reached --> Avoid irritating/wrong 'Account missing' errormessage for
+                     * this case - wait and retry!
+                     */
+                    throw new ConditionalSkipReasonException(new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, 60 * 1000, "No more slots allowed for host " + link.getHost() + " via " + this.getHost()));
+                }
+            }
         }
     }
 
@@ -308,31 +351,44 @@ abstract public class ZeveraCore extends UseNet {
                 if (useSlotBlockingQueueHandling) {
                     /* 2023-07-17 */
                     logger.info("Executing slot-blocking queue handling");
-                    entries = this.handleAPIErrors(this, br, link, account, API_STATUS_FOR_QUEUE_HANDLING);
+                    entries = this.handleAPIErrors(this, br, link, account, API_STATUS_FOR_QUEUE_DEFERRED_HANDLING);
                     String status = (String) entries.get("status");
-                    if (API_STATUS_FOR_QUEUE_HANDLING.equalsIgnoreCase(status)) {
-                        final Number delay = (Number) entries.get("delay");
-                        final int maxWaitSeconds = delay != null ? Math.min(delay.intValue() * 10, 2400) : 120;
-                        int passedSeconds = 0;
-                        final int waitSecondsPerLoop = 10;
-                        do {
-                            this.sleep(waitSecondsPerLoop * 1000l, link, "deferred queue handling: Waiting sec " + passedSeconds + "/" + maxWaitSeconds);
-                            passedSeconds += waitSecondsPerLoop;
-                            br.postPage(url, query);
-                            entries = this.handleAPIErrors(this, br, link, account, API_STATUS_FOR_QUEUE_HANDLING);
-                            status = (String) entries.get("status");
-                            logger.info("Waited seconds: " + passedSeconds + "/" + maxWaitSeconds);
-                            if (!StringUtils.equals(status, "deferred")) {
-                                logger.info("Stopping because: Status != deferred");
-                                break;
-                            } else if (passedSeconds >= maxWaitSeconds) {
-                                logger.info("Stopping because: Timeout -> Could not find final downloadurl");
-                                break;
+                    if (API_STATUS_FOR_QUEUE_DEFERRED_HANDLING.equalsIgnoreCase(status)) {
+                        this.controlQueueSlot(link, +1);
+                        try {
+                            final Number delay = (Number) entries.get("delay");
+                            final boolean allowUnlimitedRetries = true; // 2023-08-03
+                            final int maxWaitSeconds = delay != null ? Math.min(delay.intValue() * 10, 2400) : 120;
+                            int passedSeconds = 0;
+                            final int waitSecondsPerLoop = 10;
+                            final String maxWaitHumanReadable;
+                            if (allowUnlimitedRetries) {
+                                maxWaitHumanReadable = "Unlimited";
+                            } else {
+                                maxWaitHumanReadable = Integer.toString(maxWaitSeconds);
                             }
-                        } while (!this.isAbort());
-                        this.handleAPIErrors(this, entries, br, link, account, null);
+                            do {
+                                this.sleep(waitSecondsPerLoop * 1000l, link, "deferred queue handling: Waiting sec " + passedSeconds + "/" + maxWaitHumanReadable);
+                                passedSeconds += waitSecondsPerLoop;
+                                br.postPage(url, query);
+                                entries = this.handleAPIErrors(this, br, link, account, API_STATUS_FOR_QUEUE_DEFERRED_HANDLING);
+                                status = (String) entries.get("status");
+                                logger.info("Waited seconds: " + passedSeconds + "/" + maxWaitHumanReadable + " | Serverside 'delay' value: " + delay);
+                                if (!StringUtils.equals(status, "deferred")) {
+                                    logger.info("Stopping because: Status != deferred");
+                                    break;
+                                } else if (!allowUnlimitedRetries && passedSeconds >= maxWaitSeconds) {
+                                    logger.info("Stopping because: Timeout -> Could not find final downloadurl");
+                                    break;
+                                }
+                            } while (!this.isAbort());
+                            this.handleAPIErrors(this, entries, br, link, account, null);
+                        } finally {
+                            this.controlQueueSlot(link, -1);
+                        }
                     }
                 } else {
+                    /* Old handling: No special handling for queue-downloads. */
                     entries = this.handleAPIErrors(this, br, link, account);
                 }
                 dllink = (String) entries.get("location");
@@ -340,26 +396,24 @@ abstract public class ZeveraCore extends UseNet {
                 if (!StringUtils.isEmpty(filename) && link.getFinalFileName() == null) {
                     link.setFinalFileName(filename);
                 }
-                if (!StringUtils.isEmpty(dllink)) {
-                    /*
-                     * 2019-11-29: TODO: This is a workaround! They're caching data. This means that it may also happen that a slightly
-                     * different file will get delivered (= new hash). This is a bad workaround to "disable" the hash check of our original
-                     * file thus prevent JD to display CRC errors when there are none. Premiumize is advised to at least return the correct
-                     * MD5 hash so that we can set it accordingly but for now, we only have this workaround. See also:
-                     * https://svn.jdownloader.org/issues/87604
-                     */
-                    final boolean forceDisableCRCCheck = true;
-                    final long originalSourceFilesize = link.getView().getBytesTotal();
-                    long thisFilesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), -1l);
-                    if (forceDisableCRCCheck || originalSourceFilesize > 0 && thisFilesize > 0 && thisFilesize != originalSourceFilesize) {
-                        logger.info("Dumping existing hashes to prevent errors because of cache download");
-                        link.setHashInfo(null);
-                    }
-                }
                 if (StringUtils.isEmpty(dllink)) {
                     handleAPIErrors(this, this.br, link, account);
                     /* This should never happen. */
-                    getMultiHosterManagement().handleErrorGeneric(account, link, "dllinknull", 2, 5 * 60 * 1000l);
+                    getMultiHosterManagement().handleErrorGeneric(account, link, "Failed to find final downloadurl", 2, 5 * 60 * 1000l);
+                }
+                /*
+                 * 2019-11-29: TODO: This is a workaround! They're caching data. This means that it may also happen that a slightly
+                 * different file will get delivered (= new hash). This is a bad workaround to "disable" the hash check of our original file
+                 * thus prevent JD to display CRC errors when there are none. Premiumize is advised to at least return the correct MD5 hash
+                 * so that we can set it accordingly but for now, we only have this workaround. See also:
+                 * https://svn.jdownloader.org/issues/87604
+                 */
+                final boolean forceDisableCRCCheck = true;
+                final long originalSourceFilesize = link.getView().getBytesTotal();
+                long thisFilesize = JavaScriptEngineFactory.toLong(entries.get("filesize"), -1l);
+                if (forceDisableCRCCheck || originalSourceFilesize > 0 && thisFilesize > 0 && thisFilesize != originalSourceFilesize) {
+                    logger.info("Dumping existing hashes to prevent errors because of cache download");
+                    link.setHashInfo(null);
                 }
             }
             try {
@@ -380,7 +434,12 @@ abstract public class ZeveraCore extends UseNet {
                     logger.info("Update Filesize: old=" + verifiedFileSize + "|new=" + completeContentLength);
                     link.setVerifiedFileSize(completeContentLength);
                 }
-                this.dl.startDownload();
+                controlSlot(link, +1);
+                try {
+                    dl.startDownload();
+                } finally {
+                    controlSlot(link, -1);
+                }
             } catch (final Exception e) {
                 if (storedDirecturl != null) {
                     link.removeProperty(directlinkproperty);
@@ -388,6 +447,75 @@ abstract public class ZeveraCore extends UseNet {
                 } else {
                     throw e;
                 }
+            }
+        }
+    }
+
+    private static Map<String, Object> mapLockMap = new HashMap<String, Object>();
+
+    protected Object getMapLock() {
+        synchronized (mapLockMap) {
+            Object ret = mapLockMap.get(getHost());
+            if (ret == null) {
+                ret = new Object();
+                mapLockMap.put(getHost(), ret);
+            }
+            return ret;
+        }
+    }
+
+    private <T> Map<String, T> getMap(final Map<String, Map<String, T>> map) {
+        synchronized (map) {
+            Object ret = map.get(getHost());
+            if (ret == null) {
+                ret = new HashMap<String, Object>();
+                map.put(getHost(), (Map<String, T>) ret);
+            }
+            return (Map<String, T>) ret;
+        }
+    }
+
+    private <T> ArrayList<String> getList(final Map<String, ArrayList<String>> map) {
+        synchronized (map) {
+            ArrayList<String> ret = map.get(getHost());
+            if (ret == null) {
+                ret = new ArrayList<String>();
+                map.put(getHost(), ret);
+            }
+            return ret;
+        }
+    }
+
+    /** Controls max simultaneous downloads of hosts which require queue handling. */
+    private void controlSlot(final DownloadLink link, final int num) {
+        synchronized (getMapLock()) {
+            final ArrayList<String> queueHostsList = getList(ZeveraCore.hostQueueHandlingMapOfLists);
+            if (queueHostsList.contains(link.getHost())) {
+                final Map<String, AtomicInteger> hostRunningDlsNumMap = getMap(ZeveraCore.hostRunningDownloadsNumMap);
+                AtomicInteger currentRunningDls = hostRunningDlsNumMap.get(this.getDownloadLink().getHost());
+                if (currentRunningDls == null) {
+                    currentRunningDls = new AtomicInteger(0);
+                    hostRunningDlsNumMap.put(link.getHost(), currentRunningDls);
+                }
+                currentRunningDls.addAndGet(num);
+            }
+        }
+    }
+
+    private void controlQueueSlot(final DownloadLink link, final int num) {
+        synchronized (getMapLock()) {
+            final ArrayList<String> queueHostsList = getList(ZeveraCore.hostQueueHandlingMapOfLists);
+            if (queueHostsList.contains(link.getHost())) {
+                final Map<String, AtomicInteger> hostRunningDlsNumMap = getMap(ZeveraCore.hostActiveQueueHandlingNumMap);
+                AtomicInteger currentRunningDls = hostRunningDlsNumMap.get(this.getDownloadLink().getHost());
+                if (currentRunningDls == null) {
+                    currentRunningDls = new AtomicInteger(0);
+                    hostRunningDlsNumMap.put(link.getHost(), currentRunningDls);
+                }
+                currentRunningDls.addAndGet(num);
+            } else {
+                /* This should not happen */
+                logger.warning("WTF: DownloadLink of non-queue host is in queue | Host: " + link.getHost() + " | Filename: " + link.getName());
             }
         }
     }
@@ -469,10 +597,29 @@ abstract public class ZeveraCore extends UseNet {
         final Map<String, Object> hosterinfo = this.handleAPIErrors(this, br, null, account);
         final HashSet<String> supportedHostsMainDomains = new HashSet<String>();
         final String[] hosterListTypesToAdd = new String[] { "directdl", "queue" };
-        for (final String hosterListTypeToAdd : hosterListTypesToAdd) {
-            final List<String> hosts = (List<String>) hosterinfo.get(hosterListTypeToAdd);
-            if (hosts != null) {
-                supportedHostsMainDomains.addAll(hosts);
+        synchronized (this.getMapLock()) {
+            final ArrayList<String> queueHosts = this.getList(ZeveraCore.hostQueueHandlingMapOfLists);
+            queueHosts.clear();
+            for (final String hosterListTypeToAdd : hosterListTypesToAdd) {
+                final List<String> hosts = (List<String>) hosterinfo.get(hosterListTypeToAdd);
+                if (hosts != null) {
+                    supportedHostsMainDomains.addAll(hosts);
+                }
+                /* Collect queue hosts */
+                if (hosterListTypeToAdd.equals("queue")) {
+                    for (final String domain : hosts) {
+                        final ArrayList<String> supportedHostsTmp = new ArrayList<String>();
+                        supportedHostsTmp.add(domain);
+                        ai.setMultiHostSupport(this, supportedHostsTmp);
+                        final List<String> realDomainList = ai.getMultiHostSupport();
+                        if (realDomainList == null || realDomainList.isEmpty()) {
+                            logger.info("Skipping host not supported by JD or not multihoster-supported by JD: " + domain);
+                            continue;
+                        }
+                        queueHosts.add(realDomainList.get(0));
+                    }
+                    logger.info("Detected queue hosts: " + queueHosts);
+                }
             }
         }
         /*
@@ -1006,16 +1153,12 @@ abstract public class ZeveraCore extends UseNet {
                     getMultiHosterManagement().handleErrorGeneric(account, link, message, 2, retryInMilliseconds);
                 }
             }
-        } else if ("deferred".equalsIgnoreCase(status)) {
+        } else if (API_STATUS_FOR_QUEUE_DEFERRED_HANDLING.equalsIgnoreCase(status)) {
             /*
              * Most likely user tried to download a file of a host which is in the "queue" list of supported host. Such files first need to
              * be downloaded 100% serverside until the user can download them.
              */
-            if (StringUtils.isEmpty(message)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait for serverside download until you can download this file", retryInMilliseconds);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, retryInMilliseconds);
-            }
+            getMultiHosterManagement().handleErrorGeneric(account, link, message != null ? message : "Wait for serverside download until you can download this file", 50, retryInMilliseconds);
         } else if (errormap != null) {
             /* 2023-05-20: new json zevera.com(?) */
             final String messageNew = errormap.get("message").toString();
