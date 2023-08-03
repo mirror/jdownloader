@@ -1112,6 +1112,8 @@ public class TbCmV2 extends PluginForDecrypt {
             }
             humanReadableTitle = "Channel " + userName;
         }
+        List<Map<String, Object>> alerts = null;
+        String errorOrWarningMessage = null;
         URL originalURL = null;
         final ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         Map<String, Object> ytConfigData = null;
@@ -1224,8 +1226,8 @@ public class TbCmV2 extends PluginForDecrypt {
              * This message can also contain information like "2 unavailable videos won't be displayed in this list". </br>
              * Only mind this errormessage if we can't find any content.
              */
-            final List<Map<String, Object>> alerts = (List<Map<String, Object>>) rootMap.get("alerts");
-            String errorOrWarningMessage = null;
+            alerts = (List<Map<String, Object>>) rootMap.get("alerts");
+            errorOrWarningMessage = null;
             /* Find last errormessage. Mostly there is one one available anyways. */
             if (alerts != null && alerts.size() > 0) {
                 for (final Map<String, Object> alert : alerts) {
@@ -1307,6 +1309,8 @@ public class TbCmV2 extends PluginForDecrypt {
         final String DELEGATED_SESSION_ID = helper.getYtCfgSet() != null ? String.valueOf(helper.getYtCfgSet().get("DELEGATED_SESSION_ID")) : null;
         boolean reachedUserDefinedMaxItemsLimit = false;
         int numberofSkippedDuplicates = 0;
+        int internalGuessedPaginationSize = -1;
+        boolean paginationFailedForUnknownReasons = false;
         pagination: do {
             /* First try old HTML handling though by now [June 2023] all data is provided via json. */
             String nextPageToken = null;
@@ -1319,6 +1323,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     /* This should never happen. */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                int numberOfVideoItemsOnThisPage = 0;
                 for (final Map<String, Object> vid : varray) {
                     /* Playlist */
                     String id = (String) JavaScriptEngineFactory.walkJson(vid, "playlistVideoRenderer/videoId");
@@ -1337,6 +1342,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     /* Typically last item (item 101) will contain the continuationToken. */
                     final String continuationToken = (String) JavaScriptEngineFactory.walkJson(vid, "continuationItemRenderer/continuationEndpoint/continuationCommand/token");
                     if (id != null) {
+                        numberOfVideoItemsOnThisPage++;
                         videoPositionCounter++;
                         if (!playListDupes.add(id)) {
                             /* Playlists can contain the same video multiple times */
@@ -1356,9 +1362,12 @@ public class TbCmV2 extends PluginForDecrypt {
                         logger.info("Found unknown playlist item: " + vid);
                     }
                 }
+                if (internalGuessedPaginationSize == -1) {
+                    internalGuessedPaginationSize = numberOfVideoItemsOnThisPage;
+                }
                 /* Check for some abort conditions */
                 final int numberofNewItemsThisRun = playListDupes.size() - crawledItemsSizeOld;
-                logger.info("Crawled page " + round + " | Found items on this page [== pagination_size]: " + numberofNewItemsThisRun + " | Found items so far: " + playListDupes.size() + "/" + totalNumberofItems + " | nextPageToken = " + nextPageToken + " | Max items limit: " + maxItemsLimit + " | activeSort: " + activeSort);
+                logger.info("Crawled page " + round + " | Found items on this page: " + numberofNewItemsThisRun + " | Found items so far: " + playListDupes.size() + "/" + totalNumberofItems + " | nextPageToken = " + nextPageToken + " | Max items limit: " + maxItemsLimit + " | activeSort: " + activeSort + " | Internal guessed pagination size: " + internalGuessedPaginationSize);
                 if (this.isAbort()) {
                     logger.info("Stopping because: Aborted by user");
                     throw new InterruptedException();
@@ -1404,12 +1413,33 @@ public class TbCmV2 extends PluginForDecrypt {
             }
             br.postPageRaw("/youtubei/v1/browse?key=" + INNERTUBE_API_KEY + "&prettyPrint=false", JSonStorage.serializeToJson(paginationPostData));
             rootMap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final List<Map<String, Object>> onResponseReceivedActions = (List<Map<String, Object>>) rootMap.get("onResponseReceivedActions");
-            final Map<String, Object> lastReceivedAction = onResponseReceivedActions.get(onResponseReceivedActions.size() - 1);
-            varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(lastReceivedAction, "appendContinuationItemsAction/continuationItems");
-            if (varray == null) {
-                /* E.g. at the beginning after sorting */
-                varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(lastReceivedAction, "reloadContinuationItemsCommand/continuationItems");
+            try {
+                final List<Map<String, Object>> onResponseReceivedActions = (List<Map<String, Object>>) rootMap.get("onResponseReceivedActions");
+                final Map<String, Object> lastReceivedAction = onResponseReceivedActions.get(onResponseReceivedActions.size() - 1);
+                varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(lastReceivedAction, "appendContinuationItemsAction/continuationItems");
+                if (varray == null) {
+                    /* E.g. at the beginning after sorting */
+                    varray = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(lastReceivedAction, "reloadContinuationItemsCommand/continuationItems");
+                }
+            } catch (final Throwable e) {
+                if (ret.isEmpty()) {
+                    throw e;
+                } else {
+                    logger.log(e);
+                    if (alerts != null && alerts.size() > 0) {
+                        /**
+                         * 2023-08-03: E.g. playlist with 700 videos but 680 of them are hidden/unavailable which means first pagination
+                         * attempt will fail. </br>
+                         * Even via website this seems to be and edge case as the loading icon will never disappear and no error is
+                         * displayed.
+                         */
+                        logger.info("Pagination failed -> Possible reason: " + errorOrWarningMessage);
+                    } else {
+                        logger.warning("Pagination failed for unknown reasons");
+                        paginationFailedForUnknownReasons = true;
+                    }
+                    break pagination;
+                }
             }
         } while (true);
         int missingVideos = 0;
@@ -1422,7 +1452,7 @@ public class TbCmV2 extends PluginForDecrypt {
             if (!reachedUserDefinedMaxItemsLimit) {
                 missingVideos = totalNumberofItems.intValue() - ret.size();
             }
-        } else if (!reachedUserDefinedMaxItemsLimit) {
+        } else if (!reachedUserDefinedMaxItemsLimit && !paginationFailedForUnknownReasons) {
             /* We could not determine the number of items in this channel/playlist -> Use total number of found items as this number. */
             logger.info("Unable to determine PLAYLIST_SIZE -> Using number of found items as replacement");
             globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_SIZE, ret.size());
