@@ -113,7 +113,6 @@ public class Br2RadioDe extends PluginForDecrypt {
             }
             if (rest.size() > 0 && title != null && parameter.getCryptedUrl().endsWith("100.html")) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(encodeUnicode(title));
                 fp.addLinks(rest);
                 fp.setAllowInheritance(true);
             }

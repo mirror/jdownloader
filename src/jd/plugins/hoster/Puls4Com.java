@@ -15,7 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -26,16 +31,20 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "puls4.com" }, urls = { "https?://(?:www\\.)?puls4\\.com/.+" })
 public class Puls4Com extends PluginForHost {
     public Puls4Com(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     /* Nice (old 2016) API, usually only available for mobile devices. */
@@ -45,7 +54,6 @@ public class Puls4Com extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issue      = false;
 
     @Override
     public String getAGBLink() {
@@ -94,10 +102,10 @@ public class Puls4Com extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
-        server_issue = false;
+        final String extDefault = ".mp4";
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String filename = null;
+        String title = null;
         String date = null;
         final String urlpart = new Regex(link.getDownloadURL(), "puls4\\.com/(.+)").getMatch(0);
         if (use_mobile_api) {
@@ -128,7 +136,7 @@ public class Puls4Com extends PluginForHost {
             }
             final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
             date = (String) entries.get("broadcast_date");
-            filename = (String) entries.get("title");
+            title = (String) entries.get("title");
             /* Get highest quality downloadlink */
             final Map<String, Object> files = (Map<String, Object>) entries.get("files");
             if (files == null) {
@@ -150,42 +158,31 @@ public class Puls4Com extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"message\\-error\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = PluginJSonUtils.getJsonValue(br, "episodename");
+            title = PluginJSonUtils.getJsonValue(br, "episodename");
             dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\",\"hd\":true").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\",\"hd\":false").getMatch(0);
             }
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (title != null) {
+            if (date != null && !date.equals("")) {
+                title = date + "_puls4_" + title;
+            }
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
+            link.setName(this.correctOrApplyFileNameExtension(title, extDefault));
         }
-        if (date != null && !date.equals("")) {
-            filename = date + "_puls4_" + filename;
-        }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        if (dllink == null) {
-            filename = filename + ".mp4";
-            link.setName(filename);
-        } else {
-            link.setFinalFileName(filename);
-            dllink = dllink.replace("\\", "");
-            String ext = getFileNameExtensionFromString(dllink, ".mp4");
-            filename += ext;
-            link.setFinalFileName(filename);
+        if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;
             try {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                con = brc.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
-                    link.setProperty("directlink", dllink);
-                } else {
-                    server_issue = true;
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
                 }
             } finally {
                 try {
@@ -200,23 +197,25 @@ public class Puls4Com extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (server_issue) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 60 * 60 * 1000l);
-        } else if (dllink == null) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 30 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
-        dl.startDownload();
     }
 
     @Override

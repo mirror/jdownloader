@@ -27,7 +27,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -53,7 +52,7 @@ public class XunniupanCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xunniufile.com", "xunniupan.co", "xunniupan.com", "xun-niu.com" });
+        ret.add(new String[] { "xunniu-pan.com", "xunniufile.com", "xunniupan.co", "xunniupan.com", "xun-niu.com" });
         return ret;
     }
 
@@ -194,8 +193,17 @@ public class XunniupanCom extends PluginForHost {
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         final String fid = getFID(link);
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
-        String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
+        final String storedDirecturl = link.getStringProperty(directlinkproperty);
+        String dllink = null;
+        if (storedDirecturl != null) {
+            logger.info("Trying to re-use stored directurl: " + storedDirecturl);
+            dllink = storedDirecturl;
+            /*
+             * Important! Correct Referer header needs to be present otherwise previously generated directurls will just redirect to
+             * main-page.
+             */
+            br.getHeaders().put("Referer", link.getPluginPatternMatcher());
+        } else {
             requestFileInformation(link, account);
             if (br.containsHTML("action=get_vip_fl")) {
                 /* Premium account */
@@ -302,49 +310,32 @@ public class XunniupanCom extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            link.setProperty(directlinkproperty, dllink);
         }
-        link.setProperty(directlinkproperty, dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, account), this.getMaxChunks(account));
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 503) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, this.getMaxChunks(account));
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 503) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            this.dl.startDownload();
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(directlinkproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+            } else {
+                throw e;
+            }
         }
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            boolean valid = false;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    valid = true;
-                    return dllink;
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-                if (!valid) {
-                    link.removeProperty(property);
-                }
-            }
-        }
-        return null;
     }
 
     @Override

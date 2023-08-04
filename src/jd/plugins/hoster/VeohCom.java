@@ -30,6 +30,10 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.crypt.Base64;
 import jd.crypt.JDCrypt;
@@ -50,9 +54,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDHexUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veoh.com" }, urls = { "https?://(?:www\\.)?veohdecrypted\\.com/(browse/videos/category/.*?/)?watch/([A-Za-z0-9]+)" })
 public class VeohCom extends PluginForHost {
     private static final String  APIKEY          = "NEQzRTQyRUMtRjEwQy00MTcyLUExNzYtRDMwQjQ2OEE2OTcy";
@@ -68,6 +69,11 @@ public class VeohCom extends PluginForHost {
 
     public VeohCom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -428,10 +434,8 @@ public class VeohCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() != 403) {
-                br.followConnection();
-            }
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -450,7 +454,7 @@ public class VeohCom extends PluginForHost {
     }
 
     private void prepareBrowser(final String userAgent) {
-        br.clearCookies("http://www.veoh.com");
+        br.clearCookies(this.getHost());
         br.getHeaders().put("Pragma", null);
         br.getHeaders().put("Cache-Control", null);
         br.getHeaders().put("Accept-Charset", null);
@@ -469,7 +473,7 @@ public class VeohCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         // Allow +18 videos
-        br.setCookie("http://veoh.com/", "confirmedAdult", "true");
+        br.setCookie(this.getHost(), "confirmedAdult", "true");
         String filename;
         if (use_api_for_availablecheck) {
             /* 2019-09-24: New */

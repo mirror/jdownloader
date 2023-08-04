@@ -128,7 +128,6 @@ public class EightTracksCom extends PluginForDecrypt {
                 fpName = "8tracks_playlist" + System.currentTimeMillis();
             }
             fpName = Encoding.htmlDecode(fpName.trim());
-            fpName = encodeUnicode(fpName);
             /* tracks in mix */
             String tracksInMix = br.getRegex("<span[^>]+class=\"gray\">\\((\\d+) tracks?\\)</span>").getMatch(0);
             if (tracksInMix == null) {

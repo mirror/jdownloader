@@ -64,6 +64,7 @@ public class ARDMediathek extends PluginForHost {
 
     @Override
     public String getPluginContentURL(final DownloadLink link) {
+        /* Expose direct-URLs to user. */
         return link.getPluginPatternMatcher();
     }
 

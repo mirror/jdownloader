@@ -119,10 +119,6 @@ public abstract class Plugin implements ActionListener {
     public static final String                 HTTP_LINKS_HOST     = "http links";
     public static final String                 DIRECT_HTTP_HOST    = "DirectHTTP";
     public static final String                 FTP_HOST            = "ftp";
-    /* to keep 0.95xx comp */
-    /* switch this on every stable update */
-    // protected static Logger logger = jd.controlling.JDLogger.getLogger();
-    /* after 0.95xx */
     protected LogInterface                     logger              = LogController.TRASH;
     protected final CopyOnWriteArrayList<File> cleanUpCaptchaFiles = new CopyOnWriteArrayList<File>();
     private CrawledLink                        currentLink         = null;
@@ -231,7 +227,7 @@ public abstract class Plugin implements ActionListener {
         }
     }
 
-    protected String[] buildSupportedNames(List<String[]> pluginDomains) {
+    protected String[] buildSupportedNames(final List<String[]> pluginDomains) {
         for (final String[] domains : pluginDomains) {
             if (StringUtils.equalsIgnoreCase(getHost(), domains[0])) {
                 return domains;

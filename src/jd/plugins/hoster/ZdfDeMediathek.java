@@ -27,6 +27,7 @@ import java.util.Scanner;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.plugins.config.Order;
@@ -65,10 +66,14 @@ public class ZdfDeMediathek extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("decrypted://", "http://"));
+    public String getPluginContentURL(final DownloadLink link) {
+        /* Expose direct-URLs to user. */
+        return getContentURL(link);
+    }
+
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceFirst("(?i)decrypted://", "http://").replaceFirst("(?i)decryptedmediathek://", "http://");
     }
 
     @Override
@@ -87,12 +92,12 @@ public class ZdfDeMediathek extends PluginForHost {
         server_issues = false;
         prepBR(this.br);
         /* New urls 2016-12-21 */
-        dllink = link.getDownloadURL().replace("decryptedmediathek://", "http://");
+        dllink = getContentURL(link);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(link.getStringProperty("directName"));
-        if (dllink.contains("m3u8")) {
+        if (StringUtils.containsIgnoreCase(dllink, "m3u8")) {
             checkFFProbe(link, "Download a HLS Stream");
             final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
             final int hlsBandwidth = link.getIntegerProperty(ZdfDeMediathek.PROPERTY_hlsBandwidth, -1);

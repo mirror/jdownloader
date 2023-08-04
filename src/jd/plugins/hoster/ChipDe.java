@@ -225,7 +225,6 @@ public class ChipDe extends PluginForHost {
             filename = "THIS_FILE_CONTAINS_ADWARE_" + filename + ".exe";
         }
         filename = Encoding.htmlDecode(filename).trim();
-        filename = encodeUnicode(filename);
         if (set_final_filename) {
             link.setFinalFileName(filename);
         } else {

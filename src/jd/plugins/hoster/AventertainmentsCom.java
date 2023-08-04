@@ -15,6 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -34,16 +40,29 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imgs.aventertainments.com", "aventertainments.com" }, urls = { "https?://imgs\\d+\\.aventertainments\\.com/.+", "https?://www\\.aventertainments\\.com/newdlsample\\.aspx.+\\.mp4|https?://ppvclips\\d+\\.aventertainments\\.com/.+\\.m3u9|https?://(?:www\\.)?aventertainments\\.com/ppv/new_detail\\.aspx\\?ProID=\\d+.*|https?://(?:www\\.)?aventertainments\\.com/ppv/Download\\.aspx\\?.+" })
 public class AventertainmentsCom extends PluginForHost {
     public AventertainmentsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.aventertainments.com/register.aspx?languageID=1&VODTypeID=1&Site=PPV");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        prepBR(br);
+        return br;
+    }
+
+    public static Browser prepBR(final Browser br) {
+        br.setCookie("aventertainments.com", "IPCountry", "EN");
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     /* DEV NOTES */
@@ -135,7 +154,6 @@ public class AventertainmentsCom extends PluginForHost {
                 if (finalFilename != null) {
                     finalFilename = Encoding.htmlDecode(finalFilename);
                     finalFilename = finalFilename.trim();
-                    finalFilename = encodeUnicode(finalFilename);
                     final String ext = getFileNameExtensionFromString(dllink, ".jpg");
                     finalFilename = applyFilenameExtension(finalFilename, ext);
                     link.setFinalFileName(finalFilename);
@@ -154,7 +172,6 @@ public class AventertainmentsCom extends PluginForHost {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    link.setProperty("directlink", dllink);
                     final String serverFilename = Plugin.getFileNameFromDispositionHeader(con);
                     if (finalFilename == null && serverFilename != null) {
                         link.setFinalFileName(finalFilename);
@@ -222,17 +239,10 @@ public class AventertainmentsCom extends PluginForHost {
         return free_maxdownloads;
     }
 
-    public static Browser prepBR(final Browser br) {
-        br.setCookie("aventertainments.com", "IPCountry", "EN");
-        br.setFollowRedirects(true);
-        return br;
-    }
-
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
-                prepBR(br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(account.getHoster(), cookies);

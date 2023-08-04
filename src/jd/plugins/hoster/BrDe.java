@@ -25,6 +25,10 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.TimeZone;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.BrDeConfigInterface;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -37,10 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.BrDeConfigInterface;
-import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "br.de" }, urls = { "http://brdecrypted\\-online\\.de/\\?format=(mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" })
 public class BrDe extends PluginForHost {
@@ -63,6 +63,17 @@ public class BrDe extends PluginForHost {
             return "br.de";
         }
         return super.rewriteHost(host);
+    }
+
+    @Override
+    public String getPluginContentURL(final DownloadLink link) {
+        /* Try to expose direct-URLs to user. */
+        final String directurl = link.getStringProperty("direct_link");
+        if (directurl != null) {
+            return directurl;
+        } else {
+            return super.getPluginContentURL(link);
+        }
     }
 
     @Override

@@ -85,10 +85,6 @@ abstract public class ZeveraCore extends UseNet {
     /** Must override!! */
     abstract String getClientID();
 
-    /**
-     * Returns whether resume is supported or not for current download mode based on account availability and account type. <br />
-     * Override this function to set resume settings!
-     */
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         /* Resume is always possible */

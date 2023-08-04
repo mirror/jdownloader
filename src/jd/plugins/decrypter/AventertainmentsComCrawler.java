@@ -23,6 +23,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -35,7 +36,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
+import jd.plugins.hoster.AventertainmentsCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "aventertainments.com" }, urls = { "https?://(?:www\\.)?aventertainments\\.com/.+" })
 public class AventertainmentsComCrawler extends PluginForDecrypt {
@@ -48,9 +49,16 @@ public class AventertainmentsComCrawler extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        AventertainmentsCom.prepBR(br);
+        return br;
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        final AventertainmentsCom plg = (AventertainmentsCom) this.getNewPluginForHostInstance(this.getHost());
         if (plg.canHandle(param.getCryptedUrl())) {
             /* URL needs to be processed by host plugin. */
             final DownloadLink forHostPlugin = this.createDownloadlink(param.getCryptedUrl());
@@ -60,7 +68,7 @@ public class AventertainmentsComCrawler extends PluginForDecrypt {
         final Account account = AccountController.getInstance().getValidAccount(getHost());
         if (account != null) {
             /* Login whenever possible */
-            ((jd.plugins.hoster.AventertainmentsCom) plg).login(account, false);
+            plg.login(account, false);
         }
         br.setFollowRedirects(true);
         /* Allow for any direct-URLs added by user. */

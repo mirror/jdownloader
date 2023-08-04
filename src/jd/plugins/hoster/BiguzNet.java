@@ -17,6 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -25,16 +29,19 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "biguz.net" }, urls = { "https?://(?:www\\.)?biguz\\.net/(?:watch\\.php\\?id=\\d+|video/\\?id=\\d+\\&name=[a-z0-9\\-]+)" })
 public class BiguzNet extends PluginForHost {
     public BiguzNet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     /* DEV NOTES */
@@ -47,7 +54,6 @@ public class BiguzNet extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -75,12 +81,22 @@ public class BiguzNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        dllink = null;
+        final String extDefault = ".mp4";
+        String title = null;
+        final String urlName = UrlQuery.parse(this.br.getURL()).get("name");
+        if (urlName != null) {
+            /* 2020-10-20: Prefer file title from URL. */
+            title = urlName.replace("-", " ").trim();
+        }
         if (!link.isNameSet()) {
             /* Set fallback filename */
-            link.setName(this.getFID(link) + ".mp4");
+            if (title != null) {
+                link.setName(title + extDefault);
+            } else {
+                link.setName(this.getFID(link) + extDefault);
+            }
         }
-        dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
@@ -89,37 +105,29 @@ public class BiguzNet extends PluginForHost {
         } else if (this.br.containsHTML("(?i)This video was suspended")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = null;
-        final String urlName = UrlQuery.parse(this.br.getURL()).get("name");
-        if (urlName != null) {
-            /* 2020-10-20: Prefer file title from URL. */
-            filename = urlName.replace("-", " ");
-        } else {
-            filename = br.getRegex("<title>([^<>\"]+)\\- biguz\\.net</title>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("</div><h1>([^<>\"]+)</h1>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<title>([^<>\"]+)\\- biguz\\.net</title>").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("</div><h1>([^<>\"]+)</h1>").getMatch(0);
             }
         }
         dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename);
-            filename = filename.trim();
-            filename = encodeUnicode(filename);
-            link.setFinalFileName(filename + ".mp4");
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
+            link.setFinalFileName(title + extDefault);
         }
         if (!StringUtils.isEmpty(dllink)) {
-            dllink = Encoding.htmlDecode(dllink);
             URLConnectionAdapter con = null;
             try {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                con = brc.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    server_issues = true;
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
                 }
             } finally {
                 try {
@@ -134,23 +142,25 @@ public class BiguzNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
-        dl.startDownload();
     }
 
     @Override
