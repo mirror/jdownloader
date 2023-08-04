@@ -127,7 +127,7 @@ public class PCloudComFolder extends PluginForDecrypt {
             }
         }
         final String folderNameMain = (String) metadata.get("name");
-        addFolder(metadata, null, parameter);
+        addFolder(ret, metadata, null, parameter);
         if (ret.size() > 1 && SubConfiguration.getConfig(this.getHost()).getBooleanProperty(DOWNLOAD_ZIP, false)) {
             /* = all files (links) of the folder as .zip archive */
             final DownloadLink main = createDownloadlink("http://pclouddecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
@@ -160,7 +160,7 @@ public class PCloudComFolder extends PluginForDecrypt {
 
     /** Recursive function to crawl all folders/subfolders */
     @SuppressWarnings("unchecked")
-    private void addFolder(final Map<String, Object> entries, String lastFpname, final String containerURL) {
+    private void addFolder(final ArrayList<DownloadLink> results, final Map<String, Object> entries, String lastFpname, final String containerURL) {
         List<Map<String, Object>> ressourcelist_temp = null;
         final boolean isFolder = ((Boolean) entries.get("isfolder"));
         if (isFolder) {
@@ -168,10 +168,10 @@ public class PCloudComFolder extends PluginForDecrypt {
             lastFpname = (String) entries.get("name");
             ressourcelist_temp = (List<Map<String, Object>>) entries.get("contents");
             for (final Map<String, Object> ressource : ressourcelist_temp) {
-                addFolder(ressource, lastFpname, containerURL);
+                addFolder(results, ressource, lastFpname, containerURL);
             }
         } else {
-            addSingleItem(entries, lastFpname, containerURL);
+            results.add(addSingleItem(entries, lastFpname, containerURL));
         }
     }
 

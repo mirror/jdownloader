@@ -20,6 +20,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.OkRuConfig;
+import org.jdownloader.plugins.components.config.OkRuConfig.Quality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -36,23 +46,20 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.OkRuConfig;
-import org.jdownloader.plugins.components.config.OkRuConfig.Quality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?ok\\.ru/(?:video|videoembed|web-api/video/moviePlayer|live)/(\\d+(-\\d+)?)" })
 public class OkRu extends PluginForHost {
     public OkRu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://ok.ru/dk?st.cmd=anonymRegistrationEnterPhone");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     @Override
@@ -70,7 +77,6 @@ public class OkRu extends PluginForHost {
     }
 
     private String              dllink               = null;
-    private boolean             downloadImpossible   = false;
     private boolean             paidContent          = false;
     private static final String PROPERTY_QUALITY     = "quality";
     private static final String PROPERTY_QUALITY_HLS = "quality_hls";
@@ -117,16 +123,16 @@ public class OkRu extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
-        downloadImpossible = false;
         this.setBrowserExclusive();
         if (account != null) {
             this.login(account, false);
         } else {
             prepBR(this.br);
         }
+        final String extDefault = ".mp4";
         final String fid = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(fid + ".mp4");
+            link.setName(fid + extDefault);
         }
         br.getPage("https://" + this.getHost() + "/video/" + fid);
         /* Offline or private video */
@@ -197,7 +203,8 @@ public class OkRu extends PluginForHost {
                 } else {
                     /* Prefer http - only use HLS if http is not available! */
                     /**
-                     * 2021-09-10: Some users also get: "ondemandHls" and "ondemandDash" </br> No idea if "ondemandHls" == "hlsManifestUrl"
+                     * 2021-09-10: Some users also get: "ondemandHls" and "ondemandDash" </br>
+                     * No idea if "ondemandHls" == "hlsManifestUrl"
                      */
                     if (userPreferredQuality != null) {
                         logger.info("Trying HLS fallback because user selected quality hasn't been found!");
@@ -225,11 +232,7 @@ public class OkRu extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
             title = encodeUnicode(title);
-            link.setFinalFileName(title + ".mp4");
-        }
-        if (br.containsHTML("class=\"fierr\"") || br.containsHTML("(?i)>\\s*Access to this video is restricted")) {
-            downloadImpossible = true;
-            return AvailableStatus.TRUE;
+            link.setFinalFileName(this.correctOrApplyFileNameExtension(title, extDefault));
         }
         // final String url_quality = new Regex(dllink, "(st.mq=\\d+)").getMatch(0);
         // if (url_quality != null) {
@@ -246,12 +249,13 @@ public class OkRu extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (con.isOK() && con.isContentDisposition()) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
                 }
             } finally {
                 try {
@@ -318,7 +322,7 @@ public class OkRu extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
-        if (downloadImpossible) {
+        if (br.containsHTML("class=\"fierr\"") || br.containsHTML("(?i)>\\s*Access to this video is restricted")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible - video corrupted?", 3 * 60 * 60 * 1000l);
         } else if (this.paidContent) {
             throw new AccountRequiredException();
@@ -354,11 +358,21 @@ public class OkRu extends PluginForHost {
             dl.startDownload();
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-            }
+            handleConnectionErrors(br, dl.getConnection());
             dl.startDownload();
+        }
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
         }
     }
 

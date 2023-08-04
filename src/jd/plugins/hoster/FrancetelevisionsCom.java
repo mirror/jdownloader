@@ -21,6 +21,15 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -30,15 +39,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "francetelevisions.fr" }, urls = { "http://francetelevisionsdecrypted/[A-Za-z0-9\\-_]+@[A-Za-z0-9\\-_]+" })
 public class FrancetelevisionsCom extends PluginForHost {
@@ -86,15 +86,15 @@ public class FrancetelevisionsCom extends PluginForHost {
         final String date = (String) JavaScriptEngineFactory.walkJson(entries, "meta/broadcasted_at");
         String channel = (String) JavaScriptEngineFactory.walkJson(entries, "markers/npaw/channel");
         final String seasonEpisode = (String) JavaScriptEngineFactory.walkJson(entries, "markers/estat/newLevel4");
-        if (inValidate(title)) {
+        if (StringUtils.isEmpty(title)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (inValidate(channel)) {
+        if (StringUtils.isEmpty(channel)) {
             /* Fallback to default channel */
             channel = "francetelevisions";
         }
         String filename = "";
-        if (!inValidate(date)) {
+        if (!StringUtils.isEmpty(date)) {
             /* Yap - the date is not always given! */
             final String date_formatted = formatDate(date);
             filename += date_formatted + "_";
@@ -103,12 +103,11 @@ public class FrancetelevisionsCom extends PluginForHost {
         if (StringUtils.isNotEmpty(seasonEpisode)) {
             filename += "_" + seasonEpisode;
         }
-        if (!inValidate(subtitle)) {
+        if (!StringUtils.isEmpty(subtitle)) {
             filename += " - " + subtitle;
         }
         filename += ".mp4";
         filename = Encoding.htmlDecode(filename).trim();
-        filename = encodeUnicode(filename);
         link.setFinalFileName(filename);
         if (Boolean.TRUE.equals(JavaScriptEngineFactory.walkJson(entries, "video/drm"))) {
             final String type = StringUtils.valueOrEmpty(StringUtils.valueOfOrNull(JavaScriptEngineFactory.walkJson(entries, "video/drm_type")));
@@ -120,7 +119,7 @@ public class FrancetelevisionsCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked" })
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -134,7 +133,7 @@ public class FrancetelevisionsCom extends PluginForHost {
             final Map<String, Object> entries = (Map<String, Object>) videoo;
             String format = (String) entries.get("format");
             url_temp = (String) entries.get("url");
-            if (inValidate(format) || inValidate(url_temp)) {
+            if (StringUtils.isEmpty(format) || StringUtils.isEmpty(url_temp)) {
                 continue;
             } else if ("dash".equals(format)) {
                 if (false) {
@@ -187,15 +186,16 @@ public class FrancetelevisionsCom extends PluginForHost {
         if (url_http != null) {
             /* Download http (rare case!) */
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url_http, true, 0);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This content is not available in your country");
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            if (dl.getConnection().getContentType().contains("html")) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.followConnection(true);
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "This content is not available in your country");
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         } else {
             // this.br.getPage("http://hdfauthftv-a.akamaihd.net/esi/TA?format=json&url=" + Encoding.urlEncode(hls_master) +
@@ -235,22 +235,6 @@ public class FrancetelevisionsCom extends PluginForHost {
             formattedDate = input;
         }
         return formattedDate;
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     */
-    protected boolean inValidate(final String s) {
-        if (s == null || s.matches("\\s+") || s.equals("")) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override

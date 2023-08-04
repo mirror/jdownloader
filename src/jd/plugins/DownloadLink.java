@@ -25,8 +25,11 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
@@ -34,6 +37,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -1552,9 +1556,18 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public void setFinalFileName(String newfinalFileName) {
         final String oldName = getName();
         if (!StringUtils.isEmpty(newfinalFileName)) {
-            if (new Regex(newfinalFileName, Pattern.compile("r(ar|\\d{2,3})\\.html?$", Pattern.CASE_INSENSITIVE)).matches()) {
+            final String toRemove = new Regex(newfinalFileName, Pattern.compile("r(?:ar|\\d{2,3})(\\.html?)$", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (toRemove != null) {
                 System.out.println("Use Workaround for stupid >>rar.html<< uploaders!");
-                newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - new Regex(newfinalFileName, Pattern.compile("r(?:ar|\\d{2,3})(\\.html?)$", Pattern.CASE_INSENSITIVE)).getMatch(0).length());
+                newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - toRemove.length());
+            }
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                final Map<String, String> forbiddenCharacterReplaceMap = JsonConfig.create(GeneralSettings.class).getFilenameAndPathCharacterReplaceMap();
+                final Iterator<Entry<String, String>> iterator = forbiddenCharacterReplaceMap.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Entry<String, String> entry = iterator.next();
+                    newfinalFileName = newfinalFileName.replace(entry.getKey(), entry.getValue());
+                }
             }
             newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName);
             this.setProperty(PROPERTY_FINALFILENAME, newfinalFileName);

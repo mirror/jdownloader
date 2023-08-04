@@ -77,8 +77,9 @@ public class MyzcloudMe extends antiDDoSForHost {
     /** 2020-02-27: This service is blocking all but turkish IPs! Turkish Proxy/VPN required or every request will return 404! */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String extDefault = ".mp3";
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".mp3");
+            link.setName(this.getFID(link) + extDefault);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -96,7 +97,7 @@ public class MyzcloudMe extends antiDDoSForHost {
         String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         final String filesize = br.getRegex("(\\d{1,2},\\d{1,2})\\s*Мб").getMatch(0);
         if (filename != null) {
-            link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename.trim())) + ".mp3");
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim() + extDefault);
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize + "MB"));
@@ -155,8 +156,9 @@ public class MyzcloudMe extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 30 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (dl.getConnection().getContentType().contains("gif")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 15 * 60 * 1000l);
         }

@@ -2,6 +2,7 @@ package org.jdownloader.settings;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -340,6 +341,13 @@ public interface GeneralSettings extends ConfigInterface {
     @RequiresRestart("A JDownloader Restart is Required")
     @DefaultBooleanValue(true)
     boolean isCleanUpFilenames();
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Returns mapping of common invalid characters to be replaced inside filenames / file paths. This is used to try to avoid invalid download paths/filenames and at the same time try to preserve the original filename/path.")
+    @DefaultJsonObject(value = "{\":\":\";\",\"|\":\"¦\",\"<\":\"[\",\">\":\"]\",\"/\":\"⁄\",\"\\\":\"∖\",\"*\":\"#\",\"?\":\"¿\",\"!\":\"¡\",\"\\\"\":\"'\"}")
+    Map<String, String> getFilenameAndPathCharacterReplaceMap();
+
+    public void setFilenameAndPathCharacterReplaceMap(Map<String, String> map);
 
     boolean isClosedWithRunningDownloads();
 

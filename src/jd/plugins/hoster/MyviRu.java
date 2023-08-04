@@ -15,7 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -26,15 +31,19 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvi.ru" }, urls = { "https?://(?:www\\.)?myvi\\.ru/(watch/[^/#\\?]+|[A-Za-z]{2}/flash/player/[A-Za-z0-9_\\-]+|player/embed/html/[A-Za-z0-9_\\-]+)" })
 public class MyviRu extends PluginForHost {
     public MyviRu(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     /* DEV NOTES */
@@ -56,14 +65,18 @@ public class MyviRu extends PluginForHost {
         return "http://myvi.ru/ru/help/license.aspx";
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
         temp_unavailable = false;
+        final String extDefault = ".mp4";
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String filename = null;
+        String title = null;
         final String html_embed_url;
         if (link.getDownloadURL().matches(TYPE_NORMAL)) {
             /* Normal video url */
@@ -74,9 +87,9 @@ public class MyviRu extends PluginForHost {
                 temp_unavailable = true;
                 return AvailableStatus.TRUE;
             }
-            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = new Regex(link.getDownloadURL(), "myvi\\.ru/watch/(.+)").getMatch(0);
+            title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (title == null) {
+                title = new Regex(link.getDownloadURL(), "myvi\\.ru/watch/(.+)").getMatch(0);
             }
             html_embed_url = br.getRegex("(//(myvi|netvi)\\.ru/player/embed/html/[^<>\"/]+)").getMatch(0);
             if (html_embed_url == null) {
@@ -103,47 +116,45 @@ public class MyviRu extends PluginForHost {
                  * (last time I got a .flv - API usually delivers .mp4).
                  */
                 // dllink = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/{0}/video/{0}/url");
-                filename = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/{0}/title");
+                title = (String) JavaScriptEngineFactory.walkJson(entries, "playlist/{0}/title");
             } catch (final Throwable e) {
             }
-            if (filename == null) {
-                filename = video_embed_id;
+            if (title == null) {
+                title = br.getRegex("<title>([^<]+)").getMatch(0);
+                if (title == null) {
+                    title = video_embed_id;
+                }
             }
         }
         String player = br.getRegex("createPlayer\\(\"v=([^\"]+?)\"").getMatch(0).replace("\\", "'");
         dllink = new Regex(player, "([^']+)'").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!StringUtils.isEmpty(dllink)) {
+            dllink = Encoding.htmlDecode(dllink);
         }
-        dllink = Encoding.htmlDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        link.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
+        title = Encoding.htmlDecode(title);
+        title = title.trim();
+        final String extFromURL = getFileNameExtensionFromString(dllink, extDefault);
+        link.setName(Plugin.getCorrectOrApplyFileNameExtension(title, extFromURL));
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -153,17 +164,21 @@ public class MyviRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is not available at the moment", 30 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
-        dl.startDownload();
     }
 
     @Override
