@@ -16,10 +16,20 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
+
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.IntegerInterface;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.IntegerKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
@@ -50,15 +60,6 @@ import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
-
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
 
 public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     private AdvancedConfigTableModel model;
@@ -139,7 +140,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ChannelCrawlerPreferredSortMode(), null, null, new ComboBox<ChannelCrawlerSortMode>(cf._getStorageHandler().getKeyHandler("ChannelCrawlerPreferredSortMode", KeyHandler.class), ChannelCrawlerSortMode.values(), null));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ChannelPlaylistCrawlerPackagingMode(), null, null, new ComboBox<ChannelPlaylistCrawlerPackagingMode>(cf._getStorageHandler().getKeyHandler("ChannelPlaylistCrawlerPackagingMode", KeyHandler.class), ChannelPlaylistCrawlerPackagingMode.values(), null));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ChannelPlaylistCrawlerPackagingMode(), null, null, new ComboBox<ChannelPlaylistCrawlerPackagingMode>(cf._getStorageHandler().getKeyHandler("ChannelPlaylistCrawlerPackagingMode", KeyHandler.class), ChannelPlaylistCrawlerPackagingMode.values(), null));
-        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ProcessPlaylistItemsInReverseOrder(), null, new Checkbox(cf._getStorageHandler().getKeyHandler("ProcessPlaylistItemsInReverseOrder", null)));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ProcessPlaylistItemsInReverseOrder(), null, new Checkbox(cf._getStorageHandler().getKeyHandler("ProcessPlaylistItemsInReverseOrder", BooleanKeyHandler.class)));
         // VariantBase[] variants = VariantBase.values();
         // Comparator<VariantBase> comp = new Comparator<VariantBase>() {
         //
