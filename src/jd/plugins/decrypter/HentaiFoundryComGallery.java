@@ -104,7 +104,6 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
                 final String pic_id = jd.plugins.hoster.HentaiFoundryCom.getFID(url);
                 if (title != null) {
                     title = pic_id + "_" + Encoding.htmlDecode(title).trim();
-                    title = encodeUnicode(title);
                 } else {
                     title = pic_id;
                 }

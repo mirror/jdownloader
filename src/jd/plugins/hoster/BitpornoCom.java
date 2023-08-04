@@ -20,6 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -28,26 +34,26 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLSearch;
 import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BitpornoCom extends PluginForHost {
     public BitpornoCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     public static List<String[]> getPluginDomains() {
@@ -83,11 +89,6 @@ public class BitpornoCom extends PluginForHost {
         return this.rewriteHost(getPluginDomains(), host);
     }
 
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
-    }
-
     /* DEV NOTES */
     // Tags:
     // protocol: no https
@@ -98,7 +99,6 @@ public class BitpornoCom extends PluginForHost {
     private static final int     free_maxdownloads   = -1;
     private static final String  html_video_encoding = "(?i)>\\s*This video is still in encoding progress";
     private String               dllink              = null;
-    private boolean              server_issues       = false;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -133,42 +133,49 @@ public class BitpornoCom extends PluginForHost {
         return false;
     }
 
-    /** 2016-05-18: playernaut.com uses crypted js, bitporno.sx doesn't! */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    /** 2016-05-18: playernaut.com uses crypted js, bitporno.sx doesn't! */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
-        server_issues = false;
+        final String extDefault = ".mp4";
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String fid = getFID(link);
         if (!link.isNameSet()) {
             /* Better filenames for offline case */
-            link.setName(fid + ".mp4");
+            link.setName(fid + extDefault);
         }
-        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        String filename = null;
+        String title = null;
         String json_source = null;
         /* Only use one of their domains */
         br.getPage("https://www." + this.getHost() + "/?v=" + fid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<span itemprop=\"name\" title=\"(.*?)\"").getMatch(0);
+        title = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<span itemprop=\"name\" title=\"(.*?)\"").getMatch(0);
         }
-        if (filename == null) {
+        if (title == null) {
             /* Fallback */
-            filename = fid;
+            title = fid;
         }
-        if (filename.length() > 212) {
-            int dash = filename.indexOf('-', 200);
+        if (title.length() > 212) {
+            int dash = title.indexOf('-', 200);
             if (dash >= 0) {
-                filename = filename.substring(0, dash);
+                title = title.substring(0, dash);
             } else {
-                filename = filename.substring(0, 212);
+                title = title.substring(0, 212);
             }
+        }
+        final String description = HTMLSearch.searchMetaTag(br, "og:description");
+        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+            link.setComment(description);
         }
         if (br.containsHTML(html_video_encoding)) {
             return AvailableStatus.TRUE;
@@ -180,7 +187,7 @@ public class BitpornoCom extends PluginForHost {
         handleConfirm(br);
         final String decode = new org.jdownloader.encoding.AADecoder(br.toString()).decode();
         json_source = new Regex(decode != null ? decode : br.toString(), "sources(?:\")?[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\])").getMatch(0);
-        if (filename == null) {
+        if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (json_source != null) {
@@ -233,8 +240,8 @@ public class BitpornoCom extends PluginForHost {
                 logger.info("file: " + dllink_best);
             }
         } else {
-            final String userPreferredVideoquality = getConfiguredVideoQuality();
-            String embed = null;
+            // final String userPreferredVideoquality = getConfiguredVideoQuality();
+            // String embed = null;
             // could be <source>, seems that it also shows highest quality to change you do another page grab to '&q=480p | &q=360p'
             final String[] source = br.getRegex("<source .*?/\\s*>").getColumn(-1);
             if (source != null) {
@@ -262,26 +269,22 @@ public class BitpornoCom extends PluginForHost {
             /* 2020-08-25: HLS */
             dllink = br.getRegex("file\\s*:\\s*\"((?:https?://|/)[^<>\"]+)\"").getMatch(0);
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String extension = ".mp4";
-        if (!filename.endsWith(extension)) {
-            filename += extension;
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
+            link.setName(title + extDefault);
         }
-        if (!StringUtils.isEmpty(dllink) && !dllink.contains(".m3u8")) {
-            link.setFinalFileName(filename);
-            if (dllink.contains("playercdn.net")) {
-                // br2.getHeaders().put("Referer", link.getDownloadURL().replace("/v/", "/e/"));
-            }
-            link.setFinalFileName(filename);
+        if (!StringUtils.isEmpty(dllink) && !dllink.contains(".m3u8") && !isDownload) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(dllink);
-                if (con.getContentType().contains("text") || !con.isOK() || con.getLongContentLength() == -1) {
-                    server_issues = true;
-                } else {
-                    link.setDownloadSize(con.getLongContentLength());
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
                 }
             } finally {
                 try {
@@ -289,23 +292,19 @@ public class BitpornoCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (br.containsHTML(html_video_encoding)) {
             /*
              * 2016-06-16, psp: I guess if this message appears longer than some hours, such videos can never be downloaded/streamed or only
              * the original file via premium account.
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable (yet) because 'This video is still in encoding progress - Please patient'", 60 * 60 * 1000l);
-        } else if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error occured");
         } else if (dllink.contains(".m3u8")) {
@@ -318,17 +317,21 @@ public class BitpornoCom extends PluginForHost {
         } else {
             /* http download */
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            handleConnectionErrors(br, dl.getConnection());
             dl.startDownload();
+        }
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
         }
     }
 

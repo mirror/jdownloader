@@ -44,6 +44,10 @@ public class VoeSx extends XFileSharingProBasic {
         this.enablePremium(super.getPurchasePremiumURL());
     }
 
+    public String getPurchasePremiumURL() {
+        return this.getMainPage() + "/register";
+    }
+
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />

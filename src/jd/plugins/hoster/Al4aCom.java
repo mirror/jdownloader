@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -34,7 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "al4a.com" }, urls = { "https?://(?:www\\.)?al4a\\.com/video/[a-z0-9\\-]+-(\\d+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "al4a.com" }, urls = { "https?://(?:www\\.)?al4a\\.com/(?:video/[a-z0-9\\-]+-\\d+\\.html|embed/\\d+)" })
 public class Al4aCom extends PluginForHost {
     public Al4aCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,6 +55,8 @@ public class Al4aCom extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
+    private final String         PATTERN_NORMAL    = "(?i)https?://[^/]+/video/([a-z0-9\\-]+)-(\\d+)\\.html";
+    private final String         PATTERN_EMBED     = "(?i)https?://[^/]+/embed/(\\d+)";
 
     @Override
     public String getAGBLink() {
@@ -71,7 +74,29 @@ public class Al4aCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        String fid = new Regex(link.getPluginPatternMatcher(), PATTERN_NORMAL).getMatch(1);
+        if (fid == null) {
+            fid = new Regex(link.getPluginPatternMatcher(), PATTERN_EMBED).getMatch(0);
+        }
+        return fid;
+    }
+
+    private String getTitleFromURL(final String url) {
+        String urlSlug = new Regex(url, PATTERN_NORMAL).getMatch(0);
+        if (urlSlug != null) {
+            return urlSlug.replace("-", " ").trim();
+        } else {
+            return null;
+        }
+    }
+
+    private String getContentURL(final DownloadLink link) {
+        if (link.getPluginPatternMatcher().matches(PATTERN_EMBED)) {
+            /* Do this so we can find a human readable title in the end. */
+            return "https://www." + this.getHost() + "/video/-" + this.getFID(link) + ".html";
+        } else {
+            return link.getPluginPatternMatcher();
+        }
     }
 
     @Override
@@ -82,16 +107,27 @@ public class Al4aCom extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
         final String extDefault = ".mp4";
+        String titleFromURL = getTitleFromURL(link.getPluginPatternMatcher());
+        if (!link.isNameSet()) {
+            if (titleFromURL != null) {
+                link.setName(titleFromURL + extDefault);
+            } else {
+                link.setName(this.getFID(link) + extDefault);
+            }
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(getContentURL(link));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getPluginPatternMatcher(), "/video/([a-z0-9\\-]*\\-\\d+)\\.html").getMatch(0).replace("-", " ");
-        String title = br.getRegex("title: '([^<>\"']*?)',").getMatch(0);
+        if (titleFromURL == null) {
+            /* E.g. for embed URLs which will redirect to normal URLs. */
+            titleFromURL = getTitleFromURL(br.getURL());
+        }
+        String title = HTMLSearch.searchMetaTag(br, "og:title");
         if (title == null) {
-            title = url_filename;
+            title = titleFromURL;
         }
         dllink = br.getRegex("'(?:file|video)'\\s*:\\s*'(http[^<>\"]*?)'").getMatch(0);
         if (dllink == null) {
@@ -110,14 +146,10 @@ public class Al4aCom extends PluginForHost {
                 }
             }
         }
-        if (title == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            title = encodeUnicode(title);
-            link.setFinalFileName(title + extDefault);
+            link.setName(title + extDefault);
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;

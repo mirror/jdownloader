@@ -25,10 +25,12 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -56,53 +58,77 @@ public class BigholestubeCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://bigholestube.com/";
+        return "https://bigholestube.com/";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         dllink = null;
+        final String extDefault = ".mp4";
+        final String titleFromURL = getFID(link).replace("-", " ").trim();
+        if (!link.isNameSet()) {
+            link.setName(titleFromURL + extDefault);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie(getHost(), "ageCookieRemember", "1");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"(playerbox|Video_Player)\"")) {
+        br.getPage(link.getPluginPatternMatcher());
+        dllink = br.getRegex("type=\"video/[^<>\"]+\" src=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (dllink == null && !br.containsHTML("id=\"(playerbox|Video_Player)\"")) {
+            /* No video content */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
+        String title = HTMLSearch.searchMetaTag(br, "og:title");
+        if (title == null) {
             /* Fallback */
-            filename = new Regex(downloadLink.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        }
-        dllink = br.getRegex("type=\"video/[^<>\"]+\" src=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.htmlDecode(dllink);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext = getFileNameExtensionFromString(dllink, ".flv");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
-                downloadLink.setDownloadSize(con.getCompleteContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            title = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+            if (title == null) {
+                title = titleFromURL;
             }
-        } finally {
+        }
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
+            final String extFromURL = getFileNameExtensionFromString(dllink, extDefault);
+            link.setName(Plugin.getCorrectOrApplyFileNameExtension(title, extFromURL));
+        }
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -110,7 +136,7 @@ public class BigholestubeCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

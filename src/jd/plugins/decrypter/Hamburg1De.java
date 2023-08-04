@@ -30,6 +30,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hamburg1.de" }, urls = { "https?://(?:www\\.)?hamburg1\\.de/[^<>\"]+/\\d+/[^<>\"]+\\.html" })
@@ -39,13 +41,12 @@ public class Hamburg1De extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         int counter = 1;
         final DecimalFormat df = new DecimalFormat("00");
@@ -59,7 +60,7 @@ public class Hamburg1De extends PluginForDecrypt {
         if (!date.equals("")) {
             date_formatted = formatDate(Encoding.htmlDecode(date).trim());
         }
-        title = date_formatted + "_hamburg1_" + encodeUnicode(title);
+        title = date_formatted + "_hamburg1_" + title;
         final String[] regexes = { "video\\.show\\(\"player\"[^\\)]+\"([^<>\"]*?)\"\\)", "(https?://embed\\.telvi\\.de/\\d+/clip/\\d+)", "videoURL\\s*=\\s*'(https?://video\\.telvi\\.de/[^<>\"\\']+)';" };
         for (final String regex : regexes) {
             final String[] matches = br.getRegex(regex).getColumn(0);
@@ -76,20 +77,19 @@ public class Hamburg1De extends PluginForDecrypt {
                     dl.setContentUrl(parameter);
                     dl.setProperty("decryptedfilename", filetitle);
                     dl.setForcedFileName(filetitle + ".mp4");
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     counter++;
                 }
             }
         }
-        if (decryptedLinks.size() == 0) {
+        if (ret.size() == 0) {
             /* Chances are high that we just don't have a video. */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 
     private String formatDate(final String input) {

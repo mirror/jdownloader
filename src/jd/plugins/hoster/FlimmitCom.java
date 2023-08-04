@@ -18,12 +18,19 @@ package jd.plugins.hoster;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.FlimmitComConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,18 +38,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.FlimmitComConfig;
-
 /**
  *
  * @author raztoki
  *
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flimmit.com" }, urls = { "http://flimmit\\.com/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flimmit.com" }, urls = { "https?://flimmit\\.com/\\d+" })
 public class FlimmitCom extends PluginForHost {
     public FlimmitCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,9 +64,6 @@ public class FlimmitCom extends PluginForHost {
         return new String[] { "flimmit.at", "flimmit.com" };
     }
 
-    /* Connection stuff */
-    private static final int FREE_MAXDOWNLOADS = 20;
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -80,31 +78,23 @@ public class FlimmitCom extends PluginForHost {
         // if (!br.getURL().contains("/play/")) {
         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // }
-        String filename = link.getStringProperty("filename", null);
+        String filename = link.getStringProperty("filename");
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = encodeUnicode(filename);
         link.setFinalFileName(filename);
-        return AvailableStatus.TRUE;
+        return AvailableStatus.UNCHECKABLE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered/premium users");
+        throw new AccountRequiredException();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     private boolean isValidUserSubscriptionsResponse(Browser br) throws Exception {
