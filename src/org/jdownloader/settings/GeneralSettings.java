@@ -14,6 +14,7 @@ import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DefaultLongValue;
+import org.appwork.storage.config.annotations.DefaultOnNull;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.RequiresRestart;
@@ -344,7 +345,8 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DescriptionForConfigEntry("Returns mapping of common invalid characters to be replaced inside filenames / file paths. This is used to try to avoid invalid download paths/filenames and at the same time try to preserve the original filename/path.")
-    @DefaultJsonObject(value = "{\":\":\";\",\"|\":\"¦\",\"<\":\"[\",\">\":\"]\",\"/\":\"⁄\",\"\\\":\"∖\",\"*\":\"#\",\"?\":\"¿\",\"!\":\"¡\",\"\\\"\":\"'\"}")
+    @DefaultJsonObject("{\":\":\";\",\"|\":\"¦\",\"<\":\"[\",\">\":\"]\",\"/\":\"⁄\",\"\\\\\":\"∖\",\"*\":\"#\",\"?\":\"¿\",\"!\":\"¡\",\"\\\"\":\"'\"}")
+    @DefaultOnNull
     Map<String, String> getFilenameAndPathCharacterReplaceMap();
 
     public void setFilenameAndPathCharacterReplaceMap(Map<String, String> map);
