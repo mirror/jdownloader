@@ -1562,11 +1562,15 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - toRemove.length());
             }
             if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                // 2023-08-04: TODO, see https://svn.jdownloader.org/issues/83699
+                // TODO: This should never be null ?!
                 final Map<String, String> forbiddenCharacterReplaceMap = JsonConfig.create(GeneralSettings.class).getFilenameAndPathCharacterReplaceMap();
-                final Iterator<Entry<String, String>> iterator = forbiddenCharacterReplaceMap.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    final Entry<String, String> entry = iterator.next();
-                    newfinalFileName = newfinalFileName.replace(entry.getKey(), entry.getValue());
+                if (forbiddenCharacterReplaceMap != null && !forbiddenCharacterReplaceMap.isEmpty()) {
+                    final Iterator<Entry<String, String>> iterator = forbiddenCharacterReplaceMap.entrySet().iterator();
+                    while (iterator.hasNext()) {
+                        final Entry<String, String> entry = iterator.next();
+                        newfinalFileName = newfinalFileName.replace(entry.getKey(), entry.getValue());
+                    }
                 }
             }
             newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName);

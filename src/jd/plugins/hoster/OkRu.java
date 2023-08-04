@@ -231,7 +231,6 @@ public class OkRu extends PluginForHost {
         }
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
-            title = encodeUnicode(title);
             link.setFinalFileName(this.correctOrApplyFileNameExtension(title, extDefault));
         }
         // final String url_quality = new Regex(dllink, "(st.mq=\\d+)").getMatch(0);

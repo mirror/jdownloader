@@ -1016,7 +1016,6 @@ public class PornHubCom extends PluginForHost {
         }
         if (site_title != null) {
             site_title = Encoding.htmlDecode(site_title);
-            site_title = plugin.encodeUnicode(site_title);
             site_title = site_title.trim();
         }
         return site_title;

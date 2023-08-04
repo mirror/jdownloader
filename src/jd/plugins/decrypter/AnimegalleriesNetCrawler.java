@@ -16,33 +16,39 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "animegalleries.net" }, urls = { "https?://(?:www\\.)?animegalleries\\.net/album/\\d+" })
-public class AnimegalleriesNet extends PluginForDecrypt {
-    public AnimegalleriesNet(PluginWrapper wrapper) {
+public class AnimegalleriesNetCrawler extends PluginForDecrypt {
+    public AnimegalleriesNetCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        getPage(parameter);
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.IMAGE_HOST };
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
+        br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex("\">([^<>\"]+)</h2>").getMatch(0);
         if (fpName == null) {
@@ -51,51 +57,46 @@ public class AnimegalleriesNet extends PluginForDecrypt {
         }
         String next = null;
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
+        fp.setName(Encoding.htmlDecode(fpName).trim());
+        fp.addLinks(ret);
+        int page = 0;
+        final HashSet<String> dupes = new HashSet<String>();
         do {
-            if (this.isAbort()) {
-                return decryptedLinks;
-            }
+            page++;
             if (next != null) {
-                getPage(next);
+                br.getPage(next);
             }
             final String[] linkids = br.getRegex("\"/img/(\\d+)\"").getColumn(0);
             if (linkids == null || linkids.length == 0) {
                 break;
             }
-            for (String linkid : linkids) {
-                final String singleLink = "http://www.animegalleries.net/img/" + linkid;
+            int newItemsOnThisPage = 0;
+            for (final String contentID : linkids) {
+                if (!dupes.add(contentID)) {
+                    continue;
+                }
+                final String singleLink = "http://www.animegalleries.net/img/" + contentID;
                 final DownloadLink dl = createDownloadlink(singleLink);
                 dl._setFilePackage(fp);
                 dl.setAvailable(true);
-                dl.setName(linkid + ".jpg");
-                decryptedLinks.add(dl);
+                dl.setName(contentID + ".jpg");
+                ret.add(dl);
                 distribute(dl);
+                newItemsOnThisPage++;
             }
+            logger.info("Crawled page" + page + "| New items on this page: " + newItemsOnThisPage + " | Total so far: " + ret.size());
             next = this.br.getRegex("class=\"tableb_compact\".*?class=\"navmenu\"><a href=\"(/album/\\d+/page/\\d+)\"").getMatch(0);
-        } while (next != null);
-        return decryptedLinks;
-    }
-
-    private PluginForHost plugin = null;
-
-    private void getPage(final String parameter) throws Exception {
-        getPage(br, parameter);
-    }
-
-    private void getPage(final Browser br, final String parameter) throws Exception {
-        loadPlugin();
-        ((jd.plugins.hoster.AnimegalleriesNet) plugin).setBrowser(br);
-        ((jd.plugins.hoster.AnimegalleriesNet) plugin).getPage(parameter);
-    }
-
-    public void loadPlugin() {
-        if (plugin == null) {
-            plugin = JDUtilities.getPluginForHost("animegalleries.net");
-            if (plugin == null) {
-                throw new IllegalStateException(getHost() + " hoster plugin not found!");
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                return ret;
+            } else if (newItemsOnThisPage == 0) {
+                logger.info("Stopping becaused: Failed to find any new items on current page: " + page);
+                break;
+            } else if (next == null) {
+                logger.info("Stopping because: Failed to find next page -> Reached end?");
+                break;
             }
-        }
+        } while (next != null);
+        return ret;
     }
 }
