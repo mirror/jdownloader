@@ -22,7 +22,6 @@ import java.util.Map;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -200,16 +199,14 @@ public class MediafireComFolder extends PluginForDecrypt {
                 final ArrayList<DownloadLink> filearray = new ArrayList<DownloadLink>();
                 int page = 1;
                 fileFolderQuery.addAndReplace("content_type", "files");
-                do {
+                filePagination: do {
                     fileFolderQuery.addAndReplace("chunk", Integer.toString(page));
                     final Map<String, Object> resp = hosterplugin.apiCommand(param.getDownloadLink(), account, "folder/get_content.php", fileFolderQuery);
                     final Map<String, Object> folder_content = (Map<String, Object>) resp.get("folder_content");
                     final List<Map<String, Object>> files = (List<Map<String, Object>>) folder_content.get("files");
                     for (final Map<String, Object> file : files) {
-                        final String url = JavaScriptEngineFactory.walkJson(file, "links/normal_download").toString();
-                        final DownloadLink link = createDownloadlink(url);
+                        final DownloadLink link = createSingleFileDownloadlink(file.get("quickkey").toString(), (String) file.get("filename"));
                         MediafireCom.parseFileInfo(link, file);
-                        link.setProperty(MediafireCom.PROPERTY_FILE_ID, file.get("quickkey"));
                         link.setRelativeDownloadFolderPath(subFolderPath);
                         link._setFilePackage(fp);
                         filearray.add(link);
@@ -218,10 +215,10 @@ public class MediafireComFolder extends PluginForDecrypt {
                     logger.info("Crawled files page " + page + " | Found files: " + filearray.size() + "/" + filesNum);
                     if (this.isAbort()) {
                         logger.info("Stopping because: Aborted by user");
-                        break;
+                        break filePagination;
                     } else if (!"yes".equalsIgnoreCase(folder_content.get("more_chunks").toString())) {
-                        logger.info("Stopping because: Reached last page");
-                        break;
+                        logger.info("Stopping file pagination because: Reached last page");
+                        break filePagination;
                     } else {
                         page++;
                     }
@@ -233,7 +230,7 @@ public class MediafireComFolder extends PluginForDecrypt {
                 final ArrayList<DownloadLink> folderarray = new ArrayList<DownloadLink>();
                 int page = 1;
                 fileFolderQuery.addAndReplace("content_type", "folders");
-                do {
+                folderPagination: do {
                     fileFolderQuery.addAndReplace("chunk", Integer.toString(page));
                     final Map<String, Object> resp = hosterplugin.apiCommand(param.getDownloadLink(), account, "folder/get_content.php", fileFolderQuery);
                     final Map<String, Object> folder_content = (Map<String, Object>) resp.get("folder_content");
@@ -247,10 +244,10 @@ public class MediafireComFolder extends PluginForDecrypt {
                     logger.info("Crawled folders page " + page + " | Found subfolders: " + folderarray.size() + "/" + foldersNum);
                     if (this.isAbort()) {
                         logger.info("Stopping because: Aborted by user");
-                        break;
+                        break folderPagination;
                     } else if (!"yes".equalsIgnoreCase(folder_content.get("more_chunks").toString())) {
-                        logger.info("Stopping because: Reached last page");
-                        break;
+                        logger.info("Stopping folder pagination because: Reached last page");
+                        break folderPagination;
                     } else {
                         page++;
                     }

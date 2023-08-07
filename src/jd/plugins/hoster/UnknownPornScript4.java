@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -25,10 +26,12 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -83,14 +86,27 @@ public class UnknownPornScript4 extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         dllink = null;
+        final String titleFromURL;
+        if (link.getPluginPatternMatcher().matches(type_1)) {
+            titleFromURL = new Regex(link.getPluginPatternMatcher(), type_1).getMatch(0).replace("-", " ");
+        } else {
+            /* E.g. homemoviestube.com */
+            titleFromURL = new Regex(link.getPluginPatternMatcher(), type_2).getMatch(1).replace("-", " ");
+        }
+        if (!link.isNameSet()) {
+            link.setName(titleFromURL + default_Extension);
+        }
         final String host = link.getHost();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().endsWith("/404.php")) {
             /* E.g. 404.php: http://www.bondagebox.com/ */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -98,19 +114,11 @@ public class UnknownPornScript4 extends PluginForHost {
             /* E.g. http://www.watchgfporn.com/videos/she-fucked-just-about-all-of-us-that-night-9332.html */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String url_filename = null;
-        if (link.getDownloadURL().matches(type_1)) {
-            url_filename = new Regex(link.getPluginPatternMatcher(), type_1).getMatch(0).replace("-", " ");
-        } else {
-            /* E.g. homemoviestube.com */
-            url_filename = new Regex(link.getDownloadURL(), type_2).getMatch(1).replace("-", " ");
+        String title = regexStandardTitleWithHost(host);
+        if (title == null) {
+            title = titleFromURL;
         }
-        String filename = regexStandardTitleWithHost(host);
-        if (filename == null) {
-            filename = url_filename;
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        filename = encodeUnicode(filename);
+        title = Encoding.htmlDecode(title).trim();
         String flashvars = this.br.getRegex("\"flashvars\"\\s*,\\s*\"([^<>\"]*?)\"").getMatch(0);
         if (flashvars == null) {
             /* E.g. homemoviestube.com */
@@ -135,28 +143,25 @@ public class UnknownPornScript4 extends PluginForHost {
                 dllink = br.getURL(src).toString();
             }
         }
-        String ext = default_Extension;
-        if (dllink != null && dllink.startsWith("http")) {
-            filename = filename.trim();
-            ext = getFileNameExtensionFromString(dllink, default_Extension);
-            /* Set final filename! */
-            link.setFinalFileName(filename + ext);
+        if (title != null) {
+            link.setName(title + default_Extension);
+        }
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
-            final Browser brc = new Browser();
-            brc.setFollowRedirects(true);
             try {
-                con = brc.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
                 }
             } finally {
                 try {
                     con.disconnect();
-                } catch (Throwable e) {
+                } catch (final Throwable e) {
                 }
             }
         }
@@ -171,7 +176,8 @@ public class UnknownPornScript4 extends PluginForHost {
         }
     }
 
-    private boolean isResumeSupported() {
+    @Override
+    public boolean isResumeable(DownloadLink link, final Account account) {
         if ("homemoviestube.com".equals(getHost())) {
             return false;
         } else {
@@ -181,24 +187,26 @@ public class UnknownPornScript4 extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (dllink == null) {
+        requestFileInformation(link, true);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* 99% use http - e.g. homemoviestube.com */
-        link.setFinalFileName(link.getName());
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeSupported(), getMaxChunks());
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks());
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
-        dl.startDownload();
     }
 
     private String regexStandardTitleWithHost(final String host) {

@@ -597,7 +597,7 @@ public class UpToBoxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hot linking is not allowed on Uptobox", 3 * 60 * 1000l);
         } else if (br.containsHTML("(?i)>\\s*This file is temporarily unavailable, please retry")) {
             errorFileTemporarilyUnavailable();
-        } else if (br.containsHTML("id='ban'")) {
+        } else if (br.containsHTML("id=('|\")ban('|\")")) {
             /*
              * 2020-06-12: E.g. "<h1>This page is not allowed in the US</h1>",
              * "We're sorry but it appears your IP comes from the US so you're not allowed to download or stream.",
