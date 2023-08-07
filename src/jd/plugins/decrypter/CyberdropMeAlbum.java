@@ -178,7 +178,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return filename;
     }
 
-    private String parseDirectURL(Browser br, String html) throws IOException {
+    private String parseDirectURL(final Browser br, final String html) throws IOException {
         String directurl = new Regex(html, "href\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
         if (directurl == null) {
             directurl = new Regex(html, "href\\s*=\\s*\"(/(?:d|v)/[^\"]+)\"").getMatch(0);
@@ -329,7 +329,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             if (ret.isEmpty()) {
                 /* Look for single directurl */
                 /* 2023-07-06: E.g. bunkr.su/v/fileID */
-                final String directurl = br.getRegex("link\\.href\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
+                final String directurl = findDirectURL(br);
                 final String filesize = br.getRegex("class=\"[^>]*text[^>]*\"[^>]*>\\s*([0-9\\.]+\\s+[MKG]B)").getMatch(0);
                 final String fileExtensionFromURL = filesize != null ? Plugin.getFileNameExtensionFromURL(directurl) : null;
                 /* Check if URL we got looks like a direct-URL and only then add it. */
@@ -359,6 +359,18 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return ret;
     }
 
+    public static String findDirectURL(final Browser br) {
+        String directurl = br.getRegex("link\\.href\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
+        if (directurl == null) {
+            directurl = br.getRegex("(?i)href=\"(https?://[^\"]+)[^>]*>\\s*Download").getMatch(0);
+            if (directurl == null) {
+                /* Video stream (URL is usually the same as downloadurl) */
+                directurl = br.getRegex("<source src=\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
+            }
+        }
+        return directurl;
+    }
+
     /**
      * Corrects given URL. </br>
      * Returns null if given URL is not a known stream/cdn URL. </br>
@@ -368,7 +380,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         String host = getHost();
         final Regex streamregex = new Regex(url, TYPE_STREAM);
         final Regex cdnregex = new Regex(url, TYPE_CDN);
-        final boolean allowCorrectionOfURLs = true;
+        final boolean allowCorrectionOfURLs = false;
         if (streamregex.matches()) {
             /* cdn can be empty(!) -> stream.bunkr.is -> media-files.bunkr.is */
             if (MAIN_BUNKR_DOMAIN.equals(host)) {
