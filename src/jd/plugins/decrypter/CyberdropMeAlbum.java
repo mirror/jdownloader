@@ -25,16 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -53,7 +43,18 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.CyberdropMe;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CyberdropMeAlbum extends PluginForDecrypt {
@@ -95,25 +96,25 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/a/[A-Za-z0-9]+";
-            regex += "|https?://(files\\.)?" + buildHostsPatternPart(domains) + "/(?:v|d)/[^/]+\\." + EXTENSIONS;
-            regex += "|https?://(files\\.)?" + buildHostsPatternPart(domains) + "/v/[A-Za-z0-9]+";
-            regex += "|https?://stream\\d*\\." + buildHostsPatternPart(domains) + "/(?:v|d)/[^/]+\\." + EXTENSIONS;
-            regex += "|https?://cdn\\d*\\." + buildHostsPatternPart(domains) + "/[^/]+\\." + EXTENSIONS;
-            regex += "|https?://media-files\\d*\\." + buildHostsPatternPart(domains) + "/[^/]+\\." + EXTENSIONS;
-            regex += "|https?://fs-\\d+\\." + buildHostsPatternPart(domains) + "/.+\\." + EXTENSIONS;
+            regex += "|https?://(files\\.)?" + buildHostsPatternPart(domains) + "/(?:v|d)/[^/]+\\." + EXTENSIONS;// TYPE_SINGLE_FILE
+            regex += "|https?://(files\\.)?" + buildHostsPatternPart(domains) + "/v/[A-Za-z0-9]+";// TYPE_SINGLE_FILE_WITHOUT_EXT
+            regex += "|https?://stream\\d*\\." + buildHostsPatternPart(domains) + "/(?:v|d)/[^/]+\\." + EXTENSIONS;// TYPE_STREAM
+            regex += "|https?://c(?:dn)?\\d*\\." + buildHostsPatternPart(domains) + "/[^/]+\\." + EXTENSIONS;// TYPE_CDN
+            regex += "|https?://media-files\\d*\\." + buildHostsPatternPart(domains) + "/[^/]+\\." + EXTENSIONS;// TYPE_MEDIA_FILES
+            regex += "|https?://fs-\\d+\\." + buildHostsPatternPart(domains) + "/.+\\." + EXTENSIONS;// TYPE_FS
             ret.add(regex);
         }
         return ret.toArray(new String[0]);
     }
 
-    public static final String TYPE_ALBUM                   = "(?i)https?://[^/]+/a/([A-Za-z0-9]+)";                                 // album
+    public static final String TYPE_ALBUM                   = "(?i)https?://[^/]+/a/([A-Za-z0-9]+)";                                // album
     /* 2023-03-24: bunkr, files subdomain seems outdated? */
     public static final String TYPE_SINGLE_FILE             = "(?i)https?://(files\\.)?[^/]+/(?:v|d)/([^/]*?\\." + EXTENSIONS + ")";
     public static final String TYPE_SINGLE_FILE_WITHOUT_EXT = "(?i)https?://(files\\.)?[^/]+/v/([A-Za-z0-9]+)";
     public static final String TYPE_STREAM                  = "(?i)https?://stream(\\d*)\\.[^/]+/(?:v|d)/(.+\\." + EXTENSIONS + ")"; // bunkr
-    public static final String TYPE_CDN                     = "(?i)https?://cdn(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";            // bunkr
-    public static final String TYPE_FS                      = "(?i)https?://fs-(\\d+)\\.[^/]+/(.+\\." + EXTENSIONS + ")";            // cyberdrop
-    public static final String TYPE_MEDIA_FILES             = "(?i)https?://media-files(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";    // bunkr
+    public static final String TYPE_CDN                     = "(?i)https?://c(?:dn)?(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";      // bunkr
+    public static final String TYPE_FS                      = "(?i)https?://fs-(\\d+)\\.[^/]+/(.+\\." + EXTENSIONS + ")";           // cyberdrop
+    public static final String TYPE_MEDIA_FILES             = "(?i)https?://media-files(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")";   // bunkr
     private PluginForHost      plugin                       = null;
 
     private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, String directurl, String filename, final String filesizeBytes, final String filesize) throws Exception {
@@ -121,7 +122,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             // bunkr, html encoding in filename and directurl
             filename = Encoding.htmlOnlyDecode(filename);
             directurl = Encoding.htmlOnlyDecode(directurl);
-            final String correctedDirectURL = correctDirecturl(directurl);
+            final String correctedDirectURL = isSingleMediaURL(directurl);
             final DownloadLink dl;
             if (correctedDirectURL != null) {
                 dl = this.createDownloadlink(correctedDirectURL);
@@ -166,7 +167,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         }
     }
 
-    private String parseFilename(Browser br, String html) {
+    private String parseMediaFilename(Browser br, String html) {
         String filename = new Regex(html, "target\\s*=\\s*\"_blank\"\\s*title\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
         if (filename == null) {
             // bunkr.is
@@ -178,7 +179,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return filename;
     }
 
-    private String parseDirectURL(final Browser br, final String html) throws IOException {
+    private String parseMediaURL(final Browser br, final String html) throws IOException {
         String directurl = new Regex(html, "href\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
         if (directurl == null) {
             directurl = new Regex(html, "href\\s*=\\s*\"(/(?:d|v)/[^\"]+)\"").getMatch(0);
@@ -191,7 +192,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String correctedDirectURL = correctDirecturl(param.getCryptedUrl());
+        final String correctedDirectURL = isSingleMediaURL(param.getCryptedUrl());
         if (correctedDirectURL != null) {
             /* Direct downloadable URL. */
             add(ret, null, param.getCryptedUrl(), null, null, null);
@@ -306,8 +307,8 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             }
             final String[] htmls = br.getRegex("<div class=\"image-container column\"[^>]*>(.*?)/p>\\s*</div>").getColumn(0);
             for (final String html : htmls) {
-                final String filename = parseFilename(br, html);
-                final String directurl = parseDirectURL(br, html);
+                final String filename = parseMediaFilename(br, html);
+                final String directurl = parseMediaURL(br, html);
                 if (directurl != null) {
                     final String filesizeBytes = new Regex(html, "class=\"(?:is-hidden)?\\s*file-size\"[^>]*>\\s*(\\d+) B").getMatch(0);
                     final String filesize = new Regex(html, "class=\"(?:is-hidden)?\\s*file-size\"[^>]*>\\s*([0-9\\.]+\\s+[MKG]B)").getMatch(0);
@@ -317,8 +318,8 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             /* 2023-02-13: bunkr.su */
             final String[] htmls2 = br.getRegex("<div class=\"grid-images_box rounded-lg[^\"]+\"(.*?)</div>\\s+</div>").getColumn(0);
             for (final String html : htmls2) {
-                final String filename = parseFilename(br, html);
-                final String directurl = parseDirectURL(br, html);
+                final String filename = parseMediaFilename(br, html);
+                final String directurl = parseMediaURL(br, html);
                 if (directurl != null) {
                     final String filesize = new Regex(html, "<p class=\"mt-0 dark:text-white-900\"[^>]*>\\s*([^<]*?)\\s*</p>").getMatch(0);
                     add(ret, dups, directurl, filename, null, filesize);
@@ -329,7 +330,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             if (ret.isEmpty()) {
                 /* Look for single directurl */
                 /* 2023-07-06: E.g. bunkr.su/v/fileID */
-                final String directurl = findDirectURL(br);
+                final String directurl = CyberdropMe.findDirectURL(this, br);
                 final String filesize = br.getRegex("class=\"[^>]*text[^>]*\"[^>]*>\\s*([0-9\\.]+\\s+[MKG]B)").getMatch(0);
                 final String fileExtensionFromURL = filesize != null ? Plugin.getFileNameExtensionFromURL(directurl) : null;
                 /* Check if URL we got looks like a direct-URL and only then add it. */
@@ -359,49 +360,19 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return ret;
     }
 
-    public static String findDirectURL(final Browser br) {
-        String directurl = br.getRegex("link\\.href\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
-        if (directurl == null) {
-            directurl = br.getRegex("(?i)href=\"(https?://[^\"]+)[^>]*>\\s*Download").getMatch(0);
-            if (directurl == null) {
-                /* Video stream (URL is usually the same as downloadurl) */
-                directurl = br.getRegex("<source src=\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
-            }
-        }
-        return directurl;
-    }
-
     /**
-     * Corrects given URL. </br>
-     * Returns null if given URL is not a known stream/cdn URL. </br>
-     * 2022-03-14: Especially required for bunkr.is video-URLs.
+     * Corrects given URL. </br> Returns null if given URL is not a known stream/cdn URL. </br> 2022-03-14: Especially required for bunkr.is
+     * video-URLs.
      */
-    private String correctDirecturl(final String url) {
-        String host = getHost();
-        final Regex streamregex = new Regex(url, TYPE_STREAM);
-        final Regex cdnregex = new Regex(url, TYPE_CDN);
-        final boolean allowCorrectionOfURLs = false;
-        if (streamregex.matches()) {
+    private String isSingleMediaURL(final String url) {
+        if (url == null) {
+            return null;
+        } else if (url.matches(TYPE_STREAM)) {
             /* cdn can be empty(!) -> stream.bunkr.is -> media-files.bunkr.is */
-            if (MAIN_BUNKR_DOMAIN.equals(host)) {
-                /* 2023-03-24: looks like media/cdn domain is still bunkr.ru */
-                host = "bunkr.ru";
-            }
-            if (allowCorrectionOfURLs) {
-                return "https://media-files" + StringUtils.valueOrEmpty(streamregex.getMatch(0)) + "." + host + "/" + streamregex.getMatch(1);
-            } else {
-                return url;
-            }
-        } else if (cdnregex.matches()) {
+            return url;
+        } else if (url.matches(TYPE_CDN)) {
             /* cdn can be empty(!) -> cdn.bunkr.is -> media-files.bunkr.is */
-            if (MAIN_BUNKR_DOMAIN.equals(host)) { /* 2023-03-24: looks like media/cdn domain is still bunkr.ru */
-                host = "bunkr.ru";
-            }
-            if (allowCorrectionOfURLs) {
-                return "https://media-files" + StringUtils.valueOrEmpty(cdnregex.getMatch(0)) + "." + host + "/" + cdnregex.getMatch(1);
-            } else {
-                return url;
-            }
+            return url;
         } else if (url.matches(TYPE_FS)) {
             // cyberdrop
             return url;

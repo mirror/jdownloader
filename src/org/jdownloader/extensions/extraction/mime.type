@@ -56,5 +56,7 @@ FLV:::464c56.*:::Flv Video:::.((.*\.flv)|(.*\.mp4))
 CSO:::4349534f.*:::Compressed ISO Image:::.+\.cso
 RMF:::2E524D46.*:::RealMediaFile:::.+\.rmvb
 FLAC:::664c6143.*:::FLAC:::.+\.flac
+WAV:::52494646[a-f0-9]{8}57415645.*:::WAVE:::.+\.wav
+TIF:::(49492a00|4d4d002a).*:::TIFF:::.+\.(tiff|tif)
 ISZ:::49735A.*:::ISZ:::.+\.isz
 MOV:::0000002066747970.*:::MOV:::.((.*\.mov)|(.*\.flv))

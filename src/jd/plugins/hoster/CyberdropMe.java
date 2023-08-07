@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.http.Browser;
@@ -22,6 +18,10 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CyberdropMeAlbum;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { CyberdropMeAlbum.class })
@@ -129,12 +129,10 @@ public class CyberdropMe extends PluginForHost {
     }
 
     private String getContentURL(final DownloadLink link) {
-        if (false && CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(getHost())) {
+        if (CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(getHost())) {
             final String url = link.getPluginPatternMatcher();
-            /* 2022-11-10: fs-(03|04|05|06) are offline, rewrite to fs-01, fs-02 redirects to fs-01 */
-            /* 2023-03-24: looks like fs-(03|04|05|06) are working again */
-            final String newUrl = url.replaceFirst("://fs-(03|04|05|06)", "://fs-01");
-            return newUrl;
+            final String newURL = url.replaceFirst("cyberdrop\\.[a-z]+/", CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN + "/");
+            return newURL;
         } else {
             return link.getPluginPatternMatcher();
         }
@@ -159,6 +157,18 @@ public class CyberdropMe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
+    }
+
+    public static String findDirectURL(final Plugin plugin, final Browser br) {
+        String directurl = br.getRegex("link\\.href\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
+        if (directurl == null) {
+            directurl = br.getRegex("(?i)href\\s*=\\s*\"(https?://[^\"]+)[^>]*>\\s*Download").getMatch(0);
+            if (directurl == null) {
+                /* Video stream (URL is usually the same as downloadurl) */
+                directurl = br.getRegex("<source src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
+            }
+        }
+        return directurl;
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
@@ -186,7 +196,7 @@ public class CyberdropMe extends PluginForHost {
             } catch (final PluginException e) {
                 /* E.g. cdn.bunkr.ru -> bunkr.su/v/... -> Try to find fresh directurl */
                 logger.info("Directurl did not lead to downloadable content -> Looking for freh directurl");
-                final String alternativeFreshDirecturl = CyberdropMeAlbum.findDirectURL(br);
+                final String alternativeFreshDirecturl = findDirectURL(this, br);
                 if (alternativeFreshDirecturl == null) {
                     logger.info("Failed to find fresh directurl");
                     throw e;
