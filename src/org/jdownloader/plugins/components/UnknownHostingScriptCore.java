@@ -17,6 +17,9 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensio
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
+import org.jdownloader.plugins.components.config.AnonFilesComConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -159,6 +162,25 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         return -1;
     }
 
+    /** Enabled/Disables download of files that are serverside flagged as "harmful". */
+    private boolean allowDownloadOfFilesFlaggedAsHarmful() {
+        final Class<? extends AnonFilesComConfig> cfgO = getThisConfigInterface();
+        if (cfgO != null) {
+            return PluginJsonConfig.get(cfgO).isAllowDownloadOfFilesFlaggedAsDangerous();
+        } else {
+            return false;
+        }
+    }
+
+    protected Class<? extends AnonFilesComConfig> getThisConfigInterface() {
+        final Class<? extends PluginConfigInterface> configInterface = this.getConfigInterface();
+        if (configInterface != null && AnonFilesComConfig.class.isAssignableFrom(configInterface)) {
+            return (Class<? extends AnonFilesComConfig>) configInterface;
+        } else {
+            return null;
+        }
+    }
+
     /** Returns direct-link-property-String for current download mode based on account availibility and account type. */
     protected static String getDownloadModeDirectlinkProperty(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
@@ -215,8 +237,13 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
      * On download error (typically error 502), this will allow to try other video qualities as fallback instead and download the best
      * quality available if download of the original file fails.
      */
-    protected boolean allowLowerQualityStreamingFallback() {
-        return false;
+    private boolean allowLowerQualityStreamingFallback() {
+        final Class<? extends AnonFilesComConfig> cfgO = getThisConfigInterface();
+        if (cfgO != null) {
+            return PluginJsonConfig.get(cfgO).isAllowFallbackToLowerQuality();
+        } else {
+            return false;
+        }
     }
 
     /** Returns empty StringArray for filename, filesize, [more information in the future?] */
@@ -426,8 +453,8 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
-            if (br.containsHTML("(?i)<strong>\\s*WARNING! YOU ARE TRYING TO DOWNLOAD A POTENTIAL VIRUS")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Download blocked: File might be harmful");
+            if (!allowDownloadOfFilesFlaggedAsHarmful() && br.containsHTML("(?i)<strong>\\s*WARNING! YOU ARE TRYING TO DOWNLOAD A POTENTIAL VIRUS")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Download blocked: File might be harmful! You can enable download of potentially harmful files under Settings -> Plugins -> " + this.getHost());
             }
             /* Example of a website which supports videostreaming: bayfiles.com */
             getDllink(link, account);
@@ -462,7 +489,7 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
              * 2020-01-07: anonfile.com: E.g. if contents of archive are recognized as potential harmful website by website the way to
              * download is different
              */
-            dllink = br.getRegex("<input type=\"text\" class=\"form-control\" value=\"(http[^<>\"]+)\"").getMatch(0);
+            dllink = br.getRegex("<input type=\"text\" class=\"form-control\"[^>]*value=\"(http[^<>\"]+)\"").getMatch(0);
         }
         /* TODO: Check if the handling below is still needed */
         // if (StringUtils.isEmpty(dllink)) {
@@ -670,8 +697,13 @@ public class UnknownHostingScriptCore extends antiDDoSForHost {
         }
     }
 
-    protected String getPreferredCDNNode() {
-        return null;
+    private String getPreferredCDNNode() {
+        final Class<? extends AnonFilesComConfig> cfgO = getThisConfigInterface();
+        if (cfgO != null) {
+            return PluginJsonConfig.get(cfgO).getPreferredCdnNode();
+        } else {
+            return null;
+        }
     }
 
     protected String getProtocol() {

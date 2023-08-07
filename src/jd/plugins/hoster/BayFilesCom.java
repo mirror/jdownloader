@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.jdownloader.plugins.components.UnknownHostingScriptCore;
 import org.jdownloader.plugins.components.config.AnonFilesComConfigBayfiles;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -118,15 +117,5 @@ public class BayFilesCom extends UnknownHostingScriptCore {
     @Override
     public Class<? extends AnonFilesComConfigBayfiles> getConfigInterface() {
         return AnonFilesComConfigBayfiles.class;
-    }
-
-    @Override
-    protected boolean allowLowerQualityStreamingFallback() {
-        return PluginJsonConfig.get(this.getConfigInterface()).isAllowFallbackToLowerQuality();
-    }
-
-    @Override
-    protected String getPreferredCDNNode() {
-        return PluginJsonConfig.get(this.getConfigInterface()).getPreferredCdnNode();
     }
 }

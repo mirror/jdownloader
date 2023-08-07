@@ -120,14 +120,4 @@ public class AnonFilesCom extends UnknownHostingScriptCore {
     public Class<? extends AnonFilesComConfig> getConfigInterface() {
         return AnonFilesComConfig.class;
     }
-
-    @Override
-    protected boolean allowLowerQualityStreamingFallback() {
-        return PluginJsonConfig.get(this.getConfigInterface()).isAllowFallbackToLowerQuality();
-    }
-
-    @Override
-    protected String getPreferredCDNNode() {
-        return PluginJsonConfig.get(this.getConfigInterface()).getPreferredCdnNode();
-    }
 }

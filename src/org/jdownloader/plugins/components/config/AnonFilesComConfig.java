@@ -12,10 +12,11 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "anonfiles.com", type = Type.HOSTER)
 public interface AnonFilesComConfig extends PluginConfigInterface {
-    final String                                       text_MaxSimultaneousFreeDownloads = "Set max simultaneous free downloads";
-    final String                                       text_AllowFallbackToLowerQuality  = "Allow fallback to lower quality video download if download of original quality fails?";
-    final String                                       text_PreferredCdnNode             = "Define preferred CDN node e.g. 'cdn-104.anonfiles.com'";
-    public static final AnonFilesComConfig.TRANSLATION TRANSLATION                       = new TRANSLATION();
+    final String                                       text_MaxSimultaneousFreeDownloads           = "Set max simultaneous free downloads";
+    final String                                       text_AllowFallbackToLowerQuality            = "Allow fallback to lower quality video download if download of original quality fails?";
+    final String                                       text_PreferredCdnNode                       = "Define preferred CDN node e.g. 'cdn-104.anonfiles.com'";
+    final String                                       text_AllowDownloadOfFilesFlaggedAsDangerous = "Allow downloads of files flagged as 'dangerous'?";
+    public static final AnonFilesComConfig.TRANSLATION TRANSLATION                                 = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getMaxSimultaneousFreeDownloads_label() {
@@ -28,6 +29,10 @@ public interface AnonFilesComConfig extends PluginConfigInterface {
 
         public String getPreferredCdnNode_label() {
             return text_PreferredCdnNode;
+        }
+
+        public String getAllowDownloadOfFilesFlaggedAsDangerous_label() {
+            return text_AllowDownloadOfFilesFlaggedAsDangerous;
         }
     }
 
@@ -54,4 +59,12 @@ public interface AnonFilesComConfig extends PluginConfigInterface {
     String getPreferredCdnNode();
 
     void setPreferredCdnNode(final String str);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_AllowDownloadOfFilesFlaggedAsDangerous)
+    @Order(40)
+    boolean isAllowDownloadOfFilesFlaggedAsDangerous();
+
+    void setAllowDownloadOfFilesFlaggedAsDangerous(boolean b);
 }
