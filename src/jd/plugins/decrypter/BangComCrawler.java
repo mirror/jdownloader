@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.BangComConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -38,6 +40,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -48,6 +51,11 @@ import jd.plugins.hoster.BangCom;
 public class BangComCrawler extends PluginForDecrypt {
     public BangComCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     private static List<String[]> getPluginDomains() {
@@ -75,9 +83,9 @@ public class BangComCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private final String PATTERN_VIDEO          = "https?://[^/]+/video/([\\w\\-]+)/([a-z0-9\\-]+)";
-    private final String PATTERN_VIDEO_DOWNLOAD = "https?://[^/]+/video/download/([a-z0-9\\-]+)";
-    private final String PATTERN_SET            = "https?://[^/]+/dvd/([\\w\\-]+)/([a-z0-9\\-]+)";
+    private final String PATTERN_VIDEO          = "(?i)https?://[^/]+/video/([\\w\\-]+)/([a-z0-9\\-]+)";
+    private final String PATTERN_VIDEO_DOWNLOAD = "(?i)https?://[^/]+/video/download/([a-z0-9\\-]+)";
+    private final String PATTERN_SET            = "(?i)https?://[^/]+/dvd/([\\w\\-]+)/([a-z0-9\\-]+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
@@ -89,8 +97,8 @@ public class BangComCrawler extends PluginForDecrypt {
     }
 
     /** Crawls set of multiple videos. */
-    public <QualitySelectionMode> ArrayList<DownloadLink> crawlSet(final String url, final Account account) throws Exception {
-        final Regex seturl = new Regex(url, PATTERN_SET);
+    public <QualitySelectionMode> ArrayList<DownloadLink> crawlSet(final String contenturl, final Account account) throws Exception {
+        final Regex seturl = new Regex(contenturl, PATTERN_SET);
         final String setSlug = seturl.getMatch(1);
         final BangComConfig cfg = PluginJsonConfig.get(BangComConfig.class);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -100,9 +108,9 @@ public class BangComCrawler extends PluginForDecrypt {
         }
         if (account != null) {
             final BangCom plg = (BangCom) this.getNewPluginForHostInstance(this.getHost());
-            plg.login(account, true, url);
+            plg.login(account, true, contenturl);
         } else {
-            br.getPage(url);
+            br.getPage(contenturl);
         }
         final String setTitle = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
@@ -114,14 +122,16 @@ public class BangComCrawler extends PluginForDecrypt {
         }
         /* Allow all items of this set to go into one package. */
         fp.setAllowInheritance(true);
-        final String[] videourls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
-        for (final String videourl : videourls) {
-            if (videourl.matches(PATTERN_VIDEO)) {
-                final DownloadLink video = this.createDownloadlink(videourl);
+        final HashSet<String> dupes = new HashSet<String>();
+        final String[] allURLs = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        for (final String url : allURLs) {
+            if (url.matches(PATTERN_VIDEO) && dupes.add(url)) {
+                final DownloadLink video = this.createDownloadlink(url);
                 video._setFilePackage(fp);
                 ret.add(video);
             }
         }
+        logger.info("Number of items found in set: " + ret.size());
         return ret;
     }
 
@@ -208,7 +218,11 @@ public class BangComCrawler extends PluginForDecrypt {
                 logger.warning("Trick to get higher thumbnail quality was unsuccessful");
                 finalThumbnailURL = thumbnailUrl;
             }
+            final String filename = Plugin.getFileNameFromURL(finalThumbnailURL);
             final DownloadLink thumb = new DownloadLink(plg, null, this.getHost(), finalThumbnailURL, true);
+            if (filename != null) {
+                thumb.setName(filename);
+            }
             thumb.setProperty(BangCom.PROPERTY_QUALITY_IDENTIFIER, "THUMBNAIL");
             ret.add(thumb);
         }
@@ -249,17 +263,25 @@ public class BangComCrawler extends PluginForDecrypt {
             for (final Map<String, Object> file : files) {
                 final String videoDownloadurl = file.get("url").toString();
                 final Number fileSizeO = (Number) file.get("fileSize");
-                final String pixelHeightStr = new Regex(videoDownloadurl, "(\\d+)p\\.mp4").getMatch(0);
+                String pixelHeightStr = new Regex(videoDownloadurl, "(\\d+)p\\.mp4").getMatch(0);
                 if (pixelHeightStr == null) {
-                    logger.warning("Unsupported video format/url: " + videoDownloadurl);
-                    continue;
+                    pixelHeightStr = new Regex(videoDownloadurl, "\\d+x(\\d+)-\\d+k\\.").getMatch(0);
                 }
-                final int pixelHeight = Integer.parseInt(pixelHeightStr);
+                final int pixelHeight;
+                if (pixelHeightStr != null) {
+                    pixelHeight = Integer.parseInt(pixelHeightStr);
+                } else {
+                    pixelHeight = -1;
+                }
                 final DownloadLink video = new DownloadLink(plg, null, this.getHost(), videoDownloadurl, true);
                 if (fileSizeO != null) {
                     video.setDownloadSize(fileSizeO.longValue());
                 }
-                video.setProperty(BangCom.PROPERTY_QUALITY_IDENTIFIER, pixelHeightStr + "p");
+                if (files.size() == 1) {
+                    video.setProperty(BangCom.PROPERTY_QUALITY_IDENTIFIER, BangCom.QUALITY_IDENTIFIER_SINGLEVIDEO);
+                } else {
+                    video.setProperty(BangCom.PROPERTY_QUALITY_IDENTIFIER, pixelHeightStr + "p");
+                }
                 if (selectedVideoQualities.contains(pixelHeightStr + "p")) {
                     selectedVideoItems.add(video);
                     /* Determine best quality within selected qualities */

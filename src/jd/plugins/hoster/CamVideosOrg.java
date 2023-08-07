@@ -55,6 +55,7 @@ public class CamVideosOrg extends KernelVideoSharingComV2 {
 
     @Override
     protected boolean preferTitleHTML() {
+        /* 2023-08-07: Plenty of their URLs do not contain usable titles for filenames -> Prefer titles from HTML. */
         return true;
     }
 }

@@ -25,6 +25,7 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.hoster.UnknownPornScript1;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UnknownPornScript1Crawler extends PornEmbedParser {
@@ -69,7 +70,7 @@ public class UnknownPornScript1Crawler extends PornEmbedParser {
 
     @Override
     protected boolean isOffline(final Browser br) {
-        return jd.plugins.hoster.UnknownPornScript1.isOffline(this.br);
+        return UnknownPornScript1.isOffline(this.br);
     }
 
     @Override

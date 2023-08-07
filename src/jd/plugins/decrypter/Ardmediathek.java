@@ -244,18 +244,6 @@ public class Ardmediathek extends PluginForDecrypt {
         }
     }
 
-    /**
-     * Find subtitle URL inside xml String
-     */
-    private String getXMLSubtitleURL(final Browser xmlBR) throws IOException {
-        final String subtitleURL = getXML(xmlBR.toString(), "videoSubtitleUrl");
-        if (subtitleURL != null) {
-            return xmlBR.getURL(subtitleURL).toString();
-        } else {
-            return null;
-        }
-    }
-
     private String getHlsToHttpURLFormat(final String hlsMaster, final String exampleHTTPURL) {
         final Regex regex_hls = new Regex(hlsMaster, ".+/([^/]+/[^/]+/[^,/]+)(?:/|_|\\.),([A-Za-z0-9_,\\-]+),\\.mp4\\.csmil/?");
         String urlpart = regex_hls.getMatch(0);
@@ -972,7 +960,8 @@ public class Ardmediathek extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().contains("xml")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String captionsLink = getXMLSubtitleURL(this.br);
+        final String subtitleURL_XML = br.getRegex("<dataTimedTextNoOffset url=\"(https?://[^\"]+)\"").getMatch(0);
+        final String subtitleURL_WEBVTT = br.getRegex("<dataTimedTextVtt url=\"(https?://[^\"]+)\"").getMatch(0);
         String date = getXML(br.toString(), "broadcastDate");
         if (StringUtils.isEmpty(date)) {
             /* E.g. kika.de */
@@ -1008,8 +997,11 @@ public class Ardmediathek extends PluginForDecrypt {
         if (tvStation != null) {
             metadata.setChannel(tvStation);
         }
-        if (captionsLink != null) {
-            metadata.setCaptionsURL_XML(captionsLink);
+        if (subtitleURL_XML != null) {
+            metadata.setCaptionsURL_XML(subtitleURL_XML);
+        }
+        if (subtitleURL_WEBVTT != null) {
+            metadata.setCaptionsURL_WEBVTT(subtitleURL_WEBVTT);
         }
         final ArrayList<String> hls_master_dupelist = new ArrayList<String>();
         final String assetsAudiodescription = br.getRegex("<assets type=\"audiodesc\">(.*?)</assets>").getMatch(0);

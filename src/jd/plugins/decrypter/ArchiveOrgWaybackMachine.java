@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -59,16 +60,25 @@ public class ArchiveOrgWaybackMachine extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://" + buildHostsPatternPart(domains) + "/web/(\\d+)/.+");
+            ret.add("https?://" + buildHostsPatternPart(domains) + "/web/(\\d+)\\*?/.+");
         }
         return ret.toArray(new String[0]);
     }
 
+    private final String PATTERN_FILE = "(?i)^(https?://[^/]+/web)/(\\d+)[^/]*/(.+)";
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
+        String url = param.getCryptedUrl();
+        final Regex fileURLRegex = new Regex(param.getCryptedUrl(), PATTERN_FILE);
+        final String fileID = fileURLRegex.getMatch(1);
+        if (fileID != null) {
+            /* This may convert such URLs to direct-downloadable URLs. */
+            url = fileURLRegex.getMatch(0) + "/" + fileID + "if_" + "/" + fileURLRegex.getMatch(2);
+        }
         /* First check if maybe the user has added a directURL. */
-        final GetRequest getRequest = br.createGetRequest(param.getCryptedUrl());
+        final GetRequest getRequest = br.createGetRequest(url);
         final URLConnectionAdapter con = this.br.openRequestConnection(getRequest);
         try {
             if (this.looksLikeDownloadableContent(con)) {

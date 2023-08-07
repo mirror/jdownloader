@@ -55,7 +55,11 @@ public class BangCom extends PluginForHost {
         this.enablePremium("https://www.bang.com/joinnow");
     }
 
-    /* Public/stable release: Allow only cookie login */
+    /**
+     * Public/stable release: Allow only cookie login </br>
+     * 2023-08-07: Normal login is disabled as they're using unsupported captcha type "Cloudflare Turnstile" </br>
+     * See ticket: https://svn.jdownloader.org/issues/90281
+     */
     private static final boolean COOKIE_LOGIN_ONLY = true;
 
     @Override
@@ -101,11 +105,12 @@ public class BangCom extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
-    private final int          ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
-    public static final String PROPERTY_MAINLINK            = "mainlink";
-    public static final String PROPERTY_CONTENT_ID          = "content_id";
-    public static final String PROPERTY_QUALITY_IDENTIFIER  = "quality";
-    public static final String PROPERTY_TITLE               = "title";
+    private final int          ACCOUNT_PREMIUM_MAXDOWNLOADS   = -1;
+    public static final String PROPERTY_MAINLINK              = "mainlink";
+    public static final String PROPERTY_CONTENT_ID            = "content_id";
+    public static final String PROPERTY_QUALITY_IDENTIFIER    = "quality";
+    public static final String PROPERTY_TITLE                 = "title";
+    public static final String QUALITY_IDENTIFIER_SINGLEVIDEO = "singlevideo";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -238,7 +243,8 @@ public class BangCom extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
                 final boolean cookieLoginOnly;
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                final boolean allowAttemptNormalLoginInDevMode = false;
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && allowAttemptNormalLoginInDevMode) {
                     /* Testing: Allow non-cookie login */
                     cookieLoginOnly = false;
                 } else {
@@ -250,7 +256,11 @@ public class BangCom extends PluginForHost {
                     } else {
                         br.setCookies(cookies);
                     }
-                    logger.info("Attempting user cookie login");
+                    if (!force) {
+                        /* Do not validate cookies. */
+                        return;
+                    }
+                    logger.info("Attempting cookie login");
                     br.getPage(checkurl);
                     if (this.isLoggedin(br)) {
                         logger.info("Cookie login successful");
@@ -274,13 +284,13 @@ public class BangCom extends PluginForHost {
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 logger.info("Performing full login");
-                br.getPage("https://www." + this.getHost() + "/modal/login");
+                br.getPage("https://www." + this.getHost() + "/login");
                 final boolean useAjaxHandling = true;
                 if (useAjaxHandling) {
                     final String csrftoken = br.getRegex("name=\"_csrf_token\" value=\"([^\"]+)").getMatch(0);
                     final Map<String, Object> postdata = new HashMap<String, Object>();
-                    postdata.put("username", account.getUser());
-                    postdata.put("password", account.getPass());
+                    postdata.put("_username", account.getUser());
+                    postdata.put("_password", account.getPass());
                     if (csrftoken != null) {
                         postdata.put("_csrf_token", csrftoken);
                     } else {
@@ -301,10 +311,9 @@ public class BangCom extends PluginForHost {
                 if (!isLoggedin(br)) {
                     logger.info("Login failed");
                     throw new AccountInvalidException();
-                } else {
-                    logger.info("Login successful");
-                    account.saveCookies(this.br.getCookies(this.getHost()), "");
                 }
+                logger.info("Login successful");
+                account.saveCookies(this.br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -369,7 +378,7 @@ public class BangCom extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(final DownloadLink link, final Account acc) {
-        /* No captchas at all */
+        /* No captchas at all (except for login-captcha) */
         return false;
     }
 

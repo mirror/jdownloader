@@ -17,6 +17,10 @@ package jd.plugins.decrypter;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
+
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,40 +33,69 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "catcut.net" }, urls = { "https?://(?:www\\.)?catcut\\.net/(?:s/)?[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CatcutNet extends PluginForDecrypt {
     public CatcutNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "catcut.net", "cclx.win" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:s/)?[A-Za-z0-9]+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String redirect = br.getRedirectLocation();
         if (redirect != null && !new Regex(redirect, this.getSupportedLinks()).matches()) {
             /* 2020-11-24: Direct redirect (mostly to advertising websites) */
-            decryptedLinks.add(this.createDownloadlink(redirect));
-            return decryptedLinks;
+            ret.add(this.createDownloadlink(redirect));
+            return ret;
         } else if (redirect != null) {
             br.setFollowRedirects(true);
             br.followRedirect();
         }
-        String base64 = br.getRegex("Base64.decode\\('(.*?)'\\)").getMatch(0);
+        String base64 = br.getRegex("Base64\\.decode\\('(.*?)'\\)").getMatch(0);
         base64 = Base64.decodeToString(base64);
         if (base64 != null) {
             br.getRequest().setHtmlCode(base64);
-            base64 = br.getRegex("Base64.decode\\('(.*?)'\\)").getMatch(0);
+            base64 = br.getRegex("Base64\\.decode\\('(.*?)'\\)").getMatch(0);
             base64 = Base64.decodeToString(base64);
-            this.sleep(15000, param);
+            final boolean skipWait = true;
+            if (!skipWait) {
+                final int sleepSeconds = 15;
+                logger.info("Waiting seconds: " + sleepSeconds);
+                this.sleep(sleepSeconds * 1000, param);
+            }
             br.getPage(base64);
             br.followRedirect();
         }
@@ -84,7 +117,8 @@ public class CatcutNet extends PluginForDecrypt {
                     final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                     go_url += "&x=" + Encoding.urlEncode(recaptchaV2Response);
                     final long timePassed = System.currentTimeMillis() - timeBefore;
-                    final long waittime = 15000 - timePassed;
+                    final int sleepSeconds = 15;
+                    final long waittime = sleepSeconds * 1000 - timePassed;
                     if (waittime > 0) {
                         logger.info("Waiting: " + waittime);
                         this.sleep(waittime, param);
@@ -102,7 +136,7 @@ public class CatcutNet extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 }
