@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -30,6 +31,12 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.config.RedditConfig;
 import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
 import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
@@ -42,6 +49,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
@@ -49,6 +57,8 @@ import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
@@ -68,13 +78,23 @@ public class RedditComCrawler extends PluginForDecrypt {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        RedditCom.prepBRAPI(br);
+        return br;
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
-        /* 2020-07-21: Let's be gentle and avoid doing too many API requests. */
+        /*
+         * 2023-08-07: Try not to run into API rate-limits RE:
+         * https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki
+         */
         return 1;
     }
 
@@ -104,9 +124,10 @@ public class RedditComCrawler extends PluginForDecrypt {
     private static final String PATTERN_GALLERY            = "(?:https?://[^/]+)?/gallery/([a-z0-9]+)";
     private static final String PATTERN_USER               = "(?:https?://[^/]+)?/(?:user|u)/([\\w\\-]+)$";
     private static final String PATTERN_USER_SAVED_OBJECTS = "(?:https?://[^/]+)?/(?:user|u)/([\\w\\-]+)/saved";
+    private CryptedLink         param                      = null;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        RedditCom.prepBRAPI(this.br);
+        this.param = param;
         if (param.getCryptedUrl().matches(PATTERN_SELFHOSTED_VIDEO)) {
             return crawlSingleVideourl(param);
         } else if (param.getCryptedUrl().matches(PATTERN_USER_SAVED_OBJECTS)) {
@@ -130,7 +151,7 @@ public class RedditComCrawler extends PluginForDecrypt {
         }
         final Browser brc = br.cloneBrowser();
         brc.setFollowRedirects(false);
-        brc.getPage("https://www." + this.getHost() + "/video/" + videoID);
+        getPage(brc, "https://www." + this.getHost() + "/video/" + videoID);
         final String redirect = brc.getRedirectLocation();
         if (redirect == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -214,7 +235,7 @@ public class RedditComCrawler extends PluginForDecrypt {
         Set<String> dupes = new HashSet<String>();
         int dupeCounter = 0;
         do {
-            br.getPage(url + "?" + query.toString());
+            getPage(br, url + "?" + query.toString());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -275,7 +296,7 @@ public class RedditComCrawler extends PluginForDecrypt {
         do {
             page++;
             logger.info("Crawling page: " + page);
-            br.getPage(getApiBaseOauth() + "/user/" + Encoding.urlEncode(acc.getUser()) + "/saved?" + query.toString());
+            getPage(br, getApiBaseOauth() + "/user/" + Encoding.urlEncode(acc.getUser()) + "/saved?" + query.toString());
             final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             crawledLinks.addAll(this.crawlListing(entries, fp));
             final Map<String, Object> data = (Map<String, Object>) entries.get("data");
@@ -315,7 +336,7 @@ public class RedditComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final ArrayList<DownloadLink> crawledLinks = new ArrayList<DownloadLink>();
-        br.getPage("https://www." + this.getHost() + "/comments/" + commentID + "/.json");
+        getPage(br, "https://www." + this.getHost() + "/comments/" + commentID + "/.json");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -693,6 +714,64 @@ public class RedditComCrawler extends PluginForDecrypt {
             logger.info("Items skipped due to users' plugin settings: " + skippedItems);
         }
         return crawledItems;
+    }
+
+    private int lastRatelimitRemaining    = -1;
+    private int lastRatelimitResetSeconds = -1;
+
+    private void getPage(final Browser br, final String url) throws IOException, DecrypterRetryException, InterruptedException {
+        int attempt = 0;
+        final int maxAttemptsNumber = 4;
+        boolean rateLimitActive = true;
+        do {
+            attempt++;
+            final URLConnectionAdapter con = br.openGetConnection(url);
+            try {
+                final String ratelimitRemainingStr = con.getRequest().getResponseHeader("x-ratelimit-remaining");
+                final String ratelimitUsedStr = con.getRequest().getResponseHeader("x-ratelimit-used");
+                final String ratelimitResetSecondsStr = con.getRequest().getResponseHeader("x-ratelimit-reset");
+                logger.info("API Limits: Used: " + ratelimitUsedStr + " | Remaining: " + ratelimitRemainingStr + " | Reset in seconds: " + ratelimitResetSecondsStr);
+                if (ratelimitRemainingStr != null) {
+                    lastRatelimitRemaining = Integer.parseInt(ratelimitRemainingStr);
+                } else {
+                    lastRatelimitRemaining = -1;
+                }
+                if (ratelimitResetSecondsStr != null) {
+                    lastRatelimitResetSeconds = Integer.parseInt(ratelimitResetSecondsStr);
+                } else {
+                    lastRatelimitResetSeconds = -1;
+                }
+                if (con.getResponseCode() == 429) {
+                    final int waitSeconds = Math.max(10, lastRatelimitResetSeconds);
+                    logger.info("Waiting seconds to resolve rate-limit: " + waitSeconds + " | Attempt: " + attempt);
+                    displayBubblenotifyMessage("Reached API Rate-Limit", "Waiting seconds to resolve API rate-limit: " + waitSeconds + " | Retry number: " + attempt + "/" + (maxAttemptsNumber - 1));
+                    this.sleep(waitSeconds * 1001l, this.param);
+                    rateLimitActive = true;
+                    continue;
+                } else {
+                    br.followConnection();
+                    rateLimitActive = false;
+                    break;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        } while (!this.isAbort() && attempt <= 4);
+        if (rateLimitActive) {
+            throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
+        }
+    }
+
+    private void displayBubblenotifyMessage(final String title, final String msg) {
+        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
+            @Override
+            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
+                return new BasicNotify("Reddit: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
+            }
+        });
     }
 
     public static final String getApiBaseOauth() {

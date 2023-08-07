@@ -172,7 +172,10 @@ public class BangbrosCom extends PluginForHost {
                 }
                 link.setVerifiedFileSize(con.getCompleteContentLength());
                 if (final_filename == null) {
-                    final_filename = Encoding.htmlDecode(getFileNameFromHeader(con));
+                    final String filenameFromHeader = getFileNameFromHeader(con);
+                    if (filenameFromHeader != null) {
+                        final_filename = Encoding.htmlDecode(filenameFromHeader);
+                    }
                 }
             } finally {
                 try {
@@ -312,7 +315,7 @@ public class BangbrosCom extends PluginForHost {
                     if (!account.hasEverBeenValid()) {
                         showCookieLoginInfo();
                     }
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Enter cookies to login", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("Enter cookies to login");
                 }
                 logger.info("Performing full login");
                 /*
@@ -328,14 +331,7 @@ public class BangbrosCom extends PluginForHost {
                 loginform.put("login%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
                 loginform.put("profiler_input", Integer.toString(new Random().nextInt(1000)));
                 if (loginform.containsHTML("g-recaptcha")) {
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    if (dlinkbefore == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", getHostInternal(this.getHost()), "https://" + account.getHoster(), true));
-                    }
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    if (dlinkbefore != null) {
-                        this.setDownloadLink(dlinkbefore);
-                    }
                     loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 }
                 br.submitForm(loginform);

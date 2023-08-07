@@ -101,8 +101,11 @@ public class UnknownPornScript1 extends PluginForHost {
         return "http://www.dansmovies.com/tos/";
     }
 
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         dllink = null;
         final String titleFromURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0).replace("-", " ");
         if (!link.isNameSet()) {
@@ -150,7 +153,7 @@ public class UnknownPornScript1 extends PluginForHost {
             }
             link.setFinalFileName(this.correctOrApplyFileNameExtension(title, ext));
         }
-        if (!StringUtils.isEmpty(dllink)) {
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(this.dllink);
@@ -185,7 +188,7 @@ public class UnknownPornScript1 extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -235,7 +235,7 @@ public class BangbrosComCrawler extends PluginForDecrypt {
     }
 
     public static String regexStreamingURL(final Browser br, final String qualityIdentifier) {
-        return br.getRegex("<source src=\"(https?://[^\"]+" + qualityIdentifier + "\\.mp4[^\"]*)\" type='video/mp4'").getMatch(0);
+        return br.getRegex("<source src=\"(https?://[^\"]+" + qualityIdentifier + "\\.mp4[^\"]*)\"[^>]*type=.video/mp4").getMatch(0);
     }
 
     public static String regexZipUrl(final Browser br, final String key) {

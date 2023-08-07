@@ -29,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -55,40 +56,46 @@ public class UnknownPornScript2 extends PluginForHost {
     /* V0.1 */
     // other:
     /* Extension which will be used if no correct extension is found */
-    private static final String  type_1            = "^https?://(?:www\\.)?[^/]+/(?:videos?|free)/[A-Za-z0-9\\-]+\\-\\d+\\.html$";
+    private static final String  type_1            = "^(?i)https?://(?:www\\.)?[^/]+/(?:videos?|free)/[A-Za-z0-9\\-]+\\-\\d+\\.html$";
     /* E.g. chopsticktube.com */
-    private static final String  type_2            = "^https?://(?:www\\.)?[^/]+/video/\\d+/[A-Za-z0-9\\-]+\\-\\d+\\.html$";
+    private static final String  type_2            = "^(?i)https?://(?:www\\.)?[^/]+/video/\\d+/[A-Za-z0-9\\-]+\\-\\d+\\.html$";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
         return "http://pornmaki.com/static/terms";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         dllink = null;
+        final String titleFromURL;
+        if (link.getPluginPatternMatcher().matches(type_1)) {
+            titleFromURL = new Regex(link.getPluginPatternMatcher(), "/(?:videos?|free)/([a-z0-9\\-]+)\\-\\d+\\.html").getMatch(0).replace("-", " ");
+        } else {
+            titleFromURL = new Regex(link.getPluginPatternMatcher(), "/video/\\d+/([a-z0-9\\-]+)\\.html").getMatch(0).replace("-", " ");
+        }
+        final String extDefault = ".mp4";
+        if (!link.isNameSet()) {
+            link.setName(titleFromURL + extDefault);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String url_filename = null;
-        if (link.getDownloadURL().matches(type_1)) {
-            url_filename = new Regex(link.getDownloadURL(), "/(?:videos?|free)/([a-z0-9\\-]+)\\-\\d+\\.html").getMatch(0).replace("-", " ");
-        } else {
-            url_filename = new Regex(link.getDownloadURL(), "/video/\\d+/([a-z0-9\\-]+)\\.html").getMatch(0).replace("-", " ");
-        }
-        String filename = this.br.getRegex("<h2 class=\"page\\-title\">([^<>\"]*?)</h2>").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
+        String title = this.br.getRegex("<h2 class=\"page\\-title\">([^<>\"]*?)</h2>").getMatch(0);
+        if (title == null) {
+            title = titleFromURL;
         }
         final String html_clip = this.br.getRegex("urls\\.push\\(\\{(.*?)\\}\\);").getMatch(0);
         if (html_clip != null) {
@@ -97,30 +104,23 @@ public class UnknownPornScript2 extends PluginForHost {
         } else {
             dllink = br.getRegex("file:\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
+            final String ext = dllink != null ? (getFileNameExtensionFromString(dllink, extDefault)) : extDefault;
+            link.setFinalFileName(this.correctOrApplyFileNameExtension(title, ext));
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
-        final String ext = dllink != null ? (getFileNameExtensionFromString(dllink, ".mp4")) : ".mp4";
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        link.setFinalFileName(filename);
-        if (dllink != null) {
-            dllink = Encoding.htmlDecode(dllink);
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
             try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    server_issues = true;
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
                 }
             } finally {
                 try {
@@ -135,23 +135,25 @@ public class UnknownPornScript2 extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
-        dl.startDownload();
     }
 
     @Override
