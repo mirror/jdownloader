@@ -61,7 +61,7 @@ public class HuabanCom extends PluginForHost {
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
         if (fid != null) {
-            return this.getHost() + "://" + fid;
+            return "huabancom://" + fid;
         } else {
             return super.getLinkID(link);
         }

@@ -124,9 +124,7 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 // }
                 // }
                 filename += jd.plugins.hoster.HuabanCom.default_extension;
-                filename = encodeUnicode(filename);
                 dl.setContentUrl(content_url);
-                dl.setLinkID("huabancom://" + pin_id);
                 if (pin_directlink != null) {
                     dl.setProperty("free_directlink", pin_directlink);
                 }

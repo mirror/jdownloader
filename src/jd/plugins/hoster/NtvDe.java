@@ -20,6 +20,8 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -32,8 +34,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n-tv.de" }, urls = { "https?://(?:www\\.)?n\\-tv\\.de/mediathek/(?:videos|sendungen)/([^/]+/[^/]+)\\.html" })
 public class NtvDe extends PluginForHost {
     public NtvDe(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class NtvDe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.n-tv.de/ntvintern/n-tv-Webseiten-article495196.html";
+        return "https://www.n-tv.de/ntvintern/n-tv-Webseiten-article495196.html";
     }
 
     @Override
@@ -88,7 +88,6 @@ public class NtvDe extends PluginForHost {
             title = Encoding.unicodeDecode(title);
             title = PluginJSonUtils.unescape(title);
             title = title.trim();
-            title = encodeUnicode(title);
             String filename = "";
             if (date != null) {
                 filename = formatDate(date) + "_";
@@ -106,6 +105,7 @@ public class NtvDe extends PluginForHost {
             }
         }
         if (looksLikeDRMProtected) {
+            logger.info("This item looks to be DRM protected -> Treating it as offline");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;

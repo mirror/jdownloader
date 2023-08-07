@@ -344,12 +344,12 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isCleanUpFilenames();
 
     @AboutConfig
-    @DescriptionForConfigEntry("Returns mapping of common invalid characters to be replaced inside filenames / file paths. This is used to try to avoid invalid download paths/filenames and at the same time try to preserve the original filename/path.")
-    @DefaultJsonObject("{\":\":\";\",\"|\":\"¦\",\"<\":\"[\",\">\":\"]\",\"/\":\"⁄\",\"\\\\\":\"∖\",\"*\":\"#\",\"?\":\"¿\",\"!\":\"¡\",\"\\\"\":\"'\"}")
+    @DescriptionForConfigEntry("Returns mapping of common invalid characters as regular expression to be replaced inside filenames / file paths. This is used to try to avoid invalid download paths/filenames and at the same time try to preserve the original filename/path.")
+    @DefaultJsonObject("{\":\":\";\",\"\\\\|\":\"\u00A6\",\"<\":\"[\",\">\":\"]\",\"/\":\"\u2044\",\"\\\\\\\\\":\"\u2216\",\"\\\\*\":\"#\",\"\\\\?\":\"\u00BF\",\"\\\\!\":\"\u00A1\",\"\\\"\":\"'\"}")
     @DefaultOnNull
-    Map<String, String> getFilenameAndPathCharacterReplaceMap();
+    Map<String, String> getFilenameAndPathCharacterRegexReplaceMap();
 
-    public void setFilenameAndPathCharacterReplaceMap(Map<String, String> map);
+    public void setFilenameAndPathCharacterRegexReplaceMap(Map<String, String> map);
 
     boolean isClosedWithRunningDownloads();
 
