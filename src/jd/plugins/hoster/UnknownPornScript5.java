@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -43,6 +44,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -70,7 +72,6 @@ public class UnknownPornScript5 extends PluginForHost {
     private boolean             resumes                      = true;
     private int                 chunks                       = 0;
     private String              dllink                       = null;
-    private boolean             server_issues                = false;
 
     @Override
     public String getAGBLink() {
@@ -79,10 +80,11 @@ public class UnknownPornScript5 extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, AccountController.getInstance().getValidAccount(this.getHost()));
+        return requestFileInformation(link, AccountController.getInstance().getValidAccount(this.getHost()), false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        dllink = null;
         if (!link.isNameSet()) {
             /* Now lets find the url_slug as a fallback in case we cannot find the filename inside the html code. */
             String url_slug = null;
@@ -135,21 +137,20 @@ public class UnknownPornScript5 extends PluginForHost {
         } else if (br.containsHTML(">Sorry, we couldn't find")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = regexStandardTitleWithHost(this.getHost());
-        if (filename == null) {
-            filename = HTMLSearch.searchMetaTag(br, "og:title");
+        String title = regexStandardTitleWithHost(this.getHost());
+        if (title == null) {
+            title = HTMLSearch.searchMetaTag(br, "og:title");
         }
-        if (filename == null) {
+        if (title == null) {
             /* Works e.g. for: boyfriendtv.com, ashemaletube.com, pornoxo.com */
-            filename = br.getRegex("<div id=\"maincolumn2\">\\s*?<h1>([^<>]*?)</h1>").getMatch(0);
+            title = br.getRegex("<div id=\"maincolumn2\">\\s*?<h1>([^<>]*?)</h1>").getMatch(0);
         }
-        if (filename == null && link.getDownloadURL().matches(type_allow_title_as_filename)) {
-            filename = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
+        if (title == null && link.getDownloadURL().matches(type_allow_title_as_filename)) {
+            title = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
         }
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename).trim();
-            filename = encodeUnicode(filename);
-            link.setFinalFileName(filename + default_Extension);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            link.setFinalFileName(title + default_Extension);
         }
         getDllink();
         if (!inValidateDllink(dllink)) {
@@ -162,25 +163,24 @@ public class UnknownPornScript5 extends PluginForHost {
         }
         /* 2022-11-21: Disabled this as their servers will return wrong results when checking multiple items in a short time. */
         final boolean checkFilesize = false;
-        if (!inValidateDllink(dllink) && checkFilesize) {
-            URLConnectionAdapter con = null;
+        if (!inValidateDllink(dllink) && checkFilesize && !isDownload) {
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                con = br2.openHeadConnection(this.dllink);
+                handleConnectionErrors(br2, con);
+                if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
-                } else {
-                    if (con.getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    server_issues = true;
+                }
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
                 }
             } finally {
                 try {
                     con.disconnect();
-                } catch (Throwable e) {
+                } catch (final Throwable e) {
                 }
             }
         }
@@ -258,8 +258,9 @@ public class UnknownPornScript5 extends PluginForHost {
         } else if (dllink.endsWith(".vtt")) {
             /* We picked up the subtitle url instead of the video downloadurl! */
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     private boolean requiresAccount(final Browser br) {
@@ -276,13 +277,11 @@ public class UnknownPornScript5 extends PluginForHost {
     }
 
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, account);
+        requestFileInformation(link, account, true);
         if (requiresAccount(br)) {
             throw new AccountRequiredException();
         } else if (inValidateDllink(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         if (dllink.contains(".m3u8")) { // bigcamtube.com
             /* hls download */
@@ -302,17 +301,21 @@ public class UnknownPornScript5 extends PluginForHost {
             dl.startDownload();
         } else {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            handleConnectionErrors(br, dl.getConnection());
             dl.startDownload();
+        }
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
         }
     }
 
