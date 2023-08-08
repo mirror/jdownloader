@@ -1772,9 +1772,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 logger.log(ignore);
             }
             logger.info("Using stored directurl");
+            /* add a download slot */
+            controlMaxFreeDownloads(account, link, +1);
             try {
-                /* add a download slot */
-                controlMaxFreeDownloads(account, link, +1);
                 /* start the dl */
                 dl.startDownload();
             } finally {

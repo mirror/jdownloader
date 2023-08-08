@@ -2,7 +2,15 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CheckableLink;
@@ -18,10 +26,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CyberdropMeAlbum;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { CyberdropMeAlbum.class })
@@ -68,22 +72,34 @@ public class CyberdropMe extends PluginForHost {
         }
     }
 
-    @Override
-    protected int getMaxSimultanDownload(DownloadLink link, Account account) {
-        if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(getHost())) {
-            return 1;
-        } else {
-            return super.getMaxSimultanDownload(link, account);
+    /* Don't touch the following! */
+    private static Map<String, AtomicInteger> freeRunning = new HashMap<String, AtomicInteger>();
+
+    protected AtomicInteger getFreeRunning() {
+        synchronized (freeRunning) {
+            AtomicInteger ret = freeRunning.get(getHost());
+            if (ret == null) {
+                ret = new AtomicInteger(0);
+                freeRunning.put(getHost(), ret);
+            }
+            return ret;
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(getHost())) {
-            return 1;
+        final int max = getMaxSimultaneousFreeAnonymousDownloads();
+        if (max == -1) {
+            return -1;
         } else {
-            return super.getMaxSimultanFreeDownloadNum();
+            final int running = getFreeRunning().get();
+            final int ret = Math.min(running + 1, max);
+            return ret;
         }
+    }
+
+    private int getMaxSimultaneousFreeAnonymousDownloads() {
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -131,19 +147,24 @@ public class CyberdropMe extends PluginForHost {
     private String getContentURL(final DownloadLink link) {
         if (CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(getHost())) {
             final String url = link.getPluginPatternMatcher();
-            final String newURL = url.replaceFirst("cyberdrop\\.[a-z]+/", CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN + "/");
+            final String newURL = url.replaceFirst("(?i)cyberdrop\\.[a-z]+/", CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN + "/");
             return newURL;
         } else {
-            return link.getPluginPatternMatcher();
-        }
-    }
-
-    private String getDirecturl(final DownloadLink link) {
-        final String directurl = link.getStringProperty(PROPERTY_ALTERNATIVE_DIRECTURL);
-        if (directurl != null) {
-            return directurl;
-        } else {
-            return this.getContentURL(link);
+            /* MAIN_BUNKR_DOMAIN */
+            String url = link.getPluginPatternMatcher();
+            /* Remove old/invalid subdomains */
+            url = url.replaceFirst("stream\\.", "");
+            /* Replace domain in URL if we know that it is dead. */
+            final String hostFromAddedURL = Browser.getHost(url, false);
+            for (final String deadHost : CyberdropMeAlbum.getDeadDomains()) {
+                if (StringUtils.equalsIgnoreCase(hostFromAddedURL, deadHost) || StringUtils.equalsIgnoreCase(hostFromAddedURL, "www." + deadHost)) {
+                    final String newHost = getHost();
+                    url = url.replaceFirst(Pattern.quote(hostFromAddedURL) + "/", newHost + "/");
+                    // logger.info("Corrected domain in added URL: " + hostFromAddedURL + " --> " + newHost);
+                    break;
+                }
+            }
+            return url;
         }
     }
 
@@ -174,11 +195,16 @@ public class CyberdropMe extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String directurl = getDirecturl(link);
+        final boolean attemptToUseLastStoredAlternativeDirecturl = false;
+        String directurl = link.getStringProperty(PROPERTY_ALTERNATIVE_DIRECTURL);
+        if (directurl == null || !attemptToUseLastStoredAlternativeDirecturl) {
+            directurl = this.getContentURL(link);
+        }
         final String filenameFromURL = Plugin.getFileNameFromURL(directurl);
         if (!link.isNameSet() && filenameFromURL != null) {
             link.setName(filenameFromURL);
         }
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36");
         final String containerURL = link.getContainerUrl();
         if (containerURL != null) {
             br.getHeaders().put("Referer", containerURL);
@@ -240,7 +266,27 @@ public class CyberdropMe extends PluginForHost {
         if (this.dl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        /* add a download slot */
+        controlMaxFreeDownloads(null, link, +1);
+        try {
+            /* start the dl */
+            dl.startDownload();
+        } finally {
+            /* remove download slot */
+            controlMaxFreeDownloads(null, link, -1);
+        }
+    }
+
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null) {
+            final AtomicInteger freeRunning = getFreeRunning();
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
     }
 
     private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
