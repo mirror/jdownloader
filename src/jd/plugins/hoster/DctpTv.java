@@ -17,6 +17,12 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -25,12 +31,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dctp.tv" }, urls = { "https?://(?:www\\.)?dctp\\.tv/filme/([a-z0-9_\\-]+)/?" })
 public class DctpTv extends PluginForHost {
@@ -94,10 +94,10 @@ public class DctpTv extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        final boolean is_wide = ((Boolean) entries.get("is_wide")).booleanValue();
+        final Object is_wide = entries.get("is_wide");
         String scalefactor;
         String scalefactor_new;
-        if (is_wide) {
+        if (Boolean.TRUE.equals(is_wide)) {
             scalefactor = "16x9";
             scalefactor_new = "720p";
         } else {
