@@ -87,7 +87,7 @@ public class CyberdropMe extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         final int max = getMaxSimultaneousFreeAnonymousDownloads();
-        if (max == -1 || true) {
+        if (max == -1) {
             return -1;
         } else {
             /* Start downloads sequentially */
