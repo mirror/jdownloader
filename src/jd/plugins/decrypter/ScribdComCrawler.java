@@ -96,7 +96,6 @@ public class ScribdComCrawler extends PluginForDecrypt {
                 for (final String[] docinfo : uplInfo) {
                     final String link = docinfo[0];
                     String title = docinfo[2];
-                    title = encodeUnicode(title);
                     final DownloadLink dl = createDownloadlink(link);
                     dl.setAvailable(true);
                     dl.setName(title + ".pdf");
@@ -254,7 +253,6 @@ public class ScribdComCrawler extends PluginForDecrypt {
                 for (final String[] docinfo : uplInfo) {
                     final String link = docinfo[0];
                     String title = docinfo[2];
-                    title = encodeUnicode(title);
                     final DownloadLink dl = createDownloadlink(link);
                     dl.setAvailable(true);
                     dl.setName(title + ".pdf");

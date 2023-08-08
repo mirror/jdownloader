@@ -17,10 +17,15 @@ package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
+import org.appwork.storage.TypeRef;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -39,15 +44,16 @@ public class FacecastNet extends PluginForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://www.servustv.com/Nutzungsbedingungen";
     }
 
-    /* Use this server as default until they change something or we find an easy way to find a working server. */
-    // private static final String server_default = "http://edge-de-2.facecast.net";
-    // TODO: Run this js to find fastest server: <script src="/v/player.min.js?c53b37b"></script>
-    private static final String server_default = "https://edge-de-2.facecast.net";
-    private long                date_start     = 0;
+    private long date_start = 0;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -63,29 +69,33 @@ public class FacecastNet extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String extDefault = ".mp4";
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
             /* Set fallback filename */
-            link.setName(this.getFID(link) + ".mp4" + "");
+            link.setName(fid + extDefault);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        this.br.getPage(server_default + "/eventdata?code=" + fid + "&ref=&_=" + System.currentTimeMillis());
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        br.getPage("https://" + this.getHost() + "/ajaj/get_servers?_t=" + System.currentTimeMillis());
+        final List<HashMap<String, Object>> ressourcelist = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST_HASHMAP);
+        final Map<String, Object> randomServerMap = ressourcelist.get(new Random().nextInt(ressourcelist.size() - 1));
+        final String webapidomain = randomServerMap.get("src").toString();
+        this.br.getPage("https://" + webapidomain + "/eventdata?code=" + fid + "&ref=&_=" + System.currentTimeMillis());
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         if (br.getHttpConnection().getResponseCode() == 404 || entries.containsKey("error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         date_start = ((Number) entries.get("date_plan_start_ts")).longValue() * 1000;
         final String date_formatted = formatDate();
         final String title = (String) entries.get("name");
-        String filename = date_formatted;
         if (title != null) {
+            String filename = date_formatted;
             filename = filename + "_" + title;
+            link.setFinalFileName(filename + extDefault);
         }
-        link.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;
     }
 
@@ -101,7 +111,7 @@ public class FacecastNet extends PluginForHost {
             /* https://svn.jdownloader.org/issues/84276 */
             throw new PluginException(LinkStatus.ERROR_FATAL, "HLS streams with split video/audio are not yet supported");
         }
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         final String eid = entries.get("id").toString();
         if (eid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
