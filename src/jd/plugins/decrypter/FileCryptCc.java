@@ -406,8 +406,8 @@ public class FileCryptCc extends PluginForDecrypt {
                 progressNumber++;
                 logger.info("Crawling mirror " + progressNumber + "/" + mirrors.size() + " | " + mirrorURL);
                 br.getPage(mirrorURL);
-                // Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down!
-                final ArrayList<DownloadLink> cnlResults = handleCnl2(param.getCryptedUrl());
+                /* Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down! */
+                final ArrayList<DownloadLink> cnlResults = handleCnl2(param.getCryptedUrl(), successfullyUsedPassword);
                 if (!cnlResults.isEmpty()) {
                     logger.info("CNL success");
                     ret.addAll(cnlResults);
@@ -578,7 +578,7 @@ public class FileCryptCc extends PluginForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> handleCnl2(final String url) throws Exception {
+    private ArrayList<DownloadLink> handleCnl2(final String url, final String password) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Form[] forms = br.getForms();
         Form CNLPOP = null;
@@ -615,6 +615,9 @@ public class FileCryptCc extends PluginForDecrypt {
                 infos.put("source", source);
             }
             infos.put("source", source);
+            if (password != null) {
+                infos.put("passwords", password);
+            }
             final String json = JSonStorage.toString(infos);
             final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
             ret.add(dl);

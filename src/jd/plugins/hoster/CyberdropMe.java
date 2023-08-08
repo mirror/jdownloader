@@ -6,14 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
 
 import jd.PluginWrapper;
-import jd.controlling.linkcrawler.CheckableLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.Account;
@@ -36,7 +32,7 @@ public class CyberdropMe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://bunkrr.su/faq";
+        return "https://" + CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN + "/faq";
     }
 
     public static List<String[]> getPluginDomains() {
@@ -64,12 +60,14 @@ public class CyberdropMe extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
+    @Override
+    public String rewriteHost(final String host) {
+        /* This host is frequently changing its' main domain. */
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
     private int getMaxChunks(final Account account) {
-        if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(getHost())) {
-            return 1;
-        } else {
-            return 0;
-        }
+        return 1;
     }
 
     /* Don't touch the following! */
@@ -89,9 +87,10 @@ public class CyberdropMe extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         final int max = getMaxSimultaneousFreeAnonymousDownloads();
-        if (max == -1) {
+        if (max == -1 || true) {
             return -1;
         } else {
+            /* Start downloads sequentially */
             final int running = getFreeRunning().get();
             final int ret = Math.min(running + 1, max);
             return ret;
@@ -99,78 +98,51 @@ public class CyberdropMe extends PluginForHost {
     }
 
     private int getMaxSimultaneousFreeAnonymousDownloads() {
-        return Integer.MAX_VALUE;
+        return -1;
     }
-
-    @Override
-    public PluginForHost assignPlugin(PluginFinder pluginFinder, DownloadLink link) {
-        final String pluginHost = getHost();
-        if (pluginFinder != null && CyberdropMe.class.equals(getClass()) && !pluginHost.equals(link.getHost())) {
-            final String url = link.getPluginPatternMatcher();
-            final boolean checkHostFlag;
-            if (CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(pluginHost) && url.matches(CyberdropMeAlbum.TYPE_FS)) {
-                checkHostFlag = true;
-            } else if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(pluginHost) && (url.matches(CyberdropMeAlbum.TYPE_CDN) || url.matches(CyberdropMeAlbum.TYPE_STREAM))) {
-                checkHostFlag = true;
-            } else {
-                checkHostFlag = false;
-                return null;
-            }
-            if (checkHostFlag) {
-                final String host = Browser.getHost(url);
-                for (String siteSupportedName : siteSupportedNames()) {
-                    if (StringUtils.equalsIgnoreCase(siteSupportedName, host)) {
-                        return super.assignPlugin(pluginFinder, link);
-                    }
-                }
-            }
-            return null;
-        } else {
-            return super.assignPlugin(pluginFinder, link);
-        }
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(getHost()) || CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(getHost())) {
-            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.ASSIGN_PLUGIN };
-        } else {
-            return new LazyPlugin.FEATURE[0];
-        }
-    }
-
-    @Override
-    protected boolean supportsUpdateDownloadLink(CheckableLink checkableLink) {
-        return false;
-    }
+    // @Override
+    // public PluginForHost assignPlugin(PluginFinder pluginFinder, DownloadLink link) {
+    // final String pluginHost = getHost();
+    // if (pluginFinder != null && CyberdropMe.class.equals(getClass()) && !pluginHost.equals(link.getHost())) {
+    // final String url = link.getPluginPatternMatcher();
+    // final boolean checkHostFlag;
+    // if (CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(pluginHost) && url.matches(CyberdropMeAlbum.TYPE_FS)) {
+    // checkHostFlag = true;
+    // } else if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(pluginHost) && (url.matches(CyberdropMeAlbum.TYPE_CDN) ||
+    // url.matches(CyberdropMeAlbum.TYPE_STREAM))) {
+    // checkHostFlag = true;
+    // } else {
+    // checkHostFlag = false;
+    // return null;
+    // }
+    // if (checkHostFlag) {
+    // final String host = Browser.getHost(url);
+    // for (String siteSupportedName : siteSupportedNames()) {
+    // if (StringUtils.equalsIgnoreCase(siteSupportedName, host)) {
+    // return super.assignPlugin(pluginFinder, link);
+    // }
+    // }
+    // }
+    // return null;
+    // } else {
+    // return super.assignPlugin(pluginFinder, link);
+    // }
+    // }
+    //
+    // @Override
+    // public LazyPlugin.FEATURE[] getFeatures() {
+    // if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(getHost()) || CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(getHost())) {
+    // return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.ASSIGN_PLUGIN };
+    // } else {
+    // return new LazyPlugin.FEATURE[0];
+    // }
+    // }
 
     private String getContentURL(final DownloadLink link) {
-        if (CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(getHost())) {
-            final String url = link.getPluginPatternMatcher();
-            final String newURL = url.replaceFirst("(?i)cyberdrop\\.[a-z]+/", CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN + "/");
-            return newURL;
-        } else {
-            /* MAIN_BUNKR_DOMAIN */
-            String url = link.getPluginPatternMatcher();
-            /* Remove old/invalid subdomains */
-            url = url.replaceFirst("stream\\.", "");
-            /* Replace domain in URL if we know that it is dead. */
-            final String hostFromAddedURL = Browser.getHost(url, false);
-            for (final String deadHost : CyberdropMeAlbum.getDeadDomains()) {
-                if (StringUtils.equalsIgnoreCase(hostFromAddedURL, deadHost) || StringUtils.equalsIgnoreCase(hostFromAddedURL, "www." + deadHost)) {
-                    final String newHost = getHost();
-                    url = url.replaceFirst(Pattern.quote(hostFromAddedURL) + "/", newHost + "/");
-                    // logger.info("Corrected domain in added URL: " + hostFromAddedURL + " --> " + newHost);
-                    break;
-                }
-            }
-            return url;
-        }
-    }
-
-    @Override
-    public String getHost(DownloadLink link, Account account, boolean includeSubdomain) {
-        return getHost();
+        final String url = link.getPluginPatternMatcher();
+        /* Do some domain corrections */
+        final String newURL = url.replaceFirst("(?i)cyberdrop\\.[a-z]+/", CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN + "/");
+        return newURL;
     }
 
     private final String PROPERTY_ALTERNATIVE_DIRECTURL = "alternative_directurl";
@@ -204,7 +176,6 @@ public class CyberdropMe extends PluginForHost {
         if (!link.isNameSet() && filenameFromURL != null) {
             link.setName(filenameFromURL);
         }
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36");
         final String containerURL = link.getContainerUrl();
         if (containerURL != null) {
             br.getHeaders().put("Referer", containerURL);
@@ -299,7 +270,7 @@ public class CyberdropMe extends PluginForHost {
             } else if (con.getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 503 too many connections", 1 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken?");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken or temporarily unavailable");
             }
         }
     }

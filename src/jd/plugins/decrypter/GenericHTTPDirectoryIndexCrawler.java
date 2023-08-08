@@ -39,7 +39,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "HTTPDirectoryCrawler", "brooksideepisodes.com" }, urls = { "", "https?://(?:www\\.)brooksideepisodes\\.com/.+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "HTTPDirectoryCrawler" }, urls = { "" })
 public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
     public GenericHTTPDirectoryIndexCrawler(PluginWrapper wrapper) {
         super(wrapper);

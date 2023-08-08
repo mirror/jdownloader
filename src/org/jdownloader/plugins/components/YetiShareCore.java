@@ -438,9 +438,10 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             }
             /**
              * Additional offline check. Useful for websites which still provide filename & filesize for offline files. </br>
-             * This can only happen on special file information page!
+             * This can only happen on special file information page! </br>
+             * Some websites enforce a specific language so there is no other way but to add traits for multiple languages.
              */
-            if (br.containsHTML("(?i)>\\s*Status\\s*:\\s*</span>\\s*<span>\\s*(Deleted|Usunięto)\\s*</span>")) {
+            if (br.containsHTML("(?i)>\\s*Status\\s*:\\s*</span>\\s*<span>\\s*(Deleted|Usunięto|Silindi|Çöp)\\s*</span>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
