@@ -2,10 +2,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.StringUtils;
 
@@ -70,34 +67,8 @@ public class CyberdropMe extends PluginForHost {
         return 1;
     }
 
-    /* Don't touch the following! */
-    private static Map<String, AtomicInteger> freeRunning = new HashMap<String, AtomicInteger>();
-
-    protected AtomicInteger getFreeRunning() {
-        synchronized (freeRunning) {
-            AtomicInteger ret = freeRunning.get(getHost());
-            if (ret == null) {
-                ret = new AtomicInteger(0);
-                freeRunning.put(getHost(), ret);
-            }
-            return ret;
-        }
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        final int max = getMaxSimultaneousFreeAnonymousDownloads();
-        if (max == -1) {
-            return -1;
-        } else {
-            /* Start downloads sequentially */
-            final int running = getFreeRunning().get();
-            final int ret = Math.min(running + 1, max);
-            return ret;
-        }
-    }
-
-    private int getMaxSimultaneousFreeAnonymousDownloads() {
         return -1;
     }
     // @Override
@@ -141,11 +112,11 @@ public class CyberdropMe extends PluginForHost {
     private String getContentURL(final DownloadLink link) {
         final String url = link.getPluginPatternMatcher();
         /* Do some domain corrections */
-        final String newURL = url.replaceFirst("(?i)cyberdrop\\.[a-z]+/", CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN + "/");
+        String newURL = url.replaceFirst("(?i)cyberdrop\\.[a-z]+/", CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN + "/");
+        /* Some fileservers are permanently down -> Fix that */
+        newURL = newURL.replaceFirst("fs-06\\.", "fs-02.");
         return newURL;
     }
-
-    private final String PROPERTY_ALTERNATIVE_DIRECTURL = "alternative_directurl";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -167,11 +138,7 @@ public class CyberdropMe extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final boolean attemptToUseLastStoredAlternativeDirecturl = false;
-        String directurl = link.getStringProperty(PROPERTY_ALTERNATIVE_DIRECTURL);
-        if (directurl == null || !attemptToUseLastStoredAlternativeDirecturl) {
-            directurl = this.getContentURL(link);
-        }
+        final String directurl = this.getContentURL(link);
         final String filenameFromURL = Plugin.getFileNameFromURL(directurl);
         if (!link.isNameSet() && filenameFromURL != null) {
             link.setName(filenameFromURL);
@@ -188,31 +155,7 @@ public class CyberdropMe extends PluginForHost {
             } else {
                 con = br.openGetConnection(directurl);
             }
-            try {
-                handleConnectionErrors(br, con);
-            } catch (final PluginException e) {
-                /* E.g. cdn.bunkr.ru -> bunkr.su/v/... -> Try to find fresh directurl */
-                logger.info("Directurl did not lead to downloadable content -> Looking for freh directurl");
-                final String alternativeFreshDirecturl = findDirectURL(this, br);
-                if (alternativeFreshDirecturl == null) {
-                    logger.info("Failed to find fresh directurl");
-                    throw e;
-                } else if (StringUtils.equals(directurl, alternativeFreshDirecturl)) {
-                    logger.info("Fresh directurl is the same as old one -> Retrying doesn't make any sense");
-                    throw e;
-                } else {
-                    logger.info("Trying again with fresh directurl: " + alternativeFreshDirecturl);
-                    if (isDownload) {
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, alternativeFreshDirecturl, true, this.getMaxChunks(null));
-                        con = dl.getConnection();
-                    } else {
-                        con = br.openGetConnection(alternativeFreshDirecturl);
-                    }
-                    handleConnectionErrors(br, con);
-                    logger.info("Fresh directurl is working: " + alternativeFreshDirecturl);
-                    link.setProperty(PROPERTY_ALTERNATIVE_DIRECTURL, alternativeFreshDirecturl);
-                }
-            }
+            handleConnectionErrors(br, con);
             if (con.getCompleteContentLength() > 0) {
                 link.setVerifiedFileSize(con.getCompleteContentLength());
             }
@@ -237,27 +180,7 @@ public class CyberdropMe extends PluginForHost {
         if (this.dl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* add a download slot */
-        controlMaxFreeDownloads(null, link, +1);
-        try {
-            /* start the dl */
-            dl.startDownload();
-        } finally {
-            /* remove download slot */
-            controlMaxFreeDownloads(null, link, -1);
-        }
-    }
-
-    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
-        if (account == null) {
-            final AtomicInteger freeRunning = getFreeRunning();
-            synchronized (freeRunning) {
-                final int before = freeRunning.get();
-                final int after = before + num;
-                freeRunning.set(after);
-                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
-            }
-        }
+        dl.startDownload();
     }
 
     private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {

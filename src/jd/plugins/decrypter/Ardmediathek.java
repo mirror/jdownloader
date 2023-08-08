@@ -960,8 +960,16 @@ public class Ardmediathek extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().contains("xml")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String subtitleURL_XML = br.getRegex("<dataTimedTextNoOffset url=\"(https?://[^\"]+)\"").getMatch(0);
-        final String subtitleURL_WEBVTT = br.getRegex("<dataTimedTextVtt url=\"(https?://[^\"]+)\"").getMatch(0);
+        String subtitleURL_XML = br.getRegex("<dataTimedTextNoOffset url=\"(https?://[^\"]+)\"").getMatch(0);
+        if (subtitleURL_XML == null) {
+            /* 2023-08-08: mdr.de */
+            subtitleURL_XML = getXML(br.getRequest().getHtmlCode(), "videoSubtitleUrl");
+        }
+        String subtitleURL_WEBVTT = br.getRegex("<dataTimedTextVtt url=\"(https?://[^\"]+)\"").getMatch(0);
+        if (subtitleURL_WEBVTT == null) {
+            /* 2023-08-08: mdr.de */
+            subtitleURL_WEBVTT = getXML(br.getRequest().getHtmlCode(), "webvttUrl");
+        }
         String date = getXML(br.toString(), "broadcastDate");
         if (StringUtils.isEmpty(date)) {
             /* E.g. kika.de */
@@ -1151,7 +1159,15 @@ public class Ardmediathek extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Crawl all embedded items on this page */
-        final String[] embedDatas = br.getRegex("data-ts_component='ts-mediaplayer'\\s*data-config='([^\\']+)'").getColumn(0);
+        String[] embedDatas = br.getRegex("data-ts_component='ts-mediaplayer'\\s*data-config='([^\\']+)'").getColumn(0);
+        if (embedDatas == null || embedDatas.length == 0) {
+            /* 2023-08-08 */
+            embedDatas = br.getRegex("data-v=\"(\\{&quot;mediadescription[^\"]+\\})").getColumn(0);
+        }
+        if (embedDatas == null || embedDatas.length == 0) {
+            logger.info("Failed to find any video content");
+            return ret;
+        }
         for (final String embedData : embedDatas) {
             final String embedJson = Encoding.htmlDecode(embedData);
             final Map<String, Object> root = restoreFromString(embedJson, TypeRef.MAP);
@@ -1169,6 +1185,7 @@ public class Ardmediathek extends PluginForDecrypt {
             }
             if (this.isAbort()) {
                 /* Abort by user */
+                logger.info("Stopping because: Aborted by user");
                 break;
             }
         }
@@ -1234,11 +1251,11 @@ public class Ardmediathek extends PluginForDecrypt {
             seriesTitle = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
         }
         if (!StringUtils.isEmpty(seriesTitle) && !StringUtils.isEmpty(title)) {
-            metadata.setTitle(seriesTitle + " - " + title.trim());
+            metadata.setTitle(Encoding.htmlDecode(seriesTitle).trim() + " - " + Encoding.htmlDecode(title).trim());
         } else if (!StringUtils.isEmpty(seriesTitle)) {
-            metadata.setTitle(seriesTitle);
+            metadata.setTitle(Encoding.htmlDecode(seriesTitle).trim());
         } else if (!StringUtils.isEmpty(title)) {
-            metadata.setTitle(title.trim());
+            metadata.setTitle(Encoding.htmlDecode(title).trim());
         }
         final Object broadcastedOnDateTime = meta.get("broadcastedOnDateTime");
         if (broadcastedOnDateTime != null) {
@@ -1250,6 +1267,19 @@ public class Ardmediathek extends PluginForDecrypt {
             metadata.setDescription(description);
         }
         final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
+        final List<Map<String, Object>> subtitles = (List<Map<String, Object>>) root.get("subtitles");
+        for (final Map<String, Object> subtitlemap : subtitles) {
+            final List<Map<String, Object>> sources = (List<Map<String, Object>>) subtitlemap.get("sources");
+            for (final Map<String, Object> subtitlesourcemap : sources) {
+                final String kind = subtitlesourcemap.get("kind").toString();
+                final String relativeURL = subtitlesourcemap.get("url").toString();
+                if (kind.equalsIgnoreCase("ebutt")) {
+                    metadata.setCaptionsURL_XML(br.getURL(relativeURL).toString());
+                } else {
+                    logger.info("Found unsupported subtitle-format: " + kind);
+                }
+            }
+        }
         final List<Map<String, Object>> streams = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(root, "streams/{0}/media");
         for (final Map<String, Object> stream : streams) {
             final String mimeType = stream.get("mimeType").toString();

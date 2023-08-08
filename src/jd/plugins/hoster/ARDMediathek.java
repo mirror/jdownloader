@@ -125,7 +125,7 @@ public class ARDMediathek extends PluginForHost {
     }
 
     private static boolean isSubtitleContent(final URLConnectionAdapter con) {
-        return con != null && con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "text/xml");
+        return con != null && con.getResponseCode() == 200 && (StringUtils.containsIgnoreCase(con.getContentType(), "text/xml") || StringUtils.containsIgnoreCase(con.getContentType(), "text/vtt"));
     }
 
     @Override
