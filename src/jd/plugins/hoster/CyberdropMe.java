@@ -123,18 +123,6 @@ public class CyberdropMe extends PluginForHost {
         return requestFileInformation(link, false);
     }
 
-    public static String findDirectURL(final Plugin plugin, final Browser br) {
-        String directurl = br.getRegex("link\\.href\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
-        if (directurl == null) {
-            directurl = br.getRegex("(?i)href\\s*=\\s*\"(https?://[^\"]+)[^>]*>\\s*Download").getMatch(0);
-            if (directurl == null) {
-                /* Video stream (URL is usually the same as downloadurl) */
-                directurl = br.getRegex("<source src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
-            }
-        }
-        return directurl;
-    }
-
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);

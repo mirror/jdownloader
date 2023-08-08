@@ -93,7 +93,7 @@ public class BunkrAlbum extends PluginForDecrypt {
         return buildAnnotationUrls(getPluginDomains());
     }
 
-    private static final String EXTENSIONS = "(?:mp4|m4v|mp3|mov|jpe?g|zip|rar|png|gif|ts|[a-z0-9]{3})";
+    private static final String EXTENSIONS = "(?i)(?:mp4|m4v|mp3|mov|jpe?g|zip|rar|png|gif|ts|[a-z0-9]{3})";
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -103,7 +103,6 @@ public class BunkrAlbum extends PluginForDecrypt {
             regex += "|https?://(\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?:v|d)/[^/#\\?]+"; // Same but wider
             regex += "|https?://c(?:dn)?(\\d+)?\\." + buildHostsPatternPart(domains) + "/[^/]+\\." + EXTENSIONS;// TYPE_CDN
             regex += "|https?://media-files\\d*\\." + buildHostsPatternPart(domains) + "/[^/]+\\." + EXTENSIONS;// TYPE_MEDIA_FILES
-            regex += "|https?://fs-\\d+\\." + buildHostsPatternPart(domains) + "/.+\\." + EXTENSIONS;// TYPE_FS
             ret.add(regex);
         }
         return ret.toArray(new String[0]);
@@ -113,7 +112,6 @@ public class BunkrAlbum extends PluginForDecrypt {
     /* 2023-03-24: bunkr, files subdomain seems outdated? */
     public static final String TYPE_SINGLE_FILE = "(?i)https?://[^/]+/(d|v)/([^/#\\?]+).*";
     public static final String TYPE_CDN         = "(?i)https?://c(?:dn)?(\\d+)?\\.[^/]+/(.+\\." + EXTENSIONS + ")";   // bunkr
-    public static final String TYPE_FS          = "(?i)https?://fs-(\\d+)\\.[^/]+/(.+\\." + EXTENSIONS + ")";         // cyberdrop
     public static final String TYPE_MEDIA_FILES = "(?i)https?://media-files(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")"; // bunkr
     private PluginForHost      plugin           = null;
 
@@ -158,33 +156,14 @@ public class BunkrAlbum extends PluginForDecrypt {
             }
             /* Double-check for offline / empty album. */
             final String albumID = new Regex(br.getURL(), TYPE_ALBUM).getMatch(0);
-            final String buildID = br.getRegex("\"buildId\"\\s*:\\s*\"([^\"]+)").getMatch(0);
-            if (albumID != null && buildID != null) {
-                final Browser brc = br.cloneBrowser();
-                brc.getPage("/_next/data/" + Encoding.urlEncode(buildID) + "/a/" + albumID + ".json");
-                if (brc.getHttpConnection().getResponseCode() == 404) {
-                    /* {"notFound":true} */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
+            String albumTitle = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+            if (albumTitle != null) {
+                albumTitle = Encoding.htmlDecode(albumTitle).trim();
+                albumTitle = albumTitle.replaceFirst(" \\| Bunkr.*$", "");
+            } else {
+                /* Fallback */
+                albumTitle = albumID;
             }
-            final String albumjs = br.getRegex("const albumData\\s*=\\s*(\\{.*?\\})").getMatch(0);
-            String fpName = new Regex(albumjs, "name\\s*:\\s*'([^\\']+)'").getMatch(0);
-            if (fpName == null) {
-                // bunkr.su
-                fpName = br.getRegex("property\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
-            }
-            if (fpName == null) {
-                fpName = br.getRegex("<h1 id=\"title\"[^>]*title=\"([^\"]+)\"[^>]*>").getMatch(0);
-                if (fpName == null) {
-                    // bunkr.su
-                    fpName = br.getRegex("<h1 id=\"title\"[^>]*>\\s*(.*?)\\s*<").getMatch(0);
-                }
-                if (fpName == null) {
-                    // bunkr.su 2023-02-13
-                    fpName = br.getRegex("<title>\\s*([^<]*?)\\s*\\|\\s*Bunkr\\s*</title>").getMatch(0);
-                }
-            }
-            final String albumDescription = br.getRegex("<span id=\"description-box\"[^>]*>([^<>\"]+)</span>").getMatch(0);
             String json = br.getRegex("<script\\s*id\\s*=\\s*\"__NEXT_DATA__\"\\s*type\\s*=\\s*\"application/json\">\\s*(\\{.*?\\})\\s*</script").getMatch(0);
             if (json != null) {
                 final Map<String, Object> map = restoreFromString(json, TypeRef.MAP);
@@ -246,14 +225,11 @@ public class BunkrAlbum extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            if (fpName != null) {
+            if (albumTitle != null && albumID != null) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName).trim());
+                fp.setName(albumTitle);
                 if (contentURL.matches(TYPE_ALBUM)) {
                     fp.setAllowInheritance(true);
-                }
-                if (!StringUtils.isEmpty(albumDescription)) {
-                    fp.setComment(albumDescription);
                 }
                 fp.addLinks(ret);
             }
@@ -347,9 +323,6 @@ public class BunkrAlbum extends PluginForDecrypt {
             return url;
         } else if (url.matches(TYPE_CDN)) {
             /* cdn can be empty(!) -> cdn.bunkr.is -> media-files.bunkr.is */
-            return url;
-        } else if (url.matches(TYPE_FS)) {
-            // cyberdrop
             return url;
         } else if (url.matches(TYPE_MEDIA_FILES)) {
             // bunkr

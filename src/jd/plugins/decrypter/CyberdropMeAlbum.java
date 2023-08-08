@@ -46,11 +46,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.CyberdropMe;
 import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -85,7 +83,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return buildAnnotationUrls(getPluginDomains());
     }
 
-    private static final String EXTENSIONS = "(?:mp4|m4v|mp3|mov|jpe?g|zip|rar|png|gif|ts|[a-z0-9]{3})";
+    private static final String EXTENSIONS = "(?i)(?:mp4|m4v|mp3|mov|jpe?g|zip|rar|png|gif|ts|[a-z0-9]{3})";
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -152,7 +150,13 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 }
             }
             final String albumjs = br.getRegex("const albumData\\s*=\\s*(\\{.*?\\})").getMatch(0);
-            String fpName = new Regex(albumjs, "name\\s*:\\s*'([^\\']+)'").getMatch(0);
+            String albumTitle = new Regex(albumjs, "name\\s*:\\s*'([^\\']+)'").getMatch(0);
+            if (albumTitle != null) {
+                albumTitle = Encoding.htmlDecode(albumTitle).trim();
+            } else {
+                /* Fallback */
+                albumTitle = albumID;
+            }
             final String json = br.getRegex("dynamicEl\\s*:\\s*(\\[\\s*\\{.*?\\])").getMatch(0);
             if (json != null) {
                 /* gallery mode only works for images */
@@ -175,26 +179,15 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 }
             }
             if (ret.isEmpty()) {
-                /* Look for single directurl */
-                // TODO: Remove this. It is most likely only for bunkrr.su links
-                final String directurl = CyberdropMe.findDirectURL(this, br);
-                final String filesize = br.getRegex("class=\"[^>]*text[^>]*\"[^>]*>\\s*([0-9\\.]+\\s+[MKG]B)").getMatch(0);
-                final String fileExtensionFromURL = filesize != null ? Plugin.getFileNameExtensionFromURL(directurl) : null;
-                /* Check if URL we got looks like a direct-URL and only then add it. */
-                if (directurl != null && (fileExtensionFromURL != null && fileExtensionFromURL.matches("\\." + EXTENSIONS))) {
-                    add(ret, dups, directurl, null, null, filesize, true);
-                }
-            }
-            if (ret.isEmpty()) {
                 if (br.containsHTML("(?i)>\\s*0 files\\s*<") || br.containsHTML("(?i)0 files \\(0 Bytes\\)\\s*<") || br.containsHTML("(?i)There are no files in the album")) {
                     throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            if (fpName != null) {
+            if (albumTitle != null && albumID != null) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName).trim());
+                fp.setName(albumTitle);
                 fp.setAllowInheritance(true);
                 fp.addLinks(ret);
             }

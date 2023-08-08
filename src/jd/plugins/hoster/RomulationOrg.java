@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,10 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "romulation.org" }, urls = { "https?://(?:www\\.)?romulation\\.(?:net|org)/rom/([^/]+/[^/]+)" })
 public class RomulationOrg extends PluginForHost {
@@ -198,7 +198,7 @@ public class RomulationOrg extends PluginForHost {
                 }
             }
         }
-        if (br.containsHTML("User class: Regular Member")) {
+        if (br.containsHTML("(?i)User class\\s*:\\s*Regular Member")) {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
