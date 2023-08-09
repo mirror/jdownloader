@@ -46,28 +46,28 @@ public interface CaptchaSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("True to enable a countdown in captcha dialogs. Dialog will close automated after the coundown")
+    @DescriptionForConfigEntry("True to enable a countdown in captcha dialogs. Dialog will close automated after the coundown")
     boolean isDialogCountdownForDownloadsEnabled();
 
     void setDialogCountdownForDownloadsEnabled(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("True to enable a countdown in crawler captcha dialogs. Dialog will close automated after the coundown")
+    @DescriptionForConfigEntry("True to enable a countdown in crawler captcha dialogs. Dialog will close automated after the coundown")
     boolean isDialogCountdownForCrawlerEnabled();
 
     void setDialogCountdownForCrawlerEnabled(boolean b);
 
     @AboutConfig
     @DefaultEnumValue("SKIP")
-    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("If the Dialog Countdown is reached, the link will be skipped. Disable this option to retry instead")
+    @DescriptionForConfigEntry("If the Dialog Countdown is reached, the link will be skipped. Disable this option to retry instead")
     CAPTCHA_TIMEOUT_ACTION getCaptchaTimeoutAction();
 
     void setCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
 
     @AboutConfig
     @DefaultEnumValue("SKIP")
-    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("If the Dialog Countdown is reached, the crawler will be skipped. Disable this option to retry instead")
+    @DescriptionForConfigEntry("If the Dialog Countdown is reached, the crawler will be skipped. Disable this option to retry instead")
     CAPTCHA_TIMEOUT_ACTION getCrawlerCaptchaTimeoutAction();
 
     void setCrawlerCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
@@ -82,7 +82,7 @@ public interface CaptchaSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultIntValue(95)
-    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Do not Change me unless you know 100000% what this value is used for!")
+    @DescriptionForConfigEntry("Do not Change me unless you know 100000% what this value is used for!")
     int getAutoCaptchaPriorityThreshold();
 
     void setAutoCaptchaPriorityThreshold(int value);
