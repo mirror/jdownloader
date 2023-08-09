@@ -350,6 +350,29 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 ret.add(dl);
             }
         }
+        final String json2023_08 = br.getRegex("page: (\\{.*?\\}),\\s+").getMatch(0);
+        if (json2023_08 != null) {
+            /* E.g. https://www.bbc.com/historyofthebbc/100-voices/ww2/country-at-war/ */
+            final Map<String, Object> map202308 = restoreFromString(json2023_08, TypeRef.MAP);
+            if (map202308 != null) {
+                final ArrayList<Map<String, Object>> hits = new ArrayList<Map<String, Object>>();
+                findVideoMapsList202308(hits, map202308);
+                logger.info("Number of detected embedded items: " + hits.size());
+                for (final Map<String, Object> media : hits) {
+                    final String description = (String) media.get("description");
+                    final String title = media.get("name").toString();
+                    final String vpid = media.get("video").toString();
+                    final DownloadLink dl = this.generateDownloadlink(vpid);
+                    dl.setContentUrl(br.getURL());
+                    if (!StringUtils.isEmpty(description)) {
+                        dl.setComment(description);
+                    }
+                    dl.setProperty(BbcCom.PROPERTY_TITLE, title);
+                    dl.setName(BbcCom.getFilename(dl));
+                    ret.add(dl);
+                }
+            }
+        }
         // final String[] newsVpids = br.getRegex("version_offset:(p[a-z0-9]+)").getColumn(0);
         // for (final String newsVpid : newsVpids) {
         // final DownloadLink dl = generateDownloadlink(newsVpid);
@@ -442,6 +465,30 @@ public class BbcComDecrypter extends PluginForDecrypt {
             return null;
         } else {
             return null;
+        }
+    }
+
+    private void findVideoMapsList202308(final ArrayList<Map<String, Object>> hits, final Object o) {
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            if (entrymap.containsKey("pid") && entrymap.containsKey("video") && entrymap.containsKey("videoDuration")) {
+                hits.add(entrymap);
+            } else {
+                for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
+                    // final String key = entry.getKey();
+                    final Object value = entry.getValue();
+                    if (value instanceof List || value instanceof Map) {
+                        findVideoMapsList202308(hits, value);
+                    }
+                }
+            }
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    findVideoMapsList202308(hits, arrayo);
+                }
+            }
         }
     }
 

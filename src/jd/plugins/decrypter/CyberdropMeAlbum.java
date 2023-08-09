@@ -43,13 +43,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CyberdropMeAlbum extends PluginForDecrypt {
@@ -83,20 +81,24 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return buildAnnotationUrls(getPluginDomains());
     }
 
-    private static final String EXTENSIONS = "(?i)(?:mp4|m4v|mp3|mov|jpe?g|zip|rar|png|gif|ts|[a-z0-9]{3})";
+    /**
+     * Those are all file-extensions which are whitelisted according to their upload form on the main page plus some video extensions. </br>
+     * Last updated: 2023-08-09
+     */
+    private static final String EXTENSIONS = "(?i)(?:mp4|m4v|mp3|mov|jpe?g|zip|rar|png|gif|ts|webp|bmp|tiff?|[a-z0-9]{3})";
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/a/[A-Za-z0-9]+";
-            regex += "|https?://fs-\\d+\\." + buildHostsPatternPart(domains) + "/.+\\." + EXTENSIONS;// TYPE_FS
+            regex += "|https?://fs-\\d+\\." + buildHostsPatternPart(domains) + "/.*?\\." + EXTENSIONS;// TYPE_FS
             ret.add(regex);
         }
         return ret.toArray(new String[0]);
     }
 
-    public static final String TYPE_ALBUM = "(?i)https?://[^/]+/a/([A-Za-z0-9]+)";                      // album
-    public static final String TYPE_FS    = "(?i)https?://fs-(\\d+)\\.[^/]+/(.+\\." + EXTENSIONS + ")"; // cyberdrop
+    public static final String TYPE_ALBUM = "(?i)https?://[^/]+/a/([A-Za-z0-9]+)";
+    public static final String TYPE_FS    = "(?i)https?://fs-(\\d+)\\.[^/]+/(.*?\\." + EXTENSIONS + ")";
     private PluginForHost      plugin     = null;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -127,7 +129,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             final URLConnectionAdapter con = this.br.openRequestConnection(getRequest);
             try {
                 if (this.looksLikeDownloadableContent(con)) {
-                    add(ret, dups, contentURL, getFileNameFromHeader(con), con.getLongContentLength() > 0 ? String.valueOf(con.getLongContentLength()) : null, null, true);
+                    add(ret, dups, contentURL, getFileNameFromHeader(con), con.getCompleteContentLength() > 0 ? String.valueOf(con.getCompleteContentLength()) : null, null, true);
                     return ret;
                 } else {
                     br.followConnection();
@@ -195,56 +197,39 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return ret;
     }
 
-    private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, String directurl, String filename, final String filesizeBytes, final String filesize, final boolean setOnlineStatus) throws Exception {
-        if (dups == null || dups.add(directurl)) {
-            // bunkr, html encoding in filename and directurl
-            filename = Encoding.htmlOnlyDecode(filename);
-            directurl = Encoding.htmlOnlyDecode(directurl);
-            final String directURL = isSingleMediaURL(directurl);
-            final DownloadLink dl;
-            if (directURL != null) {
-                dl = this.createDownloadlink(directURL);
-            } else {
-                dl = this.createDownloadlink(directurl);
-            }
-            dl.setProperty(DirectHTTP.PROPERTY_RATE_LIMIT, 500);
-            dl.setProperty(DirectHTTP.PROPERTY_MAX_CONCURRENT, 1);
-            if (plugin == null) {
-                try {
-                    final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(getHost());
-                    if (lazyHostPlugin == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        plugin = lazyHostPlugin.getPrototype(null, false);
-                    }
-                } catch (UpdateRequiredClassNotFoundException e) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
-                }
-            }
-            if (setOnlineStatus) {
-                dl.setAvailable(true);
-            }
-            if (directURL != null) {
-                // direct assign the dedicated hoster plugin because it does not have any URL regex
-                dl.setDefaultPlugin(plugin);
-            } else if (directurl.matches(TYPE_FS)) {
-                /* reset AvailableStatus to allow reprocessing through decrypter to find final URL */
-                /* see LinkCrawler.breakPluginForDecryptLoop */
-                dl.setAvailableStatus(AvailableStatus.UNCHECKED);
-            }
-            if (filename != null) {
-                dl.setFinalFileName(filename);
-            }
-            if (filesizeBytes != null) {
-                dl.setVerifiedFileSize(Long.parseLong(filesizeBytes));
-            } else if (filesize != null) {
-                dl.setDownloadSize(SizeFormatter.getSize(filesize));
-            }
-            ret.add(dl);
-            return dl;
-        } else {
+    private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, final String directurl, String filename, final String filesizeBytes, final String filesize, final boolean setOnlineStatus) throws Exception {
+        if (dups != null && !dups.add(directurl)) {
             return null;
         }
+        filename = Encoding.htmlDecode(filename);
+        final DownloadLink dl = this.createDownloadlink(directurl);
+        if (plugin == null) {
+            try {
+                final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(getHost());
+                if (lazyHostPlugin == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    plugin = lazyHostPlugin.getPrototype(null, false);
+                }
+            } catch (UpdateRequiredClassNotFoundException e) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+            }
+        }
+        if (setOnlineStatus) {
+            dl.setAvailable(true);
+        }
+        // direct assign the dedicated hoster plugin because it does not have any URL regex
+        dl.setDefaultPlugin(plugin);
+        if (filename != null) {
+            dl.setFinalFileName(filename);
+        }
+        if (filesizeBytes != null) {
+            dl.setVerifiedFileSize(Long.parseLong(filesizeBytes));
+        } else if (filesize != null) {
+            dl.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        ret.add(dl);
+        return dl;
     }
 
     private String parseMediaFilename(Browser br, String html) {

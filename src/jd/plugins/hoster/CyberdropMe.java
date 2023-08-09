@@ -9,6 +9,8 @@ import org.appwork.utils.StringUtils;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -119,6 +121,25 @@ public class CyberdropMe extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return "cyberdrop://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        String filenameFromURL = new Regex(link.getPluginPatternMatcher(), "(?i)https?://[^/]+/(.+)").getMatch(0);
+        if (filenameFromURL != null) {
+            return Encoding.htmlDecode(filenameFromURL);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
     }
@@ -127,7 +148,7 @@ public class CyberdropMe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String directurl = this.getContentURL(link);
-        final String filenameFromURL = Plugin.getFileNameFromURL(directurl);
+        final String filenameFromURL = getFID(link);
         if (!link.isNameSet() && filenameFromURL != null) {
             link.setName(filenameFromURL);
         }

@@ -81,8 +81,8 @@ public class RomulationOrg extends PluginForHost {
             /* Redirect to unknown page */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("Full Name</strong></td>[\t\n\r ]*?<td>([^<>\"]+)</td>").getMatch(0);
-        String filesize = br.getRegex("Filesize</strong></td>[\t\n\r ]*?<td>([^<>\"]+)</td>").getMatch(0);
+        final String filename = br.getRegex("Full Name\\s*</strong></td>[\t\n\r ]*?<td>([^<>\"]+)</td>").getMatch(0);
+        String filesize = br.getRegex("Filesize\\s*</strong></td>[\t\n\r ]*?<td>([^<>\"]+)</td>").getMatch(0);
         if (filename != null) {
             link.setName(Encoding.htmlDecode(filename).trim());
         } else {
@@ -247,7 +247,7 @@ public class RomulationOrg extends PluginForHost {
                 if (!isLoggedIn(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.saveCookies(br.getCookies(plugin.getHost()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;

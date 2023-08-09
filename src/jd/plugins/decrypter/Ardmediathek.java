@@ -1166,20 +1166,108 @@ public class Ardmediathek extends PluginForDecrypt {
         }
         if (embedDatas == null || embedDatas.length == 0) {
             logger.info("Failed to find any video content");
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        int progress = 0;
         for (final String embedData : embedDatas) {
+            progress++;
+            logger.info("Crawling embed json " + progress + "/" + embedDatas.length);
             final String embedJson = Encoding.htmlDecode(embedData);
+            String contentID = new Regex(embedJson, "video-(\\d+)").getMatch(0);
+            if (contentID == null) {
+                contentID = new Regex(embedJson, "(\\d{4}/\\d{4}/TV-\\d{8}-\\d+-\\d+)").getMatch(0);
+            }
             final Map<String, Object> root = restoreFromString(embedJson, TypeRef.MAP);
             final Map<String, Object> mc = (Map<String, Object>) root.get("mc");
-            final String _type = (String) mc.get("_type");
+            String _type = (String) mc.get("_type");
+            if (_type == null) {
+                _type = (String) root.get("playerType");
+            }
             if (_type == null || !_type.equalsIgnoreCase("video")) {
                 /* Skip unsupported items */
                 continue;
             }
-            final ArrayList<DownloadLink> result = crawlARDJsonExtended(param, mc);
+            final ArdMetadata metadata = new ArdMetadata();
+            if (contentID != null) {
+                metadata.setContentID(contentID);
+            } else {
+                logger.warning("Failed to find contentID");
+            }
+            final Map<String, Object> metamap = (Map<String, Object>) mc.get("meta");
+            final Map<String, Object> _info = (Map<String, Object>) mc.get("_info");
+            final Map<String, Object> _download = (Map<String, Object>) mc.get("_download");
+            if (_info != null) {
+                metadata.setTitle((String) _info.get("clipTitle"));
+                final String clipDate = _info.get("clipDate").toString();
+                if (clipDate != null) {
+                    final long timestamp = TimeFormatter.getMilliSeconds(clipDate, "dd.MM.yyyy HH:mm", Locale.GERMANY);
+                    metadata.setDateTimestamp(timestamp);
+                }
+                metadata.setChannel(_info.get("channelTitle").toString());
+                final String description = (String) _info.get("clipDescription");
+                if (!StringUtils.isEmpty(description)) {
+                    metadata.setDescription(description);
+                }
+            } else if (_download != null) {
+                /* Kind of our fallback as '_info' doesn't always exist */
+                if (metadata.getTitle() == null) {
+                    metadata.setTitle((String) _download.get("title"));
+                }
+                final String dateStr = (String) _download.get("date");
+                if (metadata.getChannel() == null) {
+                    metadata.setChannel(_download.get("channel").toString());
+                }
+                if (metadata.getDateTimestamp() == -1 && !StringUtils.isEmpty(dateStr)) {
+                    final long timestamp = TimeFormatter.getMilliSeconds(dateStr, "EEE MMM dd HH:mm:ss ZZZ yyyy", Locale.ENGLISH);
+                    metadata.setDateTimestamp(timestamp);
+                }
+                final String downloadurl = (String) _download.get("url");
+                if (downloadurl != null) {
+                    /* No contentID given in json -> Extract from URL */
+                    contentID = new Regex(downloadurl, "(\\d{4}/\\d{4}/TV-\\d{8}-\\d+-\\d+)").getMatch(0);
+                    if (contentID != null) {
+                        metadata.setContentID(contentID);
+                    }
+                }
+            } else if (metamap != null) {
+                metadata.setTitle(metamap.get("title").toString());
+            }
+            final List<Map<String, Object>> subtitles = (List<Map<String, Object>>) mc.get("subtitles");
+            if (subtitles != null && subtitles.size() > 0) {
+                for (final Map<String, Object> subtitlemap : subtitles) {
+                    final List<Map<String, Object>> sources = (List<Map<String, Object>>) subtitlemap.get("sources");
+                    for (final Map<String, Object> subtitlesourcemap : sources) {
+                        final String kind = subtitlesourcemap.get("kind").toString();
+                        final String relativeURL = subtitlesourcemap.get("url").toString();
+                        if (kind.equalsIgnoreCase("ebutt")) {
+                            metadata.setCaptionsURL_XML(br.getURL(relativeURL).toString());
+                        } else {
+                            logger.info("Found unsupported subtitle-format: " + kind);
+                        }
+                    }
+                }
+            }
+            final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
+            final List<Map<String, Object>> streams = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(mc, "streams/{0}/media");
+            for (final Map<String, Object> stream : streams) {
+                final String mimeType = stream.get("mimeType").toString();
+                final String url = stream.get("url").toString();
+                if (mimeType.equals("video/mp4")) {
+                    final Number width = (Number) stream.get("maxHResolutionPx");
+                    if (width == null) {
+                        logger.info("Skipping item with unavailable video-height value: " + url);
+                        continue;
+                    }
+                    this.addQualityHTTP(param, metadata, foundQualitiesMap, url, null, VideoResolution.getByWidth(width.intValue()), false);
+                } else if (mimeType.equals("application/vnd.apple.mpegurl")) {
+                    this.addHLS(param, metadata, foundQualitiesMap, br, url, false);
+                } else {
+                    logger.warning("Skipping unsupported mimeType: " + mimeType);
+                }
+            }
+            final ArrayList<DownloadLink> results = this.handleUserQualitySelection(metadata, foundQualitiesMap);
             /* Make sure user gets results right away. */
-            for (final DownloadLink link : result) {
+            for (final DownloadLink link : results) {
                 ret.add(link);
                 this.distribute(link);
             }
@@ -1193,10 +1281,10 @@ public class Ardmediathek extends PluginForDecrypt {
     }
 
     /** Crawls extended version of ardjson which also contains video metadata. */
-    private ArrayList<DownloadLink> crawlARDJsonExtended(final CryptedLink param, final Map<String, Object> root) throws Exception {
+    private ArrayList<DownloadLink> crawlARDJsonExtended(final CryptedLink param, final Map<String, Object> mc) throws Exception {
         final ArdMetadata metadata = new ArdMetadata();
-        final Map<String, Object> _info = (Map<String, Object>) root.get("_info");
-        final Map<String, Object> _download = (Map<String, Object>) root.get("_download");
+        final Map<String, Object> _info = (Map<String, Object>) mc.get("_info");
+        final Map<String, Object> _download = (Map<String, Object>) mc.get("_download");
         if (_info != null) {
             metadata.setTitle((String) _info.get("clipTitle"));
             final String clipDate = _info.get("clipDate").toString();
@@ -1232,12 +1320,19 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
             }
         }
-        final HashMap<String, DownloadLink> foundQualitiesMap = this.crawlARDJson(param, metadata, root);
+        final HashMap<String, DownloadLink> foundQualitiesMap = this.crawlARDJson(param, metadata, mc);
         return this.handleUserQualitySelection(metadata, foundQualitiesMap);
     }
 
-    private ArrayList<DownloadLink> crawlNdrJson(final CryptedLink param, Browser br, final Map<String, Object> root) throws Exception {
+    private ArrayList<DownloadLink> crawlNdrJson(final CryptedLink param, final Browser br, final Map<String, Object> root) throws Exception {
         final ArdMetadata metadata = new ArdMetadata();
+        /* Lazy attempt */
+        final String contentID = new Regex(br.getRequest().getHtmlCode(), "(\\d{4}/\\d{4}/TV-\\d{8}-\\d+-\\d+)").getMatch(0);
+        if (contentID != null) {
+            metadata.setContentID(contentID);
+        } else {
+            logger.warning("Failed to find contentID");
+        }
         final Map<String, Object> meta = (Map<String, Object>) root.get("meta");
         String title = (String) meta.get("title");
         if (StringUtils.isEmpty(title)) {
@@ -1266,26 +1361,32 @@ public class Ardmediathek extends PluginForDecrypt {
         if (!StringUtils.isEmpty(description)) {
             metadata.setDescription(description);
         }
-        final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
         final List<Map<String, Object>> subtitles = (List<Map<String, Object>>) root.get("subtitles");
-        for (final Map<String, Object> subtitlemap : subtitles) {
-            final List<Map<String, Object>> sources = (List<Map<String, Object>>) subtitlemap.get("sources");
-            for (final Map<String, Object> subtitlesourcemap : sources) {
-                final String kind = subtitlesourcemap.get("kind").toString();
-                final String relativeURL = subtitlesourcemap.get("url").toString();
-                if (kind.equalsIgnoreCase("ebutt")) {
-                    metadata.setCaptionsURL_XML(br.getURL(relativeURL).toString());
-                } else {
-                    logger.info("Found unsupported subtitle-format: " + kind);
+        if (subtitles != null && subtitles.size() > 0) {
+            for (final Map<String, Object> subtitlemap : subtitles) {
+                final List<Map<String, Object>> sources = (List<Map<String, Object>>) subtitlemap.get("sources");
+                for (final Map<String, Object> subtitlesourcemap : sources) {
+                    final String kind = subtitlesourcemap.get("kind").toString();
+                    final String relativeURL = subtitlesourcemap.get("url").toString();
+                    if (kind.equalsIgnoreCase("ebutt")) {
+                        metadata.setCaptionsURL_XML(br.getURL(relativeURL).toString());
+                    } else {
+                        logger.info("Found unsupported subtitle-format: " + kind);
+                    }
                 }
             }
         }
+        final HashMap<String, DownloadLink> foundQualitiesMap = new HashMap<String, DownloadLink>();
         final List<Map<String, Object>> streams = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(root, "streams/{0}/media");
         for (final Map<String, Object> stream : streams) {
             final String mimeType = stream.get("mimeType").toString();
             final String url = stream.get("url").toString();
             if (mimeType.equals("video/mp4")) {
                 final Number width = (Number) stream.get("maxHResolutionPx");
+                if (width == null) {
+                    logger.info("Skipping item with unavailable video-height value: " + url);
+                    continue;
+                }
                 this.addQualityHTTP(param, metadata, foundQualitiesMap, url, null, VideoResolution.getByWidth(width.intValue()), false);
             } else if (mimeType.equals("application/vnd.apple.mpegurl")) {
                 this.addHLS(param, metadata, foundQualitiesMap, br, url, false);
@@ -1441,7 +1542,7 @@ public class Ardmediathek extends PluginForDecrypt {
             link.setProperty(ARDMediathek.PROPERTY_ITEM_ID, metadata.getContentID());
         } else if (metadata.isRequiresContentIDToBeSet()) {
             /* ContentID should be available but is not! */
-            logger.log(new Exception("FixMe!"));
+            logger.log(new Exception("!Dev! FixMe! A missing contentID can lead to strange behavior especially of subtitle handling!!"));
         }
         if (filesize > 0) {
             if (setVerifiedFilesize) {
