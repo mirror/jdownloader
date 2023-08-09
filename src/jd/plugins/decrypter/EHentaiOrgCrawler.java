@@ -45,12 +45,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+import jd.plugins.hoster.EHentaiOrg;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:e-hentai\\.org|exhentai\\.org)/(g|mpv)/(\\d+)/([a-z0-9]+)" })
-public class EHentaiOrg extends PluginForDecrypt {
-    public EHentaiOrg(PluginWrapper wrapper) {
+public class EHentaiOrgCrawler extends PluginForDecrypt {
+    public EHentaiOrgCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -61,12 +60,12 @@ public class EHentaiOrg extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final PluginForHost hostplugin = JDUtilities.getPluginForHost("e-hentai.org");
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final EHentaiOrg hostplugin = (EHentaiOrg) this.getNewPluginForHostInstance("e-hentai.org");
         // final String url_host = Browser.getHost(param.getCryptedUrl());
         final Account account = AccountController.getInstance().getValidAccount(hostplugin);
         if (account != null) {
-            ((jd.plugins.hoster.EHentaiOrg) hostplugin).login(this.br, account, false);
+            hostplugin.login(this.br, account, false);
         }
         // links are transferable between the login enforced url and public, but may not be available on public
         String gallerytype = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
@@ -105,8 +104,8 @@ public class EHentaiOrg extends PluginForDecrypt {
             }
         }
         if (jd.plugins.hoster.EHentaiOrg.isOffline(br) || br.containsHTML("Key missing, or incorrect key provided") || br.containsHTML("class=\"d\"") || br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            ret.add(this.createOfflinelink(parameter));
+            return ret;
         } else if (br.getRequest().getHttpConnection().getCompleteContentLength() == 0) {
             /* 2020-11-10: Rare case */
             logger.warning("Blank page --> Are you trying to access exhentai.org without the appropriate rights?");
@@ -133,7 +132,7 @@ public class EHentaiOrg extends PluginForDecrypt {
                 galleryArchive.setDownloadSize(SizeFormatter.getSize(archiveFileSize));
             }
             galleryArchive.setAvailable(true);
-            decryptedLinks.add(galleryArchive);
+            ret.add(galleryArchive);
             distribute(galleryArchive);
         }
         /* Now add all single images */
@@ -204,7 +203,7 @@ public class EHentaiOrg extends PluginForDecrypt {
                     dl.setProperty("imagekey", imagekey);
                     fp.add(dl);
                     distribute(dl);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     counter++;
                 }
                 logger.info("Stepping out of loop as mpv URLs have all objects on the first page");
@@ -221,16 +220,16 @@ public class EHentaiOrg extends PluginForDecrypt {
                     final DownloadLink dl = getDownloadlink(singleLink, galleryid, uploaderName, tagsCommaSeparated, fpName, originalFilename, counter);
                     fp.add(dl);
                     distribute(dl);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     counter++;
                 }
             }
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user: " + parameter);
-                return decryptedLinks;
+                return ret;
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     final Set<String> dupes = new HashSet<String>();
