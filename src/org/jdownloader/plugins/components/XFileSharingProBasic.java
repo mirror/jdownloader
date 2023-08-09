@@ -1159,6 +1159,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     return new Regex(new URL(url).getPath(), "/file/([a-z0-9]{12})").getMatch(0);
                 case SHORT:
                     return new Regex(new URL(url).getPath(), "/d/([a-z0-9]+)").getMatch(0);
+                case OFFICIAL_VIDEO_DOWNLOAD:
+                    return new Regex(new URL(url).getPath(), "/d/([a-z0-9]{12})").getMatch(0);
                 case NORMAL:
                     return new Regex(new URL(url).getPath(), "/([a-z0-9]{12})").getMatch(0);
                 default:

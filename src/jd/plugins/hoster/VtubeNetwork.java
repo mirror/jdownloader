@@ -21,30 +21,29 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class StreamhubTo extends XFileSharingProBasic {
-    public StreamhubTo(final PluginWrapper wrapper) {
+public class VtubeNetwork extends XFileSharingProBasic {
+    public VtubeNetwork(final PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(super.getPurchasePremiumURL());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2023-01-18: nulla<br />
+     * captchatype-info: null 4dignum solvemedia reCaptchaV2, hcaptcha<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamhub.to", "streamhub.gg" });
+        ret.add(new String[] { "vtube.network" });
         return ret;
     }
 
@@ -81,21 +80,14 @@ public class StreamhubTo extends XFileSharingProBasic {
         final AccountType type = account != null ? account.getType() : null;
         if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return 1;
+            return 0;
         } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return 0;
         }
-    }
-
-    @Override
-    protected String requestFileInformationVideoEmbed(final Browser br, final DownloadLink link, final Account account, final boolean findFilesize) throws Exception {
-        /* Small hack: Remove referer or we will get response "Video embed restricted for this domain". */
-        br.setCurrentURL("");
-        return super.requestFileInformationVideoEmbed(br, link, account, findFilesize);
     }
 
     @Override
@@ -111,20 +103,5 @@ public class StreamhubTo extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    protected boolean isVideohoster_enforce_video_filename() {
-        return true;
-    }
-
-    @Override
-    public String[] scanInfo(final String html, final String[] fileInfo) {
-        super.scanInfo(html, fileInfo);
-        final String betterFilename = br.getRegex("<h4>([^<]+)</h4>").getMatch(0);
-        if (betterFilename != null) {
-            fileInfo[0] = betterFilename;
-        }
-        return fileInfo;
     }
 }

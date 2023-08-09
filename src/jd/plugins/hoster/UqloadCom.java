@@ -42,13 +42,14 @@ public class UqloadCom extends XFileSharingProBasic {
      */
     @Override
     public String rewriteHost(final String host) {
+        /* 2023-08-09: They're frequently changing their main domain. */
         return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "uqload.co", "uqload.com" });
+        ret.add(new String[] { "uqload.io", "uqload.co", "uqload.com" });
         return ret;
     }
 
