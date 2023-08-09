@@ -93,6 +93,11 @@ public class Bunkr extends PluginForHost {
     private int getMaxSimultaneousFreeAnonymousDownloads() {
         return Integer.MAX_VALUE;
     }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
     // @Override
     // public PluginForHost assignPlugin(PluginFinder pluginFinder, DownloadLink link) {
     // final String pluginHost = getHost();
@@ -217,7 +222,7 @@ public class Bunkr extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             if (isDownload) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, true, this.getMaxChunks(null));
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, null), this.getMaxChunks(null));
                 con = dl.getConnection();
             } else {
                 con = br.openGetConnection(directurl);
@@ -238,7 +243,7 @@ public class Bunkr extends PluginForHost {
                 } else {
                     logger.info("Trying again with fresh directurl: " + alternativeFreshDirecturl);
                     if (isDownload) {
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, alternativeFreshDirecturl, true, this.getMaxChunks(null));
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, alternativeFreshDirecturl, isResumeable(link, null), this.getMaxChunks(null));
                         con = dl.getConnection();
                     } else {
                         con = br.openGetConnection(alternativeFreshDirecturl);

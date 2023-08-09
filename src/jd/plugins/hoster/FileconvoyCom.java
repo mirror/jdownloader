@@ -16,24 +16,30 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.FileconvoyComFolder;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fileconvoy.com" }, urls = { "https?://(?:www\\.)?fileconvoy\\.com/dfl\\.php\\?id=([a-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { FileconvoyComFolder.class })
 public class FileconvoyCom extends PluginForHost {
     public FileconvoyCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,112 +52,154 @@ public class FileconvoyCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        if (linkid != null) {
-            return linkid;
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
     }
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 1;
-    private String               dllink            = null;
+    private String getFID(final DownloadLink link) {
+        try {
+            return UrlQuery.parse(link.getPluginPatternMatcher()).get("id");
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static List<String[]> getPluginDomains() {
+        return FileconvoyComFolder.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        dllink = null;
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            /* No regex: URLs get added via crawler */
+            ret.add("");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return false;
+    }
+
+    private int getMaxChunks(final Account account) {
+        return 1;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
-        br.getPage(link.getPluginPatternMatcher());
-        /* RegEx for offline files */
-        final Regex finfo = br.getRegex("class=\"TableData\">([^<>\"]+)</td><td>([^<>\"]+)</td>");
-        /* RegEx for online files */
-        final Regex finfo2 = br.getRegex("class=\"TableData\"><a href=\"(http[^\"]+)\">([^<>\"]+)</a></td><td>([^<>\"]+)</td>");
-        dllink = finfo2.getMatch(0);
-        String filename = finfo.getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            filename = finfo2.getMatch(1);
-        }
-        if (StringUtils.isEmpty(filename)) {
-            filename = this.getLinkID(link);
-        }
-        String filesize = finfo.getMatch(1);
-        if (StringUtils.isEmpty(filesize)) {
-            filesize = finfo2.getMatch(2);
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        /* Special: Filename- and size are sometimes given even for offline urls. */
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">The file set you are looking for is no longer available")) {
-            return AvailableStatus.FALSE;
-        } else if (br.containsHTML("Invalid retrieval request")) {
-            /* 2020-12-03 */
-            return AvailableStatus.FALSE;
-        }
-        return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
-    }
-
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String directurl = checkDirectLink(downloadLink, directlinkproperty);
-        if (directurl == null) {
-            directurl = this.dllink;
-            if (StringUtils.isEmpty(directurl)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            final String directurl = link.getPluginPatternMatcher();
+            if (isDownload) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, null), getMaxChunks(null));
+                con = dl.getConnection();
+            } else {
+                con = br.openGetConnection(directurl);
             }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directurl, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-        dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
             try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                handleConnectionErrors(br, con);
+            } catch (final PluginException e) {
+                /* E.g. cdn.bunkr.ru -> bunkr.su/v/... -> Try to find fresh directurl */
+                logger.info("ContentURL did not lead to downloadable content -> Looking for fresh directurl");
+                final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+                final String fid = this.getFID(link);
+                if (fid == null) {
+                    throw e;
                 }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
+                String freshDirecturl = null;
+                for (final String url : urls) {
+                    if (url.contains(fid)) {
+                        freshDirecturl = url;
+                    }
+                }
+                if (freshDirecturl == null) {
+                    logger.info("Failed to find fresh directurl");
+                    throw e;
+                } else if (StringUtils.equals(directurl, freshDirecturl)) {
+                    logger.info("Fresh directurl is the same as old one -> Retrying doesn't make any sense");
+                    throw e;
+                } else {
+                    logger.info("Trying again with fresh directurl: " + freshDirecturl);
+                    if (isDownload) {
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, freshDirecturl, true, this.getMaxChunks(null));
+                        con = dl.getConnection();
+                    } else {
+                        con = br.openGetConnection(freshDirecturl);
+                    }
+                    handleConnectionErrors(br, con);
+                    logger.info("Fresh directurl is working: " + freshDirecturl);
+                }
+            }
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+            }
+            final String filenameFromHeader = Plugin.getFileNameFromHeader(con);
+            if (!StringUtils.isEmpty(filenameFromHeader)) {
+                link.setFinalFileName(filenameFromHeader);
+            }
+        } finally {
+            if (!isDownload) {
                 try {
                     con.disconnect();
                 } catch (final Throwable e) {
                 }
             }
         }
-        return dllink;
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link, true);
+        if (this.dl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (FileconvoyComFolder.isOffline(br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken?");
+            }
+        }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return 1;
     }
 
     @Override

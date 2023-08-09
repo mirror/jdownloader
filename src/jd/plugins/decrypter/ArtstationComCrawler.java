@@ -109,7 +109,7 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
             }
             ArtstationCom.setHeaders(this.br);
             getPage("https://www.artstation.com/projects/" + project_id + ".json");
-            final Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
             final List<Object> resource_data_list = (List<Object>) json.get("assets");
             final String full_name = (String) JavaScriptEngineFactory.walkJson(json, "user/full_name");
             final String username = (String) JavaScriptEngineFactory.walkJson(json, "user/username");
@@ -204,7 +204,6 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                 }
                 filename = Encoding.htmlDecode(filename);
                 filename = filename.trim();
-                filename = encodeUnicode(filename);
                 String ext = getFileNameExtensionFromString(url, ArtstationCom.default_Extension);
                 /* Make sure that we get a correct extension */
                 if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
@@ -244,7 +243,7 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
             if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
                 return ret;
             }
-            final Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            final Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
             final String full_name_of_username_in_url = (String) json.get("full_name");
             final String projectTitle = (String) json.get("title");
             final short entries_per_page = 50;
@@ -259,7 +258,7 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
             do {
                 logger.info("Crawling page " + page + " | Offset " + offset);
                 getPage("/users/" + username + "/" + type + ".json?randomize=false&page=" + page);
-                final Map<String, Object> pageJson = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                final Map<String, Object> pageJson = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
                 if (ret.size() == 0) {
                     /* We're crawling the first page */
                     entries_total = (int) JavaScriptEngineFactory.toLong(pageJson.get("total_count"), 0);
@@ -290,7 +289,6 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                     } else {
                         filename = full_name_of_uploader + "_" + id + ".jpg";
                     }
-                    filename = encodeUnicode(filename);
                     dl.setContentUrl(url_content);
                     if (description != null) {
                         dl.setComment(description);
@@ -340,7 +338,6 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                 if (StringUtils.isNotEmpty(itemname)) {
                     filename = itemname + "_" + filename;
                 }
-                filename = encodeUnicode(filename);
                 dl.setName(filename);
                 dl.setFinalFileName(filename);
                 fp.add(dl);

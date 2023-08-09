@@ -35,8 +35,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -107,49 +105,29 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         if (singleFileURL != null) {
             /* Direct downloadable URL. */
             add(ret, null, param.getCryptedUrl(), null, null, null, false);
-        } else {
+        } else if (param.getCryptedUrl().matches(TYPE_ALBUM)) {
             /* Most likely we have an album or similar: One URL which leads to more URLs. */
             String contentURL = param.getCryptedUrl();
-            final String hostFromAddedURL = new URL(contentURL).getHost();
+            final String hostFromAddedURLWithoutSubdomain = new URL(contentURL).getHost();
             final List<String> deadDomains = getDeadDomains();
-            if (deadDomains != null && deadDomains.size() > 0) {
-                for (final String deadHost : deadDomains) {
-                    if (StringUtils.equalsIgnoreCase(hostFromAddedURL, deadHost) || StringUtils.equalsIgnoreCase(hostFromAddedURL, "www." + deadHost)) {
-                        final String newHost = getHost();
-                        contentURL = param.getCryptedUrl().replaceFirst(Pattern.quote(hostFromAddedURL) + "/", newHost + "/");
-                        logger.info("Corrected domain in added URL: " + hostFromAddedURL + " --> " + newHost);
-                        break;
-                    }
-                }
+            if (deadDomains != null && deadDomains.contains(hostFromAddedURLWithoutSubdomain)) {
+                contentURL = param.getCryptedUrl().replaceFirst(Pattern.quote(hostFromAddedURLWithoutSubdomain) + "/", getHost() + "/");
+                logger.info("Corrected domain in added URL: " + hostFromAddedURLWithoutSubdomain + " --> " + getHost());
             }
             final HashSet<String> dups = new HashSet<String>();
             br.setFollowRedirects(true);
-            /* Double-check if we got a direct-URL. */
-            final GetRequest getRequest = br.createGetRequest(contentURL);
-            final URLConnectionAdapter con = this.br.openRequestConnection(getRequest);
-            try {
-                if (this.looksLikeDownloadableContent(con)) {
-                    add(ret, dups, contentURL, getFileNameFromHeader(con), con.getCompleteContentLength() > 0 ? String.valueOf(con.getCompleteContentLength()) : null, null, true);
-                    return ret;
-                } else {
-                    br.followConnection();
-                }
-            } finally {
-                con.disconnect();
-            }
+            br.getPage(contentURL);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* Double-check for offline / empty album. */
             final String albumID = new Regex(br.getURL(), TYPE_ALBUM).getMatch(0);
             int numberofFiles = -1;
-            if (albumID != null) {
-                final String numberofFilesStr = br.getRegex("id=\"totalFilesAmount\"[^>]*>\\s*(\\d+)").getMatch(0);
-                if (numberofFilesStr != null) {
-                    numberofFiles = Integer.parseInt(numberofFilesStr);
-                } else {
-                    logger.warning("Failed to find number of files in this album");
-                }
+            final String numberofFilesStr = br.getRegex("id=\"totalFilesAmount\"[^>]*>\\s*(\\d+)").getMatch(0);
+            if (numberofFilesStr != null) {
+                numberofFiles = Integer.parseInt(numberofFilesStr);
+            } else {
+                logger.warning("Failed to find number of files in this album");
             }
             final String buildID = br.getRegex("\"buildId\"\\s*:\\s*\"([^\"]+)").getMatch(0);
             if (albumID != null && buildID != null) {
@@ -207,15 +185,20 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            if (albumTitle != null && albumID != null) {
-                final FilePackage fp = FilePackage.getInstance();
+            final FilePackage fp = FilePackage.getInstance();
+            if (albumTitle != null) {
                 fp.setName(albumTitle);
-                fp.setAllowInheritance(true);
-                if (!StringUtils.isEmpty(albumDescription)) {
-                    fp.setComment(albumDescription);
-                }
-                fp.addLinks(ret);
+            } else {
+                fp.setName(albumID);
             }
+            fp.setAllowInheritance(true);
+            if (!StringUtils.isEmpty(albumDescription)) {
+                fp.setComment(albumDescription);
+            }
+            fp.addLinks(ret);
+        } else {
+            /* Invalid URL -> Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return ret;
     }
