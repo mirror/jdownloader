@@ -142,6 +142,15 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
             }
             /* Double-check for offline / empty album. */
             final String albumID = new Regex(br.getURL(), TYPE_ALBUM).getMatch(0);
+            int numberofFiles = -1;
+            if (albumID != null) {
+                final String numberofFilesStr = br.getRegex("id=\"totalFilesAmount\"[^>]*>\\s*(\\d+)").getMatch(0);
+                if (numberofFilesStr != null) {
+                    numberofFiles = Integer.parseInt(numberofFilesStr);
+                } else {
+                    logger.warning("Failed to find number of files in this album");
+                }
+            }
             final String buildID = br.getRegex("\"buildId\"\\s*:\\s*\"([^\"]+)").getMatch(0);
             if (albumID != null && buildID != null) {
                 final Browser brc = br.cloneBrowser();
@@ -152,7 +161,18 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 }
             }
             final String albumjs = br.getRegex("const albumData\\s*=\\s*(\\{.*?\\})").getMatch(0);
-            String albumTitle = new Regex(albumjs, "name\\s*:\\s*'([^\\']+)'").getMatch(0);
+            String albumTitle = null;
+            String albumDescription = null;
+            if (albumjs != null) {
+                albumTitle = new Regex(albumjs, "name\\s*:\\s*'([^\\']+)'").getMatch(0);
+                albumDescription = new Regex(albumjs, "description\\s*:\\s*(?:'|`)([^\\'`]+)").getMatch(0);
+            }
+            if (albumDescription == null) {
+                albumDescription = br.getRegex("<span id=\"description-box\"[^>]*>([^<]+)</span>").getMatch(0);
+            }
+            if (albumDescription != null) {
+                albumDescription = Encoding.htmlDecode(albumDescription).trim();
+            }
             if (albumTitle != null) {
                 albumTitle = Encoding.htmlDecode(albumTitle).trim();
             } else {
@@ -181,7 +201,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 }
             }
             if (ret.isEmpty()) {
-                if (br.containsHTML("(?i)>\\s*0 files\\s*<") || br.containsHTML("(?i)0 files \\(0 Bytes\\)\\s*<") || br.containsHTML("(?i)There are no files in the album")) {
+                if (numberofFiles == 0 || br.containsHTML("(?i)There are no files in the album")) {
                     throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -191,6 +211,9 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(albumTitle);
                 fp.setAllowInheritance(true);
+                if (!StringUtils.isEmpty(albumDescription)) {
+                    fp.setComment(albumDescription);
+                }
                 fp.addLinks(ret);
             }
         }
@@ -201,7 +224,6 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         if (dups != null && !dups.add(directurl)) {
             return null;
         }
-        filename = Encoding.htmlDecode(filename);
         final DownloadLink dl = this.createDownloadlink(directurl);
         if (plugin == null) {
             try {
@@ -221,7 +243,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         // direct assign the dedicated hoster plugin because it does not have any URL regex
         dl.setDefaultPlugin(plugin);
         if (filename != null) {
-            dl.setFinalFileName(filename);
+            dl.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
         if (filesizeBytes != null) {
             dl.setVerifiedFileSize(Long.parseLong(filesizeBytes));

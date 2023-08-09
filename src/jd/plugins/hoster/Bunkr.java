@@ -12,6 +12,8 @@ import org.appwork.utils.StringUtils;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -119,6 +121,28 @@ public class Bunkr extends PluginForHost {
     // return super.assignPlugin(pluginFinder, link);
     // }
     // }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return "bunkr://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        String filenameFromURL = new Regex(link.getPluginPatternMatcher(), BunkrAlbum.TYPE_SINGLE_FILE).getMatch(0);
+        if (filenameFromURL == null) {
+            filenameFromURL = new Regex(link.getPluginPatternMatcher(), "(?i)https?://[^/]+/(.+)").getMatch(0);
+        }
+        if (filenameFromURL != null) {
+            return Encoding.htmlDecode(filenameFromURL).trim();
+        } else {
+            return null;
+        }
+    }
 
     private String getContentURL(final DownloadLink link) {
         final String url = link.getPluginPatternMatcher();

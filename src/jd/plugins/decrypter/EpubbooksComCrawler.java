@@ -13,10 +13,11 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -24,37 +25,34 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
+import jd.plugins.hoster.EpubbooksCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "epubbooks.com" }, urls = { "https?://(?:www\\.)?epubbooks\\.com/book/\\d+\\-[a-z0-9\\-]+" })
-public class EpubbooksCom extends PluginForDecrypt {
-
-    public EpubbooksCom(PluginWrapper wrapper) {
+public class EpubbooksComCrawler extends PluginForDecrypt {
+    public EpubbooksComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final PluginForHost hostplugin = JDUtilities.getPluginForHost(this.getHost());
-        final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa == null) {
-            logger.info("Account required");
-            return decryptedLinks;
+            throw new AccountRequiredException();
         }
-        jd.plugins.hoster.EpubbooksCom.login(this.br, aa, false);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
+        // final PluginForHost hostplugin = this.getNewPluginForHostInstance(this.getHost());
+        EpubbooksCom.login(this.br, aa, false);
         br.getPage(parameter);
         if (jd.plugins.hoster.EpubbooksCom.isOffline(this.br)) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_title = new Regex(parameter, "/\\d+\\-([^/]+)$").getMatch(0);
         String fpName = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
@@ -86,13 +84,11 @@ public class EpubbooksCom extends PluginForDecrypt {
             dl.setName(url_title + ext);
             dl.setAvailable(true);
             dl.setProperty("mainlink", parameter);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
-
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
-
-        return decryptedLinks;
+        fp.setName(Encoding.htmlDecode(fpName).trim());
+        fp.addLinks(ret);
+        return ret;
     }
 }

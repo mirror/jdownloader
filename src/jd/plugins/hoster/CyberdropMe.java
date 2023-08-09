@@ -133,7 +133,7 @@ public class CyberdropMe extends PluginForHost {
     private String getFID(final DownloadLink link) {
         String filenameFromURL = new Regex(link.getPluginPatternMatcher(), "(?i)https?://[^/]+/(.+)").getMatch(0);
         if (filenameFromURL != null) {
-            return Encoding.htmlDecode(filenameFromURL);
+            return Encoding.htmlDecode(filenameFromURL).trim();
         } else {
             return null;
         }

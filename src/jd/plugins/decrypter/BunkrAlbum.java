@@ -46,7 +46,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -155,6 +154,19 @@ public class BunkrAlbum extends PluginForDecrypt {
             }
             /* Double-check for offline / empty album. */
             final String albumID = new Regex(br.getURL(), TYPE_ALBUM).getMatch(0);
+            int numberofFiles = -1;
+            if (albumID != null) {
+                final String numberofFilesStr = br.getRegex(">\\s*(\\d+)\\s*files").getMatch(0);
+                if (numberofFilesStr != null) {
+                    numberofFiles = Integer.parseInt(numberofFilesStr);
+                } else {
+                    logger.warning("Failed to find number of files in this album");
+                }
+            }
+            String albumDescription = br.getRegex("<p class=\"text-base text-body-color dark:text-dark-text\"[^>]*>([^<]+)</p>").getMatch(0);
+            if (albumDescription != null) {
+                albumDescription = Encoding.htmlDecode(albumDescription).trim();
+            }
             String albumTitle = br.getRegex("<title>([^<]+)</title>").getMatch(0);
             if (albumTitle != null) {
                 albumTitle = Encoding.htmlDecode(albumTitle).trim();
@@ -218,7 +230,7 @@ public class BunkrAlbum extends PluginForDecrypt {
                 }
             }
             if (ret.isEmpty()) {
-                if (br.containsHTML("(?i)>\\s*0 files\\s*<") || br.containsHTML("(?i)There are no files in the album")) {
+                if (numberofFiles == 0 || br.containsHTML("(?i)There are no files in the album")) {
                     throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -227,8 +239,9 @@ public class BunkrAlbum extends PluginForDecrypt {
             if (albumTitle != null && albumID != null) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(albumTitle);
-                if (contentURL.matches(TYPE_ALBUM)) {
-                    fp.setAllowInheritance(true);
+                fp.setAllowInheritance(true);
+                if (!StringUtils.isEmpty(albumDescription)) {
+                    fp.setComment(albumDescription);
                 }
                 fp.addLinks(ret);
             }
@@ -236,20 +249,11 @@ public class BunkrAlbum extends PluginForDecrypt {
         return ret;
     }
 
-    private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, String directurl, String filename, final String filesizeBytes, final String filesize, final boolean setOnlineStatus) throws Exception {
+    private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, final String directurl, String filename, final String filesizeBytes, final String filesize, final boolean setOnlineStatus) throws Exception {
         if (dups != null && !dups.add(directurl)) {
             return null;
         }
-        // bunkr, html encoding in filename and directurl
-        filename = Encoding.htmlOnlyDecode(filename);
-        directurl = Encoding.htmlOnlyDecode(directurl);
-        final String directURL = isSingleMediaURL(directurl);
-        final DownloadLink dl;
-        if (directURL != null) {
-            dl = this.createDownloadlink(directURL);
-        } else {
-            dl = this.createDownloadlink(directurl);
-        }
+        final DownloadLink dl = this.createDownloadlink(directurl);
         if (plugin == null) {
             try {
                 final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(getHost());
@@ -265,16 +269,9 @@ public class BunkrAlbum extends PluginForDecrypt {
         if (setOnlineStatus) {
             dl.setAvailable(true);
         }
-        if (directURL != null) {
-            // direct assign the dedicated hoster plugin because it does not have any URL regex
-            dl.setDefaultPlugin(plugin);
-        } else if (directurl.matches(TYPE_SINGLE_FILE)) {
-            /* reset AvailableStatus to allow reprocessing through decrypter to find final URL */
-            /* see LinkCrawler.breakPluginForDecryptLoop */
-            dl.setAvailableStatus(AvailableStatus.UNCHECKED);
-        }
+        dl.setDefaultPlugin(plugin);
         if (filename != null) {
-            dl.setFinalFileName(filename);
+            dl.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
         if (filesizeBytes != null) {
             dl.setVerifiedFileSize(Long.parseLong(filesizeBytes));
