@@ -29,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -48,8 +49,7 @@ public class UnknownPornScript8 extends PluginForHost {
     /* Porn_plugin */
     /* V0.2 */
     /* Tags: Script, template */
-    private String  dllink      = null;
-    private boolean serverissue = false;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -57,9 +57,35 @@ public class UnknownPornScript8 extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String linkid = getFID(link);
+        if (linkid != null) {
+            return this.getHost() + "://" + linkid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        String fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/embed/(\\d+)").getMatch(0);
+        if (fid == null) {
+            fid = new Regex(link.getPluginPatternMatcher(), "(\\d+)\\.html$").getMatch(0);
+        }
+        return fid;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        serverissue = false;
+        this.dllink = null;
         final String extDefault = ".mp4";
+        final String urlSlug = new Regex(link.getPluginPatternMatcher(), "(?i)/video/([^/]+)-\\d+\\.html$").getMatch(0);
+        if (!link.isNameSet()) {
+            if (urlSlug != null) {
+                link.setName(Encoding.htmlDecode(urlSlug).replace("-", " ").trim() + extDefault);
+            } else {
+                link.setName(this.getFID(link) + extDefault);
+            }
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
@@ -75,9 +101,9 @@ public class UnknownPornScript8 extends PluginForHost {
             }
         }
         final String filename_url = getUrlFilename(link);
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\">").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            filename = filename_url;
+        String title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]+)\">").getMatch(0);
+        if (StringUtils.isEmpty(title)) {
+            title = filename_url;
         }
         dllink = br.getRegex("<source src=\"(https?[^<>\"]+)\"").getMatch(0);
         if (dllink == null) {
@@ -92,31 +118,31 @@ public class UnknownPornScript8 extends PluginForHost {
             }
         }
         if (dllink == null) {
-            logger.info("filename: " + filename + ", dllink: " + dllink);
+            logger.info("filename: " + title + ", dllink: " + dllink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename);
-            filename = filename.trim();
-            filename = encodeUnicode(filename);
-            filename += ".mp4";
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
+            link.setFinalFileName(title + extDefault);
         }
-        link.setFinalFileName(filename);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openHeadConnection(dllink);
-            if (this.looksLikeDownloadableContent(con)) {
+        if (!StringUtils.isEmpty(dllink)) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-            } else {
-                serverissue = true;
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
@@ -140,21 +166,25 @@ public class UnknownPornScript8 extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (serverissue) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
-        dl.startDownload();
     }
 
     @Override

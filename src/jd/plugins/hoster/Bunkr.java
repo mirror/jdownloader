@@ -133,7 +133,7 @@ public class Bunkr extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        String filenameFromURL = new Regex(link.getPluginPatternMatcher(), BunkrAlbum.TYPE_SINGLE_FILE).getMatch(0);
+        String filenameFromURL = new Regex(link.getPluginPatternMatcher(), BunkrAlbum.TYPE_SINGLE_FILE).getMatch(2);
         if (filenameFromURL == null) {
             filenameFromURL = new Regex(link.getPluginPatternMatcher(), "(?i)https?://[^/]+/(.+)").getMatch(0);
         }
@@ -146,33 +146,29 @@ public class Bunkr extends PluginForHost {
 
     private String getContentURL(final DownloadLink link) {
         final String url = link.getPluginPatternMatcher();
-        String newurl = url;
-        /* Remove/correct old/invalid subdomains */
-        newurl = newurl.replaceFirst("stream\\.", "");
-        /* Replace domain in URL if we know that it is dead. */
-        final List<String> deadDomains;
-        /* Desired domain correction depends on URL-pattern. */
-        final boolean replaceSubdomain;
-        if (newurl.matches(BunkrAlbum.TYPE_SINGLE_FILE)) {
-            deadDomains = BunkrAlbum.getDeadDomains();
-            replaceSubdomain = true;
-        } else {
-            deadDomains = getDeadCDNDomains();
-            replaceSubdomain = false;
-        }
-        final String hostFromAddedURL = Browser.getHost(newurl, false);
-        final String hostFromAddedURLToReplace = Browser.getHost(newurl, replaceSubdomain);
-        if (deadDomains != null && deadDomains.size() > 0) {
-            for (final String deadHost : deadDomains) {
-                if (StringUtils.equalsIgnoreCase(hostFromAddedURL, deadHost) || StringUtils.equalsIgnoreCase(hostFromAddedURL, "www." + deadHost)) {
-                    final String newHost = getHost();
-                    newurl = newurl.replaceFirst(Pattern.quote(hostFromAddedURLToReplace) + "/", newHost + "/");
-                    // logger.info("Corrected domain in added URL: " + hostFromAddedURL + " --> " + newHost);
-                    break;
-                }
+        final Regex singleFileRegex = new Regex(url, BunkrAlbum.TYPE_SINGLE_FILE);
+        final String hostFromAddedURLWithoutSubdomain = Browser.getHost(url, false);
+        if (singleFileRegex.patternFind()) {
+            final List<String> deadDomains = BunkrAlbum.getDeadDomains();
+            final String type = singleFileRegex.getMatch(1);
+            final String filename = singleFileRegex.getMatch(2);
+            final String host;
+            if (deadDomains != null && deadDomains.contains(hostFromAddedURLWithoutSubdomain)) {
+                /* We know given host is dead -> Use current main domain */
+                host = getHost();
+            } else {
+                /* Use domain from given url */
+                host = hostFromAddedURLWithoutSubdomain;
             }
+            return "https://" + host + "/" + type + "/" + filename;
+        } else {
+            final List<String> deadDomains = getDeadCDNDomains();
+            if (deadDomains != null && deadDomains.contains(hostFromAddedURLWithoutSubdomain)) {
+                final String newurl = url.replaceFirst(Pattern.quote(hostFromAddedURLWithoutSubdomain) + "/", getHost() + "/");
+                return newurl;
+            }
+            return url;
         }
-        return newurl;
     }
 
     private final String PROPERTY_ALTERNATIVE_DIRECTURL = "alternative_directurl";
@@ -214,9 +210,6 @@ public class Bunkr extends PluginForHost {
         if (!link.isNameSet() && filenameFromURL != null) {
             link.setName(filenameFromURL);
         }
-        // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)
-        // Chrome/115.0.0.0 Safari/537.36");
-        // br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(null));
         final String containerURL = link.getContainerUrl();
         if (containerURL != null) {
             br.getHeaders().put("Referer", containerURL);
@@ -233,7 +226,7 @@ public class Bunkr extends PluginForHost {
                 handleConnectionErrors(br, con);
             } catch (final PluginException e) {
                 /* E.g. cdn.bunkr.ru -> bunkr.su/v/... -> Try to find fresh directurl */
-                logger.info("Directurl did not lead to downloadable content -> Looking for freh directurl");
+                logger.info("ContentURL did not lead to downloadable content -> Looking for fresh directurl");
                 final String alternativeFreshDirecturl = findDirectURL(this, br);
                 // final String filesize = Bunkr.findFilesize(this, br);
                 if (alternativeFreshDirecturl == null) {

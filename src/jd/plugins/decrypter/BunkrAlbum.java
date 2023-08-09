@@ -38,8 +38,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -48,11 +46,9 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.Bunkr;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BunkrAlbum extends PluginForDecrypt {
@@ -108,7 +104,7 @@ public class BunkrAlbum extends PluginForDecrypt {
 
     public static final String TYPE_ALBUM       = "(?i)https?://[^/]+/a/([A-Za-z0-9]+)";                              // album
     /* 2023-03-24: bunkr, files subdomain seems outdated? */
-    public static final String TYPE_SINGLE_FILE = "(?i)https?://[^/]+/(d|v)/([^/#\\?]+).*";
+    public static final String TYPE_SINGLE_FILE = "(?i)https?://([^/]+)/(d|v)/([^/#\\?]+).*";
     public static final String TYPE_CDN         = "(?i)https?://c(?:dn)?(\\d+)?\\.[^/]+/(.+\\." + EXTENSIONS + ")";   // bunkr
     public static final String TYPE_MEDIA_FILES = "(?i)https?://media-files(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")"; // bunkr
     private PluginForHost      plugin           = null;
@@ -119,49 +115,29 @@ public class BunkrAlbum extends PluginForDecrypt {
         if (singleFileURL != null) {
             /* Direct downloadable URL. */
             add(ret, null, param.getCryptedUrl(), null, null, null, false);
-        } else {
+        } else if (param.getCryptedUrl().matches(TYPE_ALBUM)) {
             /* Most likely we have an album or similar: One URL which leads to more URLs. */
             String contentURL = param.getCryptedUrl();
-            final String hostFromAddedURL = new URL(contentURL).getHost();
+            final String hostFromAddedURLWithoutSubdomain = Browser.getHost(contentURL, false);
             final List<String> deadDomains = getDeadDomains();
-            if (deadDomains != null && deadDomains.size() > 0) {
-                for (final String deadHost : getDeadDomains()) {
-                    if (StringUtils.equalsIgnoreCase(hostFromAddedURL, deadHost) || StringUtils.equalsIgnoreCase(hostFromAddedURL, "www." + deadHost)) {
-                        final String newHost = getHost();
-                        contentURL = param.getCryptedUrl().replaceFirst(Pattern.quote(hostFromAddedURL) + "/", newHost + "/");
-                        logger.info("Corrected domain in added URL: " + hostFromAddedURL + " --> " + newHost);
-                        break;
-                    }
-                }
+            if (deadDomains != null && deadDomains.contains(hostFromAddedURLWithoutSubdomain)) {
+                contentURL = param.getCryptedUrl().replaceFirst(Pattern.quote(hostFromAddedURLWithoutSubdomain) + "/", getHost() + "/");
+                logger.info("Corrected domain in added URL: " + hostFromAddedURLWithoutSubdomain + " --> " + getHost());
             }
-            final HashSet<String> dups = new HashSet<String>();
             br.setFollowRedirects(true);
-            /* Double-check if we got a direct-URL. */
-            final GetRequest getRequest = br.createGetRequest(contentURL);
-            final URLConnectionAdapter con = this.br.openRequestConnection(getRequest);
-            try {
-                if (this.looksLikeDownloadableContent(con)) {
-                    add(ret, dups, contentURL, getFileNameFromHeader(con), con.getCompleteContentLength() > 0 ? String.valueOf(con.getCompleteContentLength()) : null, null, true);
-                    return ret;
-                } else {
-                    br.followConnection();
-                }
-            } finally {
-                con.disconnect();
-            }
+            br.getPage(contentURL);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            final HashSet<String> dups = new HashSet<String>();
             /* Double-check for offline / empty album. */
-            final String albumID = new Regex(br.getURL(), TYPE_ALBUM).getMatch(0);
+            final String albumID = new Regex(param.getCryptedUrl(), TYPE_ALBUM).getMatch(0);
             int numberofFiles = -1;
-            if (albumID != null) {
-                final String numberofFilesStr = br.getRegex(">\\s*(\\d+)\\s*files").getMatch(0);
-                if (numberofFilesStr != null) {
-                    numberofFiles = Integer.parseInt(numberofFilesStr);
-                } else {
-                    logger.warning("Failed to find number of files in this album");
-                }
+            final String numberofFilesStr = br.getRegex(">\\s*(\\d+)\\s*files").getMatch(0);
+            if (numberofFilesStr != null) {
+                numberofFiles = Integer.parseInt(numberofFilesStr);
+            } else {
+                logger.warning("Failed to find number of files in this album");
             }
             String albumDescription = br.getRegex("<p class=\"text-base text-body-color dark:text-dark-text\"[^>]*>([^<]+)</p>").getMatch(0);
             if (albumDescription != null) {
@@ -172,8 +148,7 @@ public class BunkrAlbum extends PluginForDecrypt {
                 albumTitle = Encoding.htmlDecode(albumTitle).trim();
                 albumTitle = albumTitle.replaceFirst(" \\| Bunkr.*$", "");
             } else {
-                /* Fallback */
-                albumTitle = albumID;
+                logger.warning("Failed to find album title");
             }
             String json = br.getRegex("<script\\s*id\\s*=\\s*\"__NEXT_DATA__\"\\s*type\\s*=\\s*\"application/json\">\\s*(\\{.*?\\})\\s*</script").getMatch(0);
             if (json != null) {
@@ -219,32 +194,27 @@ public class BunkrAlbum extends PluginForDecrypt {
                 }
             }
             if (ret.isEmpty()) {
-                /* Look for single directurl */
-                /* 2023-07-06: E.g. bunkr.su/v/fileID */
-                final String directurl = Bunkr.findDirectURL(this, br);
-                final String filesize = Bunkr.findFilesize(this, br);
-                final String fileExtensionFromURL = filesize != null ? Plugin.getFileNameExtensionFromURL(directurl) : null;
-                /* Check if URL we got looks like a direct-URL and only then add it. */
-                if (directurl != null && (this.isSingleMediaURL(directurl) != null || (fileExtensionFromURL != null && fileExtensionFromURL.matches("\\." + EXTENSIONS)))) {
-                    add(ret, dups, directurl, null, null, filesize, true);
-                }
-            }
-            if (ret.isEmpty()) {
                 if (numberofFiles == 0 || br.containsHTML("(?i)There are no files in the album")) {
                     throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            if (albumTitle != null && albumID != null) {
-                final FilePackage fp = FilePackage.getInstance();
+            final FilePackage fp = FilePackage.getInstance();
+            if (albumTitle != null) {
                 fp.setName(albumTitle);
-                fp.setAllowInheritance(true);
-                if (!StringUtils.isEmpty(albumDescription)) {
-                    fp.setComment(albumDescription);
-                }
-                fp.addLinks(ret);
+            } else {
+                /* Fallback */
+                fp.setName(albumID);
             }
+            fp.setAllowInheritance(true);
+            if (!StringUtils.isEmpty(albumDescription)) {
+                fp.setComment(albumDescription);
+            }
+            fp.addLinks(ret);
+        } else {
+            /* Invalid URL -> Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return ret;
     }
