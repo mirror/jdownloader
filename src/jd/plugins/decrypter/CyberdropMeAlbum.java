@@ -24,14 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -46,6 +38,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CyberdropMeAlbum extends PluginForDecrypt {
@@ -104,7 +104,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         final String singleFileURL = isSingleMediaURL(param.getCryptedUrl());
         if (singleFileURL != null) {
             /* Direct downloadable URL. */
-            add(ret, null, param.getCryptedUrl(), null, null, null, false);
+            add(ret, null, param.getCryptedUrl(), null, null, null, null);
         } else if (param.getCryptedUrl().matches(TYPE_ALBUM)) {
             /* Most likely we have an album or similar: One URL which leads to more URLs. */
             String contentURL = param.getCryptedUrl();
@@ -203,7 +203,7 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
         return ret;
     }
 
-    private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, final String directurl, String filename, final String filesizeBytes, final String filesize, final boolean setOnlineStatus) throws Exception {
+    private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, final String directurl, String filename, final String filesizeBytes, final String filesize, final Boolean setOnlineStatus) throws Exception {
         if (dups != null && !dups.add(directurl)) {
             return null;
         }
@@ -220,8 +220,8 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
             }
         }
-        if (setOnlineStatus) {
-            dl.setAvailable(true);
+        if (setOnlineStatus != null) {
+            dl.setAvailable(setOnlineStatus.booleanValue());
         }
         // direct assign the dedicated hoster plugin because it does not have any URL regex
         dl.setDefaultPlugin(plugin);
@@ -261,8 +261,8 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
     }
 
     /**
-     * Returns URL if given URL looks like it is pointing to a single file. </br>
-     * Returns null if given URL-structure is unknown or does not seem to point to a single file.
+     * Returns URL if given URL looks like it is pointing to a single file. </br> Returns null if given URL-structure is unknown or does not
+     * seem to point to a single file.
      */
     private String isSingleMediaURL(final String url) {
         if (url == null) {

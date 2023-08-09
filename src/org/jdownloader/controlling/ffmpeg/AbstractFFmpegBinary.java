@@ -19,6 +19,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.raf.FileBytesMap;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.resources.AWUTheme;
@@ -45,11 +50,6 @@ import org.jdownloader.controlling.ffmpeg.FFMpegException.ERROR;
 import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.downloader.hls.M3U8Playlist.M3U8Segment;
 
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.raf.FileBytesMap;
-
 public abstract class AbstractFFmpegBinary {
     public static enum FLAGTYPE {
         LIB,
@@ -64,7 +64,6 @@ public abstract class AbstractFFmpegBinary {
         WEBM(FLAGTYPE.FORMAT, "E\\s*(webm|matroska,webm)"), // mux
         DASH(FLAGTYPE.FORMAT, "E\\s*dash"), // mux
         HLS(FLAGTYPE.FORMAT, "D\\s*(hls|applehttp)");// demux
-
         private final Pattern  pattern;
         private final FLAGTYPE type;
 
@@ -751,6 +750,7 @@ public abstract class AbstractFFmpegBinary {
         DEFAULT_FORMAT_BY_EXTENSION.put(".avi", "avi");
         DEFAULT_FORMAT_BY_EXTENSION.put(".flv", "flv");
         DEFAULT_FORMAT_BY_EXTENSION.put(".ogg", "ogg");
+        DEFAULT_FORMAT_BY_EXTENSION.put(".opus", "opus");
         DEFAULT_FORMAT_BY_EXTENSION.put(".mkv", "matroska");
         DEFAULT_FORMAT_BY_EXTENSION.put(".webm", "webm");
         DEFAULT_FORMAT_BY_EXTENSION.put(".mpeg", "mpeg");

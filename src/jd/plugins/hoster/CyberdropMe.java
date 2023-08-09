@@ -3,8 +3,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.appwork.utils.StringUtils;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -21,6 +20,8 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CyberdropMeAlbum;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { CyberdropMeAlbum.class })
@@ -73,50 +74,13 @@ public class CyberdropMe extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-    // @Override
-    // public PluginForHost assignPlugin(PluginFinder pluginFinder, DownloadLink link) {
-    // final String pluginHost = getHost();
-    // if (pluginFinder != null && CyberdropMe.class.equals(getClass()) && !pluginHost.equals(link.getHost())) {
-    // final String url = link.getPluginPatternMatcher();
-    // final boolean checkHostFlag;
-    // if (CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(pluginHost) && url.matches(CyberdropMeAlbum.TYPE_FS)) {
-    // checkHostFlag = true;
-    // } else if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(pluginHost) && (url.matches(CyberdropMeAlbum.TYPE_CDN) ||
-    // url.matches(CyberdropMeAlbum.TYPE_STREAM))) {
-    // checkHostFlag = true;
-    // } else {
-    // checkHostFlag = false;
-    // return null;
-    // }
-    // if (checkHostFlag) {
-    // final String host = Browser.getHost(url);
-    // for (String siteSupportedName : siteSupportedNames()) {
-    // if (StringUtils.equalsIgnoreCase(siteSupportedName, host)) {
-    // return super.assignPlugin(pluginFinder, link);
-    // }
-    // }
-    // }
-    // return null;
-    // } else {
-    // return super.assignPlugin(pluginFinder, link);
-    // }
-    // }
-    //
-    // @Override
-    // public LazyPlugin.FEATURE[] getFeatures() {
-    // if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(getHost()) || CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(getHost())) {
-    // return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.ASSIGN_PLUGIN };
-    // } else {
-    // return new LazyPlugin.FEATURE[0];
-    // }
-    // }
 
     private String getContentURL(final DownloadLink link) {
         final String url = link.getPluginPatternMatcher();
         /* Do some domain corrections */
         String newURL = url.replaceFirst("(?i)cyberdrop\\.[a-z]+/", CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN + "/");
-        /* Some fileservers are permanently down -> Fix that */
-        newURL = newURL.replaceFirst("fs-06\\.", "fs-02.");
+        /* Some fileservers are permanently down -> Fix that by using random fs01 to fs05 */
+        newURL = newURL.replaceFirst("fs-06\\.", "fs-0." + (1 + new Random().nextInt(5)));
         return newURL;
     }
 

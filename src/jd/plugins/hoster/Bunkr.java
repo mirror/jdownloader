@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -24,6 +22,8 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.BunkrAlbum;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { BunkrAlbum.class })
@@ -98,34 +98,6 @@ public class Bunkr extends PluginForHost {
     public boolean isResumeable(final DownloadLink link, final Account account) {
         return true;
     }
-    // @Override
-    // public PluginForHost assignPlugin(PluginFinder pluginFinder, DownloadLink link) {
-    // final String pluginHost = getHost();
-    // if (pluginFinder != null && CyberdropMe.class.equals(getClass()) && !pluginHost.equals(link.getHost())) {
-    // final String url = link.getPluginPatternMatcher();
-    // final boolean checkHostFlag;
-    // if (CyberdropMeAlbum.MAIN_CYBERDROP_DOMAIN.equals(pluginHost) && url.matches(CyberdropMeAlbum.TYPE_FS)) {
-    // checkHostFlag = true;
-    // } else if (CyberdropMeAlbum.MAIN_BUNKR_DOMAIN.equals(pluginHost) && (url.matches(CyberdropMeAlbum.TYPE_CDN) ||
-    // url.matches(CyberdropMeAlbum.TYPE_STREAM))) {
-    // checkHostFlag = true;
-    // } else {
-    // checkHostFlag = false;
-    // return null;
-    // }
-    // if (checkHostFlag) {
-    // final String host = Browser.getHost(url);
-    // for (String siteSupportedName : siteSupportedNames()) {
-    // if (StringUtils.equalsIgnoreCase(siteSupportedName, host)) {
-    // return super.assignPlugin(pluginFinder, link);
-    // }
-    // }
-    // }
-    // return null;
-    // } else {
-    // return super.assignPlugin(pluginFinder, link);
-    // }
-    // }
 
     @Override
     public String getLinkID(final DownloadLink link) {

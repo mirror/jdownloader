@@ -13,8 +13,10 @@ import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.storage.StorableValidatorIgnoresMissingGetter;
 import org.appwork.storage.config.handler.StorageHandler;
 
+@StorableValidatorIgnoresMissingGetter
 public abstract class LookAndFeelExtension implements LAFSettings {
     public abstract void customizeHeaderScrollPane(JComponent headerScrollPane);
 

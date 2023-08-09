@@ -14,7 +14,7 @@
 	<property name="pluginres" value="${dist}/pluginressourcen" />
 
 
-  
+
 	<path id="classpath">
 		<fileset dir="${cls}" />
 		<!-- Dependencies -->
@@ -101,12 +101,18 @@
 			</fileset>
 		</copy>
 
-		<copy todir="${dist}">
+		<copy todir="${dist}/themes/standard/org/jdownloader/">
+			<fileset dir="${dep.awu}/themes/themes/standard/org/appwork/" includes="**/*">
+				<exclude name="**/*.psd" />
+				<exclude name="**/*.pnd" />
+			</fileset>
+		</copy>
+
+		<copy todir="${dist}" overwrite="true">
 			<fileset dir="themes" includes="**/*">
 				<exclude name="**/*.psd" />
 				<exclude name="**/*.pnd" />
 			</fileset>
-
 		</copy>
 
 		<copy todir="${dist}/licenses">

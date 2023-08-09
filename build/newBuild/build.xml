@@ -127,12 +127,18 @@
 			</fileset>
 		</copy>
 
-		<copy todir="${dist}">
+		<copy todir="${dist}/themes/standard/org/jdownloader/">
+			<fileset dir="${dep.awu}/themes/themes/standard/org/appwork/" includes="**/*">
+				<exclude name="**/*.psd" />
+				<exclude name="**/*.pnd" />
+			</fileset>
+		</copy>
+
+		<copy todir="${dist}" overwrite="true">
 			<fileset dir="themes" includes="**/*">
 				<exclude name="**/*.psd" />
 				<exclude name="**/*.pnd" />
 			</fileset>
-
 		</copy>
 
 		<copy todir="${dist}/licenses">
@@ -368,10 +374,10 @@
 			<attribute name="Created-By" value="Appwork GmbH and JDownloader Community" />
 			<attribute name="Main-Class" value="org.jdownloader.update.launcher.JDLauncher" />
 			<!-- Synthetica JPMS, http://www.javasoft.de/synthetica/faq/#general-23-->
-			<!-- https://openjdk.java.net/jeps/238--> 
+			<!-- https://openjdk.java.net/jeps/238-->
 			<attribute name="Add-Exports" value="java.desktop/sun.swing java.desktop/sun.swing.table java.desktop/sun.swing.plaf.synth java.desktop/com.sun.java.swing.plaf.windows java.desktop/sun.awt.shell java.desktop/com.sun.awt java.base/sun.security.action" />
 			<attribute name="Add-Opens" value="java.desktop/javax.swing.plaf.synth java.desktop/javax.swing.plaf.basic java.desktop/javax.swing java.desktop/javax.swing.tree java.desktop/java.awt.event" />
-					
+
 			<!-- plugins that serialize own classes have to be put in the classpath -->
 			<!--<attribute name="Class-Path" value="" />-->
 
