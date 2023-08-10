@@ -160,23 +160,44 @@ public class Bunkr extends PluginForHost {
         return "https://" + getHost() + "/d/" + filename;
     }
 
-    private final String PROPERTY_LAST_GRABBED_DIRECTURL = "last_grabbed_directurl";
+    private final String PROPERTY_LAST_GRABBED_DIRECTURL    = "last_grabbed_directurl";
+    private final String PROPERTY_LAST_USED_SINGLE_FILE_URL = "last_used_single_file_url";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
     }
 
-    public static String findFilesize(final Plugin plugin, final Browser br) {
-        String filesize = br.getRegex("Download (\\d+[^<]+)</a>").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("class=\"[^>]*text[^>]*\"[^>]*>\\s*([0-9\\.]+\\s+[MKG]B)").getMatch(0);
-        }
-        return filesize;
-    }
-
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
+        final String lastCachedDirecturl = link.getStringProperty(PROPERTY_LAST_GRABBED_DIRECTURL);
+        final String lastUsedSingleFileURL = link.getStringProperty(PROPERTY_LAST_USED_SINGLE_FILE_URL);
+        if (lastCachedDirecturl != null && lastUsedSingleFileURL != null) {
+            logger.info("Trying to re-use last cached directurl: " + lastCachedDirecturl);
+            br.getHeaders().put("Referer", lastUsedSingleFileURL);
+            URLConnectionAdapter con = null;
+            try {
+                if (isDownload) {
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, lastCachedDirecturl, isResumeable(link, null), this.getMaxChunks(null));
+                    con = dl.getConnection();
+                } else {
+                    con = br.openGetConnection(lastCachedDirecturl);
+                }
+                handleConnectionErrors(br, con);
+                logger.info("Successfully re-used last cached directurl");
+                return AvailableStatus.TRUE;
+            } catch (final Exception e) {
+                logger.log(e);
+                logger.info("Failed to re-use last cached directurl");
+            } finally {
+                if (!isDownload) {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
+        }
         String directurl;
         if (link.getPluginPatternMatcher().matches(BunkrAlbum.TYPE_SINGLE_FILE)) {
             directurl = getDirecturlFromSingleFileAvailablecheck(link, this.getContentURL(link), true);
@@ -220,6 +241,7 @@ public class Bunkr extends PluginForHost {
                     throw e;
                 } else {
                     final String singleFileURL = br.getURL();
+                    link.setProperty(PROPERTY_LAST_USED_SINGLE_FILE_URL, singleFileURL);
                     if (br.getHttpConnection().getResponseCode() == 416) {
                         /* E.g. resume of download. */
                         br.getPage(singleFileURL);
@@ -232,6 +254,7 @@ public class Bunkr extends PluginForHost {
                     } else {
                         con = br.openGetConnection(freshDirecturl);
                     }
+                    handleConnectionErrors(br, con);
                 }
             }
             if (con.getCompleteContentLength() > 0) {
