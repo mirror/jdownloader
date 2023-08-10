@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -20,8 +22,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CyberdropMeAlbum;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { CyberdropMeAlbum.class })
@@ -135,6 +135,11 @@ public class CyberdropMe extends PluginForHost {
             final String filenameFromHeader = Plugin.getFileNameFromHeader(con);
             if (!StringUtils.isEmpty(filenameFromHeader)) {
                 link.setFinalFileName(filenameFromHeader);
+            }
+        } catch (final Throwable e) {
+            try {
+                con.disconnect();
+            } catch (final Throwable ignore) {
             }
         } finally {
             if (!isDownload) {

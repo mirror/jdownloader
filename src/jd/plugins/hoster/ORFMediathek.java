@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -31,12 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "https?://tvthek\\.orf\\.atdecrypted\\d+" })
 public class ORFMediathek extends PluginForHost {
@@ -84,7 +84,6 @@ public class ORFMediathek extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
             filename = Encoding.htmlDecode(filename).trim();
-            filename = encodeUnicode(filename);
             filename += ".mp3";
             link.setFinalFileName(filename);
             final String audioID = br.getRegex("data\\-audio=\"(\\d+)\"").getMatch(0);
@@ -147,7 +146,6 @@ public class ORFMediathek extends PluginForHost {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                return AvailableStatus.TRUE;
             } finally {
                 try {
                     con.disconnect();
@@ -166,7 +164,7 @@ public class ORFMediathek extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void download(final DownloadLink link) throws Exception {
-        final String dllink = link.getStringProperty("directURL", null);
+        final String dllink = link.getStringProperty("directURL");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -224,18 +222,18 @@ public class ORFMediathek extends PluginForHost {
             link.setProperty("FLVFIXER", true);
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
         } else {
-            boolean isSRT = false;
+            boolean isSubtitle = false;
             if (link.getName().endsWith(".srt")) {
-                isSRT = true;
+                isSubtitle = true;
                 /* Workaround for old downloadcore bug that can lead to incomplete files */
                 br.getHeaders().put("Accept-Encoding", "identity");
             }
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, !isSRT, isSRT ? 1 : 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, !isSubtitle, isSubtitle ? 1 : 0);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 final URLConnectionAdapter con = dl.getConnection();
-                if (isSRT && con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "html")) {
-                    // valid subtitle
+                if (isSubtitle && con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "html")) {
+                    // valid subtitle -> Allow download
                 } else {
                     br.followConnection(true);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

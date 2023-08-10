@@ -25,12 +25,12 @@ import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
@@ -40,6 +40,8 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -98,12 +100,37 @@ public class LinkSnappyCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private final boolean resumes                  = true;
-    private final int     chunks                   = 0;
-    /** Defines max. waittime for cached downloads after last serverside progress change. */
-    private final int     CACHE_WAIT_THRESHOLD     = 10 * 60000;
-    private final String  PROPERTY_DIRECTURL       = "linksnappycomdirectlink";
-    private final String  PROPERTY_HOSTER_INFO_MAP = "hoster_info_map";
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        final int maxchunksDefault = 1;
+        try {
+            /* Try to get this information from map which is saved on Account object every time the account gets checked. */
+            final Map<String, Map<String, Object>> allHosterInfoMap = (Map<String, Map<String, Object>>) account.getProperty(PROPERTY_HOSTER_INFO_MAP);
+            final Map<String, Object> thisHosterInfoMap = allHosterInfoMap.get(link.getHost());
+            final int connlimit = Integer.parseInt(thisHosterInfoMap.get("connlimit").toString());
+            if (connlimit > 1) {
+                return -connlimit;
+            } else {
+                return connlimit;
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            logger.warning("Missing or faulty hostermap for host: " + link.getHost());
+        }
+        return maxchunksDefault;
+    }
+
+    /**
+     * Defines max. waittime for cached downloads after last serverside progress change. </br>
+     * Longer time than this and progress of serverside download did not change --> Abort
+     */
+    private final int    CACHE_WAIT_THRESHOLD     = 10 * 60000;
+    private final String PROPERTY_DIRECTURL       = "linksnappycomdirectlink";
+    private final String PROPERTY_HOSTER_INFO_MAP = "hoster_info_map";
 
     public void setBrowser(final Browser br) {
         super.setBrowser(br);
@@ -148,8 +175,8 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     /**
-     * Only call this for download-requests of files, hosted on linksnappy!! Do not call this in any handling which is taking care of other
-     * filehoster downloads! Do not use this in handleMultihost!
+     * Only call this for download-requests of files, hosted on linksnappy!! </br>
+     * Do not call this in handleMultiHost!!
      */
     private void handleConnectionErrors(final Browser br, final DownloadLink link, final URLConnectionAdapter con) throws Exception {
         if (!this.looksLikeDownloadableContent(con)) {
@@ -217,12 +244,13 @@ public class LinkSnappyCom extends PluginForHost {
             if (usedSpace != null) {
                 ac.setUsedSpace(usedSpace.longValue());
             }
+            final SIZEUNIT maxSizeUnit = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
             final Number trafficUsedTodayBytes = (Number) usermap.get("trafficused");
             final Object trafficleftGlobalO = usermap.get("trafficleft"); // mostly "unlimited"
             String trafficMaxDailyHumanReadable = "N/A";
             final Number maxtrafficDailyBytesO = (Number) usermap.get("maxtraffic");
             if (maxtrafficDailyBytesO != null) {
-                trafficMaxDailyHumanReadable = SizeFormatter.formatBytes(maxtrafficDailyBytesO.longValue());
+                trafficMaxDailyHumanReadable = SIZEUNIT.formatValue(maxSizeUnit, maxtrafficDailyBytesO.longValue());
             }
             if (trafficleftGlobalO instanceof String) {
                 /* Value should be "unlimited" */
@@ -240,7 +268,7 @@ public class LinkSnappyCom extends PluginForHost {
                 }
             }
             if (trafficUsedTodayBytes != null) {
-                ac.setStatus(String.format("%s | Today's usage: %s/%s", account.getType().getLabel(), SizeFormatter.formatBytes(trafficUsedTodayBytes.longValue()), trafficMaxDailyHumanReadable));
+                ac.setStatus(String.format("%s | Today's usage: %s/%s", account.getType().getLabel(), SIZEUNIT.formatValue(maxSizeUnit, trafficUsedTodayBytes.longValue()), trafficMaxDailyHumanReadable));
             }
             br.getPage("/api/FILEHOSTS");
             final String error = getError(br);
@@ -379,7 +407,7 @@ public class LinkSnappyCom extends PluginForHost {
                     }
                     return "";
                 }
-                return "Preparing your file";
+                return "Preparing your file: " + lastCurrent + "%";
             }
 
             @Override
@@ -425,21 +453,21 @@ public class LinkSnappyCom extends PluginForHost {
                 if (currentProgress.intValue() == 100) {
                     // cache finished, lets go to download part
                     return;
-                } else {
-                    link.addPluginProgress(waitProgress);
-                    waitProgress.updateValues(currentProgress.intValue(), 100);
-                    /* Workaround: Do not use "sleep" statement as this would also update the status text visible to the user. */
-                    for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
-                        if (isAbort()) {
-                            throw new PluginException(LinkStatus.ERROR_RETRY);
-                        } else {
-                            Thread.sleep(1000);
-                        }
-                    }
-                    if (currentProgress.intValue() != lastProgress) {
-                        lastProgressChange = System.currentTimeMillis();
-                        lastProgress = currentProgress.intValue();
-                    }
+                }
+                link.addPluginProgress(waitProgress);
+                waitProgress.updateValues(currentProgress.intValue(), 100);
+                // /* Workaround: Do not use "sleep" statement as this would also update the status text visible to the user. */
+                // for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
+                // if (isAbort()) {
+                // throw new PluginException(LinkStatus.ERROR_RETRY);
+                // } else {
+                // Thread.sleep(1000);
+                // }
+                // }
+                this.sleep(10000, link, "Preparing your file: " + currentProgress + "%");
+                if (currentProgress.intValue() != lastProgress) {
+                    lastProgressChange = System.currentTimeMillis();
+                    lastProgress = currentProgress.intValue();
                 }
                 round++;
             }
@@ -452,16 +480,8 @@ public class LinkSnappyCom extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
-        long tt = link.getLongProperty("filezize", -1);
-        if (link.getView().getBytesLoaded() <= 0 || tt == -1) {
-            long a = link.getView().getBytesTotalEstimated();
-            if (a != -1) {
-                link.setProperty("filezize", a);
-                tt = a;
-            }
-        }
         this.loginAPI(account, false);
-        if (attemptStoredDownloadurlDownload(link)) {
+        if (attemptStoredDownloadurlDownload(link, account)) {
             logger.info("Using previously generated final downloadurl");
         } else {
             logger.info("Generating new downloadurl");
@@ -535,7 +555,7 @@ public class LinkSnappyCom extends PluginForHost {
                     link.setFinalFileName(existingName);
                 }
             }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 this.handleDownloadErrors(link, account);
@@ -568,12 +588,6 @@ public class LinkSnappyCom extends PluginForHost {
         }
     }
 
-    /**
-     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br>
-     * It should be minimum of 5 minutes and above!
-     *
-     * @throws InterruptedException
-     */
     private void handleDownloadErrors(final DownloadLink link, final Account account) throws PluginException, IOException, InterruptedException {
         final int dlResponseCode = dl.getConnection().getResponseCode();
         if (dlResponseCode == 401) {
@@ -615,7 +629,7 @@ public class LinkSnappyCom extends PluginForHost {
         }
     }
 
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
+    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
         final String url = link.getStringProperty(PROPERTY_DIRECTURL);
         if (StringUtils.isEmpty(url)) {
             return false;
@@ -623,7 +637,7 @@ public class LinkSnappyCom extends PluginForHost {
         boolean valid = false;
         try {
             final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumes, chunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, account), this.getMaxChunks(link, account));
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 valid = true;
                 return true;

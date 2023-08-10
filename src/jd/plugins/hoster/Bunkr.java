@@ -189,6 +189,10 @@ public class Bunkr extends PluginForHost {
             } catch (final Exception e) {
                 logger.log(e);
                 logger.info("Failed to re-use last cached directurl");
+                try {
+                    con.disconnect();
+                } catch (final Throwable ignore) {
+                }
             } finally {
                 if (!isDownload) {
                     try {
@@ -241,7 +245,10 @@ public class Bunkr extends PluginForHost {
                     throw e;
                 } else {
                     final String singleFileURL = br.getURL();
-                    link.setProperty(PROPERTY_LAST_USED_SINGLE_FILE_URL, singleFileURL);
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable ignore) {
+                    }
                     if (br.getHttpConnection().getResponseCode() == 416) {
                         /* E.g. resume of download. */
                         br.getPage(singleFileURL);
@@ -263,6 +270,11 @@ public class Bunkr extends PluginForHost {
             final String filenameFromHeader = Plugin.getFileNameFromHeader(con);
             if (!StringUtils.isEmpty(filenameFromHeader)) {
                 link.setFinalFileName(filenameFromHeader);
+            }
+        } catch (final Throwable e) {
+            try {
+                con.disconnect();
+            } catch (final Throwable ignore) {
             }
         } finally {
             if (!isDownload) {
@@ -303,6 +315,7 @@ public class Bunkr extends PluginForHost {
             link.setName(filename);
         }
         link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, directurl);
+        link.setProperty(PROPERTY_LAST_USED_SINGLE_FILE_URL, singleFileURL);
         return directurl;
     }
 
