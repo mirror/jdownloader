@@ -45,11 +45,11 @@ public class Etsy extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        this.br.setFollowRedirects(true);
         String title = br.getRegex("<h1[^>]+data-buy-box-listing-title\\s*=\\s*\"true\"[^>]*>\\s*([^<]+)\\s*").getMatch(0);
         if (StringUtils.isEmpty(title)) {
             title = br.getRegex("<title>\\s*([^<]+)\\s+-\\s+Etsy\\.\\w+").getMatch(0);
@@ -65,12 +65,16 @@ public class Etsy extends antiDDoSForDecrypt {
         // Detail page images
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ArrayList<String> links = new ArrayList<String>();
-        Collections.addAll(links, br.getRegex("<img[^>]+class\\s*=\\s*\"[^\"]*carousel[^\"]*\"[^>]+data-src-zoom-image\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0));
+        Collections.addAll(links, br.getRegex("data-src-zoom-image\\s*=\\s*\"([^\"]+)\"").getColumn(0));
         for (String link : links) {
             ret.add(createDownloadlink(Encoding.htmlDecode(link)));
         }
         if (ret.isEmpty()) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("<div elementtiming=\"ux-nla-message\">")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         for (final DownloadLink result : ret) {
             /* We know that all items are online -> Skip availablecheck */

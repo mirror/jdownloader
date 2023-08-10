@@ -26,7 +26,6 @@ import java.util.Set;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -104,8 +103,7 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
             }
         }
         if (jd.plugins.hoster.EHentaiOrg.isOffline(br) || br.containsHTML("Key missing, or incorrect key provided") || br.containsHTML("class=\"d\"") || br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
-            ret.add(this.createOfflinelink(parameter));
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getRequest().getHttpConnection().getCompleteContentLength() == 0) {
             /* 2020-11-10: Rare case */
             logger.warning("Blank page --> Are you trying to access exhentai.org without the appropriate rights?");
@@ -113,7 +111,7 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
         }
         final String uploaderName = br.getRegex("<a href=\"https://[^/]+/uploader/([^<>\"]+)\">([^<>\"]+)</a>\\&nbsp; <a href=\"[^\"]+\"><img class=\"ygm\" src=\"[^\"]+\" alt=\"PM\" title=\"Contact Uploader\" />").getMatch(0);
         final String tagsCommaSeparated = br.getRegex("<meta name=\"description\" content=\"[^\"]+ - Tags: ([^\"]+)\" />").getMatch(0);
-        String fpName = ((jd.plugins.hoster.EHentaiOrg) hostplugin).getTitle(br);
+        String fpName = hostplugin.getTitle(br);
         if (fpName == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "fpName can not be found");
         }
@@ -206,7 +204,7 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
                     ret.add(dl);
                     counter++;
                 }
-                logger.info("Stepping out of loop as mpv URLs have all objects on the first page");
+                logger.info("Stopping because: mpv URLs have all objects on the first page");
                 break;
             } else {
                 final String[][] links = br2.getRegex("\"(https?://(?:(?:g\\.)?e-hentai|exhentai)\\.org/s/[a-z0-9]+/" + galleryid + "-\\d+)\">\\s*<img[^<>]*title\\s*=\\s*\"(.*?)\"[^<>]*src\\s*=\\s*\"(.*?)\"").getMatches();
@@ -225,7 +223,7 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
                 }
             }
             if (this.isAbort()) {
-                logger.info("Decryption aborted by user: " + parameter);
+                logger.info("Stopping because: Decryption aborted by user: " + parameter);
                 return ret;
             }
         }
@@ -274,7 +272,7 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
             name = namepart + extension;
         }
         dl.setName(name);
-        dl.setMimeHint(CompiledFiletypeFilter.getExtensionsFilterInterface(Files.getExtension(name)));
+        // dl.setMimeHint(CompiledFiletypeFilter.getExtensionsFilterInterface(Files.getExtension(name)));
         dl.setAvailable(true);
         return dl;
     }

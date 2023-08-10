@@ -112,7 +112,7 @@ public abstract class RapidtrafficCore extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("INVALID_LOGIN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -159,11 +159,10 @@ public abstract class RapidtrafficCore extends PluginForHost {
             trafficLeftHumanReadable = SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), trafficLeftLong);
         }
         /* Inactive --> Free account --> Free accounts can still have leftover "traffic left" values though (can be negative values). */
-        if (br.containsHTML("(?i)Konto ważne do\\s*:\\s*<b>nieaktywne</b>")) {
+        if (br.containsHTML("(?i)Konto ważne do\\s*:\\s*<b>\\s*nieaktywne\\s*</b>")) {
             ai.setExpired(true);
             account.setType(AccountType.FREE);
             ai.setTrafficLeft(0);
-            return ai;
         } else {
             validUntil = br.getRegex("(?i)Konto ważne do\\s*:\\s*<b>(\\d{4}\\-\\d{2}\\-\\d{2})</b>").getMatch(0);
             if (validUntil == null) {
@@ -253,10 +252,8 @@ public abstract class RapidtrafficCore extends PluginForHost {
         }
         sleep(1000l, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, resume, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) // unknown
-        // error
-        {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             // not tested!
             if (br.containsHTML("<div id=\"message\">Ważność linka wygasła.</div>")) {
                 // previously generated link expired,

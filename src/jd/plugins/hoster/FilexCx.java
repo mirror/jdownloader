@@ -75,7 +75,7 @@ public class FilexCx extends YetiShareCore {
         }
         /* Change embed URLs -> Normal file-URLs. */
         final Regex embed = new Regex(link.getPluginPatternMatcher(), PATTERN_EMBED);
-        if (embed.matches()) {
+        if (embed.patternFind()) {
             /* Make sure that upper handling can work with these links -> Return a fitting URL. */
             final String filenameInsideURL = embed.getMatch(2);
             String newurl = this.getMainPage(link) + "/" + embed.getMatch(0);
@@ -85,6 +85,16 @@ public class FilexCx extends YetiShareCore {
             return newurl;
         } else {
             return super.getContentURL(link);
+        }
+    }
+
+    @Override
+    public String getFUIDFromURL(final String url) {
+        final Regex embed = new Regex(url, PATTERN_EMBED);
+        if (embed.patternFind()) {
+            return embed.getMatch(0);
+        } else {
+            return super.getFUIDFromURL(url);
         }
     }
 

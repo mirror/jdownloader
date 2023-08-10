@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -58,7 +59,43 @@ public class GoodstreamUno extends YetiShareCore {
     }
 
     public static String[] getAnnotationUrls() {
-        return YetiShareCore.buildAnnotationUrls(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + YetiShareCore.buildHostsPatternPart(domains) + "/(?!folder|shared)(video/embed/[A-Za-z0-9]+(/\\d+x\\d+/[^/<>]+)?|[A-Za-z0-9]+(?:/[^/<>]+)?)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    final String PATTERN_EMBED = "(?i)https?://[^/]+/video/embed/([A-Za-z0-9]+)(/\\d+x\\d+/([^/<>]+))?";
+
+    @Override
+    protected String getContentURL(final DownloadLink link) {
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        }
+        /* Change embed URLs -> Normal file-URLs. */
+        final Regex embed = new Regex(link.getPluginPatternMatcher(), PATTERN_EMBED);
+        if (embed.patternFind()) {
+            /* Make sure that upper handling can work with these links -> Return a fitting URL. */
+            final String filenameInsideURL = embed.getMatch(2);
+            String newurl = this.getMainPage(link) + "/" + embed.getMatch(0);
+            if (filenameInsideURL != null) {
+                newurl += "/" + filenameInsideURL;
+            }
+            return newurl;
+        } else {
+            return super.getContentURL(link);
+        }
+    }
+
+    @Override
+    public String getFUIDFromURL(final String url) {
+        final Regex embed = new Regex(url, PATTERN_EMBED);
+        if (embed.patternFind()) {
+            return embed.getMatch(0);
+        } else {
+            return super.getFUIDFromURL(url);
+        }
     }
 
     @Override

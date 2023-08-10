@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -22,8 +24,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.BunkrAlbum;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { BunkrAlbum.class })
@@ -190,6 +190,8 @@ public class Bunkr extends PluginForHost {
         final String containerURL = link.getContainerUrl();
         if (containerURL != null) {
             br.getHeaders().put("Referer", containerURL);
+        } else {
+            br.getHeaders().put("Referer", "https://" + Browser.getHost(directurl, false) + "/");
         }
         URLConnectionAdapter con = null;
         try {
@@ -203,6 +205,10 @@ public class Bunkr extends PluginForHost {
                 handleConnectionErrors(br, con);
             } catch (final PluginException e) {
                 /* E.g. cdn.bunkr.ru -> bunkr.su/v/... -> Try to find fresh directurl */
+                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    /* Offline status is permanent -> No need to go further */
+                    throw e;
+                }
                 logger.info("ContentURL did not lead to downloadable content -> Looking for fresh directurl");
                 final String alternativeFreshDirecturl = findDirectURL(this, br);
                 // final String filesize = Bunkr.findFilesize(this, br);

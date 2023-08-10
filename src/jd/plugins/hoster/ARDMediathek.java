@@ -22,10 +22,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
+import java.util.TimeZone;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
@@ -44,6 +47,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -295,7 +299,7 @@ public class ARDMediathek extends PluginForHost {
         final String xmlContent = xml.toString();
         /* They got two different subtitle formats */
         if (xmlContent.contains("<ebuttm:documentEbuttVersion>") || xmlContent.contains("<tts:documentEbuttVersion>")) {
-            success = jd.plugins.hoster.BrDe.convertSubtitleBrDe(this, downloadlink, xmlContent, 0);
+            success = ARDMediathek.convertSubtitleBrDe(this, downloadlink, xmlContent, 0);
         } else {
             int counter = 1;
             BufferedWriter dest;
@@ -370,6 +374,120 @@ public class ARDMediathek extends PluginForHost {
             source.delete();
         }
         return success;
+    }
+
+    /**
+     * Converts the BR Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     *
+     * @return The success of the conversion.
+     */
+    public static boolean convertSubtitleBrDe(final Plugin plugin, final DownloadLink downloadlink, final String xmlContent, long offset_reduce_milliseconds) {
+        final File source = new File(downloadlink.getFileOutput());
+        final BufferedWriter dest;
+        try {
+            dest = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(source.getAbsolutePath().replace(".xml", ".srt")), "UTF-8"));
+        } catch (IOException e1) {
+            plugin.getLogger().log(e1);
+            return false;
+        }
+        int counter = 1;
+        final String lineseparator = System.getProperty("line.separator");
+        try {
+            /* Find hex color text --> code assignments */
+            final HashMap<String, String> color_codes = new HashMap<String, String>();
+            final String styling = new Regex(xmlContent, "<tt:styling>(.*?)</tt:styling>").getMatch(0);
+            final String[] colorCodesLines = new Regex(styling, "<tt:style[^>]*tts:color=\"[^>]*?/>").getColumn(-1);
+            for (final String colorCodesLine : colorCodesLines) {
+                final String colorName = new Regex(colorCodesLine, "xml:id=\"([A-Za-z0-9]+)\"").getMatch(0);
+                final String colorCode = new Regex(colorCodesLine, "tts:color=\"(#[A-Fa-f0-9]+)\"").getMatch(0);
+                color_codes.put(colorName, colorCode);
+            }
+            /* empty subtitle|subtitle with text */
+            final String[] matches = new Regex(xmlContent, "(<tt:p[^>]*?xml:id=\"[A-Za-z0-9]+\"([^>]*?/>\\s+|.*?</tt:p>))").getColumn(0);
+            boolean offsetSet = false;
+            for (final String info : matches) {
+                dest.write(counter++ + lineseparator);
+                final String startString = new Regex(info, "begin=\"(\\d{2}:\\d{2}:\\d{2}\\.\\d{3})\"").getMatch(0);
+                final String endString = new Regex(info, "end=\"(\\d{2}:\\d{2}:\\d{2}\\.\\d{3})\"").getMatch(0);
+                final Regex startInfo = new Regex(info, "begin=\"(\\d{2})(:\\d{2}:\\d{2})\\.(\\d{3})\"");
+                // final Regex endInfo = new Regex(info, "end=\"(\\d{2})(:\\d{2}:\\d{2})\\.(\\d{3})\"");
+                final String start_hours_source_string = startInfo.getMatch(0);
+                // final String end_hours_source_string = endInfo.getMatch(0);
+                final int start_hours_source = Integer.parseInt(start_hours_source_string);
+                // final int end_hours_source = Integer.parseInt(end_hours_source_string);
+                long start_milliseconds = timeStringToMilliseconds(startString);
+                long end_milliseconds = timeStringToMilliseconds(endString);
+                if (start_hours_source >= 9 && counter == 2 && !offsetSet) {
+                    /* 1st case - correct offset hardcoded 10 hours */
+                    offset_reduce_milliseconds = 10 * 60 * 60 * 1000l;
+                    offsetSet = true;
+                } else if (start_hours_source > 0 && counter == 2 && !offsetSet) {
+                    /* 2nd case - correct offset dynamically */
+                    offset_reduce_milliseconds = start_milliseconds;
+                    offsetSet = true;
+                }
+                if (start_hours_source == 0 && counter == 2 && !offsetSet && offset_reduce_milliseconds != 0) {
+                    /* Given offset is wrong --> Correct that */
+                    offset_reduce_milliseconds = 0;
+                    offsetSet = true;
+                } else if (offset_reduce_milliseconds != 0) {
+                    /* Correct offset via given offset_reduce_hours */
+                    start_milliseconds -= offset_reduce_milliseconds;
+                    /* Errorhandling for negative start values - should not happen with end values */
+                    if (start_milliseconds < 0) {
+                        start_milliseconds = 0;
+                    }
+                    end_milliseconds -= offset_reduce_milliseconds;
+                    offsetSet = true;
+                }
+                final DateFormat output_date_format = new SimpleDateFormat("HH:mm:ss,SSS");
+                /* Important or we will always have one hour too much! */
+                output_date_format.setTimeZone(TimeZone.getTimeZone("GMT"));
+                final String start_formatted = output_date_format.format(start_milliseconds);
+                final String end_formatted = output_date_format.format(end_milliseconds);
+                dest.write(start_formatted + " --> " + end_formatted + lineseparator);
+                final String[][] texts = new Regex(info, "<tt:span[^>]*?style=\"([A-Za-z0-9]+)\">([^<>]*?)</tt:span>").getMatches();
+                String text = "";
+                int line_counter = 1;
+                for (final String[] textinfo : texts) {
+                    final String color = textinfo[0];
+                    final String colorcode = color_codes.get(color);
+                    String line = textinfo[1];
+                    text += "<font color=" + colorcode + ">" + line + "</font>";
+                    /* Add linebreak as long as we're not at the last line of this statement */
+                    if (line_counter != texts.length) {
+                        text += lineseparator;
+                    }
+                    line_counter++;
+                }
+                text = HTMLEntities.unhtmlentities(text);
+                text = HTMLEntities.unhtmlAmpersand(text);
+                text = HTMLEntities.unhtmlAngleBrackets(text);
+                text = HTMLEntities.unhtmlSingleQuotes(text);
+                text = HTMLEntities.unhtmlDoubleQuotes(text);
+                dest.write(text + lineseparator + lineseparator);
+            }
+        } catch (Exception e) {
+            plugin.getLogger().log(e);
+            return false;
+        } finally {
+            try {
+                dest.close();
+            } catch (IOException e) {
+            }
+        }
+        source.delete();
+        return true;
+    }
+
+    public static long timeStringToMilliseconds(final String timeString) {
+        final Regex timeRegex = new Regex(timeString, "(\\d{2}):(\\d{2}):(\\d{2})\\.(\\d{3})");
+        final String timeHours = timeRegex.getMatch(0);
+        final String timeMinutes = timeRegex.getMatch(1);
+        final String timeSeconds = timeRegex.getMatch(2);
+        final String timeMilliseconds = timeRegex.getMatch(3);
+        final long timeMillisecondsComplete = Long.parseLong(timeHours) * 60 * 60 * 1000 + Long.parseLong(timeMinutes) * 60 * 1000 + Long.parseLong(timeSeconds) * 1000 + Long.parseLong(timeMilliseconds);
+        return timeMillisecondsComplete;
     }
 
     private static String getColorCode(final String colorName) {
