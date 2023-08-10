@@ -26,6 +26,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.components.config.RedditConfig;
+import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
+import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
+import org.jdownloader.plugins.components.config.RedditConfig.TextCrawlerMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -50,25 +69,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.RedditCom;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.components.config.RedditConfig;
-import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
-import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
-import org.jdownloader.plugins.components.config.RedditConfig.TextCrawlerMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { RedditCom.class })
@@ -743,7 +743,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                     lastRatelimitResetSeconds = -1;
                 }
                 if (con.getResponseCode() == 429) {
-                    br.followConnection();
+                    br.followConnection(true);
                     final int waitSeconds = Math.max(10, lastRatelimitResetSeconds);
                     logger.info("Waiting seconds to resolve rate-limit: " + waitSeconds + " | Attempt: " + attempt);
                     displayBubblenotifyMessage("Reached API Rate-Limit", "Waiting seconds to resolve API rate-limit: " + waitSeconds + " | Retry number: " + attempt + "/" + (maxAttemptsNumber - 1));

@@ -161,10 +161,10 @@ public class BrDeDecrypter extends PluginForDecrypt {
             /* Date is not always given */
             date_formatted = formatDate(date);
         }
-        title = encodeUnicode(Encoding.htmlDecode(title).trim());
+        title = Encoding.htmlDecode(title).trim();
         if (!StringUtils.isEmpty(show)) {
             /* Show is not always given */
-            show = encodeUnicode(Encoding.htmlDecode(show).trim());
+            show = Encoding.htmlDecode(show).trim();
         }
         String subtitle_url = null;
         for (final Object videoO : qualities) {
@@ -379,8 +379,8 @@ public class BrDeDecrypter extends PluginForDecrypt {
             /* Show is not always given */
             show = "-";
         }
-        title = encodeUnicode(Encoding.htmlDecode(title).trim());
-        show = encodeUnicode(Encoding.htmlDecode(show).trim());
+        title = Encoding.htmlDecode(title).trim();
+        show = Encoding.htmlDecode(show).trim();
         String subtitle_url = br.getRegex("<dataTimedText url=\"(/mediathek/video/untertitel[^<>\"/]+\\.xml)\"").getMatch(0);
         if (subtitle_url != null) {
             subtitle_url = "http://www.br.de" + Encoding.htmlDecode(subtitle_url);

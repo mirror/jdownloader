@@ -21,9 +21,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -33,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "global-files.net" }, urls = { "https?://(?:www\\.)?global\\-files\\.net/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "global-files.net" }, urls = { "https?://(?:www\\.)?global\\-files\\.net/([a-z0-9]+)" })
 public class GlobalFilesNet extends PluginForHost {
     public GlobalFilesNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -71,7 +68,7 @@ public class GlobalFilesNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.containsHTML("#FileProperties")) {
@@ -106,54 +103,23 @@ public class GlobalFilesNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (dllink == null) {
-            dllink = "http://global-files.net/Save/" + getLinkID(downloadLink);
-            if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+        String dllink = "/Save/" + getLinkID(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
     }
 
     @Override
