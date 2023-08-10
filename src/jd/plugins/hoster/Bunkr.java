@@ -271,11 +271,12 @@ public class Bunkr extends PluginForHost {
             if (!StringUtils.isEmpty(filenameFromHeader)) {
                 link.setFinalFileName(filenameFromHeader);
             }
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             try {
                 con.disconnect();
             } catch (final Throwable ignore) {
             }
+            throw e;
         } finally {
             if (!isDownload) {
                 try {

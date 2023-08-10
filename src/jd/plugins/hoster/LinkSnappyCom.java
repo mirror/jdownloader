@@ -456,14 +456,6 @@ public class LinkSnappyCom extends PluginForHost {
                 }
                 link.addPluginProgress(waitProgress);
                 waitProgress.updateValues(currentProgress.intValue(), 100);
-                // /* Workaround: Do not use "sleep" statement as this would also update the status text visible to the user. */
-                // for (int sleepRound = 0; sleepRound < 10; sleepRound++) {
-                // if (isAbort()) {
-                // throw new PluginException(LinkStatus.ERROR_RETRY);
-                // } else {
-                // Thread.sleep(1000);
-                // }
-                // }
                 this.sleep(10000, link, "Preparing your file: " + currentProgress + "%");
                 if (currentProgress.intValue() != lastProgress) {
                     lastProgressChange = System.currentTimeMillis();
