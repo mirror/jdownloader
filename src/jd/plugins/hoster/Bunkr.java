@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,6 +31,13 @@ import jd.plugins.decrypter.BunkrAlbum;
 public class Bunkr extends PluginForHost {
     public Bunkr(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -148,23 +156,15 @@ public class Bunkr extends PluginForHost {
         }
     }
 
-    private final String PROPERTY_ALTERNATIVE_DIRECTURL = "alternative_directurl";
+    private String generateSingleFileURL(final String filename) {
+        return "https://" + getHost() + "/d/" + filename;
+    }
+
+    private final String PROPERTY_LAST_GRABBED_DIRECTURL = "last_grabbed_directurl";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
-    }
-
-    public static String findDirectURL(final Plugin plugin, final Browser br) {
-        String directurl = br.getRegex("link\\.href\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
-        if (directurl == null) {
-            directurl = br.getRegex("(?i)href\\s*=\\s*\"(https?://[^\"]+)[^>]*>\\s*Download").getMatch(0);
-            if (directurl == null) {
-                /* Video stream (URL is usually the same as downloadurl) */
-                directurl = br.getRegex("<source src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
-            }
-        }
-        return directurl;
     }
 
     public static String findFilesize(final Plugin plugin, final Browser br) {
@@ -177,21 +177,27 @@ public class Bunkr extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        final boolean attemptToUseLastStoredAlternativeDirecturl = false;
-        String directurl = link.getStringProperty(PROPERTY_ALTERNATIVE_DIRECTURL);
-        if (directurl == null || !attemptToUseLastStoredAlternativeDirecturl) {
-            directurl = this.getContentURL(link);
-        }
-        final String filenameFromURL = Plugin.getFileNameFromURL(directurl);
-        if (!link.isNameSet() && filenameFromURL != null) {
-            link.setName(filenameFromURL);
-        }
-        final String containerURL = link.getContainerUrl();
-        if (containerURL != null) {
-            br.getHeaders().put("Referer", containerURL);
+        String directurl;
+        if (link.getPluginPatternMatcher().matches(BunkrAlbum.TYPE_SINGLE_FILE)) {
+            directurl = getDirecturlFromSingleFileAvailablecheck(link, this.getContentURL(link), true);
+            if (!isDownload) {
+                return AvailableStatus.TRUE;
+            } else {
+                this.sleep(1000, link);
+            }
         } else {
-            br.getHeaders().put("Referer", "https://" + Browser.getHost(directurl, false) + "/");
+            directurl = this.getContentURL(link);
+            final String filenameFromURL = Plugin.getFileNameFromURL(directurl);
+            if (!link.isNameSet() && filenameFromURL != null) {
+                link.setName(filenameFromURL);
+            }
+            /* Set referer for download */
+            final String containerURL = link.getContainerUrl();
+            if (containerURL != null) {
+                br.getHeaders().put("Referer", containerURL);
+            } else {
+                br.getHeaders().put("Referer", "https://" + Browser.getHost(directurl, false) + "/");
+            }
         }
         URLConnectionAdapter con = null;
         try {
@@ -204,31 +210,28 @@ public class Bunkr extends PluginForHost {
             try {
                 handleConnectionErrors(br, con);
             } catch (final PluginException e) {
-                /* E.g. cdn.bunkr.ru -> bunkr.su/v/... -> Try to find fresh directurl */
+                /* E.g. redirect from cdn8.bunkr.ru/... to bukrr.su/v/... resulting in new final URL media-files8.bunkr.ru/... */
                 if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                    /* Offline status is permanent -> No need to go further */
+                    /* Dead end */
                     throw e;
-                }
-                logger.info("ContentURL did not lead to downloadable content -> Looking for fresh directurl");
-                final String alternativeFreshDirecturl = findDirectURL(this, br);
-                // final String filesize = Bunkr.findFilesize(this, br);
-                if (alternativeFreshDirecturl == null) {
-                    logger.info("Failed to find fresh directurl");
-                    throw e;
-                } else if (StringUtils.equals(directurl, alternativeFreshDirecturl)) {
-                    logger.info("Fresh directurl is the same as old one -> Retrying doesn't make any sense");
+                } else if (!br.getURL().matches(BunkrAlbum.TYPE_SINGLE_FILE)) {
+                    /* Unknown URL format -> We most likely won't be able to refresh directurl from this format. */
+                    logger.info("Directurl redirected to URL with unknown format -> We most likely won't be able to refresh directurl from this format. URL: " + br.getURL());
                     throw e;
                 } else {
-                    logger.info("Trying again with fresh directurl: " + alternativeFreshDirecturl);
+                    final String singleFileURL = br.getURL();
+                    if (br.getHttpConnection().getResponseCode() == 416) {
+                        /* E.g. resume of download. */
+                        br.getPage(singleFileURL);
+                    }
+                    final String freshDirecturl = getDirecturlFromSingleFileAvailablecheck(link, br.getURL(), false);
+                    br.getHeaders().put("Referer", singleFileURL); // Important!
                     if (isDownload) {
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, alternativeFreshDirecturl, isResumeable(link, null), this.getMaxChunks(null));
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, freshDirecturl, isResumeable(link, null), this.getMaxChunks(null));
                         con = dl.getConnection();
                     } else {
-                        con = br.openGetConnection(alternativeFreshDirecturl);
+                        con = br.openGetConnection(freshDirecturl);
                     }
-                    handleConnectionErrors(br, con);
-                    logger.info("Fresh directurl is working: " + alternativeFreshDirecturl);
-                    link.setProperty(PROPERTY_ALTERNATIVE_DIRECTURL, alternativeFreshDirecturl);
                 }
             }
             if (con.getCompleteContentLength() > 0) {
@@ -247,6 +250,37 @@ public class Bunkr extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getDirecturlFromSingleFileAvailablecheck(final DownloadLink link, final String singleFileURL, final boolean accessURL) throws PluginException, IOException {
+        link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, null);
+        if (accessURL) {
+            br.getPage(singleFileURL);
+        }
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String directurl = br.getRegex("(?i)href\\s*=\\s*\"(https?://[^\"]+)[^>]*>\\s*Download").getMatch(0);
+        if (directurl == null) {
+            /* Video stream (URL is usually the same as downloadurl) */
+            directurl = br.getRegex("<source src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
+        }
+        String filesize = br.getRegex("Download (\\d+[^<]+)</a>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("class=\"[^>]*text[^>]*\"[^>]*>\\s*([0-9\\.]+\\s+[MKG]B)").getMatch(0);
+        }
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (directurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String filename = Plugin.getFileNameFromURL(directurl);
+        if (filename != null) {
+            link.setName(filename);
+        }
+        link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, directurl);
+        return directurl;
     }
 
     @Override
@@ -284,6 +318,9 @@ public class Bunkr extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (con.getResponseCode() == 416) {
+                /* This should never happen! */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 416", 30 * 1000l);
             } else if (con.getResponseCode() == 429) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 429 too many requests", 30 * 1000l);
             } else if (con.getResponseCode() == 503) {

@@ -23,6 +23,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -45,24 +63,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -88,7 +88,7 @@ public class LinkSnappyCom extends PluginForHost {
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
         if (fid != null) {
-            return this.getHost() + "://" + fid;
+            return "linksnappy://" + fid;
         } else {
             return super.getLinkID(link);
         }
@@ -98,11 +98,12 @@ public class LinkSnappyCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private static final boolean resumes              = true;
-    private static final int     chunks               = 0;
+    private final boolean resumes                  = true;
+    private final int     chunks                   = 0;
     /** Defines max. waittime for cached downloads after last serverside progress change. */
-    private static final int     CACHE_WAIT_THRESHOLD = 10 * 60000;
-    private static final String  PROPERTY_DIRECTURL   = "linksnappycomdirectlink";
+    private final int     CACHE_WAIT_THRESHOLD     = 10 * 60000;
+    private final String  PROPERTY_DIRECTURL       = "linksnappycomdirectlink";
+    private final String  PROPERTY_HOSTER_INFO_MAP = "hoster_info_map";
 
     public void setBrowser(final Browser br) {
         super.setBrowser(br);
@@ -253,50 +254,26 @@ public class LinkSnappyCom extends PluginForHost {
             }
             final ArrayList<String> supportedHosts = new ArrayList<String>();
             /* Connection info map */
-            final HashMap<String, HashMap<String, Object>> con = new HashMap<String, HashMap<String, Object>>();
+            final HashMap<String, Map<String, Object>> allHosterInfoMap = new HashMap<String, Map<String, Object>>();
             final Map<String, Object> hosterMapResponse = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
             final Map<String, Object> hosterMap = (Map<String, Object>) hosterMapResponse.get("return");
             final Iterator<Entry<String, Object>> it = hosterMap.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, Object> entry = it.next();
-                final Map<String, Object> hosterInformation = (Map<String, Object>) entry.getValue();
+                final Map<String, Object> thisHosterInformation = (Map<String, Object>) entry.getValue();
                 final String host = entry.getKey();
                 if (StringUtils.isEmpty(host)) {
                     continue;
                 }
-                HashMap<String, Object> hostInfo = new HashMap<String, Object>();
-                final long status = JavaScriptEngineFactory.toLong(hosterInformation.get("Status"), 0);
-                final Object quotaO = hosterInformation.get("Quota");
-                final long quota;
-                boolean hostHasUnlimitedQuota;
-                if (quotaO != null && quotaO instanceof String) {
-                    if ("unlimited".equalsIgnoreCase(quotaO.toString())) {
-                        hostHasUnlimitedQuota = true;
-                        hostInfo.put("quota", -1);
-                    } else {
-                        /* this should not happen */
-                        hostHasUnlimitedQuota = false;
-                        logger.warning("Failed to find individual quota for host: " + host);
-                    }
-                    quota = -1;
-                } else {
-                    hostHasUnlimitedQuota = false;
-                    quota = JavaScriptEngineFactory.toLong(quotaO, 0);
+                final long status = JavaScriptEngineFactory.toLong(thisHosterInformation.get("Status"), 0);
+                final Object quotaO = thisHosterInformation.get("Quota");
+                long quota = -1;
+                if (quotaO instanceof Number) {
+                    quota = ((Number) quotaO).longValue();
                 }
                 // final long noretry = JavaScriptEngineFactory.toLong(hosterInformation.get("noretry"), 0);
-                final long canDownload = JavaScriptEngineFactory.toLong(hosterInformation.get("canDownload"), 0);
-                final long usage = JavaScriptEngineFactory.toLong(hosterInformation.get("Usage"), 0);
-                final long resume = JavaScriptEngineFactory.toLong(hosterInformation.get("resume"), 0);
-                final Object connlimit = hosterInformation.get("connlimit");
-                hostInfo.put("usage", usage);
-                if (resume == 1) {
-                    hostInfo.put("resumes", true);
-                } else {
-                    hostInfo.put("resumes", false);
-                }
-                if (connlimit != null) {
-                    hostInfo.put("chunks", JavaScriptEngineFactory.toLong(connlimit, 1));
-                }
+                final long canDownload = JavaScriptEngineFactory.toLong(thisHosterInformation.get("canDownload"), 0);
+                final long usage = JavaScriptEngineFactory.toLong(thisHosterInformation.get("Usage"), 0);
                 if (canDownload != 1) {
                     logger.info("Skipping host as it is because API says download is not possible (canDownload!=1): " + host);
                     continue;
@@ -304,7 +281,7 @@ public class LinkSnappyCom extends PluginForHost {
                     /* Host is currently not working or disabled for this MOCH --> Do not add it to the list of supported hosts */
                     logger.info("Skipping host as it is not available at the moment (status!=1): " + host);
                     continue;
-                } else if (!hostHasUnlimitedQuota && quota - usage <= 0) {
+                } else if (quota != -1 && quota - usage <= 0) {
                     /* User does not have any traffic left for this host */
                     logger.info("Skipping host as account has no quota left for it: " + host);
                     continue;
@@ -318,12 +295,10 @@ public class LinkSnappyCom extends PluginForHost {
                     continue;
                 }
                 final String realHost = realHosts.get(0);
-                if (!hostInfo.isEmpty()) {
-                    con.put(realHost, hostInfo);
-                }
+                allHosterInfoMap.put(realHost, thisHosterInformation);
                 supportedHosts.add(realHost);
             }
-            account.setProperty("accountProperties", con);
+            account.setProperty(PROPERTY_HOSTER_INFO_MAP, allHosterInfoMap);
             // final List<String> mapped = ac.setMultiHostSupport(this, supportedHosts);
             /* Free account information & downloading is only possible via website; not via API! */
             if (AccountType.FREE == account.getType()) {
@@ -519,8 +494,8 @@ public class LinkSnappyCom extends PluginForHost {
                     wrongPasswordAttempts += 1;
                     passCode = getUserInput("Password?", link);
                     /**
-                     * Do not reset initial password.</br> Multihosters are prone to error - we do not want to remove the users' initial
-                     * manually typed in PW!
+                     * Do not reset initial password.</br>
+                     * Multihosters are prone to error - we do not want to remove the users' initial manually typed in PW!
                      */
                     // link.setDownloadPassword(null);
                     continue;
@@ -571,9 +546,10 @@ public class LinkSnappyCom extends PluginForHost {
         dl.setFilenameFix(true);
         if (this.dl.startDownload()) {
             /**
-             * Check if user wants JD to clear serverside download history in linksnappy account after each successful download. </br> Also
-             * make sure we get no exception as our download was successful. </br> NOTE: Even failed downloads will appear in the download
-             * history - but they will also be cleared once there is one successful download.
+             * Check if user wants JD to clear serverside download history in linksnappy account after each successful download. </br>
+             * Also make sure we get no exception as our download was successful. </br>
+             * NOTE: Even failed downloads will appear in the download history - but they will also be cleared once there is one successful
+             * download.
              */
             if (PluginJsonConfig.get(LinkSnappyComConfig.class).isClearDownloadHistoryEnabled()) {
                 logger.info("Clearing download history");
@@ -593,8 +569,8 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     /**
-     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br> It should be
-     * minimum of 5 minutes and above!
+     * We have already retried X times before this method is called, their is zero point to additional retries too soon.</br>
+     * It should be minimum of 5 minutes and above!
      *
      * @throws InterruptedException
      */
@@ -829,7 +805,8 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     /**
-     * Checks login status by available cookies. </br> Works for website- and API.
+     * Checks login status by available cookies. </br>
+     * Works for website- and API.
      */
     private boolean isLoggedin(final Browser br) {
         return br.getCookie(this.getHost(), "Auth", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(this.getHost(), "username", Cookies.NOTDELETEDPATTERN) != null;
