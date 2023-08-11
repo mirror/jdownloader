@@ -208,47 +208,10 @@ public class TiktokComCrawler extends PluginForDecrypt {
          * When using an account and potentially downloading private videos however, we can't use the embed way.
          */
         String videoDllink = null;
+        boolean useWebsiteHandling = false;
+        boolean offlineIfWebsiteHandlingFails = false;
         if (account != null) {
-            br.getPage(url);
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
-            }
-            String videoJson = br.getRegex("crossorigin=\"anonymous\">\\s*(.*?)\\s*</script>").getMatch(0);
-            if (videoJson == null) {
-                videoJson = br.getRegex("<script\\s*id[^>]*>\\s*(\\{.*?)\\s*</script>").getMatch(0);
-            }
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
-            final Map<String, Object> itemModule = (Map<String, Object>) entries.get("ItemModule");
-            /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
-            if (itemModule == null || itemModule.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> videoInfo = (Map<String, Object>) itemModule.entrySet().iterator().next().getValue();
-            description = (String) entries.get("desc");
-            final Map<String, Object> downloadInfo = (Map<String, Object>) videoInfo.get("video");
-            videoDllink = (String) downloadInfo.get("downloadAddr");
-            if (StringUtils.isEmpty(videoDllink)) {
-                videoDllink = (String) downloadInfo.get("playAddr");
-            }
-            username = videoInfo.get("author").toString();
-            final String createDateTimestampStr = videoInfo.get("createTime").toString();
-            if (!StringUtils.isEmpty(createDateTimestampStr)) {
-                dateFormatted = TiktokCom.convertDateFormat(createDateTimestampStr);
-            }
-            final Map<String, Object> stats = (Map<String, Object>) videoInfo.get("stats");
-            diggCountO = stats.get("diggCount");
-            shareCountO = stats.get("shareCount");
-            playCountO = stats.get("playCount");
-            commentCountO = stats.get("commentCount");
-            if (videoDllink == null) {
-                /* Fallback */
-                videoDllink = TiktokCom.generateDownloadurlOld(br, contentID);
-                video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
-            } else {
-                video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, false);
-            }
+            useWebsiteHandling = true;
         } else if (useWebsiteEmbed) {
             /* Old version: https://www.tiktok.com/embed/<videoID> */
             // br.getPage(String.format("https://www.tiktok.com/embed/%s", fid));
@@ -264,86 +227,131 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www." + this.getHost() + "/video/" + contentID));
             }
             if (br.containsHTML("\"(?:status_msg|message)\"\\s*:\\s*\"Something went wrong\"")) {
-                // webmode not possible!? retry with api
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* Required headers! */
-            final Browser brc = this.br.cloneBrowser();
-            brc.getHeaders().put("sec-fetch-dest", "iframe");
-            brc.getHeaders().put("sec-fetch-mode", "navigate");
-            // brc.getHeaders().put("sec-fetch-site", "cross-site");
-            // brc.getHeaders().put("upgrade-insecure-requests", "1");
-            // brc.getHeaders().put("Referer", link.getPluginPatternMatcher());
-            brc.getPage("https://www." + this.getHost() + "/embed/v2/" + contentID);
-            brc.followRedirect(); // without this we have different videoJson
-            if (brc.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (brc.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
-            }
-            String videoJson = brc.getRegex("crossorigin=\"anonymous\">\\s*(.*?)\\s*</script>").getMatch(0);
-            if (videoJson == null) {
-                videoJson = brc.getRegex("<script\\s*id[^>]*>\\s*(\\{.*?)\\s*</script>").getMatch(0);
-            }
-            final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
-            Map<String, Object> videoData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "props/pageProps/videoData");
-            if (videoData == null) {
-                // different videoJson when we do not follow the embed/v2 redirect
-                Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "source/data/");
-                if (data != null) {
-                    String key = null;
-                    for (String keyEntry : data.keySet()) {
-                        if (StringUtils.containsIgnoreCase(keyEntry, contentID)) {
-                            key = keyEntry;
-                            break;
-                        }
-                    }
-                    // key contains / separator, so we must use different walkJson here
-                    videoData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "source", "data", key, "videoData");
+                logger.info("Item looks to be offline according to oembed status -> Try Website as fallback");
+                useWebsiteHandling = true;
+                offlineIfWebsiteHandlingFails = true;
+            } else {
+                /* Required headers! */
+                final Browser brc = this.br.cloneBrowser();
+                brc.getHeaders().put("sec-fetch-dest", "iframe");
+                brc.getHeaders().put("sec-fetch-mode", "navigate");
+                // brc.getHeaders().put("sec-fetch-site", "cross-site");
+                // brc.getHeaders().put("upgrade-insecure-requests", "1");
+                // brc.getHeaders().put("Referer", link.getPluginPatternMatcher());
+                brc.getPage("https://www." + this.getHost() + "/embed/v2/" + contentID);
+                brc.followRedirect(); // without this we have different videoJson
+                checkErrorsWebsite(brc);
+                String videoJson = brc.getRegex("crossorigin=\"anonymous\">\\s*(.*?)\\s*</script>").getMatch(0);
+                if (videoJson == null) {
+                    videoJson = brc.getRegex("<script\\s*id[^>]*>\\s*(\\{.*?)\\s*</script>").getMatch(0);
                 }
-            }
-            /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
-            if (videoData == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> itemInfos = (Map<String, Object>) videoData.get("itemInfos");
-            final Map<String, Object> musicInfos = (Map<String, Object>) videoData.get("musicInfos");
-            // entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos");
-            /* In some cases this will be "0". In these cases, the date will be obtained from "last modified" header via website. */
-            final String createTime = itemInfos.get("createTime").toString();
-            description = (String) itemInfos.get("text");
-            videoDllink = (String) JavaScriptEngineFactory.walkJson(itemInfos, "video/urls/{0}");
-            /* Always look for username --> Username given inside URL which user added can be wrong! */
-            final Object authorInfosO = videoData.get("authorInfos");
-            if (authorInfosO != null) {
-                final Map<String, Object> authorInfos = (Map<String, Object>) authorInfosO;
-                username = (String) authorInfos.get("uniqueId");
-            }
-            /* Set more Packagizer properties */
-            diggCountO = itemInfos.get("diggCount");
-            playCountO = itemInfos.get("playCount");
-            shareCountO = itemInfos.get("shareCount");
-            commentCountO = itemInfos.get("commentCount");
-            if (!StringUtils.isEmpty(createTime) && !"0".equals(createTime)) {
-                dateFormatted = TiktokCom.convertDateFormat(createTime);
-            }
-            if (videoDllink == null) {
-                /* Fallback */
-                videoDllink = TiktokCom.generateDownloadurlOld(br, contentID);
-            }
-            if (cfg.isVideoCrawlerCrawlAudioSeparately() && musicInfos != null) {
-                final List<String> audioURLs = (List<String>) musicInfos.get("playUrl");
-                final String audioDirecturl = audioURLs != null && audioURLs.size() > 0 ? StringUtils.nullOrNonEmpty(audioURLs.get(0)) : null;
-                if (audioDirecturl != null) {
-                    final DownloadLink audio = new DownloadLink(hostPlg, this.getHost(), url);
-                    audio.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, audioDirecturl);
-                    audio.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_AUDIO);
-                    ret.add(audio);
+                final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
+                Map<String, Object> videoData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "props/pageProps/videoData");
+                if (videoData == null) {
+                    // different videoJson when we do not follow the embed/v2 redirect
+                    Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "source/data/");
+                    if (data != null) {
+                        String key = null;
+                        for (String keyEntry : data.keySet()) {
+                            if (StringUtils.containsIgnoreCase(keyEntry, contentID)) {
+                                key = keyEntry;
+                                break;
+                            }
+                        }
+                        // key contains / separator, so we must use different walkJson here
+                        videoData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "source", "data", key, "videoData");
+                    }
+                }
+                /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
+                if (videoData == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final Map<String, Object> itemInfos = (Map<String, Object>) videoData.get("itemInfos");
+                final Map<String, Object> musicInfos = (Map<String, Object>) videoData.get("musicInfos");
+                // entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "videoData/itemInfos");
+                /* In some cases this will be "0". In these cases, the date will be obtained from "last modified" header via website. */
+                final String createTime = itemInfos.get("createTime").toString();
+                description = (String) itemInfos.get("text");
+                videoDllink = (String) JavaScriptEngineFactory.walkJson(itemInfos, "video/urls/{0}");
+                /* Always look for username --> Username given inside URL which user added can be wrong! */
+                final Object authorInfosO = videoData.get("authorInfos");
+                if (authorInfosO != null) {
+                    final Map<String, Object> authorInfos = (Map<String, Object>) authorInfosO;
+                    username = (String) authorInfos.get("uniqueId");
+                }
+                /* Set more Packagizer properties */
+                diggCountO = itemInfos.get("diggCount");
+                playCountO = itemInfos.get("playCount");
+                shareCountO = itemInfos.get("shareCount");
+                commentCountO = itemInfos.get("commentCount");
+                if (!StringUtils.isEmpty(createTime) && !"0".equals(createTime)) {
+                    dateFormatted = TiktokCom.convertDateFormat(createTime);
+                }
+                if (videoDllink == null) {
+                    /* Fallback */
+                    videoDllink = TiktokCom.generateDownloadurlOld(br, contentID);
+                }
+                if (cfg.isVideoCrawlerCrawlAudioSeparately() && musicInfos != null) {
+                    final List<String> audioURLs = (List<String>) musicInfos.get("playUrl");
+                    final String audioDirecturl = audioURLs != null && audioURLs.size() > 0 ? StringUtils.nullOrNonEmpty(audioURLs.get(0)) : null;
+                    if (audioDirecturl != null) {
+                        final DownloadLink audio = new DownloadLink(hostPlg, this.getHost(), url);
+                        audio.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, audioDirecturl);
+                        audio.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_AUDIO);
+                        ret.add(audio);
+                    }
                 }
             }
         } else {
             /* Rev. 40928 and earlier */
+            /* Super old handling */
             videoDllink = TiktokCom.generateDownloadurlOld(br, contentID);
+        }
+        if (useWebsiteHandling) {
+            try {
+                br.getPage(url);
+                checkErrorsWebsite(br);
+                String videoJson = br.getRegex("crossorigin=\"anonymous\">\\s*(.*?)\\s*</script>").getMatch(0);
+                if (videoJson == null) {
+                    videoJson = br.getRegex("<script\\s*id[^>]*>\\s*(\\{.*?)\\s*</script>").getMatch(0);
+                }
+                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
+                final Map<String, Object> itemModule = (Map<String, Object>) entries.get("ItemModule");
+                /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
+                if (itemModule == null || itemModule.isEmpty()) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final Map<String, Object> videoInfo = (Map<String, Object>) itemModule.entrySet().iterator().next().getValue();
+                description = (String) entries.get("desc");
+                final Map<String, Object> downloadInfo = (Map<String, Object>) videoInfo.get("video");
+                videoDllink = (String) downloadInfo.get("downloadAddr");
+                if (StringUtils.isEmpty(videoDllink)) {
+                    videoDllink = (String) downloadInfo.get("playAddr");
+                }
+                username = videoInfo.get("author").toString();
+                final String createDateTimestampStr = videoInfo.get("createTime").toString();
+                if (!StringUtils.isEmpty(createDateTimestampStr)) {
+                    dateFormatted = TiktokCom.convertDateFormat(createDateTimestampStr);
+                }
+                final Map<String, Object> stats = (Map<String, Object>) videoInfo.get("stats");
+                diggCountO = stats.get("diggCount");
+                shareCountO = stats.get("shareCount");
+                playCountO = stats.get("playCount");
+                commentCountO = stats.get("commentCount");
+                if (videoDllink == null) {
+                    /* Fallback */
+                    videoDllink = TiktokCom.generateDownloadurlOld(br, contentID);
+                    video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
+                } else {
+                    video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, false);
+                }
+            } catch (final Exception e) {
+                if (offlineIfWebsiteHandlingFails) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw e;
+                }
+            }
         }
         if (!StringUtils.isEmpty(videoDllink)) {
             video.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, videoDllink);
@@ -382,6 +390,14 @@ public class TiktokComCrawler extends PluginForDecrypt {
             }
         }
         return ret;
+    }
+
+    private void checkErrorsWebsite(final Browser br) throws PluginException {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
+        }
     }
 
     public ArrayList<DownloadLink> crawlSingleMediaAPI(final String url, final Account account, final boolean isForcedAPIUsage) throws Exception {
