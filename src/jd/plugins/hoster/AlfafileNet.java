@@ -156,7 +156,7 @@ public class AlfafileNet extends PluginForHost {
                 con = br.openGetConnection(link.getDownloadURL());
                 if (this.looksLikeDownloadableContent(con)) {
                     logger.info("This url is a directurl");
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                     link.setFinalFileName(getFileNameFromHeader(con));
                     isDirecturl = true;
                     return AvailableStatus.TRUE;
