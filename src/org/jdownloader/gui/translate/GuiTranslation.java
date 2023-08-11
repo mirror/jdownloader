@@ -4551,8 +4551,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Playlist Number. *videonumber* or e.g. *videonumber[000]*" })
     String YoutubeHelper_getDescription_videonumber();
 
-    @Default(lngs = { "en" }, values = { "Customized Packagename" })
+    @Default(lngs = { "en" }, values = { "Customized Packagename for single videos" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern();
+
+    @Default(lngs = { "en" }, values = { "Customized Packagename for videos that are part of a crawled channel" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern_channel();
+
+    @Default(lngs = { "en" }, values = { "Customized Packagename for videos that are part of a crawled playlist" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern_playlist();
 
     @Default(lngs = { "en" }, values = { "Audio" })
     String YoutubeBasicVariant_getLabel_audio();

@@ -16,15 +16,6 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
-import jd.gui.swing.jdgui.views.settings.components.ComboBox;
-import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
-import jd.gui.swing.jdgui.views.settings.components.Spinner;
-import jd.gui.swing.jdgui.views.settings.components.TextInput;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
-import jd.plugins.Plugin;
-import jd.plugins.PluginConfigPanelNG;
-
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.IntegerInterface;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -60,6 +51,15 @@ import org.jdownloader.plugins.components.youtube.variants.FileContainer;
 import org.jdownloader.plugins.components.youtube.variants.VariantGroup;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
+import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.TextInput;
+import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
+import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
 
 public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     private AdvancedConfigTableModel model;
@@ -138,7 +138,6 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ProfileCrawlMode(), null, null, new ComboBox<ProfileCrawlMode>(cf._getStorageHandler().getKeyHandler("ProfileCrawlMode", KeyHandler.class), ProfileCrawlMode.values(), null));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_PlaylistAndProfileCrawlerMaxItemsLimit(), null, null, new Spinner(cf._getStorageHandler().getKeyHandler("PlaylistAndProfileCrawlerMaxItemsLimit", IntegerKeyHandler.class)));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ChannelCrawlerPreferredSortMode(), null, null, new ComboBox<ChannelCrawlerSortMode>(cf._getStorageHandler().getKeyHandler("ChannelCrawlerPreferredSortMode", KeyHandler.class), ChannelCrawlerSortMode.values(), null));
-        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ChannelPlaylistCrawlerPackagingMode(), null, null, new ComboBox<ChannelPlaylistCrawlerPackagingMode>(cf._getStorageHandler().getKeyHandler("ChannelPlaylistCrawlerPackagingMode", KeyHandler.class), ChannelPlaylistCrawlerPackagingMode.values(), null));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ChannelPlaylistCrawlerPackagingMode(), null, null, new ComboBox<ChannelPlaylistCrawlerPackagingMode>(cf._getStorageHandler().getKeyHandler("ChannelPlaylistCrawlerPackagingMode", KeyHandler.class), ChannelPlaylistCrawlerPackagingMode.values(), null));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_ProcessPlaylistItemsInReverseOrder(), null, new Checkbox(cf._getStorageHandler().getKeyHandler("ProcessPlaylistItemsInReverseOrder", BooleanKeyHandler.class)));
         // VariantBase[] variants = VariantBase.values();
@@ -313,6 +312,8 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
             // [SU] Space to Underscore
         }
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("PackagePattern", StringKeyHandler.class)));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern_channel(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("PackagePatternForChannels", StringKeyHandler.class)));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern_playlist(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("PackagePatternForPlaylists", StringKeyHandler.class)));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_video(), null, null, new TextInput(CFG_YOUTUBE.VIDEO_FILENAME_PATTERN));
         // addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_video3D(), null, null, new
         // TextInput(CFG_YOUTUBE.VIDEO3DFILENAME_PATTERN));

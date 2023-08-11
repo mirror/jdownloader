@@ -2978,6 +2978,20 @@ public class YoutubeHelper {
     public static final String YT_USER_NAME               = "YT_USER_NAME";
     public static final String YT_USER_NAME_ALTERNATIVE   = "YT_USER_NAME_ALTERNATIVE";
 
+    /** Returns true if given pattern contains a replacement entry which can only be available in context of a single crawled video. */
+    public static boolean namePatternContainsSingleVideoSpecificEntries(final String pattern) {
+        if (pattern == null) {
+            return false;
+        }
+        final String[] videoSpecificReplacePatterns = new String[] { "video_name", "group", "itag_audio_name", "itag_video_name", "itag_video_id", "itag_audio_id", "variant", "v", "quality", "collection", "col", "360", "spherical", "threed", "3d", "fps", "ext", "extension", "height", "h", "height_best", "width", "w", "duration", "category", "date", "date_time", "date_publish", "date_upload", "date_update", "video_codec", "codec_video", "resolution", "bestresolution", "resolution_best", "audio_codec", "codec_audio", "lng", "audio_bitrate", "videonumber", "playlist_position", "views" };
+        for (final String videoSpecificReplacePattern : videoSpecificReplacePatterns) {
+            if (StringUtils.containsIgnoreCase(pattern, "*" + videoSpecificReplacePattern + "*")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public String createFilename(DownloadLink link) {
         AbstractVariant variant = AbstractVariant.get(link);
         String formattedFilename = variant.getFileNamePattern();

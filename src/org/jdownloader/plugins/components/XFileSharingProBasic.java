@@ -2443,10 +2443,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             if (containsPlainTextCaptcha(getCorrectBR(br))) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
                 /* Captcha method by ManiacMansion */
-                String[][] letters = new Regex(br, "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
+                String[][] letters = new Regex(br, "<span style=.position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;.>(&#\\d+;)</span>").getMatches();
                 if (letters == null || letters.length == 0) {
                     /* Try again, this time look in non-cleaned-up html as correctBR() could have removed this part! */
-                    letters = new Regex(br.toString(), "<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(&#\\d+;)</span>").getMatches();
+                    letters = new Regex(br.toString(), "<span style=.position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;.>(&#\\d+;)</span>").getMatches();
                     if (letters == null || letters.length == 0) {
                         logger.warning("plaintext captchahandling broken!");
                         checkErrorsLastResort(br, null);

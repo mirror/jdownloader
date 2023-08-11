@@ -402,6 +402,22 @@ public interface YoutubeConfig extends PluginConfigInterface {
     @DefaultStringValue("*VIDEO_NAME*")
     String getPackagePattern();
 
+    void setPackagePattern(String pattern);
+
+    @AboutConfig
+    @DefaultOnNull
+    @DefaultStringValue("*USERNAME*")
+    String getPackagePatternForChannels();
+
+    void setPackagePatternForChannels(String pattern);
+
+    @AboutConfig
+    @DefaultOnNull
+    @DefaultStringValue("*PLAYLIST_NAME*")
+    String getPackagePatternForPlaylists();
+
+    void setPackagePatternForPlaylists(String pattern);
+
     @AboutConfig
     String[] getPreferedSubtitleLanguages();
 
@@ -578,8 +594,6 @@ public interface YoutubeConfig extends PluginConfigInterface {
     void setLinkIsPlaylistUrlAction(YoutubeConfig.IfUrlisAPlaylistAction action);
 
     void setLinkIsVideoAndPlaylistUrlAction(YoutubeConfig.IfUrlisAVideoAndPlaylistAction action);
-
-    void setPackagePattern(String pattern);
 
     void setPreferedSubtitleLanguages(String[] lngKeys);
 
