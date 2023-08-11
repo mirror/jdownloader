@@ -119,6 +119,7 @@
 			<fileset dir="${res}/licenses" includes="**/*" />
 			<fileset dir="${res}/libs/" includes="**/*.info" />
 			<fileset dir="${dep.awu}/libs/" includes="**/*.info" />
+			<fileset dir="${dep.awu}/libs/" includes="**/*.license" />
 			<fileset dir="${dep.browser}/libs/" includes="**/*.info" />
 		</copy>
 

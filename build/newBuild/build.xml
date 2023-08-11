@@ -142,8 +142,8 @@
 		</copy>
 
 		<copy todir="${dist}/licenses">
-
 			<fileset dir="${dep.awu}/libs/" includes="**/*.info" excludes="**/*jackson*" />
+			<fileset dir="${dep.awu}/libs/" includes="**/*.license" />
 			<fileset dir="${dep.jdc}/libs/" includes="**/*.info" />
 			<fileset dir="${dep.browser}/libs/" includes="**/*.info" />
 			<fileset dir="${res}/licenses" includes="**/*" />
