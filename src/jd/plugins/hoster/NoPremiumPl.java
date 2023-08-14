@@ -88,17 +88,22 @@ public class NoPremiumPl extends PluginForHost {
             }
         }
         /** 2023-08-14: Workaround because they sometimes don't update their API list of supported hosts... */
-        try {
-            br.getPage("https://www." + this.getHost() + "/");
-            final String[] hostsWithoutTld = br.getRegex("class=\"ServerLogo\"[^>]*alt=\"([^\"]+)").getColumn(0);
-            if (hostsWithoutTld != null && hostsWithoutTld.length != 0) {
-                for (final String hostWithoutTld : hostsWithoutTld) {
-                    supportedHosts.add(hostWithoutTld);
+        final boolean tryToFindMoreHostsViaWebsite = true;
+        if (tryToFindMoreHostsViaWebsite) {
+            try {
+                br.getPage("https://www." + this.getHost() + "/");
+                final String[] hostsWithoutTld = br.getRegex("class=\"ServerLogo\"[^>]*alt=\"([^\"]+)").getColumn(0);
+                if (hostsWithoutTld != null && hostsWithoutTld.length != 0) {
+                    for (final String hostWithoutTld : hostsWithoutTld) {
+                        supportedHosts.add(hostWithoutTld);
+                    }
+                } else {
+                    logger.warning("Website workaround for finding additional supported hosts failed");
                 }
-            } else {
-                logger.warning("Website workaround for finding additional supported hosts failed");
+            } catch (final Throwable e) {
+                logger.log(e);
+                logger.warning("Website workaround for finding additional supported hosts failed with exception");
             }
-        } catch (final Throwable e) {
         }
         ac.setMultiHostSupport(this, supportedHosts);
         return ac;
