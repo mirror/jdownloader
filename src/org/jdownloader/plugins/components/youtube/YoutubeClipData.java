@@ -42,6 +42,7 @@ public class YoutubeClipData {
     public String                             playlistTitle            = null;
     public String                             playlistCreator          = null;
     public int                                playlistSize             = -1;
+    public String                             playlistDescription      = null;
     public String                             videoID                  = null;
     public int                                playlistEntryNumber      = -1;
     public String                             category                 = null;
@@ -166,6 +167,7 @@ public class YoutubeClipData {
             dest.playlistTitle = playlistTitle;
             dest.playlistCreator = playlistCreator;
             dest.playlistSize = playlistSize;
+            dest.playlistDescription = playlistDescription;
             dest.user = user;
             dest.user_alternative = user_alternative;
             dest.bestVideoItag = bestVideoItag;
@@ -203,6 +205,7 @@ public class YoutubeClipData {
         setValue(dest, YoutubeHelper.YT_PLAYLIST_TITLE, playlistTitle);
         setValue(dest, YoutubeHelper.YT_PLAYLIST_CREATOR, playlistCreator);
         setValue(dest, YoutubeHelper.YT_PLAYLIST_SIZE, playlistSize);
+        setValue(dest, YoutubeHelper.YT_PLAYLIST_DESCRIPTION, playlistDescription);
         setValue(dest, YoutubeHelper.YT_USER_NAME, user);
         setValue(dest, YoutubeHelper.YT_USER_NAME_ALTERNATIVE, user_alternative);
         if (bestVideoItag != null) {

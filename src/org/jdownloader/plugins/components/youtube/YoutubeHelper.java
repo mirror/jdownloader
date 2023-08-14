@@ -612,6 +612,22 @@ public class YoutubeHelper {
                 return new DataOrigin[] { DataOrigin.YT_PLAYLIST };
             }
         });
+        REPLACER.add(new YoutubeReplacer("PLAYLIST_DESCRIPTION", "PL_DESCR") {
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_PLAYLIST_DESCRIPTION, "");
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_playlist_description();
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_PLAYLIST };
+            }
+        });
         REPLACER.add(new YoutubeReplacer("CHANNEL_ID", "CH_ID") {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
@@ -3209,6 +3225,7 @@ public class YoutubeHelper {
     public static final String YT_PLAYLIST_TITLE          = "YT_PLAYLIST_TITLE";
     public static final String YT_PLAYLIST_ID             = "YT_PLAYLIST_ID";
     public static final String YT_PLAYLIST_SIZE           = "YT_PLAYLIST_SIZE";
+    public static final String YT_PLAYLIST_DESCRIPTION    = "YT_PLAYLIST_DESCRIPTION";
     public static final String YT_USER_ID                 = "YT_USER_ID";
     public static final String YT_USER_NAME               = "YT_USER_NAME";
     public static final String YT_USER_NAME_ALTERNATIVE   = "YT_USER_NAME_ALTERNATIVE";

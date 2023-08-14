@@ -581,6 +581,10 @@ public class TbCmV2 extends PluginForDecrypt {
                                     channelOrPlaylistPackage.setName(packagename);
                                 }
                             }
+                            final String playlistDescription = (String) globalPropertiesForDownloadLink.get(YoutubeHelper.YT_PLAYLIST_DESCRIPTION);
+                            if (playlistDescription != null) {
+                                channelOrPlaylistPackage.setComment(playlistDescription);
+                            }
                             if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                                 /* Dev only: Include number of expected items in packagename for better overview/debugging. */
                                 channelOrPlaylistPackage.setName("[" + videoIdsToAdd.size() + " videos] " + channelOrPlaylistPackage.getName());
@@ -1310,8 +1314,10 @@ public class TbCmV2 extends PluginForDecrypt {
                 } else {
                     logger.warning("Failed to find name of playlist-uploader");
                 }
-                // final String playlistDescription = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer,
-                // "descriptionText/simpleText");
+                final String playlistDescription = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "descriptionText/simpleText");
+                if (playlistDescription != null) {
+                    this.globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_DESCRIPTION, playlistDescription);
+                }
                 videosCountText = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "numVideosText/runs/{0}/text");
             }
             /**

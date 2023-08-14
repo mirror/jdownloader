@@ -6607,8 +6607,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Playlist Name e.g. Canadian Animals" })
     String YoutubeHelper_getDescription_playlist_name();
 
-    @Default(lngs = { "en" }, values = { "Playlist Size" })
+    @Default(lngs = { "en" }, values = { "Playlist size" })
     String YoutubeHelper_getDescription_playlist_size();
+
+    @Default(lngs = { "en" }, values = { "Playlist description" })
+    String YoutubeHelper_getDescription_playlist_description();
 
     @Default(lngs = { "en" }, values = { "Audio Stream name. e.g. DASH_AUDIO_128K_AAC" })
     String YoutubeHelper_getDescription_itag_audio_name();
