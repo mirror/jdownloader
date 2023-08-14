@@ -55,7 +55,6 @@ public class ZdfDeMediathek extends PluginForHost {
     public static final String PROPERTY_date_formatted = "date_formatted";
     public static final String PROPERTY_tv_station     = "tv_station";
     private String             dllink                  = null;
-    private boolean            server_issues           = false;
 
     public ZdfDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -89,44 +88,46 @@ public class ZdfDeMediathek extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        server_issues = false;
+        return this.requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        dllink = null;
         prepBR(this.br);
         /* New urls 2016-12-21 */
         dllink = getContentURL(link);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (StringUtils.isEmpty(dllink)) {
+            /* This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         link.setFinalFileName(link.getStringProperty("directName"));
-        if (StringUtils.containsIgnoreCase(dllink, "m3u8")) {
-            checkFFProbe(link, "Download a HLS Stream");
-            final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
-            final int hlsBandwidth = link.getIntegerProperty(ZdfDeMediathek.PROPERTY_hlsBandwidth, -1);
-            if (hlsBandwidth > 0) {
-                for (M3U8Playlist playList : downloader.getPlayLists()) {
-                    playList.setAverageBandwidth(hlsBandwidth);
+        if (!isDownload) {
+            if (StringUtils.containsIgnoreCase(dllink, "m3u8")) {
+                checkFFProbe(link, "Download a HLS Stream");
+                final HLSDownloader downloader = new HLSDownloader(link, br, dllink);
+                final int hlsBandwidth = link.getIntegerProperty(ZdfDeMediathek.PROPERTY_hlsBandwidth, -1);
+                if (hlsBandwidth > 0) {
+                    for (M3U8Playlist playList : downloader.getPlayLists()) {
+                        playList.setAverageBandwidth(hlsBandwidth);
+                    }
                 }
-            }
-            final long estimatedSize = downloader.getEstimatedSize();
-            if (estimatedSize > 0) {
-                link.setDownloadSize(estimatedSize);
-            }
-        } else {
-            URLConnectionAdapter con = null;
-            try {
-                con = this.br.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
+                final long estimatedSize = downloader.getEstimatedSize();
+                if (estimatedSize > 0) {
+                    link.setDownloadSize(estimatedSize);
+                }
+            } else {
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openHeadConnection(this.dllink);
+                    handleConnectionErrors(br, con);
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                } else if (con.getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "GEO blocked");
-                } else {
-                    server_issues = true;
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
@@ -135,14 +136,12 @@ public class ZdfDeMediathek extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         download(link);
     }
 
     private void download(final DownloadLink link) throws Exception {
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dllink.contains("hinweis_fsk")) {
@@ -165,26 +164,30 @@ public class ZdfDeMediathek extends PluginForHost {
             }
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                if (br.getHttpConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 3 * 60 * 1000l);
-                } else if (br.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-                }
-            }
+            handleConnectionErrors(br, dl.getConnection());
             if (this.dl.startDownload()) {
                 this.postprocess(link);
             }
         }
     }
 
-    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
-        if (super.looksLikeDownloadableContent(urlConnection)) {
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO blocked");
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken?");
+            }
+        }
+    }
+
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con) {
+        if (super.looksLikeDownloadableContent(con)) {
             return true;
-        } else if (urlConnection.getURL().toString().endsWith(".xml") && urlConnection.getContentType().contains("application/xml")) {
+        } else if (isSubtitleContent(con)) {
             /* XML subtitle */
             return true;
         } else {
@@ -192,12 +195,16 @@ public class ZdfDeMediathek extends PluginForHost {
         }
     }
 
+    private static boolean isSubtitleContent(final URLConnectionAdapter con) {
+        return con.getResponseCode() == 200 && (StringUtils.containsIgnoreCase(con.getContentType(), "text/xml") || StringUtils.containsIgnoreCase(con.getContentType(), "application/xml") || StringUtils.containsIgnoreCase(con.getContentType(), "text/vtt"));
+    }
+
     private void postprocess(final DownloadLink link) {
-        if ("subtitle".equals(link.getStringProperty(PROPERTY_streamingType, null))) {
+        if ("subtitle".equals(link.getStringProperty(PROPERTY_streamingType))) {
             if (!convertSubtitle(link)) {
                 logger.severe("Subtitle conversion failed!");
             } else {
-                link.setFinalFileName(link.getName().replace(".xml", ".srt"));
+                link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getName(), ".srt"));
             }
         }
     }

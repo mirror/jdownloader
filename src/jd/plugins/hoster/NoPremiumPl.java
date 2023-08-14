@@ -65,17 +65,14 @@ public class NoPremiumPl extends PluginForHost {
         br.getPage(adres);
         // "Invalid login" / "Banned" / "Valid login"
         if (br.containsHTML("Zbyt wiele prób logowania - dostęp został tymczasowo zablokowany")) {
-            ac.setStatus("Zbyt wiele prób logowania - dostęp został tymczasowo zablokowany");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("Zbyt wiele prób logowania - dostęp został tymczasowo zablokowany");
         } else if (br.containsHTML("balance")) {
             ac.setStatus("Premium Account");
         } else if (br.containsHTML("Nieprawidlowa nazwa uzytkownika/haslo")) {
-            ac.setStatus("Invalid login! Wrong password?");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException();
         } else {
             // unknown error
-            ac.setStatus("unknown account status");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown error", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("Unknown account status");
         }
         ac.setTrafficLeft(SizeFormatter.getSize(br.getRegex("balance=(\\d+)").getMatch(0) + "MB"));
         account.setMaxSimultanDownloads(20);
@@ -90,7 +87,19 @@ public class NoPremiumPl extends PluginForHost {
                 supportedHosts.add(host.trim());
             }
         }
-        ac.setStatus("Account valid");
+        /** 2023-08-14: Workaround because they sometimes don't update their API list of supported hosts... */
+        try {
+            br.getPage("https://www." + this.getHost() + "/");
+            final String[] hostsWithoutTld = br.getRegex("class=\"ServerLogo\"[^>]*alt=\"([^\"]+)").getColumn(0);
+            if (hostsWithoutTld != null && hostsWithoutTld.length != 0) {
+                for (final String hostWithoutTld : hostsWithoutTld) {
+                    supportedHosts.add(hostWithoutTld);
+                }
+            } else {
+                logger.warning("Website workaround for finding additional supported hosts failed");
+            }
+        } catch (final Throwable e) {
+        }
         ac.setMultiHostSupport(this, supportedHosts);
         return ac;
     }

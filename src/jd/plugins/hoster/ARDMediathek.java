@@ -121,15 +121,15 @@ public class ARDMediathek extends PluginForHost {
     }
 
     public static boolean isVideoContent(final URLConnectionAdapter con) {
-        return con != null && con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getCompleteContentLength() > 512 * 1024l;
+        return con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "video") && con.getCompleteContentLength() > 512 * 1024l;
     }
 
     private static boolean isAudioContent(final URLConnectionAdapter con) {
-        return con != null && con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "audio") && con.getCompleteContentLength() > 512 * 1024l;
+        return con.getResponseCode() == 200 && StringUtils.containsIgnoreCase(con.getContentType(), "audio") && con.getCompleteContentLength() > 512 * 1024l;
     }
 
     private static boolean isSubtitleContent(final URLConnectionAdapter con) {
-        return con != null && con.getResponseCode() == 200 && (StringUtils.containsIgnoreCase(con.getContentType(), "text/xml") || StringUtils.containsIgnoreCase(con.getContentType(), "text/vtt"));
+        return con.getResponseCode() == 200 && (StringUtils.containsIgnoreCase(con.getContentType(), "text/xml") || StringUtils.containsIgnoreCase(con.getContentType(), "text/vtt"));
     }
 
     @Override
