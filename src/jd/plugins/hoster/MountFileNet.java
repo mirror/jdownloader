@@ -22,6 +22,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,13 +48,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "https?://(?:www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" })
 public class MountFileNet extends antiDDoSForHost {
@@ -286,8 +286,18 @@ public class MountFileNet extends antiDDoSForHost {
                 /* New 2016-10-19 */
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", Locale.ENGLISH));
             }
-            ai.setUnlimitedTraffic();
             account.setType(AccountType.PREMIUM);
+        }
+        /* List of downloads done by the user. It also contains information about the remaining traffic. */
+        br.getPage("/stat/download");
+        final Regex trafficleftInfo = br.getRegex("(?i)Downloaded in last 24 hours: ([0-9\\.]+) of ([0-9\\.]+) GB\\s*<");
+        if (trafficleftInfo.patternFind()) {
+            final String sizeUnit = "GB";
+            final Long trafficMax = SizeFormatter.getSize(trafficleftInfo.getMatch(1) + sizeUnit);
+            ai.setTrafficMax(trafficMax);
+            ai.setTrafficLeft(trafficMax - SizeFormatter.getSize(trafficleftInfo.getMatch(0) + sizeUnit));
+        } else {
+            logger.warning("Failed to find traffic left information");
         }
         return ai;
     }

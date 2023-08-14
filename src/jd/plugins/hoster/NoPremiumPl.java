@@ -16,30 +16,28 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nopremium.pl" }, urls = { "" })
 public class NoPremiumPl extends PluginForHost {
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                            NICE_HOST          = "nopremium.pl";
-    private static final String                            NICE_HOSTproperty  = "nopremiumpl";
+    protected static MultiHosterManagement mhm = new MultiHosterManagement("rapidtraffic.pl");
 
     public NoPremiumPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -84,7 +82,7 @@ public class NoPremiumPl extends PluginForHost {
         account.setConcurrentUsePossible(true);
         ac.setValidUntil(-1);
         // now let's get a list of all supported hosts:
-        br.getPage("http://nopremium.pl/clipboard.php"); // different domain!
+        br.getPage("https://nopremium.pl/clipboard.php"); // different domain!
         final String[] hosts = br.toString().split("<br />");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
@@ -109,21 +107,7 @@ public class NoPremiumPl extends PluginForHost {
 
     /* no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
+        mhm.runCheck(account, link);
         String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getSHA1(JDHash.getMD5(account.getPass())) + "&info=0&url=" + Encoding.urlEncode(link.getDownloadURL()) + "&site=nopremium";
         String response = br.postPage("http://crypt.nopremium.pl", postData);
         br.setFollowRedirects(true);
@@ -132,46 +116,25 @@ public class NoPremiumPl extends PluginForHost {
          * I really wanted to use Content Disposition below, but it just don't work for resume at hotfile -> Doesn't matter anymore, hotfile
          * is offline
          */
-        if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
-            br.followConnection();
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
             if (br.containsHTML("Brak")) {
                 /* No transfer left */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException("No traffic left", 5 * 60 * 1000l);
             } else if (br.containsHTML("Nieprawidlowa")) {
                 /* Wrong username/password */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (br.containsHTML("Niepoprawny")) {
-                /* File not found */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new AccountInvalidException();
             } else if (br.containsHTML("Konto")) {
                 /* Account Expired */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException("Account expired");
             } else if (br.containsHTML("15=Hosting nie obslugiwany")) {
                 /* Host not supported */
-                tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
-            }
-            int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", 0);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started");
+                mhm.putError(account, link, 5 * 60 * 1000l, "Host not supported");
             } else {
-                link.setProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", Property.NULL);
-                logger.info(NICE_HOST + ": Unknown error - disabling current host!");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "Final downloadurl did not lead to downloadable file", 50, 5 * 60 * 1000);
             }
         }
-        if (dl.getConnection().getResponseCode() == 404) {
-            /* file offline */
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        try {
-            dl.startDownload();
-        } catch (Throwable e) {
-            link.getLinkStatus().setStatusText("Content Disposition");
-        }
+        dl.startDownload();
     }
 
     @Override
@@ -179,25 +142,14 @@ public class NoPremiumPl extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) throws Exception {
-        return true;
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+        if (account == null) {
+            return false;
+        } else {
+            mhm.runCheck(account, link);
+            return true;
+        }
     }
 
     @Override

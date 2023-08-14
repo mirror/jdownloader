@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.translate._GUI;
@@ -93,7 +94,7 @@ public abstract class RapidtrafficCore extends PluginForHost {
                     br.getPage(this.getBaseURL() + "konto");
                     if (this.isLoggedIN(br)) {
                         logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(this.getHost()), "");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
@@ -200,8 +201,8 @@ public abstract class RapidtrafficCore extends PluginForHost {
         getMultiHosterManagement().runCheck(account, link);
         boolean resume = true;
         showMessage(link, "Phase 1/4: Login");
-        login(account, false);
-        String userId = br.getRegex("<input type='hidden' name='usr' value='(\\d+)' id='usr_check' />").getMatch(0);
+        login(account, true);
+        final String userId = br.getRegex("<input type='hidden' name='usr' value='(\\d+)' id='usr_check' />").getMatch(0);
         if (userId == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -215,11 +216,7 @@ public abstract class RapidtrafficCore extends PluginForHost {
             sleep(2 * 1000l, link);
             if (br.containsHTML("<td class='file_error' id='linkstatus_1'>Błędny link</td>")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("BAD_LINK"), 10 * 60 * 1000l);
-            }
-            if (!br.containsHTML("<td class='file_ok' id='linkstatus_1'>OK</td>")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (br.containsHTML("Rozmiar pobieranych plików przekracza dostępny transfer")) {
+            } else if (br.containsHTML("Rozmiar pobieranych plików przekracza dostępny transfer")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("NO_TRAFFIC"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             postData = "v=usr%2Cpliki%7Cusr%2Clinki&c=pob&f=zapiszRozpoczete&usr=" + userId + "&progress_type=verified&link_ok%5B1%5D=" + url;
@@ -237,8 +234,9 @@ public abstract class RapidtrafficCore extends PluginForHost {
                     }
                 }
             }
-            if (fileId == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (StringUtils.isEmpty(fileId)) {
+                /* This should never happen */
+                getMultiHosterManagement().handleErrorGeneric(account, link, "Failed to get internal fileID", 50, 3 * 60 * 1000l);
             }
             postData = "v=usr%2Cpliki&c=fil&f=usunUsera&perm=wygeneruj+linki&fil%5B" + fileId + "%5D=on";
             showMessage(link, "Phase 3/4: Generating Link");
@@ -246,7 +244,7 @@ public abstract class RapidtrafficCore extends PluginForHost {
             sleep(2 * 1000l, link);
             generatedLink = br.getRegex("(?i)<h2>Wygenerowane linki bezpośrednie</h2><textarea rows='1' style='width: 650px; height: 40px'>(.*)</textarea>").getMatch(0);
             if (generatedLink == null) {
-                getMultiHosterManagement().handleErrorGeneric(account, link, "dllinknull", 50, 3 * 60 * 1000l);
+                getMultiHosterManagement().handleErrorGeneric(account, link, "Failed to find final downloadurl", 50, 3 * 60 * 1000l);
             }
             link.setProperty(getDirecturlproperty(), generatedLink);
         }
@@ -277,11 +275,6 @@ public abstract class RapidtrafficCore extends PluginForHost {
             } else if (br.getBaseURL().contains("notfound")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        }
-        if (dl.getConnection().getResponseCode() == 404) {
-            /* file offline */
-            dl.getConnection().disconnect();
-            getMultiHosterManagement().handleErrorGeneric(account, link, "Error 404", 50, 3 * 60 * 1000l);
         }
         showMessage(link, "Phase 4/4: Begin download");
         dl.startDownload();

@@ -62,4 +62,16 @@ public class KvsDemoCom extends KernelVideoSharingComV2 {
             return super.isPrivateVideoWebsite(br);
         }
     }
+
+    @Override
+    protected boolean isValidDirectURL(final String url) {
+        if (url == null) {
+            return false;
+        } else if (url.contains("get_file") && url.contains("premium_trailer")) {
+            /* 2023-08-14: E.g. https://www.kvs-demo.com/videos/422/david-guetta-feat-kid-cudi-memories/ */
+            return true;
+        } else {
+            return super.isValidDirectURL(url);
+        }
+    }
 }

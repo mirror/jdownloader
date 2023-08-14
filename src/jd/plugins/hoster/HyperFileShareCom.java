@@ -17,8 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -28,9 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hyperfileshare.com" }, urls = { "https?://[\\w\\.]*?hyperfileshare\\.com/(?:d/|download\\.php\\?code=)[a-fA-F0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hyperfileshare.com" }, urls = { "https?://[\\w\\.]*?hyperfileshare\\.com/(?:d/|download\\.php\\?code=)([a-fA-F0-9]+)" })
 public class HyperFileShareCom extends PluginForHost {
     public HyperFileShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,6 +63,20 @@ public class HyperFileShareCom extends PluginForHost {
         return 5;
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return "hyperfilesharecom://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
     private static final String MAINTENANCE = ">Servers Maintenance<";
 
     @Override
@@ -77,7 +92,9 @@ public class HyperFileShareCom extends PluginForHost {
         if (br.containsHTML(MAINTENANCE)) {
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.containsHTML("Download URL is incorrect") || br.containsHTML("Not Found")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("Download URL is incorrect") || br.containsHTML("Not Found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
@@ -85,11 +102,12 @@ public class HyperFileShareCom extends PluginForHost {
             filename = br.getRegex("<span>Download(.*?)</span></div>").getMatch(0);
         }
         String size = br.getRegex("File size:.*?strong>(.*?)</strong>").getMatch(0);
-        if (filename == null || size == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(size + "B"));
+        if (size != null) {
+            link.setDownloadSize(SizeFormatter.getSize(size + "B"));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -98,6 +116,8 @@ public class HyperFileShareCom extends PluginForHost {
         requestFileInformation(link);
         if (br.containsHTML(MAINTENANCE)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode!", 3 * 60 * 60 * 1000l);
+        } else if (br.containsHTML(">We are sorry, requested file is temporarily not available")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
         br.setFollowRedirects(true);
         String url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+&sid=[a-f0-9]+&s=\\d)\"").getMatch(0);

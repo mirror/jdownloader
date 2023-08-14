@@ -15,6 +15,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -298,8 +299,21 @@ public class Bunkr extends PluginForHost {
         }
         String directurl = br.getRegex("(?i)href\\s*=\\s*\"(https?://[^\"]+)[^>]*>\\s*Download").getMatch(0);
         if (directurl == null) {
-            /* Video stream (URL is usually the same as downloadurl) */
+            /* Video stream (For "/v/ URLs."URL is usually the same as downloadurl.) */
             directurl = br.getRegex("<source src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
+            if (directurl == null) {
+                /* Video stream (URL is usually the same as downloadurl) */
+                directurl = br.getRegex("<source src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
+                if (directurl == null) {
+                    final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+                    for (final String url : urls) {
+                        if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES)) {
+                            directurl = url;
+                            break;
+                        }
+                    }
+                }
+            }
         }
         String filesize = br.getRegex("Download (\\d+[^<]+)</a>").getMatch(0);
         if (filesize == null) {

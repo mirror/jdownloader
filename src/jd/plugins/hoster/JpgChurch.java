@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -67,7 +69,7 @@ public class JpgChurch extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "jpeg.pet", "jpg.pet", "jpg.fishing", "jpg.fish", "jpg.church" });
+        ret.add(new String[] { "jpg1.su", "jpeg.pet", "jpg.pet", "jpg.fishing", "jpg.fish", "jpg.church" });
         return ret;
     }
 
@@ -93,6 +95,7 @@ public class JpgChurch extends PluginForHost {
         /* 2023-02-21: Main domain changed from jpg.church to jpg.fish. */
         /* 2023-06-20: Main domain changed from jpg.fishing to jpg.pet. */
         /* 2023-07-12: Main domain changed from jpg.pet to jpeg.pet */
+        /* 2023-08-14: Main domain changed from jpeg.pet to jpg1.su */
         return this.rewriteHost(getPluginDomains(), host);
     }
 
@@ -267,16 +270,22 @@ public class JpgChurch extends PluginForHost {
         if (!StringUtils.isEmpty(filesizeStr)) {
             link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         }
-        if (!StringUtils.isEmpty(dllink) && (StringUtils.isEmpty(filesizeStr))) {
-            final Browser brc = br.cloneBrowser();
-            final URLConnectionAdapter con;
-            if ((con = checkDownloadableRequest(link, brc, brc.createHeadRequest(dllink), 0, true)) == null) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Media broken?");
-            } else {
-                /* Only now can we be sure to have the correct file-extension. */
-                final String extByMimetype = getExtensionFromMimeType(con.getContentType());
-                if (extByMimetype != null && !StringUtils.isEmpty(title)) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + extByMimetype));
+        if (!StringUtils.isEmpty(dllink) && StringUtils.isEmpty(filesizeStr) && !isDownload) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
                 }
             }
         }
@@ -290,16 +299,8 @@ public class JpgChurch extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } /* Add a download slot */
+        handleConnectionErrors(br, dl.getConnection());
+        /* Add a download slot */
         controlMaxFreeDownloads(null, link, +1);
         try {
             /* Start download */
@@ -307,6 +308,19 @@ public class JpgChurch extends PluginForHost {
         } finally {
             /* Remove download slot */
             controlMaxFreeDownloads(null, link, -1);
+        }
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
         }
     }
 

@@ -26,7 +26,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.controlling.UrlProtection;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -122,8 +121,9 @@ public class IcedriveNetFolder extends PluginForDecrypt {
             } else {
                 final long filesize = ((Number) resource.get("filesize")).longValue();
                 final DownloadLink dl = this.createDownloadlink(createContentURL(id));
+                /* They do not have separate user-browsable URLs for single files inside folders. */
+                dl.setContentUrl(param.getCryptedUrl());
                 dl.setProperty(IcedriveNet.PROPERTY_INTERNAL_FOLDER_ID, folderID);
-                dl.setUrlProtection(UrlProtection.PROTECTED_DECRYPTER);
                 dl.setFinalFileName(Encoding.htmlDecode(filename));
                 dl.setVerifiedFileSize(filesize);
                 dl.setAvailable(true);
