@@ -3202,16 +3202,6 @@ public class YoutubeHelper {
                 return true;
             }
         }
-        // final String[] videoSpecificReplacePatterns = new String[] { "video_name", "group", "itag_audio_name", "itag_video_name",
-        // "itag_video_id", "itag_audio_id", "variant", "v", "quality", "collection", "col", "360", "spherical", "threed", "3d", "fps",
-        // "ext", "extension", "height", "h", "height_best", "width", "w", "duration", "category", "date", "date_time", "date_publish",
-        // "date_upload", "date_update", "video_codec", "codec_video", "resolution", "bestresolution", "resolution_best", "audio_codec",
-        // "codec_audio", "lng", "audio_bitrate", "videonumber", "playlist_position", "views" };
-        // for (final String videoSpecificReplacePattern : videoSpecificReplacePatterns) {
-        // if (StringUtils.containsIgnoreCase(pattern, "*" + videoSpecificReplacePattern + "*")) {
-        // return true;
-        // }
-        // }
         return false;
     }
 
