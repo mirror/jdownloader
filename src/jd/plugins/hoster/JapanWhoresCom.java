@@ -20,6 +20,7 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -56,8 +57,12 @@ public class JapanWhoresCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String regexNormalTitleWebsite(final Browser br) {
-        final String title = br.getRegex("name=\"DC\\.title\"[^>]*content=\"([^\"]+)\"").getMatch(0);
+        String title = br.getRegex("<h1 class=\"title\"[^>]*>([^<]+)</h1>").getMatch(0);
+        if (title == null) {
+            title = HTMLSearch.searchMetaTag(br, "og:title");
+        }
         if (title != null) {
+            title = title.replaceFirst("(?i)\\s*\\| Japan-Whores\\.com\\s*", "");
             return title;
         } else {
             return super.regexNormalTitleWebsite(br);

@@ -268,6 +268,7 @@ public class EHentaiOrg extends PluginForHost {
             final String lowResInfo = (String) entries.get("d");
             final String origInfo = (String) entries.get("o");
             /* 2020-05-21: Only registered users can download originals! */
+            boolean downloadRequiresPoints = false;
             if (account != null && preferOriginalQuality) {
                 /* Download original file */
                 filesizeStr = new Regex(origInfo, "(\\d+\\.\\d{1,2} [A-Za-z]+)").getMatch(0);
@@ -275,6 +276,7 @@ public class EHentaiOrg extends PluginForHost {
                 if (!this.dllink.startsWith("http") && !this.dllink.startsWith("/")) {
                     this.dllink = "https://" + host + "/" + this.dllink;
                 }
+                downloadRequiresPoints = true;
             } else {
                 /* Download "lower quality" file */
                 filesizeStr = new Regex(lowResInfo, "(\\d+\\.\\d{1,2} [A-Za-z]+)").getMatch(0);
@@ -283,7 +285,8 @@ public class EHentaiOrg extends PluginForHost {
             /* Only perform linkcheck if filesize is not given as text! */
             if (filesizeStr != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
-            } else {
+            }
+            if (filesizeStr == null && !downloadRequiresPoints) {
                 URLConnectionAdapter con = null;
                 try {
                     final Browser brc = br.cloneBrowser();
