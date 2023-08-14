@@ -12,6 +12,9 @@
 	<property name="dist" value="${working}/dist" />
 	<property name="res" value="ressourcen" />
 	<property name="pluginres" value="${dist}/pluginressourcen" />
+	
+	<property name="jvm_target" value="1.8" />
+	<property name="jvm_source" value="1.8" />
 
 
 
@@ -43,17 +46,17 @@
 
 		<!-- Build dependencies -->
 
-		<javac srcdir="${dep.awu}/src" excludes="**/test/**" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.8" target="1.8" includeantruntime="false">
+		<javac srcdir="${dep.awu}/src" excludes="**/test/**" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="${jvm_source}" target="${jvm_target}" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
-		<javac srcdir="${dep.myjd}/src" excludes="**/test/**" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.8" target="1.8" includeantruntime="false">
+		<javac srcdir="${dep.myjd}/src" excludes="**/test/**" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="${jvm_source}" target="${jvm_target}" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
-		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" verbose="false" destdir="${cls}" encoding="UTF-8" source="1.8" target="1.8" includeantruntime="false">
+		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" verbose="false" destdir="${cls}" encoding="UTF-8" source="${jvm_source}" target="${jvm_target}" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
@@ -61,7 +64,7 @@
 
 
 
-		<javac srcdir="src" debug="${debug}" verbose="false" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.8" target="1.8" includeantruntime="false">
+		<javac srcdir="src" debug="${debug}" verbose="false" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="${jvm_source}" target="${jvm_target}" includeantruntime="false">
 			<classpath refid="classpath" />
 			<compilerarg line="-proc:none" />
 

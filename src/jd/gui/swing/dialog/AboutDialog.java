@@ -67,6 +67,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.images.IconIO;
+import org.appwork.utils.images.svg.SVGFactory;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
 import org.appwork.utils.net.httpconnection.JavaSSLSocketStreamFactory;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamFactory;
@@ -453,6 +455,17 @@ public class AboutDialog extends AbstractDialog<Integer> {
                 stats.add(createLink(laf.getName(), "https://github.com/kirill-grouchnikov/radiance"));
             } else {
                 stats.add(createLink(laf.getName(), ""));
+            }
+        }
+        final SVGFactory svgFactory = IconIO.getSvgFactory();
+        if (svgFactory != null && svgFactory.isSupported()) {
+            final String name = svgFactory.getClass().getSimpleName();
+            if ("KitFoxFactory".equals(name)) {
+                stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_svg()), "");
+                stats.add(createLink("svgSalamander", "https://github.com/blackears/svgSalamander"));
+            } else if ("WeisjJSVGFactory".equals(name)) {
+                stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_svg()), "");
+                stats.add(createLink("jsvg", "https://github.com/weisJ/jsvg"));
             }
         }
         stats.add(new JLabel(_GUI.T.jd_gui_swing_components_AboutDialog_icons()), "");
