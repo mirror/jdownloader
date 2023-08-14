@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -39,11 +44,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SeventySevenFileCom extends PluginForHost {
@@ -103,16 +103,34 @@ public class SeventySevenFileCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link));
+            link.setName(fid);
+        }
+        br.setFollowRedirects(false);
+        br.getPage(link.getPluginPatternMatcher());
+        String redirect = getRedirect(br);
+        if (redirect != null) {
+            /* 2023-08-14: Prevent redirectloop to https://www.77file.com/s/ */
+            int numberofRedirects = 0;
+            boolean success = false;
+            do {
+                numberofRedirects++;
+                if (br.getURL().matches(".+/s/$")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                br.getPage(redirect);
+                redirect = getRedirect(br);
+                if (redirect == null) {
+                    success = true;
+                    break;
+                }
+            } while (redirect != null && numberofRedirects <= 10);
+            if (!success) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Redirectloop");
+            }
         }
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
-        /* 2023-03-24: Added check for redirect */
-        final String redirect = br.getRegex(">window\\.location\\.href='(/[^<>\"\\']+)'").getMatch(0);
-        if (redirect != null) {
-            br.getPage(redirect);
-        }
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("<span id=\"file_size\"></span>")) {
@@ -136,6 +154,15 @@ public class SeventySevenFileCom extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getRedirect(final Browser br) {
+        String redirect = br.getRedirectLocation();
+        if (redirect == null) {
+            /* 2023-03-24: Added check for redirect */
+            redirect = br.getRegex(">window\\.location\\.href='(/[^<>\"\\']+)'").getMatch(0);
+        }
+        return redirect;
     }
 
     @Override

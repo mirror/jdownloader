@@ -81,6 +81,10 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
                 link.setHost(this.getHost());
             }
         }
+        /* Set additional properties */
+        for (final DownloadLink link : crawledItems) {
+            link.setProperty(PROPERTY_ALTERNATIVE_ROOT_FOLDER_TITLE, this.betterRootFolderName);
+        }
         return crawledItems;
     }
 
@@ -99,11 +103,20 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
             if (removeThis2 != null) {
                 path = path.replaceFirst(removeThis2, "");
             }
-            if (betterRootFolderName != null && !path.startsWith(betterRootFolderName) && !path.startsWith("/" + betterRootFolderName)) {
+            final String rootFolderName;
+            if (betterRootFolderName != null) {
+                rootFolderName = betterRootFolderName;
+            } else {
+                rootFolderName = new Regex(br.getURL(), "/dl(?:u|t)/([a-z0-9]+)").getMatch(0);
+            }
+            if (path.equals("/")) {
+                return rootFolderName;
+            }
+            if (rootFolderName != null && !path.startsWith(rootFolderName) && !path.startsWith("/" + rootFolderName)) {
                 if (path.startsWith("/")) {
-                    path = betterRootFolderName + path;
+                    path = rootFolderName + path;
                 } else {
-                    path = betterRootFolderName + "/" + path;
+                    path = rootFolderName + "/" + path;
                 }
             }
             return path;
@@ -112,19 +125,17 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
 
     @Override
     protected String getCurrentDirectoryPath(final String url) throws UnsupportedEncodingException {
-        final String path = new Regex(url, "(?i)^https?://[^/]+/dl(?:u|t)/[a-z0-9]+/(.+)").getMatch(0);
-        if (path != null) {
+        final Regex pathregex = new Regex(url, "(?i)^https?://[^/]+/dl(?:u|t)/([a-z0-9]+)/(.+)");
+        if (pathregex.patternFind()) {
+            final String internalRootFolder = pathregex.getMatch(0);
+            final String path = pathregex.getMatch(1);
             if (betterRootFolderName != null) {
                 return betterRootFolderName + "/" + URLDecoder.decode(path, "UTF-8");
             } else {
-                return URLDecoder.decode(path, "UTF-8");
+                return internalRootFolder + "/" + URLDecoder.decode(path, "UTF-8");
             }
-        } else if (betterRootFolderName != null) {
-            /* Root */
-            return betterRootFolderName;
         } else {
-            /* Root */
-            return "/";
+            return super.getCurrentDirectoryPath(url);
         }
     }
 

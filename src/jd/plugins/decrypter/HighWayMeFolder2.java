@@ -80,7 +80,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account == null) {
-            displayBubblenotifyMessage("Account benötigt", "Account benötigt, um torrent und usenet Dateien aus dem eigenen High-Way Account einfügen zu können.");
+            displayBubblenotifyMessage("Account benötigt", "Account benötigt, um Torrent und Usenet Dateien aus dem eigenen High-Way Account einfügen zu können.");
             throw new AccountRequiredException();
         }
         final HighWayMe2 hosterplugin = (HighWayMe2) this.getNewPluginForHostInstance(this.getHost());
@@ -142,6 +142,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                 logger.info("Failed to find any items for category: usenet");
                 break usenetCrawler;
             }
+            final boolean trustZipAsSingleFile = false;
             for (final Map<String, Object> item : items) {
                 final String percentDownloaded = item.get("Prozent").toString();
                 final String name = item.get("Name").toString();
@@ -153,7 +154,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                     continue;
                 }
                 final DownloadLink link = this.createDownloadlink(item.get("link").toString());
-                if (StringUtils.equals(zip, "1")) {
+                if (StringUtils.equals(zip, "1") && trustZipAsSingleFile) {
                     /* We know we got only one file and it is downloadable. */
                     link.setName(Plugin.getCorrectOrApplyFileNameExtension(name, ".zip"));
                     final String filesizeBytesStr = (String) item.get("Size");
