@@ -4529,6 +4529,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Channel ID" })
     String YoutubeHelper_getDescription_channel_id();
 
+    @Default(lngs = { "en" }, values = { "Channel size" })
+    String YoutubeHelper_getDescription_channel_size();
+
     @Default(lngs = { "en" }, values = { "Clip duration *duration* or e.g. *duration[seconds]*" })
     String YoutubeHelper_getDescription_duration();
 

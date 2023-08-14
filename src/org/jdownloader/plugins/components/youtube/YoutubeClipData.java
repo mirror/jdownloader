@@ -8,8 +8,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.plugins.DownloadLink;
-
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.youtube.itag.YoutubeITAG;
 import org.jdownloader.plugins.components.youtube.variants.AbstractVariant;
@@ -21,6 +19,8 @@ import org.jdownloader.plugins.components.youtube.variants.VariantInfo;
 import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 import org.jdownloader.plugins.components.youtube.variants.YoutubeSubtitleStorable;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+
+import jd.plugins.DownloadLink;
 
 public class YoutubeClipData {
     /**
@@ -37,6 +37,11 @@ public class YoutubeClipData {
     public String                             description_alternative  = null;
     public String                             channelTitle             = null;
     public String                             channelTitle_alternative = null;
+    public int                                channelSize              = -1;
+    public String                             playlistID               = null;
+    public String                             playlistTitle            = null;
+    public String                             playlistCreator          = null;
+    public int                                playlistSize             = -1;
     public String                             videoID                  = null;
     public int                                playlistEntryNumber      = -1;
     public String                             category                 = null;
@@ -156,6 +161,11 @@ public class YoutubeClipData {
             dest.playlistEntryNumber = playlistEntryNumber;
             dest.channelTitle = channelTitle;
             dest.channelTitle_alternative = channelTitle_alternative;
+            dest.channelSize = channelSize;
+            dest.playlistID = playlistID;
+            dest.playlistTitle = playlistTitle;
+            dest.playlistCreator = playlistCreator;
+            dest.playlistSize = playlistSize;
             dest.user = user;
             dest.user_alternative = user_alternative;
             dest.bestVideoItag = bestVideoItag;
@@ -188,6 +198,11 @@ public class YoutubeClipData {
         setValue(dest, YoutubeHelper.YT_3D, is3D());
         setValue(dest, YoutubeHelper.YT_CHANNEL_TITLE, channelTitle);
         setValue(dest, YoutubeHelper.YT_CHANNEL_TITLE_ALTERNATIVE, channelTitle_alternative);
+        setValue(dest, YoutubeHelper.YT_CHANNEL_SIZE, channelSize);
+        setValue(dest, YoutubeHelper.YT_PLAYLIST_ID, playlistID);
+        setValue(dest, YoutubeHelper.YT_PLAYLIST_TITLE, playlistTitle);
+        setValue(dest, YoutubeHelper.YT_PLAYLIST_CREATOR, playlistCreator);
+        setValue(dest, YoutubeHelper.YT_PLAYLIST_SIZE, playlistSize);
         setValue(dest, YoutubeHelper.YT_USER_NAME, user);
         setValue(dest, YoutubeHelper.YT_USER_NAME_ALTERNATIVE, user_alternative);
         if (bestVideoItag != null) {

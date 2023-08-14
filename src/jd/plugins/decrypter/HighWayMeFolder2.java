@@ -38,7 +38,6 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.HighWayMe2;
@@ -106,8 +105,6 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                 logger.info("Failed to find any items for category: torrent");
                 break torrentCrawler;
             }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName("Torrent");
             for (final Map<String, Object> item : items) {
                 final String percentDownloaded = item.get("percentDone").toString();
                 final String name = item.get("name").toString();
@@ -128,7 +125,6 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                  * HighWayMeFolder
                  */
                 // link.setAvailable(true);
-                link._setFilePackage(fp);
                 ret.add(link);
                 distribute(link);
             }
@@ -145,8 +141,6 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                 logger.info("Failed to find any items for category: usenet");
                 break usenetCrawler;
             }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName("Usenet");
             for (final Map<String, Object> item : items) {
                 final String percentDownloaded = item.get("Prozent").toString();
                 final String name = item.get("Name").toString();
@@ -173,7 +167,6 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                      */
                     // link.setAvailable(true);
                 }
-                link._setFilePackage(fp);
                 ret.add(link);
                 distribute(link);
             }

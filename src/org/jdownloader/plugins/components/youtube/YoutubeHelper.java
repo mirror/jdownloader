@@ -144,6 +144,7 @@ public class YoutubeHelper {
     private static final String REGEX_FMT_MAP_FROM_JSPLAYER_SETUP          = "\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")";
     public static final String  PAID_VIDEO                                 = "Paid Video:";
     public static final String  YT_CHANNEL_ID                              = "YT_CHANNEL_ID";
+    public static final String  YT_CHANNEL_SIZE                            = "YT_CHANNEL_SIZE";
     public static final String  YT_DURATION                                = "YT_DURATION";
     public static final String  YT_DATE_UPLOAD                             = "YT_DATE_UPDATE";
     public static final String  YT_GOOGLE_PLUS_ID                          = "YT_GOOGLE_PLUS_ID";
@@ -611,7 +612,7 @@ public class YoutubeHelper {
                 return new DataOrigin[] { DataOrigin.YT_PLAYLIST };
             }
         });
-        REPLACER.add(new YoutubeReplacer("CHANNEL_ID") {
+        REPLACER.add(new YoutubeReplacer("CHANNEL_ID", "CH_ID") {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_CHANNEL_ID, "");
@@ -625,6 +626,27 @@ public class YoutubeHelper {
             @Override
             public DataOrigin[] getDataOrigins() {
                 return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO, DataOrigin.YT_CHANNEL };
+            }
+        });
+        REPLACER.add(new YoutubeReplacer("CHANNEL_SIZE", "CH_SIZE") {
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                final int ret = link.getIntegerProperty(YoutubeHelper.YT_CHANNEL_SIZE, -1);
+                if (ret == -1) {
+                    return "";
+                } else {
+                    return String.valueOf(ret);
+                }
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_channel_size();
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_CHANNEL };
             }
         });
         REPLACER.add(new YoutubeReplacer("GOOGLEPLUS_ID") {
