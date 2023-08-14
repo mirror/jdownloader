@@ -459,7 +459,7 @@ public class EHentaiOrg extends PluginForHost {
                 br.getPage(MAINPAGE_ehentai + "/home.php");// before, debugging
                 br.getPage(MAINPAGE_ehentai + "/hathperks.php");
                 logger.info("Credits before:");
-                short[] creditsLeftInfo = getCreditsLeftInfo(br); // prints credits left (logs them)
+                int[] creditsLeftInfo = getCreditsLeftInfo(br); // prints credits left (logs them)
                 /*
                  * 2021-01-15: In browser a re-login (using the still existing e-hentai cookies) worked fine and removed that limit but it
                  * didn't help here.
@@ -765,7 +765,7 @@ public class EHentaiOrg extends PluginForHost {
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
         br.getPage(MAINPAGE_ehentai + "/home.php");
-        final short[] creditsLeftInfo = this.getCreditsLeftInfo(br);
+        final int[] creditsLeftInfo = this.getCreditsLeftInfo(br);
         if (creditsLeftInfo != null) {
             ai.setStatus(String.format(AccountType.FREE.getLabel() + " [Used %d / %d items]", creditsLeftInfo[0], creditsLeftInfo[1]));
             if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
@@ -796,7 +796,7 @@ public class EHentaiOrg extends PluginForHost {
      * [1] = max limit for this account </br>
      * [1] minus [0] = points left
      */
-    private short[] getCreditsLeftInfo(final Browser br) {
+    private int[] getCreditsLeftInfo(final Browser br) {
         if (!br.getURL().endsWith("/home.php")) {
             logger.warning("!Developer! You did not access '/home.php' before calling this! It will most likely fail!");
         }
@@ -804,7 +804,7 @@ public class EHentaiOrg extends PluginForHost {
         final String items_maxStr = br.getRegex("(?i)towards a limit of <strong>(\\d+)</strong>").getMatch(0);
         if (items_downloadedStr != null && items_maxStr != null) {
             logger.info("Credits: Used: " + items_downloadedStr + " Max: " + items_maxStr);
-            return new short[] { Short.parseShort(items_downloadedStr), Short.parseShort(items_maxStr) };
+            return new int[] { Integer.parseInt(items_downloadedStr), Integer.parseInt(items_maxStr) };
         } else {
             /* Assume true as we can't check */
             logger.warning("Failed to find remaining credits");
