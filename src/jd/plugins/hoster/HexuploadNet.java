@@ -17,6 +17,12 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.Time;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -29,10 +35,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.Time;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HexuploadNet extends XFileSharingProBasic {
@@ -57,6 +59,17 @@ public class HexuploadNet extends XFileSharingProBasic {
 
     @Override
     protected String getDllink(DownloadLink link, Account account, Browser br, String src) {
+        if (br.getRequest().getHtmlCode().startsWith("{")) {
+            /* 2023-08-14 */
+            try {
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final String urlb64Encoded = entries.get("link").toString();
+                return Encoding.Base64Decode(urlb64Encoded);
+            } catch (final Throwable e) {
+                logger.log(e);
+                logger.warning("Ajax handling failed");
+            }
+        }
         String ret = super.getDllink(link, account, br, src);
         if (ret == null) {
             final String base64 = br.getRegex("ldl\\.ld\\('(aHR0c.*?)'").getMatch(0);
@@ -129,7 +142,14 @@ public class HexuploadNet extends XFileSharingProBasic {
     public Form findFormDownload1Free(final Browser br) throws Exception {
         /* 2022-04-07: Special */
         handleSecurityVerification(br);
-        return super.findFormDownload1Free(br);
+        final Form download1 = super.findFormDownload1Free(br);
+        if (download1 != null && br.containsHTML("type: 'POST',\\s*url: 'https?://[^/]+/download'")) {
+            /* 2023-08-14 */
+            download1.put("ajax", "1");
+            download1.put("method_free", "1");
+            download1.put("dataType", "json");
+        }
+        return download1;
     }
 
     @Override

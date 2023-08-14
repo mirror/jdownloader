@@ -135,6 +135,20 @@ public class TwitterCom extends PluginForHost {
         TwitterComCrawler.setRequestIntervallLimits();
     }
 
+    @Override
+    public String getPluginContentURL(final DownloadLink link) {
+        /* Expose direct-URLs to user as they are static. */
+        final String directurl = link.getStringProperty(PROPERTY_DIRECTURL);
+        final String hls_master = link.getStringProperty(PROPERTY_DIRECTURL_hls_master);
+        if (PluginJsonConfig.get(TwitterConfigInterface.class).isPreferHLSVideoDownload() && hls_master != null) {
+            return hls_master;
+        } else if (directurl != null) {
+            return directurl;
+        } else {
+            return super.getPluginContentURL(link);
+        }
+    }
+
     private static Object LOCK = new Object();
 
     @Override

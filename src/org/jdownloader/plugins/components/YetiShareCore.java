@@ -1053,7 +1053,11 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         if (continue_link == null) {
             continue_link = getDllink(br);
         }
-        return continue_link;
+        if (continue_link != null) {
+            return Encoding.htmlOnlyDecode(continue_link);
+        } else {
+            return continue_link;
+        }
     }
 
     /** If overridden, make sure to make isDownloadlink compatible as well! */

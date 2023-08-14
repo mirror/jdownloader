@@ -17,12 +17,16 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
@@ -31,8 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "makinamania.net" }, urls = { "https?://(?:www\\.)?makinamania\\.(?:com|net)/((download/|descargar\\-).+|index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+)" })
 public class MakinaManiaCom extends PluginForHost {
@@ -55,14 +57,13 @@ public class MakinaManiaCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(link.getPluginPatternMatcher());
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-                } else {
+                if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
             } finally {
                 try {
                     con.disconnect();
@@ -80,7 +81,7 @@ public class MakinaManiaCom extends PluginForHost {
                 filesize = br.getRegex("Tama.o\\s*:\\s*(\\d+[^<>\"]+)<").getMatch(0);
             }
             if (filename != null) {
-                link.setName(Encoding.htmlDecode(filename.trim()));
+                link.setName(Encoding.htmlDecode(filename).trim());
             }
             if (filesize != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -118,11 +119,11 @@ public class MakinaManiaCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
-        ai.setStatus("Normal User");
+        account.setType(AccountType.FREE);
         return ai;
     }
 
@@ -159,15 +160,12 @@ public class MakinaManiaCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filenameFromHeader = getFileNameFromHeader(dl.getConnection());
+        if (filenameFromHeader != null) {
+            filenameFromHeader = Encoding.htmlDecode(filenameFromHeader).trim();
+            link.setFinalFileName(filenameFromHeader);
         }
-        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
-        if (dl.getConnection().getLongContentLength() == 0) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
-        }
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
@@ -210,19 +208,24 @@ public class MakinaManiaCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+        String filenameHeader = getFileNameFromHeader(dl.getConnection());
+        if (filenameHeader != null) {
+            filenameHeader = Encoding.htmlDecode(filenameHeader).trim();
+            filenameHeader = filenameHeader.replace("_(MAKINAMANIA.COM)", "");
+            link.setFinalFileName(filenameHeader);
+        }
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (dl.getConnection().getLongContentLength() == 0) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: File is empty", 10 * 60 * 1000l);
         }
-        final String filenameHeader = getFileNameFromHeader(dl.getConnection());
-        if (filenameHeader != null) {
-            link.setFinalFileName(Encoding.htmlDecode(filenameHeader));
-        }
-        if (dl.getConnection().getLongContentLength() == 0) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
-        }
-        dl.startDownload();
     }
 
     @Override

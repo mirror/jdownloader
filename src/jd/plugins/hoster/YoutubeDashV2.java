@@ -200,7 +200,7 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         } catch (final Throwable e) {
             logger.log(e);
         }
-        String url = generateVideoContentURL(videoID, playlistID, link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_INT, -1));
+        String url = generateVideoContentURL(videoID, playlistID, link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_POSITION, -1));
         if (PluginJsonConfig.get(YoutubeConfig.class).isEnableIncludeVariantStringInContentURLs() && variant != null) {
             /* Add this to URL so if user adds this again, crawler knows which variant to crawl. */
             url += "#variant=" + Encoding.urlEncode(Base64.encode(variant.getStorableString()));

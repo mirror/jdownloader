@@ -990,8 +990,6 @@ public class TbCmV2 extends PluginForDecrypt {
             final DownloadLink ret = createDownloadlink(linkID);
             final YoutubeHelper helper = new YoutubeHelper(br, getLogger());
             ClipDataCache.referenceLink(helper, ret, clip);
-            // thislink.setAvailable(true);
-            // thislink.setProperty(key, value)
             ret.setProperty(YoutubeHelper.YT_ID, clip.videoID);
             ret.setProperty(YoutubeHelper.YT_COLLECTION, l.getName());
             for (Entry<String, Object> es : globalPropertiesForDownloadLink.entrySet()) {
@@ -1007,7 +1005,7 @@ public class TbCmV2 extends PluginForDecrypt {
             // thislink.setProperty(YoutubeHelper.YT_VARIANT, variantInfo.getVariant()._getUniqueId());
             YoutubeHelper.writeVariantToDownloadLink(ret, variantInfo.getVariant());
             // variantInfo.fillExtraProperties(thislink, alternatives);
-            String filename = helper.createFilename(ret);
+            final String filename = helper.createFilename(ret);
             ret.setFinalFileName(filename);
             ret.setLinkID(linkID);
             if (groupPackage != null) {

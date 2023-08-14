@@ -1045,7 +1045,7 @@ public class YoutubeHelper {
                 return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
-        REPLACER.add(new YoutubeReplacer("VIDEONUMBER", "PLAYLIST_POSITION") {
+        REPLACER.add(new YoutubeReplacer("VIDEONUMBER", "PLAYLIST_POSITION", "PL_POS") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_videonumber();
@@ -1053,7 +1053,7 @@ public class YoutubeHelper {
 
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
-                final int playlistNumber = link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_INT, -1);
+                final int playlistNumber = link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_POSITION, -1);
                 if (playlistNumber >= 0) {
                     // playlistnumber
                     DecimalFormat df = new DecimalFormat("0000");
@@ -1099,7 +1099,6 @@ public class YoutubeHelper {
     public static final String  YT_TITLE                         = "YT_TITLE";
     public static final String  YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
     public static final String  YT_CATEGORY                      = "YT_CATEGORY";
-    public static final String  YT_PLAYLIST_INT                  = "YT_PLAYLIST_INT";
     public static final String  YT_ID                            = "YT_ID";
     public static final String  YT_CHANNEL_TITLE                 = "YT_CHANNEL";
     public static final String  YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
@@ -3225,6 +3224,8 @@ public class YoutubeHelper {
     public static final String YT_PLAYLIST_TITLE          = "YT_PLAYLIST_TITLE";
     public static final String YT_PLAYLIST_ID             = "YT_PLAYLIST_ID";
     public static final String YT_PLAYLIST_SIZE           = "YT_PLAYLIST_SIZE";
+    /* Position of video if it is part of a playlist. */
+    public static final String YT_PLAYLIST_POSITION       = "YT_PLAYLIST_INT";
     public static final String YT_PLAYLIST_DESCRIPTION    = "YT_PLAYLIST_DESCRIPTION";
     public static final String YT_USER_ID                 = "YT_USER_ID";
     public static final String YT_USER_NAME               = "YT_USER_NAME";
@@ -3244,7 +3245,7 @@ public class YoutubeHelper {
         return false;
     }
 
-    public String createFilename(DownloadLink link) {
+    public String createFilename(final DownloadLink link) {
         AbstractVariant variant = AbstractVariant.get(link);
         String formattedFilename = variant.getFileNamePattern();
         // validate the pattern
@@ -3255,6 +3256,11 @@ public class YoutubeHelper {
             formattedFilename = "*videoname* (*quality*) *ext*";
         }
         formattedFilename = replaceVariables(link, formattedFilename);
+        final String playlistID = link.getStringProperty(YoutubeHelper.YT_PLAYLIST_ID);
+        final int playlistPosition = link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_POSITION, -1);
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && playlistID != null && playlistPosition != -1) {
+            formattedFilename = playlistPosition + "." + formattedFilename;
+        }
         return formattedFilename;
     }
 

@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -25,6 +27,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangatown.com" }, urls = { "https?://(?:www\\.)?mangatown\\.com/manga/[^/]+/c\\d+/(?:\\d+\\.html)?" })
@@ -33,22 +37,24 @@ public class MangatownCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.IMAGE_GALLERY };
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"mangaread_next_info\"")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">\\s*The series [^>]* has been licensed")) {
             /* 2020-11-11: >The series Onepunch-Man has been licensed, it is not available in MangaTown. </div> */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.canHandle(this.br.getURL())) {
             /* 2021-03-02: E.g. redirect to mainpage or search */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex urlinfo = new Regex(parameter, "mangatown\\.com/manga/([^/]+)/c(\\d+)/");
         final String chapter_str = urlinfo.getMatch(1);
@@ -79,11 +85,11 @@ public class MangatownCom extends PluginForDecrypt {
             final DownloadLink dl = this.createDownloadlink(content_url);
             dl.setFinalFileName(url_name + "_" + chapter_formatted + "_" + page_formatted + ext);
             dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(url_fpname);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 }
