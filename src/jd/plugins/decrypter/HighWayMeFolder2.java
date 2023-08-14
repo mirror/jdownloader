@@ -125,6 +125,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                  * HighWayMeFolder
                  */
                 // link.setAvailable(true);
+                link.setProperty(HighWayMeFolder.PROPERTY_ALTERNATIVE_ROOT_FOLDER_TITLE, name);
                 ret.add(link);
                 distribute(link);
             }
@@ -153,6 +154,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                 }
                 final DownloadLink link = this.createDownloadlink(item.get("link").toString());
                 if (StringUtils.equals(zip, "1")) {
+                    /* We know we got only one file and it is downloadable. */
                     link.setName(Plugin.getCorrectOrApplyFileNameExtension(name, ".zip"));
                     final String filesizeBytesStr = (String) item.get("Size");
                     if (filesizeBytesStr != null) {
@@ -166,6 +168,8 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                      * HighWayMeFolder
                      */
                     // link.setAvailable(true);
+                    /* Save extra properties which can be useful for subsequent crawling processes. */
+                    link.setProperty(HighWayMeFolder.PROPERTY_ALTERNATIVE_ROOT_FOLDER_TITLE, name);
                 }
                 ret.add(link);
                 distribute(link);

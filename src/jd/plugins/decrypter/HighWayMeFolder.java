@@ -36,7 +36,11 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public static final String PROPERTY_ALTERNATIVE_ROOT_FOLDER_TITLE = "alternative_root_folder_title";
+    private String             betterRootFolderName                   = null;
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        betterRootFolderName = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(PROPERTY_ALTERNATIVE_ROOT_FOLDER_TITLE) : null;
         final ArrayList<DownloadLink> crawledItems = super.decryptIt(param, progress);
         if (param.getCryptedUrl().matches("(?i)^https?://(?:torrentarchiv|torrent)\\.[^/]+/dlt/[a-z0-9]+/$")) {
             /*
@@ -55,6 +59,17 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
             } else {
                 logger.info("Could not find a .zip file to remove");
             }
+        }
+        final List<DownloadLink> remove2 = new ArrayList<DownloadLink>();
+        for (final DownloadLink link : crawledItems) {
+            if (link.getPluginPatternMatcher().endsWith("/__ADMIN__/") && !link.isAvailabilityStatusChecked()) {
+                remove2.add(link);
+            }
+        }
+        /* Remove folders which will end up in error 403 anyways. */
+        if (remove2.size() > 0 && remove2.size() < crawledItems.size()) {
+            logger.info("Removing additional unusable items: " + remove2);
+            crawledItems.removeAll(remove2);
         }
         /*
          * Workaround! We want directURLs to be handled by our high-way.me host plugin, not directhttp a it's usually expected to happen
@@ -76,9 +91,20 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
             return null;
         } else {
             /* Remove internal base path as it's not required for the user. */
-            final String removeThis = new Regex(path, "(?i)^(/torrent/([a-f0-9]{40}|[a-f0-9]{64}))/").getMatch(0);
-            if (removeThis != null) {
-                path = path.replaceFirst(removeThis, "");
+            final String removeThis1 = new Regex(path, "(?i)^(/torrent/([a-f0-9]{40}|[a-f0-9]{64}))/").getMatch(0);
+            if (removeThis1 != null) {
+                path = path.replaceFirst(removeThis1, "");
+            }
+            final String removeThis2 = new Regex(path, "(?i)^(/usenet/(incomplete/)?[^/]+)/").getMatch(0);
+            if (removeThis2 != null) {
+                path = path.replaceFirst(removeThis2, "");
+            }
+            if (betterRootFolderName != null && !path.startsWith(betterRootFolderName) && !path.startsWith("/" + betterRootFolderName)) {
+                if (path.startsWith("/")) {
+                    path = betterRootFolderName + path;
+                } else {
+                    path = betterRootFolderName + "/" + path;
+                }
             }
             return path;
         }
@@ -88,7 +114,14 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
     protected String getCurrentDirectoryPath(final String url) throws UnsupportedEncodingException {
         final String path = new Regex(url, "(?i)^https?://[^/]+/dl(?:u|t)/[a-z0-9]+/(.+)").getMatch(0);
         if (path != null) {
-            return URLDecoder.decode(path, "UTF-8");
+            if (betterRootFolderName != null) {
+                return betterRootFolderName + "/" + URLDecoder.decode(path, "UTF-8");
+            } else {
+                return URLDecoder.decode(path, "UTF-8");
+            }
+        } else if (betterRootFolderName != null) {
+            /* Root */
+            return betterRootFolderName;
         } else {
             /* Root */
             return "/";
