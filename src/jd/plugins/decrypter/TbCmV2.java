@@ -1125,6 +1125,10 @@ public class TbCmV2 extends PluginForDecrypt {
         if (playlistID != null) {
             userOrPlaylistURL = generatePlaylistURL(playlistID);
             humanReadableTitle = "Playlist " + playlistID;
+            if (playlistID.startsWith("RD")) {
+                /* It's a mix playlist auto created by youtube -> Set "YouTube" as name of creator of this playlist. */
+                this.globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_CREATOR, "YouTube");
+            }
         } else if (channelID != null) {
             /* Channel via channelID (legacy - urls containing only channelID are not common anymore) */
             if (channelTabFromURL == null) {
@@ -1294,6 +1298,20 @@ public class TbCmV2 extends PluginForDecrypt {
                 if (playlistTitle != null) {
                     globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, playlistTitle);
                 }
+                // final String playlistCreatorFullName = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer,
+                // "ownerText/runs/{0}/text");
+                String playlistCreator = null;
+                final String playlistCreatorURL = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "ownerText/runs/{0}/navigationEndpoint/browseEndpoint/canonicalBaseUrl");
+                if (playlistCreatorURL != null) {
+                    playlistCreator = new Regex(playlistCreatorURL, "/@(.+)").getMatch(0);
+                }
+                if (playlistCreator != null) {
+                    this.globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_CREATOR, playlistCreator);
+                } else {
+                    logger.warning("Failed to find name of playlist-uploader");
+                }
+                // final String playlistDescription = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer,
+                // "descriptionText/simpleText");
                 videosCountText = (String) JavaScriptEngineFactory.walkJson(playlistHeaderRenderer, "numVideosText/runs/{0}/text");
             }
             /**

@@ -5,10 +5,10 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-
-import org.appwork.utils.StringUtils;
 
 public abstract class YoutubeReplacer {
     public static enum TagTasks {
@@ -18,6 +18,7 @@ public abstract class YoutubeReplacer {
     }
 
     private final String[] tags;
+    private DataOrigin[]   dataOrigins = null;
 
     public String[] getTags() {
         return tags;
@@ -98,7 +99,7 @@ public abstract class YoutubeReplacer {
                 }
             }
         }
-    return name;
+        return name;
     }
 
     abstract protected String getValue(DownloadLink link, YoutubeHelper helper, String mod);
@@ -115,6 +116,20 @@ public abstract class YoutubeReplacer {
 
     public DataSource getDataSource() {
         return DataSource.WEBSITE;
+    }
+
+    public static enum DataOrigin {
+        YT_CHANNEL,
+        YT_PLAYLIST,
+        YT_SINGLE_VIDEO
+    }
+
+    public DataOrigin[] getDataOrigins() {
+        return this.dataOrigins;
+    }
+
+    public void setDataOrigins(final DataOrigin... dataOrigins) {
+        this.dataOrigins = dataOrigins;
     }
 
     public boolean matches(String checkName) {

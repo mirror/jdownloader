@@ -68,6 +68,7 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.components.youtube.YoutubeReplacer.DataOrigin;
 import org.jdownloader.plugins.components.youtube.YoutubeReplacer.DataSource;
 import org.jdownloader.plugins.components.youtube.itag.VideoCodec;
 import org.jdownloader.plugins.components.youtube.itag.VideoResolution;
@@ -192,6 +193,11 @@ public class YoutubeHelper {
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_group();
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("ITAG_AUDIO_NAME") {
             @Override
@@ -207,6 +213,11 @@ public class YoutubeHelper {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_itag_audio_name();
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
         REPLACER.add(new YoutubeReplacer("ITAG_VIDEO_NAME") {
@@ -224,6 +235,11 @@ public class YoutubeHelper {
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_itag_video_name();
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("ITAG_VIDEO_ID") {
             @Override
@@ -239,6 +255,11 @@ public class YoutubeHelper {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_itag_video_id();
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
         REPLACER.add(new YoutubeReplacer("ITAG_AUDIO_ID") {
@@ -256,6 +277,11 @@ public class YoutubeHelper {
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_itag_audio_id();
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("VARIANT", "V") {
             @Override
@@ -270,6 +296,11 @@ public class YoutubeHelper {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_variantid2();
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
         REPLACER.add(new YoutubeReplacer("QUALITY") {
@@ -293,6 +324,11 @@ public class YoutubeHelper {
                     return "[INVALID LINK!]";
                 }
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("COLLECTION", "COL") {
             @Override
@@ -304,6 +340,11 @@ public class YoutubeHelper {
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_COLLECTION, "");
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("VIDEOID", "ID") {
             @Override
@@ -314,6 +355,11 @@ public class YoutubeHelper {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_ID, "");
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
         REPLACER.add(new YoutubeReplacer("360", "SPHERICAL") {
@@ -334,6 +380,11 @@ public class YoutubeHelper {
                 }
                 return "";
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("THREED", "3D") {
             @Override
@@ -353,6 +404,11 @@ public class YoutubeHelper {
                 }
                 return "";
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("FPS") {
             @Override
@@ -371,6 +427,11 @@ public class YoutubeHelper {
                 }
                 return "";
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("EXT", "EXTENSION") {
             @Override
@@ -382,6 +443,11 @@ public class YoutubeHelper {
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 AbstractVariant variant = AbstractVariant.get(link);
                 return variant.getContainer().getExtension();
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
         REPLACER.add(new YoutubeReplacer("HEIGHT", "H") {
@@ -398,6 +464,11 @@ public class YoutubeHelper {
                 }
                 return "";
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("HEIGHT_BEST") {
             @Override
@@ -412,6 +483,11 @@ public class YoutubeHelper {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_BEST_VIDEO_HEIGHT, "");
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
         REPLACER.add(new YoutubeReplacer("WIDTH", "W") {
@@ -428,6 +504,11 @@ public class YoutubeHelper {
                 }
                 return "";
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("USERNAME", "USER") {
             @Override
@@ -438,6 +519,11 @@ public class YoutubeHelper {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_user();
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO, DataOrigin.YT_CHANNEL };
             }
         });
         REPLACER.add(new YoutubeReplacer("USERNAME_ALTERNATIVE", "USER_ALTERNATIVE") {
@@ -450,8 +536,13 @@ public class YoutubeHelper {
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_user() + " " + _GUI.T.YoutubeHelper_getDescription_alternative();
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO, DataOrigin.YT_CHANNEL };
+            }
         });
-        REPLACER.add(new YoutubeReplacer("PLAYLIST_ID") {
+        REPLACER.add(new YoutubeReplacer("PLAYLIST_ID", "PL_ID") {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_PLAYLIST_ID, "");
@@ -461,8 +552,29 @@ public class YoutubeHelper {
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_playlist_id();
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_PLAYLIST };
+            }
         });
-        REPLACER.add(new YoutubeReplacer("PLAYLIST_NAME") {
+        REPLACER.add(new YoutubeReplacer("PLAYLIST_CREATOR", "PLAYLIST_USERNAME", "PL_USR") {
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_PLAYLIST_CREATOR, "");
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_playlist_creator();
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_PLAYLIST };
+            }
+        });
+        REPLACER.add(new YoutubeReplacer("PLAYLIST_NAME", "PLAYLIST_TITLE", "PL_NAME") {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_PLAYLIST_TITLE, "");
@@ -472,8 +584,13 @@ public class YoutubeHelper {
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_playlist_name();
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_PLAYLIST };
+            }
         });
-        REPLACER.add(new YoutubeReplacer("PLAYLIST_SIZE") {
+        REPLACER.add(new YoutubeReplacer("PLAYLIST_SIZE", "PL_SIZE") {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 final int ret = link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_SIZE, -1);
@@ -488,6 +605,11 @@ public class YoutubeHelper {
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_playlist_size();
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_PLAYLIST };
+            }
         });
         REPLACER.add(new YoutubeReplacer("CHANNEL_ID") {
             @Override
@@ -498,6 +620,11 @@ public class YoutubeHelper {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_channel_id();
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO, DataOrigin.YT_CHANNEL };
             }
         });
         REPLACER.add(new YoutubeReplacer("GOOGLEPLUS_ID") {
@@ -513,6 +640,11 @@ public class YoutubeHelper {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_googleplus_id();
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
         REPLACER.add(new YoutubeReplacer("DURATION") {
@@ -534,6 +666,11 @@ public class YoutubeHelper {
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_duration();
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("CHANNEL", "CHANNELNAME") {
             @Override
@@ -544,6 +681,11 @@ public class YoutubeHelper {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_channel();
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO, DataOrigin.YT_CHANNEL };
             }
         });
         REPLACER.add(new YoutubeReplacer("CHANNEL_ALTERNATIVE", "CHANNELNAME_ALTERNATIVE") {
@@ -556,6 +698,11 @@ public class YoutubeHelper {
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_channel() + " " + _GUI.T.YoutubeHelper_getDescription_alternative();
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO, DataOrigin.YT_CHANNEL };
+            }
         });
         REPLACER.add(new YoutubeReplacer("VIDEONAME", "VIDEO_NAME", "TITLE") {
             @Override
@@ -566,6 +713,11 @@ public class YoutubeHelper {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_title();
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
         REPLACER.add(new YoutubeReplacer("VIDEONAME_ALTERNATIVE", "VIDEO_NAME_ALTERNATIVE", "TITLE_ALTERNATIVE") {
@@ -578,6 +730,11 @@ public class YoutubeHelper {
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_title() + " " + _GUI.T.YoutubeHelper_getDescription_alternative();
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("CATEGORY") {
             @Override
@@ -588,6 +745,11 @@ public class YoutubeHelper {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_category();
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
         REPLACER.add(new YoutubeReplacer("DATE", "DATE_TIME", "DATE_PUBLISH") {
@@ -618,6 +780,11 @@ public class YoutubeHelper {
                 } else {
                     return "";
                 }
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
         // keep compatibility with wrong 'DATE_UDPATE' TAG, 06.10.2020
@@ -654,6 +821,11 @@ public class YoutubeHelper {
                     return "";
                 }
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("VIDEO_CODEC", "CODEC_VIDEO") {
             @Override
@@ -676,6 +848,11 @@ public class YoutubeHelper {
                 }
                 return "";
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("RESOLUTION") {
             @Override
@@ -697,6 +874,11 @@ public class YoutubeHelper {
                     }
                 }
                 return "";
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
         REPLACER.add(new YoutubeReplacer("BESTRESOLUTION", "RESOLUTION_BEST") {
@@ -723,6 +905,11 @@ public class YoutubeHelper {
                     return "[INVALID LINK!]";
                 }
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("AUDIO_CODEC", "CODEC_AUDIO") {
             @Override
@@ -743,6 +930,11 @@ public class YoutubeHelper {
                     }
                 }
                 return "";
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
         REPLACER.add(new YoutubeReplacer("LNG") {
@@ -783,6 +975,11 @@ public class YoutubeHelper {
                 }
                 return "";
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
         });
         REPLACER.add(new YoutubeReplacer("AUDIO_BITRATE") {
             @Override
@@ -803,6 +1000,11 @@ public class YoutubeHelper {
                     }
                 }
                 return "";
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
         REPLACER.add(new YoutubeReplacer("VIDEONUMBER", "PLAYLIST_POSITION") {
@@ -829,6 +1031,11 @@ public class YoutubeHelper {
                     return "";
                 }
             }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO, DataOrigin.YT_PLAYLIST };
+            }
         });
         REPLACER.add(new YoutubeReplacer("VIEWS") {
             @Override
@@ -843,6 +1050,11 @@ public class YoutubeHelper {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_VIEWS, "");
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
     }
@@ -2971,6 +3183,7 @@ public class YoutubeHelper {
     public static final String YT_STREAM_DATA_DATA        = "YT_STREAM_DATA_DATA";
     public static final String YT_3D                      = "YT_3D";
     public static final String YT_COLLECTION              = "YT_COLLECTION";
+    public static final String YT_PLAYLIST_CREATOR        = "YT_PLAYLIST_CREATOR";
     public static final String YT_PLAYLIST_TITLE          = "YT_PLAYLIST_TITLE";
     public static final String YT_PLAYLIST_ID             = "YT_PLAYLIST_ID";
     public static final String YT_PLAYLIST_SIZE           = "YT_PLAYLIST_SIZE";
@@ -2983,12 +3196,22 @@ public class YoutubeHelper {
         if (pattern == null) {
             return false;
         }
-        final String[] videoSpecificReplacePatterns = new String[] { "video_name", "group", "itag_audio_name", "itag_video_name", "itag_video_id", "itag_audio_id", "variant", "v", "quality", "collection", "col", "360", "spherical", "threed", "3d", "fps", "ext", "extension", "height", "h", "height_best", "width", "w", "duration", "category", "date", "date_time", "date_publish", "date_upload", "date_update", "video_codec", "codec_video", "resolution", "bestresolution", "resolution_best", "audio_codec", "codec_audio", "lng", "audio_bitrate", "videonumber", "playlist_position", "views" };
-        for (final String videoSpecificReplacePattern : videoSpecificReplacePatterns) {
-            if (StringUtils.containsIgnoreCase(pattern, "*" + videoSpecificReplacePattern + "*")) {
+        for (final YoutubeReplacer rpl : YoutubeHelper.REPLACER) {
+            final DataOrigin[] dataOrigins = rpl.getDataOrigins();
+            if (rpl.matches(pattern) && dataOrigins != null && dataOrigins.length > 0 && dataOrigins[0] == DataOrigin.YT_SINGLE_VIDEO) {
                 return true;
             }
         }
+        // final String[] videoSpecificReplacePatterns = new String[] { "video_name", "group", "itag_audio_name", "itag_video_name",
+        // "itag_video_id", "itag_audio_id", "variant", "v", "quality", "collection", "col", "360", "spherical", "threed", "3d", "fps",
+        // "ext", "extension", "height", "h", "height_best", "width", "w", "duration", "category", "date", "date_time", "date_publish",
+        // "date_upload", "date_update", "video_codec", "codec_video", "resolution", "bestresolution", "resolution_best", "audio_codec",
+        // "codec_audio", "lng", "audio_bitrate", "videonumber", "playlist_position", "views" };
+        // for (final String videoSpecificReplacePattern : videoSpecificReplacePatterns) {
+        // if (StringUtils.containsIgnoreCase(pattern, "*" + videoSpecificReplacePattern + "*")) {
+        // return true;
+        // }
+        // }
         return false;
     }
 

@@ -413,7 +413,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultOnNull
-    @DefaultStringValue("*PLAYLIST_NAME*")
+    @DefaultStringValue("*PLAYLIST_CREATOR* - *PLAYLIST_TITLE*")
     String getPackagePatternForPlaylists();
 
     void setPackagePatternForPlaylists(String pattern);
