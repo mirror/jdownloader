@@ -429,34 +429,15 @@ public class EHentaiOrg extends PluginForHost {
 
     /** Returns direct downloadable URL to normal image (not original image). */
     private String getNormalmageDownloadurl(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        // g.e-hentai.org = free non account
-        // error
-        // <div id="i3"><a onclick="return load_image(94, '00ea7fd4e0')" href="http://g.e-hentai.org/s/00ea7fd4e0/348501-94"><img id="img"
-        // src="http://ehgt.org/g/509.gif" style="margin:20px auto" /></a></div>
-        // working
-        // <div id="i3"><a onclick="return load_image(94, '00ea7fd4e0')" href="http://g.e-hentai.org/s/00ea7fd4e0/348501-94"><img id="img"
-        // src="http://153.149.98.104:65000/h/40e8a3da0fac1b0ec40b5c58489f7b8d46b1a2a2-436260-1200-1600-jpg/keystamp=1469074200-e1ec68e0ef/093.jpg"
-        // style="height:1600px;width:1200px" /></a></div>
-        // error (no div id=i3, no a onclick either...) Link; 0957971887641.log; 57438449; jdlog://0957971887641
-        // <a href="http://g.e-hentai.org/s/4bf901e9e6/957224-513"><img src="http://ehgt.org/g/509.gif" style="margin:20px auto" /></a>
-        // working
-        // ...
-        // exhentai.org = account
-        // error
-        // <div id="i3"><a onclick="return load_image(26, '2fb043446a')" href="http://exhentai.org/s/2fb043446a/706165-26"><img id="img"
-        // src="http://exhentai.org/img/509.gif" style="margin:20px auto" /></a></div>
-        // working
-        // <div id="i3"><a onclick="return load_image(54, 'cd7295ee9c')" href="http://exhentai.org/s/cd7295ee9c/940613-54"><img id="img"
-        // src="http://130.234.205.178:25565/h/f21818f4e9d04169de22f31407df68da84f30719-935516-1273-1800-jpg/keystamp=1468656900-b9873b14ab/ow_013.jpg"
-        // style="height:1800px;width:1273px" /></a></div>
-        // best solution is to apply cleanup?
-        /* 2020-03-05: I've created this workaround but it is not required anymore --> Just keep counter_max set to 0 then it'll be fine! */
+        /* 2023-08-15: This workaround is not required anymore -> Only do one attempt. */
+        final boolean allowRetryOnLimitReached = false;
         boolean looksLikeLimitReached = false;
         int counter = 0;
         int counter_max = 2;
         /* URL to current image */
         final String targetURL = br.getURL();
         String dllink = null;
+        final String errorMessageOnLimitReached = "No GP left";
         do {
             counter++;
             logger.info(String.format("Getdllink attempt %d / %d", counter, counter_max));
@@ -467,29 +448,19 @@ public class EHentaiOrg extends PluginForHost {
                  */
                 // final Browser brc = br.cloneBrowser();
                 br.setFollowRedirects(true);
-                br.getPage(MAINPAGE_ehentai + "/home.php");// before, debugging
-                br.getPage(MAINPAGE_ehentai + "/hathperks.php");
+                br.getPage(MAINPAGE_ehentai + "/home.php");
                 logger.info("Credits before:");
                 int[] creditsLeftInfo = getCreditsLeftInfo(br); // prints credits left (logs them)
-                /*
-                 * 2021-01-15: In browser a re-login (using the still existing e-hentai cookies) worked fine and removed that limit but it
-                 * didn't help here.
-                 */
-                // /* Enforce to get new exhentai cookies */
-                // br.clearCookies(MAINPAGE_exhentai);
-                // this.getPage(br, MAINPAGE_exhentai);
-                // if (!this.isLoggedInExhentai(br)) {
-                // throw new AccountUnavailableException("Exhentai login failure", 5 * 60 * 1000);
-                // }
-                // getPage(br, MAINPAGE_ehentai + "/uiconfig.php");
+                br.getPage(MAINPAGE_ehentai + "/hathperks.php");
                 br.getPage(MAINPAGE_ehentai + "/home.php");
                 logger.info("Credits AFTER:");
                 creditsLeftInfo = getCreditsLeftInfo(br);
                 if (creditsLeftInfo != null && creditsLeftInfo[0] >= creditsLeftInfo[1]) {
                     logger.info("Confirmed limit reached according to remaining credits");
-                    exceptionLimitReached(account);
+                    exceptionLimitReached(account, errorMessageOnLimitReached);
+                } else {
+                    br.getPage(targetURL);
                 }
-                br.getPage(targetURL);
             }
             final String html = br.getRequest().getHtmlCode();
             String cleanup = new Regex(html, "<iframe[^>]*>(.*?)<iframe").getMatch(0);
@@ -505,8 +476,8 @@ public class EHentaiOrg extends PluginForHost {
                 logger.info("Failed to find final downloadurl");
                 break;
             }
-            /* E.g. https://ehgt.org/g/509.gif */
-            if (StringUtils.contains(dllink, "509.gif")) {
+            if (StringUtils.containsIgnoreCase(dllink, "509.gif")) {
+                /* E.g. https://ehgt.org/g/509.gif or https://exhentai.org/img/509.gif */
                 looksLikeLimitReached = true;
             } else {
                 looksLikeLimitReached = false;
@@ -516,23 +487,14 @@ public class EHentaiOrg extends PluginForHost {
                 /* This function has been called during linkcheck -> We don't want to waste time here. */
                 break;
             }
-        } while (looksLikeLimitReached && counter < counter_max);
+        } while (looksLikeLimitReached && allowRetryOnLimitReached && counter < counter_max);
         if (looksLikeLimitReached) {
-            logger.info("Failed to get around limit - limit is definitely reached!");
-            exceptionLimitReached(account);
+            exceptionLimitReached(account, errorMessageOnLimitReached);
         }
         return dllink;
     }
 
-    private void maybeLoginFailure(final Account account) throws PluginException {
-        if (account != null) {
-            throw new AccountUnavailableException("Unexpected logout happened?", 5 * 60 * 1000);
-        } else {
-            throw new AccountRequiredException();
-        }
-    }
-
-    private void exceptionLimitReached(final Account account) throws PluginException {
+    private void exceptionLimitReached(final Account account, final String errormessage) throws PluginException {
         if (account == null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000);
         } else {
@@ -584,7 +546,7 @@ public class EHentaiOrg extends PluginForHost {
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
                 } else if (br.containsHTML("﻿(?i)You have exceeded your image viewing limits")) {
-                    exceptionLimitReached(account);
+                    exceptionLimitReached(account, "You have exceeded your image viewing limits");
                 } else if (br.getURL().contains("bounce_login.php")) {
                     /* Account required / re-login required */
                     if (account != null) {
@@ -594,9 +556,9 @@ public class EHentaiOrg extends PluginForHost {
                         throw new AccountRequiredException();
                     }
                 } else if (br.containsHTML(Pattern.quote(errorNotEnoughGP))) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorNotEnoughGP, 10 * 60 * 1000l);
+                    exceptionLimitReached(account, errorNotEnoughGP);
                 } else if (br.containsHTML(Pattern.quote(errorNotEnoughGP2))) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorNotEnoughGP2, 10 * 60 * 1000l);
+                    exceptionLimitReached(account, errorNotEnoughGP2);
                 } else if (br.getRequest().getHtmlCode().length() <= 150 && !br.getRequest().getHtmlCode().startsWith("<html")) {
                     /* No html error but plaintext -> Looks like an errormessage we don't know */
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown error: " + br.getRequest().getHtmlCode());
@@ -609,7 +571,7 @@ public class EHentaiOrg extends PluginForHost {
                 /* Rare error: E.g. "403 picture" is smaller than 1 KB but is still downloaded content (picture). */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - file is too small:" + dl.getConnection().getCompleteContentLength(), 2 * 60 * 1000l);
             } else if (requiresAccount(dl.getConnection().getURL().toString())) {
-                maybeLoginFailure(account);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (final Exception e) {
             if (storedDirecturl != null) {

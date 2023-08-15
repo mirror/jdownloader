@@ -325,6 +325,7 @@ public class Bunkr extends PluginForHost {
         if (directurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        directurl = Encoding.htmlOnlyDecode(directurl);
         final String filename = Plugin.getFileNameFromURL(directurl);
         if (filename != null) {
             link.setName(filename);

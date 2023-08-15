@@ -48,6 +48,16 @@ public class ArteTv extends PluginForHost {
     }
 
     @Override
+    public String getPluginContentURL(final DownloadLink link) {
+        final String directurl = getDirectURL(link);
+        if (directurl != null) {
+            return directurl;
+        } else {
+            return super.getPluginContentURL(link);
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
     }

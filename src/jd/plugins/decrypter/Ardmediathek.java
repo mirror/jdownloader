@@ -1635,12 +1635,15 @@ public class Ardmediathek extends PluginForDecrypt {
         /* Finally add selected URLs - add subtitles if available and wished by user */
         final String captionsURL;
         final String captionsExt;
+        final boolean convertSubtitle;
         if (cfg.getPreferredSubtitleType() == SubtitleType.WEBVTT && metadata.getCaptionsURL_WEBVTT() != null) {
             captionsURL = metadata.getCaptionsURL_WEBVTT();
             captionsExt = ".vtt";
+            convertSubtitle = false;
         } else {
             captionsURL = metadata.getCaptionsURL_XML();
             captionsExt = ".xml";
+            convertSubtitle = true;
         }
         final Iterator<Entry<String, DownloadLink>> it = finalSelectedQualityMap.entrySet().iterator();
         while (it.hasNext()) {
@@ -1663,6 +1666,9 @@ public class Ardmediathek extends PluginForDecrypt {
                 }
                 if (data_src.getReleaseDate() > 0) {
                     data_subtitle.setReleaseDate(data_src.getReleaseDate());
+                }
+                if (convertSubtitle) {
+                    subtitle.setProperty(ARDMediathek.PROPERTY_CONVERT_XML_SUBTITLE, true);
                 }
                 subtitle.setAvailable(true);
                 final String finalFilename = MediathekHelper.getMediathekFilename(subtitle, data_subtitle, true, false);

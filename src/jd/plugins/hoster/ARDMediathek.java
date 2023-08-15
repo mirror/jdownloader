@@ -56,7 +56,7 @@ public class ARDMediathek extends PluginForHost {
     private String             dllink                           = null;
     public static final String PROPERTY_CRAWLER_FORCED_FILENAME = "crawler_forced_filename";
     public static final String PROPERTY_ITEM_ID                 = "itemId";
-    public static final String PROPERTY_CONVERT_SUBTITLES       = "convert_subtitles";
+    public static final String PROPERTY_CONVERT_XML_SUBTITLE    = "convert_xml_subtitle";
 
     public ARDMediathek(final PluginWrapper wrapper) {
         super(wrapper);
@@ -258,6 +258,14 @@ public class ARDMediathek extends PluginForHost {
     }
 
     private void postprocess(final DownloadLink link) {
+        final boolean allowConvertSubtitle;
+        final MediathekProperties data_src = link.bindData(MediathekProperties.class);
+        if ("subtitle".equalsIgnoreCase(data_src.getStreamingType())) {
+            /* Legacy handling for items added up to revision 4815 */
+            allowConvertSubtitle = true;
+        } else {
+            allowConvertSubtitle = link.getBooleanProperty(PROPERTY_CONVERT_XML_SUBTITLE, false);
+        }
         if (isSubtitle(link) && StringUtils.endsWithCaseInsensitive(link.getName(), ".xml")) {
             if (!convertSubtitle(link)) {
                 logger.severe("Subtitle conversion failed!");
