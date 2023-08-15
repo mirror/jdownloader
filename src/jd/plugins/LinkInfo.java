@@ -50,8 +50,15 @@ public class LinkInfo {
     public static LinkInfo getLinkInfo(final File file) {
         if (file == null || !file.isFile()) {
             return null;
+        } else {
+            return getLinkInfo(file.getName());
         }
-        final String fileName = file.getName();
+    }
+
+    public static LinkInfo getLinkInfo(final String fileName) {
+        if (StringUtils.isEmpty(fileName)) {
+            return null;
+        }
         final String fileNameExtension = Files.getExtension(fileName);
         int num = -1;
         try {

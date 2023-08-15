@@ -3,6 +3,8 @@ package org.jdownloader.extensions.extraction;
 import java.awt.Color;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jd.plugins.LinkInfo;
+
 import org.jdownloader.controlling.FileCreationManager;
 
 public interface ArchiveFile {
@@ -33,6 +35,8 @@ public interface ArchiveFile {
     public Boolean isComplete();
 
     public String getFilePath();
+
+    public LinkInfo getLinkInfo();
 
     public long getFileSize();
 

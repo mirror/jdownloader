@@ -16,6 +16,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageView;
+import jd.plugins.LinkInfo;
 import jd.plugins.PluginProgress;
 
 import org.appwork.utils.StringUtils;
@@ -53,6 +54,11 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         } else {
             invalidateExists();
         }
+    }
+
+    @Override
+    public LinkInfo getLinkInfo() {
+        return getDownloadLinks().get(0).getLinkInfo();
     }
 
     public DownloadLinkArchiveFile(DownloadLink link) {

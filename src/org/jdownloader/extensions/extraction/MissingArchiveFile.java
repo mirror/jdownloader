@@ -2,6 +2,8 @@ package org.jdownloader.extensions.extraction;
 
 import java.awt.Color;
 
+import jd.plugins.LinkInfo;
+
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 
@@ -40,6 +42,11 @@ public class MissingArchiveFile implements ArchiveFile {
         this.name = missingArchive.getName();
         this.missingOrIncompleteArchive = missingArchive;
         this.filePath = filePath;
+    }
+
+    @Override
+    public LinkInfo getLinkInfo() {
+        return LinkInfo.getLinkInfo(getName());
     }
 
     @Override

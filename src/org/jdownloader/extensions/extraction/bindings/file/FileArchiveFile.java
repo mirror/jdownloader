@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.plugins.LinkInfo;
+
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.FileStateManager;
@@ -44,6 +46,11 @@ public class FileArchiveFile implements ArchiveFile {
     @Override
     public int hashCode() {
         return hashCode;
+    }
+
+    @Override
+    public LinkInfo getLinkInfo() {
+        return LinkInfo.getLinkInfo(getName());
     }
 
     @Override

@@ -12,6 +12,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkProperty;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.LinkInfo;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
@@ -40,6 +41,11 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
             invalidateExists();
         }
         this.fileArchiveFileExists = fileArchiveFileExists;
+    }
+
+    @Override
+    public LinkInfo getLinkInfo() {
+        return getLinks().get(0).getLinkInfo();
     }
 
     public CrawledLinkArchiveFile(CrawledLink l) {

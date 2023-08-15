@@ -168,7 +168,7 @@ public enum ArchiveType {
         private final int multiPartThreshold = 50;
 
         @Override
-        protected boolean looksLikeAnArchive(BitSet bitset) {
+        protected boolean looksLikeAnArchive(BitSet bitset, ArchiveFile archiveFiles[]) {
             int setCount = 0;
             for (int index = 0; index < bitset.length(); index++) {
                 if (bitset.get(index)) {
@@ -272,7 +272,7 @@ public enum ArchiveType {
         }
 
         @Override
-        protected boolean looksLikeAnArchive(BitSet bitset) {
+        protected boolean looksLikeAnArchive(BitSet bitset, ArchiveFile archiveFiles[]) {
             int setCount = 0;
             for (int index = 0; index < bitset.length(); index++) {
                 if (bitset.get(index)) {
@@ -386,18 +386,22 @@ public enum ArchiveType {
          */
         @Override
         protected Boolean isValidPart(int partIndex, ArchiveFile archiveFile, boolean verifiedResult) {
-            if (archiveFile.exists(verifiedResult)) {
-                final String signatureString;
-                try {
-                    signatureString = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()), 4);
-                } catch (IOException e) {
-                    LogController.CL().log(e);
-                    return false;
+            if (archiveFile == null) {
+                return false;
+            } else if (partIndex == -1) {
+                    return null;
+                } else if (archiveFile.exists(verifiedResult)) {
+                    final String signatureString;
+                    try {
+                        signatureString = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()), 4);
+                    } catch (IOException e) {
+                        LogController.CL().log(e);
+                        return false;
+                    }
+                    if (signatureString.length() >= 8) {
+                        return signatureString.startsWith("52617221");
+                    }
                 }
-                if (signatureString.length() >= 8) {
-                    return signatureString.startsWith("52617221");
-                }
-            }
             return verifiedResult ? false : null;
         }
 
@@ -574,7 +578,7 @@ public enum ArchiveType {
         }
 
         @Override
-        protected boolean looksLikeAnArchive(BitSet bitset) {
+        protected boolean looksLikeAnArchive(BitSet bitset, ArchiveFile archiveFiles[]) {
             for (int index = 0; index < bitset.length(); index++) {
                 if (bitset.get(index) && index > 0) {
                     // at least one zxx part to make sure it is a multipart archive
@@ -1366,7 +1370,7 @@ public enum ArchiveType {
         }
 
         @Override
-        protected boolean looksLikeAnArchive(BitSet bitset) {
+        protected boolean looksLikeAnArchive(BitSet bitset, ArchiveFile archiveFiles[]) {
             int count = 0;
             for (int index = 0; index < bitset.length(); index++) {
                 if (bitset.get(index)) {
@@ -1387,7 +1391,13 @@ public enum ArchiveType {
 
         @Override
         protected Boolean isValidPart(int partIndex, ArchiveFile archiveFile, boolean verifiedResult) {
-            return RAR_SINGLE.isValidPart(partIndex, archiveFile, false);
+            if (archiveFile == null) {
+                return false;
+            } else if (partIndex == -1) {
+                return null;
+            } else {
+                return RAR_SINGLE.isValidPart(partIndex, archiveFile, false);
+            }
         }
 
         @Override
@@ -1437,12 +1447,12 @@ public enum ArchiveType {
 
     protected abstract String buildMissingPart(String[] matches, int partIndex, int partStringLength);
 
-    protected boolean looksLikeAnArchive(BitSet bitset) {
+    protected boolean looksLikeAnArchive(BitSet bitset, ArchiveFile archiveFiles[]) {
         return bitset.size() != 0;
     }
 
     protected Boolean isValidPart(int partIndex, ArchiveFile archiveFile, boolean verifiedResult) {
-        return null;
+        return archiveFile != null;
     }
 
     protected Boolean isMultiPart(final ArchiveFile archiveFile, boolean verifiedResult) {
@@ -1525,7 +1535,7 @@ public enum ArchiveType {
         final String linkPath = link.getFilePath();
         archiveTypeLoop: for (final ArchiveType archiveType : archiveTypes) {
             final String[] filePathParts = archiveType.getMatches(linkPath);
-            if (filePathParts != null) {
+            if (filePathParts != null && !Boolean.FALSE.equals(archiveType.isValidPart(-1, link, false))) {
                 final Boolean isMultiPart;
                 if (allowDeepInspection) {
                     isMultiPart = archiveType.isMultiPart(link, false);
@@ -1567,7 +1577,7 @@ public enum ArchiveType {
                         }
                     }
                 }
-                if (archiveType.looksLikeAnArchive(availableParts)) {
+                if (archiveType.looksLikeAnArchive(availableParts, archiveFiles)) {
                     final String[] fileNameParts = archiveType.getMatches(link.getName());
                     final Archive archive = link.createArchive(archiveType);
                     archive.setName(fileNameParts[0]);

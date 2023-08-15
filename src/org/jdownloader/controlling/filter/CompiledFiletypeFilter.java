@@ -5,12 +5,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import jd.plugins.LinkInfo;
+
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-
-import jd.plugins.LinkInfo;
 
 public class CompiledFiletypeFilter {
     private final Pattern[]                   list;
@@ -19,6 +19,9 @@ public class CompiledFiletypeFilter {
 
     public TypeMatchType getMatchType() {
         return matchType;
+    }
+
+    public static interface CompiledFiletypeExtension extends ExtensionsFilterInterface {
     }
 
     public static interface ExtensionsFilterInterface {
@@ -44,13 +47,13 @@ public class CompiledFiletypeFilter {
     private static List<ExtensionsFilterInterface> init() {
         final List<ExtensionsFilterInterface> ret = new ArrayList<ExtensionsFilterInterface>();
         ret.addAll(Arrays.asList(VideoExtensions.values()));
-        ret.addAll(Arrays.asList(ArchiveExtensions.values()));
         ret.addAll(Arrays.asList(AudioExtensions.values()));
         ret.addAll(Arrays.asList(ExecutableExtensions.values()));
         ret.addAll(Arrays.asList(HashExtensions.values()));
         ret.addAll(Arrays.asList(DocumentExtensions.values()));
         ret.addAll(Arrays.asList(ImageExtensions.values()));
         ret.addAll(Arrays.asList(SubtitleExtensions.values()));
+        ret.addAll(Arrays.asList(ArchiveExtensions.values()));
         return ret;
     }
 
@@ -66,7 +69,7 @@ public class CompiledFiletypeFilter {
         return null;
     }
 
-    public static enum HashExtensions implements ExtensionsFilterInterface {
+    public static enum HashExtensions implements CompiledFiletypeExtension {
         SFV,
         MD5,
         SHA,
@@ -74,7 +77,6 @@ public class CompiledFiletypeFilter {
         SHA512,
         PAR2("(vol\\d+\\.par2|vol\\d+\\+\\d+\\.par2|par2)"),
         PAR("(p\\d+|par)");
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -120,7 +122,7 @@ public class CompiledFiletypeFilter {
         }
     }
 
-    public static enum ExecutableExtensions implements ExtensionsFilterInterface {
+    public static enum ExecutableExtensions implements CompiledFiletypeExtension {
         BAT,
         EXE,
         MSI,
@@ -132,7 +134,6 @@ public class CompiledFiletypeFilter {
         RUN,
         PS1,
         CMD;
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -178,7 +179,7 @@ public class CompiledFiletypeFilter {
         }
     }
 
-    public static enum SubtitleExtensions implements ExtensionsFilterInterface {
+    public static enum SubtitleExtensions implements CompiledFiletypeExtension {
         SRT, // SubRip
         SSF, // Structured Subtitle Format
         SSA, // SubStation Alpha
@@ -188,7 +189,6 @@ public class CompiledFiletypeFilter {
         SMI, // SAMI
         VTT, // WebVTT
         SUB;// VobSub
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -234,7 +234,7 @@ public class CompiledFiletypeFilter {
         }
     }
 
-    public static enum DocumentExtensions implements ExtensionsFilterInterface {
+    public static enum DocumentExtensions implements CompiledFiletypeExtension {
         TXT,
         HTML("(html?)"),
         PHP,
@@ -253,7 +253,6 @@ public class CompiledFiletypeFilter {
         PDF,
         NFO,
         USF;
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -299,7 +298,7 @@ public class CompiledFiletypeFilter {
         }
     }
 
-    public static enum AudioExtensions implements ExtensionsFilterInterface {
+    public static enum AudioExtensions implements CompiledFiletypeExtension {
         MP3,
         WMA,
         AAC,
@@ -329,7 +328,6 @@ public class CompiledFiletypeFilter {
         SND,
         SPX, // Speex
         NSF;// NES Sound Format, https://wiki.nesdev.com/w/index.php/NSF
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -375,7 +373,7 @@ public class CompiledFiletypeFilter {
         }
     }
 
-    public static enum VideoExtensions implements ExtensionsFilterInterface {
+    public static enum VideoExtensions implements CompiledFiletypeExtension {
         ThreeGP("3GP"),
         ASF,
         AVI,
@@ -400,7 +398,6 @@ public class CompiledFiletypeFilter {
         GP3,
         WEBM,
         APNG;
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -464,7 +461,7 @@ public class CompiledFiletypeFilter {
         return Pattern.compile(sb.toString(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
     }
 
-    public static enum ArchiveExtensions implements ExtensionsFilterInterface {
+    public static enum ArchiveExtensions implements CompiledFiletypeExtension {
         REV,
         RAR,
         ZIP,
@@ -489,7 +486,6 @@ public class CompiledFiletypeFilter {
         LZH,
         LHA,
         AA("[a-z]{2}");
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -535,7 +531,7 @@ public class CompiledFiletypeFilter {
         }
     }
 
-    public static enum ImageExtensions implements ExtensionsFilterInterface {
+    public static enum ImageExtensions implements CompiledFiletypeExtension {
         JPG,
         JP2("(jp2|j2k|jpf|jpg2|jpx|jpm|mj2|mjp2)"),
         JPEG("(jpe|jpeg|jfif)"),
@@ -554,7 +550,6 @@ public class CompiledFiletypeFilter {
         CUR,
         WEBP,
         MVIEW;
-
         private final Pattern  pattern;
         private static Pattern allPattern;
 

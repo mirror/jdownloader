@@ -12,6 +12,9 @@ import java.util.regex.Pattern;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.CompiledFiletypeExtension;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -157,17 +160,28 @@ public enum SplitType {
         }
 
         @Override
-        protected boolean looksLikeAnArchive(BitSet bitset) {
+        protected boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
+            if (archiveFile == null) {
+                return false;
+            }
+            final ExtensionsFilterInterface extension = archiveFile.getLinkInfo().getExtension().getSource();
+            if (partIndex == -1 && extension instanceof CompiledFiletypeExtension && !(extension instanceof ArchiveExtensions)) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+
+        @Override
+        protected boolean looksLikeAnArchive(BitSet bitset, ArchiveFile archiveFiles[]) {
             int count = 0;
             final HashSet<Integer> exclude = new HashSet<Integer>();
-            exclude.add(parseIndex("js"));
-            exclude.add(parseIndex("xz"));
-            exclude.add(parseIndex("db"));
-            exclude.add(parseIndex("aac"));
-            exclude.add(parseIndex("zip"));
-            exclude.add(parseIndex("rar"));
-            exclude.add(parseIndex("bmp"));
-            exclude.add(parseIndex("html"));
+            for (final ArchiveFile archiveFile : archiveFiles) {
+                if (archiveFile != null && !isValidPart(-1, archiveFile)) {
+                    final String extension = archiveFile.getLinkInfo().getExtension().name();
+                    exclude.add(parseIndex(extension));
+                }
+            }
             for (int index = 0; index < bitset.length(); index++) {
                 if (exclude.contains(Integer.valueOf(index))) {
                     /* exclude js,xz,db for validation */
@@ -243,7 +257,7 @@ public enum SplitType {
         }
 
         @Override
-        protected boolean looksLikeAnArchive(BitSet bitset) {
+        protected boolean looksLikeAnArchive(BitSet bitset, ArchiveFile archiveFiles[]) {
             int below10Count = 0;
             int below100Count = 0;
             int below1000Count = 0;
@@ -281,7 +295,9 @@ public enum SplitType {
 
         @Override
         protected boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
-            if (archiveFile.exists()) {
+            if (archiveFile == null) {
+                return false;
+            } else if (archiveFile.exists()) {
                 final String signatureString;
                 try {
                     signatureString = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()));
@@ -381,7 +397,7 @@ public enum SplitType {
         }
 
         @Override
-        protected boolean looksLikeAnArchive(BitSet bitset) {
+        protected boolean looksLikeAnArchive(BitSet bitset, ArchiveFile archiveFiles[]) {
             int below10Count = 0;
             int below100Count = 0;
             int below1000Count = 0;
@@ -419,7 +435,9 @@ public enum SplitType {
 
         @Override
         protected boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
-            if (partIndex == 0 && archiveFile.exists()) {
+            if (archiveFile == null) {
+                return false;
+            } else if (partIndex == 0 && archiveFile.exists()) {
                 try {
                     return HachaSplit.parseHachaHeader(archiveFile) != null;
                 } catch (Exception e) {
@@ -462,14 +480,14 @@ public enum SplitType {
 
     protected abstract String buildMissingPart(String[] matches, int partIndex, int partStringLength);
 
-    protected boolean looksLikeAnArchive(BitSet bitset) {
+    protected boolean looksLikeAnArchive(BitSet bitset, ArchiveFile archiveFiles[]) {
         return bitset.size() != 0;
     }
 
     public abstract String getIconExtension();
 
     protected boolean isValidPart(int partIndex, ArchiveFile archiveFile) {
-        return true;
+        return archiveFile != null;
     }
 
     public ArchiveFile getBestArchiveFileMatch(final Archive archive, final String fileName) {
@@ -545,7 +563,7 @@ public enum SplitType {
     public static Archive createArchive(ArchiveFactory link, SplitType splitType, boolean allowDeepInspection) throws ArchiveException {
         final String linkPath = link.getFilePath();
         final String[] filePathParts = splitType.getMatches(linkPath);
-        if (filePathParts != null) {
+        if (filePathParts != null && splitType.isValidPart(-1, link)) {
             final Pattern pattern = splitType.buildArchivePattern(filePathParts);
             final List<ArchiveFile> foundArchiveFiles = link.createPartFileList(linkPath, pattern.pattern());
             if (foundArchiveFiles == null || foundArchiveFiles.size() == 0) {
@@ -579,7 +597,7 @@ public enum SplitType {
                     }
                 }
             }
-            if (splitType.looksLikeAnArchive(availableParts)) {
+            if (splitType.looksLikeAnArchive(availableParts, archiveFiles)) {
                 final String[] fileNameParts = splitType.getMatches(link.getName());
                 final Archive archive = link.createArchive(splitType);
                 archive.setName(fileNameParts[0]);
