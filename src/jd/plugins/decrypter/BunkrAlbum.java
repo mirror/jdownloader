@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +23,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -39,16 +48,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.hoster.Bunkr;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BunkrAlbum extends PluginForDecrypt {
@@ -67,7 +67,8 @@ public class BunkrAlbum extends PluginForDecrypt {
 
     /**
      * These domains are dead and can't be used for main URLs/albums BUT some of them can still be used for downloading inside directurls.
-     * </br> 2023-08-08: Example still working as CDN domain: bunkr.ru, bunkr.is
+     * </br>
+     * 2023-08-08: Example still working as CDN domain: bunkr.ru, bunkr.is
      */
     public static List<String> getDeadDomains() {
         return Arrays.asList(new String[] { "bunkr.su", "bunkr.ru", "bunkr.is" });
@@ -92,21 +93,23 @@ public class BunkrAlbum extends PluginForDecrypt {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/a/[A-Za-z0-9]+";
-            regex += "|https?://(\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?:v|d)/[^/#\\?]+\\." + EXTENSIONS;
-            regex += "|https?://(\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?:v|d)/[^/#\\?]+"; // Same but wider
-            regex += "|https?://c(?:dn)?(\\d+)?\\." + buildHostsPatternPart(domains) + "/[^/]+\\." + EXTENSIONS;// TYPE_CDN
-            regex += "|https?://media-files\\d*\\." + buildHostsPatternPart(domains) + "/[^/]+\\." + EXTENSIONS;// TYPE_MEDIA_FILES
+            regex += "|https?://(\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?:v|d)/[^/#\\?\"\\']+\\." + EXTENSIONS;
+            regex += "|https?://(\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?:v|d)/[^/#\\?\"\\']+"; // Same but wider
+            regex += "|https?://c(?:dn)?(\\d+)?\\." + buildHostsPatternPart(domains) + "/[^/#\\?\"\\']+";// TYPE_CDN
+            regex += "|https?://media-files\\d*\\." + buildHostsPatternPart(domains) + "/[^/#\\?\"\\']+";// TYPE_MEDIA_FILES
             ret.add(regex);
         }
         return ret.toArray(new String[0]);
     }
 
-    public static final String TYPE_ALBUM       = "(?i)https?://[^/]+/a/([A-Za-z0-9]+)";                             // album
+    public static final String TYPE_ALBUM                   = "(?i)https?://[^/]+/a/([A-Za-z0-9]+)";
     /* 2023-03-24: bunkr, files subdomain seems outdated? */
-    public static final String TYPE_SINGLE_FILE = "(?i)https?://([^/]+)/(d|v)/([^/#\\?]+).*";
-    public static final String TYPE_CDN         = "(?i)https?://c(?:dn)?(\\d+)?\\.[^/]+/(.+\\." + EXTENSIONS + ")";  // bunkr
-    public static final String TYPE_MEDIA_FILES = "(?i)https?://media-files(\\d*)\\.[^/]+/(.+\\." + EXTENSIONS + ")"; // bunkr
-    private PluginForHost      plugin           = null;
+    public static final String TYPE_SINGLE_FILE             = "(?i)https?://([^/]+)/(d|v)/([^/#\\?\"\\']+).*";
+    public static final String TYPE_CDN_WITHOUT_EXT         = "(?i)https?://c(?:dn)?(\\d+)?\\.[^/]+/[^/#\\?\"\\']+";
+    public static final String TYPE_CDN_WITH_EXT            = TYPE_CDN_WITHOUT_EXT + "(\\." + EXTENSIONS + ")";
+    public static final String TYPE_MEDIA_FILES_WITHOUT_EXT = "(?i)https?://media-files(\\d*)\\.[^/]+/[^/#\\?\"\\']+";
+    public static final String TYPE_MEDIA_FILES_WITH_EXT    = TYPE_MEDIA_FILES_WITHOUT_EXT + "(\\." + EXTENSIONS + ")";
+    private PluginForHost      plugin                       = null;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -183,8 +186,14 @@ public class BunkrAlbum extends PluginForDecrypt {
             }
             final String[] htmls = br.getRegex("<div class=\"grid-images_box rounded-lg[^\"]+\"(.*?)</div>\\s+</div>").getColumn(0);
             for (final String html : htmls) {
-                final String filename = parseMediaFilename(br, html);
-                final String directurl = parseMediaURL(br, html);
+                String filename = new Regex(html, "<div\\s*class\\s*=\\s*\"[^\"]*details\"\\s*>\\s*<p\\s*class[^>]*>\\s*(.*?)\\s*<").getMatch(0);
+                String directurl = new Regex(html, "href\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
+                if (directurl == null) {
+                    directurl = new Regex(html, "href\\s*=\\s*\"(/(?:d|v)/[^\"]+)\"").getMatch(0);
+                    if (directurl != null) {
+                        directurl = br.getURL(directurl).toExternalForm();
+                    }
+                }
                 if (directurl != null) {
                     final String filesize = new Regex(html, "<p class=\"mt-0 dark:text-white-900\"[^>]*>\\s*([^<]*?)\\s*</p>").getMatch(0);
                     add(ret, dups, directurl, filename, null, filesize, true);
@@ -240,7 +249,9 @@ public class BunkrAlbum extends PluginForDecrypt {
         }
         dl.setDefaultPlugin(plugin);
         if (filename != null) {
-            dl.setFinalFileName(Encoding.htmlDecode(filename).trim());
+            filename = Encoding.htmlDecode(filename).trim();
+            dl.setProperty(Bunkr.PROPERTY_FILENAME_FROM_ALBUM, filename);
+            Bunkr.setFilename(dl, filename, false, false);
         }
         if (filesizeBytes != null) {
             dl.setVerifiedFileSize(Long.parseLong(filesizeBytes));
@@ -251,42 +262,19 @@ public class BunkrAlbum extends PluginForDecrypt {
         return dl;
     }
 
-    private String parseMediaFilename(Browser br, String html) {
-        String filename = new Regex(html, "target\\s*=\\s*\"_blank\"\\s*title\\s*=\\s*\"([^<>\"]+)\"").getMatch(0);
-        if (filename == null) {
-            // bunkr.is
-            filename = new Regex(html, "<p\\s*class\\s*=\\s*\"name\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
-            if (filename == null) {
-                filename = new Regex(html, "<div\\s*class\\s*=\\s*\"[^\"]*details\"\\s*>\\s*<p\\s*class[^>]*>\\s*(.*?)\\s*<").getMatch(0);
-            }
-        }
-        return filename;
-    }
-
-    private String parseMediaURL(final Browser br, final String html) throws IOException {
-        String directurl = new Regex(html, "href\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
-        if (directurl == null) {
-            directurl = new Regex(html, "href\\s*=\\s*\"(/(?:d|v)/[^\"]+)\"").getMatch(0);
-            if (directurl != null) {
-                directurl = br.getURL(directurl).toExternalForm();
-            }
-        }
-        return directurl;
-    }
-
     /**
-     * Returns URL if given URL looks like it is pointing to a single file. </br> Returns null if given URL-structure is unknown or does not
-     * seem to point to a single file.
+     * Returns URL if given URL looks like it is pointing to a single file. </br>
+     * Returns null if given URL-structure is unknown or does not seem to point to a single file.
      */
     private String isSingleMediaURL(final String url) {
         if (url == null) {
             return null;
         } else if (url.matches(TYPE_SINGLE_FILE)) {
             return url;
-        } else if (url.matches(TYPE_CDN)) {
+        } else if (url.matches(TYPE_CDN_WITH_EXT) || url.matches(TYPE_CDN_WITHOUT_EXT)) {
             /* cdn can be empty(!) -> cdn.bunkr.is -> media-files.bunkr.is */
             return url;
-        } else if (url.matches(TYPE_MEDIA_FILES)) {
+        } else if (url.matches(TYPE_MEDIA_FILES_WITH_EXT) || url.matches(TYPE_MEDIA_FILES_WITHOUT_EXT)) {
             // bunkr
             return url;
         } else {

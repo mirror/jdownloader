@@ -107,7 +107,6 @@ public class EHentaiOrg extends PluginForHost {
     private static final String TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW = "https://[^/]+/mpv/(\\d+)/([a-f0-9]{10})/#page(\\d+)";
     private static final String TYPE_SINGLE_IMAGE                 = "https?://[^/]+/s/([a-f0-9]{10})/(\\d+)-(\\d+)";
     public static final String  PROPERTY_GALLERY_URL              = "gallery_url";
-    private final String        PROPERTY_DIRECTURL                = "directurl";
 
     @Override
     public String getAGBLink() {

@@ -66,9 +66,12 @@ public class ORFMediathek extends PluginForHost {
         return "http://orf.at";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         if (!link.getDownloadURL().matches(NEW_URLFORMAT)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -97,7 +100,8 @@ public class ORFMediathek extends PluginForHost {
             }
             try {
                 con = br.openGetConnection(dllink);
-                if (looksLikeDownloadableContent(con)) {
+                this.handleConnectionErrors(link, br, con);
+                if (looksLikeDownloadableContent(con, link)) {
                     if (con.getCompleteContentLength() > 0) {
                         link.setDownloadSize(con.getCompleteContentLength());
                     }
@@ -129,22 +133,19 @@ public class ORFMediathek extends PluginForHost {
         } else {
             link.setFinalFileName(link.getStringProperty("directName", null));
         }
-        if ("http".equals(link.getStringProperty("streamingType")) && StringUtils.equalsIgnoreCase("progressive", link.getStringProperty("delivery"))) {
+        if (this.isSubtitle(link) || ("http".equals(link.getStringProperty("streamingType")) && StringUtils.equalsIgnoreCase("progressive", link.getStringProperty("delivery")))) {
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
+            dllink = link.getStringProperty("directURL");
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             try {
-                dllink = link.getStringProperty("directURL", null);
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                con = br2.openGetConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                con = br2.openHeadConnection(dllink);
+                handleConnectionErrors(link, br2, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -156,9 +157,22 @@ public class ORFMediathek extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private void handleConnectionErrors(final DownloadLink link, final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con, link)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file?");
+            }
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         download(link);
     }
 
@@ -222,25 +236,42 @@ public class ORFMediathek extends PluginForHost {
             link.setProperty("FLVFIXER", true);
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
         } else {
-            boolean isSubtitle = false;
-            if (link.getName().endsWith(".srt")) {
-                isSubtitle = true;
+            if (isSubtitle(link)) {
                 /* Workaround for old downloadcore bug that can lead to incomplete files */
                 br.getHeaders().put("Accept-Encoding", "identity");
             }
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, !isSubtitle, isSubtitle ? 1 : 0);
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
-                final URLConnectionAdapter con = dl.getConnection();
-                if (isSubtitle && con.getResponseCode() == 200 && !StringUtils.containsIgnoreCase(con.getContentType(), "html")) {
-                    // valid subtitle -> Allow download
-                } else {
-                    br.followConnection(true);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            this.handleConnectionErrors(link, br, dl.getConnection());
             dl.startDownload();
         }
+    }
+
+    private boolean isSubtitle(final DownloadLink link) {
+        final String streamingType = link.getStringProperty("streamingType");
+        if (StringUtils.equalsIgnoreCase(streamingType, "subtitle")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con, final DownloadLink link) {
+        if (super.looksLikeDownloadableContent(con)) {
+            return true;
+        } else if (isSubtitle(link) && isSubtitleContent(con)) {
+            return true;
+        } else if (isSubtitle(link) && con.isOK()) {
+            /* 2023-08-15 e.g. https://api-tvthek.orf.at/assets/subtitles/0158/88/3bca2b4fb96099bfd35871d61a63ab06342eacc6.srt */
+            logger.info("Subtitle is missing [correct] content-type header: " + con.getURL());
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean isSubtitleContent(final URLConnectionAdapter con) {
+        return con.getResponseCode() == 200 && (StringUtils.containsIgnoreCase(con.getContentType(), "text/xml") || StringUtils.containsIgnoreCase(con.getContentType(), "text/vtt"));
     }
 
     @Override

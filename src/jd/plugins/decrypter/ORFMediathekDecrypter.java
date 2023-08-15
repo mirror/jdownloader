@@ -27,6 +27,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -44,11 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 // http://tvthek,orf.at/live/... --> HDS
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "https?://(?:www\\.)?tvthek\\.orf\\.at/(?:index\\.php/)?(?:programs?|topic|profile)/.+" })
@@ -173,8 +173,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     final boolean isGaplessVideo = video == gapless_videoEntry;
                     final String thumbnail = (String) video.get("preview_image_url");
                     final List<Object> sources_video = (List) video.get("sources");
-                    List<Object> subtitle_list = null;
-                    final Object sources_subtitle_o = video.get("subtitles");
+                    final List<Map<String, Object>> subtitle_list = (List<Map<String, Object>>) video.get("subtitles");
                     final String id_individual_video;
                     if (isGaplessVideo) {
                         id_individual_video = "gapless";
@@ -224,9 +223,8 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             numberofSkippedDRMItems++;
                             continue;
                         }
-                        if (sources_subtitle_o != null) {
+                        if (subtitle_list != null && subtitle_list.size() > 0) {
                             /* [0] = .srt, [1] = WEBVTT .vtt */
-                            subtitle_list = (List) sources_subtitle_o;
                             if (subtitle_list.size() > 1) {
                                 subtitle = (String) JavaScriptEngineFactory.walkJson(subtitle_list.get(1), "src");
                             } else if (subtitle_list.size() == 1) {
@@ -253,6 +251,9 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             continue;
                         } else if ("dash".equals(delivery)) {
                             /* 2021-04-06 unsupported */
+                            logger.info("skip delivery:" + delivery);
+                            continue;
+                        } else if ("rtmp".equals(delivery)) {
                             logger.info("skip delivery:" + delivery);
                             continue;
                         } else if (url_directlink_video == null || isEmpty(fmt)) {
@@ -370,20 +371,15 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         link.setProperty("directFMT", fmt);
                         link.setProperty("directQuality", fmtQuality);
                         link.setProperty("mainlink", param.getCryptedUrl());
-                        if (protocol == null && delivery == null) {
+                        link.setProperty("streamingType", protocol);
+                        link.setProperty("delivery", delivery);
+                        if (filesize > 0) {
                             link.setAvailable(true);
-                            link.setProperty("streamingType", "rtmp");
-                        } else {
-                            link.setProperty("streamingType", protocol);
-                            link.setProperty("delivery", delivery);
-                            if (filesize > 0) {
-                                link.setAvailable(true);
-                                link.setDownloadSize(filesize);
-                            } else if (!"http".equals(protocol)) {
-                                link.setAvailable(true);
-                            } else if (!"progressive".equals(delivery)) {
-                                link.setAvailable(true);
-                            }
+                            link.setDownloadSize(filesize);
+                        } else if (!"http".equals(protocol)) {
+                            link.setAvailable(true);
+                        } else if (!"progressive".equals(delivery)) {
+                            link.setAvailable(true);
                         }
                         if (fp != null) {
                             link._setFilePackage(fp);

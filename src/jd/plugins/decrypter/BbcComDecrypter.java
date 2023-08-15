@@ -586,7 +586,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlEmbed(final CryptedLink param) throws PluginException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String title = br.getRegex("title:\"([^\"]+)\"").getMatch(0);
-        final String vpid = br.getRegex("versionID:\"([a-z0-9]+)\"").getMatch(0);
+        final String vpid = br.getRegex("versionID:\\s*\"([a-z0-9]+)\"").getMatch(0);
         if (vpid != null) {
             final DownloadLink video = this.generateDownloadlink(vpid);
             video.setContentUrl(br.getURL());

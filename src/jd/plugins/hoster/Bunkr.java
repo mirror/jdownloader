@@ -161,8 +161,9 @@ public class Bunkr extends PluginForHost {
         return "https://" + getHost() + "/d/" + filename;
     }
 
-    private final String PROPERTY_LAST_GRABBED_DIRECTURL    = "last_grabbed_directurl";
-    private final String PROPERTY_LAST_USED_SINGLE_FILE_URL = "last_used_single_file_url";
+    private final String       PROPERTY_LAST_GRABBED_DIRECTURL    = "last_grabbed_directurl";
+    private final String       PROPERTY_LAST_USED_SINGLE_FILE_URL = "last_used_single_file_url";
+    public static final String PROPERTY_FILENAME_FROM_ALBUM       = "filename_from_album";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -171,6 +172,15 @@ public class Bunkr extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
+        final String contenturl = this.getContentURL(link);
+        final String filenameFromURL = Plugin.getFileNameFromURL(contenturl);
+        if (filenameFromURL != null) {
+            if (isDownload) {
+                setFilename(link, filenameFromURL, true, true);
+            } else if (!link.isNameSet()) {
+                setFilename(link, filenameFromURL, true, false);
+            }
+        }
         final String lastCachedDirecturl = link.getStringProperty(PROPERTY_LAST_GRABBED_DIRECTURL);
         final String lastUsedSingleFileURL = link.getStringProperty(PROPERTY_LAST_USED_SINGLE_FILE_URL);
         if (lastCachedDirecturl != null && lastUsedSingleFileURL != null) {
@@ -205,18 +215,14 @@ public class Bunkr extends PluginForHost {
         }
         String directurl;
         if (link.getPluginPatternMatcher().matches(BunkrAlbum.TYPE_SINGLE_FILE)) {
-            directurl = getDirecturlFromSingleFileAvailablecheck(link, this.getContentURL(link), true);
+            directurl = getDirecturlFromSingleFileAvailablecheck(link, contenturl, true);
             if (!isDownload) {
                 return AvailableStatus.TRUE;
             } else {
                 this.sleep(1000, link);
             }
         } else {
-            directurl = this.getContentURL(link);
-            final String filenameFromURL = Plugin.getFileNameFromURL(directurl);
-            if (!link.isNameSet() && filenameFromURL != null) {
-                link.setName(filenameFromURL);
-            }
+            directurl = contenturl;
             /* Set referer for download */
             final String containerURL = link.getContainerUrl();
             if (containerURL != null) {
@@ -270,7 +276,7 @@ public class Bunkr extends PluginForHost {
             }
             final String filenameFromHeader = Plugin.getFileNameFromHeader(con);
             if (!StringUtils.isEmpty(filenameFromHeader)) {
-                link.setFinalFileName(filenameFromHeader);
+                setFilename(link, filenameFromHeader, true, true);
             }
         } catch (final Exception e) {
             try {
@@ -289,6 +295,34 @@ public class Bunkr extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public static void setFilename(final DownloadLink link, final String filename, final boolean canContainFileID, final boolean setFinalName) {
+        if (StringUtils.isEmpty(filename)) {
+            return;
+        }
+        final boolean fixFilename = false;
+        final String filenameFromAlbum = link.getStringProperty(PROPERTY_FILENAME_FROM_ALBUM);
+        final String correctedFilename;
+        if (fixFilename && filenameFromAlbum != null) {
+            correctedFilename = filenameFromAlbum;
+        } else if (fixFilename && canContainFileID) {
+            final String fileID = new Regex(filename, "(-[A-Za-z0-9]{8})(\\.[^\\.]+)?$").getMatch(0);
+            if (fileID != null) {
+                correctedFilename = filename.replaceFirst(fileID, "").replace("-", " ").trim();
+            } else {
+                /* No fileID in link while it should be given */
+                correctedFilename = filename;
+            }
+        } else {
+            /* Do not touch given filename */
+            correctedFilename = filename;
+        }
+        if (setFinalName) {
+            link.setFinalFileName(correctedFilename);
+        } else {
+            link.setName(correctedFilename);
+        }
+    }
+
     private String getDirecturlFromSingleFileAvailablecheck(final DownloadLink link, final String singleFileURL, final boolean accessURL) throws PluginException, IOException {
         link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, null);
         if (accessURL) {
@@ -305,17 +339,24 @@ public class Bunkr extends PluginForHost {
                 /* Video stream (URL is usually the same as downloadurl) */
                 directurl = br.getRegex("<source src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
                 if (directurl == null) {
+                    String directurlForFileWithoutExtOrUnknownExt = null;
                     final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
                     for (final String url : urls) {
-                        if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES)) {
+                        if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITH_EXT) || url.matches(BunkrAlbum.TYPE_CDN_WITH_EXT)) {
                             directurl = url;
                             break;
+                        } else if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITHOUT_EXT) || url.matches(BunkrAlbum.TYPE_CDN_WITHOUT_EXT)) {
+                            directurlForFileWithoutExtOrUnknownExt = url;
                         }
+                    }
+                    if (directurl == null && directurlForFileWithoutExtOrUnknownExt != null) {
+                        /* File without extension or extension we don't know. */
+                        directurl = directurlForFileWithoutExtOrUnknownExt;
                     }
                 }
             }
         }
-        String filesize = br.getRegex("Download (\\d+[^<]+)</a>").getMatch(0);
+        String filesize = br.getRegex("Download\\s*(\\d+[^<]+)</a>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("class=\"[^>]*text[^>]*\"[^>]*>\\s*([0-9\\.]+\\s+[MKG]B)").getMatch(0);
         }
@@ -328,7 +369,7 @@ public class Bunkr extends PluginForHost {
         directurl = Encoding.htmlOnlyDecode(directurl);
         final String filename = Plugin.getFileNameFromURL(directurl);
         if (filename != null) {
-            link.setName(filename);
+            setFilename(link, filename, true, true);
         }
         link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, directurl);
         link.setProperty(PROPERTY_LAST_USED_SINGLE_FILE_URL, singleFileURL);
