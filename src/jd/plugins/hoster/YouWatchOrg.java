@@ -53,6 +53,15 @@ public class YouWatchOrg extends XFileSharingProBasic {
         return ret;
     }
 
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("sikafika.info");
+        deadDomains.add("voodaith7e.com");
+        deadDomains.add("gh1d4fr.host");
+        return deadDomains;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }

@@ -38,7 +38,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -102,21 +101,15 @@ public class ImageFap extends PluginForHost {
         }
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
+    private String getContentURL(final DownloadLink link) {
         if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().contains("imagedecrypted/")) {
             final String photoID = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+            link.setProperty("photoID", Long.parseLong(photoID));
             if (photoID != null) {
-                final String newurl = "https://www.imagefap.com/photo/" + photoID + "/";
-                link.setPluginPatternMatcher(newurl);
-                link.setContentUrl(newurl);
-            }
-        } else if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().contains("/photo/") && !link.hasProperty("photoID")) {
-            /* Set Packagizer property */
-            final String photoID = new Regex(link.getPluginPatternMatcher(), "/photo/(\\d+)").getMatch(0);
-            if (photoID != null) {
-                link.setProperty("photoID", Long.parseLong(photoID));
+                return "https://www.imagefap.com/photo/" + photoID + "/";
             }
         }
+        return link.getPluginPatternMatcher();
     }
 
     @Override
@@ -276,20 +269,11 @@ public class ImageFap extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        correctDownloadLink(link);
         prepBR(this.br);
         loadSessionCookies(this.br, this.getHost());
-        try {
-            getRequest(this, this.br, br.createGetRequest(link.getPluginPatternMatcher()));
-        } catch (PluginException e) {
-            if (!(Thread.currentThread() instanceof SingleDownloadController) && e.getLinkStatus() == LinkStatus.ERROR_IP_BLOCKED) {
-                logger.log(e);
-                return AvailableStatus.UNCHECKED;
-            } else {
-                throw e;
-            }
-        }
-        if (link.getPluginPatternMatcher().matches(VIDEOLINK)) {
+        final String contenturl = getContentURL(link);
+        getRequest(this, this.br, br.createGetRequest(contenturl));
+        if (contenturl.matches(VIDEOLINK)) {
             link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.FLV);
             /*
              * 2021-05-05: Offline videos can't be easily recognized by html code e.g.: https://www.imagefap.com/video.php?vid=999999999999
@@ -431,24 +415,41 @@ public class ImageFap extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            final String fid = getFID(link);
-            String imageLink = br.getRegex("original\\s*=\\s*\"([^\"]*)\"[^<>]*imageid\\s*=\\s*\"" + Pattern.quote(fid) + "\"").getMatch(0);
+            String imageLink = null;
+            final String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (returnID != null) {
+                imageLink = decryptLink(returnID);
+            }
             if (imageLink == null) {
-                imageLink = br.getRegex("name=\"mainPhoto\"[^>]*src\\s*=\\s*\"(https?://[^<>\"]+)\"").getMatch(0);
-                if (imageLink == null) {
-                    final String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                    if (returnID != null) {
-                        imageLink = decryptLink(returnID);
-                    }
-                    if (imageLink == null) {
-                        imageLink = br.getRegex("onclick=\"OnPhotoClick\\(\\);\" src\\s*=\\s*\"(https?://.*?)\"").getMatch(0);
-                        if (imageLink == null) {
-                            imageLink = br.getRegex("href=\"#\" onclick\\s*=\\s*\"javascript:window\\.open\\(\\'(https?://.*?)\\'\\)").getMatch(0);
-                            if (imageLink == null) {
-                                imageLink = br.getRegex("\"contentUrl\"\\s*>\\s*(https?://cdn\\.imagefap\\.com/images/full/.*?)\\s*<").getMatch(0);
+                final String thumbnailurl = br.getRegex("itemprop=\"contentUrl\"[^>]*>(https?://[^<]+)</span>").getMatch(0);
+                final String thumbPart = new Regex(thumbnailurl, "frame-thumb/(\\d+/\\d+)").getMatch(0);
+                if (thumbPart != null) {
+                    final String fid = getFID(link);
+                    final String[] fullImageLinks = br.getRegex("(https?://[^/]+/images/full/[^\"]+)").getColumn(0);
+                    if (fullImageLinks != null == fullImageLinks.length > 0) {
+                        final HashSet<String> hits = new HashSet<String>();
+                        for (final String fullImageLink : fullImageLinks) {
+                            if (fullImageLink.contains(fid)) {
+                                /* Safe hit */
+                                imageLink = fullImageLink;
+                                break;
+                            } else if (fullImageLink.contains(thumbPart)) {
+                                hits.add(fullImageLink);
                             }
                         }
+                        if (imageLink == null) {
+                            if (hits.size() == 1) {
+                                imageLink = hits.iterator().next();
+                            } else {
+                                logger.warning("Too many fullsize-hits");
+                            }
+                        }
+                    } else {
+                        logger.warning("Failed to find any fullsize urls");
                     }
+                }
+                if (imageLink == null) {
+                    imageLink = br.getRegex("\"contentUrl\"\\s*>\\s*(https?://cdn\\.imagefap\\.com/images/full/.*?)\\s*<").getMatch(0);
                 }
             }
             if (imageLink == null) {
@@ -459,14 +460,28 @@ public class ImageFap extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    private boolean looksLikeThumbnail(final String url) {
+        if (StringUtils.containsIgnoreCase(url, "/frame-thumb/")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(true);
         // TODO: maybe add cache/reuse
         final String finalLink = findFinalLink(br, link);
-        if (link.getDownloadURL().matches(VIDEOLINK)) {
+        if (finalLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        /* Fail-safe against downloading thumbnails by mistake. */
+        if (looksLikeThumbnail(finalLink)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken or only thumbnail available?");
+        }
+        if (link.getPluginPatternMatcher().matches(VIDEOLINK)) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 0);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);

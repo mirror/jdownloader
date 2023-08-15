@@ -390,6 +390,8 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
                 /* Account required! */
                 throw new GdriveException(GdriveFolderStatus.FOLDER_PRIVATE, offlineOrEmptyFolderTitle);
             }
+        } else if (br.getHttpConnection().getResponseCode() == 429) {
+            throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT, "429_TOO_MANY_REQUESTS_" + offlineOrEmptyFolderTitle, "Error 429 too many requests. Try again later.");
         }
         String currentFolderTitle = getCurrentFolderTitleWebsite(this.br);
         if (currentFolderTitle == null) {

@@ -63,7 +63,15 @@ public class VidsharTv extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return VidsharTv.buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "(?::\\d+)?" + XFileSharingProBasic.getDefaultAnnotationPatternPart());
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
