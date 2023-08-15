@@ -2,15 +2,17 @@ package org.jdownloader.extensions.antistandby;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.logging.LogController;
 
 public class MacAntiStandBy extends Thread {
-
     private final AntiStandbyExtension     jdAntiStandby;
     private static final int               sleep       = 5000;
     private final AtomicReference<Process> lastProcess = new AtomicReference<Process>(null);
@@ -80,8 +82,14 @@ public class MacAntiStandBy extends Thread {
 
     private Process createProcess(final LogSource logger) {
         try {
-            final ProcessBuilder probuilder = ProcessBuilderFactory.create(new String[] { "pmset", "noidle" });
-            logger.info("Call pmset nodile");
+            final String[] cmd;
+            if (CrossSystem.getOS().isMinimum(OperatingSystem.MAC_BIG_SUR)) {
+                cmd = new String[] { "caffeinate" };
+            } else {
+                cmd = new String[] { "pmset", "noidle" };
+            }
+            final ProcessBuilder probuilder = ProcessBuilderFactory.create(cmd);
+            logger.info("Call:" + Arrays.toString(cmd));
             return probuilder.start();
         } catch (IOException e) {
             logger.log(e);
