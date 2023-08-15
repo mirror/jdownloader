@@ -7,13 +7,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -30,6 +23,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CopyCaseCom extends PluginForHost {
@@ -236,7 +236,7 @@ public class CopyCaseCom extends PluginForHost {
         }
     }
 
-    public Map<String, Object> login(final Browser br, final Account account, final boolean force) throws Exception {
+    public AccountInfo login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (account) {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
@@ -250,9 +250,9 @@ public class CopyCaseCom extends PluginForHost {
                     return null;
                 }
                 try {
-                    final Map<String, Object> resp = getAccountInfo(br, account);
+                    final AccountInfo ai = getAccountInfo(br, account);
                     logger.info("Token login successful");
-                    return resp;
+                    return ai;
                 } catch (final PluginException exc) {
                     logger.info("Token login failed");
                     account.removeProperty(PROPERTY_ACCOUNT_TOKEN);
@@ -265,8 +265,9 @@ public class CopyCaseCom extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             brc.setAllowedResponseCodes(422);
             Map<String, Object> resp = this.callAPI(brc, null, account, brc.createPostRequest(getAPIBase() + "/auth/login", JSonStorage.serializeToJson(postData)), true);
+            final String status = (String) resp.get("status");
             boolean required2FALogin = false;
-            if (StringUtils.equalsIgnoreCase((String) resp.get("status"), "two_factor_auth")) {
+            if (StringUtils.equalsIgnoreCase(status, "two_factor_auth")) {
                 /* Ask user for 2FA login code and try again. */
                 logger.info("2FA code required");
                 required2FALogin = true;
@@ -300,17 +301,18 @@ public class CopyCaseCom extends PluginForHost {
             }
             account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
             br.getHeaders().put("Authorization", "Bearer " + token);
-            br.setRequest(brc.getRequest());
-            return resp;
+            return null;
         }
     }
 
-    private Map<String, Object> getAccountInfo(final Browser br, final Account account) throws IOException, PluginException {
-        final Map<String, Object> accmap = this.callAPI(br, null, account, br.createGetRequest(getAPIBase() + "/account"), true);
-        if (accmap.get("me") == null) {
+    private AccountInfo getAccountInfo(final Browser br, final Account account) throws IOException, PluginException {
+        final Map<String, Object> ret = this.callAPI(br, null, account, br.createGetRequest(getAPIBase() + "/account"), true);
+        final Map<String, Object> user = ret != null ? (Map<String, Object>) ret.get("me") : null;
+        if (user == null || user.size() == 0) {
             throw new AccountInvalidException("Session expired?");
+        } else {
+            return fetchAccountInfo(account, user);
         }
-        return accmap;
     }
 
     private Map<String, Object> checkErrorsAPI(final Browser br, final Object link, final Account account) throws PluginException {
@@ -349,12 +351,18 @@ public class CopyCaseCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        Map<String, Object> usermap = login(br, account, true);
-        if (br.getURL() == null || !br.getURL().endsWith("/account")) {
-            usermap = this.getAccountInfo(br, account);
+        AccountInfo ai = login(br, account, true);
+        if (ai == null || br.getURL() == null || !br.getURL().endsWith("/account")) {
+            ai = this.getAccountInfo(br, account);
         }
-        final Map<String, Object> user = (Map<String, Object>) usermap.get("me");
+        return ai;
+    }
+
+    private AccountInfo fetchAccountInfo(final Account account, Map<String, Object> user) throws PluginException {
+        final AccountInfo ai = new AccountInfo();
+        if (user == null || user.size() == 0) {
+            throw new AccountInvalidException();
+        }
         final String accounType = user.get("type").toString();
         final String premium_expire_at = (String) user.get("premium_expire_at");
         final Number download_available_transfer = (Number) user.get("download_available_transfer");
