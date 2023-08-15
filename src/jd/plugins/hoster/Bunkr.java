@@ -379,6 +379,9 @@ public class Bunkr extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken or temporarily unavailable");
             }
+        } else if (con.getURL().getPath().equalsIgnoreCase("/maintenance-vid.mp4")) {
+            /* https://bnkr.b-cdn.net/maintenance-vid.mp4 */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Media temporarily not available due to ongoing server maintenance.", 2 * 60 * 1000l);
         }
     }
 

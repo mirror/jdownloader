@@ -67,7 +67,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     /* Not sure where these URLs come from. Probably old RSS readers via old APIs ... */
     private final String        TYPER_ZDF_REDIRECT        = "https?://[^/]+/uri/.+";
     private List<String>        userSelectedSubtitleTypes = new ArrayList<String>();
-    private Map<String, String> allSubtitles              = new HashMap<String, String>();
+    private Map<String, String> subtitlesXML              = new HashMap<String, String>();
+    private Map<String, String> subtitlesVTT              = new HashMap<String, String>();
 
     public ZDFMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -583,7 +584,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             }
             /* 1. Collect subtitles */
             final Object captionsO = JavaScriptEngineFactory.walkJson(player, "captions");
-            if (captionsO instanceof List && this.allSubtitles.isEmpty()) {
+            if (captionsO instanceof List && this.subtitlesXML.isEmpty()) {
                 /* Captions can be available in different versions (languages- and types) */
                 final List<Object> subtitlesO = (List<Object>) player.get("captions");
                 Map<String, Object> subInfo = null;
@@ -591,14 +592,16 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     subInfo = (Map<String, Object>) subtitleO;
                     final String subtitleType = (String) subInfo.get("class");
                     final String uri = (String) subInfo.get("uri");
-                    final boolean formatIsSupported = uri != null && uri.toLowerCase(Locale.ENGLISH).contains(".xml");
                     /* E.g. "ebu-tt-d-basic-de" or "webvtt" */
                     // final String format = (String) subInfo.get("format");
                     /* Skip unsupported formats */
-                    if (!formatIsSupported) {
-                        continue;
+                    if (uri.toLowerCase(Locale.ENGLISH).endsWith(".xml")) {
+                        subtitlesXML.put(subtitleType, uri);
+                    } else if (uri.toLowerCase(Locale.ENGLISH).endsWith(".vtt")) {
+                        subtitlesVTT.put(subtitleType, uri);
                     } else {
-                        allSubtitles.put(subtitleType, uri);
+                        logger.info("Detected unsupported subtitle-format: " + uri);
+                        continue;
                     }
                 }
             }
@@ -995,17 +998,33 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         return null;
     }
 
-    private void addDownloadLinkAndGenerateSubtitleDownloadLink(final ArrayList<DownloadLink> decryptedLinks, final DownloadLink dl) {
-        decryptedLinks.add(dl);
+    private void addDownloadLinkAndGenerateSubtitleDownloadLink(final ArrayList<DownloadLink> ret, final DownloadLink dl) {
+        ret.add(dl);
+        final boolean preferVTT = false;
+        final Map<String, String> subtitleSource;
+        final String ext;
+        boolean convertSubtitle = false;
+        if (preferVTT) {
+            subtitleSource = this.subtitlesVTT;
+            ext = ".vtt";
+        } else {
+            subtitleSource = this.subtitlesXML;
+            ext = ".xml";
+            /* xml -> srt */
+            convertSubtitle = true;
+        }
         for (final String selectedSubtitleType : this.userSelectedSubtitleTypes) {
-            if (this.allSubtitles.containsKey(selectedSubtitleType)) {
+            if (subtitleSource.containsKey(selectedSubtitleType)) {
                 final String current_ext = dl.getFinalFileName().substring(dl.getFinalFileName().lastIndexOf("."));
                 final String longSubtitleName = this.convertInternalSubtitleClassToUserReadable(selectedSubtitleType);
-                final String final_filename = dl.getFinalFileName().replace(current_ext, "_" + longSubtitleName + ".xml");
+                final String final_filename = dl.getFinalFileName().replace(current_ext, "_" + longSubtitleName + ext);
                 final String linkid = dl.getLinkID() + "_" + longSubtitleName;
-                final DownloadLink dl_subtitle = this.createDownloadlink(this.allSubtitles.get(selectedSubtitleType));
-                setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle", linkid, null, null, null, null);
-                decryptedLinks.add(dl_subtitle);
+                final DownloadLink dl_subtitle = this.createDownloadlink(subtitleSource.get(selectedSubtitleType));
+                setDownloadlinkProperties(dl_subtitle, final_filename, "subtitle_" + ext, linkid, null, null, null, null);
+                if (convertSubtitle) {
+                    dl_subtitle.setProperty(ZdfDeMediathek.PROPERTY_convert_subtitle, true);
+                }
+                ret.add(dl_subtitle);
             }
         }
     }

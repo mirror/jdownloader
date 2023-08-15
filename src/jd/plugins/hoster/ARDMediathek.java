@@ -56,6 +56,7 @@ public class ARDMediathek extends PluginForHost {
     private String             dllink                           = null;
     public static final String PROPERTY_CRAWLER_FORCED_FILENAME = "crawler_forced_filename";
     public static final String PROPERTY_ITEM_ID                 = "itemId";
+    public static final String PROPERTY_CONVERT_SUBTITLES       = "convert_subtitles";
 
     public ARDMediathek(final PluginWrapper wrapper) {
         super(wrapper);

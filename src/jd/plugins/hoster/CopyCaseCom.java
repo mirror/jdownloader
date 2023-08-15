@@ -7,6 +7,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -23,13 +30,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class CopyCaseCom extends PluginForHost {
@@ -300,12 +300,17 @@ public class CopyCaseCom extends PluginForHost {
             }
             account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
             br.getHeaders().put("Authorization", "Bearer " + token);
+            br.setRequest(brc.getRequest());
             return resp;
         }
     }
 
     private Map<String, Object> getAccountInfo(final Browser br, final Account account) throws IOException, PluginException {
-        return this.callAPI(br, null, account, br.createGetRequest(getAPIBase() + "/account"), true);
+        final Map<String, Object> accmap = this.callAPI(br, null, account, br.createGetRequest(getAPIBase() + "/account"), true);
+        if (accmap.get("me") == null) {
+            throw new AccountInvalidException("Session expired?");
+        }
+        return accmap;
     }
 
     private Map<String, Object> checkErrorsAPI(final Browser br, final Object link, final Account account) throws PluginException {

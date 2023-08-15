@@ -107,6 +107,7 @@ public class EHentaiOrg extends PluginForHost {
     private static final String TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW = "https://[^/]+/mpv/(\\d+)/([a-f0-9]{10})/#page(\\d+)";
     private static final String TYPE_SINGLE_IMAGE                 = "https?://[^/]+/s/([a-f0-9]{10})/(\\d+)-(\\d+)";
     public static final String  PROPERTY_GALLERY_URL              = "gallery_url";
+    private final String        PROPERTY_DIRECTURL                = "directurl";
 
     @Override
     public String getAGBLink() {
@@ -145,6 +146,14 @@ public class EHentaiOrg extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE).matches() || new Regex(link.getPluginPatternMatcher(), TYPE_EXHENTAI).matches();
     }
 
+    private String getDirecturlproperty(final Account account) {
+        if (account != null && this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY)) {
+            return "directurl_original";
+        } else {
+            return "directurl";
+        }
+    }
+
     /**
      * Take account from download candidate! </br>
      * 2021-01-18: There is an API available but it is only returning the metadata: https://ehwiki.org/wiki/API
@@ -167,6 +176,7 @@ public class EHentaiOrg extends PluginForHost {
              */
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         }
+        final String directurlproperty = getDirecturlproperty(account);
         prepBR(br, link);
         final boolean preferOriginalQuality = this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY);
         /* from manual 'online check', we don't want to 'try' as it uses up quota... */
@@ -296,6 +306,7 @@ public class EHentaiOrg extends PluginForHost {
                         if (con.getCompleteContentLength() > 0) {
                             link.setDownloadSize(con.getCompleteContentLength());
                         }
+                        link.setProperty(directurlproperty, con.getURL().toString());
                     }
                 } finally {
                     try {
@@ -534,7 +545,6 @@ public class EHentaiOrg extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, null, true);
         handleDownload(link, null);
     }
 
@@ -543,9 +553,17 @@ public class EHentaiOrg extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        if (StringUtils.isEmpty(dllink)) {
-            logger.warning("Failed to find final downloadurl");
-            this.handleErrorsLastResort(link, account, this.br);
+        final String directurlproperty = getDirecturlproperty(account);
+        final String storedDirecturl = link.getStringProperty(directurlproperty);
+        if (storedDirecturl != null) {
+            logger.info("Trying to re-use stored directurl: " + storedDirecturl);
+            this.dllink = storedDirecturl;
+        } else {
+            requestFileInformation(link, account, true);
+            if (StringUtils.isEmpty(dllink)) {
+                logger.warning("Failed to find final downloadurl");
+                this.handleErrorsLastResort(link, account, this.br);
+            }
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), free_maxchunks);
         long expectedFilesize = link.getView().getBytesTotal();
@@ -556,42 +574,52 @@ public class EHentaiOrg extends PluginForHost {
              */
             expectedFilesize -= 1000;
         }
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            final String errorNotEnoughGP = "Downloading original files during peak hours requires GP, and you do not have enough.";
-            final String errorNotEnoughGP2 = "Downloading original files of this gallery requires GP, and you do not have enough.";
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else if (br.containsHTML("﻿(?i)You have exceeded your image viewing limits")) {
-                exceptionLimitReached(account);
-            } else if (br.getURL().contains("bounce_login.php")) {
-                /* Account required / re-login required */
-                if (account != null) {
-                    throw new AccountUnavailableException("Account / Re-login required", 1 * 60 * 1000l);
+        try {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
+                final String errorNotEnoughGP = "Downloading original files during peak hours requires GP, and you do not have enough.";
+                final String errorNotEnoughGP2 = "Downloading original files of this gallery requires GP, and you do not have enough.";
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                } else if (br.containsHTML("﻿(?i)You have exceeded your image viewing limits")) {
+                    exceptionLimitReached(account);
+                } else if (br.getURL().contains("bounce_login.php")) {
+                    /* Account required / re-login required */
+                    if (account != null) {
+                        throw new AccountUnavailableException("Account / Re-login required", 1 * 60 * 1000l);
+                    } else {
+                        /* This should never happen */
+                        throw new AccountRequiredException();
+                    }
+                } else if (br.containsHTML(Pattern.quote(errorNotEnoughGP))) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorNotEnoughGP, 10 * 60 * 1000l);
+                } else if (br.containsHTML(Pattern.quote(errorNotEnoughGP2))) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorNotEnoughGP2, 10 * 60 * 1000l);
+                } else if (br.getRequest().getHtmlCode().length() <= 150 && !br.getRequest().getHtmlCode().startsWith("<html")) {
+                    /* No html error but plaintext -> Looks like an errormessage we don't know */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown error: " + br.getRequest().getHtmlCode());
                 } else {
-                    /* This should never happen */
-                    throw new AccountRequiredException();
+                    this.handleErrorsLastResort(link, account, this.br);
                 }
-            } else if (br.containsHTML(Pattern.quote(errorNotEnoughGP))) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorNotEnoughGP, 10 * 60 * 1000l);
-            } else if (br.containsHTML(Pattern.quote(errorNotEnoughGP2))) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorNotEnoughGP2, 10 * 60 * 1000l);
-            } else if (br.getRequest().getHtmlCode().length() <= 150 && !br.getRequest().getHtmlCode().startsWith("<html")) {
-                /* No html error but plaintext -> Looks like an errormessage we don't know */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown error: " + br.getRequest().getHtmlCode());
-            } else {
-                this.handleErrorsLastResort(link, account, this.br);
+            } else if (dl.getConnection().getResponseCode() != 206 && dl.getConnection().getCompleteContentLength() > 0 && expectedFilesize > 0 && dl.getConnection().getCompleteContentLength() < expectedFilesize) {
+                /* Don't jump into this for response code 206 Partial Content (when download is resumed). */
+                br.followConnection(true);
+                /* Rare error: E.g. "403 picture" is smaller than 1 KB but is still downloaded content (picture). */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - file is too small:" + dl.getConnection().getCompleteContentLength(), 2 * 60 * 1000l);
+            } else if (requiresAccount(dl.getConnection().getURL().toString())) {
+                maybeLoginFailure(account);
             }
-        } else if (dl.getConnection().getResponseCode() != 206 && dl.getConnection().getCompleteContentLength() > 0 && expectedFilesize > 0 && dl.getConnection().getCompleteContentLength() < expectedFilesize) {
-            /* Don't jump into this for response code 206 Partial Content (when download is resumed). */
-            br.followConnection(true);
-            /* Rare error: E.g. "403 picture" is smaller than 1 KB but is still downloaded content (picture). */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - file is too small:" + dl.getConnection().getCompleteContentLength(), 2 * 60 * 1000l);
-        } else if (requiresAccount(dl.getConnection().getURL().toString())) {
-            maybeLoginFailure(account);
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(directurlproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+            } else {
+                throw e;
+            }
         }
+        link.setProperty(getDirecturlproperty(account), dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
@@ -814,8 +842,6 @@ public class EHentaiOrg extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, account, true);
-        /* No need to login here as we already logged in in availablecheck */
         handleDownload(link, account);
     }
 

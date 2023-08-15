@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.Locale;
 import java.util.Scanner;
 
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -48,13 +49,14 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
 public class ZdfDeMediathek extends PluginForHost {
-    public static final String PROPERTY_hlsBandwidth   = "hlsBandwidth";
-    public static final String PROPERTY_streamingType  = "streamingType";
-    public static final String PROPERTY_title          = "title";
-    public static final String PROPERTY_tv_show        = "tv_show";
-    public static final String PROPERTY_date_formatted = "date_formatted";
-    public static final String PROPERTY_tv_station     = "tv_station";
-    private String             dllink                  = null;
+    public static final String PROPERTY_hlsBandwidth     = "hlsBandwidth";
+    public static final String PROPERTY_streamingType    = "streamingType";
+    public static final String PROPERTY_title            = "title";
+    public static final String PROPERTY_tv_show          = "tv_show";
+    public static final String PROPERTY_date_formatted   = "date_formatted";
+    public static final String PROPERTY_tv_station       = "tv_station";
+    public static final String PROPERTY_convert_subtitle = "convertsubtitle";
+    private String             dllink                    = null;
 
     public ZdfDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -156,7 +158,7 @@ public class ZdfDeMediathek extends PluginForHost {
         } else {
             boolean resume = true;
             int maxChunks = 0;
-            if ("subtitle".equals(link.getStringProperty(PROPERTY_streamingType, null))) {
+            if (isSubtitle(link)) {
                 br.getHeaders().put("Accept-Encoding", "identity");
                 link.setDownloadSize(0);
                 resume = false;
@@ -168,6 +170,15 @@ public class ZdfDeMediathek extends PluginForHost {
             if (this.dl.startDownload()) {
                 this.postprocess(link);
             }
+        }
+    }
+
+    private boolean isSubtitle(final DownloadLink link) {
+        final String streamingType = link.getStringProperty(PROPERTY_streamingType);
+        if (streamingType != null && streamingType.matches("subtitle.*")) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -188,7 +199,7 @@ public class ZdfDeMediathek extends PluginForHost {
         if (super.looksLikeDownloadableContent(con)) {
             return true;
         } else if (isSubtitleContent(con)) {
-            /* XML subtitle */
+            /* Subtitle */
             return true;
         } else {
             return false;
@@ -200,7 +211,14 @@ public class ZdfDeMediathek extends PluginForHost {
     }
 
     private void postprocess(final DownloadLink link) {
-        if ("subtitle".equals(link.getStringProperty(PROPERTY_streamingType))) {
+        final boolean allowConvertSubtitle;
+        if ("subtitle".equalsIgnoreCase(link.getStringProperty(PROPERTY_streamingType))) {
+            /* Legacy handling for items added up to revision 4815 */
+            allowConvertSubtitle = true;
+        } else {
+            allowConvertSubtitle = link.getBooleanProperty(PROPERTY_convert_subtitle, false);
+        }
+        if (this.isSubtitle(link) && getContentURL(link).toLowerCase(Locale.ENGLISH).endsWith(".xml") && allowConvertSubtitle) {
             if (!convertSubtitle(link)) {
                 logger.severe("Subtitle conversion failed!");
             } else {
