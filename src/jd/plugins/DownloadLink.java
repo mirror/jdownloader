@@ -745,7 +745,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (StringUtils.isEmpty(fileName)) {
             removeProperty(PROPERTY_CUSTOM_LOCALFILENAME);
         } else {
-            fileName = CrossSystem.alleviatePathParts(fileName);
+            fileName = this.fixFilename(fileName);
             this.setProperty(PROPERTY_CUSTOM_LOCALFILENAME, fileName);
         }
         cachedName = null;
@@ -760,7 +760,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (StringUtils.isEmpty(fileName)) {
             removeProperty(PROPERTY_CUSTOM_LOCALFILENAMEAPPEND);
         } else {
-            fileName = CrossSystem.alleviatePathParts(fileName, false);
+            fileName = this.fixFilename(fileName, false);
             this.setProperty(PROPERTY_CUSTOM_LOCALFILENAMEAPPEND, fileName);
         }
         cachedName = null;
@@ -1440,7 +1440,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             name = Plugin.extractFileNameFromURL(getContentUrlOrPatternMatcher());
         }
         if (!StringUtils.isEmpty(name)) {
-            name = CrossSystem.alleviatePathParts(name);
+            name = this.fixFilename(name);
         }
         if (StringUtils.isEmpty(name)) {
             name = UNKNOWN_FILE_NAME;
@@ -1473,7 +1473,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 this.removeProperty(PROPERTY_FORCEDFILENAME);
             } else {
                 oldName = getName(false, true);
-                newForced = CrossSystem.alleviatePathParts(newForced);
+                newForced = this.fixFilename(newForced);
                 this.setProperty(PROPERTY_FORCEDFILENAME, newForced);
             }
             cachedName = null;
@@ -1510,7 +1510,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                     oldName = getName();
                 }
             } else {
-                name = CrossSystem.alleviatePathParts(name);
+                name = this.fixFilename(name);
                 // if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.FILENAME_TO_LOWER_CASE.isEnabled()) {
                 // name = name.toLowerCase(Locale.ENGLISH);
                 // }
@@ -1557,35 +1557,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public void setFinalFileName(String newfinalFileName) {
         final String oldName = getName();
         if (!StringUtils.isEmpty(newfinalFileName)) {
-            final String toRemove = new Regex(newfinalFileName, Pattern.compile("r(?:ar|\\d{2,3})(\\.html?)$", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (toRemove != null) {
-                System.out.println("Use Workaround for stupid >>rar.html<< uploaders!");
-                newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - toRemove.length());
-            }
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                // 2023-08-04: TODO, see https://svn.jdownloader.org/issues/83699
-                // TODO: This should never be null ?!
-                final Map<String, String> forbiddenCharacterRegexReplaceMap = JsonConfig.create(GeneralSettings.class).getFilenameAndPathCharacterRegexReplaceMap();
-                if (forbiddenCharacterRegexReplaceMap != null && !forbiddenCharacterRegexReplaceMap.isEmpty()) {
-                    String newfilenameTemp = newfinalFileName;
-                    final Iterator<Entry<String, String>> iterator = forbiddenCharacterRegexReplaceMap.entrySet().iterator();
-                    while (iterator.hasNext()) {
-                        final Entry<String, String> entry = iterator.next();
-                        try {
-                            newfilenameTemp = newfilenameTemp.replaceAll(entry.getKey(), entry.getValue());
-                        } catch (final PatternSyntaxException e) {
-                        }
-                    }
-                    /**
-                     * Users can put anything into that replace map. </br>
-                     * Try to avoid the results of adding something like ".+" resulting in empty filenames.
-                     */
-                    if (!StringUtils.isEmpty(newfilenameTemp)) {
-                        newfinalFileName = newfilenameTemp;
-                    }
-                }
-            }
-            newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName);
+            newfinalFileName = this.fixFilename(newfinalFileName);
             this.setProperty(PROPERTY_FINALFILENAME, newfinalFileName);
             cachedName = null;// setName calls getName
             setName(newfinalFileName);
@@ -1600,6 +1572,44 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
             }
         }
+    }
+
+    protected String fixFilename(final String filename) {
+        return fixFilename(filename, true);
+    }
+
+    protected String fixFilename(String filename, final boolean removeLeadingHidingDot) {
+        String newfinalFileName = filename;
+        final String toRemove = new Regex(newfinalFileName, Pattern.compile("r(?:ar|\\d{2,3})(\\.html?)$", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (toRemove != null) {
+            System.out.println("Use Workaround for stupid >>rar.html<< uploaders!");
+            newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - toRemove.length());
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            // 2023-08-04: TODO, see https://svn.jdownloader.org/issues/83699
+            // TODO: This should never be null ?!
+            final Map<String, String> forbiddenCharacterRegexReplaceMap = JsonConfig.create(GeneralSettings.class).getFilenameAndPathCharacterRegexReplaceMap();
+            if (forbiddenCharacterRegexReplaceMap != null && !forbiddenCharacterRegexReplaceMap.isEmpty()) {
+                String newfilenameTemp = newfinalFileName;
+                final Iterator<Entry<String, String>> iterator = forbiddenCharacterRegexReplaceMap.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Entry<String, String> entry = iterator.next();
+                    try {
+                        newfilenameTemp = newfilenameTemp.replaceAll(entry.getKey(), entry.getValue());
+                    } catch (final PatternSyntaxException e) {
+                    }
+                }
+                /**
+                 * Users can put anything into that replace map. </br>
+                 * Try to avoid the results of adding something like ".+" resulting in empty filenames.
+                 */
+                if (!StringUtils.isEmpty(newfilenameTemp)) {
+                    newfinalFileName = newfilenameTemp;
+                }
+            }
+        }
+        newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName, removeLeadingHidingDot);
+        return newfinalFileName;
     }
 
     /**

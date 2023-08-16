@@ -7,6 +7,11 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.BunkrConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -23,9 +28,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.BunkrAlbum;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { BunkrAlbum.class })
@@ -87,6 +89,7 @@ public class Bunkr extends PluginForHost {
 
     /* Don't touch the following! */
     private static final AtomicInteger freeRunning = new AtomicInteger(0);
+    private final static Pattern       PATTERN_FID = Pattern.compile("(-([A-Za-z0-9]{8}))(\\.[^\\.]+)?$");
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
@@ -119,15 +122,45 @@ public class Bunkr extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        String filenameFromURL = new Regex(link.getPluginPatternMatcher(), BunkrAlbum.TYPE_SINGLE_FILE).getMatch(2);
+        final String lastStoredDirecturl = link.getStringProperty(PROPERTY_LAST_GRABBED_DIRECTURL);
+        String fid = null;
+        if (lastStoredDirecturl != null) {
+            fid = getFidFromURL(lastStoredDirecturl);
+        }
+        if (fid == null) {
+            fid = getFidFromURL(link.getPluginPatternMatcher());
+        }
+        if (fid != null) {
+            return fid;
+        } else {
+            /* Fallback */
+            return getFilenameFromURL(link);
+        }
+    }
+
+    private String getFilenameFromURL(final DownloadLink link) {
+        String filenameFromURL = getFilenameFromURL(link.getPluginPatternMatcher());
+        if (filenameFromURL != null) {
+            return filenameFromURL;
+        } else {
+            return null;
+        }
+    }
+
+    private String getFilenameFromURL(final String url) {
+        String filenameFromURL = new Regex(url, BunkrAlbum.TYPE_SINGLE_FILE).getMatch(2);
         if (filenameFromURL == null) {
-            filenameFromURL = new Regex(link.getPluginPatternMatcher(), "(?i)https?://[^/]+/(.+)").getMatch(0);
+            filenameFromURL = new Regex(url, "(?i)https?://[^/]+/(.+)").getMatch(0);
         }
         if (filenameFromURL != null) {
             return Encoding.htmlDecode(filenameFromURL).trim();
         } else {
             return null;
         }
+    }
+
+    private String getFidFromURL(final String url) {
+        return new Regex(url, PATTERN_FID).getMatch(1);
     }
 
     private String getContentURL(final DownloadLink link) {
@@ -173,7 +206,7 @@ public class Bunkr extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         final String contenturl = this.getContentURL(link);
-        final String filenameFromURL = Plugin.getFileNameFromURL(contenturl);
+        final String filenameFromURL = getFilenameFromURL(link);
         if (filenameFromURL != null) {
             if (isDownload) {
                 setFilename(link, filenameFromURL, true, true);
@@ -295,34 +328,6 @@ public class Bunkr extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public static void setFilename(final DownloadLink link, final String filename, final boolean canContainFileID, final boolean setFinalName) {
-        if (StringUtils.isEmpty(filename)) {
-            return;
-        }
-        final boolean fixFilename = false;
-        final String filenameFromAlbum = link.getStringProperty(PROPERTY_FILENAME_FROM_ALBUM);
-        final String correctedFilename;
-        if (fixFilename && filenameFromAlbum != null) {
-            correctedFilename = filenameFromAlbum;
-        } else if (fixFilename && canContainFileID) {
-            final String fileID = new Regex(filename, "(-[A-Za-z0-9]{8})(\\.[^\\.]+)?$").getMatch(0);
-            if (fileID != null) {
-                correctedFilename = filename.replaceFirst(fileID, "").replace("-", " ").trim();
-            } else {
-                /* No fileID in link while it should be given */
-                correctedFilename = filename;
-            }
-        } else {
-            /* Do not touch given filename */
-            correctedFilename = filename;
-        }
-        if (setFinalName) {
-            link.setFinalFileName(correctedFilename);
-        } else {
-            link.setName(correctedFilename);
-        }
-    }
-
     private String getDirecturlFromSingleFileAvailablecheck(final DownloadLink link, final String singleFileURL, final boolean accessURL) throws PluginException, IOException {
         link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, null);
         if (accessURL) {
@@ -367,13 +372,57 @@ public class Bunkr extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         directurl = Encoding.htmlOnlyDecode(directurl);
-        final String filename = Plugin.getFileNameFromURL(directurl);
+        final String filename = getFilenameFromURL(directurl);
         if (filename != null) {
             setFilename(link, filename, true, true);
         }
         link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, directurl);
         link.setProperty(PROPERTY_LAST_USED_SINGLE_FILE_URL, singleFileURL);
         return directurl;
+    }
+
+    public static void setFilename(final DownloadLink link, final String filename, final boolean canContainFileID, final boolean setFinalName) {
+        if (StringUtils.isEmpty(filename)) {
+            return;
+        }
+        final boolean fixFilename = PluginJsonConfig.get(BunkrConfig.class).isFixFilename();
+        final String filenameFromAlbum = link.getStringProperty(PROPERTY_FILENAME_FROM_ALBUM);
+        String correctedFilename;
+        if (fixFilename && canContainFileID) {
+            final String fileID = new Regex(filename, PATTERN_FID).getMatch(0);
+            if (fileID != null) {
+                correctedFilename = filename.replaceFirst(fileID, "");
+            } else {
+                /* No fileID in link while it should be given */
+                correctedFilename = filename;
+            }
+            if (filenameFromAlbum != null) {
+                /* We know they replace spaces with minus but if the original filename already contained minus that would be a mistake. */
+                if (!correctedFilename.equals(filenameFromAlbum)) {
+                    correctedFilename = correctedFilename.replace("-", " ");
+                }
+                if (correctedFilename.equals(filenameFromAlbum)) {
+                    /*
+                     * We were able to re-create the desired filename without the need of the one we stored -> Remove that property to save
+                     * memory.
+                     */
+                    link.removeProperty(PROPERTY_FILENAME_FROM_ALBUM);
+                } else {
+                    correctedFilename = filenameFromAlbum;
+                }
+            } else {
+                /* No reference "original filename" given so let's do the default replacements. */
+                correctedFilename = correctedFilename.replace("-", " ");
+            }
+        } else {
+            /* Do not touch given filename */
+            correctedFilename = filename;
+        }
+        if (setFinalName) {
+            link.setFinalFileName(correctedFilename);
+        } else {
+            link.setName(correctedFilename);
+        }
     }
 
     @Override
@@ -426,6 +475,11 @@ public class Bunkr extends PluginForHost {
             /* https://bnkr.b-cdn.net/maintenance-vid.mp4 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Media temporarily not available due to ongoing server maintenance.", 2 * 60 * 1000l);
         }
+    }
+
+    @Override
+    public Class<? extends BunkrConfig> getConfigInterface() {
+        return BunkrConfig.class;
     }
 
     @Override

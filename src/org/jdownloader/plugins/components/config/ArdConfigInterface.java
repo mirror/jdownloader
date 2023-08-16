@@ -68,7 +68,7 @@ public interface ArdConfigInterface extends PluginConfigInterface {
         XML {
             @Override
             public String getLabel() {
-                return "SRT [XML -> srt (.srt)]";
+                return "SRT [XML converted to srt (.srt)]";
             }
         };
     }

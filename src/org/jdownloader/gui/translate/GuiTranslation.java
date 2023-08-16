@@ -114,19 +114,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Waiting for Captcha for %s1 to continue!" })
     String gui_captchaWindow_waitForInput(String hoster);
 
-    @Default(lngs = { "en", "de" }, values = { "<html>Enable shared IP workaround?<br /><p style=\"color:#808080\">If you share share-online accounts with friends or use them via a VPN it may happen that they get temporarily banned from share-online.<br />It would then usually get temporarily deactivated in JDownloader as well.<br />This setting will keep share-online accounts active in this case and retry the download process after some time.</p></html>", "<html>Aktiviere shared IP workaround?<br /><p style=\"color:#808080\">Sofern du deine share-online Accounts mit einem VPN benutzt oder mit Freunden teilst kann dieser von share-online temporär gesperrt werden.<br />Er wird dann normalerweise auch in JDownloader temporär deaktiviert.<br />Diese Einstellung bewirkt, dass der Account aktiv bleibt und die Downloads nach einiger Zeit erneut versucht werden.</p></html>" })
-    String gui_plugin_settings_share_online_shared_ip_workaround();
-
-    @Default(lngs = { "en", "de" }, values = { "<html>Enable traffic workaround?<br /><p style=\"color:#808080\">Share-online has a premium fair-use-limit of 100 GB per day - if exceeded you can continue downloading but with limited speed.<br />Usually JDownloader disables accounts 'without traffic' - if you activate this setting, share-online accounts will still get used in this case.<br />If you only own a single premium account to download from share-online, it makes sense to use this setting.</p></html>",
-    "<html>Aktiviere traffic workaround?<br /><p style=\"color:#808080\">Share-Online hat ein premium fair-use-Limit von 100 GB pro Tag - danach kann man nur gedrosselt weiter herunterladen.<br />Normalerweise deaktiviert JDownloader Accounts 'ohne Traffic' - aktiviert man diese Einstellung, werden betroffene share-online Accounts in diesem Fall trotzdem weiter verwendet.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
-    String gui_plugin_settings_share_online_traffic_workaround();
-
-    @Default(lngs = { "en", "de" }, values = { "<html>Enable max. traffic workaround?<br /><p style=\"color:#808080\">The calculation of the traffic is decreased before the download and added again later if necessary. This does not exceed the limit of 100 GB per day.<br />If you only own a single premium account to download from share-online, it makes sense to use this setting.</p></html>", "<html>Aktiviere max. traffic workaround?<br /><p style=\"color:#808080\">Die Berechnung vom Traffic wird vor dem Download abgezogen und später wieder hinzugefügt, wenn erforderlich. Dadurch wird das Limit von 100 GB pro Tag keinesfalls überschritten.<br />Sofern du nur einen premium Account zum Download von share-online besitzt ist es sinnvoll, diese Einstellung zu verwenden.</p></html>" })
-    String gui_plugin_settings_share_online_traffic_workaround_max();
-
-    @Default(lngs = { "en", "de" }, values = { "Prefer HTTPS communication?\r\nOnly available for premium users.", "Bevorzuge sichere Kommunikation per HTTPS?\r\nNur für Premium Nutzer verfügbar!" })
-    String gui_plugin_settings_share_online_traffic_premium_prefer_https();
-
     @Default(lngs = { "en" }, values = { "Host/IP/Address" })
     String gui_column_host2();
 

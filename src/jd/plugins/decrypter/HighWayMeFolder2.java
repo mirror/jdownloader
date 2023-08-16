@@ -96,7 +96,8 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
             crawlTorrent = true;
             crawlUsenet = true;
         }
-        int numberofSkippedItems = 0;
+        final ArrayList<String> skippedItemsTorrent = new ArrayList<String>();
+        final ArrayList<String> skippedItemsUsenet = new ArrayList<String>();
         torrentCrawler: if (crawlTorrent) {
             br.getPage(hosterplugin.getWebsiteBase() + "torrent.php?action=list&json&order=1&suche=");
             final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
@@ -111,7 +112,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                 // final String status = item.get("Status").toString();
                 if (!percentDownloaded.equals("100")) {
                     logger.info("Skipping unfinished item: " + name + " | Percent: " + percentDownloaded);
-                    numberofSkippedItems++;
+                    skippedItemsTorrent.add(name);
                     continue;
                 }
                 final DownloadLink link = this.createDownloadlink(item.get("link").toString());
@@ -150,11 +151,12 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                 // final String status = item.get("Status").toString();
                 if (!percentDownloaded.equals("100")) {
                     logger.info("Skipping unfinished item: " + name + " | Percent: " + percentDownloaded);
-                    numberofSkippedItems++;
+                    skippedItemsUsenet.add(name);
                     continue;
                 }
                 final DownloadLink link = this.createDownloadlink(item.get("link").toString());
-                if (StringUtils.equals(zip, "1") && trustZipAsSingleFile) {
+                final boolean isSingleFile = StringUtils.equals(zip, "1");
+                if (isSingleFile && trustZipAsSingleFile) {
                     /* We know we got only one file and it is downloadable. */
                     link.setName(Plugin.getCorrectOrApplyFileNameExtension(name, ".zip"));
                     final String filesizeBytesStr = (String) item.get("Size");
@@ -176,9 +178,26 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                 distribute(link);
             }
         }
+        final int numberofSkippedItems = skippedItemsTorrent.size() + skippedItemsUsenet.size();
+        String textSkippedElements = "";
+        if (skippedItemsTorrent.size() > 0) {
+            textSkippedElements = "Torrents: " + textSkippedElements;
+        }
+        if (skippedItemsUsenet.size() > 0) {
+            if (textSkippedElements.length() > 0) {
+                textSkippedElements += "\r\n";
+            }
+            textSkippedElements += "Usenet: " + skippedItemsUsenet;
+        }
         if (ret.isEmpty()) {
             logger.info("Failed to find any results | Number of skipped items: " + numberofSkippedItems);
-            displayBubblenotifyMessage("Nichts gefunden", "Es konnten keine eigenen torrents/usenet Downloads gefunden werden.\r\nAnzahl übersprungener/unfertiger Elemente: " + numberofSkippedItems);
+            String text = "Es konnten keine eigenen torrents/usenet Downloads gefunden werden.\r\nAnzahl übersprungener/unfertiger Elemente: " + numberofSkippedItems;
+            if (textSkippedElements.length() > 0) {
+                text += "\r\n" + textSkippedElements;
+            }
+            displayBubblenotifyMessage("Nichts gefunden", text);
+        } else if (numberofSkippedItems > 0) {
+            displayBubblenotifyMessage("Einige unfertige Elemente wurden übersprungen", "Übersprungene Elemente:\r\n" + textSkippedElements);
         }
         return ret;
     }
