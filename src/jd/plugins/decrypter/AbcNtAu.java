@@ -13,13 +13,17 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,68 +33,113 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
-import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
 
 /**
  *
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abc.net.au" }, urls = { "https?://(?:www\\.)?abc\\.net\\.au/news/\\d{4}-\\d{2}-\\d{2}/[^/]+/\\d+" }) 
-public class AbcNtAu extends antiDDoSForDecrypt {
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abc.net.au" }, urls = { "https?://(?:www\\.)?abc\\.net\\.au/.+" })
+public class AbcNtAu extends PluginForDecrypt {
     public AbcNtAu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        final String[][] results = br.getRegex("inline(Video|Audio)Data\\.push\\((.*?)\\);").getMatches();
-        if (results != null) {
-            for (final String[] result : results) {
+        String lastMediaTitle = null;
+        final String json = br.getRegex("id=\"__NEXT_DATA__\" type=\"application/json\"[^>]*>(\\{.*?\\})</script>").getMatch(0);
+        final HashSet<String> dupesMediaids = new HashSet<String>();
+        if (json != null) {
+            final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+            final ArrayList<Map<String, Object>> audiomaps = new ArrayList<Map<String, Object>>();
+            this.findAudioMaps(entries, audiomaps);
+            for (final Map<String, Object> audiomap : audiomaps) {
+                if (!dupesMediaids.add(audiomap.get("id").toString())) {
+                    continue;
+                }
+                final String title = audiomap.get("title").toString().trim();
+                lastMediaTitle = title;
+                final String caption = (String) audiomap.get("caption");
+                final List<Map<String, Object>> renditions = (List<Map<String, Object>>) audiomap.get("renditions");
+                for (final Map<String, Object> rendition : renditions) {
+                    final String mimetype = rendition.get("MIMEType").toString();
+                    String ext = Plugin.getExtensionFromMimeTypeStatic(mimetype);
+                    if (ext == null) {
+                        ext = "mp3";
+                    } else {
+                        logger.warning("Failed to find ext for mimetype: " + mimetype);
+                    }
+                    final String url = rendition.get("url").toString();
+                    final DownloadLink dl = createDownloadlink(url);
+                    if (!StringUtils.isEmpty(caption)) {
+                        dl.setComment(caption);
+                    }
+                    if (renditions.size() == 1) {
+                        /* Only one item? Don't include quality information in filename. */
+                        dl.setFinalFileName(title + "." + ext);
+                    } else {
+                        dl.setFinalFileName(title + rendition.get("bitrate") + "b." + ext);
+                    }
+                    dl.setVerifiedFileSize(((Number) rendition.get("fileSize")).longValue());
+                    dl.setAvailable(true);
+                    ret.add(dl);
+                }
+            }
+            final ArrayList<Map<String, Object>> videomaps = new ArrayList<Map<String, Object>>();
+            this.findVideoMaps(entries, videomaps);
+            for (final Map<String, Object> videomap : videomaps) {
+                final Map<String, Object> document = (Map<String, Object>) JavaScriptEngineFactory.walkJson(videomap, "props/document");
+                if (!dupesMediaids.add(document.get("id").toString())) {
+                    continue;
+                }
+                final String title = document.get("title").toString();
+                lastMediaTitle = title;
+                final List<Map<String, Object>> renditions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(document, "media/video/renditions/files");
+                final ArrayList<DownloadLink> thisResults = new ArrayList<DownloadLink>();
+                final ArrayList<Integer> qual = new ArrayList<Integer>();
                 final HashMap<Integer, DownloadLink> abc = new HashMap<Integer, DownloadLink>();
                 String urlPattern = null;
-                final ArrayList<Integer> qual = new ArrayList<Integer>();
-                String[] result_array = PluginJSonUtils.getJsonResultsFromArray(result[1]);
-                if (result_array != null) {
-                    for (final String results_a : result_array) {
-                        final String url = PluginJSonUtils.getJsonValue(results_a, "url");
-                        // if video
-                        final boolean isVideo = "Video".equalsIgnoreCase(result[0]);
-                        final String q = new Regex(url, "(\\d+)k\\.mp4").getMatch(0);
-                        if (isVideo && q != null) {
-                            // get qual
-                            qual.add(Integer.parseInt(q));
-                            if (urlPattern == null) {
-                                urlPattern = url;
-                            }
-                        }
-                        final String size = PluginJSonUtils.getJsonValue(results_a, "fileSize");
-                        if (!inValidate(url)) {
-                            final DownloadLink dl = createDownloadlink(url);
-                            if (!inValidate(size)) {
-                                dl.setVerifiedFileSize(Long.parseLong(size));
-                            }
-                            dl.setAvailableStatus(AvailableStatus.TRUE);
-                            if (isVideo && q != null) {
-                                abc.put(Integer.parseInt(q), dl);
-                            } else {
-                                decryptedLinks.add(dl);
-                            }
+                for (final Map<String, Object> rendition : renditions) {
+                    final String mimetype = rendition.get("MIMEType").toString();
+                    if (!mimetype.equals("video/mp4")) {
+                        logger.info("Skipping mimetype: " + mimetype);
+                        continue;
+                    }
+                    final String url = rendition.get("url").toString();
+                    final String q = new Regex(url, "(\\d+)k\\.mp4").getMatch(0);
+                    if (q != null) {
+                        // get qual
+                        qual.add(Integer.parseInt(q));
+                        if (urlPattern == null) {
+                            urlPattern = url;
                         }
                     }
+                    final DownloadLink dl = createDownloadlink(url);
+                    dl.setFinalFileName(title + rendition.get("height") + "p.mp4");
+                    dl.setVerifiedFileSize(((Number) rendition.get("size")).longValue());
+                    dl.setAvailable(true);
+                    if (q != null) {
+                        abc.put(Integer.parseInt(q), dl);
+                    }
+                    thisResults.add(dl);
                 }
+                /* Old handling */
+                boolean foundAndAddedBetterResult = false;
                 // analyse the results, because they don't include all qualities at times.. yet they're available.
                 if (urlPattern != null && !qual.isEmpty()) {
                     // 1000k, 512k, 256k,
                     final int[] k = new int[] { 1000, 512, 256 };
                     for (final int kk : k) {
                         if (!qual.contains(kk)) {
-                            decryptedLinks.add(createDownloadlink(urlPattern.replaceFirst("\\d+(k\\.mp4)", kk + "$1")));
+                            ret.add(createDownloadlink(urlPattern.replaceFirst("\\d+(k\\.mp4)", kk + "$1")));
+                            foundAndAddedBetterResult = true;
                         }
                     }
                 }
@@ -99,12 +148,15 @@ public class AbcNtAu extends antiDDoSForDecrypt {
                     final int[] k = new int[] { 1000, 512, 256 };
                     for (final int kk : k) {
                         if (abc.containsKey(kk)) {
-                            decryptedLinks.add(abc.get(kk));
+                            ret.add(abc.get(kk));
+                            foundAndAddedBetterResult = true;
                             break;
                         }
                     }
                 }
-
+                if (!foundAndAddedBetterResult) {
+                    ret.addAll(thisResults);
+                }
             }
         }
         // lets look for external links? youtube etc.
@@ -113,22 +165,83 @@ public class AbcNtAu extends antiDDoSForDecrypt {
             for (final String externlink : externlinks) {
                 final String[] links = HTMLParser.getHttpLinks(externlink, null);
                 for (final String link : links) {
-                    decryptedLinks.add(createDownloadlink(link));
+                    ret.add(createDownloadlink(link));
                 }
             }
         }
-        final String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        if (!inValidate(fpName)) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName));
-            fp.addLinks(decryptedLinks);
+        String packageTitle = null;
+        if (dupesMediaids.size() == 1) {
+            packageTitle = lastMediaTitle;
+        } else {
+            packageTitle = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         }
-        return decryptedLinks;
+        if (!StringUtils.isEmpty(packageTitle)) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(packageTitle).trim());
+            fp.addLinks(ret);
+        }
+        return ret;
+    }
+
+    private void findAudioMaps(final Object o, final ArrayList<Map<String, Object>> results) {
+        if (o instanceof Map) {
+            final Map<String, Object> map = (Map<String, Object>) o;
+            final String docType = (String) map.get("docType");
+            if (StringUtils.equalsIgnoreCase(docType, "audiosegment") && map.containsKey("duration")) {
+                results.add(map);
+            } else {
+                for (final Map.Entry<String, Object> entry : map.entrySet()) {
+                    // final String key = entry.getKey();
+                    final Object value = entry.getValue();
+                    if (value instanceof List || value instanceof Map) {
+                        findAudioMaps(value, results);
+                    }
+                }
+            }
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    findAudioMaps(arrayo, results);
+                }
+            }
+            return;
+        } else {
+            return;
+        }
+    }
+
+    private void findVideoMaps(final Object o, final ArrayList<Map<String, Object>> results) {
+        if (o instanceof Map) {
+            final Map<String, Object> map = (Map<String, Object>) o;
+            final String type = (String) map.get("type");
+            final String keyy = (String) map.get("key");
+            if (StringUtils.equalsIgnoreCase(type, "embed") && StringUtils.equalsIgnoreCase(keyy, "video")) {
+                results.add(map);
+            } else {
+                for (final Map.Entry<String, Object> entry : map.entrySet()) {
+                    // final String key = entry.getKey();
+                    final Object value = entry.getValue();
+                    if (value instanceof List || value instanceof Map) {
+                        findVideoMaps(value, results);
+                    }
+                }
+            }
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    findVideoMaps(arrayo, results);
+                }
+            }
+            return;
+        } else {
+            return;
+        }
     }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }

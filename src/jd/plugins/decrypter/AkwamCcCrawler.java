@@ -22,16 +22,20 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.AkwamCc;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { AkwamCc.class })
 public class AkwamCcCrawler extends PluginForDecrypt {
     public AkwamCcCrawler(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,17 +81,31 @@ public class AkwamCcCrawler extends PluginForDecrypt {
             final String bulkHtml = new Regex(html, "(?i)(id=\"(?:series|show)-episodes\"[\\s\\S]+widget-4)").getMatch(0);
             links = new Regex(bulkHtml, "<a href=\"(https://" + Pattern.quote(br.getHost()) + "/[^\"]+)\"").getMatches();
         } else {
-            links = new Regex(html, "<a href=\"([^\"]+)\"[^>]+link-download").getMatches();
+            links = new Regex(html, "<a href=\"([^\"]+)\"[^>]+(?:link-download|download-link)").getMatches();
         }
-        if (links == null || links.length == 0) {
+        if (links != null && links.length > 0) {
+            for (final String[] link : links) {
+                final String finalLink = link[0];
+                final DownloadLink dl = createDownloadlink(finalLink);
+                dl._setFilePackage(fp);
+                ret.add(dl);
+            }
+        } else {
+            /* Last resort */
+            final Pattern redirectpattern = Pattern.compile("(http?://[^/]+/link/\\d+)");
+            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+            final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+            for (final String url : urls) {
+                if (plg.canHandle(url)) {
+                    ret.add(this.createDownloadlink(url));
+                } else if (new Regex(url, redirectpattern).patternFind()) {
+                    ret.add(this.createDownloadlink(url));
+                }
+            }
+        }
+        if (ret.isEmpty()) {
             logger.info("Unsupported URL or crawler failure");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        for (final String[] link : links) {
-            final String finalLink = link[0];
-            final DownloadLink dl = createDownloadlink(finalLink);
-            dl._setFilePackage(fp);
-            ret.add(dl);
         }
         return ret;
     }

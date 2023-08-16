@@ -24,6 +24,8 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AdshortCo extends MightyScriptAdLinkFly {
@@ -71,12 +73,29 @@ public class AdshortCo extends MightyScriptAdLinkFly {
     protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
+        if (param.getCryptedUrl().matches("https?://[^/]+/[a-z0-9]+")) {
+            /**
+             * Only lowercase contentID -> Invalid e.g.: </br>
+             * https://adshort.co/anunciantes </br>
+             * https://adshort.co/rates
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.setFollowRedirects(true);
+        /* 2023-08-16: This referer skips captcha & two redirect-forms */
+        br.getHeaders().put("Referer", "https://techgeek.digital/");
         getPage(param.getCryptedUrl());
         /* 2022-06-23: Extra step needed */
-        final Form preForm = br.getFormByInputFieldKeyValue("submit", "continue");
+        Form preForm = br.getFormByInputFieldKeyValue("submit", "continue");
+        if (preForm == null) {
+            preForm = br.getFormbyProperty("id", "setc");
+        }
         if (preForm != null) {
             this.submitForm(preForm);
+        }
+        final Form preform2 = br.getFormbyKey("FU4");
+        if (preform2 != null) {
+            logger.warning("Found preform2 which should be auto-skipped");
         }
         if (this.regexAppVars(this.br) == null) {
             logger.warning("Possible crawler failure...");
@@ -85,7 +104,7 @@ public class AdshortCo extends MightyScriptAdLinkFly {
         return ret;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         return super.decryptIt(param, progress);
     }
 }
