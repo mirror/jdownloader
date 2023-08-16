@@ -205,17 +205,12 @@ public class PCloudComFolder extends PluginForDecrypt {
     }
 
     private DownloadLink addSingleItem(final Map<String, Object> entries, final String path) {
-        final String parentfolderid = entries.get("parentfolderid").toString();
-        final String contenturl = "https://u.pcloud.link/publink/show?code=" + foldercode + "#folder=" + parentfolderid + "&tpl=publicfoldergrid";
+        final String parentfolderid = Long.toString(((Number) entries.get("parentfolderid")).longValue());
         final DownloadLink file = createDownloadlink("http://pclouddecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-        file.setContentUrl(contenturl);
         final long filesize = ((Number) entries.get("size")).longValue();
         String filename = entries.get("name").toString();
-        final String fileid = entries.get("fileid").toString();
-        filename = Encoding.htmlDecode(filename).trim();
+        final String fileid = Long.toString(((Number) entries.get("fileid")).longValue());
         totalSize += filesize;
-        file.setVerifiedFileSize(filesize);
-        file.setFinalFileName(filename);
         file.setProperty("plain_name", filename);
         file.setProperty("plain_size", filesize);
         file.setProperty("plain_fileid", fileid);
@@ -228,6 +223,9 @@ public class PCloudComFolder extends PluginForDecrypt {
             fp.setName(path);
             file._setFilePackage(fp);
         }
+        filename = Encoding.htmlDecode(filename).trim();
+        file.setVerifiedFileSize(filesize);
+        file.setFinalFileName(filename);
         return file;
     }
 

@@ -64,6 +64,21 @@ public class PCloudCom extends PluginForHost {
     }
 
     @Override
+    public String getPluginContentURL(final DownloadLink link) {
+        String folderid = null;
+        try {
+            folderid = this.getFolderID(link);
+        } catch (final PluginException ignore) {
+        }
+        final String parentfolderid = link.getStringProperty("plain_parentfolderid");
+        if (folderid != null && parentfolderid != null) {
+            return "https://u.pcloud.link/publink/show?code=" + folderid + "#folder=" + parentfolderid + "&tpl=publicfoldergrid";
+        } else {
+            return super.getPluginContentURL(link);
+        }
+    }
+
+    @Override
     public String getLinkID(final DownloadLink link) {
         String id = null;
         try {
