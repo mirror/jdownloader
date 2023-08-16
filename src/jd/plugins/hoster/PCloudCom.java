@@ -35,6 +35,8 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -59,6 +61,24 @@ public class PCloudCom extends PluginForHost {
         final Browser br = new Browser();
         PCloudComFolder.prepBR(br);
         return br;
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        String id = null;
+        try {
+            final String fileid = getFID(link);
+            final String folderID = getFolderID(link);
+            if (fileid != null) {
+                id = folderID + "_" + fileid;
+            }
+        } catch (final Throwable e) {
+        }
+        if (id != null) {
+            return "pcloud://" + id;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
     @Override
@@ -153,7 +173,7 @@ public class PCloudCom extends PluginForHost {
     }
 
     private String getDownloadURL(final DownloadLink link, final Account account, final String account_auth, final boolean publicDownload) throws Exception {
-        final String code = getCODE(link);
+        final String code = getFolderID(link);
         if (isCompleteFolder(link)) {
             if (account_auth != null) {
                 br.getPage("https://" + getAPIDomain(link) + "/showpublink?code=" + code + "&auth=" + account_auth);
@@ -355,7 +375,7 @@ public class PCloudCom extends PluginForHost {
         }
         boolean publicDownload = true;
         if (STATUS_CODE_MAYBE_OWNER_ONLY == statusCode) {
-            final String code = getCODE(link);
+            final String code = getFolderID(link);
             getAPISafe("https://" + getAPIDomain(link) + "/showpublink?code=" + code + "&auth=" + account_auth);
             final String ownerisme = PluginJSonUtils.getJson(br, "ownerisme");
             if (StringUtils.equals(ownerisme, "true")) {
@@ -373,7 +393,7 @@ public class PCloudCom extends PluginForHost {
                  * not yet implemented for complete folder(zip)
                  */
                 /* tofolderid --> 0 = root */
-                final String code = getCODE(link);
+                final String code = getFolderID(link);
                 final String fileid = getFID(link);
                 getAPISafe("https://" + getAPIDomain(link) + "/copypubfile?fileid=" + fileid + "&tofolderid=0&code=" + code + "&auth=" + account_auth);
                 final String new_fileid = PluginJSonUtils.getJsonValue(br, "fileid");
@@ -445,8 +465,8 @@ public class PCloudCom extends PluginForHost {
         return null;
     }
 
-    private String getCODE(final DownloadLink dl) throws PluginException {
-        final String ret = dl.getStringProperty("plain_code", null);
+    private String getFolderID(final DownloadLink dl) throws PluginException {
+        final String ret = dl.getStringProperty("plain_code");
         if (ret == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
@@ -455,7 +475,7 @@ public class PCloudCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink dl) throws PluginException {
-        final String ret = dl.getStringProperty("plain_fileid", null);
+        final String ret = dl.getStringProperty("plain_fileid");
         if (ret == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
@@ -484,20 +504,22 @@ public class PCloudCom extends PluginForHost {
             case STATUS_CODE_OKAY:
                 /* Everything ok */
                 break;
+            case 1029:
+                throw new AccountRequiredException();
             case STATUS_CODE_INVALID_LOGIN:
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     statusMessage = "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
                 } else {
                     statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
                 }
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException(statusMessage);
             case 2008:
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     statusMessage = "\r\nDein Account hat keinen freien Speicherplatz mehr!";
                 } else {
                     statusMessage = "\r\nYour account has no free space anymore!";
                 }
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException(statusMessage);
             case STATUS_CODE_WRONG_LOCATION:
                 // wrong location
                 /*
@@ -510,11 +532,11 @@ public class PCloudCom extends PluginForHost {
             case 7002:
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case STATUS_CODE_PREMIUMONLY:
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                throw new AccountRequiredException();
             case STATUS_CODE_MAYBE_OWNER_ONLY:
                 /* file might be set to preview only download */
                 /* "error": "Access denied. You do not have permissions to perform this operation." */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                throw new AccountRequiredException();
             case 7014:
                 /*
                  * 2016-08-31: Added support for this though I'm not sure about this - I guess some kind of account traffic limit has been

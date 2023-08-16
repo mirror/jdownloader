@@ -5,11 +5,6 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import jd.controlling.downloadcontroller.DownloadControllerConfig;
-import jd.controlling.faviconcontroller.FavIconsConfig;
-import jd.controlling.linkchecker.LinkCheckerConfig;
-import jd.controlling.linkcrawler.LinkCrawlerConfig;
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -33,7 +28,6 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.AccountSettings;
-import org.jdownloader.settings.RtmpdumpSettings;
 import org.jdownloader.settings.SoundSettings;
 import org.jdownloader.settings.staticreferences.CFG_API;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
@@ -50,6 +44,11 @@ import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.LastChanceSettings;
 import org.jdownloader.updatev2.UpdateSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.downloadcontroller.DownloadControllerConfig;
+import jd.controlling.faviconcontroller.FavIconsConfig;
+import jd.controlling.linkchecker.LinkCheckerConfig;
+import jd.controlling.linkcrawler.LinkCrawlerConfig;
 
 public class AdvancedConfigManager {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();
@@ -85,7 +84,6 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(FFmpegSetup.class));
         register(JsonConfig.create(LogConfig.class));
         register(JsonConfig.create(ShortcutSettings.class));
-        register(JsonConfig.create(RtmpdumpSettings.class));
         register(JsonConfig.create(UpdateSettings.class));
         register(JsonConfig.create(LastChanceSettings.class));
         register(JsonConfig.create(ExtFileSystemViewSettings.class));

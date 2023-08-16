@@ -164,7 +164,7 @@ public class Bunkr extends PluginForHost {
     }
 
     private String getContentURL(final DownloadLink link) {
-        final String url = link.getPluginPatternMatcher();
+        final String url = Encoding.htmlOnlyDecode(link.getPluginPatternMatcher());
         final Regex singleFileRegex = new Regex(url, BunkrAlbum.TYPE_SINGLE_FILE);
         final String hostFromAddedURLWithoutSubdomain = Browser.getHost(url, false);
         if (singleFileRegex.patternFind()) {
@@ -216,6 +216,7 @@ public class Bunkr extends PluginForHost {
         }
         final String lastCachedDirecturl = link.getStringProperty(PROPERTY_LAST_GRABBED_DIRECTURL);
         final String lastUsedSingleFileURL = link.getStringProperty(PROPERTY_LAST_USED_SINGLE_FILE_URL);
+        Exception exceptionFromDirecturlCheck = null;
         if (lastCachedDirecturl != null && lastUsedSingleFileURL != null) {
             logger.info("Trying to re-use last cached directurl: " + lastCachedDirecturl);
             br.getHeaders().put("Referer", lastUsedSingleFileURL);
@@ -229,8 +230,12 @@ public class Bunkr extends PluginForHost {
                 }
                 handleConnectionErrors(br, con);
                 logger.info("Successfully re-used last cached directurl");
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
                 return AvailableStatus.TRUE;
             } catch (final Exception e) {
+                exceptionFromDirecturlCheck = e;
                 logger.log(e);
                 logger.info("Failed to re-use last cached directurl");
                 try {
@@ -294,6 +299,10 @@ public class Bunkr extends PluginForHost {
                         br.getPage(singleFileURL);
                     }
                     final String freshDirecturl = getDirecturlFromSingleFileAvailablecheck(link, br.getURL(), false);
+                    /* Avoid trying again with the same directurl if we already know the result. */
+                    if (StringUtils.equals(freshDirecturl, lastCachedDirecturl) && exceptionFromDirecturlCheck != null) {
+                        throw exceptionFromDirecturlCheck;
+                    }
                     br.getHeaders().put("Referer", singleFileURL); // Important!
                     if (isDownload) {
                         dl = jd.plugins.BrowserAdapter.openDownload(br, link, freshDirecturl, isResumeable(link, null), this.getMaxChunks(null));
@@ -429,6 +438,7 @@ public class Bunkr extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, true);
         if (this.dl == null) {
+            /* Developer mistake! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Add a download slot */

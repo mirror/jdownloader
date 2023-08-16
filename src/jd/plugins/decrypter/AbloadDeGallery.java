@@ -28,6 +28,8 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -53,12 +55,15 @@ public class AbloadDeGallery extends PluginForDecrypt {
         final String addedurl = param.getCryptedUrl();
         br.setFollowRedirects(true);
         br.getPage(addedurl);
-        if (br.containsHTML("Ein Bild mit diesem Dateinamen existiert nicht\\.") || br.containsHTML(">Dieses Bild wurde gelöscht")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("Galerie nicht gefunden\\.") || br.containsHTML("Gallery not found\\.")) {
+        }
+        if (br.containsHTML("(?i)Ein Bild mit diesem Dateinamen existiert nicht\\.") || br.containsHTML(">\\s*Dieses Bild wurde gelöscht")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getHttpConnection().getResponseCode() == 404) {
+        } else if (br.containsHTML("(?i)Galerie nicht gefunden\\.") || br.containsHTML("(?i)Gallery not found\\.")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*Die Galerie ist leer")) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
         if (!addedurl.contains("browseGallery.php?gal=") && !addedurl.contains("image.php")) {
             final String galID = new Regex(addedurl, "([A-Za-z0-9]+)$").getMatch(0);

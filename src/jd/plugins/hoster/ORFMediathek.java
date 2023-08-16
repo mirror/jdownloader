@@ -233,7 +233,6 @@ public class ORFMediathek extends PluginForHost {
             dl.setEstimatedDuration(hit.getDuration());
             dl.startDownload();
         } else if (dllink.startsWith("rtmp")) {
-            link.setProperty("FLVFIXER", true);
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
         } else {
             if (isSubtitle(link)) {

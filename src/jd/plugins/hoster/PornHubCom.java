@@ -1571,6 +1571,7 @@ public class PornHubCom extends PluginForHost {
 
     public static Browser prepBr(final Browser br) {
         if (TRY_MP4.get() && MP4_WORKAROUND.get()) {
+            /* 2023-08-16: This doesn't work anymore! */
             br.setCookie("http://pornhub.com/", "platform", "mac");
             br.getHeaders().put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15");
         }
